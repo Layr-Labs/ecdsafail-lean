@@ -9378,6 +9378,38 @@ theorem selected (s : State) (m : List Bool) (v : BasisState) (small : Nat)
   rw [preparedState false s m v small k mode a b input exchange]
   exact congrArg (Expr.read v) (tagCertificate k i)
 
+
+/-- R1: the selector ops in front of the cross mux, and the program prefix that runs them. -/
+def crossAt : List Op := far ++ zero ++ suffix ++ select
+def crossPrefix := ((program false).drop (initPC false)).take 60
+theorem crossShape : crossPrefix = withHits 1721 1722 false swaps (crossAt.map Op.enter) := by rfl
+theorem crossCertificate : ∀k:Mode,
+    sim crossAt (LeaveSelector.start ports false k) 1724 = .bit false ∧
+    Partial.leave225Rows.all (fun r => decide (sim crossAt (LeaveSelector.start ports false k) r.1 =
+      .bit (enabled k && decide (r.2 = 401 + key k)))) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+/-- R1 precondition: in front of the mux the crossing wire is clean and every hot tag selects the same cell. -/
+theorem crossReady (s : State) (m : List Bool) (v : BasisState) (small : Nat)
+    (k : Mode) (mode : k=farMode (s.basis 1721) (s.basis 1722) small)
+    (a:s.basis 1559=false) (b:s.basis 1560=false)
+    (input : ∀q,q≠1559 → q≠1560 → s.basis q=(before ports false k q).read v)
+    (exchange : right k=true → ∀i<15,i≤key k → s.basis (swaps i)=decide (i=key k)) :
+    (run crossPrefix m s).basis 1724=false ∧
+      ∀r∈Partial.leave225Rows,(run crossPrefix m s).basis r.1=true → r.2=401+key k := by
+  have sep : ∀i : Fin 15, swaps i≠1559 ∧ swaps i≠1560 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have state : run crossPrefix m s = ⟨s.phase,fun q=>(sim crossAt (LeaveSelector.start ports false k) q).read v⟩ := by
+    rw [crossShape]
+    exact allSites ports 1721 1722 false _ swaps sites (fun i hi=>sep ⟨i,hi⟩) s m v small
+      (by decide) (by decide) a b k mode input exchange
+  obtain ⟨c0,tg⟩ := crossCertificate k
+  rw [state]
+  refine ⟨congrArg (Expr.read v) c0,?_⟩
+  intro r hr on
+  have e : sim crossAt (LeaveSelector.start ports false k) r.1 = .bit (enabled k && decide (r.2 = 401 + key k)) :=
+    of_decide_eq_true (List.all_eq_true.mp tg r hr)
+  have on' : (sim crossAt (LeaveSelector.start ports false k) r.1).read v = true := on
+  rw [e] at on'
+  have on'' : (enabled k && decide (r.2 = 401 + key k)) = true := on'
+  exact of_decide_eq_true (Bool.and_eq_true_iff.mp on'').2
 end ECDSAAdd.Entrant.StairPacket.Leave225Selector
 
 end
@@ -9714,6 +9746,38 @@ theorem selected (s : State) (m : List Bool) (v : BasisState) (small : Nat)
   rw [preparedState false s m v small k mode a b input exchange]
   exact congrArg (Expr.read v) (tagCertificate k i)
 
+
+/-- R1: the selector ops in front of the cross mux, and the program prefix that runs them. -/
+def crossAt : List Op := far ++ zero ++ suffix ++ select
+def crossPrefix := ((program false).drop (initPC false)).take 60
+theorem crossShape : crossPrefix = withHits 1713 1714 false swaps (crossAt.map Op.enter) := by rfl
+theorem crossCertificate : ∀k:Mode,
+    sim crossAt (LeaveSelector.start ports false k) 1716 = .bit false ∧
+    Partial.leave240Rows.all (fun r => decide (sim crossAt (LeaveSelector.start ports false k) r.1 =
+      .bit (enabled k && decide (r.2 = 408 + key k)))) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+/-- R1 precondition: in front of the mux the crossing wire is clean and every hot tag selects the same cell. -/
+theorem crossReady (s : State) (m : List Bool) (v : BasisState) (small : Nat)
+    (k : Mode) (mode : k=farMode (s.basis 1713) (s.basis 1714) small)
+    (a:s.basis 1559=false) (b:s.basis 1560=false)
+    (input : ∀q,q≠1559 → q≠1560 → s.basis q=(before ports false k q).read v)
+    (exchange : right k=true → ∀i<15,i≤key k → s.basis (swaps i)=decide (i=key k)) :
+    (run crossPrefix m s).basis 1716=false ∧
+      ∀r∈Partial.leave240Rows,(run crossPrefix m s).basis r.1=true → r.2=408+key k := by
+  have sep : ∀i : Fin 15, swaps i≠1559 ∧ swaps i≠1560 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have state : run crossPrefix m s = ⟨s.phase,fun q=>(sim crossAt (LeaveSelector.start ports false k) q).read v⟩ := by
+    rw [crossShape]
+    exact allSites ports 1713 1714 false _ swaps sites (fun i hi=>sep ⟨i,hi⟩) s m v small
+      (by decide) (by decide) a b k mode input exchange
+  obtain ⟨c0,tg⟩ := crossCertificate k
+  rw [state]
+  refine ⟨congrArg (Expr.read v) c0,?_⟩
+  intro r hr on
+  have e : sim crossAt (LeaveSelector.start ports false k) r.1 = .bit (enabled k && decide (r.2 = 408 + key k)) :=
+    of_decide_eq_true (List.all_eq_true.mp tg r hr)
+  have on' : (sim crossAt (LeaveSelector.start ports false k) r.1).read v = true := on
+  rw [e] at on'
+  have on'' : (enabled k && decide (r.2 = 408 + key k)) = true := on'
+  exact of_decide_eq_true (Bool.and_eq_true_iff.mp on'').2
 end ECDSAAdd.Entrant.StairPacket.Leave240Selector
 
 end
@@ -10054,6 +10118,38 @@ theorem selected (s : State) (m : List Bool) (v : BasisState) (small : Nat)
   rw [preparedState false s m v small k mode a b input exchange]
   exact congrArg (Expr.read v) (tagCertificate k i)
 
+
+/-- R1: the selector ops in front of the cross mux, and the program prefix that runs them. -/
+def crossAt : List Op := far ++ zero ++ suffix ++ select
+def crossPrefix := ((program false).drop (initPC false)).take 60
+theorem crossShape : crossPrefix = withHits 1706 1707 false swaps (crossAt.map Op.enter) := by rfl
+theorem crossCertificate : ∀k:Mode,
+    sim crossAt (LeaveSelector.start ports false k) 1709 = .bit false ∧
+    Partial.leave255Rows.all (fun r => decide (sim crossAt (LeaveSelector.start ports false k) r.1 =
+      .bit (enabled k && decide (r.2 = 416 + key k)))) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+/-- R1 precondition: in front of the mux the crossing wire is clean and every hot tag selects the same cell. -/
+theorem crossReady (s : State) (m : List Bool) (v : BasisState) (small : Nat)
+    (k : Mode) (mode : k=farMode (s.basis 1706) (s.basis 1707) small)
+    (a:s.basis 1559=false) (b:s.basis 1560=false)
+    (input : ∀q,q≠1559 → q≠1560 → s.basis q=(before ports false k q).read v)
+    (exchange : right k=true → ∀i<15,i≤key k → s.basis (swaps i)=decide (i=key k)) :
+    (run crossPrefix m s).basis 1709=false ∧
+      ∀r∈Partial.leave255Rows,(run crossPrefix m s).basis r.1=true → r.2=416+key k := by
+  have sep : ∀i : Fin 15, swaps i≠1559 ∧ swaps i≠1560 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have state : run crossPrefix m s = ⟨s.phase,fun q=>(sim crossAt (LeaveSelector.start ports false k) q).read v⟩ := by
+    rw [crossShape]
+    exact allSites ports 1706 1707 false _ swaps sites (fun i hi=>sep ⟨i,hi⟩) s m v small
+      (by decide) (by decide) a b k mode input exchange
+  obtain ⟨c0,tg⟩ := crossCertificate k
+  rw [state]
+  refine ⟨congrArg (Expr.read v) c0,?_⟩
+  intro r hr on
+  have e : sim crossAt (LeaveSelector.start ports false k) r.1 = .bit (enabled k && decide (r.2 = 416 + key k)) :=
+    of_decide_eq_true (List.all_eq_true.mp tg r hr)
+  have on' : (sim crossAt (LeaveSelector.start ports false k) r.1).read v = true := on
+  rw [e] at on'
+  have on'' : (enabled k && decide (r.2 = 416 + key k)) = true := on'
+  exact of_decide_eq_true (Bool.and_eq_true_iff.mp on'').2
 end ECDSAAdd.Entrant.StairPacket.Leave255Selector
 
 end
@@ -12139,6 +12235,116 @@ theorem bwAppend (a b:List Gate):inverse (a++b)=inverse b ++ inverse a:=by
   simp only [inverse,List.map_append,List.reverse_append]
 theorem fwNil:forward []=[]:=rfl
 theorem bwNil:inverse []=[]:=rfl
+end ECDSAAdd.Entrant.StairPacket.GateMirror
+
+end
+
+-- ==== R1: freshness transfer for the spliced gate lists ====
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.GateMirror
+
+/-- Gate form of `MoveChain.rows`. -/
+def rowGates (c : Wire) : List MoveChain.Row → List Gate
+  | [] => []
+  | r :: rs => .cx r.2 c :: .ccx r.1 c r.2 :: .cx r.2 c :: rowGates c rs
+def gateOf : Instr → Gate
+  | .X t => .x t
+  | .CX a t => .cx a t
+  | .CCX a b t => .ccx a b t
+  | .measureX t _ _ => .x t
+/-- Gates that need no clean target. -/
+def plainGate : Gate → Bool
+  | .make _ _ _ => false
+  | _ => true
+/-- A gate whose step commutes with the clear of row `r` and whose freshness test does not read the cell. -/
+def calmGate (c : Wire) (r : MoveChain.Row) (g : Gate) : Bool :=
+  MoveChain.quiet c r (front g) && (plainGate g || decide (target g ≠ r.2))
+
+theorem rowGates_forward (c : Wire) (rs : List MoveChain.Row) : forward (rowGates c rs) = MoveChain.rows c rs := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih => exact congrArg (fun p => Instr.CX r.2 c :: Instr.CCX r.1 c r.2 :: Instr.CX r.2 c :: p) ih
+theorem ready_plain (gs : List Gate) (h : gs.all plainGate = true) (s : State) : Ready s gs := by
+  induction gs generalizing s with
+  | nil => trivial
+  | cons g gs ih =>
+    have hh := Bool.and_eq_true_iff.mp (show (plainGate g && gs.all plainGate) = true from h)
+    refine ⟨?_, ih hh.2 _⟩
+    cases g with
+    | make a b t => exact absurd hh.1 (by simp [plainGate])
+    | x t => trivial
+    | cx a t => trivial
+    | ccx a b t => trivial
+    | pop a b t => trivial
+theorem rowGates_plain (c : Wire) (rs : List MoveChain.Row) : (rowGates c rs).all plainGate = true := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih => exact ih
+theorem ready_split (as bs : List Gate) (s : State) (h : Ready s (as ++ bs)) :
+    Ready s as ∧ Ready (run (forward as) [] s) bs := by
+  induction as generalizing s with
+  | nil => exact ⟨trivial, h⟩
+  | cons g gs ih =>
+    have h' : Fresh s g ∧ Ready (transition g s) (gs ++ bs) := h
+    obtain ⟨a, b⟩ := ih (transition g s) h'.2
+    refine ⟨⟨h'.1, a⟩, ?_⟩
+    show Ready (run ([front g] ++ forward gs) [] s) bs
+    rw [run_append, run_take, List.drop_nil]
+    exact b
+theorem ready_clr (c : Wire) (r : MoveChain.Row) (gs : List Gate) (h : gs.all (calmGate c r) = true)
+    (s : State) (rd : Ready s gs) : Ready (MoveChain.clr c r s) gs := by
+  induction gs generalizing s with
+  | nil => trivial
+  | cons g gs ih =>
+    have hh := Bool.and_eq_true_iff.mp (show (calmGate c r g && gs.all (calmGate c r)) = true from h)
+    have hg := Bool.and_eq_true_iff.mp (show (MoveChain.quiet c r (front g) && (plainGate g || decide (target g ≠ r.2))) = true from hh.1)
+    have rd' : Fresh s g ∧ Ready (transition g s) gs := rd
+    have step : transition g (MoveChain.clr c r s) = MoveChain.clr c r (transition g s) :=
+      MoveChain.step_comm c r (front g) hg.1 [] s
+    refine ⟨?_, ?_⟩
+    · cases g with
+      | make a b t =>
+        have ne : t ≠ r.2 := of_decide_eq_true (show decide (t ≠ r.2) = true from hg.2)
+        exact (MoveChain.clr_frame c r s t ne).trans rd'.1
+      | x t => trivial
+      | cx a t => trivial
+      | ccx a b t => trivial
+      | pop a b t => trivial
+    · rw [step]
+      exact ih hh.2 _ rd'.2
+theorem ready_clrAll (c : Wire) (rs : List MoveChain.Row) (gs : List Gate)
+    (h : rs.all (fun r => gs.all (calmGate c r)) = true) (s : State) (rd : Ready s gs) :
+    Ready (MoveChain.clrAll c rs s) gs := by
+  induction rs generalizing s with
+  | nil => exact rd
+  | cons r rs ih =>
+    have hh := Bool.and_eq_true_iff.mp (show (gs.all (calmGate c r) && rs.all (fun r => gs.all (calmGate c r))) = true from h)
+    exact ih hh.2 _ (ready_clr c r gs hh.1 s rd)
+
+/-- Freshness of every `make` carries over from the reference gate list to the spliced one. -/
+theorem ready_move (c : Wire) (rs : List MoveChain.Row) (A B C muxG digG keptG : List Gate) (s : State) (a0 : Wire)
+    (hmux : forward muxG = MoveChain.mux c rs)
+    (hdig : forward digG = MoveChain.weave c rs (forward keptG))
+    (hk : keptG.all plainGate = true)
+    (geo : MoveChain.apart c rs = true) (nd : MoveChain.lone rs = true)
+    (still : rs.all (fun r => (forward B).all (MoveChain.quiet c r)) = true)
+    (calmB : rs.all (fun r => B.all (calmGate c r)) = true)
+    (wv : MoveChain.woven c rs (forward keptG) = true)
+    (clean : (run (forward A) [] s).basis c = false)
+    (sel : ∀ r ∈ rs, (run (forward A) [] s).basis r.1 = true → r.2 = a0)
+    (rd : Ready s (A ++ (muxG ++ (B ++ (digG ++ C))))) :
+    Ready s (A ++ (rowGates c rs ++ (B ++ (keptG ++ C)))) := by
+  obtain ⟨rA, r1⟩ := ready_split _ _ _ rd
+  obtain ⟨_, r2⟩ := ready_split _ _ _ r1
+  rw [hmux] at r2
+  obtain ⟨rB, r3⟩ := ready_split _ _ _ r2
+  obtain ⟨_, rC⟩ := ready_split _ _ _ r3
+  rw [hdig, MoveChain.weave_run c rs (forward keptG) wv, ← MoveChain.commAll c rs (forward B) still] at rC
+  refine ready_append _ _ _ rA (ready_append _ _ _ (ready_plain _ (rowGates_plain c rs) _) ?_)
+  rw [rowGates_forward, MoveChain.moved c rs [] _ a0 geo nd clean sel]
+  exact ready_append _ _ _ (ready_clrAll c rs B calmB _ rB) (ready_append _ _ _ (ready_plain _ hk _) rC)
+
 end ECDSAAdd.Entrant.StairPacket.GateMirror
 
 end
@@ -17258,6 +17464,89 @@ theorem inverts (s:State) (phase:∀m,(run Partial.leave225 m s).phase=s.phase)
   have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
   rw [←bEq,←fEq]
   exact invert ops s phys (all_prepared ops s phys (by rwa [fEq])) ready m n
+
+/-- R1: the gate list of the physical leave225Move, spliced from the reference list. -/
+private def moveKept : List Gate := Partial.leave225Kept.map GateMirror.gateOf
+private def opsMove : List Gate :=
+  ops.take 302 ++ (GateMirror.rowGates 1724 Partial.leave225Rows ++ ((ops.drop 318).take 1762 ++ (moveKept ++ ops.drop 2112)))
+private theorem opsShape : ops = ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 1762 ++
+    ((ops.drop 2080).take 32 ++ ops.drop 2112))) := by decide +kernel
+private theorem fMove : GateMirror.forward opsMove = Partial.leave225Move := by decide +kernel
+private theorem bMove : GateMirror.inverse opsMove = Partial.leave225MoveInv := by decide +kernel
+private theorem prefixEq : GateMirror.forward (ops.take 302) = Partial.leave225.take 302 := by decide +kernel
+private theorem refShape : Partial.leave225 = Partial.leave225.take 302 ++ (MoveChain.mux 1724 Partial.leave225Rows ++
+    ((Partial.leave225.drop 318).take 1762 ++ (MoveChain.weave 1724 Partial.leave225Rows Partial.leave225Kept ++
+      Partial.leave225.drop 2112))) := by decide +kernel
+
+/-- R1 bridge: the physical leave225Move runs exactly like the reference leave225 whenever, in front of the mux,
+the crossing wire is clean and the hot tags select one cell. -/
+theorem sameRun (s : State) (m : List Bool) (a0 : Wire)
+    (clean : (run (Partial.leave225.take 302) m s).basis 1724 = false)
+    (sel : ∀ r ∈ Partial.leave225Rows, (run (Partial.leave225.take 302) m s).basis r.1 = true → r.2 = a0) :
+    run Partial.leave225Move m s = run Partial.leave225 m s := by
+  have geo : MoveChain.apart 1724 Partial.leave225Rows = true := by decide +kernel
+  have nd : MoveChain.lone Partial.leave225Rows = true := by decide +kernel
+  have still : Partial.leave225Rows.all (fun r => ((Partial.leave225.drop 318).take 1762).all (MoveChain.quiet 1724 r)) = true := by
+    decide +kernel
+  have wv : MoveChain.woven 1724 Partial.leave225Rows Partial.leave225Kept = true := by decide +kernel
+  have e := MoveChain.splice 1724 Partial.leave225Rows (Partial.leave225.take 302) ((Partial.leave225.drop 318).take 1762)
+    (Partial.leave225.drop 2112) Partial.leave225Kept s m a0 geo nd still wv clean sel
+  exact e.trans (congrArg (fun P => run P m s) refShape.symm)
+
+/-- R1: the facts `inverts` derives about the reference gate list, exported. -/
+theorem grounded (s:State)
+    (initial:∀q, 1556≤q → q≤1717 → s.basis q=false)
+    (core:zeros (run (Partial.leave225.take 2260) [] s) [1560,1576,1596,1613,1614])
+    (post:(run (Partial.leave225.take 2847) [] s).basis 1556=false) :
+    (∀g∈ops,proper g=true) ∧ Ready s ops:=by
+  let s1:=run (GateMirror.forward group0) [] s
+  let s2:=run (GateMirror.forward group1) [] s1
+  have s2e:s2=run (GateMirror.forward (group0++group1)) [] s:=by
+    simp [s2,s1,GateMirror.forward,List.map_append,run_append]
+  have i0:Masked s (0x3fffffffffffffffffffffffeffffeffffe <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (fromRange (lo:=1556) (width:=162) (fun q h1 h2=>initial q h1 (Nat.le_of_lt_succ h2)))
+  obtain ⟨h0,r0,z0⟩:=bit_sound group0 s _ _ cert0 i0
+  have kc:zeros s1 [1560,1576,1596,1613,1614]:=by simpa only [s1,pEq] using core
+  have i1:Masked s1 (0x1fffffffffffffffe0003fffffffff8 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z0 (fromList kc))
+  obtain ⟨h1,r1,z1⟩:=bit_sound group1 s1 _ _ cert1 i1
+  have kp:zeros s2 [1556]:=by
+    intro q hq
+    obtain rfl: q=1556:=by simpa using hq
+    rw [s2e,qEq];exact post
+  have i2:Masked s2 (0x79 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z1 (fromList kp))
+  obtain ⟨h2,r2,z2⟩:=bit_sound group2 s2 _ _ cert2 i2
+  have phys:∀g∈ops,proper g=true:=by
+    intro g hg
+    rcases List.mem_append.mp hg with h|h
+    · exact h0 g h
+    · rcases List.mem_append.mp h with h|h
+      · exact h1 g h
+      · exact h2 g h
+  have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
+  exact ⟨phys,ready⟩
+/-- R1: the physical inverse undoes the physical forward program (it is the mirror of the same gate list). -/
+theorem invertsMove (s:State) (phase:∀m,(run Partial.leave225 m s).phase=s.phase)
+    (initial:∀q, 1556≤q → q≤1717 → s.basis q=false)
+    (core:zeros (run (Partial.leave225.take 2260) [] s) [1560,1576,1596,1613,1614])
+    (post:(run (Partial.leave225.take 2847) [] s).basis 1556=false) (a0:Wire)
+    (hot:∀o,(run (Partial.leave225.take 302) o s).basis 1724=false ∧
+      ∀r∈Partial.leave225Rows,(run (Partial.leave225.take 302) o s).basis r.1=true → r.2=a0) (m n:List Bool):
+    run Partial.leave225MoveInv n (run Partial.leave225Move m s)=s:=by
+  obtain ⟨phys,ready⟩ := grounded s initial core post
+  have same (o : List Bool) : run Partial.leave225Move o s = run Partial.leave225 o s := sameRun s o a0 (hot o).1 (hot o).2
+  have physAll : opsMove.all proper = true := by decide +kernel
+  have physM : ∀ g ∈ opsMove, proper g = true := List.all_eq_true.mp physAll
+  have rd : Ready s (ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 1762 ++
+      ((ops.drop 2080).take 32 ++ ops.drop 2112)))) := by
+    rw [← opsShape]
+    exact ready
+  have readyM : Ready s opsMove :=
+    GateMirror.ready_move 1724 Partial.leave225Rows (ops.take 302) ((ops.drop 318).take 1762) (ops.drop 2112)
+      ((ops.drop 302).take 16) ((ops.drop 2080).take 32) moveKept s a0
+      (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by rw [prefixEq]; exact (hot []).1) (by rw [prefixEq]; exact (hot []).2) rd
+  rw [← bMove, ← fMove]
+  exact invert opsMove s physM (all_prepared opsMove s physM (by intro o; rw [fMove, same o]; exact phase o)) readyM m n
 end ECDSAAdd.Entrant.StairPacket.Leave225Mirror
 
 end
@@ -21651,6 +21940,89 @@ theorem inverts (s:State) (phase:∀m,(run Partial.leave240 m s).phase=s.phase)
   have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
   rw [←bEq,←fEq]
   exact invert ops s phys (all_prepared ops s phys (by rwa [fEq])) ready m n
+
+/-- R1: the gate list of the physical leave240Move, spliced from the reference list. -/
+private def moveKept : List Gate := Partial.leave240Kept.map GateMirror.gateOf
+private def opsMove : List Gate :=
+  ops.take 302 ++ (GateMirror.rowGates 1716 Partial.leave240Rows ++ ((ops.drop 318).take 1898 ++ (moveKept ++ ops.drop 2248)))
+private theorem opsShape : ops = ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 1898 ++
+    ((ops.drop 2216).take 32 ++ ops.drop 2248))) := by decide +kernel
+private theorem fMove : GateMirror.forward opsMove = Partial.leave240Move := by decide +kernel
+private theorem bMove : GateMirror.inverse opsMove = Partial.leave240MoveInv := by decide +kernel
+private theorem prefixEq : GateMirror.forward (ops.take 302) = Partial.leave240.take 302 := by decide +kernel
+private theorem refShape : Partial.leave240 = Partial.leave240.take 302 ++ (MoveChain.mux 1716 Partial.leave240Rows ++
+    ((Partial.leave240.drop 318).take 1898 ++ (MoveChain.weave 1716 Partial.leave240Rows Partial.leave240Kept ++
+      Partial.leave240.drop 2248))) := by decide +kernel
+
+/-- R1 bridge: the physical leave240Move runs exactly like the reference leave240 whenever, in front of the mux,
+the crossing wire is clean and the hot tags select one cell. -/
+theorem sameRun (s : State) (m : List Bool) (a0 : Wire)
+    (clean : (run (Partial.leave240.take 302) m s).basis 1716 = false)
+    (sel : ∀ r ∈ Partial.leave240Rows, (run (Partial.leave240.take 302) m s).basis r.1 = true → r.2 = a0) :
+    run Partial.leave240Move m s = run Partial.leave240 m s := by
+  have geo : MoveChain.apart 1716 Partial.leave240Rows = true := by decide +kernel
+  have nd : MoveChain.lone Partial.leave240Rows = true := by decide +kernel
+  have still : Partial.leave240Rows.all (fun r => ((Partial.leave240.drop 318).take 1898).all (MoveChain.quiet 1716 r)) = true := by
+    decide +kernel
+  have wv : MoveChain.woven 1716 Partial.leave240Rows Partial.leave240Kept = true := by decide +kernel
+  have e := MoveChain.splice 1716 Partial.leave240Rows (Partial.leave240.take 302) ((Partial.leave240.drop 318).take 1898)
+    (Partial.leave240.drop 2248) Partial.leave240Kept s m a0 geo nd still wv clean sel
+  exact e.trans (congrArg (fun P => run P m s) refShape.symm)
+
+/-- R1: the facts `inverts` derives about the reference gate list, exported. -/
+theorem grounded (s:State)
+    (initial:∀q, 1556≤q → q≤1709 → s.basis q=false)
+    (core:zeros (run (Partial.leave240.take 2395) [] s) [1560,1576,1596,1613,1614])
+    (post:(run (Partial.leave240.take 3024) [] s).basis 1556=false) :
+    (∀g∈ops,proper g=true) ∧ Ready s ops:=by
+  let s1:=run (GateMirror.forward group0) [] s
+  let s2:=run (GateMirror.forward group1) [] s1
+  have s2e:s2=run (GateMirror.forward (group0++group1)) [] s:=by
+    simp [s2,s1,GateMirror.forward,List.map_append,run_append]
+  have i0:Masked s (0x3fffffffffffffffffffffffffeffffeffffe <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (fromRange (lo:=1556) (width:=154) (fun q h1 h2=>initial q h1 (Nat.le_of_lt_succ h2)))
+  obtain ⟨h0,r0,z0⟩:=bit_sound group0 s _ _ cert0 i0
+  have kc:zeros s1 [1560,1576,1596,1613,1614]:=by simpa only [s1,pEq] using core
+  have i1:Masked s1 (0xfffffffffffffffffe0003fffffffff8 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z0 (fromList kc))
+  obtain ⟨h1,r1,z1⟩:=bit_sound group1 s1 _ _ cert1 i1
+  have kp:zeros s2 [1556]:=by
+    intro q hq
+    obtain rfl: q=1556:=by simpa using hq
+    rw [s2e,qEq];exact post
+  have i2:Masked s2 (0x79 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z1 (fromList kp))
+  obtain ⟨h2,r2,z2⟩:=bit_sound group2 s2 _ _ cert2 i2
+  have phys:∀g∈ops,proper g=true:=by
+    intro g hg
+    rcases List.mem_append.mp hg with h|h
+    · exact h0 g h
+    · rcases List.mem_append.mp h with h|h
+      · exact h1 g h
+      · exact h2 g h
+  have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
+  exact ⟨phys,ready⟩
+/-- R1: the physical inverse undoes the physical forward program (it is the mirror of the same gate list). -/
+theorem invertsMove (s:State) (phase:∀m,(run Partial.leave240 m s).phase=s.phase)
+    (initial:∀q, 1556≤q → q≤1709 → s.basis q=false)
+    (core:zeros (run (Partial.leave240.take 2395) [] s) [1560,1576,1596,1613,1614])
+    (post:(run (Partial.leave240.take 3024) [] s).basis 1556=false) (a0:Wire)
+    (hot:∀o,(run (Partial.leave240.take 302) o s).basis 1716=false ∧
+      ∀r∈Partial.leave240Rows,(run (Partial.leave240.take 302) o s).basis r.1=true → r.2=a0) (m n:List Bool):
+    run Partial.leave240MoveInv n (run Partial.leave240Move m s)=s:=by
+  obtain ⟨phys,ready⟩ := grounded s initial core post
+  have same (o : List Bool) : run Partial.leave240Move o s = run Partial.leave240 o s := sameRun s o a0 (hot o).1 (hot o).2
+  have physAll : opsMove.all proper = true := by decide +kernel
+  have physM : ∀ g ∈ opsMove, proper g = true := List.all_eq_true.mp physAll
+  have rd : Ready s (ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 1898 ++
+      ((ops.drop 2216).take 32 ++ ops.drop 2248)))) := by
+    rw [← opsShape]
+    exact ready
+  have readyM : Ready s opsMove :=
+    GateMirror.ready_move 1716 Partial.leave240Rows (ops.take 302) ((ops.drop 318).take 1898) (ops.drop 2248)
+      ((ops.drop 302).take 16) ((ops.drop 2216).take 32) moveKept s a0
+      (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by rw [prefixEq]; exact (hot []).1) (by rw [prefixEq]; exact (hot []).2) rd
+  rw [← bMove, ← fMove]
+  exact invert opsMove s physM (all_prepared opsMove s physM (by intro o; rw [fMove, same o]; exact phase o)) readyM m n
 end ECDSAAdd.Entrant.StairPacket.Leave240Mirror
 
 end
@@ -26199,6 +26571,91 @@ theorem inverts (s:State) (phase:∀m,(run Partial.leave255 m s).phase=s.phase)
   have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
   rw [←bEq,←fEq]
   exact invert ops s phys (all_prepared ops s phys (by rwa [fEq])) ready m n
+
+/-- R1: the gate list of the physical leave255Move, spliced from the reference list. -/
+private def moveKept : List Gate := Partial.leave255Kept.map GateMirror.gateOf
+private def opsMove : List Gate :=
+  ops.take 302 ++ (GateMirror.rowGates 1709 Partial.leave255Rows ++ ((ops.drop 318).take 2017 ++ (moveKept ++ ops.drop 2367)))
+private theorem opsShape : ops = ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 2017 ++
+    ((ops.drop 2335).take 32 ++ ops.drop 2367))) := by decide +kernel
+private theorem fMove : GateMirror.forward opsMove = Partial.leave255Move := by decide +kernel
+private theorem bMove : GateMirror.inverse opsMove = Partial.leave255MoveInv := by decide +kernel
+private theorem prefixEq : GateMirror.forward (ops.take 302) = Partial.leave255.take 302 := by decide +kernel
+private theorem refShape : Partial.leave255 = Partial.leave255.take 302 ++ (MoveChain.mux 1709 Partial.leave255Rows ++
+    ((Partial.leave255.drop 318).take 2017 ++ (MoveChain.weave 1709 Partial.leave255Rows Partial.leave255Kept ++
+      Partial.leave255.drop 2367))) := by decide +kernel
+
+/-- R1 bridge: the physical leave255Move runs exactly like the reference leave255 whenever, in front of the mux,
+the crossing wire is clean and the hot tags select one cell. -/
+theorem sameRun (s : State) (m : List Bool) (a0 : Wire)
+    (clean : (run (Partial.leave255.take 302) m s).basis 1709 = false)
+    (sel : ∀ r ∈ Partial.leave255Rows, (run (Partial.leave255.take 302) m s).basis r.1 = true → r.2 = a0) :
+    run Partial.leave255Move m s = run Partial.leave255 m s := by
+  have geo : MoveChain.apart 1709 Partial.leave255Rows = true := by decide +kernel
+  have nd : MoveChain.lone Partial.leave255Rows = true := by decide +kernel
+  have still : Partial.leave255Rows.all (fun r => ((Partial.leave255.drop 318).take 2017).all (MoveChain.quiet 1709 r)) = true := by
+    decide +kernel
+  have wv : MoveChain.woven 1709 Partial.leave255Rows Partial.leave255Kept = true := by decide +kernel
+  have e := MoveChain.splice 1709 Partial.leave255Rows (Partial.leave255.take 302) ((Partial.leave255.drop 318).take 2017)
+    (Partial.leave255.drop 2367) Partial.leave255Kept s m a0 geo nd still wv clean sel
+  exact e.trans (congrArg (fun P => run P m s) refShape.symm)
+
+/-- R1: the facts `inverts` derives about the reference gate list, exported. -/
+theorem grounded (s:State)
+    (initial:∀q, 1556≤q → q≤1702 → s.basis q=false)
+    (extra:∀q, 1713≤q → q≤1718 → s.basis q=false)
+    (core:zeros (run (Partial.leave255.take 2515) [] s) [1560,1576,1596,1613,1614])
+    (post:(run (Partial.leave255.take 3162) [] s).basis 1556=false) :
+    (∀g∈ops,proper g=true) ∧ Ready s ops:=by
+  let s1:=run (GateMirror.forward group0) [] s
+  let s2:=run (GateMirror.forward group1) [] s1
+  have s2e:s2=run (GateMirror.forward (group0++group1)) [] s:=by
+    simp [s2,s1,GateMirror.forward,List.map_append,run_append]
+  have i0:Masked s (0x7e007fffffffffffffffffffffffffeffffeffffe <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks (fromRange (lo:=1556) (width:=147) (fun q h1 h2=>initial q h1 (Nat.le_of_lt_succ h2))) (fromRange (lo:=1713) (width:=6) (fun q h1 h2=>extra q h1 (Nat.le_of_lt_succ h2))))
+  obtain ⟨h0,r0,z0⟩:=bit_sound group0 s _ _ cert0 i0
+  have kc:zeros s1 [1560,1576,1596,1613,1614]:=by simpa only [s1,pEq] using core
+  have i1:Masked s1 (0xfffffffffffffffffffe0003fffffffff8 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z0 (fromList kc))
+  obtain ⟨h1,r1,z1⟩:=bit_sound group1 s1 _ _ cert1 i1
+  have kp:zeros s2 [1556]:=by
+    intro q hq
+    obtain rfl: q=1556:=by simpa using hq
+    rw [s2e,qEq];exact post
+  have i2:Masked s2 (0x79 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z1 (fromList kp))
+  obtain ⟨h2,r2,z2⟩:=bit_sound group2 s2 _ _ cert2 i2
+  have phys:∀g∈ops,proper g=true:=by
+    intro g hg
+    rcases List.mem_append.mp hg with h|h
+    · exact h0 g h
+    · rcases List.mem_append.mp h with h|h
+      · exact h1 g h
+      · exact h2 g h
+  have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
+  exact ⟨phys,ready⟩
+/-- R1: the physical inverse undoes the physical forward program (it is the mirror of the same gate list). -/
+theorem invertsMove (s:State) (phase:∀m,(run Partial.leave255 m s).phase=s.phase)
+    (initial:∀q, 1556≤q → q≤1702 → s.basis q=false)
+    (extra:∀q, 1713≤q → q≤1718 → s.basis q=false)
+    (core:zeros (run (Partial.leave255.take 2515) [] s) [1560,1576,1596,1613,1614])
+    (post:(run (Partial.leave255.take 3162) [] s).basis 1556=false) (a0:Wire)
+    (hot:∀o,(run (Partial.leave255.take 302) o s).basis 1709=false ∧
+      ∀r∈Partial.leave255Rows,(run (Partial.leave255.take 302) o s).basis r.1=true → r.2=a0) (m n:List Bool):
+    run Partial.leave255MoveInv n (run Partial.leave255Move m s)=s:=by
+  obtain ⟨phys,ready⟩ := grounded s initial extra core post
+  have same (o : List Bool) : run Partial.leave255Move o s = run Partial.leave255 o s := sameRun s o a0 (hot o).1 (hot o).2
+  have physAll : opsMove.all proper = true := by decide +kernel
+  have physM : ∀ g ∈ opsMove, proper g = true := List.all_eq_true.mp physAll
+  have rd : Ready s (ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 2017 ++
+      ((ops.drop 2335).take 32 ++ ops.drop 2367)))) := by
+    rw [← opsShape]
+    exact ready
+  have readyM : Ready s opsMove :=
+    GateMirror.ready_move 1709 Partial.leave255Rows (ops.take 302) ((ops.drop 318).take 2017) (ops.drop 2367)
+      ((ops.drop 302).take 16) ((ops.drop 2335).take 32) moveKept s a0
+      (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by rw [prefixEq]; exact (hot []).1) (by rw [prefixEq]; exact (hot []).2) rd
+  rw [← bMove, ← fMove]
+  exact invert opsMove s physM (all_prepared opsMove s physM (by intro o; rw [fMove, same o]; exact phase o)) readyM m n
 end ECDSAAdd.Entrant.StairPacket.Leave255Mirror
 
 end
@@ -27195,6 +27652,31 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
+
+/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
+theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^144)
+    (ready:onRails 10 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).v) s.basis)
+    (fresh:s.basis 1723=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
+    (mode:k=farMode ((run entry m s).basis 1721) ((run entry m s).basis 1722) smallU)
+    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
+    (run (entry++crossPrefix) m s).basis 1724=false ∧
+      ∀r∈Partial.leave225Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=401+key k := by
+  let a:=run entry m s
+  have keep:=Leave225FrontReady.frame s m z G sg small ready fresh scratch temp
+  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
+  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
+    unfold watched
+    apply List.mem_append_right
+    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
+  rw [run_append,run_take]
+  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
+  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
+  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave225FrontPrepare
 
 end
@@ -27313,6 +27795,31 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
+
+/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
+theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^136)
+    (ready:onRails 11 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).v) s.basis)
+    (fresh:s.basis 1715=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
+    (mode:k=farMode ((run entry m s).basis 1713) ((run entry m s).basis 1714) smallU)
+    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
+    (run (entry++crossPrefix) m s).basis 1716=false ∧
+      ∀r∈Partial.leave240Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=408+key k := by
+  let a:=run entry m s
+  have keep:=Leave240FrontReady.frame s m z G sg small ready fresh scratch temp
+  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
+  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
+    unfold watched
+    apply List.mem_append_right
+    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
+  rw [run_append,run_take]
+  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
+  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
+  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave240FrontPrepare
 
 end
@@ -27431,6 +27938,31 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
+
+/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
+theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^129)
+    (ready:onRails 12 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).v) s.basis)
+    (fresh:s.basis 1708=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
+    (mode:k=farMode ((run entry m s).basis 1706) ((run entry m s).basis 1707) smallU)
+    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
+    (run (entry++crossPrefix) m s).basis 1709=false ∧
+      ∀r∈Partial.leave255Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=416+key k := by
+  let a:=run entry m s
+  have keep:=Leave255FrontReady.frame s m z G sg small ready fresh scratch temp
+  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
+  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
+    unfold watched
+    apply List.mem_append_right
+    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
+  rw [run_append,run_take]
+  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
+  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
+  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave255FrontPrepare
 
 end
@@ -28387,16 +28919,17 @@ open Arithmetic MappedCompressed IntegerPacket
 set_option maxRecDepth 16000
 set_option maxHeartbeats 2000000
 attribute [local irreducible] run routed unrouted renameProgram portal225 enter225 enter240 enter255 leave225 leave240 leave255
+  leave225Move leave240Move leave255Move leave225MoveInv leave240MoveInv leave255MoveInv
   portal225Inv enter225Inv enter240Inv enter255Inv leave225Inv leave240Inv leave255Inv park270 park270Inv portal270 portal270Inv
   archiveLoad240 archiveLoad255 archiveLoad270 archiveRestore240 archiveRestore255 archiveRestore270
 theorem assembly (d:Bool) : forward45plus1 d =
-    NativePack225.firstWindow d ++ leave225 ++ NativePack240.nextWindow d ++ leave240 ++ NativePack255.nextWindow d ++ leave255 ++ NativePack270.lastWindow d := by
+    NativePack225.firstWindow d ++ leave225Move ++ NativePack240.nextWindow d ++ leave240Move ++ NativePack255.nextWindow d ++ leave255Move ++ NativePack270.lastWindow d := by
   simp only [forward45plus1,NativePack225.firstWindow,NativePack240.nextWindow,NativePack255.nextWindow,NativePack270.lastWindow,
     NativePack225.window,NativePack240.window,NativePack255.window,NativePack270.endSlice,body,
     NativePack240.withArchive,NativePack255.withArchive, List.append_assoc]
   rfl
 theorem unwind_assembly (d:Bool) : reverse45plus1 d =
-    NativePack270.lastUnwind d ++ leave255Inv ++ NativePack255.nextUnwind d ++ leave240Inv ++ NativePack240.nextUnwind d ++ leave225Inv ++ NativePack225.firstUnwind d := by
+    NativePack270.lastUnwind d ++ leave255MoveInv ++ NativePack255.nextUnwind d ++ leave240MoveInv ++ NativePack240.nextUnwind d ++ leave225MoveInv ++ NativePack225.firstUnwind d := by
   simp only [reverse45plus1,NativePack270.lastUnwind,NativePack255.nextUnwind,NativePack240.nextUnwind,NativePack225.firstUnwind,
     NativePack225.unwind,NativePack240.unwind,NativePack255.unwind,NativePack270.endUndo,unbody,
     NativePack240.fromArchive,NativePack255.fromArchive,List.append_assoc]
@@ -30082,6 +30615,36 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
+
+/-- R1 precondition at the mux of leave225, under the hypotheses of `result`. -/
+theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^144)
+    (ready:onRails 10 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).v) s.basis)
+    (fresh:s.basis 1723=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (_odd:z.v%2=1) (_room:Shadow.high 144 15 z+1<2^97)
+    (_clean:∀q∈carries,s.basis q=false)
+    (_padding:∀i:Nat,97 ≤ i → i<112 → s.basis (wire i)=false)
+    (_bank:regValue ys s.basis=if Shadow.far 144 15 z then Shadow.high 144 15 z else 0)
+    (zero:∀q∈Leave225FrontReady.watched,s.basis q=false)
+    (_par:Leave225EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 144 15 z)))
+    (mode:actualMode 144 z=farMode (s.basis 1721) (s.basis 1722) z.u)
+    (events:right (actualMode 144 z)=true → ∀i<15,i≤key (actualMode 144 z) → s.basis (Leave225Hit.swaps i)=decide (i=key (actualMode 144 z)))
+    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^136)
+    (_bound:Leave225TrueMiddle.F z<2^112) :
+    (run (leave225.take 302) m s).basis 1724=false ∧
+      ∀r∈Partial.leave225Rows,(run (leave225.take 302) m s).basis r.1=true → r.2=401+key (actualMode 144 z) := by
+  let a:=run entry m s
+  let k:=actualMode 144 z
+  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
+  have sw:∀i:Fin 15,Leave225Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have shape : leave225.take 302=entry++crossPrefix := by decide +kernel
+  rw [shape]
+  exact Leave225FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
+    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
+    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave225PostReady
 
 end
@@ -30239,6 +30802,36 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
+
+/-- R1 precondition at the mux of leave240, under the hypotheses of `result`. -/
+theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^136)
+    (ready:onRails 11 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).v) s.basis)
+    (fresh:s.basis 1715=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (_odd:z.v%2=1) (_room:Shadow.high 136 15 z+1<2^105)
+    (_clean:∀q∈carries,s.basis q=false)
+    (_padding:∀i:Nat,105 ≤ i → i<120 → s.basis (wire i)=false)
+    (_bank:regValue ys s.basis=if Shadow.far 136 15 z then Shadow.high 136 15 z else 0)
+    (zero:∀q∈Leave240FrontReady.watched,s.basis q=false)
+    (_par:Leave240EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 136 15 z)))
+    (mode:actualMode 136 z=farMode (s.basis 1713) (s.basis 1714) z.u)
+    (events:right (actualMode 136 z)=true → ∀i<15,i≤key (actualMode 136 z) → s.basis (Leave240Hit.swaps i)=decide (i=key (actualMode 136 z)))
+    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^129)
+    (_bound:Leave240TrueMiddle.F z<2^120) :
+    (run (leave240.take 302) m s).basis 1716=false ∧
+      ∀r∈Partial.leave240Rows,(run (leave240.take 302) m s).basis r.1=true → r.2=408+key (actualMode 136 z) := by
+  let a:=run entry m s
+  let k:=actualMode 136 z
+  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
+  have sw:∀i:Fin 15,Leave240Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have shape : leave240.take 302=entry++crossPrefix := by decide +kernel
+  rw [shape]
+  exact Leave240FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
+    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
+    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave240PostReady
 
 end
@@ -30396,6 +30989,36 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
+
+/-- R1 precondition at the mux of leave255, under the hypotheses of `result`. -/
+theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^129)
+    (ready:onRails 12 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).v) s.basis)
+    (fresh:s.basis 1708=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (_odd:z.v%2=1) (_room:Shadow.high 129 15 z+1<2^112)
+    (_clean:∀q∈carries,s.basis q=false)
+    (_padding:∀i:Nat,112 ≤ i → i<127 → s.basis (wire i)=false)
+    (_bank:regValue ys s.basis=if Shadow.far 129 15 z then Shadow.high 129 15 z else 0)
+    (zero:∀q∈Leave255FrontReady.watched,s.basis q=false)
+    (_par:Leave255EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 129 15 z)))
+    (mode:actualMode 129 z=farMode (s.basis 1706) (s.basis 1707) z.u)
+    (events:right (actualMode 129 z)=true → ∀i<15,i≤key (actualMode 129 z) → s.basis (Leave255Hit.swaps i)=decide (i=key (actualMode 129 z)))
+    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^121)
+    (_bound:Leave255TrueMiddle.F z<2^127) :
+    (run (leave255.take 302) m s).basis 1709=false ∧
+      ∀r∈Partial.leave255Rows,(run (leave255.take 302) m s).basis r.1=true → r.2=416+key (actualMode 129 z) := by
+  let a:=run entry m s
+  let k:=actualMode 129 z
+  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
+  have sw:∀i:Fin 15,Leave255Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have shape : leave255.take 302=entry++crossPrefix := by decide +kernel
+  rw [shape]
+  exact Leave255FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
+    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
+    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave255PostReady
 
 end
@@ -30509,6 +31132,35 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   apply Leave225Mirror.inverts s phase initial  _ _ m n
   · exact Leave225CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1269,1556) (by decide)).2
+
+/-- R1: the physical pair runs like the reference and inverts itself. -/
+theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^144)
+    (ready:onRails 10 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).v) s.basis)
+    (fresh:s.basis 1723=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (odd:z.v%2=1) (room:Shadow.high 144 15 z+1<2^97)
+    (clean:∀q∈carries,s.basis q=false)
+    (padding:∀i:Nat,97 ≤ i → i<112 → s.basis (wire i)=false)
+    (bank:regValue ys s.basis=if Shadow.far 144 15 z then Shadow.high 144 15 z else 0)
+    (zero:∀q∈Leave225FrontReady.watched,s.basis q=false)
+    (par:Leave225EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 144 15 z)))
+    (mode:actualMode 144 z=farMode (s.basis 1721) (s.basis 1722) z.u)
+    (events:right (actualMode 144 z)=true → ∀i<15,i≤key (actualMode 144 z) → s.basis (Leave225Hit.swaps i)=decide (i=key (actualMode 144 z)))
+    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^136)
+    (bound:Leave225TrueMiddle.F z<2^112)
+    (phase:∀o,(run leave225 o s).phase=s.phase)
+    (initial:∀q,1556≤q→q≤1717→s.basis q=false)
+    : (∀o,run leave225Move o s=run leave225 o s) ∧ run leave225MoveInv n (run leave225Move m s)=s:=by
+  have atCore:=Leave225CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
+  have atPost:=Leave225PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
+  have hot (o:List Bool):=Leave225PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
+  refine ⟨fun o=>Leave225Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
+  apply Leave225Mirror.invertsMove s phase initial  _ _ (401+key (actualMode 144 z)) hot m n
+  · exact Leave225CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
+  · exact (atPost.2.2.2.2 (1269,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave225Roundtrip
 
 end
@@ -30601,6 +31253,35 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   have atCore:=Leave240CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
   have atPost:=Leave240PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
   apply Leave240Mirror.inverts s phase initial  _ _ m n
+  · exact Leave240CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
+  · exact (atPost.2.2.2.2 (1284,1556) (by decide)).2
+
+/-- R1: the physical pair runs like the reference and inverts itself. -/
+theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^136)
+    (ready:onRails 11 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).v) s.basis)
+    (fresh:s.basis 1715=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (odd:z.v%2=1) (room:Shadow.high 136 15 z+1<2^105)
+    (clean:∀q∈carries,s.basis q=false)
+    (padding:∀i:Nat,105 ≤ i → i<120 → s.basis (wire i)=false)
+    (bank:regValue ys s.basis=if Shadow.far 136 15 z then Shadow.high 136 15 z else 0)
+    (zero:∀q∈Leave240FrontReady.watched,s.basis q=false)
+    (par:Leave240EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 136 15 z)))
+    (mode:actualMode 136 z=farMode (s.basis 1713) (s.basis 1714) z.u)
+    (events:right (actualMode 136 z)=true → ∀i<15,i≤key (actualMode 136 z) → s.basis (Leave240Hit.swaps i)=decide (i=key (actualMode 136 z)))
+    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^129)
+    (bound:Leave240TrueMiddle.F z<2^120)
+    (phase:∀o,(run leave240 o s).phase=s.phase)
+    (initial:∀q,1556≤q→q≤1709→s.basis q=false)
+    : (∀o,run leave240Move o s=run leave240 o s) ∧ run leave240MoveInv n (run leave240Move m s)=s:=by
+  have atCore:=Leave240CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
+  have atPost:=Leave240PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
+  have hot (o:List Bool):=Leave240PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
+  refine ⟨fun o=>Leave240Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
+  apply Leave240Mirror.invertsMove s phase initial  _ _ (408+key (actualMode 136 z)) hot m n
   · exact Leave240CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1284,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave240Roundtrip
@@ -30696,6 +31377,36 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   have atCore:=Leave255CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
   have atPost:=Leave255PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
   apply Leave255Mirror.inverts s phase initial extra  _ _ m n
+  · exact Leave255CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
+  · exact (atPost.2.2.2.2 (1299,1556) (by decide)).2
+
+/-- R1: the physical pair runs like the reference and inverts itself. -/
+theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
+    (small:min z.u z.v<2^129)
+    (ready:onRails 12 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).u
+        (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).v) s.basis)
+    (fresh:s.basis 1708=false)
+    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
+    (temp:∀p∈longPairs,s.basis p.2=false)
+    (odd:z.v%2=1) (room:Shadow.high 129 15 z+1<2^112)
+    (clean:∀q∈carries,s.basis q=false)
+    (padding:∀i:Nat,112 ≤ i → i<127 → s.basis (wire i)=false)
+    (bank:regValue ys s.basis=if Shadow.far 129 15 z then Shadow.high 129 15 z else 0)
+    (zero:∀q∈Leave255FrontReady.watched,s.basis q=false)
+    (par:Leave255EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 129 15 z)))
+    (mode:actualMode 129 z=farMode (s.basis 1706) (s.basis 1707) z.u)
+    (events:right (actualMode 129 z)=true → ∀i<15,i≤key (actualMode 129 z) → s.basis (Leave255Hit.swaps i)=decide (i=key (actualMode 129 z)))
+    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^121)
+    (bound:Leave255TrueMiddle.F z<2^127)
+    (phase:∀o,(run leave255 o s).phase=s.phase)
+    (initial:∀q,1556≤q→q≤1702→s.basis q=false)
+    (extra:∀q,1713≤q→q≤1718→s.basis q=false)
+    : (∀o,run leave255Move o s=run leave255 o s) ∧ run leave255MoveInv n (run leave255Move m s)=s:=by
+  have atCore:=Leave255CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
+  have atPost:=Leave255PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
+  have hot (o:List Bool):=Leave255PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
+  refine ⟨fun o=>Leave255Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
+  apply Leave255Mirror.invertsMove s phase initial extra  _ _ (416+key (actualMode 129 z)) hot m n
   · exact Leave255CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1299,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave255Roundtrip
@@ -32733,6 +33444,18 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave225 o s).phase=s.phase:=by
     exact (Leave225Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave225Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry225 _ s h.ready)
+
+theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
+    (∀o,run leave225Move o s=run leave225 o s) ∧ ∀m n,run leave225MoveInv n (run leave225Move m s)=s:=by
+  let u:=flags z g0 s0
+  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
+  have par:=Leave225RecordedParity.result s z g0 s0 h.small h.odd h.record
+  have mode : actualMode 144 z=farMode (s.basis 1721) (s.basis 1722) z.u:=by
+    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
+  have ev:=Leave225RecordedEvents.result s z g0 s0 h.small h.odd h.record
+  have ph (o:List Bool) : (run leave225 o s).phase=s.phase:=by
+    exact (Leave225Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
+  exact ⟨fun o=>(Leave225Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry225 _ s h.ready)).1 o,fun m n=>(Leave225Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry225 _ s h.ready)).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave225Admission
 
 end
@@ -32820,6 +33543,18 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave240 o s).phase=s.phase:=by
     exact (Leave240Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave240Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry240 _ s h.ready)
+
+theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
+    (∀o,run leave240Move o s=run leave240 o s) ∧ ∀m n,run leave240MoveInv n (run leave240Move m s)=s:=by
+  let u:=flags z g0 s0
+  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
+  have par:=Leave240RecordedParity.result s z g0 s0 h.small h.odd h.record
+  have mode : actualMode 136 z=farMode (s.basis 1713) (s.basis 1714) z.u:=by
+    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
+  have ev:=Leave240RecordedEvents.result s z g0 s0 h.small h.odd h.record
+  have ph (o:List Bool) : (run leave240 o s).phase=s.phase:=by
+    exact (Leave240Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
+  exact ⟨fun o=>(Leave240Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry240 _ s h.ready)).1 o,fun m n=>(Leave240Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry240 _ s h.ready)).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave240Admission
 
 end
@@ -32907,6 +33642,18 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave255 o s).phase=s.phase:=by
     exact (Leave255Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave255Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry255 _ s h.ready) h.extra
+
+theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
+    (∀o,run leave255Move o s=run leave255 o s) ∧ ∀m n,run leave255MoveInv n (run leave255Move m s)=s:=by
+  let u:=flags z g0 s0
+  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
+  have par:=Leave255RecordedParity.result s z g0 s0 h.small h.odd h.record
+  have mode : actualMode 129 z=farMode (s.basis 1706) (s.basis 1707) z.u:=by
+    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
+  have ev:=Leave255RecordedEvents.result s z g0 s0 h.small h.odd h.record
+  have ph (o:List Bool) : (run leave255 o s).phase=s.phase:=by
+    exact (Leave255Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
+  exact ⟨fun o=>(Leave255Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry255 _ s h.ready) h.extra).1 o,fun m n=>(Leave255Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry255 _ s h.ready) h.extra).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave255Admission
 
 end
@@ -33958,6 +34705,21 @@ theorem pair {F R F' R':Program} {A B:State→Prop}
   intro n
   rw [run_append,run_take,inv,inv']
 
+/-- R1: a checked pair stays checked when its inner program and inverse are replaced by ones that run the same. -/
+theorem relayed {F R L I L' I':Program} {A B:State→Prop} (old:Checked (F++L) (I++R) A B)
+    (moved:∀s m,A s→(∀n,run L' n (run F m s)=run L n (run F m s)) ∧
+      (∀n k,run I' k (run L' n (run F m s))=run F m s) ∧ ∀k,run R k (run F m s)=s) :
+    Checked (F++L') (I'++R) A B := by
+  intro s m h
+  obtain ⟨ph,post,_⟩:=old s m h
+  obtain ⟨same,back,rest⟩:=moved s m h
+  have e:run (F++L') m s=run (F++L) m s:=by rw [run_append,run_append,run_take,same]
+  dsimp only
+  rw [e]
+  refine ⟨ph,post,?_⟩
+  intro n
+  rw [←e,run_append,run_append,run_take,run_take,back,rest]
+
 theorem cutPhase {lo hi:List (Wire×Wire)} {g n f u:Wire} {neg far long:Bool}
     {sig:Wire→Wire} {raw s:State} {pending:List Wire}
     (cut:PackedCut lo hi g n f u neg far long (pullState sig raw) (eraseSites pending s)) :
@@ -33976,7 +34738,7 @@ namespace ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 open Arithmetic IntegerPacket WideReference SkywalkRails Partial MappedCompressed
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3200000
-attribute [local irreducible] run body measurementCount leave225 leave225Inv NativePack225.firstWindow NativePack225.firstUnwind
+attribute [local irreducible] run body measurementCount leave225 leave225Inv NativePack225.firstWindow NativePack225.firstUnwind leave225Move leave225MoveInv
 
 private theorem physical (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
     (pre:Before d x p s) :
@@ -34003,6 +34765,21 @@ theorem step225 (d:Bool) (x p:Nat) (good:Bounds x p) :
   apply pair (F:=NativePack225.firstWindow d) (F':=leave225) (R:=NativePack225.firstUnwind d) (R':=leave225Inv)
   intro s m h
   exact physical d x p good s m _ h
+
+/-- R1: from the same precondition the physical leave225Move / leave225MoveInv run like the reference pair. -/
+theorem moved225 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Before d x p s) :
+    (∀n,run leave225Move n (run (NativePack225.firstWindow d) m s)=run leave225 n (run (NativePack225.firstWindow d) m s)) ∧
+    (∀n k,run leave225MoveInv k (run leave225Move n (run (NativePack225.firstWindow d) m s))=run (NativePack225.firstWindow d) m s) ∧
+    ∀k,run (NativePack225.firstUnwind d) k (run (NativePack225.firstWindow d) m s)=s := by
+  have old : ∀k,run (NativePack225.firstUnwind d) k (run (NativePack225.firstWindow d) m s)=s := (physical d x p good s m [] pre).2.2.2
+  obtain ⟨raw,stage,rfl⟩:=pre
+  obtain ⟨g,sg,input,h,cut,facts⟩:=NativePack225.stock_endpoint d x p good raw m [] stage
+  have mv:=Leave225Admission.Inputs.moved h
+  exact ⟨mv.1,mv.2,old⟩
+
+theorem step225Move (d:Bool) (x p:Nat) (good:Bounds x p) :
+    Checked (NativePack225.firstWindow d++leave225Move) (leave225MoveInv++NativePack225.firstUnwind d) (Before d x p) (Ready240 d x p) :=
+  relayed (L':=leave225Move) (I':=leave225MoveInv) (step225 d x p good) (fun s m h=>moved225 d x p good s m h)
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -34013,7 +34790,7 @@ namespace ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 open Arithmetic IntegerPacket WideReference SkywalkRails Partial MappedCompressed ArchivePortAction ArchiveStockRows
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3300000
-attribute [local irreducible] run body measurementCount leave240 leave240Inv NativePack240.nextWindow NativePack240.nextUnwind
+attribute [local irreducible] run body measurementCount leave240 leave240Inv NativePack240.nextWindow NativePack240.nextUnwind leave240Move leave240MoveInv
 
 private theorem finalWindowPhysical (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
     (pre:Ready240 d x p s) :
@@ -34046,6 +34823,22 @@ theorem step240 (d:Bool) (x p:Nat) (good:Bounds x p) :
   apply pair (F:=NativePack240.nextWindow d) (F':=leave240) (R:=NativePack240.nextUnwind d) (R':=leave240Inv)
   intro s m h
   exact finalWindowPhysical d x p good s m _ h
+
+/-- R1: from the same precondition the physical leave240Move / leave240MoveInv run like the reference pair. -/
+theorem moved240 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Ready240 d x p s) :
+    (∀n,run leave240Move n (run (NativePack240.nextWindow d) m s)=run leave240 n (run (NativePack240.nextWindow d) m s)) ∧
+    (∀n k,run leave240MoveInv k (run leave240Move n (run (NativePack240.nextWindow d) m s))=run (NativePack240.nextWindow d) m s) ∧
+    ∀k,run (NativePack240.nextUnwind d) k (run (NativePack240.nextWindow d) m s)=s := by
+  have old : ∀k,run (NativePack240.nextUnwind d) k (run (NativePack240.nextWindow d) m s)=s := (finalWindowPhysical d x p good s m [] pre).2.2.2
+  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
+  have curr:=readInput 240 x p raw g sg pre.input
+  obtain ⟨h,cut,facts⟩:=NativePack240.stock_endpoint d x p good raw s m [] pre.domain g sg pre.cut curr pg ps _ pre.facts
+  have mv:=Leave240Admission.Inputs.moved h
+  exact ⟨mv.1,mv.2,old⟩
+
+theorem step240Move (d:Bool) (x p:Nat) (good:Bounds x p) :
+    Checked (NativePack240.nextWindow d++leave240Move) (leave240MoveInv++NativePack240.nextUnwind d) (Ready240 d x p) (Ready255 d x p) :=
+  relayed (L':=leave240Move) (I':=leave240MoveInv) (step240 d x p good) (fun s m h=>moved240 d x p good s m h)
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -34061,7 +34854,7 @@ namespace ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 open Arithmetic IntegerPacket WideReference SkywalkRails Partial MappedCompressed ArchivePortAction ArchiveStockRows
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3300000
-attribute [local irreducible] run body measurementCount leave255 leave255Inv NativePack255.nextWindow NativePack255.nextUnwind
+attribute [local irreducible] run body measurementCount leave255 leave255Inv NativePack255.nextWindow NativePack255.nextUnwind leave255Move leave255MoveInv
 
 private theorem physical_wb2 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
     (pre:Ready255 d x p s) :
@@ -34100,6 +34893,22 @@ theorem step255 (d:Bool) (x p:Nat) (good:Bounds x p) :
   apply pair (F:=NativePack255.nextWindow d) (F':=leave255) (R:=NativePack255.nextUnwind d) (R':=leave255Inv)
   intro s m h
   exact physical_wb2 d x p good s m _ h
+
+/-- R1: from the same precondition the physical leave255Move / leave255MoveInv run like the reference pair. -/
+theorem moved255 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Ready255 d x p s) :
+    (∀n,run leave255Move n (run (NativePack255.nextWindow d) m s)=run leave255 n (run (NativePack255.nextWindow d) m s)) ∧
+    (∀n k,run leave255MoveInv k (run leave255Move n (run (NativePack255.nextWindow d) m s))=run (NativePack255.nextWindow d) m s) ∧
+    ∀k,run (NativePack255.nextUnwind d) k (run (NativePack255.nextWindow d) m s)=s := by
+  have old : ∀k,run (NativePack255.nextUnwind d) k (run (NativePack255.nextWindow d) m s)=s := (physical_wb2 d x p good s m [] pre).2.2.2
+  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
+  have curr:=readInput 255 x p raw g sg pre.input
+  obtain ⟨h,cut,facts⟩:=NativePack255.stock_endpoint d x p good raw s m [] pre.domain g sg pre.cut curr pg ps _ pre.facts
+  have mv:=Leave255Admission.Inputs.moved h
+  exact ⟨mv.1,mv.2,old⟩
+
+theorem step255Move (d:Bool) (x p:Nat) (good:Bounds x p) :
+    Checked (NativePack255.nextWindow d++leave255Move) (leave255MoveInv++NativePack255.nextUnwind d) (Ready255 d x p) (Ready270 d x p) :=
+  relayed (L':=leave255Move) (I':=leave255MoveInv) (step255 d x p good) (fun s m h=>moved255 d x p good s m h)
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -34139,6 +34948,7 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.StockWindowChain
 open Arithmetic MappedCompressed WideReference Secp256k1 StockWindowTicket Partial
 attribute [local irreducible] run measurementCount Checked body leave225 leave240 leave255 leave225Inv leave240Inv leave255Inv
+  leave225Move leave240Move leave255Move leave225MoveInv leave240MoveInv leave255MoveInv
   NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.lastWindow
   NativePack225.firstUnwind NativePack240.nextUnwind NativePack255.nextUnwind NativePack270.lastUnwind
 
@@ -34146,7 +34956,7 @@ theorem checked (d:Bool) (x:Nat) (good:Bounds x p) :
     Checked (forward45plus1 d) (reverse45plus1 d) (Before d x p) (ArchiveStockRows.Final d x p) := by
   rw [assembly,unwind_assembly]
   simpa only [List.append_assoc] using
-    composition (step225 d x p good) (composition (step240 d x p good) (composition (step255 d x p good) (step270 d x good)))
+    composition (step225Move d x p good) (composition (step240Move d x p good) (composition (step255Move d x p good) (step270 d x good)))
 
 theorem result (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 225 raw.basis) :

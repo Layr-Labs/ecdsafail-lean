@@ -56824,6 +56824,457 @@ end ECDSAAdd.Entrant.StairPacket
 end
 
 
+-- ==== R1: controlled-move chain (generic bridge) and the physical leave programs ====
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.MoveChain
+
+/-- (tag, cell). A hot tag moves its cell into the clean wire `c`. -/
+abbrev Row := Wire × Wire
+
+/-- Reference shape: one-hot mux into `c`. -/
+def mux (c : Wire) (rs : List Row) : Program := rs.map (fun r => Instr.CCX r.1 r.2 c)
+/-- Reference shape: the later clears of the selected cell. -/
+def clears (c : Wire) (rs : List Row) : Program := rs.map (fun r => Instr.CCX r.1 c r.2)
+/-- Physical shape: one controlled swap (one Toffoli) per row. -/
+def rows (c : Wire) : List Row → Program
+  | [] => []
+  | r :: rs => .CX r.2 c :: .CCX r.1 c r.2 :: .CX r.2 c :: rows c rs
+/-- Reference digit pass: clear of row i followed by the kept gate i. -/
+def weave (c : Wire) : List Row → Program → Program
+  | r :: rs, k :: ks => .CCX r.1 c r.2 :: k :: weave c rs ks
+  | _, _ => []
+
+def clr (c : Wire) (r : Row) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))⟩
+def clrAll (c : Wire) (rs : List Row) (s : State) : State := rs.foldl (fun t r => clr c r t) s
+def muxS (c : Wire) (r : Row) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis c (s.basis c ^^ (s.basis r.1 && s.basis r.2))⟩
+def rowS (c : Wire) (r : Row) (s : State) : State :=
+  run [.CX r.2 c, .CCX r.1 c r.2, .CX r.2 c] [] s
+
+def corrFree (a : Wire) : List Correction → Bool
+  | [] => true
+  | .Z t :: cs => decide (t ≠ a) && corrFree a cs
+  | .CZ x y :: cs => decide (x ≠ a) && (decide (y ≠ a) && corrFree a cs)
+/-- A gate that commutes with the clear of row `r`: it never writes the tag or `c` and never reads the cell. -/
+def quiet (c : Wire) (r : Row) : Instr → Bool
+  | .X t => decide (t ≠ r.1) && decide (t ≠ c)
+  | .CX a t => decide (t ≠ r.1) && (decide (t ≠ c) && decide (a ≠ r.2))
+  | .CCX a b t => decide (t ≠ r.1) && (decide (t ≠ c) && (decide (a ≠ r.2) && decide (b ≠ r.2)))
+  | .measureX t c0 c1 => decide (t ≠ r.1) && (decide (t ≠ c) && (decide (t ≠ r.2) && (corrFree r.2 c0 && corrFree r.2 c1)))
+def woven (c : Wire) : List Row → Program → Bool
+  | _ :: rs, k :: ks => rs.all (fun r => [k].all (quiet c r)) && woven c rs ks
+  | [], [] => true
+  | _, _ => false
+/-- Tags, cells and `c` are pairwise different wires; tags are never cells. -/
+def apart (c : Wire) (rs : List Row) : Bool :=
+  rs.all (fun r => decide (r.1 ≠ c) && (decide (r.2 ≠ c) && (decide (r.1 ≠ r.2) && rs.all (fun r' => decide (r'.1 ≠ r.2)))))
+def lone : List Row → Bool
+  | [] => true
+  | r :: rs => rs.all (fun r' => decide (r'.2 ≠ r.2)) && lone rs
+
+theorem wb_same (b : BasisState) (w : Wire) (v : Bool) : writeBit b w v w = v := by simp [writeBit]
+theorem wb_other (b : BasisState) (w q : Wire) (v : Bool) (h : q ≠ w) : writeBit b w v q = b q := by
+  simp [writeBit, h]
+theorem wb_keep (b : BasisState) (w : Wire) : writeBit b w (b w) = b := by
+  funext q
+  by_cases e : q = w
+  · rw [e, wb_same]
+  · rw [wb_other b w q _ e]
+
+theorem clears_run (c : Wire) (rs : List Row) (m : List Bool) (s : State) :
+    run (clears c rs) m s = clrAll c rs s := by
+  induction rs generalizing s with
+  | nil => rfl
+  | cons r rs ih => exact ih (clr c r s)
+theorem rows_count (c : Wire) (rs : List Row) : measurementCount (rows c rs) = 0 := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih => exact ih
+theorem mux_count (c : Wire) (rs : List Row) : measurementCount (mux c rs) = 0 := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih => exact ih
+theorem weave_count (c : Wire) (rs : List Row) (ks : Program) (h : woven c rs ks = true) :
+    measurementCount (weave c rs ks) = measurementCount ks := by
+  induction rs generalizing ks with
+  | nil =>
+    cases ks with
+    | nil => rfl
+    | cons k ks => exact absurd h (by simp [woven])
+  | cons r rs ih =>
+    cases ks with
+    | nil => exact absurd h (by simp [woven])
+    | cons k ks =>
+      have t : woven c rs ks = true := (Bool.and_eq_true_iff.mp h).2
+      have e := ih ks t
+      show measurementCount (k :: weave c rs ks) = measurementCount (k :: ks)
+      cases k <;> simp only [measurementCount, e]
+
+/-! Cold rows do nothing. -/
+theorem clr_cold (c : Wire) (r : Row) (s : State) (off : s.basis r.1 = false) : clr c r s = s := by
+  unfold clr
+  rw [off, Bool.false_and, Bool.xor_false, wb_keep]
+theorem muxS_cold (c : Wire) (r : Row) (s : State) (off : s.basis r.1 = false) : muxS c r s = s := by
+  unfold muxS
+  rw [off, Bool.false_and, Bool.xor_false, wb_keep]
+theorem muxS_frame (c : Wire) (r : Row) (s : State) (q : Wire) (h : q ≠ c) : (muxS c r s).basis q = s.basis q :=
+  wb_other _ _ _ _ h
+theorem clr_frame (c : Wire) (r : Row) (s : State) (q : Wire) (h : q ≠ r.2) : (clr c r s).basis q = s.basis q :=
+  wb_other _ _ _ _ h
+theorem rowS_cold (c : Wire) (r : Row) (s : State) (off : s.basis r.1 = false) (tc : r.1 ≠ c) (ac : r.2 ≠ c) :
+    rowS c r s = s := by
+  have e1 : (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 = false := (wb_other _ _ _ _ tc).trans off
+  have e2 : (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 = s.basis r.2 := wb_other _ _ _ _ ac
+  show (⟨s.phase, writeBit (writeBit (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2
+      ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 && (writeBit s.basis c (s.basis c ^^ s.basis r.2)) c))) c
+      ((writeBit (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2
+      ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 && (writeBit s.basis c (s.basis c ^^ s.basis r.2)) c))) c ^^
+       (writeBit (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2
+      ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 && (writeBit s.basis c (s.basis c ^^ s.basis r.2)) c))) r.2)⟩ : State) = s
+  rw [e1, Bool.false_and, Bool.xor_false, wb_keep, wb_same, e2]
+  apply congrArg (State.mk s.phase)
+  funext q
+  by_cases e : q = c
+  · rw [e, wb_same]
+    cases s.basis c <;> cases s.basis r.2 <;> rfl
+  · rw [wb_other _ _ _ _ e, wb_other _ _ _ _ e]
+/-- A hot row with `c` clean is the mux step followed by the clear. -/
+theorem rowS_hot (c : Wire) (r : Row) (s : State) (on : s.basis r.1 = true) (clean : s.basis c = false)
+    (tc : r.1 ≠ c) (ac : r.2 ≠ c) (_ta : r.1 ≠ r.2) : rowS c r s = clr c r (muxS c r s) := by
+  have ca : c ≠ r.2 := fun e => ac e.symm
+  apply congrArg (State.mk s.phase)
+  funext q
+  show writeBit (writeBit (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2
+      ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 && (writeBit s.basis c (s.basis c ^^ s.basis r.2)) c))) c
+      ((writeBit (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2
+      ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 && (writeBit s.basis c (s.basis c ^^ s.basis r.2)) c))) c ^^
+       (writeBit (writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2
+      ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ s.basis r.2)) r.1 && (writeBit s.basis c (s.basis c ^^ s.basis r.2)) c))) r.2) q =
+    writeBit (writeBit s.basis c (s.basis c ^^ (s.basis r.1 && s.basis r.2))) r.2
+      ((writeBit s.basis c (s.basis c ^^ (s.basis r.1 && s.basis r.2))) r.2 ^^
+        ((writeBit s.basis c (s.basis c ^^ (s.basis r.1 && s.basis r.2))) r.1 &&
+          (writeBit s.basis c (s.basis c ^^ (s.basis r.1 && s.basis r.2))) c)) q
+  rw [wb_other _ c r.1 _ tc, wb_other _ c r.1 _ tc, wb_other _ c r.2 _ ac, wb_other _ c r.2 _ ac,
+    wb_same, wb_same, wb_same, wb_other _ r.2 c _ ca, wb_same, on, clean]
+  by_cases e : q = c
+  · rw [e, wb_same, wb_other _ r.2 c _ ca, wb_same]
+    cases s.basis r.2 <;> rfl
+  · rw [wb_other _ c q _ e]
+    by_cases e2 : q = r.2
+    · rw [e2, wb_same, wb_same]
+      cases s.basis r.2 <;> rfl
+    · rw [wb_other _ r.2 q _ e2, wb_other _ r.2 q _ e2, wb_other _ c q _ e, wb_other _ c q _ e]
+
+theorem rows_cold (c : Wire) (rs : List Row) (m : List Bool) (s : State)
+    (off : ∀ r ∈ rs, s.basis r.1 = false ∧ r.1 ≠ c ∧ r.2 ≠ c) : run (rows c rs) m s = s := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih =>
+    have h := off r (List.mem_cons_self ..)
+    show run (rows c rs) m (rowS c r s) = s
+    rw [rowS_cold c r s h.1 h.2.1 h.2.2]
+    exact ih (fun x hx => off x (List.mem_cons_of_mem _ hx))
+theorem mux_cold (c : Wire) (rs : List Row) (m : List Bool) (s : State)
+    (off : ∀ r ∈ rs, s.basis r.1 = false) : run (mux c rs) m s = s := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih =>
+    show run (mux c rs) m (muxS c r s) = s
+    rw [muxS_cold c r s (off r (List.mem_cons_self ..))]
+    exact ih (fun x hx => off x (List.mem_cons_of_mem _ hx))
+theorem clrAll_cold (c : Wire) (rs : List Row) (s : State)
+    (off : ∀ r ∈ rs, s.basis r.1 = false) : clrAll c rs s = s := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih =>
+    show clrAll c rs (clr c r s) = s
+    rw [clr_cold c r s (off r (List.mem_cons_self ..))]
+    exact ih (fun x hx => off x (List.mem_cons_of_mem _ hx))
+theorem mux_frame (c : Wire) (rs : List Row) (m : List Bool) (s : State) (q : Wire) (h : q ≠ c) :
+    (run (mux c rs) m s).basis q = s.basis q := by
+  induction rs generalizing s with
+  | nil => rfl
+  | cons r rs ih => exact (ih (muxS c r s)).trans (muxS_frame c r s q h)
+
+/-- The move lemma: with `c` clean and every hot tag pointing at the same cell, the swap rows equal the mux
+followed by all clears. -/
+theorem move (c : Wire) (rs : List Row) (m : List Bool) (s : State) (a0 : Wire)
+    (sep : ∀ r ∈ rs, r.1 ≠ c ∧ r.2 ≠ c ∧ r.1 ≠ r.2) (cross : ∀ r ∈ rs, ∀ r' ∈ rs, r'.1 ≠ r.2)
+    (nd : lone rs = true) (clean : s.basis c = false)
+    (sel : ∀ r ∈ rs, s.basis r.1 = true → r.2 = a0) :
+    run (rows c rs) m s = clrAll c rs (run (mux c rs) m s) := by
+  induction rs with
+  | nil => rfl
+  | cons r rs ih =>
+    have hr := sep r (List.mem_cons_self ..)
+    have tailSep : ∀ x ∈ rs, x.1 ≠ c ∧ x.2 ≠ c ∧ x.1 ≠ x.2 := fun x hx => sep x (List.mem_cons_of_mem _ hx)
+    have nd2 := Bool.and_eq_true_iff.mp nd
+    show run (rows c rs) m (rowS c r s) = clrAll c rs (clr c r (run (mux c rs) m (muxS c r s)))
+    cases on : s.basis r.1 with
+    | false =>
+      rw [rowS_cold c r s on hr.1 hr.2.1, muxS_cold c r s on,
+        clr_cold c r _ ((mux_frame c rs m s r.1 hr.1).trans on)]
+      exact ih tailSep (fun x hx y hy => cross x (List.mem_cons_of_mem _ hx) y (List.mem_cons_of_mem _ hy))
+        nd2.2 (fun x hx => sel x (List.mem_cons_of_mem _ hx))
+    | true =>
+      have here : r.2 = a0 := sel r (List.mem_cons_self ..) on
+      have cold : ∀ x ∈ rs, s.basis x.1 = false := by
+        intro x hx
+        cases ox : s.basis x.1 with
+        | false => rfl
+        | true =>
+          have there : x.2 = a0 := sel x (List.mem_cons_of_mem _ hx) ox
+          exact absurd (there.trans here.symm) (of_decide_eq_true (List.all_eq_true.mp nd2.1 x hx))
+      have coldMux : ∀ x ∈ rs, (muxS c r s).basis x.1 = false := fun x hx =>
+        (muxS_frame c r s x.1 (tailSep x hx).1).trans (cold x hx)
+      have coldEnd : ∀ x ∈ rs, (clr c r (muxS c r s)).basis x.1 = false := fun x hx =>
+        (clr_frame c r _ x.1 (cross r (List.mem_cons_self ..) x (List.mem_cons_of_mem _ hx))).trans (coldMux x hx)
+      rw [mux_cold c rs m _ coldMux, clrAll_cold c rs _ coldEnd, rowS_hot c r s on clean hr.1 hr.2.1 hr.2.2]
+      exact rows_cold c rs m _ (fun x hx => ⟨coldEnd x hx, (tailSep x hx).1, (tailSep x hx).2.1⟩)
+
+/-! Clears commute with every quiet gate, for every measurement record. -/
+theorem corr_comm (c : Wire) (r : Row) (cs : List Correction) (h : corrFree r.2 cs = true) (s : State) :
+    ECDSAAdd.correct cs (clr c r s) = clr c r (ECDSAAdd.correct cs s) := by
+  induction cs generalizing s with
+  | nil => rfl
+  | cons x cs ih =>
+    cases x with
+    | Z t =>
+      have hh := Bool.and_eq_true_iff.mp h
+      have ta : t ≠ r.2 := of_decide_eq_true hh.1
+      show ECDSAAdd.correct cs ⟨(clr c r s).phase ^^ (clr c r s).basis t, (clr c r s).basis⟩ =
+        clr c r (ECDSAAdd.correct cs ⟨s.phase ^^ s.basis t, s.basis⟩)
+      rw [← ih hh.2, clr_frame c r s t ta]
+      rfl
+    | CZ x y =>
+      have hh := Bool.and_eq_true_iff.mp h
+      have h2 := Bool.and_eq_true_iff.mp hh.2
+      have xa : x ≠ r.2 := of_decide_eq_true hh.1
+      have ya : y ≠ r.2 := of_decide_eq_true h2.1
+      show ECDSAAdd.correct cs ⟨(clr c r s).phase ^^ ((clr c r s).basis x && (clr c r s).basis y), (clr c r s).basis⟩ =
+        clr c r (ECDSAAdd.correct cs ⟨s.phase ^^ (s.basis x && s.basis y), s.basis⟩)
+      rw [← ih h2.2, clr_frame c r s x xa, clr_frame c r s y ya]
+      rfl
+
+/-- Two xor-writes commute when neither value reads the other target. -/
+theorem xor_comm (b : BasisState) (t u : Wire) (x y x' y' : Bool)
+    (hx : x' = x) (hy : y' = y) :
+    writeBit (writeBit b u (b u ^^ y)) t ((writeBit b u (b u ^^ y)) t ^^ x') =
+      writeBit (writeBit b t (b t ^^ x)) u ((writeBit b t (b t ^^ x)) u ^^ y') := by
+  subst hx; subst hy
+  funext q
+  by_cases e : q = t
+  · by_cases f : q = u
+    · have tu : t = u := e.symm.trans f
+      subst tu
+      rw [e, wb_same, wb_same, wb_same, wb_same]
+      cases b t <;> cases x' <;> cases y' <;> rfl
+    · have tu : t ≠ u := fun h => f (e.trans h)
+      rw [e, wb_same, wb_other _ u t _ tu, wb_other _ u t _ tu, wb_same]
+  · by_cases f : q = u
+    · have ut : u ≠ t := fun h => e (f.trans h)
+      rw [f, wb_other _ t u _ ut, wb_same, wb_same, wb_other _ t u _ ut]
+    · rw [wb_other _ t q _ e, wb_other _ u q _ f, wb_other _ u q _ f, wb_other _ t q _ e]
+
+theorem step_comm (c : Wire) (r : Row) (g : Instr) (h : quiet c r g = true) (m : List Bool) (s : State) :
+    run [g] m (clr c r s) = clr c r (run [g] m s) := by
+  cases g with
+  | X t =>
+    have hh := Bool.and_eq_true_iff.mp h
+    have t1 : t ≠ r.1 := of_decide_eq_true hh.1
+    have tc : t ≠ c := of_decide_eq_true hh.2
+    apply congrArg (State.mk s.phase)
+    show writeBit (writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t
+        (!(writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t) =
+      writeBit (writeBit s.basis t (!s.basis t)) r.2 ((writeBit s.basis t (!s.basis t)) r.2 ^^
+        ((writeBit s.basis t (!s.basis t)) r.1 && (writeBit s.basis t (!s.basis t)) c))
+    rw [wb_other _ t r.1 _ (fun e => t1 e.symm), wb_other _ t c _ (fun e => tc e.symm),
+      ← Bool.xor_true, ← Bool.xor_true (s.basis t)]
+    exact xor_comm s.basis t r.2 true _ true _ rfl rfl
+  | CX a t =>
+    have hh := Bool.and_eq_true_iff.mp h
+    have h2 := Bool.and_eq_true_iff.mp hh.2
+    have t1 : t ≠ r.1 := of_decide_eq_true hh.1
+    have tc : t ≠ c := of_decide_eq_true h2.1
+    have aa : a ≠ r.2 := of_decide_eq_true h2.2
+    apply congrArg (State.mk s.phase)
+    show writeBit (writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t
+        ((writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t ^^
+          (writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) a) =
+      writeBit (writeBit s.basis t (s.basis t ^^ s.basis a)) r.2 ((writeBit s.basis t (s.basis t ^^ s.basis a)) r.2 ^^
+        ((writeBit s.basis t (s.basis t ^^ s.basis a)) r.1 && (writeBit s.basis t (s.basis t ^^ s.basis a)) c))
+    rw [wb_other _ t r.1 _ (fun e => t1 e.symm), wb_other _ t c _ (fun e => tc e.symm), wb_other _ r.2 a _ aa]
+    exact xor_comm s.basis t r.2 _ _ _ _ rfl rfl
+  | CCX a b t =>
+    have hh := Bool.and_eq_true_iff.mp h
+    have h2 := Bool.and_eq_true_iff.mp hh.2
+    have h3 := Bool.and_eq_true_iff.mp h2.2
+    have t1 : t ≠ r.1 := of_decide_eq_true hh.1
+    have tc : t ≠ c := of_decide_eq_true h2.1
+    have aa : a ≠ r.2 := of_decide_eq_true h3.1
+    have ba : b ≠ r.2 := of_decide_eq_true h3.2
+    apply congrArg (State.mk s.phase)
+    show writeBit (writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t
+        ((writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t ^^
+          ((writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) a &&
+            (writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) b)) =
+      writeBit (writeBit s.basis t (s.basis t ^^ (s.basis a && s.basis b))) r.2
+        ((writeBit s.basis t (s.basis t ^^ (s.basis a && s.basis b))) r.2 ^^
+        ((writeBit s.basis t (s.basis t ^^ (s.basis a && s.basis b))) r.1 &&
+          (writeBit s.basis t (s.basis t ^^ (s.basis a && s.basis b))) c))
+    rw [wb_other _ t r.1 _ (fun e => t1 e.symm), wb_other _ t c _ (fun e => tc e.symm), wb_other _ r.2 a _ aa,
+      wb_other _ r.2 b _ ba]
+    exact xor_comm s.basis t r.2 _ _ _ _ rfl rfl
+  | measureX t c0 c1 =>
+    have hh := Bool.and_eq_true_iff.mp h
+    have h2 := Bool.and_eq_true_iff.mp hh.2
+    have h3 := Bool.and_eq_true_iff.mp h2.2
+    have h4 := Bool.and_eq_true_iff.mp h3.2
+    have t1 : t ≠ r.1 := of_decide_eq_true hh.1
+    have tc : t ≠ c := of_decide_eq_true h2.1
+    have ta : t ≠ r.2 := of_decide_eq_true h3.1
+    have free : corrFree r.2 (if m.headD false then c1 else c0) = true := by
+      cases m.headD false
+      · exact h4.1
+      · exact h4.2
+    show ECDSAAdd.correct (if m.headD false then c1 else c0)
+        ⟨(clr c r s).phase ^^ (m.headD false && (clr c r s).basis t), writeBit (clr c r s).basis t false⟩ =
+      clr c r (ECDSAAdd.correct (if m.headD false then c1 else c0)
+        ⟨s.phase ^^ (m.headD false && s.basis t), writeBit s.basis t false⟩)
+    rw [← corr_comm c r _ free, clr_frame c r s t ta]
+    apply congrArg (ECDSAAdd.correct _)
+    apply congrArg (State.mk _)
+    show writeBit (writeBit s.basis r.2 (s.basis r.2 ^^ (s.basis r.1 && s.basis c))) t false =
+      writeBit (writeBit s.basis t false) r.2 ((writeBit s.basis t false) r.2 ^^
+        ((writeBit s.basis t false) r.1 && (writeBit s.basis t false) c))
+    rw [wb_other _ t r.2 _ (fun e => ta e.symm), wb_other _ t r.1 _ (fun e => t1 e.symm),
+      wb_other _ t c _ (fun e => tc e.symm)]
+    funext q
+    by_cases e : q = t
+    · rw [e, wb_same, wb_other _ r.2 t _ ta, wb_same]
+    · by_cases f : q = r.2
+      · rw [wb_other _ t q _ e, f, wb_same, wb_same]
+      · rw [wb_other _ t q _ e, wb_other _ r.2 q _ f, wb_other _ r.2 q _ f, wb_other _ t q _ e]
+
+theorem comm (c : Wire) (r : Row) (P : Program) (h : P.all (quiet c r) = true) (m : List Bool) (s : State) :
+    run P m (clr c r s) = clr c r (run P m s) := by
+  induction P generalizing m s with
+  | nil => rfl
+  | cons g P ih =>
+    have hh := Bool.and_eq_true_iff.mp (show (quiet c r g && P.all (quiet c r)) = true from h)
+    have e (x : State) : run (g :: P) m x =
+        run P (m.drop (measurementCount [g])) (run [g] (m.take (measurementCount [g])) x) := run_append [g] P m x
+    rw [e, e, step_comm c r g hh.1, ih hh.2]
+theorem commAll (c : Wire) (rs : List Row) (P : Program) (h : rs.all (fun r => P.all (quiet c r)) = true)
+    (m : List Bool) (s : State) : run P m (clrAll c rs s) = clrAll c rs (run P m s) := by
+  induction rs generalizing s with
+  | nil => rfl
+  | cons r rs ih =>
+    have hh := Bool.and_eq_true_iff.mp (show (P.all (quiet c r) && rs.all (fun r => P.all (quiet c r))) = true from h)
+    show run P m (clrAll c rs (clr c r s)) = clrAll c rs (clr c r (run P m s))
+    rw [ih hh.2, comm c r P hh.1]
+
+/-- The woven digit pass is the kept gates after all clears. -/
+theorem weave_run (c : Wire) (rs : List Row) (ks : Program) (h : woven c rs ks = true) (m : List Bool) (s : State) :
+    run (weave c rs ks) m s = run ks m (clrAll c rs s) := by
+  induction rs generalizing ks m s with
+  | nil =>
+    cases ks with
+    | nil => rfl
+    | cons k ks => exact absurd h (by simp [woven])
+  | cons r rs ih =>
+    cases ks with
+    | nil => exact absurd h (by simp [woven])
+    | cons k ks =>
+      have hh := Bool.and_eq_true_iff.mp (show (rs.all (fun x => [k].all (quiet c x)) && woven c rs ks) = true from h)
+      have e (P : Program) (x : State) : run (k :: P) m x =
+          run P (m.drop (measurementCount [k])) (run [k] (m.take (measurementCount [k])) x) := run_append [k] P m x
+      show run (k :: weave c rs ks) m (clr c r s) = run (k :: ks) m (clrAll c rs (clr c r s))
+      rw [e, e, ih ks hh.2, commAll c rs [k] hh.1]
+
+theorem apart_sep (c : Wire) (rs : List Row) (geo : apart c rs = true) :
+    ∀ r ∈ rs, r.1 ≠ c ∧ r.2 ≠ c ∧ r.1 ≠ r.2 := by
+  intro r hr
+  have a := Bool.and_eq_true_iff.mp (List.all_eq_true.mp geo r hr)
+  have b := Bool.and_eq_true_iff.mp a.2
+  have d := Bool.and_eq_true_iff.mp b.2
+  exact ⟨of_decide_eq_true a.1, of_decide_eq_true b.1, of_decide_eq_true d.1⟩
+theorem apart_cross (c : Wire) (rs : List Row) (geo : apart c rs = true) :
+    ∀ r ∈ rs, ∀ r' ∈ rs, r'.1 ≠ r.2 := by
+  intro r hr r' hr'
+  have a := Bool.and_eq_true_iff.mp (List.all_eq_true.mp geo r hr)
+  have b := Bool.and_eq_true_iff.mp a.2
+  have d := Bool.and_eq_true_iff.mp b.2
+  exact of_decide_eq_true (List.all_eq_true.mp d.2 r' hr')
+/-- `move` with the wire geometry as one decidable check. -/
+theorem moved (c : Wire) (rs : List Row) (m : List Bool) (s : State) (a0 : Wire)
+    (geo : apart c rs = true) (nd : lone rs = true) (clean : s.basis c = false)
+    (sel : ∀ r ∈ rs, s.basis r.1 = true → r.2 = a0) :
+    run (rows c rs) m s = clrAll c rs (run (mux c rs) m s) :=
+  move c rs m s a0 (apart_sep c rs geo) (apart_cross c rs geo) nd clean sel
+
+/-- Bridge: the spliced program (rows at the mux, kept gates at the digit pass) runs exactly like the reference
+(mux ... woven digit pass) from every state where `c` is clean and the hot tags select one cell before the mux. -/
+theorem splice (c : Wire) (rs : List Row) (A B C ks : Program) (s : State) (m : List Bool) (a0 : Wire)
+    (geo : apart c rs = true) (nd : lone rs = true)
+    (still : rs.all (fun r => B.all (quiet c r)) = true) (wv : woven c rs ks = true)
+    (clean : (run A m s).basis c = false)
+    (sel : ∀ r ∈ rs, (run A m s).basis r.1 = true → r.2 = a0) :
+    run (A ++ (rows c rs ++ (B ++ (ks ++ C)))) m s = run (A ++ (mux c rs ++ (B ++ (weave c rs ks ++ C)))) m s := by
+  simp only [run_append, run_take, rows_count, mux_count, weave_count c rs ks wv, List.drop_zero]
+  rw [moved c rs _ (run A m s) a0 geo nd clean sel, commAll c rs B still, weave_run c rs ks wv]
+  rw [run_take]
+
+end ECDSAAdd.Entrant.StairPacket.MoveChain
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.Partial
+
+/-- R1 leave225: (tag, cell) rows of the selector mux and the kept half of the digit pass. -/
+def leave225Rows : List MoveChain.Row := [(1576, 401), (1562, 402), (1563, 403), (1564, 404), (1565, 405), (1566, 406), (1567, 407), (1568, 408), (1569, 409), (1570, 410), (1571, 411), (1572, 412), (1573, 413), (1574, 414), (1575, 415), (1560, 416)]
+def leave225Kept : Program := [.CCX 1576 1613 402, .CCX 1562 1613 403, .CCX 1563 1613 404, .CCX 1564 1613 405, .CCX 1565 1613 406, .CCX 1566 1613 407, .CCX 1567 1613 408, .CCX 1568 1613 409, .CCX 1569 1613 410, .CCX 1570 1613 411, .CCX 1571 1613 412, .CCX 1572 1613 413, .CCX 1573 1613 414, .CCX 1574 1613 415, .CCX 1575 1613 416, .CCX 1560 1613 417]
+/-- R1 physical leave225: the reference program with the 16 mux Toffolis replaced by 16 controlled swaps and the
+16 digit clears removed (16 Toffolis fewer). -/
+def leave225Move : Program :=
+  leave225.take 302 ++ (MoveChain.rows 1724 leave225Rows ++ ((leave225.drop 318).take 1762 ++ (leave225Kept ++ leave225.drop 2112)))
+def leave225MoveInv : Program :=
+  leave225Inv.take 1080 ++ (leave225Kept.reverse ++ ((leave225Inv.drop 1112).take 1762 ++ (MoveChain.rows 1724 leave225Rows.reverse ++ leave225Inv.drop 2890)))
+
+/-- R1 leave240: (tag, cell) rows of the selector mux and the kept half of the digit pass. -/
+def leave240Rows : List MoveChain.Row := [(1576, 408), (1562, 409), (1563, 410), (1564, 411), (1565, 412), (1566, 413), (1567, 414), (1568, 415), (1569, 416), (1570, 417), (1571, 418), (1572, 419), (1573, 420), (1574, 421), (1575, 422), (1560, 423)]
+def leave240Kept : Program := [.CCX 1576 1613 409, .CCX 1562 1613 410, .CCX 1563 1613 411, .CCX 1564 1613 412, .CCX 1565 1613 413, .CCX 1566 1613 414, .CCX 1567 1613 415, .CCX 1568 1613 416, .CCX 1569 1613 417, .CCX 1570 1613 418, .CCX 1571 1613 419, .CCX 1572 1613 420, .CCX 1573 1613 421, .CCX 1574 1613 422, .CCX 1575 1613 423, .CCX 1560 1613 424]
+/-- R1 physical leave240: the reference program with the 16 mux Toffolis replaced by 16 controlled swaps and the
+16 digit clears removed (16 Toffolis fewer). -/
+def leave240Move : Program :=
+  leave240.take 302 ++ (MoveChain.rows 1716 leave240Rows ++ ((leave240.drop 318).take 1898 ++ (leave240Kept ++ leave240.drop 2248)))
+def leave240MoveInv : Program :=
+  leave240Inv.take 1142 ++ (leave240Kept.reverse ++ ((leave240Inv.drop 1174).take 1898 ++ (MoveChain.rows 1716 leave240Rows.reverse ++ leave240Inv.drop 3088)))
+
+/-- R1 leave255: (tag, cell) rows of the selector mux and the kept half of the digit pass. -/
+def leave255Rows : List MoveChain.Row := [(1576, 416), (1562, 417), (1563, 418), (1564, 419), (1565, 420), (1566, 421), (1567, 422), (1568, 423), (1569, 424), (1570, 425), (1571, 426), (1572, 427), (1573, 428), (1574, 429), (1575, 430), (1560, 431)]
+def leave255Kept : Program := [.CCX 1576 1613 417, .CCX 1562 1613 418, .CCX 1563 1613 419, .CCX 1564 1613 420, .CCX 1565 1613 421, .CCX 1566 1613 422, .CCX 1567 1613 423, .CCX 1568 1613 424, .CCX 1569 1613 425, .CCX 1570 1613 426, .CCX 1571 1613 427, .CCX 1572 1613 428, .CCX 1573 1613 429, .CCX 1574 1613 430, .CCX 1575 1613 431, .CCX 1560 1613 432]
+/-- R1 physical leave255: the reference program with the 16 mux Toffolis replaced by 16 controlled swaps and the
+16 digit clears removed (16 Toffolis fewer). -/
+def leave255Move : Program :=
+  leave255.take 302 ++ (MoveChain.rows 1709 leave255Rows ++ ((leave255.drop 318).take 2017 ++ (leave255Kept ++ leave255.drop 2367)))
+def leave255MoveInv : Program :=
+  leave255Inv.take 1143 ++ (leave255Kept.reverse ++ ((leave255Inv.drop 1175).take 2017 ++ (MoveChain.rows 1709 leave255Rows.reverse ++ leave255Inv.drop 3208)))
+
+end ECDSAAdd.Entrant.StairPacket.Partial
+
+end
+
 section
 
 namespace ECDSAAdd.Entrant.StairPacket.Partial
@@ -56855,19 +57306,19 @@ def forward45plus1 (d:Bool) : Program :=
   routed ⟨10,by decide⟩ 0 1 ++
   renameProgram (OB5.sig 225) (Rolling1588.packAtTick d 225) ++
   routed ⟨10,by decide⟩ 1 14 ++
-  leave225 ++
+  leave225Move ++
   enter240 ++
   routed ⟨11,by decide⟩ 0 1 ++
   renameProgram (OB5.sig 240) (Rolling1588.packAtTick d 230) ++
   archiveLoad240 d ++
   routed ⟨11,by decide⟩ 1 14 ++
-  leave240 ++
+  leave240Move ++
   enter255 ++
   routed ⟨12,by decide⟩ 0 1 ++
   renameProgram (OB5.sig 255) (Rolling1588.packAtTick d 245) ++
   archiveLoad255 d ++
   routed ⟨12,by decide⟩ 1 14 ++
-  leave255 ++
+  leave255Move ++
   park270 ++
   portal270Inv ++
   renameProgram (OB5.sig 270) (TickRanges.tick base 270) ++
@@ -56879,19 +57330,19 @@ def reverse45plus1 (d:Bool) : Program :=
   renameProgram (OB5.sig 270) (W.ReverseCarry.compactReceiverTick base 270) ++
   portal270 ++
   park270Inv ++
-  leave255Inv ++
+  leave255MoveInv ++
   unrouted ⟨12,by decide⟩ 1 14 ++
   archiveRestore255 d ++
   renameProgram (OB5.sig 255) (Rolling1588.unpackAtTick d 245) ++
   unrouted ⟨12,by decide⟩ 0 1 ++
   enter255Inv ++
-  leave240Inv ++
+  leave240MoveInv ++
   unrouted ⟨11,by decide⟩ 1 14 ++
   archiveRestore240 d ++
   renameProgram (OB5.sig 240) (Rolling1588.unpackAtTick d 230) ++
   unrouted ⟨11,by decide⟩ 0 1 ++
   enter240Inv ++
-  leave225Inv ++
+  leave225MoveInv ++
   unrouted ⟨10,by decide⟩ 1 14 ++
   renameProgram (OB5.sig 225) (Rolling1588.unpackAtTick d 225) ++
   unrouted ⟨10,by decide⟩ 0 1 ++
@@ -57005,7 +57456,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part5 : toffoliCount (leave225) = 821 ∧ measurementCount (leave225) = 297 := by
+theorem part5 : toffoliCount (leave225Move) = 805 ∧ measurementCount (leave225Move) = 297 := by
   decide +kernel
 
 theorem part6 : toffoliCount (enter240) = 20 ∧ measurementCount (enter240) = 6 := by
@@ -57101,7 +57552,7 @@ theorem part10 : toffoliCount (routed ⟨11,by decide⟩ 1 14) = 4312 ∧ measur
   dsimp only [j]
   decide +kernel
 
-theorem part11 : toffoliCount (leave240) = 872 ∧ measurementCount (leave240) = 314 := by
+theorem part11 : toffoliCount (leave240Move) = 856 ∧ measurementCount (leave240Move) = 314 := by
   decide +kernel
 
 theorem part12 : toffoliCount (enter255) = 20 ∧ measurementCount (enter255) = 6 := by
@@ -57140,7 +57591,7 @@ theorem part16 : toffoliCount (routed ⟨12,by decide⟩ 1 14) = 4116 ∧ measur
   dsimp only [j]
   decide +kernel
 
-theorem part17 : toffoliCount (leave255) = 911 ∧ measurementCount (leave255) = 327 := by
+theorem part17 : toffoliCount (leave255Move) = 895 ∧ measurementCount (leave255Move) = 327 := by
   decide +kernel
 
 theorem part18 : toffoliCount (park270) = 0 ∧ measurementCount (park270) = 0 := by
@@ -57251,7 +57702,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part35 : toffoliCount (leave255Inv) = 910 ∧ measurementCount (leave255Inv) = 328 := by
+theorem part35 : toffoliCount (leave255MoveInv) = 894 ∧ measurementCount (leave255MoveInv) = 328 := by
   decide +kernel
 
 theorem part36 : toffoliCount (unrouted ⟨12,by decide⟩ 1 14) = 4116 ∧ measurementCount (unrouted ⟨12,by decide⟩ 1 14) = 2058 := by
@@ -57290,7 +57741,7 @@ set_option maxHeartbeats 4000000
 theorem part40 : toffoliCount (enter255Inv) = 20 ∧ measurementCount (enter255Inv) = 6 := by
   decide +kernel
 
-theorem part41 : toffoliCount (leave240Inv) = 871 ∧ measurementCount (leave240Inv) = 315 := by
+theorem part41 : toffoliCount (leave240MoveInv) = 855 ∧ measurementCount (leave240MoveInv) = 315 := by
   decide +kernel
 
 theorem part42 : toffoliCount (unrouted ⟨11,by decide⟩ 1 14) = 4312 ∧ measurementCount (unrouted ⟨11,by decide⟩ 1 14) = 2156 := by
@@ -57329,7 +57780,7 @@ theorem part45 : toffoliCount (unrouted ⟨11,by decide⟩ 0 1) = 308 ∧ measur
 theorem part46 : toffoliCount (enter240Inv) = 20 ∧ measurementCount (enter240Inv) = 6 := by
   decide +kernel
 
-theorem part47 : toffoliCount (leave225Inv) = 820 ∧ measurementCount (leave225Inv) = 298 := by
+theorem part47 : toffoliCount (leave225MoveInv) = 804 ∧ measurementCount (leave225MoveInv) = 298 := by
   decide +kernel
 
 theorem part48 : toffoliCount (unrouted ⟨10,by decide⟩ 1 14) = 4536 ∧ measurementCount (unrouted ⟨10,by decide⟩ 1 14) = 2268 := by
@@ -57577,19 +58028,19 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem forward45plus1_false : toffoliCount (forward45plus1 false) = 18309 ∧ measurementCount (forward45plus1 false) = 9166 := by
+theorem forward45plus1_false : toffoliCount (forward45plus1 false) = 18261 ∧ measurementCount (forward45plus1 false) = 9166 := by
   simp only [forward45plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part0.1, part0.2, part1.1, part1.2, part2.1, part2.2, part3.1, part3.2, part4.1, part4.2, part5.1, part5.2, part6.1, part6.2, part7.1, part7.2, part8.1, part8.2, part9.1, part9.2, part10.1, part10.2, part11.1, part11.2, part12.1, part12.2, part13.1, part13.2, part14.1, part14.2, part15.1, part15.2, part16.1, part16.2, part17.1, part17.2, part18.1, part18.2, part19.1, part19.2, part20.1, part20.2, part21.1, part21.2, part22.1, part22.2]
   decide
 
-theorem forward45plus1_true : toffoliCount (forward45plus1 true) = 18312 ∧ measurementCount (forward45plus1 true) = 9166 := by
+theorem forward45plus1_true : toffoliCount (forward45plus1 true) = 18264 ∧ measurementCount (forward45plus1 true) = 9166 := by
   simp only [forward45plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part0.1, part0.2, part1.1, part1.2, part2.1, part2.2, part4.1, part4.2, part5.1, part5.2, part6.1, part6.2, part7.1, part7.2, part10.1, part10.2, part11.1, part11.2, part12.1, part12.2, part13.1, part13.2, part16.1, part16.2, part17.1, part17.2, part18.1, part18.2, part19.1, part19.2, part20.1, part20.2, part23.1, part23.2, part24.1, part24.2, part25.1, part25.2, part26.1, part26.2, part27.1, part27.2, part28.1, part28.2, part29.1, part29.2]
   decide
 
-theorem reverse45plus1_false : toffoliCount (reverse45plus1 false) = 18344 ∧ measurementCount (reverse45plus1 false) = 9124 := by
+theorem reverse45plus1_false : toffoliCount (reverse45plus1 false) = 18296 ∧ measurementCount (reverse45plus1 false) = 9124 := by
   simp only [reverse45plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part30.1, part30.2, part31.1, part31.2, part32.1, part32.2, part33.1, part33.2, part34.1, part34.2, part35.1, part35.2, part36.1, part36.2, part37.1, part37.2, part38.1, part38.2, part39.1, part39.2, part40.1, part40.2, part41.1, part41.2, part42.1, part42.2, part43.1, part43.2, part44.1, part44.2, part45.1, part45.2, part46.1, part46.2, part47.1, part47.2, part48.1, part48.2, part49.1, part49.2, part50.1, part50.2, part51.1, part51.2, part52.1, part52.2]
   decide
 
-theorem reverse45plus1_true : toffoliCount (reverse45plus1 true) = 18347 ∧ measurementCount (reverse45plus1 true) = 9124 := by
+theorem reverse45plus1_true : toffoliCount (reverse45plus1 true) = 18299 ∧ measurementCount (reverse45plus1 true) = 9124 := by
   simp only [reverse45plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part32.1, part32.2, part33.1, part33.2, part34.1, part34.2, part35.1, part35.2, part36.1, part36.2, part39.1, part39.2, part40.1, part40.2, part41.1, part41.2, part42.1, part42.2, part45.1, part45.2, part46.1, part46.2, part47.1, part47.2, part48.1, part48.2, part50.1, part50.2, part51.1, part51.2, part52.1, part52.2, part53.1, part53.2, part54.1, part54.2, part55.1, part55.2, part56.1, part56.2, part57.1, part57.2, part58.1, part58.2, part59.1, part59.2]
   decide
 
@@ -57626,7 +58077,7 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part5 : gateSlots (leave225) ≤ 3489 := by decide +kernel
+theorem part5 : gateSlots (leave225Move) ≤ 3505 := by decide +kernel
 
 theorem part6 : gateSlots (enter240) ≤ 93 := by decide +kernel
 
@@ -57676,7 +58127,7 @@ set_option linter.unusedSimpArgs false
 
 theorem part10 : gateSlots (routed ⟨11,by decide⟩ 1 14) ≤ 70000 := (route ⟨11,by decide⟩ 1 14).1
 
-theorem part11 : gateSlots (leave240) ≤ 3704 := by decide +kernel
+theorem part11 : gateSlots (leave240Move) ≤ 3720 := by decide +kernel
 
 theorem part12 : gateSlots (enter255) ≤ 93 := by decide +kernel
 
@@ -57702,7 +58153,7 @@ theorem part15 : gateSlots (archiveLoad255 false) ≤ 3288 := by
 
 theorem part16 : gateSlots (routed ⟨12,by decide⟩ 1 14) ≤ 70000 := (route ⟨12,by decide⟩ 1 14).1
 
-theorem part17 : gateSlots (leave255) ≤ 3837 := by decide +kernel
+theorem part17 : gateSlots (leave255Move) ≤ 3853 := by decide +kernel
 
 theorem part18 : gateSlots (park270) ≤ 9 := by decide +kernel
 
@@ -57776,7 +58227,7 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part35 : gateSlots (leave255Inv) ≤ 3838 := by decide +kernel
+theorem part35 : gateSlots (leave255MoveInv) ≤ 3854 := by decide +kernel
 
 theorem part36 : gateSlots (unrouted ⟨12,by decide⟩ 1 14) ≤ 70000 := (route ⟨12,by decide⟩ 1 14).2
 
@@ -57802,7 +58253,7 @@ set_option linter.unusedSimpArgs false
 
 theorem part40 : gateSlots (enter255Inv) ≤ 93 := by decide +kernel
 
-theorem part41 : gateSlots (leave240Inv) ≤ 3705 := by decide +kernel
+theorem part41 : gateSlots (leave240MoveInv) ≤ 3721 := by decide +kernel
 
 theorem part42 : gateSlots (unrouted ⟨11,by decide⟩ 1 14) ≤ 70000 := (route ⟨11,by decide⟩ 1 14).2
 
@@ -57828,7 +58279,7 @@ theorem part45 : gateSlots (unrouted ⟨11,by decide⟩ 0 1) ≤ 5000 := (route 
 
 theorem part46 : gateSlots (enter240Inv) ≤ 93 := by decide +kernel
 
-theorem part47 : gateSlots (leave225Inv) ≤ 3490 := by decide +kernel
+theorem part47 : gateSlots (leave225MoveInv) ≤ 3506 := by decide +kernel
 
 theorem part48 : gateSlots (unrouted ⟨10,by decide⟩ 1 14) ≤ 70000 := (route ⟨10,by decide⟩ 1 14).2
 
@@ -60528,7 +60979,7 @@ theorem part3 : GatePhysical (renameProgram (OB5.sig 225) (Rolling1588.packAtTic
 theorem part4 : GatePhysical (routed ⟨10,by decide⟩ 1 14) := by
   exact (route ⟨10, by decide⟩ 1 14 (by decide)).1
 
-theorem part5 : GatePhysical (leave225) := by
+theorem part5 : GatePhysical (leave225Move) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part6 : GatePhysical (enter240) := by
@@ -60552,7 +61003,7 @@ theorem part9 : GatePhysical (archiveLoad240 false) := by
 theorem part10 : GatePhysical (routed ⟨11,by decide⟩ 1 14) := by
   exact (route ⟨11, by decide⟩ 1 14 (by decide)).1
 
-theorem part11 : GatePhysical (leave240) := by
+theorem part11 : GatePhysical (leave240Move) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part12 : GatePhysical (enter255) := by
@@ -60576,7 +61027,7 @@ theorem part15 : GatePhysical (archiveLoad255 false) := by
 theorem part16 : GatePhysical (routed ⟨12,by decide⟩ 1 14) := by
   exact (route ⟨12, by decide⟩ 1 14 (by decide)).1
 
-theorem part17 : GatePhysical (leave255) := by
+theorem part17 : GatePhysical (leave255Move) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part18 : GatePhysical (park270) := by
@@ -60674,7 +61125,7 @@ theorem part33 : GatePhysical (portal270) := by
 theorem part34 : GatePhysical (park270Inv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part35 : GatePhysical (leave255Inv) := by
+theorem part35 : GatePhysical (leave255MoveInv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part36 : GatePhysical (unrouted ⟨12,by decide⟩ 1 14) := by
@@ -60709,7 +61160,7 @@ set_option maxHeartbeats 4000000
 theorem part40 : GatePhysical (enter255Inv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part41 : GatePhysical (leave240Inv) := by
+theorem part41 : GatePhysical (leave240MoveInv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part42 : GatePhysical (unrouted ⟨11,by decide⟩ 1 14) := by
@@ -60733,7 +61184,7 @@ theorem part45 : GatePhysical (unrouted ⟨11,by decide⟩ 0 1) := by
 theorem part46 : GatePhysical (enter240Inv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part47 : GatePhysical (leave225Inv) := by
+theorem part47 : GatePhysical (leave225MoveInv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part48 : GatePhysical (unrouted ⟨10,by decide⟩ 1 14) := by
@@ -61226,27 +61677,27 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-private theorem forward45plus1_false_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 2030 → x1 ≤ 93 → x2 ≤ 5000 → x3 ≤ 156 → x4 ≤ 70000 → x5 ≤ 3489 → x6 ≤ 93 → x7 ≤ 5000 → x8 ≤ 156 → x9 ≤ 3288 → x10 ≤ 70000 → x11 ≤ 3704 → x12 ≤ 93 → x13 ≤ 5000 → x14 ≤ 156 → x15 ≤ 3288 → x16 ≤ 70000 → x17 ≤ 3837 → x18 ≤ 9 → x19 ≤ 2219 → x20 ≤ 6004 → x21 ≤ 156 → x22 ≤ 3288 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257059 := by omega
+private theorem forward45plus1_false_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 2030 → x1 ≤ 93 → x2 ≤ 5000 → x3 ≤ 156 → x4 ≤ 70000 → x5 ≤ 3505 → x6 ≤ 93 → x7 ≤ 5000 → x8 ≤ 156 → x9 ≤ 3288 → x10 ≤ 70000 → x11 ≤ 3720 → x12 ≤ 93 → x13 ≤ 5000 → x14 ≤ 156 → x15 ≤ 3288 → x16 ≤ 70000 → x17 ≤ 3853 → x18 ≤ 9 → x19 ≤ 2219 → x20 ≤ 6004 → x21 ≤ 156 → x22 ≤ 3288 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257107 := by omega
 
-theorem forward45plus1_false : gateSlots (forward45plus1 false) ≤ 257059 := by
+theorem forward45plus1_false : gateSlots (forward45plus1 false) ≤ 257107 := by
   simp only [forward45plus1,gateSlots_append,rename_gateSlots]
   exact forward45plus1_false_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part0 part1 part2 part3 part4 part5 part6 part7 part8 part9 part10 part11 part12 part13 part14 part15 part16 part17 part18 part19 part20 part21 part22
 
-private theorem forward45plus1_true_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 2030 → x1 ≤ 93 → x2 ≤ 5000 → x3 ≤ 168 → x4 ≤ 70000 → x5 ≤ 3489 → x6 ≤ 93 → x7 ≤ 5000 → x8 ≤ 168 → x9 ≤ 3278 → x10 ≤ 70000 → x11 ≤ 3704 → x12 ≤ 93 → x13 ≤ 5000 → x14 ≤ 168 → x15 ≤ 3278 → x16 ≤ 70000 → x17 ≤ 3837 → x18 ≤ 9 → x19 ≤ 2219 → x20 ≤ 6004 → x21 ≤ 168 → x22 ≤ 3278 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257077 := by omega
+private theorem forward45plus1_true_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 2030 → x1 ≤ 93 → x2 ≤ 5000 → x3 ≤ 168 → x4 ≤ 70000 → x5 ≤ 3505 → x6 ≤ 93 → x7 ≤ 5000 → x8 ≤ 168 → x9 ≤ 3278 → x10 ≤ 70000 → x11 ≤ 3720 → x12 ≤ 93 → x13 ≤ 5000 → x14 ≤ 168 → x15 ≤ 3278 → x16 ≤ 70000 → x17 ≤ 3853 → x18 ≤ 9 → x19 ≤ 2219 → x20 ≤ 6004 → x21 ≤ 168 → x22 ≤ 3278 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257125 := by omega
 
-theorem forward45plus1_true : gateSlots (forward45plus1 true) ≤ 257077 := by
+theorem forward45plus1_true : gateSlots (forward45plus1 true) ≤ 257125 := by
   simp only [forward45plus1,gateSlots_append,rename_gateSlots]
   exact forward45plus1_true_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part0 part1 part2 part23 part4 part5 part6 part7 part24 part25 part10 part11 part12 part13 part26 part27 part16 part17 part18 part19 part20 part28 part29
 
-private theorem reverse45plus1_false_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 3562 → x1 ≤ 154 → x2 ≤ 6001 → x3 ≤ 2219 → x4 ≤ 9 → x5 ≤ 3838 → x6 ≤ 70000 → x7 ≤ 3562 → x8 ≤ 154 → x9 ≤ 5000 → x10 ≤ 93 → x11 ≤ 3705 → x12 ≤ 70000 → x13 ≤ 3562 → x14 ≤ 154 → x15 ≤ 5000 → x16 ≤ 93 → x17 ≤ 3490 → x18 ≤ 70000 → x19 ≤ 154 → x20 ≤ 5000 → x21 ≤ 93 → x22 ≤ 2030 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257873 := by omega
+private theorem reverse45plus1_false_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 3562 → x1 ≤ 154 → x2 ≤ 6001 → x3 ≤ 2219 → x4 ≤ 9 → x5 ≤ 3854 → x6 ≤ 70000 → x7 ≤ 3562 → x8 ≤ 154 → x9 ≤ 5000 → x10 ≤ 93 → x11 ≤ 3721 → x12 ≤ 70000 → x13 ≤ 3562 → x14 ≤ 154 → x15 ≤ 5000 → x16 ≤ 93 → x17 ≤ 3506 → x18 ≤ 70000 → x19 ≤ 154 → x20 ≤ 5000 → x21 ≤ 93 → x22 ≤ 2030 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257921 := by omega
 
-theorem reverse45plus1_false : gateSlots (reverse45plus1 false) ≤ 257873 := by
+theorem reverse45plus1_false : gateSlots (reverse45plus1 false) ≤ 257921 := by
   simp only [reverse45plus1,gateSlots_append,rename_gateSlots]
   exact reverse45plus1_false_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part30 part31 part32 part33 part34 part35 part36 part37 part38 part39 part40 part41 part42 part43 part44 part45 part46 part47 part48 part49 part50 part51 part52
 
-private theorem reverse45plus1_true_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 3542 → x1 ≤ 166 → x2 ≤ 6001 → x3 ≤ 2219 → x4 ≤ 9 → x5 ≤ 3838 → x6 ≤ 70000 → x7 ≤ 3542 → x8 ≤ 166 → x9 ≤ 5000 → x10 ≤ 93 → x11 ≤ 3705 → x12 ≤ 70000 → x13 ≤ 3542 → x14 ≤ 166 → x15 ≤ 5000 → x16 ≤ 93 → x17 ≤ 3490 → x18 ≤ 70000 → x19 ≤ 166 → x20 ≤ 5000 → x21 ≤ 93 → x22 ≤ 2030 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257861 := by omega
+private theorem reverse45plus1_true_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) : x0 ≤ 3542 → x1 ≤ 166 → x2 ≤ 6001 → x3 ≤ 2219 → x4 ≤ 9 → x5 ≤ 3854 → x6 ≤ 70000 → x7 ≤ 3542 → x8 ≤ 166 → x9 ≤ 5000 → x10 ≤ 93 → x11 ≤ 3721 → x12 ≤ 70000 → x13 ≤ 3542 → x14 ≤ 166 → x15 ≤ 5000 → x16 ≤ 93 → x17 ≤ 3506 → x18 ≤ 70000 → x19 ≤ 166 → x20 ≤ 5000 → x21 ≤ 93 → x22 ≤ 2030 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22 ≤ 257909 := by omega
 
-theorem reverse45plus1_true : gateSlots (reverse45plus1 true) ≤ 257861 := by
+theorem reverse45plus1_true : gateSlots (reverse45plus1 true) ≤ 257909 := by
   simp only [reverse45plus1,gateSlots_append,rename_gateSlots]
   exact reverse45plus1_true_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part53 part54 part32 part33 part34 part35 part36 part55 part56 part39 part40 part41 part42 part57 part58 part45 part46 part47 part48 part59 part50 part51 part52
 

@@ -18697,9 +18697,9 @@ attribute [local irreducible] Partial.forward45plus1 Partial.reverse45plus1 Roll
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 5043 else 5046)=
+    toffoliCount (forward d tail)+(if d then 5091 else 5094)=
       toffoliCount (Stair44WalkRun.forward d (255+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 5029 else 5032)=
+    toffoliCount (backward d tail)+(if d then 5077 else 5080)=
       toffoliCount (Stair44WalkRun.backward d (255+tail)) ∧
     measurementCount (forward d tail)+2546=measurementCount (Stair44WalkRun.forward d (255+tail)) ∧
     measurementCount (backward d tail)+2552=measurementCount (Stair44WalkRun.backward d (255+tail)) := by
@@ -18707,23 +18707,23 @@ theorem exactWalks (d : Bool) (tail : Nat) :
   · have sf := StockWindowCosts.stock false
     have a := forward45plus1_false
     have b := reverse45plus1_false
-    have t := walk tc false tail 5046 5032
-      (subEq 5046 a.1 sf.1 rfl) (subEq 5032 b.1 sf.2.2.1 rfl)
+    have t := walk tc false tail 5094 5080
+      (subEq 5094 a.1 sf.1 rfl) (subEq 5080 b.1 sf.2.2.1 rfl)
     have m := walk mc false tail 2546 2552
       (subEq 2546 a.2 sf.2.1 rfl) (subEq 2552 b.2 sf.2.2.2 rfl)
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts.stock true
     have a := forward45plus1_true
     have b := reverse45plus1_true
-    have t := walk tc true tail 5043 5029
-      (subEq 5043 a.1 sf.1 rfl) (subEq 5029 b.1 sf.2.2.1 rfl)
+    have t := walk tc true tail 5091 5077
+      (subEq 5091 a.1 sf.1 rfl) (subEq 5077 b.1 sf.2.2.1 rfl)
     have m := walk mc true tail 2546 2552
       (subEq 2546 a.2 sf.2.1 rfl) (subEq 2552 b.2 sf.2.2.2 rfl)
     exact ⟨t.1,t.2,m⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 255+tail=n)
-    (hf : (if d then 5043 else 5046)=f) (hr : (if d then 5029 else 5032)=r) :
+    (hf : (if d then 5091 else 5094)=f) (hr : (if d then 5077 else 5080)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+2546=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -18801,7 +18801,7 @@ set_option maxHeartbeats 6000000
 theorem site4 : Covered (routed ⟨10,by decide⟩ 1 14) := by
   exact (routeSites ports10 1 14 (by decide)).1
 
-theorem site5 : Covered (leave225) := by
+theorem site5 : Covered (leave225Move) := by
   exact from_check (by decide +kernel)
 
 theorem site6 : Covered (enter240) := by
@@ -18824,7 +18824,7 @@ set_option maxHeartbeats 6000000
 theorem site40 : Covered (enter255Inv) := by
   exact from_check (by decide +kernel)
 
-theorem site41 : Covered (leave240Inv) := by
+theorem site41 : Covered (leave240MoveInv) := by
   exact from_check (by decide +kernel)
 
 theorem site42 : Covered (unrouted ⟨11,by decide⟩ 1 14) := by
@@ -18853,7 +18853,7 @@ theorem site45 : Covered (unrouted ⟨11,by decide⟩ 0 1) := by
 theorem site46 : Covered (enter240Inv) := by
   exact from_check (by decide +kernel)
 
-theorem site47 : Covered (leave225Inv) := by
+theorem site47 : Covered (leave225MoveInv) := by
   exact from_check (by decide +kernel)
 
 end ECDSAAdd.Entrant.StairPacket.PartialSites
@@ -18945,7 +18945,7 @@ theorem site9 : Covered (archiveLoad240 false) := by
 theorem site10 : Covered (routed ⟨11,by decide⟩ 1 14) := by
   exact (routeSites ports11 1 14 (by decide)).1
 
-theorem site11 : Covered (leave240) := by
+theorem site11 : Covered (leave240Move) := by
   exact from_check (by decide +kernel)
 
 end ECDSAAdd.Entrant.StairPacket.PartialSites
@@ -18985,7 +18985,7 @@ set_option maxHeartbeats 6000000
 theorem site16 : Covered (routed ⟨12,by decide⟩ 1 14) := by
   exact (routeSites ports12 1 14 (by decide)).1
 
-theorem site17 : Covered (leave255) := by
+theorem site17 : Covered (leave255Move) := by
   exact from_check (by decide +kernel)
 
 theorem site18 : Covered (park270) := by
@@ -19091,7 +19091,7 @@ theorem site33 : Covered (portal270) := by
 theorem site34 : Covered (park270Inv) := by
   exact from_check (by decide +kernel)
 
-theorem site35 : Covered (leave255Inv) := by
+theorem site35 : Covered (leave255MoveInv) := by
   exact from_check (by decide +kernel)
 
 end ECDSAAdd.Entrant.StairPacket.PartialSites
@@ -19527,29 +19527,29 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+5043+5032=tc.measure Stair44Outer.divide+541 :=
-  kernels tc 5043 5032 541 (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 235 490 5046 5032 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+5091+5080=tc.measure Stair44Outer.divide+541 :=
+  kernels tc 5091 5080 541 (WindowWalkCosts.inst true 154 409 5091 5077 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 235 490 5094 5080 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+5046+5029=tc.measure (Stair44Outer.multiply k)+535 :=
-  kernelsM tc k 5046 5029 535 (WindowWalkCosts.inst false 234 489 5046 5032 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+5094+5077=tc.measure (Stair44Outer.multiply k)+535 :=
+  kernelsM tc k 5094 5077 535 (WindowWalkCosts.inst false 234 489 5094 5080 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 154 409 5091 5077 rfl rfl rfl).2.1 fieldTcMul
 
 theorem mc_div : mc.measure divide+2546+2552=mc.measure Stair44Outer.divide+562 :=
-  kernels mc 2546 2552 562 (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 235 490 5046 5032 rfl rfl rfl).2.2.2 fieldMcDiv
+  kernels mc 2546 2552 562 (WindowWalkCosts.inst true 154 409 5091 5077 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 235 490 5094 5080 rfl rfl rfl).2.2.2 fieldMcDiv
 
 theorem mc_mul (k : Nat) : mc.measure (multiply k)+2546+2552=mc.measure (Stair44Outer.multiply k)+562 :=
-  kernelsM mc k 2546 2552 562 (WindowWalkCosts.inst false 234 489 5046 5032 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).2.2.2 fieldMcMul
+  kernelsM mc k 2546 2552 562 (WindowWalkCosts.inst false 234 489 5094 5080 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 154 409 5091 5077 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+19074=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+19266=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+9072=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 19074 (pair_delta2 tc_div (tc_mul _) rfl),
+  ⟨finite_delta tc C cx cy 19266 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 9072 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2150714 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2150522 ∧
     measurementCount (program C) ≤ 1511852 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -19631,28 +19631,28 @@ private theorem groupCap (d : Bool) (n : Nat) (hn : 3*(if d then 6042 else 6053)
   have h := WindowFieldCosts.group_slots d
   omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+257077+257873+19371 :=
-  kernels slots 257077 257873 19371
-    (walk slots true 154 257077 257861 409 rfl (casts forward45plus1_true) (casts reverse45plus1_true)).1
-    (walk slots false 235 257059 257873 490 rfl (casts forward45plus1_false) (casts reverse45plus1_false)).2
+    slots.measure Stair44Outer.divide+257125+257921+19371 :=
+  kernels slots 257125 257921 19371
+    (walk slots true 154 257125 257909 409 rfl (casts forward45plus1_true) (casts reverse45plus1_true)).1
+    (walk slots false 235 257107 257921 490 rfl (casts forward45plus1_false) (casts reverse45plus1_false)).2
     (groupCap true 19371 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+257059+257861+20750 :=
-  kernelsM slots k 257059 257861 20750
-    (walk slots false 234 257059 257873 489 rfl (casts forward45plus1_false) (casts reverse45plus1_false)).1
-    (walk slots true 154 257077 257861 409 rfl (casts forward45plus1_true) (casts reverse45plus1_true)).2
+    slots.measure (Stair44Outer.multiply k)+257107+257909+20750 :=
+  kernelsM slots k 257107 257909 20750
+    (walk slots false 234 257107 257921 489 rfl (casts forward45plus1_false) (casts reverse45plus1_false)).1
+    (walk slots true 154 257125 257909 409 rfl (casts forward45plus1_true) (casts reverse45plus1_true)).2
     (groupCap false 20750 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+257077+257873+19371)
-    (hm : b ≤ y+257059+257861+20750) : a+b ≤ x+y+1069991 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+257125+257921+19371)
+    (hm : b ≤ y+257107+257909+20750) : a+b ≤ x+y+1070183 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+1069991 :=
-  finite_upper slots C cx cy 1069991 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+1070183 :=
+  finite_upper slots C cx cy 1070183 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 51930473 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 51930665 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -20275,7 +20275,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2150714,1511852,1542,51930473⟩
+def bounds : Challenge.Bounds := ⟨2150522,1511852,1542,51930665⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -20292,7 +20292,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowCallerCosts.qubitBound C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 51930473
+    change gateSlots (normalizeProgram _) ≤ 51930665
     rw [normalize_slots]
     exact WindowSlots.slotBound C
 
@@ -22838,6 +22838,7 @@ open Arithmetic MappedCompressed Secp256k1 IntegerPacket WideReference StockWind
 set_option maxRecDepth 16000
 set_option maxHeartbeats 4500000
 attribute [local irreducible] run measurementCount Partial.leave225 Partial.leave240 Partial.leave255
+  Partial.leave225Move Partial.leave240Move Partial.leave255Move Partial.leave225MoveInv Partial.leave240MoveInv Partial.leave255MoveInv
   NativePack240.nextWindow NativePack255.nextWindow NativePack270.lastWindow
 noncomputable def value (x p i b:Nat) (c:SkywalkNat.State→Bool):Nat→Bool:=
   key b (unsigned i x p) (c (unsigned i x p)) (SkywalkTrace.trace 15 (WideReference.canonical i x p))
@@ -22934,7 +22935,10 @@ theorem result (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
   have room:Checked (forward45plus1 d) (reverse45plus1 d) (Before d x p) (final d x p):=by
     rw [assembly,unwind_assembly]
     simpa only [List.append_assoc] using
-      composition (step225 d x p good) (composition (selected240 d x p good) (composition (selected255 d x p good) (selected270 d x good)))
+      composition (step225Move d x p good)
+        (composition (relayed (L':=leave240Move) (I':=leave240MoveInv) (selected240 d x p good) (fun s m h=>moved240 d x p good s m h))
+          (composition (relayed (L':=leave255Move) (I':=leave255MoveInv) (selected255 d x p good) (fun s m h=>moved255 d x p good s m h.1))
+            (selected270 d x good)))
   exact room _ m ⟨raw,stage,rfl⟩
 end ECDSAAdd.Entrant.StairPacket.StockStrongChain
 
@@ -22967,8 +22971,8 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+12*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2151770 ∧
-    measurementCount (program C) ≤ 1511852 ∧ gateSlots (program C) ≤ 51932993 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2151578 ∧
+    measurementCount (program C) ≤ 1511852 ∧ gateSlots (program C) ≤ 51933185 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
   cases C with
@@ -23710,7 +23714,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2151770,1511852,1542,51932993⟩
+def bounds : Challenge.Bounds := ⟨2151578,1511852,1542,51933185⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -23727,7 +23731,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 51932993
+    change gateSlots (normalizeProgram _) ≤ 51933185
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -26567,7 +26571,7 @@ namespace ECDSAAdd.Entrant.StairPacket.OrdinaryChain
 open Arithmetic MappedCompressed WideReference Secp256k1 StockWindowTicket Partial ArchiveHistoryCompare
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3800000
-attribute [local irreducible] run measurementCount body NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.lastWindow leave225 leave240 leave255
+attribute [local irreducible] run measurementCount body NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.lastWindow leave225 leave240 leave255 leave225Move leave240Move leave255Move
 def Ref240 (d:Bool) (x:Nat) (initial s:State):Prop:=
   ∃raw g sg pg ps,At240 d x p raw s g sg pg ps ∧ Except mask225 raw (run (prog225 d) [] (run (span 225 15) [] initial))
 
@@ -26812,7 +26816,7 @@ namespace ECDSAAdd.Entrant.StairPacket.OrdinaryChain
 open Arithmetic MappedCompressed WideReference Secp256k1 StockWindowTicket Partial ArchiveHistoryCompare
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3800000
-attribute [local irreducible] run measurementCount body NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.lastWindow leave225 leave240 leave255
+attribute [local irreducible] run measurementCount body NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.lastWindow leave225 leave240 leave255 leave225Move leave240Move leave255Move
 private theorem seven (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (a b c e f h j:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 225 raw.basis) :
     let origin:=pullState (OB5.sig 224) raw
@@ -26834,13 +26838,40 @@ private theorem seven (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (a b c e f 
   let out:=run (NativePack270.lastWindow d) j s4
   exact last270 d x good raw s4 j (next255 d x good raw s3 f h (next240 d x good raw s2 c e (begin225 d x good raw a b stage)))
 
+/-- R1: `seven` for the physical leave programs (each runs like its reference from the reached state). -/
+private theorem sevenMove (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (a b c e f h j:List Bool)
+    (stage:Rolling1588.Integer.Stage base d x p 225 raw.basis) :
+    let origin:=pullState (OB5.sig 224) raw
+    let v1:=run (NativePack225.firstWindow d) a origin
+    let s2:=run leave225Move b v1
+    let v2:=run (NativePack240.nextWindow d) c s2
+    let s3:=run leave240Move e v2
+    let v3:=run (NativePack255.nextWindow d) f s3
+    let s4:=run leave255Move h v3
+    let out:=run (NativePack270.lastWindow d) j s4
+    ∀q∉ArchiveStockSuffix.archives,out.basis q=(StockArchiveReference.common d raw).basis q := by
+  have r2:=begin225 d x good raw a b stage
+  have e2:=(moved225 d x p good (pullState (OB5.sig 224) raw) a ⟨raw,stage,rfl⟩).1 b
+  have q2:Ready240 d x p (run leave225 b (run (NativePack225.firstWindow d) a (pullState (OB5.sig 224) raw))):=by
+    obtain ⟨w,g,sg,pg,ps,pre,_⟩:=r2
+    exact ⟨w,g,sg,pg,ps,pre⟩
+  have r3:=next240 d x good raw _ c e r2
+  have e3:=(moved240 d x p good _ c q2).1 e
+  have q3:Ready255 d x p (run leave240 e (run (NativePack240.nextWindow d) c (run leave225 b (run (NativePack225.firstWindow d) a (pullState (OB5.sig 224) raw))))):=by
+    obtain ⟨w,g,sg,pg,ps,pre,_⟩:=r3
+    exact ⟨w,g,sg,pg,ps,pre⟩
+  have e4:=(moved255 d x p good _ f q3).1 h
+  show ∀q∉ArchiveStockSuffix.archives,(run (NativePack270.lastWindow d) j (run leave255Move h (run (NativePack255.nextWindow d) f (run leave240Move e (run (NativePack240.nextWindow d) c (run leave225Move b (run (NativePack225.firstWindow d) a (pullState (OB5.sig 224) raw)))))))).basis q=(StockArchiveReference.common d raw).basis q
+  rw [e2,e3,e4]
+  exact seven d x good raw a b c e f h j stage
+
 theorem wires (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 225 raw.basis) :
     ∀q∉ArchiveStockSuffix.archives,(run (forward45plus1 d) m (pullState (OB5.sig 224) raw)).basis q=
       (StockArchiveReference.common d raw).basis q := by
   rw [assembly]
   simp only [List.append_assoc,run_append,run_take]
-  exact seven d x good raw m _ _ _ _ _ _ stage
+  exact sevenMove d x good raw m _ _ _ _ _ _ stage
 end ECDSAAdd.Entrant.StairPacket.OrdinaryChain
 
 end
