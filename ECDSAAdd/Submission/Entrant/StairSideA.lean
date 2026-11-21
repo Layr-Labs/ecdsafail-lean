@@ -57657,6 +57657,17 @@ theorem part32 : gateSlots (W.ReverseCarry.compactReceiverTick base 270) ≤ 600
   have c := (W.compactTick_gateSlots_le base 270 (by decide)).2
   omega
 
+
+/-- E1a: the stock exit tick and receiver at 315 (exit moved from 270). -/
+theorem part20e : gateSlots (TickRanges.tick base 315) ≤ 6004 := by
+  have h := TickRanges.tick_slots base 315 (by decide) base_pool_nodup
+  have r := W.repairedTick_slots base 315 (by decide) base_pool_nodup
+  have c := (W.compactTick_gateSlots_le base 315 (by decide)).1
+  omega
+theorem part32e : gateSlots (W.ReverseCarry.compactReceiverTick base 315) ≤ 6001 := by
+  have h := W.ReverseCarry.compactReceiverTick_slots base 315 (by decide) base_pool_nodup
+  have c := (W.compactTick_gateSlots_le base 315 (by decide)).2
+  omega
 theorem part33 : gateSlots (portal270) ≤ 2219 := by decide +kernel
 
 theorem part34 : gateSlots (park270Inv) ≤ 9 := by decide +kernel
@@ -59091,6 +59102,13 @@ def exitRestoreP (e : Nat) (d : Bool) : Program :=
 
 end
 
+/-- E1a: exit at 315; the literal names are the generic pieces (no literal lists). -/
+def park315 : Program := parkP 315
+def park315Inv : Program := parkInvP 315
+def portal315 : Program := portalP 315
+def portal315Inv : Program := portalInvP 315
+def archiveLoad315 (d : Bool) : Program := exitLoadP 315 d
+def archiveRestore315 (d : Bool) : Program := exitRestoreP 315 d
 end ECDSAAdd.Entrant.StairPacket.Partial
 
 end
@@ -63713,20 +63731,20 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+namespace ECDSAAdd.Entrant.StairPacket.Portal315Flag
 open Arithmetic PortalAnd
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
-def thresholdPairs : List (Wire×Wire) := [(425, 1558), (426, 1559), (427, 1560), (428, 1561), (429, 1562), (430, 1563), (431, 1564), (432, 1565), (433, 1566), (434, 1567), (435, 1568), (436, 1569), (437, 1570), (438, 1571), (439, 1572), (440, 1573), (441, 1574), (442, 1575), (443, 1576), (444, 1577), (445, 1578), (446, 1579), (447, 1580), (448, 1581), (449, 1582), (450, 1583), (451, 1584), (452, 1585), (453, 1586), (454, 1587), (455, 1588), (456, 1589), (457, 1590), (458, 1591), (459, 1592), (460, 1593), (461, 1594), (462, 1595), (463, 1596), (464, 1597), (465, 1598), (466, 1599), (467, 1600), (468, 1601), (469, 1602), (470, 1603), (471, 1604), (472, 1605), (473, 1606), (474, 1607), (475, 1608), (476, 1609), (477, 1610), (478, 1611), (479, 1612), (480, 1613), (481, 1614), (482, 1615), (483, 1616), (484, 1617), (485, 1618), (486, 1619), (487, 1620), (488, 1621), (489, 1622), (490, 1623), (491, 1624), (492, 1625), (493, 1626), (494, 1627), (495, 1628), (496, 1629), (497, 1630), (498, 1631), (499, 1632), (500, 1633), (501, 1634), (502, 1635), (503, 1636), (504, 1637), (505, 1638), (506, 1639), (507, 1640), (508, 1641), (509, 1642), (510, 1643), (511, 1644), (512, 1645), (513, 1646), (514, 1647), (515, 1648), (516, 1649), (517, 1650), (518, 1651), (519, 1652), (520, 1653), (521, 1654), (522, 1655), (523, 1656), (524, 1657), (525, 1658), (526, 1659), (527, 1660), (528, 1661)]
+def thresholdPairs : List (Wire×Wire) := [(448, 1558), (449, 1559), (450, 1560), (451, 1561), (452, 1562), (453, 1563), (454, 1564), (455, 1565), (456, 1566), (457, 1567), (458, 1568), (459, 1569), (460, 1570), (461, 1571), (462, 1572), (463, 1573), (464, 1574), (465, 1575), (466, 1576), (467, 1577), (468, 1578), (469, 1579), (470, 1580), (471, 1581), (472, 1582), (473, 1583), (474, 1584), (475, 1585), (476, 1586), (477, 1587), (478, 1588), (479, 1589), (480, 1590), (481, 1591), (482, 1592), (483, 1593), (484, 1594), (485, 1595), (486, 1596), (487, 1597), (488, 1598), (489, 1599), (490, 1600), (491, 1601), (492, 1602), (493, 1603), (494, 1604), (495, 1605), (496, 1606), (497, 1607), (498, 1608), (499, 1609), (500, 1610), (501, 1611), (502, 1612), (503, 1613), (504, 1614), (505, 1615), (506, 1616), (507, 1617), (508, 1618), (509, 1619), (510, 1620), (511, 1621), (512, 1622), (513, 1623), (514, 1624), (515, 1625), (516, 1626), (517, 1627), (518, 1628), (519, 1629), (520, 1630), (521, 1631), (522, 1632), (523, 1633), (524, 1634), (525, 1635), (526, 1636), (527, 1637), (528, 1638)]
 def threshold := latch true none 1556 1557 thresholdPairs
 theorem threshold_layout : (1556::1557::sites thresholdPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem threshold_slice : ((Partial.portal270).drop 427).take 420=threshold := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-def orientationPairs : List (Wire×Wire) := [(924, 1556), (925, 1557), (926, 1558), (927, 1559), (928, 1560), (929, 1561), (930, 1562), (931, 1563), (932, 1564), (933, 1565), (934, 1566), (935, 1567), (936, 1568), (937, 1569), (938, 1570), (939, 1571), (940, 1572), (941, 1573), (942, 1574), (943, 1575), (944, 1576), (945, 1577), (946, 1578), (947, 1579), (948, 1580), (949, 1581), (950, 1582), (951, 1583), (952, 1584), (953, 1585), (954, 1586), (955, 1587), (956, 1588), (957, 1589), (958, 1590), (959, 1591), (960, 1592), (961, 1593), (962, 1594), (963, 1595), (964, 1596), (965, 1597), (966, 1598), (967, 1599), (968, 1600), (969, 1601), (970, 1602), (971, 1603), (972, 1604), (973, 1605), (974, 1606), (975, 1607), (976, 1608), (977, 1609), (978, 1610), (979, 1611), (980, 1612), (981, 1613), (982, 1614), (983, 1615), (984, 1616), (985, 1617), (986, 1618), (987, 1619), (988, 1620), (989, 1621), (990, 1622), (991, 1623), (992, 1624), (993, 1625), (994, 1626), (995, 1627), (996, 1628), (997, 1629), (998, 1630), (999, 1631), (1000, 1632), (1001, 1633), (1002, 1634), (1003, 1635), (1004, 1636), (1005, 1637), (1006, 1638), (1007, 1639), (1008, 1640), (1009, 1641), (1010, 1642), (1011, 1643), (1012, 1644), (1013, 1645), (1014, 1646), (1015, 1647), (1016, 1648), (1017, 1649), (1018, 1650), (1019, 1651), (1020, 1652), (1021, 1653), (1022, 1654), (1023, 1655), (1024, 1656), (1025, 1657), (1026, 1658), (1027, 1659), (1028, 1660)]
-def orientation := latch false (some 1698) 1699 923 orientationPairs
-theorem orientation_layout : (1699::923::sites orientationPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem orientation_slice : ((Partial.portal270).drop 850).take 424=orientation := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem orientation_enable : 1698∉1699::923::sites orientationPairs := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+theorem threshold_slice : ((Partial.portal315).drop 335).take 328=threshold := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+def orientationPairs : List (Wire×Wire) := [(902, 1556), (903, 1557), (904, 1558), (905, 1559), (906, 1560), (907, 1561), (908, 1562), (909, 1563), (910, 1564), (911, 1565), (912, 1566), (913, 1567), (914, 1568), (915, 1569), (916, 1570), (917, 1571), (918, 1572), (919, 1573), (920, 1574), (921, 1575), (922, 1576), (923, 1577), (924, 1578), (925, 1579), (926, 1580), (927, 1581), (928, 1582), (929, 1583), (930, 1584), (931, 1585), (932, 1586), (933, 1587), (934, 1588), (935, 1589), (936, 1590), (937, 1591), (938, 1592), (939, 1593), (940, 1594), (941, 1595), (942, 1596), (943, 1597), (944, 1598), (945, 1599), (946, 1600), (947, 1601), (948, 1602), (949, 1603), (950, 1604), (951, 1605), (952, 1606), (953, 1607), (954, 1608), (955, 1609), (956, 1610), (957, 1611), (958, 1612), (959, 1613), (960, 1614), (961, 1615), (962, 1616), (963, 1617), (964, 1618), (965, 1619), (966, 1620), (967, 1621), (968, 1622), (969, 1623), (970, 1624), (971, 1625), (972, 1626), (973, 1627), (974, 1628), (975, 1629), (976, 1630), (977, 1631), (978, 1632), (979, 1633), (980, 1634), (981, 1635), (982, 1636), (983, 1637)]
+def orientation := latch false (some 1676) 1677 901 orientationPairs
+theorem orientation_layout : (1677::901::sites orientationPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem orientation_slice : ((Partial.portal315).drop 666).take 332=orientation := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem orientation_enable : 1676∉1677::901::sites orientationPairs := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+end ECDSAAdd.Entrant.StairPacket.Portal315Flag
 
 end
 
@@ -64522,32 +64540,32 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+namespace ECDSAAdd.Entrant.StairPacket.Portal315Flag
 open Arithmetic PortalAnd
 set_option maxRecDepth 30000
 set_option maxHeartbeats 6000000
-def railA : List Wire := [423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528]
-def railB : List Wire := [923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028]
-def carry : List Wire := [1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658]
+def railA : List Wire := [446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528]
+def railB : List Wire := [901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983]
+def carry : List Wire := [1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635]
 def bulkA := railA.drop 3
 def bulkB := railB.drop 3
-def scan : Program := [.CX 528 1700,.CX 1028 1700] ++
-  RailPair.exchange 285 (railA.zip railB) ++ signComplement 1700 railB
-def flags : Program := [.CCX 423 424 1557] ++ threshold ++
-  [.measureX 1557 [] [.CZ 423 424],.CX 1556 1698,.CX 1698 1556] ++ orientation
-def erase : Program := [.X 425,.CCX 925 425 1556] ++
-  Companion.erase bulkA bulkB carry 1699 1556 ++
-  [.measureX 1556 [] [.CZ 925 425],.X 425]
+def scan : Program := [.CX 528 1678,.CX 983 1678] ++
+  RailPair.exchange 330 (railA.zip railB) ++ signComplement 1678 railB
+def flags : Program := [.CCX 446 447 1557] ++ threshold ++
+  [.measureX 1557 [] [.CZ 446 447],.CX 1556 1676,.CX 1676 1556] ++ orientation
+def erase : Program := [.X 448,.CCX 903 448 1556] ++
+  Companion.erase bulkA bulkB carry 1677 1556 ++
+  [.measureX 1556 [] [.CZ 903 448],.X 448]
 def store : Program := RailPair.transfer false (bulkA.zip bulkB) ++
-  signComplement 1700 (railB.take 3) ++ RailPair.exchange 285 ((railA.take 3).zip (railB.take 3))
-theorem emitted : Partial.portal270=scan++flags++erase++store := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem exchange_good : (285::RailPair.sites (railA.zip railB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem complement_good : railB.Nodup ∧ 1700∉railB := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  signComplement 1678 (railB.take 3) ++ RailPair.exchange 330 ((railA.take 3).zip (railB.take 3))
+theorem emitted : Partial.portal315=scan++flags++erase++store := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem exchange_good : (330::RailPair.sites (railA.zip railB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem complement_good : railB.Nodup ∧ 1678∉railB := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem move_good : (RailPair.sites (bulkA.zip bulkB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem copy_good : Companion.Geometry bulkA bulkB carry 1699 1556 := by
+theorem copy_good : Companion.Geometry bulkA bulkB carry 1677 1556 := by
   constructor <;> (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+end ECDSAAdd.Entrant.StairPacket.Portal315Flag
 
 end
 
@@ -64909,6 +64927,16 @@ theorem stock120 (d : Bool) :
   exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
     h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 
+
+/-- E1a: the stock walk over the ticks the 120..300 window (exit 315) replaces: [120,316). -/
+theorem stock120x (d : Bool) :
+    toffoliCount (Rolling1588TickGap.forward d 120 196)=97196 ∧
+    measurementCount (Rolling1588TickGap.forward d 120 196)=48672 ∧
+    toffoliCount (Rolling1588.reverse d 120 196)=97172 ∧
+    measurementCount (Rolling1588.reverse d 120 196)=48530 := by
+  have h := walks d 120 196 (by decide) (by decide)
+  exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
+    h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 end ECDSAAdd.Entrant.StairPacket.StockWindowCosts
 
 end
@@ -65630,19 +65658,19 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+namespace ECDSAAdd.Entrant.StairPacket.Portal315Flag
 open Arithmetic
 set_option maxRecDepth 30000
 set_option maxHeartbeats 7000000
-def backFlags := PortalAnd.flagsBack 423 424 1557 1556 1698 1699 923 thresholdPairs orientationPairs
-def backErase := PortalBorrow.wrap 425 925 1556 (PortalBorrow.restore bulkA bulkB carry 1699 1556)
-theorem emitted_back : Partial.portal270Inv=store.reverse++backErase++backFlags++scan.reverse := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem flags_spec : flags=PortalAnd.flags 423 424 1557 1556 1698 1699 923 thresholdPairs orientationPairs := by rfl
-theorem erase_spec : erase=PortalBorrow.wrap 425 925 1556 (Companion.erase bulkA bulkB carry 1699 1556) := by rfl
+def backFlags := PortalAnd.flagsBack 446 447 1557 1556 1676 1677 901 thresholdPairs orientationPairs
+def backErase := PortalBorrow.wrap 448 903 1556 (PortalBorrow.restore bulkA bulkB carry 1677 1556)
+theorem emitted_back : Partial.portal315Inv=store.reverse++backErase++backFlags++scan.reverse := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem flags_spec : flags=PortalAnd.flags 446 447 1557 1556 1676 1677 901 thresholdPairs orientationPairs := by rfl
+theorem erase_spec : erase=PortalBorrow.wrap 448 903 1556 (Companion.erase bulkA bulkB carry 1677 1556) := by rfl
 theorem scan_proper : ProperProgram scan := PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem store_proper : ProperProgram store := PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-def activeScratch : List Wire := [1557,1556,1698,1699,1556]++thresholdPairs.map Prod.snd++orientationPairs.map Prod.snd++carry
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+def activeScratch : List Wire := [1557,1556,1676,1677,1556]++thresholdPairs.map Prod.snd++orientationPairs.map Prod.snd++carry
+end ECDSAAdd.Entrant.StairPacket.Portal315Flag
 
 end
 
@@ -65955,15 +65983,15 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+namespace ECDSAAdd.Entrant.StairPacket.Portal315Flag
 open Arithmetic
 set_option maxRecDepth 30000
 set_option maxHeartbeats 7000000
-theorem away_scan : ∀q∈activeScratch,q∉wires scan := PortalStatic.separated _ _ 1700 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
+theorem away_scan : ∀q∈activeScratch,q∉wires scan := PortalStatic.separated _ _ 1678 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem flags_do (s:State) (m:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    let f:=PortalAnd.high 423 424 thresholdPairs s.basis
-    let u:=f && (PortalAnd.digits 923 orientationPairs).any s.basis
-    run flags m s=⟨s.phase,writeBit (writeBit s.basis 1698 f) 1699 u⟩ := by
+    let f:=PortalAnd.high 446 447 thresholdPairs s.basis
+    let u:=f && (PortalAnd.digits 901 orientationPairs).any s.basis
+    run flags m s=⟨s.phase,writeBit (writeBit s.basis 1676 f) 1677 u⟩ := by
   rw [flags_spec]
   apply PortalAnd.flags_run
   · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -66001,12 +66029,12 @@ theorem erase_return (s:State) (m n:List Bool) (h:s.basis 1556=false ∧ ∀q∈
   · exact h.1
   · exact h.2
 theorem portal_return (s:State) (m tape:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    run Partial.portal270Inv tape (run Partial.portal270 m s)=s := by
+    run Partial.portal315Inv tape (run Partial.portal315 m s)=s := by
   let v:=run scan m s
   have vh:∀q∈activeScratch,v.basis q=false:=fun q hp=>(run_preserves_outside _ _ _ _ (away_scan _ hp)).trans (h _ hp)
   have hc (m0:List Bool) : (run flags m0 v).basis 1556=false ∧ ∀q∈carry,(run flags m0 v).basis q=false := by
     rw [flags_do v m0 vh]
-    have dis: ∀q∈carry,q≠1698 ∧ q≠1699 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+    have dis: ∀q∈carry,q≠1676 ∧ q≠1677 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
     constructor
     · simpa [writeBit] using vh 1556 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
     · intro q hq; simp [writeBit,(dis _ hq).1,(dis _ hq).2,vh q (by simp [activeScratch,hq])]
@@ -66014,7 +66042,7 @@ theorem portal_return (s:State) (m tape:List Bool) (h:∀q∈activeScratch,s.bas
   simp only [run_append,run_take]
   rw [run_reverse_proper _ store_proper,erase_return _ _ _ (hc _),flags_return _ _ _ vh,run_reverse_proper _ scan_proper]
 
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+end ECDSAAdd.Entrant.StairPacket.Portal315Flag
 
 end
 
@@ -67488,20 +67516,20 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary315
 open ArchivePortAction StairArchiveIntegerHook CodecBitSliceVerify
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-def rawPortsList : List Wire := [276,1809,277,1808,278,1807,279,1806,280,1805,281,1804,282,1803,283,1802,284,1801,285,1800,1029,1030,1031,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689]
+def rawPortsList : List Wire := [321,1764,322,1763,323,1762,324,1761,325,1760,326,1759,327,1758,328,1757,329,1756,330,1755,984,985,986,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1683,1684,1685,1686,1687,1688,1689,1690,1691,1692,1693,1694,1695,1696,1697,1698,1699]
 def rawPorts (i:Fin 157) : Wire := rawPortsList.getD i 0
-def codePortsList : List Wire := [276,1809,277,1808,278,279,1806,280,281,1804,282,1803,283,284,1801,285,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689,1807,1805,1802,1800,1029,1030,1031]
+def codePortsList : List Wire := [321,1764,322,1763,323,324,1761,325,326,1759,327,1758,328,329,1756,330,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1683,1684,1685,1686,1687,1688,1689,1690,1691,1692,1693,1694,1695,1696,1697,1698,1699,1762,1760,1757,1755,984,985,986]
 def codePorts (i:Fin 157) : Wire := codePortsList.getD i 0
-def loadMapList : List Wire := [276,1809,277,1808,278,1807,279,1806,280,1805,281,1804,282,1803,283,1802,284,1801,285,1800,1029,1030,1031,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687]
+def loadMapList : List Wire := [321,1764,322,1763,323,1762,324,1761,325,1760,326,1759,327,1758,328,1757,329,1756,330,1755,984,985,986,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1683,1684,1685,1686,1687,1688,1689,1690,1691,1692,1693,1694,1695,1696,1697]
 def loadMap (q:Wire) := loadMapList.getD q 0
-def loadMoves : List (Wire×Wire) := [(279,1807),(1806,1807),(280,1807),(281,1807),(1804,1805),(282,1807),(1803,1805),(283,1807),(284,1805),(1801,1807),(285,1802)]
+def loadMoves : List (Wire×Wire) := [(324,1762),(1761,1762),(325,1762),(326,1762),(1759,1760),(327,1762),(1758,1760),(328,1762),(329,1760),(1756,1762),(330,1757)]
 def loadRouteList : List (Fin 157) := [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,17,16,18,19,20,21,22]
 def loadRoute (i:Fin 157) := loadRouteList.getD i 0
-theorem load_program (d:Bool) : Partial.archiveLoad270 d=placed loadMap (op true d) ++ moves loadMoves := by cases d <;> rfl
+theorem load_program (d:Bool) : Partial.archiveLoad315 d=placed loadMap (op true d) ++ moves loadMoves := by cases d <;> rfl
 theorem load_unique : Function.Injective rawPorts := by exact injective_list rawPortsList (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem load_map : ∀q:Fin 155, loadMap q=rawPorts ⟨q,by omega⟩ := by
   have h1 : (loadMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -67529,19 +67557,19 @@ theorem load_sort : ∀ i, loadRoute i=i ∨ (16≤ i.val ∧ 16≤(loadRoute i)
 theorem load_scope : ∀p∈loadMoves,(∃i,rawPorts i=p.1) ∧ (∃i,rawPorts i=p.2) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem load_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
     (ready:Frame rawPorts (startCols true d) row s) :
-    let t:=run (Partial.archiveLoad270 d) m s
+    let t:=run (Partial.archiveLoad315 d) m s
     t.phase=s.phase ∧ Frame codePorts (endCols true d) row t ∧ ∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q := by
   rw [load_program]
   apply packet true d rawPorts codePorts loadMap loadMoves loadRoute load_unique _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) load_route load_sort load_scope row hr s m ready
   intro q h
   have lim:q<155:=by cases d <;> exact h
   exact ⟨⟨q,by omega⟩,rfl,load_map ⟨q,lim⟩⟩
-def restoreMapList : List Wire := [276,1809,277,1808,278,279,1806,280,281,1804,282,1803,283,284,1801,285,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689]
+def restoreMapList : List Wire := [321,1764,322,1763,323,324,1761,325,326,1759,327,1758,328,329,1756,330,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1683,1684,1685,1686,1687,1688,1689,1690,1691,1692,1693,1694,1695,1696,1697,1698,1699]
 def restoreMap (q:Wire) := restoreMapList.getD q 0
-def restoreMoves : List (Wire×Wire) := [(1807,279),(279,1806),(1806,280),(280,281),(1805,1804),(281,282),(1804,1803),(282,283),(1803,284),(283,1801),(1802,285),(284,1556),(1801,1557),(285,1558),(1800,1559),(1029,1560),(1030,1561),(1031,1562)]
+def restoreMoves : List (Wire×Wire) := [(1762,324),(324,1761),(1761,325),(325,326),(1760,1759),(326,327),(1759,1758),(327,328),(1758,329),(328,1756),(1757,330),(329,1556),(1756,1557),(330,1558),(1755,1559),(984,1560),(985,1561),(986,1562)]
 def restoreRouteList : List (Fin 157) := [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,151,150,152,153,154,155,156,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149]
 def restoreRoute (i:Fin 157) := restoreRouteList.getD i 0
-theorem restore_program (d:Bool) : Partial.archiveRestore270 d=placed restoreMap (op false d) ++ moves restoreMoves := by cases d <;> rfl
+theorem restore_program (d:Bool) : Partial.archiveRestore315 d=placed restoreMap (op false d) ++ moves restoreMoves := by cases d <;> rfl
 theorem restore_unique : Function.Injective codePorts := by exact injective_list codePortsList (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem restore_map : ∀q:Fin 150, restoreMap q=codePorts ⟨q,by omega⟩ := by
   have h1 : (restoreMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -67569,7 +67597,7 @@ theorem restore_sort : ∀ i, restoreRoute i=i ∨ (23≤ i.val ∧ 23≤(restor
 theorem restore_scope : ∀p∈restoreMoves,(∃i,codePorts i=p.1) ∧ (∃i,codePorts i=p.2) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem restore_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
     (ready:Frame codePorts (startCols false d) row s) :
-    let t:=run (Partial.archiveRestore270 d) m s
+    let t:=run (Partial.archiveRestore315 d) m s
     t.phase=s.phase ∧ Frame rawPorts (endCols false d) row t ∧ ∀q,(∀i,codePorts i≠q) → t.basis q=s.basis q := by
   rw [restore_program]
   apply packet false d codePorts rawPorts restoreMap restoreMoves restoreRoute restore_unique _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) restore_route restore_sort restore_scope row hr s m ready
@@ -67579,7 +67607,7 @@ theorem restore_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
 theorem code_from_raw : ∀i,∃j,rawPorts j=codePorts i := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem roundtrip (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
     (ready:Frame rawPorts raw row s) :
-    run (Partial.archiveRestore270 d) n (run (Partial.archiveLoad270 d) m s)=s := by
+    run (Partial.archiveRestore315 d) n (run (Partial.archiveLoad315 d) m s)=s := by
   have f:=load_run d row hr s m ready
   have b:=restore_run d row hr _ n f.2.1
   apply state_eq
@@ -67593,7 +67621,7 @@ theorem roundtrip (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
         intro i; obtain ⟨j,eq⟩:=code_from_raw i
         exact eq ▸ no j
       exact (b.2.2 q noc).trans (f.2.2 q no)
-end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary315
 
 end
 
@@ -67656,24 +67684,24 @@ theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
   intro i
   exact (fr ⟨i,by omega⟩).trans (congrArg (fun x:Nat=>x.testBit row) (field_bits d i))
 end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary255
-namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary315
 open ArchivePortAction CodecBitSliceVerify StairArchiveRaw StairArchiveGates
 theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
     (legal:∃row<63145,∀q<23,(rawCol q).testBit row=data q)
     (recorded:∀i:Fin 157,i.val<23 → s.basis (rawPorts i)=data i)
     (scratch:∀i:Fin 157,23≤ i.val → s.basis (rawPorts i)=false) :
-    let t:=run (Partial.archiveLoad270 d) m s
+    let t:=run (Partial.archiveLoad315 d) m s
     ∃row<63145, t.phase=s.phase ∧ Frame codePorts (code d) row t ∧
         (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then enter0Trace0In else enter1Trace0In) i).testBit row) ∧
         (∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q) ∧
-        (∀ tape, run (Partial.archiveRestore270 d) tape t=s) := by
+        (∀ tape, run (Partial.archiveRestore315 d) tape t=s) := by
   obtain ⟨row,hr,h⟩:=legal
   have ready:=starting_frame rawPorts s row data h recorded scratch
   have ⟨ph,fr,away⟩:=load_run d row hr s m ready
   refine ⟨row,hr,ph,fr,?_,away,fun tape=>roundtrip d row hr s m tape ready⟩
   intro i
   exact (fr ⟨i,by omega⟩).trans (congrArg (fun x:Nat=>x.testBit row) (field_bits d i))
-end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary315
 
 end
 end
@@ -67731,7 +67759,7 @@ def params : Pieces Program :=
 
 /-- First ship: blocks 3..12 (ticks 120..255), exit tick 270. -/
 def first : Fin 23 := ⟨3,by decide⟩
-def rest : List (Fin 23) := (List.finRange 23).filter (fun j => 4 ≤ j.val && j.val ≤ 12)
+def rest : List (Fin 23) := (List.finRange 23).filter (fun j => 4 ≤ j.val && j.val ≤ 15)
 
 /-! Closed forms. Every `Pieces Nat` below takes a closed form where par-b's (or the stock) count lemma applies and
 falls back to the measured piece itself elsewhere, so it equals `params.map c` for every argument, and a `decide` on a
@@ -67931,29 +67959,29 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
 
 /-- First ship 120..255 (exit 270): window counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=63619 ∧ toffoliCount (forwardW params false first rest)=63609 ∧
-    toffoliCount (reverseW params true first rest)=63721 ∧ toffoliCount (reverseW params false first rest)=63721 ∧
-    measurementCount (forwardW params true first rest)=31846 ∧ measurementCount (forwardW params false first rest)=31846 ∧
-    measurementCount (reverseW params true first rest)=31713 ∧ measurementCount (reverseW params false first rest)=31713 := by
+    toffoliCount (forwardW params true first rest)=78079 ∧ toffoliCount (forwardW params false first rest)=78066 ∧
+    toffoliCount (reverseW params true first rest)=78211 ∧ toffoliCount (reverseW params false first rest)=78211 ∧
+    measurementCount (forwardW params true first rest)=38996 ∧ measurementCount (forwardW params false first rest)=38996 ∧
+    measurementCount (reverseW params true first rest)=38824 ∧ measurementCount (reverseW params false first rest)=38824 := by
   rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
     (counts true first rest).2.2.1,(counts false first rest).2.2.1,(counts true first rest).2.2.2,(counts false first rest).2.2.2]
   decide +kernel
 
 /-- The window sizes of the first ship (blocks 3..12, exit 270), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=63619 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=78079 := by
   rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=63609 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=78066 := by
   rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=63721 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=78211 := by
   rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=63721 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=78211 := by
   rw [(counts false first rest).2.1]; decide +kernel
-theorem ship_measureF : measurementCount (forwardW params true first rest)=31846 ∧
-    measurementCount (forwardW params false first rest)=31846 := by
+theorem ship_measureF : measurementCount (forwardW params true first rest)=38996 ∧
+    measurementCount (forwardW params false first rest)=38996 := by
   rw [(counts true first rest).2.2.1,(counts false first rest).2.2.1]; decide +kernel
-theorem ship_measureR : measurementCount (reverseW params true first rest)=31713 ∧
-    measurementCount (reverseW params false first rest)=31713 := by
+theorem ship_measureR : measurementCount (reverseW params true first rest)=38824 ∧
+    measurementCount (reverseW params false first rest)=38824 := by
   rw [(counts true first rest).2.2.2,(counts false first rest).2.2.2]; decide +kernel
 
 /-- `slotsV`: upper bounds of the piece slot counts. Exact closed forms where par-b's count lemmas apply (enter,
@@ -67980,8 +68008,8 @@ def slotsV : Pieces Nat where
     gateSlots (renameProgram (OB5.sig s) (Rolling1588.packAtTick d t))
   unpack d s t := if dueTick t then 142+(if d then 24 else 12) else
     gateSlots (renameProgram (OB5.sig s) (Rolling1588.unpackAtTick d t))
-  tick e := if e = 270 then 6004 else gateSlots (renameProgram (OB5.sig e) (TickRanges.tick base e))
-  receiver e := if e = 270 then 6001 else
+  tick e := if e = 315 then 6004 else gateSlots (renameProgram (OB5.sig e) (TickRanges.tick base e))
+  receiver e := if e = 315 then 6001 else
     gateSlots (renameProgram (OB5.sig e) (W.ReverseCarry.compactReceiverTick base e))
 
 theorem slots_le : (params.map gateSlots).Le slotsV := by
@@ -68026,15 +68054,15 @@ theorem slots_le : (params.map gateSlots).Le slotsV := by
     · rename_i h; exact (pack_slots d s t (due_of h).1 (due_of h).2).2.le
     · exact Nat.le_refl _
   · intro e; dsimp only; split
-    · rename_i h; subst h; rw [rename_gateSlots]; exact WindowSlots.part20
+    · rename_i h; subst h; rw [rename_gateSlots]; exact WindowSlots.part20e
     · exact Nat.le_refl _
   · intro e; dsimp only; split
-    · rename_i h; subst h; rw [rename_gateSlots]; exact WindowSlots.part32
+    · rename_i h; subst h; rw [rename_gateSlots]; exact WindowSlots.part32e
     · exact Nat.le_refl _
 
 /-- First ship 120..255 (exit 270): the slot sums of `slotsV`, one Nat evaluation (no program is evaluated). -/
-theorem slot_sums : (forwardL slotsV true first rest).sum ≤ 825001 ∧ (forwardL slotsV false first rest).sum ≤ 825001 ∧
-    (reverseL slotsV true first rest).sum ≤ 827626 ∧ (reverseL slotsV false first rest).sum ≤ 827694 := by
+theorem slot_sums : (forwardL slotsV true first rest).sum ≤ 1070572 ∧ (forwardL slotsV false first rest).sum ≤ 1070572 ∧
+    (reverseL slotsV true first rest).sum ≤ 1073986 ∧ (reverseL slotsV false first rest).sum ≤ 1074078 := by
   decide +kernel
 
 
@@ -68346,14 +68374,14 @@ theorem exit_tick (e : Nat) (he : e < 511)
   · exact List.all_eq_true.mp table x (List.mem_toFinset.mp
       (W.ReverseCarry.compactReceiverTick_support base e (by omega) base_pool_nodup hx))
 
-theorem exit270 (d : Bool) :
-    CoveredW (renameProgram (OB5.sig 270) (TickRanges.tick base 270)) ∧
-    CoveredW (renameProgram (OB5.sig 270) (W.ReverseCarry.compactReceiverTick base 270)) ∧
-    CoveredW (exitLoadP 270 d) ∧ CoveredW (exitRestoreP 270 d) := by
-  have t := exit_tick 270 (by decide) (by decide +kernel)
-  exact ⟨t.1,t.2,(exitArch_cov 270 d (by omega) (by omega)).1,(exitArch_cov 270 d (by omega) (by omega)).2⟩
+theorem exit315 (d : Bool) :
+    CoveredW (renameProgram (OB5.sig 315) (TickRanges.tick base 315)) ∧
+    CoveredW (renameProgram (OB5.sig 315) (W.ReverseCarry.compactReceiverTick base 315)) ∧
+    CoveredW (exitLoadP 315 d) ∧ CoveredW (exitRestoreP 315 d) := by
+  have t := exit_tick 315 (by decide) (by decide +kernel)
+  exact ⟨t.1,t.2,(exitArch_cov 315 d (by omega) (by omega)).1,(exitArch_cov 315 d (by omega) (by omega)).2⟩
 
-theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 3 12 where
+theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 3 15 where
   block j h0 h1 := by
     have e := enter_cov j h0 (by omega)
     have l := leave_cov j h0 (by omega)
@@ -68368,25 +68396,25 @@ theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 3 12 where
     exact ⟨p.1,p.2,o.1,o.2⟩
   later j h0 h1 := by
     have lo : 135 ≤ start j := by simp only [start]; omega
-    have hi : start j ≤ 255 := by simp only [start]; omega
+    have hi : start j ≤ 300 := by simp only [start]; omega
     have m : (start j-10)%5=0 := by simp only [start]; omega
     have p := pack_cov d (start j) (start j-10) (by omega) (by omega) (by omega) m
     exact ⟨p.1,p.2⟩
   saved j h0 h1 := archive_cov j d h0 (by omega)
   exit j h := by
-    have hs : start j = 270 := by simp only [start]; omega
+    have hs : start j = 315 := by simp only [start]; omega
     rw [hs]
-    have k := park_cov 270 (by omega) (by omega)
-    have o := portal_cov 270 (by omega) (by omega)
-    have p := pack_cov d 270 260 (by omega) (by omega) (by omega) (by omega)
-    have x := exit270 d
+    have k := park_cov 315 (by omega) (by omega)
+    have o := portal_cov 315 (by omega) (by omega)
+    have p := pack_cov d 315 305 (by omega) (by omega) (by omega) (by omega)
+    have x := exit315 d
     exact ⟨k.1,k.2,o.1,o.2,x.1,x.2.1,p.1,p.2,x.2.2.1,x.2.2.2⟩
 
 theorem rest_eq : WindowParams.rest = [⟨4,by decide⟩,⟨5,by decide⟩,⟨6,by decide⟩,⟨7,by decide⟩,⟨8,by decide⟩,
-    ⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩] := by decide
+    ⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩,⟨13,by decide⟩,⟨14,by decide⟩,⟨15,by decide⟩] := by decide
 theorem consec : Consec WindowParams.first WindowParams.rest := by
-  rw [rest_eq]; exact ⟨rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,trivial⟩
-theorem last : (lastBlock WindowParams.first WindowParams.rest).val = 12 := by rw [rest_eq]; rfl
+  rw [rest_eq]; exact ⟨rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,trivial⟩
+theorem last : (lastBlock WindowParams.first WindowParams.rest).val = 15 := by rw [rest_eq]; rfl
 
 /-- The first ship's window (both directions, both kernels) lies in the K2 domain. -/
 theorem window_covered (d : Bool) :
@@ -68435,11 +68463,11 @@ theorem leave_phys (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   rw [leaveP, leaveInvP]; exact physical_of_proper _ (leave_proper j h0 h1)
 
 theorem portal_proper120 : (portalOps 120).all proper = true := by decide +kernel
-theorem portal_proper270 : (portalOps 270).all proper = true := by decide +kernel
+theorem portal_proper315 : (portalOps 315).all proper = true := by decide +kernel
 theorem portal_phys120 : GatePhysical (portalP 120) ∧ GatePhysical (portalInvP 120) :=
   physical_of_proper _ (List.all_eq_true.mp portal_proper120)
-theorem portal_phys270 : GatePhysical (portalP 270) ∧ GatePhysical (portalInvP 270) :=
-  physical_of_proper _ (List.all_eq_true.mp portal_proper270)
+theorem portal_phys315 : GatePhysical (portalP 315) ∧ GatePhysical (portalInvP 315) :=
+  physical_of_proper _ (List.all_eq_true.mp portal_proper315)
 
 /-- Packs and unpacks at any due tick, in any `OB5.sig s` frame. -/
 theorem pack_phys (d : Bool) (s t : Nat) (hs : s ≤ 511) (ten : 10 ≤ t) (hi : t ≤ 511)
@@ -68522,10 +68550,10 @@ theorem archive_phys (j : Fin 23) (d : Bool) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 
     exact appP (restore_codec_phys _ nr (by rw [restorePortsWP_length]) d) (moveRestore_phys _ _ lo hi fl)
 
 /-- Stock-form exit archives at 270 (the two port lists by one decide each). -/
-theorem exit_phys270 (d : Bool) : GatePhysical (exitLoadP 270 d) ∧ GatePhysical (exitRestoreP 270 d) := by
-  have hb : bTopP 270+1 = 1029 := rfl
-  have nl : (loadPortsWP 270 1029).Nodup := by decide +kernel
-  have nr : (restorePortsWP 270).Nodup := by decide +kernel
+theorem exit_phys315 (d : Bool) : GatePhysical (exitLoadP 315 d) ∧ GatePhysical (exitRestoreP 315 d) := by
+  have hb : bTopP 315+1 = 984 := rfl
+  have nl : (loadPortsWP 315 984).Nodup := by decide +kernel
+  have nr : (restorePortsWP 315).Nodup := by decide +kernel
   constructor
   · rw [exitLoadP, hb]
     exact appP (load_codec_phys _ nl (by rw [loadPortsWP_length]) d) (moveLoad_phys _ (by omega) (by omega))
@@ -68536,7 +68564,7 @@ theorem exit_phys270 (d : Bool) : GatePhysical (exitLoadP 270 d) ∧ GatePhysica
 attribute [local irreducible] GatePhysical enterP enterInvP leaveP leaveInvP archiveLoadP archiveRestoreP portalP
   portalInvP parkP parkInvP exitLoadP exitRestoreP StairPacket.routed StairPacket.unrouted Rolling1588.packAtTick
   Rolling1588.unpackAtTick in
-theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 3 12 where
+theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 3 15 where
   block j h0 h1 := by
     have e := enterP_physical j (by omega) (by omega)
     have l := leave_phys j (by omega) (by omega)
@@ -68550,20 +68578,20 @@ theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 3 12
     exact ⟨p.1,p.2,portal_phys120.1,portal_phys120.2⟩
   later j h0 h1 := by
     have lo : 135 ≤ start j := by simp only [start]; omega
-    have hi : start j ≤ 255 := by simp only [start]; omega
+    have hi : start j ≤ 300 := by simp only [start]; omega
     have due : History5.packDue (start j-10)=true := by
       simp only [History5.packDue,decide_eq_true_eq,start]; omega
     have p := pack_phys d (start j) (start j-10) (by omega) (by omega) (by omega) due
     exact ⟨p.1,p.2⟩
   saved j h0 h1 := archive_phys j d h0 (by omega)
   exit j h := by
-    have hs : start j = 270 := by simp only [start]; omega
+    have hs : start j = 315 := by simp only [start]; omega
     rw [hs]
-    have k := parkP_physical 270 (by omega) (by omega)
-    have p := pack_phys d 270 260 (by omega) (by omega) (by omega) (by decide)
-    have t := tick_phys 270 (by omega)
-    have x := exit_phys270 d
-    exact ⟨k.1,k.2,portal_phys270.1,portal_phys270.2,t.1,t.2,p.1,p.2,x.1,x.2⟩
+    have k := parkP_physical 315 (by omega) (by omega)
+    have p := pack_phys d 315 305 (by omega) (by omega) (by omega) (by decide)
+    have t := tick_phys 315 (by omega)
+    have x := exit_phys315 d
+    exact ⟨k.1,k.2,portal_phys315.1,portal_phys315.2,t.1,t.2,p.1,p.2,x.1,x.2⟩
 
 /-- The first ship's window (both directions, both kernels) is physical. -/
 theorem window_physical (d : Bool) :
@@ -68589,15 +68617,15 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParams
 open ECDSAAdd.Entrant.StairPacket.WindowFold ECDSAAdd.Challenge
 
 /-- Slot bounds of the first ship's window (upper bounds only; the judge has no slot ceiling). -/
-theorem ship_slotsF : gateSlots (Partial.forward45plus1 true) ≤ 825001 ∧
-    gateSlots (Partial.forward45plus1 false) ≤ 825001 := by
-  show gateSlots (forwardW params true first rest) ≤ 825001 ∧ gateSlots (forwardW params false first rest) ≤ 825001
+theorem ship_slotsF : gateSlots (Partial.forward45plus1 true) ≤ 1070572 ∧
+    gateSlots (Partial.forward45plus1 false) ≤ 1070572 := by
+  show gateSlots (forwardW params true first rest) ≤ 1070572 ∧ gateSlots (forwardW params false first rest) ≤ 1070572
   rw [measure_forward gateSlots gateSlots_append, measure_forward gateSlots gateSlots_append]
   exact ⟨(forwardL_le slots_le true first rest).trans slot_sums.1,
     (forwardL_le slots_le false first rest).trans slot_sums.2.1⟩
-theorem ship_slotsR : gateSlots (Partial.reverse45plus1 true) ≤ 827626 ∧
-    gateSlots (Partial.reverse45plus1 false) ≤ 827694 := by
-  show gateSlots (reverseW params true first rest) ≤ 827626 ∧ gateSlots (reverseW params false first rest) ≤ 827694
+theorem ship_slotsR : gateSlots (Partial.reverse45plus1 true) ≤ 1073986 ∧
+    gateSlots (Partial.reverse45plus1 false) ≤ 1074078 := by
+  show gateSlots (reverseW params true first rest) ≤ 1073986 ∧ gateSlots (reverseW params false first rest) ≤ 1074078
   rw [measure_reverse gateSlots gateSlots_append, measure_reverse gateSlots gateSlots_append]
   exact ⟨(reverseL_le slots_le true first rest).trans slot_sums.2.2.1,
     (reverseL_le slots_le false first rest).trans slot_sums.2.2.2⟩
