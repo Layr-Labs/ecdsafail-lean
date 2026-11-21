@@ -37,6 +37,9 @@ def enter270Part0 : Program := [
     .CX 1559 924,
     .measureX 1559 [] [.CZ 923 1558],
     .CX 1558 923,
+    .CCX 1699 423 923,
+    .CCX 1699 424 924,
+    .CCX 1699 425 925,
     .CX 423 1559,
     .CCX 1698 1559 423,
     .CX 423 1559,
@@ -47,11 +50,9 @@ def enter270Part0 : Program := [
     .CCX 1698 1561 425,
     .CX 425 1561,
     .CX 1698 424,
-    .CCX 1699 1559 923,
-    .CX 1698 1560,
-    .CCX 1699 1560 924,
-    .CX 1698 1560,
-    .CCX 1699 1561 925,
+    .CCX 1699 423 923,
+    .CCX 1699 424 924,
+    .CCX 1699 425 925,
     .X 923,
     .X 924,
     .X 925,
@@ -142,11 +143,9 @@ def enter270InvPart0 : Program := [
     .X 925,
     .X 924,
     .X 923,
-    .CCX 1699 1561 925,
-    .CX 1698 1560,
-    .CCX 1699 1560 924,
-    .CX 1698 1560,
-    .CCX 1699 1559 923,
+    .CCX 1699 425 925,
+    .CCX 1699 424 924,
+    .CCX 1699 423 923,
     .CX 1698 424,
     .CX 425 1561,
     .CCX 1698 1561 425,
@@ -157,6 +156,9 @@ def enter270InvPart0 : Program := [
     .CX 423 1559,
     .CCX 1698 1559 423,
     .CX 423 1559,
+    .CCX 1699 425 925,
+    .CCX 1699 424 924,
+    .CCX 1699 423 923,
     .CX 1558 923,
     .CCX 923 1558 1559,
     .CX 1559 924,
@@ -3868,10 +3870,97 @@ def leave270Part37 : Program := [
     .CX 1028 1013,
     .CX 1013 1028,
     .CX 1028 1013,
+    .CX 1029 1014,
+    .CX 1014 1029,
+    .CX 1029 1014]
+def leave270Part38 : Program := [
+    .CX 1030 1015,
+    .CX 1015 1030,
+    .CX 1030 1015,
+    .CX 1031 1016,
+    .CX 1016 1031,
+    .CX 1031 1016,
+    .CX 1032 1017,
+    .CX 1017 1032,
+    .CX 1032 1017,
+    .CX 1033 1018,
+    .CX 1018 1033,
+    .CX 1033 1018,
+    .CX 1034 1019,
+    .CX 1019 1034,
+    .CX 1034 1019,
+    .CX 1035 1020,
+    .CX 1020 1035,
+    .CX 1035 1020,
+    .CX 1036 1021,
+    .CX 1021 1036,
+    .CX 1036 1021,
+    .CX 1037 1022,
+    .CX 1022 1037,
+    .CX 1037 1022,
+    .CX 1038 1023,
+    .CX 1023 1038,
+    .CX 1038 1023,
+    .CX 1039 1024,
+    .CX 1024 1039,
+    .CX 1039 1024,
+    .CX 1040 1025,
+    .CX 1025 1040,
+    .CX 1040 1025,
+    .CX 1041 1026,
+    .CX 1026 1041,
+    .CX 1041 1026,
+    .CX 1042 1027,
+    .CX 1027 1042,
+    .CX 1042 1027,
+    .CX 1598 1028,
+    .CX 1028 1598,
+    .CX 1598 1028,
+    .CX 1599 1029,
+    .CX 1029 1599,
+    .CX 1599 1029,
+    .CX 1600 1030,
+    .CX 1030 1600,
+    .CX 1600 1030,
+    .CX 1601 1031,
+    .CX 1031 1601,
+    .CX 1601 1031,
+    .CX 1602 1032,
+    .CX 1032 1602,
+    .CX 1602 1032,
+    .CX 1603 1033,
+    .CX 1033 1603,
+    .CX 1603 1033,
+    .CX 1604 1034,
+    .CX 1034 1604,
+    .CX 1604 1034,
+    .CX 1605 1035,
+    .CX 1035 1605,
+    .CX 1605 1035,
+    .CX 1606 1036,
+    .CX 1036 1606,
+    .CX 1606 1036,
+    .CX 1607 1037,
+    .CX 1037 1607,
+    .CX 1607 1037,
+    .CX 1608 1038,
+    .CX 1038 1608,
+    .CX 1608 1038,
+    .CX 1609 1039,
+    .CX 1039 1609,
+    .CX 1609 1039,
+    .CX 1610 1040,
+    .CX 1040 1610,
+    .CX 1610 1040,
+    .CX 1611 1041,
+    .CX 1041 1611,
+    .CX 1611 1041,
+    .CX 1612 1042,
+    .CX 1042 1612,
+    .CX 1612 1042,
     .CX 1557 1691,
     .CX 1691 1557,
-    .CX 1557 1691]
-def leave270Part38 : Program := [
+    .CX 1557 1691,
     .CX 1558 1692,
     .CX 1692 1558,
     .CX 1558 1692,
@@ -3880,14 +3969,15 @@ def leave270Part38 : Program := [
     .CX 1700 1693,
     .CX 1698 1694,
     .CX 1694 1698,
-    .CX 1698 1694,
+    .CX 1698 1694]
+def leave270Part39 : Program := [
     .CX 1702 1695,
     .CX 1695 1702,
     .CX 1702 1695,
     .CX 1701 1696,
     .CX 1696 1701,
     .CX 1701 1696]
-def leave270 : Program := leave270Part0 ++ (leave270Part1 ++ (leave270Part2 ++ (leave270Part3 ++ (leave270Part4 ++ (leave270Part5 ++ (leave270Part6 ++ (leave270Part7 ++ (leave270Part8 ++ (leave270Part9 ++ (leave270Part10 ++ (leave270Part11 ++ (leave270Part12 ++ (leave270Part13 ++ (leave270Part14 ++ (leave270Part15 ++ (leave270Part16 ++ (leave270Part17 ++ (leave270Part18 ++ (leave270Part19 ++ (leave270Part20 ++ (leave270Part21 ++ (leave270Part22 ++ (leave270Part23 ++ (leave270Part24 ++ (leave270Part25 ++ (leave270Part26 ++ (leave270Part27 ++ (leave270Part28 ++ (leave270Part29 ++ (leave270Part30 ++ (leave270Part31 ++ (leave270Part32 ++ (leave270Part33 ++ (leave270Part34 ++ (leave270Part35 ++ (leave270Part36 ++ (leave270Part37 ++ (leave270Part38))))))))))))))))))))))))))))))))))))))
+def leave270 : Program := leave270Part0 ++ (leave270Part1 ++ (leave270Part2 ++ (leave270Part3 ++ (leave270Part4 ++ (leave270Part5 ++ (leave270Part6 ++ (leave270Part7 ++ (leave270Part8 ++ (leave270Part9 ++ (leave270Part10 ++ (leave270Part11 ++ (leave270Part12 ++ (leave270Part13 ++ (leave270Part14 ++ (leave270Part15 ++ (leave270Part16 ++ (leave270Part17 ++ (leave270Part18 ++ (leave270Part19 ++ (leave270Part20 ++ (leave270Part21 ++ (leave270Part22 ++ (leave270Part23 ++ (leave270Part24 ++ (leave270Part25 ++ (leave270Part26 ++ (leave270Part27 ++ (leave270Part28 ++ (leave270Part29 ++ (leave270Part30 ++ (leave270Part31 ++ (leave270Part32 ++ (leave270Part33 ++ (leave270Part34 ++ (leave270Part35 ++ (leave270Part36 ++ (leave270Part37 ++ (leave270Part38 ++ (leave270Part39)))))))))))))))))))))))))))))))))))))))
 
 def leave270InvPart0 : Program := [
     .CX 1701 1696,
@@ -3908,6 +3998,94 @@ def leave270InvPart0 : Program := [
     .CX 1557 1691,
     .CX 1691 1557,
     .CX 1557 1691,
+    .CX 1612 1042,
+    .CX 1042 1612,
+    .CX 1612 1042,
+    .CX 1611 1041,
+    .CX 1041 1611,
+    .CX 1611 1041,
+    .CX 1610 1040,
+    .CX 1040 1610,
+    .CX 1610 1040,
+    .CX 1609 1039,
+    .CX 1039 1609,
+    .CX 1609 1039,
+    .CX 1608 1038,
+    .CX 1038 1608,
+    .CX 1608 1038,
+    .CX 1607 1037,
+    .CX 1037 1607,
+    .CX 1607 1037,
+    .CX 1606 1036,
+    .CX 1036 1606,
+    .CX 1606 1036,
+    .CX 1605 1035,
+    .CX 1035 1605,
+    .CX 1605 1035,
+    .CX 1604 1034,
+    .CX 1034 1604,
+    .CX 1604 1034,
+    .CX 1603 1033,
+    .CX 1033 1603,
+    .CX 1603 1033,
+    .CX 1602 1032,
+    .CX 1032 1602,
+    .CX 1602 1032,
+    .CX 1601 1031,
+    .CX 1031 1601,
+    .CX 1601 1031,
+    .CX 1600 1030,
+    .CX 1030 1600,
+    .CX 1600 1030,
+    .CX 1599 1029,
+    .CX 1029 1599,
+    .CX 1599 1029,
+    .CX 1598 1028,
+    .CX 1028 1598,
+    .CX 1598 1028,
+    .CX 1042 1027,
+    .CX 1027 1042,
+    .CX 1042 1027,
+    .CX 1041 1026,
+    .CX 1026 1041,
+    .CX 1041 1026,
+    .CX 1040 1025,
+    .CX 1025 1040,
+    .CX 1040 1025,
+    .CX 1039 1024,
+    .CX 1024 1039,
+    .CX 1039 1024,
+    .CX 1038 1023,
+    .CX 1023 1038,
+    .CX 1038 1023,
+    .CX 1037 1022,
+    .CX 1022 1037,
+    .CX 1037 1022,
+    .CX 1036 1021,
+    .CX 1021 1036,
+    .CX 1036 1021,
+    .CX 1035 1020,
+    .CX 1020 1035,
+    .CX 1035 1020,
+    .CX 1034 1019,
+    .CX 1019 1034,
+    .CX 1034 1019,
+    .CX 1033 1018,
+    .CX 1018 1033,
+    .CX 1033 1018,
+    .CX 1032 1017,
+    .CX 1017 1032,
+    .CX 1032 1017]
+def leave270InvPart1 : Program := [
+    .CX 1031 1016,
+    .CX 1016 1031,
+    .CX 1031 1016,
+    .CX 1030 1015,
+    .CX 1015 1030,
+    .CX 1030 1015,
+    .CX 1029 1014,
+    .CX 1014 1029,
+    .CX 1029 1014,
     .CX 1028 1013,
     .CX 1013 1028,
     .CX 1028 1013,
@@ -3985,8 +4163,7 @@ def leave270InvPart0 : Program := [
     .CX 1004 989,
     .CX 1003 988,
     .CX 988 1003,
-    .CX 1003 988]
-def leave270InvPart1 : Program := [
+    .CX 1003 988,
     .CX 1002 987,
     .CX 987 1002,
     .CX 1002 987,
@@ -3995,7 +4172,8 @@ def leave270InvPart1 : Program := [
     .CX 1001 986,
     .CX 1000 985,
     .CX 985 1000,
-    .CX 1000 985,
+    .CX 1000 985]
+def leave270InvPart2 : Program := [
     .CX 999 984,
     .CX 984 999,
     .CX 999 984,
@@ -4082,8 +4260,7 @@ def leave270InvPart1 : Program := [
     .CX 972 957,
     .CX 971 956,
     .CX 956 971,
-    .CX 971 956]
-def leave270InvPart2 : Program := [
+    .CX 971 956,
     .CX 970 955,
     .CX 955 970,
     .CX 970 955,
@@ -4092,7 +4269,8 @@ def leave270InvPart2 : Program := [
     .CX 969 954,
     .CX 968 953,
     .CX 953 968,
-    .CX 968 953,
+    .CX 968 953]
+def leave270InvPart3 : Program := [
     .CX 967 952,
     .CX 952 967,
     .CX 967 952,
@@ -4179,8 +4357,7 @@ def leave270InvPart2 : Program := [
     .CX 940 925,
     .CX 939 924,
     .CX 924 939,
-    .CX 939 924]
-def leave270InvPart3 : Program := [
+    .CX 939 924,
     .CX 938 923,
     .CX 923 938,
     .CX 938 923,
@@ -4189,7 +4366,8 @@ def leave270InvPart3 : Program := [
     .CX 937 922,
     .CX 936 921,
     .CX 921 936,
-    .CX 936 921,
+    .CX 936 921]
+def leave270InvPart4 : Program := [
     .CX 935 920,
     .CX 920 935,
     .CX 935 920,
@@ -4276,8 +4454,7 @@ def leave270InvPart3 : Program := [
     .X 292,
     .X 291,
     .X 290,
-    .X 289]
-def leave270InvPart4 : Program := [
+    .X 289,
     .X 288,
     .X 287,
     .X 286,
@@ -4286,7 +4463,8 @@ def leave270InvPart4 : Program := [
     .X 908,
     .X 909,
     .X 910,
-    .X 911,
+    .X 911]
+def leave270InvPart5 : Program := [
     .X 912,
     .X 913,
     .X 914,
@@ -4373,8 +4551,7 @@ def leave270InvPart4 : Program := [
     .X 967,
     .X 968,
     .X 969,
-    .X 970]
-def leave270InvPart5 : Program := [
+    .X 970,
     .X 971,
     .X 972,
     .X 973,
@@ -4383,7 +4560,8 @@ def leave270InvPart5 : Program := [
     .X 976,
     .X 977,
     .X 978,
-    .X 979,
+    .X 979]
+def leave270InvPart6 : Program := [
     .X 980,
     .X 981,
     .X 982,
@@ -4470,8 +4648,7 @@ def leave270InvPart5 : Program := [
     .CCX 1563 938 1564,
     .CCX 1564 939 1565,
     .CCX 1565 940 1566,
-    .CCX 1566 941 1567]
-def leave270InvPart6 : Program := [
+    .CCX 1566 941 1567,
     .CCX 1567 942 1568,
     .CCX 1568 943 1569,
     .CCX 1569 944 1570,
@@ -4480,7 +4657,8 @@ def leave270InvPart6 : Program := [
     .CCX 1572 947 1573,
     .CCX 1573 948 1574,
     .CCX 1574 949 1575,
-    .CCX 1575 950 1576,
+    .CCX 1575 950 1576]
+def leave270InvPart7 : Program := [
     .CCX 1576 951 1577,
     .CCX 1577 952 1578,
     .CCX 1578 953 1579,
@@ -4567,8 +4745,7 @@ def leave270InvPart6 : Program := [
     .CCX 1674 1034 1675,
     .CCX 1675 1035 1676,
     .CCX 1676 1036 1677,
-    .CCX 1677 1037 1678]
-def leave270InvPart7 : Program := [
+    .CCX 1677 1037 1678,
     .CCX 1678 1038 1679,
     .CCX 1679 1039 1680,
     .CCX 1680 1040 1681,
@@ -4577,7 +4754,8 @@ def leave270InvPart7 : Program := [
     .CCX 1683 1598 1684,
     .CCX 1684 1599 1685,
     .CCX 1685 1600 1686,
-    .CCX 1686 1601 1687,
+    .CCX 1686 1601 1687]
+def leave270InvPart8 : Program := [
     .CCX 1687 1602 1688,
     .CCX 1688 1603 1689,
     .CCX 1689 1604 1690,
@@ -4664,8 +4842,7 @@ def leave270InvPart7 : Program := [
     .measureX 1628 [] [.CZ 1627 987],
     .measureX 1627 [] [.CZ 1626 986],
     .measureX 1626 [] [.CZ 1625 985],
-    .measureX 1625 [] [.CZ 1624 984]]
-def leave270InvPart8 : Program := [
+    .measureX 1625 [] [.CZ 1624 984],
     .measureX 1624 [] [.CZ 1623 983],
     .measureX 1623 [] [.CZ 1622 982],
     .measureX 1622 [] [.CZ 1621 981],
@@ -4674,7 +4851,8 @@ def leave270InvPart8 : Program := [
     .measureX 1619 [] [.CZ 1618 978],
     .measureX 1618 [] [.CZ 1617 977],
     .measureX 1617 [] [.CZ 1616 976],
-    .measureX 1616 [] [.CZ 1615 975],
+    .measureX 1616 [] [.CZ 1615 975]]
+def leave270InvPart9 : Program := [
     .measureX 1615 [] [.CZ 1614 974],
     .measureX 1614 [] [.CZ 1613 973],
     .measureX 1613 [] [.CZ 1597 972],
@@ -4761,8 +4939,7 @@ def leave270InvPart8 : Program := [
     .X 1016,
     .X 1015,
     .X 1014,
-    .X 1013]
-def leave270InvPart9 : Program := [
+    .X 1013,
     .X 1012,
     .X 1011,
     .X 1010,
@@ -4771,7 +4948,8 @@ def leave270InvPart9 : Program := [
     .X 1007,
     .X 1006,
     .X 1005,
-    .X 1004,
+    .X 1004]
+def leave270InvPart10 : Program := [
     .X 1003,
     .X 1002,
     .X 1001,
@@ -4858,8 +5036,7 @@ def leave270InvPart9 : Program := [
     .X 911,
     .X 910,
     .X 909,
-    .X 908]
-def leave270InvPart10 : Program := [
+    .X 908,
     .CX 1558 908,
     .CCX 908 1558 1559,
     .CX 1559 909,
@@ -4868,7 +5045,8 @@ def leave270InvPart10 : Program := [
     .CCX 910 1560 1561,
     .CX 1561 911,
     .CCX 911 1561 1562,
-    .CX 1562 912,
+    .CX 1562 912]
+def leave270InvPart11 : Program := [
     .CCX 912 1562 1563,
     .CX 1563 913,
     .CCX 913 1563 1564,
@@ -4955,8 +5133,7 @@ def leave270InvPart10 : Program := [
     .CCX 295 1580 1581,
     .CCX 294 1581 1582,
     .CCX 293 1582 1583,
-    .CCX 292 1583 1584]
-def leave270InvPart11 : Program := [
+    .CCX 292 1583 1584,
     .CCX 291 1584 1585,
     .CCX 290 1585 1586,
     .CCX 289 1586 1587,
@@ -4965,7 +5142,8 @@ def leave270InvPart11 : Program := [
     .CCX 1563 1586 1590,
     .CCX 1564 1584 1591,
     .CCX 1565 1582 1592,
-    .CCX 1566 1580 1593,
+    .CCX 1566 1580 1593]
+def leave270InvPart12 : Program := [
     .CCX 1567 1578 1594,
     .CCX 1568 300 1595,
     .CX 1560 1596,
@@ -5052,8 +5230,7 @@ def leave270InvPart11 : Program := [
     .CCX 1614 426 926,
     .CX 926 426,
     .CX 1564 1614,
-    .CCX 1614 425 1697]
-def leave270InvPart12 : Program := [
+    .CCX 1614 425 1697,
     .CX 1697 425,
     .CX 1563 1614,
     .CCX 1614 424 1696,
@@ -5062,7 +5239,8 @@ def leave270InvPart12 : Program := [
     .CCX 1614 423 1695,
     .CX 1695 423,
     .CX 1576 1614,
-    .CCX 1560 1613 439,
+    .CCX 1560 1613 439]
+def leave270InvPart13 : Program := [
     .CCX 1560 1701 438,
     .CCX 1575 1613 438,
     .CCX 1575 1701 437,
@@ -5149,8 +5327,7 @@ def leave270InvPart12 : Program := [
     .CX 937 945,
     .CCX 1613 945 937,
     .CX 937 945,
-    .CX 938 946]
-def leave270InvPart13 : Program := [
+    .CX 938 946,
     .CCX 1613 946 938,
     .CX 938 946,
     .CX 939 947,
@@ -5159,7 +5336,8 @@ def leave270InvPart13 : Program := [
     .CX 940 948,
     .CCX 1613 948 940,
     .CX 940 948,
-    .CX 941 949,
+    .CX 941 949]
+def leave270InvPart14 : Program := [
     .CCX 1613 949 941,
     .CX 941 949,
     .CX 942 950,
@@ -5246,8 +5424,7 @@ def leave270InvPart13 : Program := [
     .CX 969 977,
     .CCX 1613 977 969,
     .CX 969 977,
-    .CX 970 978]
-def leave270InvPart14 : Program := [
+    .CX 970 978,
     .CCX 1613 978 970,
     .CX 970 978,
     .CX 971 979,
@@ -5256,7 +5433,8 @@ def leave270InvPart14 : Program := [
     .CX 972 980,
     .CCX 1613 980 972,
     .CX 972 980,
-    .CX 973 981,
+    .CX 973 981]
+def leave270InvPart15 : Program := [
     .CCX 1613 981 973,
     .CX 973 981,
     .CX 974 982,
@@ -5343,8 +5521,7 @@ def leave270InvPart14 : Program := [
     .CX 1001 1009,
     .CCX 1613 1009 1001,
     .CX 1001 1009,
-    .CX 1002 1010]
-def leave270InvPart15 : Program := [
+    .CX 1002 1010,
     .CCX 1613 1010 1002,
     .CX 1002 1010,
     .CX 1003 1011,
@@ -5353,7 +5530,8 @@ def leave270InvPart15 : Program := [
     .CX 1004 1012,
     .CCX 1613 1012 1004,
     .CX 1004 1012,
-    .CX 1005 1013,
+    .CX 1005 1013]
+def leave270InvPart16 : Program := [
     .CCX 1613 1013 1005,
     .CX 1005 1013,
     .CX 1006 1014,
@@ -5440,8 +5618,7 @@ def leave270InvPart15 : Program := [
     .CX 1033 1041,
     .CCX 1613 1041 1033,
     .CX 1033 1041,
-    .CX 1034 1042]
-def leave270InvPart16 : Program := [
+    .CX 1034 1042,
     .CCX 1613 1042 1034,
     .CX 1034 1042,
     .CX 1035 1598,
@@ -5450,7 +5627,8 @@ def leave270InvPart16 : Program := [
     .CX 1036 1599,
     .CCX 1613 1599 1036,
     .CX 1036 1599,
-    .CX 1037 1600,
+    .CX 1037 1600]
+def leave270InvPart17 : Program := [
     .CCX 1613 1600 1037,
     .CX 1037 1600,
     .CX 1038 1601,
@@ -5537,8 +5715,7 @@ def leave270InvPart16 : Program := [
     .CX 932 936,
     .CX 933 937,
     .CCX 1613 937 933,
-    .CX 933 937]
-def leave270InvPart17 : Program := [
+    .CX 933 937,
     .CX 934 938,
     .CCX 1613 938 934,
     .CX 934 938,
@@ -5547,7 +5724,8 @@ def leave270InvPart17 : Program := [
     .CX 935 939,
     .CX 936 940,
     .CCX 1613 940 936,
-    .CX 936 940,
+    .CX 936 940]
+def leave270InvPart18 : Program := [
     .CX 937 941,
     .CCX 1613 941 937,
     .CX 937 941,
@@ -5634,8 +5812,7 @@ def leave270InvPart17 : Program := [
     .CX 964 968,
     .CX 965 969,
     .CCX 1613 969 965,
-    .CX 965 969]
-def leave270InvPart18 : Program := [
+    .CX 965 969,
     .CX 966 970,
     .CCX 1613 970 966,
     .CX 966 970,
@@ -5644,7 +5821,8 @@ def leave270InvPart18 : Program := [
     .CX 967 971,
     .CX 968 972,
     .CCX 1613 972 968,
-    .CX 968 972,
+    .CX 968 972]
+def leave270InvPart19 : Program := [
     .CX 969 973,
     .CCX 1613 973 969,
     .CX 969 973,
@@ -5731,8 +5909,7 @@ def leave270InvPart18 : Program := [
     .CX 996 1000,
     .CX 997 1001,
     .CCX 1613 1001 997,
-    .CX 997 1001]
-def leave270InvPart19 : Program := [
+    .CX 997 1001,
     .CX 998 1002,
     .CCX 1613 1002 998,
     .CX 998 1002,
@@ -5741,7 +5918,8 @@ def leave270InvPart19 : Program := [
     .CX 999 1003,
     .CX 1000 1004,
     .CCX 1613 1004 1000,
-    .CX 1000 1004,
+    .CX 1000 1004]
+def leave270InvPart20 : Program := [
     .CX 1001 1005,
     .CCX 1613 1005 1001,
     .CX 1001 1005,
@@ -5828,8 +6006,7 @@ def leave270InvPart19 : Program := [
     .CX 1028 1032,
     .CX 1029 1033,
     .CCX 1613 1033 1029,
-    .CX 1029 1033]
-def leave270InvPart20 : Program := [
+    .CX 1029 1033,
     .CX 1030 1034,
     .CCX 1613 1034 1030,
     .CX 1030 1034,
@@ -5838,7 +6015,8 @@ def leave270InvPart20 : Program := [
     .CX 1031 1035,
     .CX 1032 1036,
     .CCX 1613 1036 1032,
-    .CX 1032 1036,
+    .CX 1032 1036]
+def leave270InvPart21 : Program := [
     .CX 1033 1037,
     .CCX 1613 1037 1033,
     .CX 1033 1037,
@@ -5925,8 +6103,7 @@ def leave270InvPart20 : Program := [
     .CCX 1613 934 932,
     .CX 932 934,
     .CX 933 935,
-    .CCX 1613 935 933]
-def leave270InvPart21 : Program := [
+    .CCX 1613 935 933,
     .CX 933 935,
     .CX 934 936,
     .CCX 1613 936 934,
@@ -5935,7 +6112,8 @@ def leave270InvPart21 : Program := [
     .CCX 1613 937 935,
     .CX 935 937,
     .CX 936 938,
-    .CCX 1613 938 936,
+    .CCX 1613 938 936]
+def leave270InvPart22 : Program := [
     .CX 936 938,
     .CX 937 939,
     .CCX 1613 939 937,
@@ -6022,8 +6200,7 @@ def leave270InvPart21 : Program := [
     .CCX 1613 966 964,
     .CX 964 966,
     .CX 965 967,
-    .CCX 1613 967 965]
-def leave270InvPart22 : Program := [
+    .CCX 1613 967 965,
     .CX 965 967,
     .CX 966 968,
     .CCX 1613 968 966,
@@ -6032,7 +6209,8 @@ def leave270InvPart22 : Program := [
     .CCX 1613 969 967,
     .CX 967 969,
     .CX 968 970,
-    .CCX 1613 970 968,
+    .CCX 1613 970 968]
+def leave270InvPart23 : Program := [
     .CX 968 970,
     .CX 969 971,
     .CCX 1613 971 969,
@@ -6119,8 +6297,7 @@ def leave270InvPart22 : Program := [
     .CCX 1613 998 996,
     .CX 996 998,
     .CX 997 999,
-    .CCX 1613 999 997]
-def leave270InvPart23 : Program := [
+    .CCX 1613 999 997,
     .CX 997 999,
     .CX 998 1000,
     .CCX 1613 1000 998,
@@ -6129,7 +6306,8 @@ def leave270InvPart23 : Program := [
     .CCX 1613 1001 999,
     .CX 999 1001,
     .CX 1000 1002,
-    .CCX 1613 1002 1000,
+    .CCX 1613 1002 1000]
+def leave270InvPart24 : Program := [
     .CX 1000 1002,
     .CX 1001 1003,
     .CCX 1613 1003 1001,
@@ -6216,8 +6394,7 @@ def leave270InvPart23 : Program := [
     .CCX 1613 1030 1028,
     .CX 1028 1030,
     .CX 1029 1031,
-    .CCX 1613 1031 1029]
-def leave270InvPart24 : Program := [
+    .CCX 1613 1031 1029,
     .CX 1029 1031,
     .CX 1030 1032,
     .CCX 1613 1032 1030,
@@ -6226,7 +6403,8 @@ def leave270InvPart24 : Program := [
     .CCX 1613 1033 1031,
     .CX 1031 1033,
     .CX 1032 1034,
-    .CCX 1613 1034 1032,
+    .CCX 1613 1034 1032]
+def leave270InvPart25 : Program := [
     .CX 1032 1034,
     .CX 1033 1035,
     .CCX 1613 1035 1033,
@@ -6313,8 +6491,7 @@ def leave270InvPart24 : Program := [
     .CX 934 935,
     .CCX 1613 935 934,
     .CX 934 935,
-    .CX 935 936]
-def leave270InvPart25 : Program := [
+    .CX 935 936,
     .CCX 1613 936 935,
     .CX 935 936,
     .CX 936 937,
@@ -6323,7 +6500,8 @@ def leave270InvPart25 : Program := [
     .CX 937 938,
     .CCX 1613 938 937,
     .CX 937 938,
-    .CX 938 939,
+    .CX 938 939]
+def leave270InvPart26 : Program := [
     .CCX 1613 939 938,
     .CX 938 939,
     .CX 939 940,
@@ -6410,8 +6588,7 @@ def leave270InvPart25 : Program := [
     .CX 966 967,
     .CCX 1613 967 966,
     .CX 966 967,
-    .CX 967 968]
-def leave270InvPart26 : Program := [
+    .CX 967 968,
     .CCX 1613 968 967,
     .CX 967 968,
     .CX 968 969,
@@ -6420,7 +6597,8 @@ def leave270InvPart26 : Program := [
     .CX 969 970,
     .CCX 1613 970 969,
     .CX 969 970,
-    .CX 970 971,
+    .CX 970 971]
+def leave270InvPart27 : Program := [
     .CCX 1613 971 970,
     .CX 970 971,
     .CX 971 972,
@@ -6507,8 +6685,7 @@ def leave270InvPart26 : Program := [
     .CX 998 999,
     .CCX 1613 999 998,
     .CX 998 999,
-    .CX 999 1000]
-def leave270InvPart27 : Program := [
+    .CX 999 1000,
     .CCX 1613 1000 999,
     .CX 999 1000,
     .CX 1000 1001,
@@ -6517,7 +6694,8 @@ def leave270InvPart27 : Program := [
     .CX 1001 1002,
     .CCX 1613 1002 1001,
     .CX 1001 1002,
-    .CX 1002 1003,
+    .CX 1002 1003]
+def leave270InvPart28 : Program := [
     .CCX 1613 1003 1002,
     .CX 1002 1003,
     .CX 1003 1004,
@@ -6604,8 +6782,7 @@ def leave270InvPart27 : Program := [
     .CX 1030 1031,
     .CCX 1613 1031 1030,
     .CX 1030 1031,
-    .CX 1031 1032]
-def leave270InvPart28 : Program := [
+    .CX 1031 1032,
     .CCX 1613 1032 1031,
     .CX 1031 1032,
     .CX 1032 1033,
@@ -6614,7 +6791,8 @@ def leave270InvPart28 : Program := [
     .CX 1033 1034,
     .CCX 1613 1034 1033,
     .CX 1033 1034,
-    .CX 1034 1035,
+    .CX 1034 1035]
+def leave270InvPart29 : Program := [
     .CCX 1613 1035 1034,
     .CX 1034 1035,
     .CX 1035 1036,
@@ -6701,8 +6879,7 @@ def leave270InvPart28 : Program := [
     .CX 1597 993,
     .CX 1597 992,
     .CX 1597 991,
-    .CX 1597 990]
-def leave270InvPart29 : Program := [
+    .CX 1597 990,
     .CX 1597 989,
     .CX 1597 988,
     .CX 1597 987,
@@ -6711,7 +6888,8 @@ def leave270InvPart29 : Program := [
     .CX 1597 984,
     .CX 1597 983,
     .CX 1597 982,
-    .CX 1597 981,
+    .CX 1597 981]
+def leave270InvPart30 : Program := [
     .CX 1597 980,
     .CX 1597 979,
     .CX 1597 978,
@@ -6798,8 +6976,7 @@ def leave270InvPart29 : Program := [
     .CCX 935 1609 1610,
     .CX 1610 936,
     .CCX 936 1610 1611,
-    .CX 1611 937]
-def leave270InvPart30 : Program := [
+    .CX 1611 937,
     .CCX 937 1611 1612,
     .CX 1612 938,
     .CCX 938 1612 1613,
@@ -6808,7 +6985,8 @@ def leave270InvPart30 : Program := [
     .CX 1614 940,
     .CCX 940 1614 1615,
     .CX 1615 941,
-    .CCX 941 1615 1616,
+    .CCX 941 1615 1616]
+def leave270InvPart31 : Program := [
     .CX 1616 942,
     .CCX 942 1616 1617,
     .CX 1617 943,
@@ -6895,8 +7073,7 @@ def leave270InvPart30 : Program := [
     .CCX 983 1657 1658,
     .CX 1658 984,
     .CCX 984 1658 1659,
-    .CX 1659 985]
-def leave270InvPart31 : Program := [
+    .CX 1659 985,
     .CCX 985 1659 1660,
     .CX 1660 986,
     .CCX 986 1660 1661,
@@ -6905,7 +7082,8 @@ def leave270InvPart31 : Program := [
     .CX 1662 988,
     .CCX 988 1662 1663,
     .CX 1663 989,
-    .CCX 989 1663 1664,
+    .CCX 989 1663 1664]
+def leave270InvPart32 : Program := [
     .CX 1664 990,
     .CCX 990 1664 1665,
     .CX 1665 991,
@@ -6992,8 +7170,7 @@ def leave270InvPart31 : Program := [
     .CCX 1031 1715 1716,
     .CX 1716 1032,
     .CCX 1032 1716 1717,
-    .CX 1717 1033]
-def leave270InvPart32 : Program := [
+    .CX 1717 1033,
     .CCX 1033 1717 1718,
     .CX 1718 1034,
     .CCX 1034 1718 1719,
@@ -7002,7 +7179,8 @@ def leave270InvPart32 : Program := [
     .CX 1720 1036,
     .CCX 1036 1720 1721,
     .CX 1721 1037,
-    .CCX 1037 1721 1722,
+    .CCX 1037 1721 1722]
+def leave270InvPart33 : Program := [
     .CX 1722 1038,
     .CCX 1038 1722 1723,
     .CX 1723 1039,
@@ -7089,8 +7267,7 @@ def leave270InvPart32 : Program := [
     .measureX 1642 [] [.CZ 967 1641],
     .measureX 1641 [] [.CZ 966 1640],
     .measureX 1640 [] [.CZ 965 1639],
-    .measureX 1639 [] [.CZ 964 1638]]
-def leave270InvPart33 : Program := [
+    .measureX 1639 [] [.CZ 964 1638],
     .measureX 1638 [] [.CZ 963 1637],
     .measureX 1637 [] [.CZ 962 1636],
     .measureX 1636 [] [.CZ 961 1635],
@@ -7099,7 +7276,8 @@ def leave270InvPart33 : Program := [
     .measureX 1633 [] [.CZ 958 1632],
     .measureX 1632 [] [.CZ 957 1631],
     .measureX 1631 [] [.CZ 956 1630],
-    .measureX 1630 [] [.CZ 955 1629],
+    .measureX 1630 [] [.CZ 955 1629]]
+def leave270InvPart34 : Program := [
     .measureX 1629 [] [.CZ 954 1628],
     .measureX 1628 [] [.CZ 953 1627],
     .measureX 1627 [] [.CZ 952 1626],
@@ -7186,8 +7364,7 @@ def leave270InvPart33 : Program := [
     .CX 1597 991,
     .CX 1597 990,
     .CX 1597 989,
-    .CX 1597 988]
-def leave270InvPart34 : Program := [
+    .CX 1597 988,
     .CX 1597 987,
     .CX 1597 986,
     .CX 1597 985,
@@ -7196,7 +7373,8 @@ def leave270InvPart34 : Program := [
     .CX 1597 982,
     .CX 1597 981,
     .CX 1597 980,
-    .CX 1597 979,
+    .CX 1597 979]
+def leave270InvPart35 : Program := [
     .CX 1597 978,
     .CX 1597 977,
     .CX 1597 976,
@@ -7283,8 +7461,7 @@ def leave270InvPart34 : Program := [
     .CCX 1565 427 1701,
     .CCX 1564 426 1701,
     .CCX 1563 425 1701,
-    .CCX 1562 424 1701]
-def leave270InvPart35 : Program := [
+    .CCX 1562 424 1701,
     .CCX 1576 423 1701,
     .measureX 1595 [] [.CZ 1568 300],
     .measureX 1594 [] [.CZ 1567 1578],
@@ -7293,7 +7470,8 @@ def leave270InvPart35 : Program := [
     .measureX 1591 [] [.CZ 1564 1584],
     .measureX 1590 [] [.CZ 1563 1586],
     .measureX 1589 [] [.CZ 1562 1588],
-    .measureX 1588 [] [.CZ 288 1587],
+    .measureX 1588 [] [.CZ 288 1587]]
+def leave270InvPart36 : Program := [
     .measureX 1587 [] [.CZ 289 1586],
     .measureX 1586 [] [.CZ 290 1585],
     .measureX 1585 [] [.CZ 291 1584],
@@ -7380,8 +7558,7 @@ def leave270InvPart35 : Program := [
     .CCX 914 1564 1565,
     .CX 1565 915,
     .CCX 915 1565 1566,
-    .CX 1566 916]
-def leave270InvPart36 : Program := [
+    .CX 1566 916,
     .CCX 916 1566 1567,
     .CX 1567 917,
     .CCX 917 1567 1568,
@@ -7390,7 +7567,8 @@ def leave270InvPart36 : Program := [
     .CX 1569 919,
     .CCX 919 1569 1570,
     .CX 1570 920,
-    .CCX 920 1570 1571,
+    .CCX 920 1570 1571]
+def leave270InvPart37 : Program := [
     .CX 1571 921,
     .CCX 921 1571 1572,
     .CX 1572 922,
@@ -7477,8 +7655,7 @@ def leave270InvPart36 : Program := [
     .measureX 1559 [] [.CZ 1558 910],
     .measureX 1558 [] [.CZ 1557 909],
     .measureX 1557 [] [.CZ 907 908],
-    .X 925]
-def leave270InvPart37 : Program := [
+    .X 925,
     .X 924,
     .X 923,
     .X 922,
@@ -7487,7 +7664,8 @@ def leave270InvPart37 : Program := [
     .X 919,
     .X 918,
     .X 917,
-    .X 916,
+    .X 916]
+def leave270InvPart38 : Program := [
     .X 915,
     .X 914,
     .X 913,
@@ -7574,8 +7752,7 @@ def leave270InvPart37 : Program := [
     .CCX 300 912 427,
     .CX 427 912,
     .CX 426 911,
-    .CCX 300 911 426]
-def leave270InvPart38 : Program := [
+    .CCX 300 911 426,
     .CX 426 911,
     .CX 425 910,
     .CCX 300 910 425,
@@ -7584,3637 +7761,17 @@ def leave270InvPart38 : Program := [
     .CCX 300 909 424,
     .CX 424 909,
     .CX 423 908,
-    .CCX 300 908 423,
+    .CCX 300 908 423]
+def leave270InvPart39 : Program := [
     .CX 423 908,
     .CX 422 907,
     .CCX 300 907 422,
     .CX 422 907,
     .CX 925 1700,
     .CX 440 1700]
-def leave270Inv : Program := leave270InvPart0 ++ (leave270InvPart1 ++ (leave270InvPart2 ++ (leave270InvPart3 ++ (leave270InvPart4 ++ (leave270InvPart5 ++ (leave270InvPart6 ++ (leave270InvPart7 ++ (leave270InvPart8 ++ (leave270InvPart9 ++ (leave270InvPart10 ++ (leave270InvPart11 ++ (leave270InvPart12 ++ (leave270InvPart13 ++ (leave270InvPart14 ++ (leave270InvPart15 ++ (leave270InvPart16 ++ (leave270InvPart17 ++ (leave270InvPart18 ++ (leave270InvPart19 ++ (leave270InvPart20 ++ (leave270InvPart21 ++ (leave270InvPart22 ++ (leave270InvPart23 ++ (leave270InvPart24 ++ (leave270InvPart25 ++ (leave270InvPart26 ++ (leave270InvPart27 ++ (leave270InvPart28 ++ (leave270InvPart29 ++ (leave270InvPart30 ++ (leave270InvPart31 ++ (leave270InvPart32 ++ (leave270InvPart33 ++ (leave270InvPart34 ++ (leave270InvPart35 ++ (leave270InvPart36 ++ (leave270InvPart37 ++ (leave270InvPart38))))))))))))))))))))))))))))))))))))))
-def park285Part0 : Program := [
-    .CX 1694 1029,
-    .CX 1029 1694,
-    .CX 1694 1029,
-    .CX 1695 1030,
-    .CX 1030 1695,
-    .CX 1695 1030,
-    .CX 1696 1031,
-    .CX 1031 1696,
-    .CX 1696 1031]
-def park285 : Program := park285Part0
-def park285InvPart0 : Program := [
-    .CX 1696 1031,
-    .CX 1031 1696,
-    .CX 1696 1031,
-    .CX 1695 1030,
-    .CX 1030 1695,
-    .CX 1695 1030,
-    .CX 1694 1029,
-    .CX 1029 1694,
-    .CX 1694 1029]
-def park285Inv : Program := park285InvPart0
-def portal285Part0 : Program := [
-    .CX 528 1693,
-    .CX 1013 1693,
-    .CX 431 916,
-    .CCX 300 916 431,
-    .CX 431 916,
-    .CX 432 917,
-    .CCX 300 917 432,
-    .CX 432 917,
-    .CX 433 918,
-    .CCX 300 918 433,
-    .CX 433 918,
-    .CX 434 919,
-    .CCX 300 919 434,
-    .CX 434 919,
-    .CX 435 920,
-    .CCX 300 920 435,
-    .CX 435 920,
-    .CX 436 921,
-    .CCX 300 921 436,
-    .CX 436 921,
-    .CX 437 922,
-    .CCX 300 922 437,
-    .CX 437 922,
-    .CX 438 923,
-    .CCX 300 923 438,
-    .CX 438 923,
-    .CX 439 924,
-    .CCX 300 924 439,
-    .CX 439 924,
-    .CX 440 925,
-    .CCX 300 925 440,
-    .CX 440 925,
-    .CX 441 926,
-    .CCX 300 926 441,
-    .CX 441 926,
-    .CX 442 927,
-    .CCX 300 927 442,
-    .CX 442 927,
-    .CX 443 928,
-    .CCX 300 928 443,
-    .CX 443 928,
-    .CX 444 929,
-    .CCX 300 929 444,
-    .CX 444 929,
-    .CX 445 930,
-    .CCX 300 930 445,
-    .CX 445 930,
-    .CX 446 931,
-    .CCX 300 931 446,
-    .CX 446 931,
-    .CX 447 932,
-    .CCX 300 932 447,
-    .CX 447 932,
-    .CX 448 933,
-    .CCX 300 933 448,
-    .CX 448 933,
-    .CX 449 934,
-    .CCX 300 934 449,
-    .CX 449 934,
-    .CX 450 935,
-    .CCX 300 935 450,
-    .CX 450 935,
-    .CX 451 936,
-    .CCX 300 936 451,
-    .CX 451 936,
-    .CX 452 937,
-    .CCX 300 937 452,
-    .CX 452 937,
-    .CX 453 938,
-    .CCX 300 938 453,
-    .CX 453 938,
-    .CX 454 939,
-    .CCX 300 939 454,
-    .CX 454 939,
-    .CX 455 940,
-    .CCX 300 940 455,
-    .CX 455 940,
-    .CX 456 941,
-    .CCX 300 941 456,
-    .CX 456 941,
-    .CX 457 942,
-    .CCX 300 942 457,
-    .CX 457 942,
-    .CX 458 943,
-    .CCX 300 943 458,
-    .CX 458 943,
-    .CX 459 944,
-    .CCX 300 944 459,
-    .CX 459 944,
-    .CX 460 945,
-    .CCX 300 945 460,
-    .CX 460 945,
-    .CX 461 946,
-    .CCX 300 946 461,
-    .CX 461 946,
-    .CX 462 947]
-def portal285Part1 : Program := [
-    .CCX 300 947 462,
-    .CX 462 947,
-    .CX 463 948,
-    .CCX 300 948 463,
-    .CX 463 948,
-    .CX 464 949,
-    .CCX 300 949 464,
-    .CX 464 949,
-    .CX 465 950,
-    .CCX 300 950 465,
-    .CX 465 950,
-    .CX 466 951,
-    .CCX 300 951 466,
-    .CX 466 951,
-    .CX 467 952,
-    .CCX 300 952 467,
-    .CX 467 952,
-    .CX 468 953,
-    .CCX 300 953 468,
-    .CX 468 953,
-    .CX 469 954,
-    .CCX 300 954 469,
-    .CX 469 954,
-    .CX 470 955,
-    .CCX 300 955 470,
-    .CX 470 955,
-    .CX 471 956,
-    .CCX 300 956 471,
-    .CX 471 956,
-    .CX 472 957,
-    .CCX 300 957 472,
-    .CX 472 957,
-    .CX 473 958,
-    .CCX 300 958 473,
-    .CX 473 958,
-    .CX 474 959,
-    .CCX 300 959 474,
-    .CX 474 959,
-    .CX 475 960,
-    .CCX 300 960 475,
-    .CX 475 960,
-    .CX 476 961,
-    .CCX 300 961 476,
-    .CX 476 961,
-    .CX 477 962,
-    .CCX 300 962 477,
-    .CX 477 962,
-    .CX 478 963,
-    .CCX 300 963 478,
-    .CX 478 963,
-    .CX 479 964,
-    .CCX 300 964 479,
-    .CX 479 964,
-    .CX 480 965,
-    .CCX 300 965 480,
-    .CX 480 965,
-    .CX 481 966,
-    .CCX 300 966 481,
-    .CX 481 966,
-    .CX 482 967,
-    .CCX 300 967 482,
-    .CX 482 967,
-    .CX 483 968,
-    .CCX 300 968 483,
-    .CX 483 968,
-    .CX 484 969,
-    .CCX 300 969 484,
-    .CX 484 969,
-    .CX 485 970,
-    .CCX 300 970 485,
-    .CX 485 970,
-    .CX 486 971,
-    .CCX 300 971 486,
-    .CX 486 971,
-    .CX 487 972,
-    .CCX 300 972 487,
-    .CX 487 972,
-    .CX 488 973,
-    .CCX 300 973 488,
-    .CX 488 973,
-    .CX 489 974,
-    .CCX 300 974 489,
-    .CX 489 974,
-    .CX 490 975,
-    .CCX 300 975 490,
-    .CX 490 975,
-    .CX 491 976,
-    .CCX 300 976 491,
-    .CX 491 976,
-    .CX 492 977,
-    .CCX 300 977 492,
-    .CX 492 977,
-    .CX 493 978,
-    .CCX 300 978 493,
-    .CX 493 978,
-    .CX 494 979]
-def portal285Part2 : Program := [
-    .CCX 300 979 494,
-    .CX 494 979,
-    .CX 495 980,
-    .CCX 300 980 495,
-    .CX 495 980,
-    .CX 496 981,
-    .CCX 300 981 496,
-    .CX 496 981,
-    .CX 497 982,
-    .CCX 300 982 497,
-    .CX 497 982,
-    .CX 498 983,
-    .CCX 300 983 498,
-    .CX 498 983,
-    .CX 499 984,
-    .CCX 300 984 499,
-    .CX 499 984,
-    .CX 500 985,
-    .CCX 300 985 500,
-    .CX 500 985,
-    .CX 501 986,
-    .CCX 300 986 501,
-    .CX 501 986,
-    .CX 502 987,
-    .CCX 300 987 502,
-    .CX 502 987,
-    .CX 503 988,
-    .CCX 300 988 503,
-    .CX 503 988,
-    .CX 504 989,
-    .CCX 300 989 504,
-    .CX 504 989,
-    .CX 505 990,
-    .CCX 300 990 505,
-    .CX 505 990,
-    .CX 506 991,
-    .CCX 300 991 506,
-    .CX 506 991,
-    .CX 507 992,
-    .CCX 300 992 507,
-    .CX 507 992,
-    .CX 508 993,
-    .CCX 300 993 508,
-    .CX 508 993,
-    .CX 509 994,
-    .CCX 300 994 509,
-    .CX 509 994,
-    .CX 510 995,
-    .CCX 300 995 510,
-    .CX 510 995,
-    .CX 511 996,
-    .CCX 300 996 511,
-    .CX 511 996,
-    .CX 512 997,
-    .CCX 300 997 512,
-    .CX 512 997,
-    .CX 513 998,
-    .CCX 300 998 513,
-    .CX 513 998,
-    .CX 514 999,
-    .CCX 300 999 514,
-    .CX 514 999,
-    .CX 515 1000,
-    .CCX 300 1000 515,
-    .CX 515 1000,
-    .CX 516 1001,
-    .CCX 300 1001 516,
-    .CX 516 1001,
-    .CX 517 1002,
-    .CCX 300 1002 517,
-    .CX 517 1002,
-    .CX 518 1003,
-    .CCX 300 1003 518,
-    .CX 518 1003,
-    .CX 519 1004,
-    .CCX 300 1004 519,
-    .CX 519 1004,
-    .CX 520 1005,
-    .CCX 300 1005 520,
-    .CX 520 1005,
-    .CX 521 1006,
-    .CCX 300 1006 521,
-    .CX 521 1006,
-    .CX 522 1007,
-    .CCX 300 1007 522,
-    .CX 522 1007,
-    .CX 523 1008,
-    .CCX 300 1008 523,
-    .CX 523 1008,
-    .CX 524 1009,
-    .CCX 300 1009 524,
-    .CX 524 1009,
-    .CX 525 1010,
-    .CCX 300 1010 525,
-    .CX 525 1010,
-    .CX 526 1011]
-def portal285Part3 : Program := [
-    .CCX 300 1011 526,
-    .CX 526 1011,
-    .CX 527 1012,
-    .CCX 300 1012 527,
-    .CX 527 1012,
-    .CX 528 1013,
-    .CCX 300 1013 528,
-    .CX 528 1013,
-    .CX 1693 916,
-    .CX 1693 917,
-    .CX 1693 918,
-    .CX 1693 919,
-    .CX 1693 920,
-    .CX 1693 921,
-    .CX 1693 922,
-    .CX 1693 923,
-    .CX 1693 924,
-    .CX 1693 925,
-    .CX 1693 926,
-    .CX 1693 927,
-    .CX 1693 928,
-    .CX 1693 929,
-    .CX 1693 930,
-    .CX 1693 931,
-    .CX 1693 932,
-    .CX 1693 933,
-    .CX 1693 934,
-    .CX 1693 935,
-    .CX 1693 936,
-    .CX 1693 937,
-    .CX 1693 938,
-    .CX 1693 939,
-    .CX 1693 940,
-    .CX 1693 941,
-    .CX 1693 942,
-    .CX 1693 943,
-    .CX 1693 944,
-    .CX 1693 945,
-    .CX 1693 946,
-    .CX 1693 947,
-    .CX 1693 948,
-    .CX 1693 949,
-    .CX 1693 950,
-    .CX 1693 951,
-    .CX 1693 952,
-    .CX 1693 953,
-    .CX 1693 954,
-    .CX 1693 955,
-    .CX 1693 956,
-    .CX 1693 957,
-    .CX 1693 958,
-    .CX 1693 959,
-    .CX 1693 960,
-    .CX 1693 961,
-    .CX 1693 962,
-    .CX 1693 963,
-    .CX 1693 964,
-    .CX 1693 965,
-    .CX 1693 966,
-    .CX 1693 967,
-    .CX 1693 968,
-    .CX 1693 969,
-    .CX 1693 970,
-    .CX 1693 971,
-    .CX 1693 972,
-    .CX 1693 973,
-    .CX 1693 974,
-    .CX 1693 975,
-    .CX 1693 976,
-    .CX 1693 977,
-    .CX 1693 978,
-    .CX 1693 979,
-    .CX 1693 980,
-    .CX 1693 981,
-    .CX 1693 982,
-    .CX 1693 983,
-    .CX 1693 984,
-    .CX 1693 985,
-    .CX 1693 986,
-    .CX 1693 987,
-    .CX 1693 988,
-    .CX 1693 989,
-    .CX 1693 990,
-    .CX 1693 991,
-    .CX 1693 992,
-    .CX 1693 993,
-    .CX 1693 994,
-    .CX 1693 995,
-    .CX 1693 996,
-    .CX 1693 997,
-    .CX 1693 998,
-    .CX 1693 999,
-    .CX 1693 1000,
-    .CX 1693 1001,
-    .CX 1693 1002,
-    .CX 1693 1003]
-def portal285Part4 : Program := [
-    .CX 1693 1004,
-    .CX 1693 1005,
-    .CX 1693 1006,
-    .CX 1693 1007,
-    .CX 1693 1008,
-    .CX 1693 1009,
-    .CX 1693 1010,
-    .CX 1693 1011,
-    .CX 1693 1012,
-    .CX 1693 1013,
-    .CCX 431 432 1557,
-    .X 1557,
-    .X 433,
-    .X 434,
-    .X 435,
-    .X 436,
-    .X 437,
-    .X 438,
-    .X 439,
-    .X 440,
-    .X 441,
-    .X 442,
-    .X 443,
-    .X 444,
-    .X 445,
-    .X 446,
-    .X 447,
-    .X 448,
-    .X 449,
-    .X 450,
-    .X 451,
-    .X 452,
-    .X 453,
-    .X 454,
-    .X 455,
-    .X 456,
-    .X 457,
-    .X 458,
-    .X 459,
-    .X 460,
-    .X 461,
-    .X 462,
-    .X 463,
-    .X 464,
-    .X 465,
-    .X 466,
-    .X 467,
-    .X 468,
-    .X 469,
-    .X 470,
-    .X 471,
-    .X 472,
-    .X 473,
-    .X 474,
-    .X 475,
-    .X 476,
-    .X 477,
-    .X 478,
-    .X 479,
-    .X 480,
-    .X 481,
-    .X 482,
-    .X 483,
-    .X 484,
-    .X 485,
-    .X 486,
-    .X 487,
-    .X 488,
-    .X 489,
-    .X 490,
-    .X 491,
-    .X 492,
-    .X 493,
-    .X 494,
-    .X 495,
-    .X 496,
-    .X 497,
-    .X 498,
-    .X 499,
-    .X 500,
-    .X 501,
-    .X 502,
-    .X 503,
-    .X 504,
-    .X 505,
-    .X 506,
-    .X 507,
-    .X 508,
-    .X 509,
-    .X 510,
-    .X 511,
-    .X 512,
-    .X 513,
-    .X 514,
-    .X 515,
-    .X 516]
-def portal285Part5 : Program := [
-    .X 517,
-    .X 518,
-    .X 519,
-    .X 520,
-    .X 521,
-    .X 522,
-    .X 523,
-    .X 524,
-    .X 525,
-    .X 526,
-    .X 527,
-    .X 528,
-    .CCX 1557 433 1558,
-    .CCX 1558 434 1559,
-    .CCX 1559 435 1560,
-    .CCX 1560 436 1561,
-    .CCX 1561 437 1562,
-    .CCX 1562 438 1563,
-    .CCX 1563 439 1564,
-    .CCX 1564 440 1565,
-    .CCX 1565 441 1566,
-    .CCX 1566 442 1567,
-    .CCX 1567 443 1568,
-    .CCX 1568 444 1569,
-    .CCX 1569 445 1570,
-    .CCX 1570 446 1571,
-    .CCX 1571 447 1572,
-    .CCX 1572 448 1573,
-    .CCX 1573 449 1574,
-    .CCX 1574 450 1575,
-    .CCX 1575 451 1576,
-    .CCX 1576 452 1577,
-    .CCX 1577 453 1578,
-    .CCX 1578 454 1579,
-    .CCX 1579 455 1580,
-    .CCX 1580 456 1581,
-    .CCX 1581 457 1582,
-    .CCX 1582 458 1583,
-    .CCX 1583 459 1584,
-    .CCX 1584 460 1585,
-    .CCX 1585 461 1586,
-    .CCX 1586 462 1587,
-    .CCX 1587 463 1588,
-    .CCX 1588 464 1589,
-    .CCX 1589 465 1590,
-    .CCX 1590 466 1591,
-    .CCX 1591 467 1592,
-    .CCX 1592 468 1593,
-    .CCX 1593 469 1594,
-    .CCX 1594 470 1595,
-    .CCX 1595 471 1596,
-    .CCX 1596 472 1597,
-    .CCX 1597 473 1598,
-    .CCX 1598 474 1599,
-    .CCX 1599 475 1600,
-    .CCX 1600 476 1601,
-    .CCX 1601 477 1602,
-    .CCX 1602 478 1603,
-    .CCX 1603 479 1604,
-    .CCX 1604 480 1605,
-    .CCX 1605 481 1606,
-    .CCX 1606 482 1607,
-    .CCX 1607 483 1608,
-    .CCX 1608 484 1609,
-    .CCX 1609 485 1610,
-    .CCX 1610 486 1611,
-    .CCX 1611 487 1612,
-    .CCX 1612 488 1613,
-    .CCX 1613 489 1614,
-    .CCX 1614 490 1615,
-    .CCX 1615 491 1616,
-    .CCX 1616 492 1617,
-    .CCX 1617 493 1618,
-    .CCX 1618 494 1619,
-    .CCX 1619 495 1620,
-    .CCX 1620 496 1621,
-    .CCX 1621 497 1622,
-    .CCX 1622 498 1623,
-    .CCX 1623 499 1624,
-    .CCX 1624 500 1625,
-    .CCX 1625 501 1626,
-    .CCX 1626 502 1627,
-    .CCX 1627 503 1628,
-    .CCX 1628 504 1629,
-    .CCX 1629 505 1630,
-    .CCX 1630 506 1631,
-    .CCX 1631 507 1632,
-    .CCX 1632 508 1633,
-    .CCX 1633 509 1634,
-    .CCX 1634 510 1635,
-    .CCX 1635 511 1636,
-    .CCX 1636 512 1637,
-    .CCX 1637 513 1638,
-    .CCX 1638 514 1639,
-    .CCX 1639 515 1640,
-    .CCX 1640 516 1641]
-def portal285Part6 : Program := [
-    .CCX 1641 517 1642,
-    .CCX 1642 518 1643,
-    .CCX 1643 519 1644,
-    .CCX 1644 520 1645,
-    .CCX 1645 521 1646,
-    .CCX 1646 522 1647,
-    .CCX 1647 523 1648,
-    .CCX 1648 524 1649,
-    .CCX 1649 525 1650,
-    .CCX 1650 526 1651,
-    .CCX 1651 527 1652,
-    .CCX 1652 528 1653,
-    .CX 1653 1556,
-    .X 1556,
-    .measureX 1653 [] [.CZ 1652 528],
-    .measureX 1652 [] [.CZ 1651 527],
-    .measureX 1651 [] [.CZ 1650 526],
-    .measureX 1650 [] [.CZ 1649 525],
-    .measureX 1649 [] [.CZ 1648 524],
-    .measureX 1648 [] [.CZ 1647 523],
-    .measureX 1647 [] [.CZ 1646 522],
-    .measureX 1646 [] [.CZ 1645 521],
-    .measureX 1645 [] [.CZ 1644 520],
-    .measureX 1644 [] [.CZ 1643 519],
-    .measureX 1643 [] [.CZ 1642 518],
-    .measureX 1642 [] [.CZ 1641 517],
-    .measureX 1641 [] [.CZ 1640 516],
-    .measureX 1640 [] [.CZ 1639 515],
-    .measureX 1639 [] [.CZ 1638 514],
-    .measureX 1638 [] [.CZ 1637 513],
-    .measureX 1637 [] [.CZ 1636 512],
-    .measureX 1636 [] [.CZ 1635 511],
-    .measureX 1635 [] [.CZ 1634 510],
-    .measureX 1634 [] [.CZ 1633 509],
-    .measureX 1633 [] [.CZ 1632 508],
-    .measureX 1632 [] [.CZ 1631 507],
-    .measureX 1631 [] [.CZ 1630 506],
-    .measureX 1630 [] [.CZ 1629 505],
-    .measureX 1629 [] [.CZ 1628 504],
-    .measureX 1628 [] [.CZ 1627 503],
-    .measureX 1627 [] [.CZ 1626 502],
-    .measureX 1626 [] [.CZ 1625 501],
-    .measureX 1625 [] [.CZ 1624 500],
-    .measureX 1624 [] [.CZ 1623 499],
-    .measureX 1623 [] [.CZ 1622 498],
-    .measureX 1622 [] [.CZ 1621 497],
-    .measureX 1621 [] [.CZ 1620 496],
-    .measureX 1620 [] [.CZ 1619 495],
-    .measureX 1619 [] [.CZ 1618 494],
-    .measureX 1618 [] [.CZ 1617 493],
-    .measureX 1617 [] [.CZ 1616 492],
-    .measureX 1616 [] [.CZ 1615 491],
-    .measureX 1615 [] [.CZ 1614 490],
-    .measureX 1614 [] [.CZ 1613 489],
-    .measureX 1613 [] [.CZ 1612 488],
-    .measureX 1612 [] [.CZ 1611 487],
-    .measureX 1611 [] [.CZ 1610 486],
-    .measureX 1610 [] [.CZ 1609 485],
-    .measureX 1609 [] [.CZ 1608 484],
-    .measureX 1608 [] [.CZ 1607 483],
-    .measureX 1607 [] [.CZ 1606 482],
-    .measureX 1606 [] [.CZ 1605 481],
-    .measureX 1605 [] [.CZ 1604 480],
-    .measureX 1604 [] [.CZ 1603 479],
-    .measureX 1603 [] [.CZ 1602 478],
-    .measureX 1602 [] [.CZ 1601 477],
-    .measureX 1601 [] [.CZ 1600 476],
-    .measureX 1600 [] [.CZ 1599 475],
-    .measureX 1599 [] [.CZ 1598 474],
-    .measureX 1598 [] [.CZ 1597 473],
-    .measureX 1597 [] [.CZ 1596 472],
-    .measureX 1596 [] [.CZ 1595 471],
-    .measureX 1595 [] [.CZ 1594 470],
-    .measureX 1594 [] [.CZ 1593 469],
-    .measureX 1593 [] [.CZ 1592 468],
-    .measureX 1592 [] [.CZ 1591 467],
-    .measureX 1591 [] [.CZ 1590 466],
-    .measureX 1590 [] [.CZ 1589 465],
-    .measureX 1589 [] [.CZ 1588 464],
-    .measureX 1588 [] [.CZ 1587 463],
-    .measureX 1587 [] [.CZ 1586 462],
-    .measureX 1586 [] [.CZ 1585 461],
-    .measureX 1585 [] [.CZ 1584 460],
-    .measureX 1584 [] [.CZ 1583 459],
-    .measureX 1583 [] [.CZ 1582 458],
-    .measureX 1582 [] [.CZ 1581 457],
-    .measureX 1581 [] [.CZ 1580 456],
-    .measureX 1580 [] [.CZ 1579 455],
-    .measureX 1579 [] [.CZ 1578 454],
-    .measureX 1578 [] [.CZ 1577 453],
-    .measureX 1577 [] [.CZ 1576 452],
-    .measureX 1576 [] [.CZ 1575 451],
-    .measureX 1575 [] [.CZ 1574 450],
-    .measureX 1574 [] [.CZ 1573 449],
-    .measureX 1573 [] [.CZ 1572 448],
-    .measureX 1572 [] [.CZ 1571 447]]
-def portal285Part7 : Program := [
-    .measureX 1571 [] [.CZ 1570 446],
-    .measureX 1570 [] [.CZ 1569 445],
-    .measureX 1569 [] [.CZ 1568 444],
-    .measureX 1568 [] [.CZ 1567 443],
-    .measureX 1567 [] [.CZ 1566 442],
-    .measureX 1566 [] [.CZ 1565 441],
-    .measureX 1565 [] [.CZ 1564 440],
-    .measureX 1564 [] [.CZ 1563 439],
-    .measureX 1563 [] [.CZ 1562 438],
-    .measureX 1562 [] [.CZ 1561 437],
-    .measureX 1561 [] [.CZ 1560 436],
-    .measureX 1560 [] [.CZ 1559 435],
-    .measureX 1559 [] [.CZ 1558 434],
-    .measureX 1558 [] [.CZ 1557 433],
-    .X 528,
-    .X 527,
-    .X 526,
-    .X 525,
-    .X 524,
-    .X 523,
-    .X 522,
-    .X 521,
-    .X 520,
-    .X 519,
-    .X 518,
-    .X 517,
-    .X 516,
-    .X 515,
-    .X 514,
-    .X 513,
-    .X 512,
-    .X 511,
-    .X 510,
-    .X 509,
-    .X 508,
-    .X 507,
-    .X 506,
-    .X 505,
-    .X 504,
-    .X 503,
-    .X 502,
-    .X 501,
-    .X 500,
-    .X 499,
-    .X 498,
-    .X 497,
-    .X 496,
-    .X 495,
-    .X 494,
-    .X 493,
-    .X 492,
-    .X 491,
-    .X 490,
-    .X 489,
-    .X 488,
-    .X 487,
-    .X 486,
-    .X 485,
-    .X 484,
-    .X 483,
-    .X 482,
-    .X 481,
-    .X 480,
-    .X 479,
-    .X 478,
-    .X 477,
-    .X 476,
-    .X 475,
-    .X 474,
-    .X 473,
-    .X 472,
-    .X 471,
-    .X 470,
-    .X 469,
-    .X 468,
-    .X 467,
-    .X 466,
-    .X 465,
-    .X 464,
-    .X 463,
-    .X 462,
-    .X 461,
-    .X 460,
-    .X 459,
-    .X 458,
-    .X 457,
-    .X 456,
-    .X 455,
-    .X 454,
-    .X 453,
-    .X 452,
-    .X 451,
-    .X 450,
-    .X 449,
-    .X 448,
-    .X 447]
-def portal285Part8 : Program := [
-    .X 446,
-    .X 445,
-    .X 444,
-    .X 443,
-    .X 442,
-    .X 441,
-    .X 440,
-    .X 439,
-    .X 438,
-    .X 437,
-    .X 436,
-    .X 435,
-    .X 434,
-    .X 433,
-    .X 1557,
-    .measureX 1557 [] [.CZ 431 432],
-    .CX 1556 1691,
-    .CX 1691 1556,
-    .X 916,
-    .X 917,
-    .X 918,
-    .X 919,
-    .X 920,
-    .X 921,
-    .X 922,
-    .X 923,
-    .X 924,
-    .X 925,
-    .X 926,
-    .X 927,
-    .X 928,
-    .X 929,
-    .X 930,
-    .X 931,
-    .X 932,
-    .X 933,
-    .X 934,
-    .X 935,
-    .X 936,
-    .X 937,
-    .X 938,
-    .X 939,
-    .X 940,
-    .X 941,
-    .X 942,
-    .X 943,
-    .X 944,
-    .X 945,
-    .X 946,
-    .X 947,
-    .X 948,
-    .X 949,
-    .X 950,
-    .X 951,
-    .X 952,
-    .X 953,
-    .X 954,
-    .X 955,
-    .X 956,
-    .X 957,
-    .X 958,
-    .X 959,
-    .X 960,
-    .X 961,
-    .X 962,
-    .X 963,
-    .X 964,
-    .X 965,
-    .X 966,
-    .X 967,
-    .X 968,
-    .X 969,
-    .X 970,
-    .X 971,
-    .X 972,
-    .X 973,
-    .X 974,
-    .X 975,
-    .X 976,
-    .X 977,
-    .X 978,
-    .X 979,
-    .X 980,
-    .X 981,
-    .X 982,
-    .X 983,
-    .X 984,
-    .X 985,
-    .X 986,
-    .X 987,
-    .X 988,
-    .X 989,
-    .X 990,
-    .X 991,
-    .X 992,
-    .X 993]
-def portal285Part9 : Program := [
-    .X 994,
-    .X 995,
-    .X 996,
-    .X 997,
-    .X 998,
-    .X 999,
-    .X 1000,
-    .X 1001,
-    .X 1002,
-    .X 1003,
-    .X 1004,
-    .X 1005,
-    .X 1006,
-    .X 1007,
-    .X 1008,
-    .X 1009,
-    .X 1010,
-    .X 1011,
-    .X 1012,
-    .X 1013,
-    .CCX 916 917 1556,
-    .CCX 1556 918 1557,
-    .CCX 1557 919 1558,
-    .CCX 1558 920 1559,
-    .CCX 1559 921 1560,
-    .CCX 1560 922 1561,
-    .CCX 1561 923 1562,
-    .CCX 1562 924 1563,
-    .CCX 1563 925 1564,
-    .CCX 1564 926 1565,
-    .CCX 1565 927 1566,
-    .CCX 1566 928 1567,
-    .CCX 1567 929 1568,
-    .CCX 1568 930 1569,
-    .CCX 1569 931 1570,
-    .CCX 1570 932 1571,
-    .CCX 1571 933 1572,
-    .CCX 1572 934 1573,
-    .CCX 1573 935 1574,
-    .CCX 1574 936 1575,
-    .CCX 1575 937 1576,
-    .CCX 1576 938 1577,
-    .CCX 1577 939 1578,
-    .CCX 1578 940 1579,
-    .CCX 1579 941 1580,
-    .CCX 1580 942 1581,
-    .CCX 1581 943 1582,
-    .CCX 1582 944 1583,
-    .CCX 1583 945 1584,
-    .CCX 1584 946 1585,
-    .CCX 1585 947 1586,
-    .CCX 1586 948 1587,
-    .CCX 1587 949 1588,
-    .CCX 1588 950 1589,
-    .CCX 1589 951 1590,
-    .CCX 1590 952 1591,
-    .CCX 1591 953 1592,
-    .CCX 1592 954 1593,
-    .CCX 1593 955 1594,
-    .CCX 1594 956 1595,
-    .CCX 1595 957 1596,
-    .CCX 1596 958 1597,
-    .CCX 1597 959 1598,
-    .CCX 1598 960 1599,
-    .CCX 1599 961 1600,
-    .CCX 1600 962 1601,
-    .CCX 1601 963 1602,
-    .CCX 1602 964 1603,
-    .CCX 1603 965 1604,
-    .CCX 1604 966 1605,
-    .CCX 1605 967 1606,
-    .CCX 1606 968 1607,
-    .CCX 1607 969 1608,
-    .CCX 1608 970 1609,
-    .CCX 1609 971 1610,
-    .CCX 1610 972 1611,
-    .CCX 1611 973 1612,
-    .CCX 1612 974 1613,
-    .CCX 1613 975 1614,
-    .CCX 1614 976 1615,
-    .CCX 1615 977 1616,
-    .CCX 1616 978 1617,
-    .CCX 1617 979 1618,
-    .CCX 1618 980 1619,
-    .CCX 1619 981 1620,
-    .CCX 1620 982 1621,
-    .CCX 1621 983 1622,
-    .CCX 1622 984 1623,
-    .CCX 1623 985 1624,
-    .CCX 1624 986 1625,
-    .CCX 1625 987 1626,
-    .CCX 1626 988 1627,
-    .CCX 1627 989 1628,
-    .CCX 1628 990 1629,
-    .CCX 1629 991 1630,
-    .CCX 1630 992 1631]
-def portal285Part10 : Program := [
-    .CCX 1631 993 1632,
-    .CCX 1632 994 1633,
-    .CCX 1633 995 1634,
-    .CCX 1634 996 1635,
-    .CCX 1635 997 1636,
-    .CCX 1636 998 1637,
-    .CCX 1637 999 1638,
-    .CCX 1638 1000 1639,
-    .CCX 1639 1001 1640,
-    .CCX 1640 1002 1641,
-    .CCX 1641 1003 1642,
-    .CCX 1642 1004 1643,
-    .CCX 1643 1005 1644,
-    .CCX 1644 1006 1645,
-    .CCX 1645 1007 1646,
-    .CCX 1646 1008 1647,
-    .CCX 1647 1009 1648,
-    .CCX 1648 1010 1649,
-    .CCX 1649 1011 1650,
-    .CCX 1650 1012 1651,
-    .CCX 1651 1013 1652,
-    .CX 1691 1692,
-    .CCX 1691 1652 1692,
-    .measureX 1652 [] [.CZ 1651 1013],
-    .measureX 1651 [] [.CZ 1650 1012],
-    .measureX 1650 [] [.CZ 1649 1011],
-    .measureX 1649 [] [.CZ 1648 1010],
-    .measureX 1648 [] [.CZ 1647 1009],
-    .measureX 1647 [] [.CZ 1646 1008],
-    .measureX 1646 [] [.CZ 1645 1007],
-    .measureX 1645 [] [.CZ 1644 1006],
-    .measureX 1644 [] [.CZ 1643 1005],
-    .measureX 1643 [] [.CZ 1642 1004],
-    .measureX 1642 [] [.CZ 1641 1003],
-    .measureX 1641 [] [.CZ 1640 1002],
-    .measureX 1640 [] [.CZ 1639 1001],
-    .measureX 1639 [] [.CZ 1638 1000],
-    .measureX 1638 [] [.CZ 1637 999],
-    .measureX 1637 [] [.CZ 1636 998],
-    .measureX 1636 [] [.CZ 1635 997],
-    .measureX 1635 [] [.CZ 1634 996],
-    .measureX 1634 [] [.CZ 1633 995],
-    .measureX 1633 [] [.CZ 1632 994],
-    .measureX 1632 [] [.CZ 1631 993],
-    .measureX 1631 [] [.CZ 1630 992],
-    .measureX 1630 [] [.CZ 1629 991],
-    .measureX 1629 [] [.CZ 1628 990],
-    .measureX 1628 [] [.CZ 1627 989],
-    .measureX 1627 [] [.CZ 1626 988],
-    .measureX 1626 [] [.CZ 1625 987],
-    .measureX 1625 [] [.CZ 1624 986],
-    .measureX 1624 [] [.CZ 1623 985],
-    .measureX 1623 [] [.CZ 1622 984],
-    .measureX 1622 [] [.CZ 1621 983],
-    .measureX 1621 [] [.CZ 1620 982],
-    .measureX 1620 [] [.CZ 1619 981],
-    .measureX 1619 [] [.CZ 1618 980],
-    .measureX 1618 [] [.CZ 1617 979],
-    .measureX 1617 [] [.CZ 1616 978],
-    .measureX 1616 [] [.CZ 1615 977],
-    .measureX 1615 [] [.CZ 1614 976],
-    .measureX 1614 [] [.CZ 1613 975],
-    .measureX 1613 [] [.CZ 1612 974],
-    .measureX 1612 [] [.CZ 1611 973],
-    .measureX 1611 [] [.CZ 1610 972],
-    .measureX 1610 [] [.CZ 1609 971],
-    .measureX 1609 [] [.CZ 1608 970],
-    .measureX 1608 [] [.CZ 1607 969],
-    .measureX 1607 [] [.CZ 1606 968],
-    .measureX 1606 [] [.CZ 1605 967],
-    .measureX 1605 [] [.CZ 1604 966],
-    .measureX 1604 [] [.CZ 1603 965],
-    .measureX 1603 [] [.CZ 1602 964],
-    .measureX 1602 [] [.CZ 1601 963],
-    .measureX 1601 [] [.CZ 1600 962],
-    .measureX 1600 [] [.CZ 1599 961],
-    .measureX 1599 [] [.CZ 1598 960],
-    .measureX 1598 [] [.CZ 1597 959],
-    .measureX 1597 [] [.CZ 1596 958],
-    .measureX 1596 [] [.CZ 1595 957],
-    .measureX 1595 [] [.CZ 1594 956],
-    .measureX 1594 [] [.CZ 1593 955],
-    .measureX 1593 [] [.CZ 1592 954],
-    .measureX 1592 [] [.CZ 1591 953],
-    .measureX 1591 [] [.CZ 1590 952],
-    .measureX 1590 [] [.CZ 1589 951],
-    .measureX 1589 [] [.CZ 1588 950],
-    .measureX 1588 [] [.CZ 1587 949],
-    .measureX 1587 [] [.CZ 1586 948],
-    .measureX 1586 [] [.CZ 1585 947],
-    .measureX 1585 [] [.CZ 1584 946],
-    .measureX 1584 [] [.CZ 1583 945],
-    .measureX 1583 [] [.CZ 1582 944],
-    .measureX 1582 [] [.CZ 1581 943],
-    .measureX 1581 [] [.CZ 1580 942],
-    .measureX 1580 [] [.CZ 1579 941]]
-def portal285Part11 : Program := [
-    .measureX 1579 [] [.CZ 1578 940],
-    .measureX 1578 [] [.CZ 1577 939],
-    .measureX 1577 [] [.CZ 1576 938],
-    .measureX 1576 [] [.CZ 1575 937],
-    .measureX 1575 [] [.CZ 1574 936],
-    .measureX 1574 [] [.CZ 1573 935],
-    .measureX 1573 [] [.CZ 1572 934],
-    .measureX 1572 [] [.CZ 1571 933],
-    .measureX 1571 [] [.CZ 1570 932],
-    .measureX 1570 [] [.CZ 1569 931],
-    .measureX 1569 [] [.CZ 1568 930],
-    .measureX 1568 [] [.CZ 1567 929],
-    .measureX 1567 [] [.CZ 1566 928],
-    .measureX 1566 [] [.CZ 1565 927],
-    .measureX 1565 [] [.CZ 1564 926],
-    .measureX 1564 [] [.CZ 1563 925],
-    .measureX 1563 [] [.CZ 1562 924],
-    .measureX 1562 [] [.CZ 1561 923],
-    .measureX 1561 [] [.CZ 1560 922],
-    .measureX 1560 [] [.CZ 1559 921],
-    .measureX 1559 [] [.CZ 1558 920],
-    .measureX 1558 [] [.CZ 1557 919],
-    .measureX 1557 [] [.CZ 1556 918],
-    .measureX 1556 [] [.CZ 916 917],
-    .X 916,
-    .X 917,
-    .X 918,
-    .X 919,
-    .X 920,
-    .X 921,
-    .X 922,
-    .X 923,
-    .X 924,
-    .X 925,
-    .X 926,
-    .X 927,
-    .X 928,
-    .X 929,
-    .X 930,
-    .X 931,
-    .X 932,
-    .X 933,
-    .X 934,
-    .X 935,
-    .X 936,
-    .X 937,
-    .X 938,
-    .X 939,
-    .X 940,
-    .X 941,
-    .X 942,
-    .X 943,
-    .X 944,
-    .X 945,
-    .X 946,
-    .X 947,
-    .X 948,
-    .X 949,
-    .X 950,
-    .X 951,
-    .X 952,
-    .X 953,
-    .X 954,
-    .X 955,
-    .X 956,
-    .X 957,
-    .X 958,
-    .X 959,
-    .X 960,
-    .X 961,
-    .X 962,
-    .X 963,
-    .X 964,
-    .X 965,
-    .X 966,
-    .X 967,
-    .X 968,
-    .X 969,
-    .X 970,
-    .X 971,
-    .X 972,
-    .X 973,
-    .X 974,
-    .X 975,
-    .X 976,
-    .X 977,
-    .X 978,
-    .X 979,
-    .X 980,
-    .X 981,
-    .X 982,
-    .X 983,
-    .X 984,
-    .X 985,
-    .X 986,
-    .X 987]
-def portal285Part12 : Program := [
-    .X 988,
-    .X 989,
-    .X 990,
-    .X 991,
-    .X 992,
-    .X 993,
-    .X 994,
-    .X 995,
-    .X 996,
-    .X 997,
-    .X 998,
-    .X 999,
-    .X 1000,
-    .X 1001,
-    .X 1002,
-    .X 1003,
-    .X 1004,
-    .X 1005,
-    .X 1006,
-    .X 1007,
-    .X 1008,
-    .X 1009,
-    .X 1010,
-    .X 1011,
-    .X 1012,
-    .X 1013,
-    .X 433,
-    .CCX 918 433 1556,
-    .CCX 919 1556 1557,
-    .CCX 920 1557 1558,
-    .CCX 921 1558 1559,
-    .CCX 922 1559 1560,
-    .CCX 923 1560 1561,
-    .CCX 924 1561 1562,
-    .CCX 925 1562 1563,
-    .CCX 926 1563 1564,
-    .CCX 927 1564 1565,
-    .CCX 928 1565 1566,
-    .CCX 929 1566 1567,
-    .CCX 930 1567 1568,
-    .CCX 931 1568 1569,
-    .CCX 932 1569 1570,
-    .CCX 933 1570 1571,
-    .CCX 934 1571 1572,
-    .CCX 935 1572 1573,
-    .CCX 936 1573 1574,
-    .CCX 937 1574 1575,
-    .CCX 938 1575 1576,
-    .CCX 939 1576 1577,
-    .CCX 940 1577 1578,
-    .CCX 941 1578 1579,
-    .CCX 942 1579 1580,
-    .CCX 943 1580 1581,
-    .CCX 944 1581 1582,
-    .CCX 945 1582 1583,
-    .CCX 946 1583 1584,
-    .CCX 947 1584 1585,
-    .CCX 948 1585 1586,
-    .CCX 949 1586 1587,
-    .CCX 950 1587 1588,
-    .CCX 951 1588 1589,
-    .CCX 952 1589 1590,
-    .CCX 953 1590 1591,
-    .CCX 954 1591 1592,
-    .CCX 955 1592 1593,
-    .CCX 956 1593 1594,
-    .CCX 957 1594 1595,
-    .CCX 958 1595 1596,
-    .CCX 959 1596 1597,
-    .CCX 960 1597 1598,
-    .CCX 961 1598 1599,
-    .CCX 962 1599 1600,
-    .CCX 963 1600 1601,
-    .CCX 964 1601 1602,
-    .CCX 965 1602 1603,
-    .CCX 966 1603 1604,
-    .CCX 967 1604 1605,
-    .CCX 968 1605 1606,
-    .CCX 969 1606 1607,
-    .CCX 970 1607 1608,
-    .CCX 971 1608 1609,
-    .CCX 972 1609 1610,
-    .CCX 973 1610 1611,
-    .CCX 974 1611 1612,
-    .CCX 975 1612 1613,
-    .CCX 976 1613 1614,
-    .CCX 977 1614 1615,
-    .CCX 978 1615 1616,
-    .CCX 979 1616 1617,
-    .CCX 980 1617 1618,
-    .CCX 981 1618 1619,
-    .CCX 982 1619 1620,
-    .CCX 983 1620 1621,
-    .CCX 984 1621 1622,
-    .CCX 985 1622 1623,
-    .CCX 986 1623 1624]
-def portal285Part13 : Program := [
-    .CCX 987 1624 1625,
-    .CCX 988 1625 1626,
-    .CCX 989 1626 1627,
-    .CCX 990 1627 1628,
-    .CCX 991 1628 1629,
-    .CCX 992 1629 1630,
-    .CCX 993 1630 1631,
-    .CCX 994 1631 1632,
-    .CCX 995 1632 1633,
-    .CCX 996 1633 1634,
-    .CCX 997 1634 1635,
-    .CCX 998 1635 1636,
-    .CCX 999 1636 1637,
-    .CCX 1000 1637 1638,
-    .CCX 1001 1638 1639,
-    .CCX 1002 1639 1640,
-    .CCX 1003 1640 1641,
-    .CCX 1004 1641 1642,
-    .CCX 1005 1642 1643,
-    .CCX 1006 1643 1644,
-    .CCX 1007 1644 1645,
-    .CCX 1008 1645 1646,
-    .CCX 1009 1646 1647,
-    .CCX 1010 1647 1648,
-    .CCX 1011 1648 1649,
-    .CCX 1012 1649 1650,
-    .CX 1650 1013,
-    .measureX 1650 [] [.CZ 1012 1649],
-    .CX 1649 1012,
-    .measureX 1649 [] [.CZ 1011 1648],
-    .CX 1648 1011,
-    .measureX 1648 [] [.CZ 1010 1647],
-    .CX 1647 1010,
-    .measureX 1647 [] [.CZ 1009 1646],
-    .CX 1646 1009,
-    .measureX 1646 [] [.CZ 1008 1645],
-    .CX 1645 1008,
-    .measureX 1645 [] [.CZ 1007 1644],
-    .CX 1644 1007,
-    .measureX 1644 [] [.CZ 1006 1643],
-    .CX 1643 1006,
-    .measureX 1643 [] [.CZ 1005 1642],
-    .CX 1642 1005,
-    .measureX 1642 [] [.CZ 1004 1641],
-    .CX 1641 1004,
-    .measureX 1641 [] [.CZ 1003 1640],
-    .CX 1640 1003,
-    .measureX 1640 [] [.CZ 1002 1639],
-    .CX 1639 1002,
-    .measureX 1639 [] [.CZ 1001 1638],
-    .CX 1638 1001,
-    .measureX 1638 [] [.CZ 1000 1637],
-    .CX 1637 1000,
-    .measureX 1637 [] [.CZ 999 1636],
-    .CX 1636 999,
-    .measureX 1636 [] [.CZ 998 1635],
-    .CX 1635 998,
-    .measureX 1635 [] [.CZ 997 1634],
-    .CX 1634 997,
-    .measureX 1634 [] [.CZ 996 1633],
-    .CX 1633 996,
-    .measureX 1633 [] [.CZ 995 1632],
-    .CX 1632 995,
-    .measureX 1632 [] [.CZ 994 1631],
-    .CX 1631 994,
-    .measureX 1631 [] [.CZ 993 1630],
-    .CX 1630 993,
-    .measureX 1630 [] [.CZ 992 1629],
-    .CX 1629 992,
-    .measureX 1629 [] [.CZ 991 1628],
-    .CX 1628 991,
-    .measureX 1628 [] [.CZ 990 1627],
-    .CX 1627 990,
-    .measureX 1627 [] [.CZ 989 1626],
-    .CX 1626 989,
-    .measureX 1626 [] [.CZ 988 1625],
-    .CX 1625 988,
-    .measureX 1625 [] [.CZ 987 1624],
-    .CX 1624 987,
-    .measureX 1624 [] [.CZ 986 1623],
-    .CX 1623 986,
-    .measureX 1623 [] [.CZ 985 1622],
-    .CX 1622 985,
-    .measureX 1622 [] [.CZ 984 1621],
-    .CX 1621 984,
-    .measureX 1621 [] [.CZ 983 1620],
-    .CX 1620 983,
-    .measureX 1620 [] [.CZ 982 1619],
-    .CX 1619 982,
-    .measureX 1619 [] [.CZ 981 1618],
-    .CX 1618 981,
-    .measureX 1618 [] [.CZ 980 1617],
-    .CX 1617 980,
-    .measureX 1617 [] [.CZ 979 1616],
-    .CX 1616 979,
-    .measureX 1616 [] [.CZ 978 1615]]
-def portal285Part14 : Program := [
-    .CX 1615 978,
-    .measureX 1615 [] [.CZ 977 1614],
-    .CX 1614 977,
-    .measureX 1614 [] [.CZ 976 1613],
-    .CX 1613 976,
-    .measureX 1613 [] [.CZ 975 1612],
-    .CX 1612 975,
-    .measureX 1612 [] [.CZ 974 1611],
-    .CX 1611 974,
-    .measureX 1611 [] [.CZ 973 1610],
-    .CX 1610 973,
-    .measureX 1610 [] [.CZ 972 1609],
-    .CX 1609 972,
-    .measureX 1609 [] [.CZ 971 1608],
-    .CX 1608 971,
-    .measureX 1608 [] [.CZ 970 1607],
-    .CX 1607 970,
-    .measureX 1607 [] [.CZ 969 1606],
-    .CX 1606 969,
-    .measureX 1606 [] [.CZ 968 1605],
-    .CX 1605 968,
-    .measureX 1605 [] [.CZ 967 1604],
-    .CX 1604 967,
-    .measureX 1604 [] [.CZ 966 1603],
-    .CX 1603 966,
-    .measureX 1603 [] [.CZ 965 1602],
-    .CX 1602 965,
-    .measureX 1602 [] [.CZ 964 1601],
-    .CX 1601 964,
-    .measureX 1601 [] [.CZ 963 1600],
-    .CX 1600 963,
-    .measureX 1600 [] [.CZ 962 1599],
-    .CX 1599 962,
-    .measureX 1599 [] [.CZ 961 1598],
-    .CX 1598 961,
-    .measureX 1598 [] [.CZ 960 1597],
-    .CX 1597 960,
-    .measureX 1597 [] [.CZ 959 1596],
-    .CX 1596 959,
-    .measureX 1596 [] [.CZ 958 1595],
-    .CX 1595 958,
-    .measureX 1595 [] [.CZ 957 1594],
-    .CX 1594 957,
-    .measureX 1594 [] [.CZ 956 1593],
-    .CX 1593 956,
-    .measureX 1593 [] [.CZ 955 1592],
-    .CX 1592 955,
-    .measureX 1592 [] [.CZ 954 1591],
-    .CX 1591 954,
-    .measureX 1591 [] [.CZ 953 1590],
-    .CX 1590 953,
-    .measureX 1590 [] [.CZ 952 1589],
-    .CX 1589 952,
-    .measureX 1589 [] [.CZ 951 1588],
-    .CX 1588 951,
-    .measureX 1588 [] [.CZ 950 1587],
-    .CX 1587 950,
-    .measureX 1587 [] [.CZ 949 1586],
-    .CX 1586 949,
-    .measureX 1586 [] [.CZ 948 1585],
-    .CX 1585 948,
-    .measureX 1585 [] [.CZ 947 1584],
-    .CX 1584 947,
-    .measureX 1584 [] [.CZ 946 1583],
-    .CX 1583 946,
-    .measureX 1583 [] [.CZ 945 1582],
-    .CX 1582 945,
-    .measureX 1582 [] [.CZ 944 1581],
-    .CX 1581 944,
-    .measureX 1581 [] [.CZ 943 1580],
-    .CX 1580 943,
-    .measureX 1580 [] [.CZ 942 1579],
-    .CX 1579 942,
-    .measureX 1579 [] [.CZ 941 1578],
-    .CX 1578 941,
-    .measureX 1578 [] [.CZ 940 1577],
-    .CX 1577 940,
-    .measureX 1577 [] [.CZ 939 1576],
-    .CX 1576 939,
-    .measureX 1576 [] [.CZ 938 1575],
-    .CX 1575 938,
-    .measureX 1575 [] [.CZ 937 1574],
-    .CX 1574 937,
-    .measureX 1574 [] [.CZ 936 1573],
-    .CX 1573 936,
-    .measureX 1573 [] [.CZ 935 1572],
-    .CX 1572 935,
-    .measureX 1572 [] [.CZ 934 1571],
-    .CX 1571 934,
-    .measureX 1571 [] [.CZ 933 1570],
-    .CX 1570 933,
-    .measureX 1570 [] [.CZ 932 1569],
-    .CX 1569 932,
-    .measureX 1569 [] [.CZ 931 1568],
-    .CX 1568 931,
-    .measureX 1568 [] [.CZ 930 1567]]
-def portal285Part15 : Program := [
-    .CX 1567 930,
-    .measureX 1567 [] [.CZ 929 1566],
-    .CX 1566 929,
-    .measureX 1566 [] [.CZ 928 1565],
-    .CX 1565 928,
-    .measureX 1565 [] [.CZ 927 1564],
-    .CX 1564 927,
-    .measureX 1564 [] [.CZ 926 1563],
-    .CX 1563 926,
-    .measureX 1563 [] [.CZ 925 1562],
-    .CX 1562 925,
-    .measureX 1562 [] [.CZ 924 1561],
-    .CX 1561 924,
-    .measureX 1561 [] [.CZ 923 1560],
-    .CX 1560 923,
-    .measureX 1560 [] [.CZ 922 1559],
-    .CX 1559 922,
-    .measureX 1559 [] [.CZ 921 1558],
-    .CX 1558 921,
-    .measureX 1558 [] [.CZ 920 1557],
-    .CX 1557 920,
-    .measureX 1557 [] [.CZ 919 1556],
-    .CX 1556 919,
-    .CCX 1692 434 919,
-    .CCX 1692 435 920,
-    .CCX 1692 436 921,
-    .CCX 1692 437 922,
-    .CCX 1692 438 923,
-    .CCX 1692 439 924,
-    .CCX 1692 440 925,
-    .CCX 1692 441 926,
-    .CCX 1692 442 927,
-    .CCX 1692 443 928,
-    .CCX 1692 444 929,
-    .CCX 1692 445 930,
-    .CCX 1692 446 931,
-    .CCX 1692 447 932,
-    .CCX 1692 448 933,
-    .CCX 1692 449 934,
-    .CCX 1692 450 935,
-    .CCX 1692 451 936,
-    .CCX 1692 452 937,
-    .CCX 1692 453 938,
-    .CCX 1692 454 939,
-    .CCX 1692 455 940,
-    .CCX 1692 456 941,
-    .CCX 1692 457 942,
-    .CCX 1692 458 943,
-    .CCX 1692 459 944,
-    .CCX 1692 460 945,
-    .CCX 1692 461 946,
-    .CCX 1692 462 947,
-    .CCX 1692 463 948,
-    .CCX 1692 464 949,
-    .CCX 1692 465 950,
-    .CCX 1692 466 951,
-    .CCX 1692 467 952,
-    .CCX 1692 468 953,
-    .CCX 1692 469 954,
-    .CCX 1692 470 955,
-    .CCX 1692 471 956,
-    .CCX 1692 472 957,
-    .CCX 1692 473 958,
-    .CCX 1692 474 959,
-    .CCX 1692 475 960,
-    .CCX 1692 476 961,
-    .CCX 1692 477 962,
-    .CCX 1692 478 963,
-    .CCX 1692 479 964,
-    .CCX 1692 480 965,
-    .CCX 1692 481 966,
-    .CCX 1692 482 967,
-    .CCX 1692 483 968,
-    .CCX 1692 484 969,
-    .CCX 1692 485 970,
-    .CCX 1692 486 971,
-    .CCX 1692 487 972,
-    .CCX 1692 488 973,
-    .CCX 1692 489 974,
-    .CCX 1692 490 975,
-    .CCX 1692 491 976,
-    .CCX 1692 492 977,
-    .CCX 1692 493 978,
-    .CCX 1692 494 979,
-    .CCX 1692 495 980,
-    .CCX 1692 496 981,
-    .CCX 1692 497 982,
-    .CCX 1692 498 983,
-    .CCX 1692 499 984,
-    .CCX 1692 500 985,
-    .CCX 1692 501 986,
-    .CCX 1692 502 987,
-    .CCX 1692 503 988,
-    .CCX 1692 504 989,
-    .CCX 1692 505 990,
-    .CCX 1692 506 991]
-def portal285Part16 : Program := [
-    .CCX 1692 507 992,
-    .CCX 1692 508 993,
-    .CCX 1692 509 994,
-    .CCX 1692 510 995,
-    .CCX 1692 511 996,
-    .CCX 1692 512 997,
-    .CCX 1692 513 998,
-    .CCX 1692 514 999,
-    .CCX 1692 515 1000,
-    .CCX 1692 516 1001,
-    .CCX 1692 517 1002,
-    .CCX 1692 518 1003,
-    .CCX 1692 519 1004,
-    .CCX 1692 520 1005,
-    .CCX 1692 521 1006,
-    .CCX 1692 522 1007,
-    .CCX 1692 523 1008,
-    .CCX 1692 524 1009,
-    .CCX 1692 525 1010,
-    .CCX 1692 526 1011,
-    .CCX 1692 527 1012,
-    .CCX 1692 528 1013,
-    .measureX 1556 [] [.CZ 918 433],
-    .X 433,
-    .CX 434 919,
-    .CX 919 434,
-    .CX 435 920,
-    .CX 920 435,
-    .CX 436 921,
-    .CX 921 436,
-    .CX 437 922,
-    .CX 922 437,
-    .CX 438 923,
-    .CX 923 438,
-    .CX 439 924,
-    .CX 924 439,
-    .CX 440 925,
-    .CX 925 440,
-    .CX 441 926,
-    .CX 926 441,
-    .CX 442 927,
-    .CX 927 442,
-    .CX 443 928,
-    .CX 928 443,
-    .CX 444 929,
-    .CX 929 444,
-    .CX 445 930,
-    .CX 930 445,
-    .CX 446 931,
-    .CX 931 446,
-    .CX 447 932,
-    .CX 932 447,
-    .CX 448 933,
-    .CX 933 448,
-    .CX 449 934,
-    .CX 934 449,
-    .CX 450 935,
-    .CX 935 450,
-    .CX 451 936,
-    .CX 936 451,
-    .CX 452 937,
-    .CX 937 452,
-    .CX 453 938,
-    .CX 938 453,
-    .CX 454 939,
-    .CX 939 454,
-    .CX 455 940,
-    .CX 940 455,
-    .CX 456 941,
-    .CX 941 456,
-    .CX 457 942,
-    .CX 942 457,
-    .CX 458 943,
-    .CX 943 458,
-    .CX 459 944,
-    .CX 944 459,
-    .CX 460 945,
-    .CX 945 460,
-    .CX 461 946,
-    .CX 946 461,
-    .CX 462 947,
-    .CX 947 462,
-    .CX 463 948,
-    .CX 948 463,
-    .CX 464 949,
-    .CX 949 464,
-    .CX 465 950,
-    .CX 950 465,
-    .CX 466 951,
-    .CX 951 466,
-    .CX 467 952,
-    .CX 952 467,
-    .CX 468 953,
-    .CX 953 468,
-    .CX 469 954,
-    .CX 954 469]
-def portal285Part17 : Program := [
-    .CX 470 955,
-    .CX 955 470,
-    .CX 471 956,
-    .CX 956 471,
-    .CX 472 957,
-    .CX 957 472,
-    .CX 473 958,
-    .CX 958 473,
-    .CX 474 959,
-    .CX 959 474,
-    .CX 475 960,
-    .CX 960 475,
-    .CX 476 961,
-    .CX 961 476,
-    .CX 477 962,
-    .CX 962 477,
-    .CX 478 963,
-    .CX 963 478,
-    .CX 479 964,
-    .CX 964 479,
-    .CX 480 965,
-    .CX 965 480,
-    .CX 481 966,
-    .CX 966 481,
-    .CX 482 967,
-    .CX 967 482,
-    .CX 483 968,
-    .CX 968 483,
-    .CX 484 969,
-    .CX 969 484,
-    .CX 485 970,
-    .CX 970 485,
-    .CX 486 971,
-    .CX 971 486,
-    .CX 487 972,
-    .CX 972 487,
-    .CX 488 973,
-    .CX 973 488,
-    .CX 489 974,
-    .CX 974 489,
-    .CX 490 975,
-    .CX 975 490,
-    .CX 491 976,
-    .CX 976 491,
-    .CX 492 977,
-    .CX 977 492,
-    .CX 493 978,
-    .CX 978 493,
-    .CX 494 979,
-    .CX 979 494,
-    .CX 495 980,
-    .CX 980 495,
-    .CX 496 981,
-    .CX 981 496,
-    .CX 497 982,
-    .CX 982 497,
-    .CX 498 983,
-    .CX 983 498,
-    .CX 499 984,
-    .CX 984 499,
-    .CX 500 985,
-    .CX 985 500,
-    .CX 501 986,
-    .CX 986 501,
-    .CX 502 987,
-    .CX 987 502,
-    .CX 503 988,
-    .CX 988 503,
-    .CX 504 989,
-    .CX 989 504,
-    .CX 505 990,
-    .CX 990 505,
-    .CX 506 991,
-    .CX 991 506,
-    .CX 507 992,
-    .CX 992 507,
-    .CX 508 993,
-    .CX 993 508,
-    .CX 509 994,
-    .CX 994 509,
-    .CX 510 995,
-    .CX 995 510,
-    .CX 511 996,
-    .CX 996 511,
-    .CX 512 997,
-    .CX 997 512,
-    .CX 513 998,
-    .CX 998 513,
-    .CX 514 999,
-    .CX 999 514,
-    .CX 515 1000,
-    .CX 1000 515,
-    .CX 516 1001,
-    .CX 1001 516,
-    .CX 517 1002,
-    .CX 1002 517]
-def portal285Part18 : Program := [
-    .CX 518 1003,
-    .CX 1003 518,
-    .CX 519 1004,
-    .CX 1004 519,
-    .CX 520 1005,
-    .CX 1005 520,
-    .CX 521 1006,
-    .CX 1006 521,
-    .CX 522 1007,
-    .CX 1007 522,
-    .CX 523 1008,
-    .CX 1008 523,
-    .CX 524 1009,
-    .CX 1009 524,
-    .CX 525 1010,
-    .CX 1010 525,
-    .CX 526 1011,
-    .CX 1011 526,
-    .CX 527 1012,
-    .CX 1012 527,
-    .CX 528 1013,
-    .CX 1013 528,
-    .CX 1693 916,
-    .CX 1693 917,
-    .CX 1693 918,
-    .CX 431 916,
-    .CCX 300 916 431,
-    .CX 431 916,
-    .CX 432 917,
-    .CCX 300 917 432,
-    .CX 432 917,
-    .CX 433 918,
-    .CCX 300 918 433,
-    .CX 433 918]
-def portal285 : Program := portal285Part0 ++ (portal285Part1 ++ (portal285Part2 ++ (portal285Part3 ++ (portal285Part4 ++ (portal285Part5 ++ (portal285Part6 ++ (portal285Part7 ++ (portal285Part8 ++ (portal285Part9 ++ (portal285Part10 ++ (portal285Part11 ++ (portal285Part12 ++ (portal285Part13 ++ (portal285Part14 ++ (portal285Part15 ++ (portal285Part16 ++ (portal285Part17 ++ (portal285Part18))))))))))))))))))
-def portal285InvPart0 : Program := [
-    .CX 433 918,
-    .CCX 300 918 433,
-    .CX 433 918,
-    .CX 432 917,
-    .CCX 300 917 432,
-    .CX 432 917,
-    .CX 431 916,
-    .CCX 300 916 431,
-    .CX 431 916,
-    .CX 1693 918,
-    .CX 1693 917,
-    .CX 1693 916,
-    .CX 1013 528,
-    .CX 528 1013,
-    .CX 1012 527,
-    .CX 527 1012,
-    .CX 1011 526,
-    .CX 526 1011,
-    .CX 1010 525,
-    .CX 525 1010,
-    .CX 1009 524,
-    .CX 524 1009,
-    .CX 1008 523,
-    .CX 523 1008,
-    .CX 1007 522,
-    .CX 522 1007,
-    .CX 1006 521,
-    .CX 521 1006,
-    .CX 1005 520,
-    .CX 520 1005,
-    .CX 1004 519,
-    .CX 519 1004,
-    .CX 1003 518,
-    .CX 518 1003,
-    .CX 1002 517,
-    .CX 517 1002,
-    .CX 1001 516,
-    .CX 516 1001,
-    .CX 1000 515,
-    .CX 515 1000,
-    .CX 999 514,
-    .CX 514 999,
-    .CX 998 513,
-    .CX 513 998,
-    .CX 997 512,
-    .CX 512 997,
-    .CX 996 511,
-    .CX 511 996,
-    .CX 995 510,
-    .CX 510 995,
-    .CX 994 509,
-    .CX 509 994,
-    .CX 993 508,
-    .CX 508 993,
-    .CX 992 507,
-    .CX 507 992,
-    .CX 991 506,
-    .CX 506 991,
-    .CX 990 505,
-    .CX 505 990,
-    .CX 989 504,
-    .CX 504 989,
-    .CX 988 503,
-    .CX 503 988,
-    .CX 987 502,
-    .CX 502 987,
-    .CX 986 501,
-    .CX 501 986,
-    .CX 985 500,
-    .CX 500 985,
-    .CX 984 499,
-    .CX 499 984,
-    .CX 983 498,
-    .CX 498 983,
-    .CX 982 497,
-    .CX 497 982,
-    .CX 981 496,
-    .CX 496 981,
-    .CX 980 495,
-    .CX 495 980,
-    .CX 979 494,
-    .CX 494 979,
-    .CX 978 493,
-    .CX 493 978,
-    .CX 977 492,
-    .CX 492 977,
-    .CX 976 491,
-    .CX 491 976,
-    .CX 975 490,
-    .CX 490 975,
-    .CX 974 489,
-    .CX 489 974,
-    .CX 973 488,
-    .CX 488 973,
-    .CX 972 487,
-    .CX 487 972]
-def portal285InvPart1 : Program := [
-    .CX 971 486,
-    .CX 486 971,
-    .CX 970 485,
-    .CX 485 970,
-    .CX 969 484,
-    .CX 484 969,
-    .CX 968 483,
-    .CX 483 968,
-    .CX 967 482,
-    .CX 482 967,
-    .CX 966 481,
-    .CX 481 966,
-    .CX 965 480,
-    .CX 480 965,
-    .CX 964 479,
-    .CX 479 964,
-    .CX 963 478,
-    .CX 478 963,
-    .CX 962 477,
-    .CX 477 962,
-    .CX 961 476,
-    .CX 476 961,
-    .CX 960 475,
-    .CX 475 960,
-    .CX 959 474,
-    .CX 474 959,
-    .CX 958 473,
-    .CX 473 958,
-    .CX 957 472,
-    .CX 472 957,
-    .CX 956 471,
-    .CX 471 956,
-    .CX 955 470,
-    .CX 470 955,
-    .CX 954 469,
-    .CX 469 954,
-    .CX 953 468,
-    .CX 468 953,
-    .CX 952 467,
-    .CX 467 952,
-    .CX 951 466,
-    .CX 466 951,
-    .CX 950 465,
-    .CX 465 950,
-    .CX 949 464,
-    .CX 464 949,
-    .CX 948 463,
-    .CX 463 948,
-    .CX 947 462,
-    .CX 462 947,
-    .CX 946 461,
-    .CX 461 946,
-    .CX 945 460,
-    .CX 460 945,
-    .CX 944 459,
-    .CX 459 944,
-    .CX 943 458,
-    .CX 458 943,
-    .CX 942 457,
-    .CX 457 942,
-    .CX 941 456,
-    .CX 456 941,
-    .CX 940 455,
-    .CX 455 940,
-    .CX 939 454,
-    .CX 454 939,
-    .CX 938 453,
-    .CX 453 938,
-    .CX 937 452,
-    .CX 452 937,
-    .CX 936 451,
-    .CX 451 936,
-    .CX 935 450,
-    .CX 450 935,
-    .CX 934 449,
-    .CX 449 934,
-    .CX 933 448,
-    .CX 448 933,
-    .CX 932 447,
-    .CX 447 932,
-    .CX 931 446,
-    .CX 446 931,
-    .CX 930 445,
-    .CX 445 930,
-    .CX 929 444,
-    .CX 444 929,
-    .CX 928 443,
-    .CX 443 928,
-    .CX 927 442,
-    .CX 442 927,
-    .CX 926 441,
-    .CX 441 926,
-    .CX 925 440,
-    .CX 440 925,
-    .CX 924 439,
-    .CX 439 924]
-def portal285InvPart2 : Program := [
-    .CX 923 438,
-    .CX 438 923,
-    .CX 922 437,
-    .CX 437 922,
-    .CX 921 436,
-    .CX 436 921,
-    .CX 920 435,
-    .CX 435 920,
-    .CX 919 434,
-    .CX 434 919,
-    .X 433,
-    .CCX 918 433 1556,
-    .CCX 1692 528 1013,
-    .CCX 1692 527 1012,
-    .CCX 1692 526 1011,
-    .CCX 1692 525 1010,
-    .CCX 1692 524 1009,
-    .CCX 1692 523 1008,
-    .CCX 1692 522 1007,
-    .CCX 1692 521 1006,
-    .CCX 1692 520 1005,
-    .CCX 1692 519 1004,
-    .CCX 1692 518 1003,
-    .CCX 1692 517 1002,
-    .CCX 1692 516 1001,
-    .CCX 1692 515 1000,
-    .CCX 1692 514 999,
-    .CCX 1692 513 998,
-    .CCX 1692 512 997,
-    .CCX 1692 511 996,
-    .CCX 1692 510 995,
-    .CCX 1692 509 994,
-    .CCX 1692 508 993,
-    .CCX 1692 507 992,
-    .CCX 1692 506 991,
-    .CCX 1692 505 990,
-    .CCX 1692 504 989,
-    .CCX 1692 503 988,
-    .CCX 1692 502 987,
-    .CCX 1692 501 986,
-    .CCX 1692 500 985,
-    .CCX 1692 499 984,
-    .CCX 1692 498 983,
-    .CCX 1692 497 982,
-    .CCX 1692 496 981,
-    .CCX 1692 495 980,
-    .CCX 1692 494 979,
-    .CCX 1692 493 978,
-    .CCX 1692 492 977,
-    .CCX 1692 491 976,
-    .CCX 1692 490 975,
-    .CCX 1692 489 974,
-    .CCX 1692 488 973,
-    .CCX 1692 487 972,
-    .CCX 1692 486 971,
-    .CCX 1692 485 970,
-    .CCX 1692 484 969,
-    .CCX 1692 483 968,
-    .CCX 1692 482 967,
-    .CCX 1692 481 966,
-    .CCX 1692 480 965,
-    .CCX 1692 479 964,
-    .CCX 1692 478 963,
-    .CCX 1692 477 962,
-    .CCX 1692 476 961,
-    .CCX 1692 475 960,
-    .CCX 1692 474 959,
-    .CCX 1692 473 958,
-    .CCX 1692 472 957,
-    .CCX 1692 471 956,
-    .CCX 1692 470 955,
-    .CCX 1692 469 954,
-    .CCX 1692 468 953,
-    .CCX 1692 467 952,
-    .CCX 1692 466 951,
-    .CCX 1692 465 950,
-    .CCX 1692 464 949,
-    .CCX 1692 463 948,
-    .CCX 1692 462 947,
-    .CCX 1692 461 946,
-    .CCX 1692 460 945,
-    .CCX 1692 459 944,
-    .CCX 1692 458 943,
-    .CCX 1692 457 942,
-    .CCX 1692 456 941,
-    .CCX 1692 455 940,
-    .CCX 1692 454 939,
-    .CCX 1692 453 938,
-    .CCX 1692 452 937,
-    .CCX 1692 451 936,
-    .CCX 1692 450 935,
-    .CCX 1692 449 934,
-    .CCX 1692 448 933,
-    .CCX 1692 447 932,
-    .CCX 1692 446 931,
-    .CCX 1692 445 930]
-def portal285InvPart3 : Program := [
-    .CCX 1692 444 929,
-    .CCX 1692 443 928,
-    .CCX 1692 442 927,
-    .CCX 1692 441 926,
-    .CCX 1692 440 925,
-    .CCX 1692 439 924,
-    .CCX 1692 438 923,
-    .CCX 1692 437 922,
-    .CCX 1692 436 921,
-    .CCX 1692 435 920,
-    .CCX 1692 434 919,
-    .CX 1556 919,
-    .CCX 919 1556 1557,
-    .CX 1557 920,
-    .CCX 920 1557 1558,
-    .CX 1558 921,
-    .CCX 921 1558 1559,
-    .CX 1559 922,
-    .CCX 922 1559 1560,
-    .CX 1560 923,
-    .CCX 923 1560 1561,
-    .CX 1561 924,
-    .CCX 924 1561 1562,
-    .CX 1562 925,
-    .CCX 925 1562 1563,
-    .CX 1563 926,
-    .CCX 926 1563 1564,
-    .CX 1564 927,
-    .CCX 927 1564 1565,
-    .CX 1565 928,
-    .CCX 928 1565 1566,
-    .CX 1566 929,
-    .CCX 929 1566 1567,
-    .CX 1567 930,
-    .CCX 930 1567 1568,
-    .CX 1568 931,
-    .CCX 931 1568 1569,
-    .CX 1569 932,
-    .CCX 932 1569 1570,
-    .CX 1570 933,
-    .CCX 933 1570 1571,
-    .CX 1571 934,
-    .CCX 934 1571 1572,
-    .CX 1572 935,
-    .CCX 935 1572 1573,
-    .CX 1573 936,
-    .CCX 936 1573 1574,
-    .CX 1574 937,
-    .CCX 937 1574 1575,
-    .CX 1575 938,
-    .CCX 938 1575 1576,
-    .CX 1576 939,
-    .CCX 939 1576 1577,
-    .CX 1577 940,
-    .CCX 940 1577 1578,
-    .CX 1578 941,
-    .CCX 941 1578 1579,
-    .CX 1579 942,
-    .CCX 942 1579 1580,
-    .CX 1580 943,
-    .CCX 943 1580 1581,
-    .CX 1581 944,
-    .CCX 944 1581 1582,
-    .CX 1582 945,
-    .CCX 945 1582 1583,
-    .CX 1583 946,
-    .CCX 946 1583 1584,
-    .CX 1584 947,
-    .CCX 947 1584 1585,
-    .CX 1585 948,
-    .CCX 948 1585 1586,
-    .CX 1586 949,
-    .CCX 949 1586 1587,
-    .CX 1587 950,
-    .CCX 950 1587 1588,
-    .CX 1588 951,
-    .CCX 951 1588 1589,
-    .CX 1589 952,
-    .CCX 952 1589 1590,
-    .CX 1590 953,
-    .CCX 953 1590 1591,
-    .CX 1591 954,
-    .CCX 954 1591 1592,
-    .CX 1592 955,
-    .CCX 955 1592 1593,
-    .CX 1593 956,
-    .CCX 956 1593 1594,
-    .CX 1594 957,
-    .CCX 957 1594 1595,
-    .CX 1595 958,
-    .CCX 958 1595 1596,
-    .CX 1596 959,
-    .CCX 959 1596 1597,
-    .CX 1597 960,
-    .CCX 960 1597 1598,
-    .CX 1598 961]
-def portal285InvPart4 : Program := [
-    .CCX 961 1598 1599,
-    .CX 1599 962,
-    .CCX 962 1599 1600,
-    .CX 1600 963,
-    .CCX 963 1600 1601,
-    .CX 1601 964,
-    .CCX 964 1601 1602,
-    .CX 1602 965,
-    .CCX 965 1602 1603,
-    .CX 1603 966,
-    .CCX 966 1603 1604,
-    .CX 1604 967,
-    .CCX 967 1604 1605,
-    .CX 1605 968,
-    .CCX 968 1605 1606,
-    .CX 1606 969,
-    .CCX 969 1606 1607,
-    .CX 1607 970,
-    .CCX 970 1607 1608,
-    .CX 1608 971,
-    .CCX 971 1608 1609,
-    .CX 1609 972,
-    .CCX 972 1609 1610,
-    .CX 1610 973,
-    .CCX 973 1610 1611,
-    .CX 1611 974,
-    .CCX 974 1611 1612,
-    .CX 1612 975,
-    .CCX 975 1612 1613,
-    .CX 1613 976,
-    .CCX 976 1613 1614,
-    .CX 1614 977,
-    .CCX 977 1614 1615,
-    .CX 1615 978,
-    .CCX 978 1615 1616,
-    .CX 1616 979,
-    .CCX 979 1616 1617,
-    .CX 1617 980,
-    .CCX 980 1617 1618,
-    .CX 1618 981,
-    .CCX 981 1618 1619,
-    .CX 1619 982,
-    .CCX 982 1619 1620,
-    .CX 1620 983,
-    .CCX 983 1620 1621,
-    .CX 1621 984,
-    .CCX 984 1621 1622,
-    .CX 1622 985,
-    .CCX 985 1622 1623,
-    .CX 1623 986,
-    .CCX 986 1623 1624,
-    .CX 1624 987,
-    .CCX 987 1624 1625,
-    .CX 1625 988,
-    .CCX 988 1625 1626,
-    .CX 1626 989,
-    .CCX 989 1626 1627,
-    .CX 1627 990,
-    .CCX 990 1627 1628,
-    .CX 1628 991,
-    .CCX 991 1628 1629,
-    .CX 1629 992,
-    .CCX 992 1629 1630,
-    .CX 1630 993,
-    .CCX 993 1630 1631,
-    .CX 1631 994,
-    .CCX 994 1631 1632,
-    .CX 1632 995,
-    .CCX 995 1632 1633,
-    .CX 1633 996,
-    .CCX 996 1633 1634,
-    .CX 1634 997,
-    .CCX 997 1634 1635,
-    .CX 1635 998,
-    .CCX 998 1635 1636,
-    .CX 1636 999,
-    .CCX 999 1636 1637,
-    .CX 1637 1000,
-    .CCX 1000 1637 1638,
-    .CX 1638 1001,
-    .CCX 1001 1638 1639,
-    .CX 1639 1002,
-    .CCX 1002 1639 1640,
-    .CX 1640 1003,
-    .CCX 1003 1640 1641,
-    .CX 1641 1004,
-    .CCX 1004 1641 1642,
-    .CX 1642 1005,
-    .CCX 1005 1642 1643,
-    .CX 1643 1006,
-    .CCX 1006 1643 1644,
-    .CX 1644 1007,
-    .CCX 1007 1644 1645,
-    .CX 1645 1008,
-    .CCX 1008 1645 1646,
-    .CX 1646 1009]
-def portal285InvPart5 : Program := [
-    .CCX 1009 1646 1647,
-    .CX 1647 1010,
-    .CCX 1010 1647 1648,
-    .CX 1648 1011,
-    .CCX 1011 1648 1649,
-    .CX 1649 1012,
-    .CCX 1012 1649 1650,
-    .CX 1650 1013,
-    .measureX 1650 [] [.CZ 1012 1649],
-    .measureX 1649 [] [.CZ 1011 1648],
-    .measureX 1648 [] [.CZ 1010 1647],
-    .measureX 1647 [] [.CZ 1009 1646],
-    .measureX 1646 [] [.CZ 1008 1645],
-    .measureX 1645 [] [.CZ 1007 1644],
-    .measureX 1644 [] [.CZ 1006 1643],
-    .measureX 1643 [] [.CZ 1005 1642],
-    .measureX 1642 [] [.CZ 1004 1641],
-    .measureX 1641 [] [.CZ 1003 1640],
-    .measureX 1640 [] [.CZ 1002 1639],
-    .measureX 1639 [] [.CZ 1001 1638],
-    .measureX 1638 [] [.CZ 1000 1637],
-    .measureX 1637 [] [.CZ 999 1636],
-    .measureX 1636 [] [.CZ 998 1635],
-    .measureX 1635 [] [.CZ 997 1634],
-    .measureX 1634 [] [.CZ 996 1633],
-    .measureX 1633 [] [.CZ 995 1632],
-    .measureX 1632 [] [.CZ 994 1631],
-    .measureX 1631 [] [.CZ 993 1630],
-    .measureX 1630 [] [.CZ 992 1629],
-    .measureX 1629 [] [.CZ 991 1628],
-    .measureX 1628 [] [.CZ 990 1627],
-    .measureX 1627 [] [.CZ 989 1626],
-    .measureX 1626 [] [.CZ 988 1625],
-    .measureX 1625 [] [.CZ 987 1624],
-    .measureX 1624 [] [.CZ 986 1623],
-    .measureX 1623 [] [.CZ 985 1622],
-    .measureX 1622 [] [.CZ 984 1621],
-    .measureX 1621 [] [.CZ 983 1620],
-    .measureX 1620 [] [.CZ 982 1619],
-    .measureX 1619 [] [.CZ 981 1618],
-    .measureX 1618 [] [.CZ 980 1617],
-    .measureX 1617 [] [.CZ 979 1616],
-    .measureX 1616 [] [.CZ 978 1615],
-    .measureX 1615 [] [.CZ 977 1614],
-    .measureX 1614 [] [.CZ 976 1613],
-    .measureX 1613 [] [.CZ 975 1612],
-    .measureX 1612 [] [.CZ 974 1611],
-    .measureX 1611 [] [.CZ 973 1610],
-    .measureX 1610 [] [.CZ 972 1609],
-    .measureX 1609 [] [.CZ 971 1608],
-    .measureX 1608 [] [.CZ 970 1607],
-    .measureX 1607 [] [.CZ 969 1606],
-    .measureX 1606 [] [.CZ 968 1605],
-    .measureX 1605 [] [.CZ 967 1604],
-    .measureX 1604 [] [.CZ 966 1603],
-    .measureX 1603 [] [.CZ 965 1602],
-    .measureX 1602 [] [.CZ 964 1601],
-    .measureX 1601 [] [.CZ 963 1600],
-    .measureX 1600 [] [.CZ 962 1599],
-    .measureX 1599 [] [.CZ 961 1598],
-    .measureX 1598 [] [.CZ 960 1597],
-    .measureX 1597 [] [.CZ 959 1596],
-    .measureX 1596 [] [.CZ 958 1595],
-    .measureX 1595 [] [.CZ 957 1594],
-    .measureX 1594 [] [.CZ 956 1593],
-    .measureX 1593 [] [.CZ 955 1592],
-    .measureX 1592 [] [.CZ 954 1591],
-    .measureX 1591 [] [.CZ 953 1590],
-    .measureX 1590 [] [.CZ 952 1589],
-    .measureX 1589 [] [.CZ 951 1588],
-    .measureX 1588 [] [.CZ 950 1587],
-    .measureX 1587 [] [.CZ 949 1586],
-    .measureX 1586 [] [.CZ 948 1585],
-    .measureX 1585 [] [.CZ 947 1584],
-    .measureX 1584 [] [.CZ 946 1583],
-    .measureX 1583 [] [.CZ 945 1582],
-    .measureX 1582 [] [.CZ 944 1581],
-    .measureX 1581 [] [.CZ 943 1580],
-    .measureX 1580 [] [.CZ 942 1579],
-    .measureX 1579 [] [.CZ 941 1578],
-    .measureX 1578 [] [.CZ 940 1577],
-    .measureX 1577 [] [.CZ 939 1576],
-    .measureX 1576 [] [.CZ 938 1575],
-    .measureX 1575 [] [.CZ 937 1574],
-    .measureX 1574 [] [.CZ 936 1573],
-    .measureX 1573 [] [.CZ 935 1572],
-    .measureX 1572 [] [.CZ 934 1571],
-    .measureX 1571 [] [.CZ 933 1570],
-    .measureX 1570 [] [.CZ 932 1569],
-    .measureX 1569 [] [.CZ 931 1568],
-    .measureX 1568 [] [.CZ 930 1567],
-    .measureX 1567 [] [.CZ 929 1566],
-    .measureX 1566 [] [.CZ 928 1565],
-    .measureX 1565 [] [.CZ 927 1564],
-    .measureX 1564 [] [.CZ 926 1563],
-    .measureX 1563 [] [.CZ 925 1562]]
-def portal285InvPart6 : Program := [
-    .measureX 1562 [] [.CZ 924 1561],
-    .measureX 1561 [] [.CZ 923 1560],
-    .measureX 1560 [] [.CZ 922 1559],
-    .measureX 1559 [] [.CZ 921 1558],
-    .measureX 1558 [] [.CZ 920 1557],
-    .measureX 1557 [] [.CZ 919 1556],
-    .measureX 1556 [] [.CZ 918 433],
-    .X 433,
-    .X 1013,
-    .X 1012,
-    .X 1011,
-    .X 1010,
-    .X 1009,
-    .X 1008,
-    .X 1007,
-    .X 1006,
-    .X 1005,
-    .X 1004,
-    .X 1003,
-    .X 1002,
-    .X 1001,
-    .X 1000,
-    .X 999,
-    .X 998,
-    .X 997,
-    .X 996,
-    .X 995,
-    .X 994,
-    .X 993,
-    .X 992,
-    .X 991,
-    .X 990,
-    .X 989,
-    .X 988,
-    .X 987,
-    .X 986,
-    .X 985,
-    .X 984,
-    .X 983,
-    .X 982,
-    .X 981,
-    .X 980,
-    .X 979,
-    .X 978,
-    .X 977,
-    .X 976,
-    .X 975,
-    .X 974,
-    .X 973,
-    .X 972,
-    .X 971,
-    .X 970,
-    .X 969,
-    .X 968,
-    .X 967,
-    .X 966,
-    .X 965,
-    .X 964,
-    .X 963,
-    .X 962,
-    .X 961,
-    .X 960,
-    .X 959,
-    .X 958,
-    .X 957,
-    .X 956,
-    .X 955,
-    .X 954,
-    .X 953,
-    .X 952,
-    .X 951,
-    .X 950,
-    .X 949,
-    .X 948,
-    .X 947,
-    .X 946,
-    .X 945,
-    .X 944,
-    .X 943,
-    .X 942,
-    .X 941,
-    .X 940,
-    .X 939,
-    .X 938,
-    .X 937,
-    .X 936,
-    .X 935,
-    .X 934,
-    .X 933,
-    .X 932,
-    .X 931,
-    .X 930,
-    .X 929,
-    .X 928,
-    .X 927,
-    .X 926]
-def portal285InvPart7 : Program := [
-    .X 925,
-    .X 924,
-    .X 923,
-    .X 922,
-    .X 921,
-    .X 920,
-    .X 919,
-    .X 918,
-    .X 917,
-    .X 916,
-    .CCX 916 917 1556,
-    .CCX 1556 918 1557,
-    .CCX 1557 919 1558,
-    .CCX 1558 920 1559,
-    .CCX 1559 921 1560,
-    .CCX 1560 922 1561,
-    .CCX 1561 923 1562,
-    .CCX 1562 924 1563,
-    .CCX 1563 925 1564,
-    .CCX 1564 926 1565,
-    .CCX 1565 927 1566,
-    .CCX 1566 928 1567,
-    .CCX 1567 929 1568,
-    .CCX 1568 930 1569,
-    .CCX 1569 931 1570,
-    .CCX 1570 932 1571,
-    .CCX 1571 933 1572,
-    .CCX 1572 934 1573,
-    .CCX 1573 935 1574,
-    .CCX 1574 936 1575,
-    .CCX 1575 937 1576,
-    .CCX 1576 938 1577,
-    .CCX 1577 939 1578,
-    .CCX 1578 940 1579,
-    .CCX 1579 941 1580,
-    .CCX 1580 942 1581,
-    .CCX 1581 943 1582,
-    .CCX 1582 944 1583,
-    .CCX 1583 945 1584,
-    .CCX 1584 946 1585,
-    .CCX 1585 947 1586,
-    .CCX 1586 948 1587,
-    .CCX 1587 949 1588,
-    .CCX 1588 950 1589,
-    .CCX 1589 951 1590,
-    .CCX 1590 952 1591,
-    .CCX 1591 953 1592,
-    .CCX 1592 954 1593,
-    .CCX 1593 955 1594,
-    .CCX 1594 956 1595,
-    .CCX 1595 957 1596,
-    .CCX 1596 958 1597,
-    .CCX 1597 959 1598,
-    .CCX 1598 960 1599,
-    .CCX 1599 961 1600,
-    .CCX 1600 962 1601,
-    .CCX 1601 963 1602,
-    .CCX 1602 964 1603,
-    .CCX 1603 965 1604,
-    .CCX 1604 966 1605,
-    .CCX 1605 967 1606,
-    .CCX 1606 968 1607,
-    .CCX 1607 969 1608,
-    .CCX 1608 970 1609,
-    .CCX 1609 971 1610,
-    .CCX 1610 972 1611,
-    .CCX 1611 973 1612,
-    .CCX 1612 974 1613,
-    .CCX 1613 975 1614,
-    .CCX 1614 976 1615,
-    .CCX 1615 977 1616,
-    .CCX 1616 978 1617,
-    .CCX 1617 979 1618,
-    .CCX 1618 980 1619,
-    .CCX 1619 981 1620,
-    .CCX 1620 982 1621,
-    .CCX 1621 983 1622,
-    .CCX 1622 984 1623,
-    .CCX 1623 985 1624,
-    .CCX 1624 986 1625,
-    .CCX 1625 987 1626,
-    .CCX 1626 988 1627,
-    .CCX 1627 989 1628,
-    .CCX 1628 990 1629,
-    .CCX 1629 991 1630,
-    .CCX 1630 992 1631,
-    .CCX 1631 993 1632,
-    .CCX 1632 994 1633,
-    .CCX 1633 995 1634,
-    .CCX 1634 996 1635,
-    .CCX 1635 997 1636,
-    .CCX 1636 998 1637,
-    .CCX 1637 999 1638,
-    .CCX 1638 1000 1639,
-    .CCX 1639 1001 1640,
-    .CCX 1640 1002 1641]
-def portal285InvPart8 : Program := [
-    .CCX 1641 1003 1642,
-    .CCX 1642 1004 1643,
-    .CCX 1643 1005 1644,
-    .CCX 1644 1006 1645,
-    .CCX 1645 1007 1646,
-    .CCX 1646 1008 1647,
-    .CCX 1647 1009 1648,
-    .CCX 1648 1010 1649,
-    .CCX 1649 1011 1650,
-    .CCX 1650 1012 1651,
-    .CCX 1651 1013 1652,
-    .CCX 1691 1652 1692,
-    .CX 1691 1692,
-    .measureX 1652 [] [.CZ 1651 1013],
-    .measureX 1651 [] [.CZ 1650 1012],
-    .measureX 1650 [] [.CZ 1649 1011],
-    .measureX 1649 [] [.CZ 1648 1010],
-    .measureX 1648 [] [.CZ 1647 1009],
-    .measureX 1647 [] [.CZ 1646 1008],
-    .measureX 1646 [] [.CZ 1645 1007],
-    .measureX 1645 [] [.CZ 1644 1006],
-    .measureX 1644 [] [.CZ 1643 1005],
-    .measureX 1643 [] [.CZ 1642 1004],
-    .measureX 1642 [] [.CZ 1641 1003],
-    .measureX 1641 [] [.CZ 1640 1002],
-    .measureX 1640 [] [.CZ 1639 1001],
-    .measureX 1639 [] [.CZ 1638 1000],
-    .measureX 1638 [] [.CZ 1637 999],
-    .measureX 1637 [] [.CZ 1636 998],
-    .measureX 1636 [] [.CZ 1635 997],
-    .measureX 1635 [] [.CZ 1634 996],
-    .measureX 1634 [] [.CZ 1633 995],
-    .measureX 1633 [] [.CZ 1632 994],
-    .measureX 1632 [] [.CZ 1631 993],
-    .measureX 1631 [] [.CZ 1630 992],
-    .measureX 1630 [] [.CZ 1629 991],
-    .measureX 1629 [] [.CZ 1628 990],
-    .measureX 1628 [] [.CZ 1627 989],
-    .measureX 1627 [] [.CZ 1626 988],
-    .measureX 1626 [] [.CZ 1625 987],
-    .measureX 1625 [] [.CZ 1624 986],
-    .measureX 1624 [] [.CZ 1623 985],
-    .measureX 1623 [] [.CZ 1622 984],
-    .measureX 1622 [] [.CZ 1621 983],
-    .measureX 1621 [] [.CZ 1620 982],
-    .measureX 1620 [] [.CZ 1619 981],
-    .measureX 1619 [] [.CZ 1618 980],
-    .measureX 1618 [] [.CZ 1617 979],
-    .measureX 1617 [] [.CZ 1616 978],
-    .measureX 1616 [] [.CZ 1615 977],
-    .measureX 1615 [] [.CZ 1614 976],
-    .measureX 1614 [] [.CZ 1613 975],
-    .measureX 1613 [] [.CZ 1612 974],
-    .measureX 1612 [] [.CZ 1611 973],
-    .measureX 1611 [] [.CZ 1610 972],
-    .measureX 1610 [] [.CZ 1609 971],
-    .measureX 1609 [] [.CZ 1608 970],
-    .measureX 1608 [] [.CZ 1607 969],
-    .measureX 1607 [] [.CZ 1606 968],
-    .measureX 1606 [] [.CZ 1605 967],
-    .measureX 1605 [] [.CZ 1604 966],
-    .measureX 1604 [] [.CZ 1603 965],
-    .measureX 1603 [] [.CZ 1602 964],
-    .measureX 1602 [] [.CZ 1601 963],
-    .measureX 1601 [] [.CZ 1600 962],
-    .measureX 1600 [] [.CZ 1599 961],
-    .measureX 1599 [] [.CZ 1598 960],
-    .measureX 1598 [] [.CZ 1597 959],
-    .measureX 1597 [] [.CZ 1596 958],
-    .measureX 1596 [] [.CZ 1595 957],
-    .measureX 1595 [] [.CZ 1594 956],
-    .measureX 1594 [] [.CZ 1593 955],
-    .measureX 1593 [] [.CZ 1592 954],
-    .measureX 1592 [] [.CZ 1591 953],
-    .measureX 1591 [] [.CZ 1590 952],
-    .measureX 1590 [] [.CZ 1589 951],
-    .measureX 1589 [] [.CZ 1588 950],
-    .measureX 1588 [] [.CZ 1587 949],
-    .measureX 1587 [] [.CZ 1586 948],
-    .measureX 1586 [] [.CZ 1585 947],
-    .measureX 1585 [] [.CZ 1584 946],
-    .measureX 1584 [] [.CZ 1583 945],
-    .measureX 1583 [] [.CZ 1582 944],
-    .measureX 1582 [] [.CZ 1581 943],
-    .measureX 1581 [] [.CZ 1580 942],
-    .measureX 1580 [] [.CZ 1579 941],
-    .measureX 1579 [] [.CZ 1578 940],
-    .measureX 1578 [] [.CZ 1577 939],
-    .measureX 1577 [] [.CZ 1576 938],
-    .measureX 1576 [] [.CZ 1575 937],
-    .measureX 1575 [] [.CZ 1574 936],
-    .measureX 1574 [] [.CZ 1573 935],
-    .measureX 1573 [] [.CZ 1572 934],
-    .measureX 1572 [] [.CZ 1571 933],
-    .measureX 1571 [] [.CZ 1570 932],
-    .measureX 1570 [] [.CZ 1569 931]]
-def portal285InvPart9 : Program := [
-    .measureX 1569 [] [.CZ 1568 930],
-    .measureX 1568 [] [.CZ 1567 929],
-    .measureX 1567 [] [.CZ 1566 928],
-    .measureX 1566 [] [.CZ 1565 927],
-    .measureX 1565 [] [.CZ 1564 926],
-    .measureX 1564 [] [.CZ 1563 925],
-    .measureX 1563 [] [.CZ 1562 924],
-    .measureX 1562 [] [.CZ 1561 923],
-    .measureX 1561 [] [.CZ 1560 922],
-    .measureX 1560 [] [.CZ 1559 921],
-    .measureX 1559 [] [.CZ 1558 920],
-    .measureX 1558 [] [.CZ 1557 919],
-    .measureX 1557 [] [.CZ 1556 918],
-    .measureX 1556 [] [.CZ 916 917],
-    .X 1013,
-    .X 1012,
-    .X 1011,
-    .X 1010,
-    .X 1009,
-    .X 1008,
-    .X 1007,
-    .X 1006,
-    .X 1005,
-    .X 1004,
-    .X 1003,
-    .X 1002,
-    .X 1001,
-    .X 1000,
-    .X 999,
-    .X 998,
-    .X 997,
-    .X 996,
-    .X 995,
-    .X 994,
-    .X 993,
-    .X 992,
-    .X 991,
-    .X 990,
-    .X 989,
-    .X 988,
-    .X 987,
-    .X 986,
-    .X 985,
-    .X 984,
-    .X 983,
-    .X 982,
-    .X 981,
-    .X 980,
-    .X 979,
-    .X 978,
-    .X 977,
-    .X 976,
-    .X 975,
-    .X 974,
-    .X 973,
-    .X 972,
-    .X 971,
-    .X 970,
-    .X 969,
-    .X 968,
-    .X 967,
-    .X 966,
-    .X 965,
-    .X 964,
-    .X 963,
-    .X 962,
-    .X 961,
-    .X 960,
-    .X 959,
-    .X 958,
-    .X 957,
-    .X 956,
-    .X 955,
-    .X 954,
-    .X 953,
-    .X 952,
-    .X 951,
-    .X 950,
-    .X 949,
-    .X 948,
-    .X 947,
-    .X 946,
-    .X 945,
-    .X 944,
-    .X 943,
-    .X 942,
-    .X 941,
-    .X 940,
-    .X 939,
-    .X 938,
-    .X 937,
-    .X 936,
-    .X 935,
-    .X 934,
-    .X 933,
-    .X 932]
-def portal285InvPart10 : Program := [
-    .X 931,
-    .X 930,
-    .X 929,
-    .X 928,
-    .X 927,
-    .X 926,
-    .X 925,
-    .X 924,
-    .X 923,
-    .X 922,
-    .X 921,
-    .X 920,
-    .X 919,
-    .X 918,
-    .X 917,
-    .X 916,
-    .CX 1691 1556,
-    .CX 1556 1691,
-    .CCX 431 432 1557,
-    .X 1557,
-    .X 433,
-    .X 434,
-    .X 435,
-    .X 436,
-    .X 437,
-    .X 438,
-    .X 439,
-    .X 440,
-    .X 441,
-    .X 442,
-    .X 443,
-    .X 444,
-    .X 445,
-    .X 446,
-    .X 447,
-    .X 448,
-    .X 449,
-    .X 450,
-    .X 451,
-    .X 452,
-    .X 453,
-    .X 454,
-    .X 455,
-    .X 456,
-    .X 457,
-    .X 458,
-    .X 459,
-    .X 460,
-    .X 461,
-    .X 462,
-    .X 463,
-    .X 464,
-    .X 465,
-    .X 466,
-    .X 467,
-    .X 468,
-    .X 469,
-    .X 470,
-    .X 471,
-    .X 472,
-    .X 473,
-    .X 474,
-    .X 475,
-    .X 476,
-    .X 477,
-    .X 478,
-    .X 479,
-    .X 480,
-    .X 481,
-    .X 482,
-    .X 483,
-    .X 484,
-    .X 485,
-    .X 486,
-    .X 487,
-    .X 488,
-    .X 489,
-    .X 490,
-    .X 491,
-    .X 492,
-    .X 493,
-    .X 494,
-    .X 495,
-    .X 496,
-    .X 497,
-    .X 498,
-    .X 499,
-    .X 500,
-    .X 501,
-    .X 502,
-    .X 503,
-    .X 504,
-    .X 505,
-    .X 506,
-    .X 507,
-    .X 508]
-def portal285InvPart11 : Program := [
-    .X 509,
-    .X 510,
-    .X 511,
-    .X 512,
-    .X 513,
-    .X 514,
-    .X 515,
-    .X 516,
-    .X 517,
-    .X 518,
-    .X 519,
-    .X 520,
-    .X 521,
-    .X 522,
-    .X 523,
-    .X 524,
-    .X 525,
-    .X 526,
-    .X 527,
-    .X 528,
-    .CCX 1557 433 1558,
-    .CCX 1558 434 1559,
-    .CCX 1559 435 1560,
-    .CCX 1560 436 1561,
-    .CCX 1561 437 1562,
-    .CCX 1562 438 1563,
-    .CCX 1563 439 1564,
-    .CCX 1564 440 1565,
-    .CCX 1565 441 1566,
-    .CCX 1566 442 1567,
-    .CCX 1567 443 1568,
-    .CCX 1568 444 1569,
-    .CCX 1569 445 1570,
-    .CCX 1570 446 1571,
-    .CCX 1571 447 1572,
-    .CCX 1572 448 1573,
-    .CCX 1573 449 1574,
-    .CCX 1574 450 1575,
-    .CCX 1575 451 1576,
-    .CCX 1576 452 1577,
-    .CCX 1577 453 1578,
-    .CCX 1578 454 1579,
-    .CCX 1579 455 1580,
-    .CCX 1580 456 1581,
-    .CCX 1581 457 1582,
-    .CCX 1582 458 1583,
-    .CCX 1583 459 1584,
-    .CCX 1584 460 1585,
-    .CCX 1585 461 1586,
-    .CCX 1586 462 1587,
-    .CCX 1587 463 1588,
-    .CCX 1588 464 1589,
-    .CCX 1589 465 1590,
-    .CCX 1590 466 1591,
-    .CCX 1591 467 1592,
-    .CCX 1592 468 1593,
-    .CCX 1593 469 1594,
-    .CCX 1594 470 1595,
-    .CCX 1595 471 1596,
-    .CCX 1596 472 1597,
-    .CCX 1597 473 1598,
-    .CCX 1598 474 1599,
-    .CCX 1599 475 1600,
-    .CCX 1600 476 1601,
-    .CCX 1601 477 1602,
-    .CCX 1602 478 1603,
-    .CCX 1603 479 1604,
-    .CCX 1604 480 1605,
-    .CCX 1605 481 1606,
-    .CCX 1606 482 1607,
-    .CCX 1607 483 1608,
-    .CCX 1608 484 1609,
-    .CCX 1609 485 1610,
-    .CCX 1610 486 1611,
-    .CCX 1611 487 1612,
-    .CCX 1612 488 1613,
-    .CCX 1613 489 1614,
-    .CCX 1614 490 1615,
-    .CCX 1615 491 1616,
-    .CCX 1616 492 1617,
-    .CCX 1617 493 1618,
-    .CCX 1618 494 1619,
-    .CCX 1619 495 1620,
-    .CCX 1620 496 1621,
-    .CCX 1621 497 1622,
-    .CCX 1622 498 1623,
-    .CCX 1623 499 1624,
-    .CCX 1624 500 1625,
-    .CCX 1625 501 1626,
-    .CCX 1626 502 1627,
-    .CCX 1627 503 1628,
-    .CCX 1628 504 1629,
-    .CCX 1629 505 1630,
-    .CCX 1630 506 1631,
-    .CCX 1631 507 1632,
-    .CCX 1632 508 1633]
-def portal285InvPart12 : Program := [
-    .CCX 1633 509 1634,
-    .CCX 1634 510 1635,
-    .CCX 1635 511 1636,
-    .CCX 1636 512 1637,
-    .CCX 1637 513 1638,
-    .CCX 1638 514 1639,
-    .CCX 1639 515 1640,
-    .CCX 1640 516 1641,
-    .CCX 1641 517 1642,
-    .CCX 1642 518 1643,
-    .CCX 1643 519 1644,
-    .CCX 1644 520 1645,
-    .CCX 1645 521 1646,
-    .CCX 1646 522 1647,
-    .CCX 1647 523 1648,
-    .CCX 1648 524 1649,
-    .CCX 1649 525 1650,
-    .CCX 1650 526 1651,
-    .CCX 1651 527 1652,
-    .CCX 1652 528 1653,
-    .X 1556,
-    .CX 1653 1556,
-    .measureX 1653 [] [.CZ 1652 528],
-    .measureX 1652 [] [.CZ 1651 527],
-    .measureX 1651 [] [.CZ 1650 526],
-    .measureX 1650 [] [.CZ 1649 525],
-    .measureX 1649 [] [.CZ 1648 524],
-    .measureX 1648 [] [.CZ 1647 523],
-    .measureX 1647 [] [.CZ 1646 522],
-    .measureX 1646 [] [.CZ 1645 521],
-    .measureX 1645 [] [.CZ 1644 520],
-    .measureX 1644 [] [.CZ 1643 519],
-    .measureX 1643 [] [.CZ 1642 518],
-    .measureX 1642 [] [.CZ 1641 517],
-    .measureX 1641 [] [.CZ 1640 516],
-    .measureX 1640 [] [.CZ 1639 515],
-    .measureX 1639 [] [.CZ 1638 514],
-    .measureX 1638 [] [.CZ 1637 513],
-    .measureX 1637 [] [.CZ 1636 512],
-    .measureX 1636 [] [.CZ 1635 511],
-    .measureX 1635 [] [.CZ 1634 510],
-    .measureX 1634 [] [.CZ 1633 509],
-    .measureX 1633 [] [.CZ 1632 508],
-    .measureX 1632 [] [.CZ 1631 507],
-    .measureX 1631 [] [.CZ 1630 506],
-    .measureX 1630 [] [.CZ 1629 505],
-    .measureX 1629 [] [.CZ 1628 504],
-    .measureX 1628 [] [.CZ 1627 503],
-    .measureX 1627 [] [.CZ 1626 502],
-    .measureX 1626 [] [.CZ 1625 501],
-    .measureX 1625 [] [.CZ 1624 500],
-    .measureX 1624 [] [.CZ 1623 499],
-    .measureX 1623 [] [.CZ 1622 498],
-    .measureX 1622 [] [.CZ 1621 497],
-    .measureX 1621 [] [.CZ 1620 496],
-    .measureX 1620 [] [.CZ 1619 495],
-    .measureX 1619 [] [.CZ 1618 494],
-    .measureX 1618 [] [.CZ 1617 493],
-    .measureX 1617 [] [.CZ 1616 492],
-    .measureX 1616 [] [.CZ 1615 491],
-    .measureX 1615 [] [.CZ 1614 490],
-    .measureX 1614 [] [.CZ 1613 489],
-    .measureX 1613 [] [.CZ 1612 488],
-    .measureX 1612 [] [.CZ 1611 487],
-    .measureX 1611 [] [.CZ 1610 486],
-    .measureX 1610 [] [.CZ 1609 485],
-    .measureX 1609 [] [.CZ 1608 484],
-    .measureX 1608 [] [.CZ 1607 483],
-    .measureX 1607 [] [.CZ 1606 482],
-    .measureX 1606 [] [.CZ 1605 481],
-    .measureX 1605 [] [.CZ 1604 480],
-    .measureX 1604 [] [.CZ 1603 479],
-    .measureX 1603 [] [.CZ 1602 478],
-    .measureX 1602 [] [.CZ 1601 477],
-    .measureX 1601 [] [.CZ 1600 476],
-    .measureX 1600 [] [.CZ 1599 475],
-    .measureX 1599 [] [.CZ 1598 474],
-    .measureX 1598 [] [.CZ 1597 473],
-    .measureX 1597 [] [.CZ 1596 472],
-    .measureX 1596 [] [.CZ 1595 471],
-    .measureX 1595 [] [.CZ 1594 470],
-    .measureX 1594 [] [.CZ 1593 469],
-    .measureX 1593 [] [.CZ 1592 468],
-    .measureX 1592 [] [.CZ 1591 467],
-    .measureX 1591 [] [.CZ 1590 466],
-    .measureX 1590 [] [.CZ 1589 465],
-    .measureX 1589 [] [.CZ 1588 464],
-    .measureX 1588 [] [.CZ 1587 463],
-    .measureX 1587 [] [.CZ 1586 462],
-    .measureX 1586 [] [.CZ 1585 461],
-    .measureX 1585 [] [.CZ 1584 460],
-    .measureX 1584 [] [.CZ 1583 459],
-    .measureX 1583 [] [.CZ 1582 458],
-    .measureX 1582 [] [.CZ 1581 457],
-    .measureX 1581 [] [.CZ 1580 456],
-    .measureX 1580 [] [.CZ 1579 455]]
-def portal285InvPart13 : Program := [
-    .measureX 1579 [] [.CZ 1578 454],
-    .measureX 1578 [] [.CZ 1577 453],
-    .measureX 1577 [] [.CZ 1576 452],
-    .measureX 1576 [] [.CZ 1575 451],
-    .measureX 1575 [] [.CZ 1574 450],
-    .measureX 1574 [] [.CZ 1573 449],
-    .measureX 1573 [] [.CZ 1572 448],
-    .measureX 1572 [] [.CZ 1571 447],
-    .measureX 1571 [] [.CZ 1570 446],
-    .measureX 1570 [] [.CZ 1569 445],
-    .measureX 1569 [] [.CZ 1568 444],
-    .measureX 1568 [] [.CZ 1567 443],
-    .measureX 1567 [] [.CZ 1566 442],
-    .measureX 1566 [] [.CZ 1565 441],
-    .measureX 1565 [] [.CZ 1564 440],
-    .measureX 1564 [] [.CZ 1563 439],
-    .measureX 1563 [] [.CZ 1562 438],
-    .measureX 1562 [] [.CZ 1561 437],
-    .measureX 1561 [] [.CZ 1560 436],
-    .measureX 1560 [] [.CZ 1559 435],
-    .measureX 1559 [] [.CZ 1558 434],
-    .measureX 1558 [] [.CZ 1557 433],
-    .X 528,
-    .X 527,
-    .X 526,
-    .X 525,
-    .X 524,
-    .X 523,
-    .X 522,
-    .X 521,
-    .X 520,
-    .X 519,
-    .X 518,
-    .X 517,
-    .X 516,
-    .X 515,
-    .X 514,
-    .X 513,
-    .X 512,
-    .X 511,
-    .X 510,
-    .X 509,
-    .X 508,
-    .X 507,
-    .X 506,
-    .X 505,
-    .X 504,
-    .X 503,
-    .X 502,
-    .X 501,
-    .X 500,
-    .X 499,
-    .X 498,
-    .X 497,
-    .X 496,
-    .X 495,
-    .X 494,
-    .X 493,
-    .X 492,
-    .X 491,
-    .X 490,
-    .X 489,
-    .X 488,
-    .X 487,
-    .X 486,
-    .X 485,
-    .X 484,
-    .X 483,
-    .X 482,
-    .X 481,
-    .X 480,
-    .X 479,
-    .X 478,
-    .X 477,
-    .X 476,
-    .X 475,
-    .X 474,
-    .X 473,
-    .X 472,
-    .X 471,
-    .X 470,
-    .X 469,
-    .X 468,
-    .X 467,
-    .X 466,
-    .X 465,
-    .X 464,
-    .X 463,
-    .X 462,
-    .X 461,
-    .X 460,
-    .X 459,
-    .X 458,
-    .X 457,
-    .X 456,
-    .X 455]
-def portal285InvPart14 : Program := [
-    .X 454,
-    .X 453,
-    .X 452,
-    .X 451,
-    .X 450,
-    .X 449,
-    .X 448,
-    .X 447,
-    .X 446,
-    .X 445,
-    .X 444,
-    .X 443,
-    .X 442,
-    .X 441,
-    .X 440,
-    .X 439,
-    .X 438,
-    .X 437,
-    .X 436,
-    .X 435,
-    .X 434,
-    .X 433,
-    .X 1557,
-    .measureX 1557 [] [.CZ 431 432],
-    .CX 1693 1013,
-    .CX 1693 1012,
-    .CX 1693 1011,
-    .CX 1693 1010,
-    .CX 1693 1009,
-    .CX 1693 1008,
-    .CX 1693 1007,
-    .CX 1693 1006,
-    .CX 1693 1005,
-    .CX 1693 1004,
-    .CX 1693 1003,
-    .CX 1693 1002,
-    .CX 1693 1001,
-    .CX 1693 1000,
-    .CX 1693 999,
-    .CX 1693 998,
-    .CX 1693 997,
-    .CX 1693 996,
-    .CX 1693 995,
-    .CX 1693 994,
-    .CX 1693 993,
-    .CX 1693 992,
-    .CX 1693 991,
-    .CX 1693 990,
-    .CX 1693 989,
-    .CX 1693 988,
-    .CX 1693 987,
-    .CX 1693 986,
-    .CX 1693 985,
-    .CX 1693 984,
-    .CX 1693 983,
-    .CX 1693 982,
-    .CX 1693 981,
-    .CX 1693 980,
-    .CX 1693 979,
-    .CX 1693 978,
-    .CX 1693 977,
-    .CX 1693 976,
-    .CX 1693 975,
-    .CX 1693 974,
-    .CX 1693 973,
-    .CX 1693 972,
-    .CX 1693 971,
-    .CX 1693 970,
-    .CX 1693 969,
-    .CX 1693 968,
-    .CX 1693 967,
-    .CX 1693 966,
-    .CX 1693 965,
-    .CX 1693 964,
-    .CX 1693 963,
-    .CX 1693 962,
-    .CX 1693 961,
-    .CX 1693 960,
-    .CX 1693 959,
-    .CX 1693 958,
-    .CX 1693 957,
-    .CX 1693 956,
-    .CX 1693 955,
-    .CX 1693 954,
-    .CX 1693 953,
-    .CX 1693 952,
-    .CX 1693 951,
-    .CX 1693 950,
-    .CX 1693 949,
-    .CX 1693 948,
-    .CX 1693 947,
-    .CX 1693 946,
-    .CX 1693 945,
-    .CX 1693 944,
-    .CX 1693 943,
-    .CX 1693 942]
-def portal285InvPart15 : Program := [
-    .CX 1693 941,
-    .CX 1693 940,
-    .CX 1693 939,
-    .CX 1693 938,
-    .CX 1693 937,
-    .CX 1693 936,
-    .CX 1693 935,
-    .CX 1693 934,
-    .CX 1693 933,
-    .CX 1693 932,
-    .CX 1693 931,
-    .CX 1693 930,
-    .CX 1693 929,
-    .CX 1693 928,
-    .CX 1693 927,
-    .CX 1693 926,
-    .CX 1693 925,
-    .CX 1693 924,
-    .CX 1693 923,
-    .CX 1693 922,
-    .CX 1693 921,
-    .CX 1693 920,
-    .CX 1693 919,
-    .CX 1693 918,
-    .CX 1693 917,
-    .CX 1693 916,
-    .CX 528 1013,
-    .CCX 300 1013 528,
-    .CX 528 1013,
-    .CX 527 1012,
-    .CCX 300 1012 527,
-    .CX 527 1012,
-    .CX 526 1011,
-    .CCX 300 1011 526,
-    .CX 526 1011,
-    .CX 525 1010,
-    .CCX 300 1010 525,
-    .CX 525 1010,
-    .CX 524 1009,
-    .CCX 300 1009 524,
-    .CX 524 1009,
-    .CX 523 1008,
-    .CCX 300 1008 523,
-    .CX 523 1008,
-    .CX 522 1007,
-    .CCX 300 1007 522,
-    .CX 522 1007,
-    .CX 521 1006,
-    .CCX 300 1006 521,
-    .CX 521 1006,
-    .CX 520 1005,
-    .CCX 300 1005 520,
-    .CX 520 1005,
-    .CX 519 1004,
-    .CCX 300 1004 519,
-    .CX 519 1004,
-    .CX 518 1003,
-    .CCX 300 1003 518,
-    .CX 518 1003,
-    .CX 517 1002,
-    .CCX 300 1002 517,
-    .CX 517 1002,
-    .CX 516 1001,
-    .CCX 300 1001 516,
-    .CX 516 1001,
-    .CX 515 1000,
-    .CCX 300 1000 515,
-    .CX 515 1000,
-    .CX 514 999,
-    .CCX 300 999 514,
-    .CX 514 999,
-    .CX 513 998,
-    .CCX 300 998 513,
-    .CX 513 998,
-    .CX 512 997,
-    .CCX 300 997 512,
-    .CX 512 997,
-    .CX 511 996,
-    .CCX 300 996 511,
-    .CX 511 996,
-    .CX 510 995,
-    .CCX 300 995 510,
-    .CX 510 995,
-    .CX 509 994,
-    .CCX 300 994 509,
-    .CX 509 994,
-    .CX 508 993,
-    .CCX 300 993 508,
-    .CX 508 993,
-    .CX 507 992,
-    .CCX 300 992 507,
-    .CX 507 992,
-    .CX 506 991,
-    .CCX 300 991 506,
-    .CX 506 991,
-    .CX 505 990]
-def portal285InvPart16 : Program := [
-    .CCX 300 990 505,
-    .CX 505 990,
-    .CX 504 989,
-    .CCX 300 989 504,
-    .CX 504 989,
-    .CX 503 988,
-    .CCX 300 988 503,
-    .CX 503 988,
-    .CX 502 987,
-    .CCX 300 987 502,
-    .CX 502 987,
-    .CX 501 986,
-    .CCX 300 986 501,
-    .CX 501 986,
-    .CX 500 985,
-    .CCX 300 985 500,
-    .CX 500 985,
-    .CX 499 984,
-    .CCX 300 984 499,
-    .CX 499 984,
-    .CX 498 983,
-    .CCX 300 983 498,
-    .CX 498 983,
-    .CX 497 982,
-    .CCX 300 982 497,
-    .CX 497 982,
-    .CX 496 981,
-    .CCX 300 981 496,
-    .CX 496 981,
-    .CX 495 980,
-    .CCX 300 980 495,
-    .CX 495 980,
-    .CX 494 979,
-    .CCX 300 979 494,
-    .CX 494 979,
-    .CX 493 978,
-    .CCX 300 978 493,
-    .CX 493 978,
-    .CX 492 977,
-    .CCX 300 977 492,
-    .CX 492 977,
-    .CX 491 976,
-    .CCX 300 976 491,
-    .CX 491 976,
-    .CX 490 975,
-    .CCX 300 975 490,
-    .CX 490 975,
-    .CX 489 974,
-    .CCX 300 974 489,
-    .CX 489 974,
-    .CX 488 973,
-    .CCX 300 973 488,
-    .CX 488 973,
-    .CX 487 972,
-    .CCX 300 972 487,
-    .CX 487 972,
-    .CX 486 971,
-    .CCX 300 971 486,
-    .CX 486 971,
-    .CX 485 970,
-    .CCX 300 970 485,
-    .CX 485 970,
-    .CX 484 969,
-    .CCX 300 969 484,
-    .CX 484 969,
-    .CX 483 968,
-    .CCX 300 968 483,
-    .CX 483 968,
-    .CX 482 967,
-    .CCX 300 967 482,
-    .CX 482 967,
-    .CX 481 966,
-    .CCX 300 966 481,
-    .CX 481 966,
-    .CX 480 965,
-    .CCX 300 965 480,
-    .CX 480 965,
-    .CX 479 964,
-    .CCX 300 964 479,
-    .CX 479 964,
-    .CX 478 963,
-    .CCX 300 963 478,
-    .CX 478 963,
-    .CX 477 962,
-    .CCX 300 962 477,
-    .CX 477 962,
-    .CX 476 961,
-    .CCX 300 961 476,
-    .CX 476 961,
-    .CX 475 960,
-    .CCX 300 960 475,
-    .CX 475 960,
-    .CX 474 959,
-    .CCX 300 959 474,
-    .CX 474 959,
-    .CX 473 958]
-def portal285InvPart17 : Program := [
-    .CCX 300 958 473,
-    .CX 473 958,
-    .CX 472 957,
-    .CCX 300 957 472,
-    .CX 472 957,
-    .CX 471 956,
-    .CCX 300 956 471,
-    .CX 471 956,
-    .CX 470 955,
-    .CCX 300 955 470,
-    .CX 470 955,
-    .CX 469 954,
-    .CCX 300 954 469,
-    .CX 469 954,
-    .CX 468 953,
-    .CCX 300 953 468,
-    .CX 468 953,
-    .CX 467 952,
-    .CCX 300 952 467,
-    .CX 467 952,
-    .CX 466 951,
-    .CCX 300 951 466,
-    .CX 466 951,
-    .CX 465 950,
-    .CCX 300 950 465,
-    .CX 465 950,
-    .CX 464 949,
-    .CCX 300 949 464,
-    .CX 464 949,
-    .CX 463 948,
-    .CCX 300 948 463,
-    .CX 463 948,
-    .CX 462 947,
-    .CCX 300 947 462,
-    .CX 462 947,
-    .CX 461 946,
-    .CCX 300 946 461,
-    .CX 461 946,
-    .CX 460 945,
-    .CCX 300 945 460,
-    .CX 460 945,
-    .CX 459 944,
-    .CCX 300 944 459,
-    .CX 459 944,
-    .CX 458 943,
-    .CCX 300 943 458,
-    .CX 458 943,
-    .CX 457 942,
-    .CCX 300 942 457,
-    .CX 457 942,
-    .CX 456 941,
-    .CCX 300 941 456,
-    .CX 456 941,
-    .CX 455 940,
-    .CCX 300 940 455,
-    .CX 455 940,
-    .CX 454 939,
-    .CCX 300 939 454,
-    .CX 454 939,
-    .CX 453 938,
-    .CCX 300 938 453,
-    .CX 453 938,
-    .CX 452 937,
-    .CCX 300 937 452,
-    .CX 452 937,
-    .CX 451 936,
-    .CCX 300 936 451,
-    .CX 451 936,
-    .CX 450 935,
-    .CCX 300 935 450,
-    .CX 450 935,
-    .CX 449 934,
-    .CCX 300 934 449,
-    .CX 449 934,
-    .CX 448 933,
-    .CCX 300 933 448,
-    .CX 448 933,
-    .CX 447 932,
-    .CCX 300 932 447,
-    .CX 447 932,
-    .CX 446 931,
-    .CCX 300 931 446,
-    .CX 446 931,
-    .CX 445 930,
-    .CCX 300 930 445,
-    .CX 445 930,
-    .CX 444 929,
-    .CCX 300 929 444,
-    .CX 444 929,
-    .CX 443 928,
-    .CCX 300 928 443,
-    .CX 443 928,
-    .CX 442 927,
-    .CCX 300 927 442,
-    .CX 442 927,
-    .CX 441 926]
-def portal285InvPart18 : Program := [
-    .CCX 300 926 441,
-    .CX 441 926,
-    .CX 440 925,
-    .CCX 300 925 440,
-    .CX 440 925,
-    .CX 439 924,
-    .CCX 300 924 439,
-    .CX 439 924,
-    .CX 438 923,
-    .CCX 300 923 438,
-    .CX 438 923,
-    .CX 437 922,
-    .CCX 300 922 437,
-    .CX 437 922,
-    .CX 436 921,
-    .CCX 300 921 436,
-    .CX 436 921,
-    .CX 435 920,
-    .CCX 300 920 435,
-    .CX 435 920,
-    .CX 434 919,
-    .CCX 300 919 434,
-    .CX 434 919,
-    .CX 433 918,
-    .CCX 300 918 433,
-    .CX 433 918,
-    .CX 432 917,
-    .CCX 300 917 432,
-    .CX 432 917,
-    .CX 431 916,
-    .CCX 300 916 431,
-    .CX 431 916,
-    .CX 1013 1693,
-    .CX 528 1693]
-def portal285Inv : Program := portal285InvPart0 ++ (portal285InvPart1 ++ (portal285InvPart2 ++ (portal285InvPart3 ++ (portal285InvPart4 ++ (portal285InvPart5 ++ (portal285InvPart6 ++ (portal285InvPart7 ++ (portal285InvPart8 ++ (portal285InvPart9 ++ (portal285InvPart10 ++ (portal285InvPart11 ++ (portal285InvPart12 ++ (portal285InvPart13 ++ (portal285InvPart14 ++ (portal285InvPart15 ++ (portal285InvPart16 ++ (portal285InvPart17 ++ (portal285InvPart18))))))))))))))))))
+def leave270Inv : Program := leave270InvPart0 ++ (leave270InvPart1 ++ (leave270InvPart2 ++ (leave270InvPart3 ++ (leave270InvPart4 ++ (leave270InvPart5 ++ (leave270InvPart6 ++ (leave270InvPart7 ++ (leave270InvPart8 ++ (leave270InvPart9 ++ (leave270InvPart10 ++ (leave270InvPart11 ++ (leave270InvPart12 ++ (leave270InvPart13 ++ (leave270InvPart14 ++ (leave270InvPart15 ++ (leave270InvPart16 ++ (leave270InvPart17 ++ (leave270InvPart18 ++ (leave270InvPart19 ++ (leave270InvPart20 ++ (leave270InvPart21 ++ (leave270InvPart22 ++ (leave270InvPart23 ++ (leave270InvPart24 ++ (leave270InvPart25 ++ (leave270InvPart26 ++ (leave270InvPart27 ++ (leave270InvPart28 ++ (leave270InvPart29 ++ (leave270InvPart30 ++ (leave270InvPart31 ++ (leave270InvPart32 ++ (leave270InvPart33 ++ (leave270InvPart34 ++ (leave270InvPart35 ++ (leave270InvPart36 ++ (leave270InvPart37 ++ (leave270InvPart38 ++ (leave270InvPart39)))))))))))))))))))))))))))))))))))))))
 open Arithmetic
 open MappedCompressed StairArchiveGates
-def moveLoad285Part0 : Program := [
-    .CX 1792 294,
-    .CX 294 1792,
-    .CX 1792 294,
-    .CX 1792 1791,
-    .CX 1791 1792,
-    .CX 1792 1791,
-    .CX 1792 295,
-    .CX 295 1792,
-    .CX 1792 295,
-    .CX 1792 296,
-    .CX 296 1792,
-    .CX 1792 296,
-    .CX 1790 1789,
-    .CX 1789 1790,
-    .CX 1790 1789,
-    .CX 1792 297,
-    .CX 297 1792,
-    .CX 1792 297,
-    .CX 1790 1788,
-    .CX 1788 1790,
-    .CX 1790 1788,
-    .CX 1792 298,
-    .CX 298 1792,
-    .CX 1792 298,
-    .CX 1790 299,
-    .CX 299 1790,
-    .CX 1790 299,
-    .CX 1792 1786,
-    .CX 1786 1792,
-    .CX 1792 1786,
-    .CX 1787 300,
-    .CX 300 1787,
-    .CX 1787 300]
-def moveLoad285 : Program := moveLoad285Part0
 def moveRestore285Part0 : Program := [
     .CX 294 1792,
     .CX 1792 294,
@@ -11261,22 +7818,16 @@ def moveRestore285Part0 : Program := [
     .CX 1559 1785,
     .CX 1785 1559,
     .CX 1559 1785,
-    .CX 1560 1029,
-    .CX 1029 1560,
-    .CX 1560 1029,
-    .CX 1561 1030,
-    .CX 1030 1561,
-    .CX 1561 1030,
-    .CX 1562 1031,
-    .CX 1031 1562,
-    .CX 1562 1031]
+    .CX 1560 1694,
+    .CX 1694 1560,
+    .CX 1560 1694,
+    .CX 1561 1695,
+    .CX 1695 1561,
+    .CX 1561 1695,
+    .CX 1562 1696,
+    .CX 1696 1562,
+    .CX 1562 1696]
 def moveRestore285 : Program := moveRestore285Part0
-private def archiveLoad285Ports : List Wire := [291, 1794, 292, 1793, 293, 1792, 294, 1791, 295, 1790, 296, 1789, 297, 1788, 298, 1787, 299, 1786, 300, 1785, 1029, 1030, 1031, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687]
-def archiveLoad285 (d:Bool) := renameProgram (fun q=>archiveLoad285Ports.getD q 0)
-  (if d then integer_load0 else integer_load1) ++ moveLoad285
-private def archiveRestore285Ports : List Wire := [291, 1794, 292, 1793, 293, 294, 1791, 295, 296, 1789, 297, 1788, 298, 299, 1786, 300, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689]
-def archiveRestore285 (d:Bool) := renameProgram (fun q=>archiveRestore285Ports.getD q 0)
-  (if d then integer_restore0 else integer_restore1) ++ moveRestore285
 end ECDSAAdd.Entrant.StairPacket.Partial
 
 end
@@ -11320,6 +7871,8 @@ theorem leave270Part34 : ECDSAAdd.Entrant.StairPacket.Partial.leave270Part34.len
 theorem leave270Part35 : ECDSAAdd.Entrant.StairPacket.Partial.leave270Part35.length = 96 := by rfl
 theorem leave270Part36 : ECDSAAdd.Entrant.StairPacket.Partial.leave270Part36.length = 96 := by rfl
 theorem leave270Part37 : ECDSAAdd.Entrant.StairPacket.Partial.leave270Part37.length = 96 := by rfl
+theorem leave270Part38 : ECDSAAdd.Entrant.StairPacket.Partial.leave270Part38.length = 96 := by rfl
+theorem leave270Part39 : ECDSAAdd.Entrant.StairPacket.Partial.leave270Part39.length = 6 := by rfl
 theorem leave270InvPart0 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart0.length = 96 := by rfl
 theorem leave270InvPart1 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart1.length = 96 := by rfl
 theorem leave270InvPart2 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart2.length = 96 := by rfl
@@ -11358,6 +7911,8 @@ theorem leave270InvPart34 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart
 theorem leave270InvPart35 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart35.length = 96 := by rfl
 theorem leave270InvPart36 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart36.length = 96 := by rfl
 theorem leave270InvPart37 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart37.length = 96 := by rfl
+theorem leave270InvPart38 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart38.length = 96 := by rfl
+theorem leave270InvPart39 : ECDSAAdd.Entrant.StairPacket.Partial.leave270InvPart39.length = 6 := by rfl
 end ECDSAAdd.Entrant.WSlimLen
 
 section
@@ -11526,107 +8081,6 @@ namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary285
 open ArchivePortAction StairArchiveIntegerHook CodecBitSliceVerify
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-def rawPortsList : List Wire := [291, 1794, 292, 1793, 293, 1792, 294, 1791, 295, 1790, 296, 1789, 297, 1788, 298, 1787, 299, 1786, 300, 1785, 1029, 1030, 1031, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689]
-def rawPorts (i:Fin 157) : Wire := rawPortsList.getD i 0
-def codePortsList : List Wire := [291, 1794, 292, 1793, 293, 294, 1791, 295, 296, 1789, 297, 1788, 298, 299, 1786, 300, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689, 1792, 1790, 1787, 1785, 1029, 1030, 1031]
-def codePorts (i:Fin 157) : Wire := codePortsList.getD i 0
-def loadMapList : List Wire := [291, 1794, 292, 1793, 293, 1792, 294, 1791, 295, 1790, 296, 1789, 297, 1788, 298, 1787, 299, 1786, 300, 1785, 1029, 1030, 1031, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687]
-def loadMap (q:Wire) := loadMapList.getD q 0
-def loadMoves : List (Wire×Wire) := [(294,1792),(1791,1792),(295,1792),(296,1792),(1789,1790),(297,1792),(1788,1790),(298,1792),(299,1790),(1786,1792),(300,1787)]
-def loadRouteList : List (Fin 157) := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 17, 16, 18, 19, 20, 21, 22]
-def loadRoute (i:Fin 157) := loadRouteList.getD i 0
-theorem load_program (d:Bool) : Partial.archiveLoad285 d=placed loadMap (op true d) ++ moves loadMoves := by cases d <;> rfl
-theorem load_unique : Function.Injective rawPorts := by exact injective_list rawPortsList (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-theorem load_map : ∀q:Fin 155, loadMap q=rawPorts ⟨q,by omega⟩ := by
-  have h1 : (loadMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have h2 : (rawPortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro q
-  simp only [loadMap, rawPorts, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h2]
-  revert q
-  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem load_route : ∀i,backMap loadMoves (codePorts i)=rawPorts (loadRoute i) := by
-  have h1 : (codePortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have h2 : (rawPortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have h3 : ((loadRouteList.map Fin.val).all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro i
-  simp only [codePorts, rawPorts, loadRoute, ECDSAAdd.Entrant.WSlimV3.fin_getD_val, Fin.val_zero, Fin.isValue,
-    ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h2, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h3]
-  revert i
-  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem load_sort : ∀ i, loadRoute i=i ∨ (16≤ i.val ∧ 16≤(loadRoute i).val) := by
-  have h1 : ((loadRouteList.map Fin.val).all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro i
-  simp only [loadRoute, Fin.ext_iff, ECDSAAdd.Entrant.WSlimV3.fin_getD_val, Fin.val_zero, Fin.isValue,
-    ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1]
-  revert i
-  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem load_scope : ∀p∈loadMoves,(∃i,rawPorts i=p.1) ∧ (∃i,rawPorts i=p.2) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem load_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
-    (ready:Frame rawPorts (startCols true d) row s) :
-    let t:=run (Partial.archiveLoad285 d) m s
-    t.phase=s.phase ∧ Frame codePorts (endCols true d) row t ∧ ∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q := by
-  rw [load_program]
-  apply packet true d rawPorts codePorts loadMap loadMoves loadRoute load_unique _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) load_route load_sort load_scope row hr s m ready
-  intro q h
-  have lim:q<155:=by cases d <;> exact h
-  exact ⟨⟨q,by omega⟩,rfl,load_map ⟨q,lim⟩⟩
-def restoreMapList : List Wire := [291, 1794, 292, 1793, 293, 294, 1791, 295, 296, 1789, 297, 1788, 298, 299, 1786, 300, 1556, 1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689]
-def restoreMap (q:Wire) := restoreMapList.getD q 0
-def restoreMoves : List (Wire×Wire) := [(1792,294),(294,1791),(1791,295),(295,296),(1790,1789),(296,297),(1789,1788),(297,298),(1788,299),(298,1786),(1787,300),(299,1556),(1786,1557),(300,1558),(1785,1559),(1029,1560),(1030,1561),(1031,1562)]
-def restoreRouteList : List (Fin 157) := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 151, 150, 152, 153, 154, 155, 156, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149]
-def restoreRoute (i:Fin 157) := restoreRouteList.getD i 0
-theorem restore_program (d:Bool) : Partial.archiveRestore285 d=placed restoreMap (op false d) ++ moves restoreMoves := by cases d <;> rfl
-theorem restore_unique : Function.Injective codePorts := by exact injective_list codePortsList (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-theorem restore_map : ∀q:Fin 150, restoreMap q=codePorts ⟨q,by omega⟩ := by
-  have h1 : (restoreMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have h2 : (codePortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro q
-  simp only [restoreMap, codePorts, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h2]
-  revert q
-  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem restore_route : ∀i,backMap restoreMoves (rawPorts i)=codePorts (restoreRoute i) := by
-  have h1 : (rawPortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have h2 : (codePortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have h3 : ((restoreRouteList.map Fin.val).all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro i
-  simp only [codePorts, rawPorts, restoreRoute, ECDSAAdd.Entrant.WSlimV3.fin_getD_val, Fin.val_zero, Fin.isValue,
-    ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h2, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h3]
-  revert i
-  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem restore_sort : ∀ i, restoreRoute i=i ∨ (23≤ i.val ∧ 23≤(restoreRoute i).val) := by
-  have h1 : ((restoreRouteList.map Fin.val).all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro i
-  simp only [restoreRoute, Fin.ext_iff, ECDSAAdd.Entrant.WSlimV3.fin_getD_val, Fin.val_zero, Fin.isValue,
-    ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1]
-  revert i
-  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem restore_scope : ∀p∈restoreMoves,(∃i,codePorts i=p.1) ∧ (∃i,codePorts i=p.2) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem restore_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
-    (ready:Frame codePorts (startCols false d) row s) :
-    let t:=run (Partial.archiveRestore285 d) m s
-    t.phase=s.phase ∧ Frame rawPorts (endCols false d) row t ∧ ∀q,(∀i,codePorts i≠q) → t.basis q=s.basis q := by
-  rw [restore_program]
-  apply packet false d codePorts rawPorts restoreMap restoreMoves restoreRoute restore_unique _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) restore_route restore_sort restore_scope row hr s m ready
-  intro q h
-  have lim:q<150:=by cases d <;> exact h
-  exact ⟨⟨q,by omega⟩,rfl,restore_map ⟨q,lim⟩⟩
-theorem code_from_raw : ∀i,∃j,rawPorts j=codePorts i := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem roundtrip (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
-    (ready:Frame rawPorts raw row s) :
-    run (Partial.archiveRestore285 d) n (run (Partial.archiveLoad285 d) m s)=s := by
-  have f:=load_run d row hr s m ready
-  have b:=restore_run d row hr _ n f.2.1
-  apply state_eq
-  · exact b.1.trans f.1
-  · intro q
-    by_cases h:∃i,rawPorts i=q
-    · obtain ⟨i,rfl⟩:=h
-      exact (b.2.1 i).trans (ready i).symm
-    · have no:∀i,rawPorts i≠q:=fun i eq=>h ⟨i,eq⟩
-      have noc:∀i,codePorts i≠q:=by
-        intro i; obtain ⟨j,eq⟩:=code_from_raw i
-        exact eq ▸ no j
-      exact (b.2.2 q noc).trans (f.2.2 q no)
 end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary285
 
 end
@@ -11635,21 +8089,6 @@ section
 
 namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary285
 open ArchivePortAction CodecBitSliceVerify StairArchiveRaw StairArchiveGates
-theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
-    (legal:∃row<63145,∀q<23,(rawCol q).testBit row=data q)
-    (recorded:∀i:Fin 157,i.val<23 → s.basis (rawPorts i)=data i)
-    (scratch:∀i:Fin 157,23≤ i.val → s.basis (rawPorts i)=false) :
-    let t:=run (Partial.archiveLoad285 d) m s
-    ∃row<63145, t.phase=s.phase ∧ Frame codePorts (code d) row t ∧
-        (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then enter0Trace0In else enter1Trace0In) i).testBit row) ∧
-        (∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q) ∧
-        (∀ tape, run (Partial.archiveRestore285 d) tape t=s) := by
-  obtain ⟨row,hr,h⟩:=legal
-  have ready:=starting_frame rawPorts s row data h recorded scratch
-  have ⟨ph,fr,away⟩:=load_run d row hr s m ready
-  refine ⟨row,hr,ph,fr,?_,away,fun tape=>roundtrip d row hr s m tape ready⟩
-  intro i
-  exact (fr ⟨i,by omega⟩).trans (congrArg (fun x:Nat=>x.testBit row) (field_bits d i))
 end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary285
 
 end
@@ -11659,25 +8098,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket
 open Arithmetic IntegerPacket SkywalkRails StairArchiveTrace StairArchiveRaw ArchivePortAction
 namespace ArchiveBoundary285
-def sourceIdx : Fin 23 := ⟨13,by decide⟩
-theorem chronological : ∀i:Fin 20, rawPorts ⟨i,by omega⟩=nativeRawPort sourceIdx i := by decide +kernel
-theorem observed (before now:State)
-    (kept:∀q:Fin 20,now.basis (rawPorts ⟨q,by omega⟩)=before.basis (rawPorts ⟨q,by omega⟩))
-    (far u c:Bool) (tags:now.basis (rawPorts 20)=far ∧ now.basis (rawPorts 21)=u ∧ now.basis (rawPorts 22)=c) :
-    let cells:=readCells (shape sourceIdx) 0 15 (mappedBasis sourceIdx before.basis)
-    ∀i:Fin 157,i.val<23 → now.basis (rawPorts i)=rawBit (read (cells.drop 5)) far u c i := by
-  dsimp only
-  intro i bound
-  by_cases young:i.val<20
-  · let col:Fin 20:=⟨i,young⟩
-    refine (kept col).trans ?_
-    rw [chronological col]
-    exact (native_raw_read sourceIdx before i young).trans (by simp [rawBit,young])
-  · have eq:i=20 ∨ i=21 ∨ i=22:=by omega
-    rcases eq with rfl|rfl|rfl
-    · exact tags.1
-    · exact tags.2.1
-    · exact tags.2.2
 end ArchiveBoundary285
 end ECDSAAdd.Entrant.StairPacket
 
@@ -11690,17 +8110,6 @@ open Arithmetic ArchivePortAction StairArchiveIntegerHook
 set_option maxRecDepth 20000
 set_option maxHeartbeats 2500000
 namespace ArchiveBoundary285
-theorem load_cover (d:Bool) : wires (Partial.archiveLoad285 d) ⊆ rawPortsList.toFinset := by
-  rw [load_program,wires_append,Finset.union_subset_iff]
-  constructor
-  · rw [placed,renameProgram_support]
-    intro q member
-    obtain ⟨w,used,rfl⟩:=Finset.mem_image.mp member
-    have bound:=Finset.mem_range.mp (sub (op true d) used)
-    have small:w<155:=by cases d <;> exact bound
-    have inside:∀j:Fin 155,loadMap j∈rawPortsList:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-    exact List.mem_toFinset.mpr (inside ⟨w,small⟩)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 end ArchiveBoundary285
 end ECDSAAdd.Entrant.StairPacket
 
@@ -11849,15 +8258,15 @@ theorem off0 : ((leave270.drop 1300).take 8) = toggles 1613 controls0 := by
   unfold leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide)]
   rfl
-theorem reverseOn0 : ((leave270Inv.drop 2355).take 8) = toggles 1613 controls0.reverse := by
-  -- WSLIM: skip 24 whole parts by their lengths (rfl walked 2355 instructions through the `++` chain)
+theorem reverseOn0 : ((leave270Inv.drop 2442).take 8) = toggles 1613 controls0.reverse := by
+  -- WSLIM: skip 25 whole parts by their lengths (rfl walked 2442 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide)]
   rfl
-theorem reverseOff0 : ((leave270Inv.drop 2723).take 8) = toggles 1613 controls0.reverse := by
-  -- WSLIM: skip 28 whole parts by their lengths (rfl walked 2723 instructions through the `++` chain)
+theorem reverseOff0 : ((leave270Inv.drop 2810).take 8) = toggles 1613 controls0.reverse := by
+  -- WSLIM: skip 29 whole parts by their lengths (rfl walked 2810 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide)]
   rfl
 theorem wrapped0 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls0)⟩
@@ -11892,15 +8301,15 @@ theorem off1 : ((leave270.drop 1679).take 8) = toggles 1613 controls1 := by
   unfold leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide)]
   rfl
-theorem reverseOn1 : ((leave270Inv.drop 1976).take 8) = toggles 1613 controls1.reverse := by
-  -- WSLIM: skip 20 whole parts by their lengths (rfl walked 1976 instructions through the `++` chain)
+theorem reverseOn1 : ((leave270Inv.drop 2063).take 8) = toggles 1613 controls1.reverse := by
+  -- WSLIM: skip 21 whole parts by their lengths (rfl walked 2063 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide)]
   rfl
-theorem reverseOff1 : ((leave270Inv.drop 2347).take 8) = toggles 1613 controls1.reverse := by
-  -- WSLIM: skip 24 whole parts by their lengths (rfl walked 2347 instructions through the `++` chain)
+theorem reverseOff1 : ((leave270Inv.drop 2434).take 8) = toggles 1613 controls1.reverse := by
+  -- WSLIM: skip 25 whole parts by their lengths (rfl walked 2434 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide)]
   rfl
 theorem wrapped1 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls1)⟩
@@ -11935,15 +8344,15 @@ theorem off2 : ((leave270.drop 2064).take 8) = toggles 1613 controls2 := by
   unfold leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide)]
   rfl
-theorem reverseOn2 : ((leave270Inv.drop 1591).take 8) = toggles 1613 controls2.reverse := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1591 instructions through the `++` chain)
+theorem reverseOn2 : ((leave270Inv.drop 1678).take 8) = toggles 1613 controls2.reverse := by
+  -- WSLIM: skip 17 whole parts by their lengths (rfl walked 1678 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide)]
   rfl
-theorem reverseOff2 : ((leave270Inv.drop 1968).take 8) = toggles 1613 controls2.reverse := by
-  -- WSLIM: skip 20 whole parts by their lengths (rfl walked 1968 instructions through the `++` chain)
+theorem reverseOff2 : ((leave270Inv.drop 2055).take 8) = toggles 1613 controls2.reverse := by
+  -- WSLIM: skip 21 whole parts by their lengths (rfl walked 2055 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide)]
   rfl
 theorem wrapped2 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls2)⟩
@@ -11978,15 +8387,15 @@ theorem off3 : ((leave270.drop 2461).take 8) = toggles 1613 controls3 := by
   unfold leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide)]
   rfl
-theorem reverseOn3 : ((leave270Inv.drop 1194).take 8) = toggles 1613 controls3.reverse := by
-  -- WSLIM: skip 12 whole parts by their lengths (rfl walked 1194 instructions through the `++` chain)
+theorem reverseOn3 : ((leave270Inv.drop 1281).take 8) = toggles 1613 controls3.reverse := by
+  -- WSLIM: skip 13 whole parts by their lengths (rfl walked 1281 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide)]
   rfl
-theorem reverseOff3 : ((leave270Inv.drop 1583).take 8) = toggles 1613 controls3.reverse := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1583 instructions through the `++` chain)
+theorem reverseOff3 : ((leave270Inv.drop 1670).take 8) = toggles 1613 controls3.reverse := by
+  -- WSLIM: skip 17 whole parts by their lengths (rfl walked 1670 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide)]
   rfl
 theorem wrapped3 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls3)⟩
@@ -12213,7 +8622,7 @@ theorem sites : Layout 1560 swaps hits 0 15 := by
 
 theorem written : ((leave270.drop 245).take 30) = putAll 1560 swaps hits 0 15 := by rfl
 
-theorem retired : ((leave270Inv.drop 3388).take 30) = dropAll 1560 swaps hits 0 15 := by rfl
+theorem retired : ((leave270Inv.drop 3475).take 30) = dropAll 1560 swaps hits 0 15 := by rfl
 
 end ECDSAAdd.Entrant.StairPacket.Leave270Hit
 
@@ -12225,15 +8634,6 @@ namespace ECDSAAdd.Entrant.StairPacket.Portal285Flag
 open Arithmetic PortalAnd
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
-def thresholdPairs : List (Wire×Wire) := [(433, 1558), (434, 1559), (435, 1560), (436, 1561), (437, 1562), (438, 1563), (439, 1564), (440, 1565), (441, 1566), (442, 1567), (443, 1568), (444, 1569), (445, 1570), (446, 1571), (447, 1572), (448, 1573), (449, 1574), (450, 1575), (451, 1576), (452, 1577), (453, 1578), (454, 1579), (455, 1580), (456, 1581), (457, 1582), (458, 1583), (459, 1584), (460, 1585), (461, 1586), (462, 1587), (463, 1588), (464, 1589), (465, 1590), (466, 1591), (467, 1592), (468, 1593), (469, 1594), (470, 1595), (471, 1596), (472, 1597), (473, 1598), (474, 1599), (475, 1600), (476, 1601), (477, 1602), (478, 1603), (479, 1604), (480, 1605), (481, 1606), (482, 1607), (483, 1608), (484, 1609), (485, 1610), (486, 1611), (487, 1612), (488, 1613), (489, 1614), (490, 1615), (491, 1616), (492, 1617), (493, 1618), (494, 1619), (495, 1620), (496, 1621), (497, 1622), (498, 1623), (499, 1624), (500, 1625), (501, 1626), (502, 1627), (503, 1628), (504, 1629), (505, 1630), (506, 1631), (507, 1632), (508, 1633), (509, 1634), (510, 1635), (511, 1636), (512, 1637), (513, 1638), (514, 1639), (515, 1640), (516, 1641), (517, 1642), (518, 1643), (519, 1644), (520, 1645), (521, 1646), (522, 1647), (523, 1648), (524, 1649), (525, 1650), (526, 1651), (527, 1652), (528, 1653)]
-def threshold := latch true none 1556 1557 thresholdPairs
-theorem threshold_layout : (1556::1557::sites thresholdPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem threshold_slice : ((Partial.portal285).drop 395).take 388=threshold := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-def orientationPairs : List (Wire×Wire) := [(917, 1556), (918, 1557), (919, 1558), (920, 1559), (921, 1560), (922, 1561), (923, 1562), (924, 1563), (925, 1564), (926, 1565), (927, 1566), (928, 1567), (929, 1568), (930, 1569), (931, 1570), (932, 1571), (933, 1572), (934, 1573), (935, 1574), (936, 1575), (937, 1576), (938, 1577), (939, 1578), (940, 1579), (941, 1580), (942, 1581), (943, 1582), (944, 1583), (945, 1584), (946, 1585), (947, 1586), (948, 1587), (949, 1588), (950, 1589), (951, 1590), (952, 1591), (953, 1592), (954, 1593), (955, 1594), (956, 1595), (957, 1596), (958, 1597), (959, 1598), (960, 1599), (961, 1600), (962, 1601), (963, 1602), (964, 1603), (965, 1604), (966, 1605), (967, 1606), (968, 1607), (969, 1608), (970, 1609), (971, 1610), (972, 1611), (973, 1612), (974, 1613), (975, 1614), (976, 1615), (977, 1616), (978, 1617), (979, 1618), (980, 1619), (981, 1620), (982, 1621), (983, 1622), (984, 1623), (985, 1624), (986, 1625), (987, 1626), (988, 1627), (989, 1628), (990, 1629), (991, 1630), (992, 1631), (993, 1632), (994, 1633), (995, 1634), (996, 1635), (997, 1636), (998, 1637), (999, 1638), (1000, 1639), (1001, 1640), (1002, 1641), (1003, 1642), (1004, 1643), (1005, 1644), (1006, 1645), (1007, 1646), (1008, 1647), (1009, 1648), (1010, 1649), (1011, 1650), (1012, 1651), (1013, 1652)]
-def orientation := latch false (some 1691) 1692 916 orientationPairs
-theorem orientation_layout : (1692::916::sites orientationPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem orientation_slice : ((Partial.portal285).drop 786).take 392=orientation := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem orientation_enable : 1691∉1692::916::sites orientationPairs := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
 
 end
@@ -12244,26 +8644,6 @@ namespace ECDSAAdd.Entrant.StairPacket.Portal285Flag
 open Arithmetic PortalAnd
 set_option maxRecDepth 30000
 set_option maxHeartbeats 6000000
-def railA : List Wire := [431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528]
-def railB : List Wire := [916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013]
-def carry : List Wire := [1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650]
-def bulkA := railA.drop 3
-def bulkB := railB.drop 3
-def scan : Program := [.CX 528 1693,.CX 1013 1693] ++
-  RailPair.exchange 300 (railA.zip railB) ++ signComplement 1693 railB
-def flags : Program := [.CCX 431 432 1557] ++ threshold ++
-  [.measureX 1557 [] [.CZ 431 432],.CX 1556 1691,.CX 1691 1556] ++ orientation
-def erase : Program := [.X 433,.CCX 918 433 1556] ++
-  Companion.erase bulkA bulkB carry 1692 1556 ++
-  [.measureX 1556 [] [.CZ 918 433],.X 433]
-def store : Program := RailPair.transfer false (bulkA.zip bulkB) ++
-  signComplement 1693 (railB.take 3) ++ RailPair.exchange 300 ((railA.take 3).zip (railB.take 3))
-theorem emitted : Partial.portal285=scan++flags++erase++store := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem exchange_good : (300::RailPair.sites (railA.zip railB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem complement_good : railB.Nodup ∧ 1693∉railB := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem move_good : (RailPair.sites (bulkA.zip bulkB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem copy_good : Companion.Geometry bulkA bulkB carry 1692 1556 := by
-  constructor <;> (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
 
@@ -12275,14 +8655,6 @@ namespace ECDSAAdd.Entrant.StairPacket.Portal285Flag
 open Arithmetic
 set_option maxRecDepth 30000
 set_option maxHeartbeats 7000000
-def backFlags := PortalAnd.flagsBack 431 432 1557 1556 1691 1692 916 thresholdPairs orientationPairs
-def backErase := PortalBorrow.wrap 433 918 1556 (PortalBorrow.restore bulkA bulkB carry 1692 1556)
-theorem emitted_back : Partial.portal285Inv=store.reverse++backErase++backFlags++scan.reverse := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem flags_spec : flags=PortalAnd.flags 431 432 1557 1556 1691 1692 916 thresholdPairs orientationPairs := by rfl
-theorem erase_spec : erase=PortalBorrow.wrap 433 918 1556 (Companion.erase bulkA bulkB carry 1692 1556) := by rfl
-theorem scan_proper : ProperProgram scan := PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-theorem store_proper : ProperProgram store := PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-def activeScratch : List Wire := [1557, 1556, 1691, 1692, 1556]++thresholdPairs.map Prod.snd++orientationPairs.map Prod.snd++carry
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
 
 end
@@ -12293,81 +8665,8 @@ namespace ECDSAAdd.Entrant.StairPacket.Portal285Flag
 open Arithmetic
 set_option maxRecDepth 30000
 set_option maxHeartbeats 7000000
-theorem away_scan : ∀q∈activeScratch,q∉wires scan := PortalStatic.separated _ _ 1693 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-theorem flags_do (s:State) (m:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    let f:=PortalAnd.high 431 432 thresholdPairs s.basis
-    let u:=f && (PortalAnd.digits 916 orientationPairs).any s.basis
-    run flags m s=⟨s.phase,writeBit (writeBit s.basis 1691 f) 1692 u⟩ := by
-  rw [flags_spec]
-  apply PortalAnd.flags_run
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · decide
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · intro p hp; exact h _ (by simp only [activeScratch,List.mem_append]; exact Or.inl (Or.inl (Or.inr (List.mem_map.mpr ⟨p,hp,rfl⟩))))
-  · intro p hp; exact h _ (by simp only [activeScratch,List.mem_append]; exact Or.inl (Or.inr (List.mem_map.mpr ⟨p,hp,rfl⟩)))
-theorem flags_return (s:State) (m n:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    run backFlags n (run flags m s)=s := by
-  rw [flags_spec]
-  apply PortalAnd.flags_undo
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · decide
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · intro p hp; exact h _ (by simp only [activeScratch,List.mem_append]; exact Or.inl (Or.inl (Or.inr (List.mem_map.mpr ⟨p,hp,rfl⟩))))
-  · intro p hp; exact h _ (by simp only [activeScratch,List.mem_append]; exact Or.inl (Or.inr (List.mem_map.mpr ⟨p,hp,rfl⟩)))
-theorem erase_return (s:State) (m n:List Bool) (h:s.basis 1556=false ∧ ∀q∈carry,s.basis q=false) :
-    run backErase n (run erase m s)=s := by
-  rw [erase_spec]
-  apply PortalBorrow.erase_undo
-  · exact copy_good
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · exact PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-  · exact h.1
-  · exact h.2
-theorem portal_return (s:State) (m tape:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    run Partial.portal285Inv tape (run Partial.portal285 m s)=s := by
-  let v:=run scan m s
-  have vh:∀q∈activeScratch,v.basis q=false:=fun q hp=>(run_preserves_outside _ _ _ _ (away_scan _ hp)).trans (h _ hp)
-  have hc (m0:List Bool) : (run flags m0 v).basis 1556=false ∧ ∀q∈carry,(run flags m0 v).basis q=false := by
-    rw [flags_do v m0 vh]
-    have dis: ∀q∈carry,q≠1691 ∧ q≠1692 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-    constructor
-    · simpa [writeBit] using vh 1556 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-    · intro q hq; simp [writeBit,(dis _ hq).1,(dis _ hq).2,vh q (by simp [activeScratch,hq])]
-  rw [emitted,emitted_back]
-  simp only [run_append,run_take]
-  rw [run_reverse_proper _ store_proper,erase_return _ _ _ (hc _),flags_return _ _ _ vh,run_reverse_proper _ scan_proper]
 
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
-
-end
-
--- ==== R1: the physical leave270 programs (MoveChain is in Window.lean) ====
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.Partial
-
-/-- R1 leave270: (tag, cell) rows of the selector mux and the kept half of the digit pass. -/
-def leave270Rows : List MoveChain.Row := [(1576, 423), (1562, 424), (1563, 425), (1564, 426), (1565, 427), (1566, 428), (1567, 429), (1568, 430), (1569, 431), (1570, 432), (1571, 433), (1572, 434), (1573, 435), (1574, 436), (1575, 437), (1560, 438)]
-def leave270Kept : Program := [.CCX 1576 1613 424, .CCX 1562 1613 425, .CCX 1563 1613 426, .CCX 1564 1613 427, .CCX 1565 1613 428, .CCX 1566 1613 429, .CCX 1567 1613 430, .CCX 1568 1613 431, .CCX 1569 1613 432, .CCX 1570 1613 433, .CCX 1571 1613 434, .CCX 1572 1613 435, .CCX 1573 1613 436, .CCX 1574 1613 437, .CCX 1575 1613 438, .CCX 1560 1613 439]
-/-- R1 physical leave270: the reference program with the 16 mux Toffolis replaced by 16 controlled swaps and the
-16 digit clears removed (16 Toffolis fewer). -/
-def leave270Move : Program :=
-  leave270.take 302 ++ (MoveChain.rows 1701 leave270Rows ++ ((leave270.drop 318).take 2153 ++ (leave270Kept ++ leave270.drop 2503)))
-def leave270MoveInv : Program :=
-  leave270Inv.take 1160 ++ (leave270Kept.reverse ++ ((leave270Inv.drop 1192).take 2153 ++ (MoveChain.rows 1701 leave270Rows.reverse ++ leave270Inv.drop 3361)))
-
-end ECDSAAdd.Entrant.StairPacket.Partial
 
 end
 
@@ -12402,22 +8701,22 @@ theorem retired : ((leave270.drop 2580).take 37) = retire.map Op.exit := by
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part25 (by decide)]
   rfl
 
-theorem preparedInv : ((leave270Inv.drop 1046).take 37) = prepareInv.map Op.enter := by
-  -- WSLIM: skip 10 whole parts by their lengths (rfl walked 1046 instructions through the `++` chain)
+theorem preparedInv : ((leave270Inv.drop 1133).take 37) = prepareInv.map Op.enter := by
+  -- WSLIM: skip 11 whole parts by their lengths (rfl walked 1133 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide)]
   rfl
 
-theorem retiredInv : ((leave270Inv.drop 3329).take 59) = retireInv.map Op.exit := by
-  -- WSLIM: skip 34 whole parts by their lengths (rfl walked 3329 instructions through the `++` chain)
+theorem retiredInv : ((leave270Inv.drop 3416).take 59) = retireInv.map Op.exit := by
+  -- WSLIM: skip 35 whole parts by their lengths (rfl walked 3416 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide)]
   rfl
 
-theorem hitsInv : ((leave270Inv.drop 1016).take 30) = putAll 1560 swaps hits 0 15 := by
-  -- WSLIM: skip 10 whole parts by their lengths (rfl walked 1016 instructions through the `++` chain)
+theorem hitsInv : ((leave270Inv.drop 1103).take 30) = putAll 1560 swaps hits 0 15 := by
+  -- WSLIM: skip 11 whole parts by their lengths (rfl walked 1103 instructions through the `++` chain)
   unfold leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide)]
   rfl
 
 theorem retireHits : ((leave270.drop 2617).take 30) = dropAll 1560 swaps hits 0 15 := by
@@ -12440,11 +8739,11 @@ def longPairs : List (Wire × Wire) := [(908, 1557), (909, 1558), (910, 1559), (
 theorem long_layout : (1556::907::sites longPairs).Nodup := WSlimBlock.nodup_of_maskB _ (by decide +kernel)
 def long : Program := ((Partial.leave270).drop 93).take 76
 theorem long_eq : long = latch true none 1556 907 longPairs := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def longBack : Program := ((Partial.leave270Inv).drop 3494).take 76
+def longBack : Program := ((Partial.leave270Inv).drop 3581).take 76
 theorem longBack_eq : longBack = backwardLatch true none 1556 907 longPairs := by
-  -- WSLIM: skip 34 whole parts by their lengths (the decide walked 3341 instructions through the `++` chain)
+  -- WSLIM: skip 37 whole parts by their lengths (the decide walked 3581 instructions through the `++` chain)
   unfold longBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart35 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart35 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart36 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 theorem long_run (s:State) (m:List Bool) (clean:∀p∈longPairs,s.basis p.2=false) :
     run long m s = ⟨s.phase,writeBit s.basis 1556 (s.basis 1556 ^^ ((digits 907 longPairs).any s.basis))⟩ := by
@@ -12458,15 +8757,15 @@ def pendingPairs : List (Wire × Wire) := [(433,1559),(934,1560),(935,1561),(936
 theorem pending_layout : (431::432::1557::1558::sites pendingPairs).Nodup := WSlimBlock.nodup_of_maskB _ (by decide +kernel)
 def pending : Program := ((Partial.leave270).drop 2717).take 506
 theorem pending_eq : pending = threshold 431 432 1558 1557 pendingPairs := by
-  -- WSLIM: skip 26 whole parts by their lengths (the decide walked 2576 instructions through the `++` chain)
+  -- WSLIM: skip 28 whole parts by their lengths (the decide walked 2717 instructions through the `++` chain)
   unfold pending Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part27 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def pendingBack : Program := ((Partial.leave270Inv).drop 440).take 506
+def pendingBack : Program := ((Partial.leave270Inv).drop 527).take 506
 theorem pendingBack_eq : pendingBack = thresholdBack 431 432 1558 1557 pendingPairs := by
-  -- WSLIM: skip 4 whole parts by their lengths (the decide walked 456 instructions through the `++` chain)
+  -- WSLIM: skip 5 whole parts by their lengths (the decide walked 527 instructions through the `++` chain)
   unfold pendingBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 theorem pending_run (s:State) (m:List Bool) (fresh : s.basis 1558=false) (clean:∀p∈pendingPairs,s.basis p.2=false) :
     run pending m s = ⟨s.phase,writeBit s.basis 1557 (s.basis 1557 ^^ (high 431 432 pendingPairs s.basis))⟩ := by
@@ -12480,13 +8779,13 @@ def clearFlagPairs : List (Wire × Wire) := [(907, 1559), (908, 1560), (909, 156
 theorem clearFlag_layout : (1556::1558::sites clearFlagPairs).Nodup := WSlimBlock.nodup_of_maskB _ (by decide +kernel)
 def clearFlag : Program := ((Partial.leave270).drop 3224).take 52
 theorem clearFlag_eq : clearFlag = latch true none 1556 1558 clearFlagPairs := by
-  -- WSLIM: skip 31 whole parts by their lengths (the decide walked 3055 instructions through the `++` chain)
+  -- WSLIM: skip 33 whole parts by their lengths (the decide walked 3224 instructions through the `++` chain)
   unfold clearFlag Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part32 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def clearFlagBack : Program := ((Partial.leave270Inv).drop 387).take 52
+def clearFlagBack : Program := ((Partial.leave270Inv).drop 474).take 52
 theorem clearFlagBack_eq : clearFlagBack = backwardLatch true none 1556 1558 clearFlagPairs := by
-  -- WSLIM: skip 4 whole parts by their lengths (the decide walked 407 instructions through the `++` chain)
+  -- WSLIM: skip 4 whole parts by their lengths (the decide walked 474 instructions through the `++` chain)
   unfold clearFlagBack Partial.leave270Inv
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
@@ -12514,23 +8813,23 @@ theorem erase_eq : erase = Companion.erase fullA fullM fullC 1556 1558 := by
   unfold erase Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def eraseBack : Program := ((Partial.leave270Inv).drop 3421).take 70
+def eraseBack : Program := ((Partial.leave270Inv).drop 3508).take 70
 theorem eraseBack_eq : eraseBack = PortalBorrow.restore fullA fullM fullC 1556 1558 := by
-  -- WSLIM: skip 34 whole parts by their lengths (the decide walked 3268 instructions through the `++` chain)
+  -- WSLIM: skip 36 whole parts by their lengths (the decide walked 3508 instructions through the `++` chain)
   unfold eraseBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart35 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 def restore : Program := ((Partial.leave270).drop 2650).take 64
 theorem restore_eq : restore = Companion.restore smallA smallM smallC 1556 1558 := by
-  -- WSLIM: skip 26 whole parts by their lengths (the decide walked 2515 instructions through the `++` chain)
+  -- WSLIM: skip 27 whole parts by their lengths (the decide walked 2650 instructions through the `++` chain)
   unfold restore Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part26 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def restoreBack : Program := ((Partial.leave270Inv).drop 949).take 64
+def restoreBack : Program := ((Partial.leave270Inv).drop 1036).take 64
 theorem restoreBack_eq : restoreBack = (notRegister smallM).reverse ++ PortalUnitInverse.emit smallM smallC 1558 ++ (notRegister smallM).reverse ++ (copyRegister (some 1556) smallA smallM).reverse := by
-  -- WSLIM: skip 9 whole parts by their lengths (the decide walked 937 instructions through the `++` chain)
+  -- WSLIM: skip 10 whole parts by their lengths (the decide walked 1036 instructions through the `++` chain)
   unfold restoreBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 def mask : Program := ((Partial.leave270).drop 169).take 3
 theorem mask_eq : mask = ([.X 1557,.CX 422 1557,.CCX 907 1557 1558]:Program) := by
@@ -12538,35 +8837,35 @@ theorem mask_eq : mask = ([.X 1557,.CX 422 1557,.CCX 907 1557 1558]:Program) := 
   unfold mask Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def maskBack : Program := ((Partial.leave270Inv).drop 3491).take 3
+def maskBack : Program := ((Partial.leave270Inv).drop 3578).take 3
 theorem maskBack_eq : maskBack = ([.measureX 1558 [] [.CZ 907 1557],.CX 422 1557,.X 1557]:Program) := by
-  -- WSLIM: skip 34 whole parts by their lengths (the decide walked 3338 instructions through the `++` chain)
+  -- WSLIM: skip 37 whole parts by their lengths (the decide walked 3578 instructions through the `++` chain)
   unfold maskBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart35 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart32 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart33 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart34 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart35 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart36 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 def releaseMask : Program := ((Partial.leave270).drop 2714).take 3
 theorem releaseMask_eq : releaseMask = ([.measureX 1558 [] [.CZ 907 1557],.CX 422 1557,.X 1557]:Program) := by
-  -- WSLIM: skip 26 whole parts by their lengths (the decide walked 2573 instructions through the `++` chain)
+  -- WSLIM: skip 28 whole parts by their lengths (the decide walked 2714 instructions through the `++` chain)
   unfold releaseMask Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part27 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def releaseMaskBack : Program := ((Partial.leave270Inv).drop 946).take 3
+def releaseMaskBack : Program := ((Partial.leave270Inv).drop 1033).take 3
 theorem releaseMaskBack_eq : releaseMaskBack = ([.X 1557,.CX 422 1557,.CCX 907 1557 1558]:Program) := by
-  -- WSLIM: skip 9 whole parts by their lengths (the decide walked 934 instructions through the `++` chain)
+  -- WSLIM: skip 10 whole parts by their lengths (the decide walked 1033 instructions through the `++` chain)
   unfold releaseMaskBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart9 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 def nextU : Program := ((Partial.leave270).drop 3223).take 1
 theorem nextU_eq : nextU = ([.CCX 1556 1557 1558]:Program) := by
-  -- WSLIM: skip 31 whole parts by their lengths (the decide walked 3054 instructions through the `++` chain)
+  -- WSLIM: skip 33 whole parts by their lengths (the decide walked 3223 instructions through the `++` chain)
   unfold nextU Partial.leave270
   rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part26 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part27 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part28 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part29 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part30 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part31 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270Part32 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-def nextUBack : Program := ((Partial.leave270Inv).drop 439).take 1
+def nextUBack : Program := ((Partial.leave270Inv).drop 526).take 1
 theorem nextUBack_eq : nextUBack = ([.measureX 1558 [] [.CZ 1556 1557]]:Program) := by
-  -- WSLIM: skip 4 whole parts by their lengths (the decide walked 455 instructions through the `++` chain)
+  -- WSLIM: skip 5 whole parts by their lengths (the decide walked 526 instructions through the `++` chain)
   unfold nextUBack Partial.leave270Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide)]
+  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave270InvPart4 (by decide)]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 end ECDSAAdd.Entrant.StairPacket.LeaveCompanion270
 
@@ -12630,10 +8929,6 @@ namespace ECDSAAdd.Entrant.StairPacket
 open Arithmetic MappedCompressed
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem enter285_clean (d:Bool) (x p:Nat) (hp0:0<p) (hx0:0<x) (hpo:p%2=1) (hp:p<2^256)
-    (hq:p+2^32≤2^256) (hx:x<p) (hc:x.Coprime p) (s:State) (h:Rolling1588.Integer.Stage base d x p 285 s.basis) :
-    ∀q∈Portal285Flag.activeScratch,(pullState (OB5.sig 284) s).basis q=false:=
-  select_scratch 285 _ (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)) d x p hp0 hx0 hpo hp hq hx hc (by decide) s h
 end ECDSAAdd.Entrant.StairPacket
 
 end
@@ -12702,23 +8997,6 @@ namespace ECDSAAdd.Entrant.StairPacket.Portal285Flag
 open Arithmetic MappedCompressed PortalValues
 set_option maxRecDepth 20000
 set_option maxHeartbeats 6000000
-def pairs := railA.zip railB
-theorem source : Source (W.compactSkywalkTickLayout base 285) (OB5.sig 284) 130 528 1013 300 pairs := by constructor <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem geom : RailPair.ScanGeometry 528 1013 300 1693 pairs := by constructor <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem scan_shape : scan=RailPair.scan 528 1013 300 1693 pairs := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem scan_real (d:Bool) (x p:Nat) (hp0:0<p) (hx0:0<x) (hpo:p%2=1) (hp:p<2^256) (hq:p+2^32≤2^256)
-    (hx:x<p) (hc:x.Coprime p) (s:State) (m:List Bool) (h:Rolling1588.Integer.Stage base d x p 285 s.basis) :
-    let z:=SkywalkNat.step^[285] (SkywalkNat.init x p)
-    let v:=run scan m (pullState (OB5.sig 284) s)
-    ∃g sg:Bool,v.basis 1693=negative sg z.u ∧ v.basis 300=g ∧ regValue railA v.basis=(z.u+z.v)/2^130 ∧
-      regValue railB v.basis=(z.u-(negative sg z.u).toNat)/2^130 := by
-  obtain ⟨route,sg,inp⟩:=real_input d x p 285 hp0 hx0 hpo hp hq hx hc (by decide) s h
-  have clean: (pullState (OB5.sig 284) s).basis 1693=false := by
-    apply (regValue_zero _ _).mp inp.2.2.2.2.2 (OB5.sig 284 1693)
-    (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have v:=scan_input _ _ _ _ _ _ _ _ source geom s m _ _ _ _ inp clean
-  rw [←scan_shape,show pairs.map Prod.fst=railA by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel),show pairs.map Prod.snd=railB by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)] at v
-  exact ⟨route,sg,v⟩
 
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
 
@@ -12732,8 +9010,8 @@ set_option maxRecDepth 50000
 set_option maxHeartbeats 1500000
 
 def program (inv : Bool) := if inv then leave270Inv else leave270
-def initPC (inv : Bool) := if inv then 1013 else 242
-def retirePC (inv : Bool) := if inv then 3329 else 2580
+def initPC (inv : Bool) := if inv then 1100 else 242
+def retirePC (inv : Bool) := if inv then 3416 else 2580
 def beforeWord (inv : Bool) := ((program inv).drop (initPC inv+33)).take (if inv then 37 else 59)
 def afterWord (inv : Bool) := ((program inv).drop (retirePC inv)).take (if inv then 59 else 37)
 
@@ -12791,43 +9069,7 @@ set_option maxRecDepth 22000
 set_option maxHeartbeats 8000000
 set_option exponentiation.threshold 1024
 
-theorem flags_values (q:State) (m:List Bool) (u v:Nat) (sg:Bool)
-    (small:min u v<2^114) (scratch:∀k∈activeScratch,q.basis k=false)
-    (x:regValue railA q.basis=(u+v)/2^130) (y:regValue railB q.basis=(u-(negative sg u).toNat)/2^130) :
-    let far:=decide (3*2^130≤u+v)
-    let long:=decide (3*2^130≤u+v ∧ 2^114≤u)
-    run flags m q=⟨q.phase,writeBit (writeBit q.basis 1691 far) 1692 long⟩ := by
-  have act:=PortalValues.actual_flags 431 432 thresholdPairs orientationPairs 916 railA railB
-    (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)) q.basis (2^130) (2^114) u v (negative sg u).toNat
-    (by decide) (by decide) small (by cases negative sg u <;> decide) x y
-  rw [flags_do q m scratch]
-  rw [act.2,act.1]
 
-theorem erase_values (q:State) (m:List Bool) (u v:Nat) (sg:Bool)
-    (small:min u v<2^114) (fresh:q.basis 1556=false ∧ ∀w∈carry,q.basis w=false)
-    (x:regValue railA q.basis=(u+v)/2^130) (y:regValue railB q.basis=(u-(negative sg u).toNat)/2^130)
-    (mode:q.basis 1692=decide (3*2^130≤u+v ∧ 2^114≤u)) :
-    let r:=run erase m q
-    r.phase=q.phase ∧ (∀w,w∉bulkB → r.basis w=q.basis w) ∧ regValue bulkB r.basis=0 := by
-  rw [erase_spec]
-  apply PortalBorrow.erase_run
-  · exact copy_good
-  · (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  · exact fresh.1
-  · exact fresh.2
-  · apply PortalValues.input_eq 431 432 433 916 917 918 1692 bulkA bulkB q.basis (2^130) (2^114) u v (negative sg u).toNat
-    · decide
-    · decide
-    · exact small
-    · cases negative sg u <;> decide
-    · by_cases pos:0<u <;> cases sg <;> simp_all [negative]; omega
-    · exact x
-    · exact y
-    · exact mode
-    · (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
 
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
@@ -12861,15 +9103,6 @@ namespace ECDSAAdd.Entrant.StairPacket.Portal285Flag
 open Arithmetic MappedCompressed PortalValues RailPair
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
-def loPairs := (railA.take 3).zip (railB.take 3)
-def hiPairs := bulkA.zip bulkB
-theorem pair_split : pairs=loPairs++hiPairs := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem store_shape : store=RailPair.store 300 1693 loPairs hiPairs := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem hi_y : hiPairs.map Prod.snd=bulkB := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem noOverlap : ∀p∈hiPairs,p.1∉hiPairs.map Prod.snd := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem bankLayout : CutLayout loPairs hiPairs 300 1693 1691 1692 := by constructor <;> first | constructor <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) | (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem pot : ∀w∈railA++railB,w≠1691 ∧ w≠1692 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem carry_apart : ∀w∈carry,w≠1691 ∧ w≠1692 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
 
 end
@@ -12912,95 +9145,6 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option exponentiation.threshold 1024
 
-/-- The real physical portal applied to the genuine rolling secp trajectory leaves
-all ordinary exterior bits alone, clears the redundant upper rail, parks the
-positive upper word, and produces its actual arithmetic predicates. -/
-theorem clean_for (raw:State) (z:SkywalkNat.State) (route sg:Bool)
-    (record:SkywalkIntegerInput (W.compactSkywalkTickLayout base 285) (SkywalkRails.encode route sg z.u z.v).a
-      (SkywalkRails.encode route sg z.u z.v).b route raw.basis) :
-    ∀q∈activeScratch,(pullState (OB5.sig 284) raw).basis q=false:=by
-  have pool : ∀q∈activeScratch,OB5.sig 284 q∈(W.compactSkywalkTickLayout base 285).carry := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  exact fun q hq=>(regValue_zero _ _).mp record.2.2.2.2.2 _ (pool _ hq)
-theorem physical_frame_local (z:SkywalkNat.State) (small:min z.u z.v<2^114) (raw:State) (m:List Bool)
-    (route sg:Bool)
-    (record:SkywalkIntegerInput (W.compactSkywalkTickLayout base 285) (SkywalkRails.encode route sg z.u z.v).a
-      (SkywalkRails.encode route sg z.u z.v).b route raw.basis) :
-    let origin:=pullState (OB5.sig 284) raw
-    PackedCut loPairs hiPairs 300 1693 1691 1692 (negative sg z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u))
-      origin (run Partial.portal285 m origin) := by
-  let origin:=pullState (OB5.sig 284) raw
-  let v:=run scan m origin
-  let t1:=m.drop (measurementCount scan)
-  let w:=run flags t1 v
-  let t2:=m.drop (measurementCount (scan++flags))
-  let x:=run erase t2 w
-  let t3:=m.drop (measurementCount (scan++flags++erase))
-  let far:=decide (3*2^130≤z.u+z.v)
-  let long:=decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u)
-  have clean:=clean_for raw z route sg record
-  have vs:∀q∈activeScratch,v.basis q=false:=fun q mem=>(run_preserves_outside _ m origin q (away_scan _ mem)).trans (clean q mem)
-  have fresh:origin.basis 1693=false:=by
-    apply (regValue_zero _ _).mp record.2.2.2.2.2 (OB5.sig 284 1693)
-    (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have first:=scan_input _ _ _ _ _ _ _ _ source geom raw m _ _ route sg record fresh
-  rw [←scan_shape,show pairs.map Prod.fst=railA by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel),show pairs.map Prod.snd=railB by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)] at first
-  obtain ⟨neg,_g,left,right⟩:=first
-  have wf:w=⟨v.phase,writeBit (writeBit v.basis 1691 far) 1692 long⟩:=flags_values v t1 _ _ sg small vs left right
-  have keep (q:Wire) (qf:q≠1691) (qu:q≠1692):w.basis q=v.basis q:=by rw [wf];simp [writeBit,qf,qu]
-  have cv:w.basis 1556=false ∧ ∀q∈carry,w.basis q=false := by
-    refine ⟨(keep _ (by decide) (by decide)).trans (vs _ (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))),?_⟩
-    intro q hq
-    exact (keep q (carry_apart _ hq).1 (carry_apart _ hq).2).trans (vs _ (by simp [activeScratch,hq]))
-  have vals (r:List Wire) (sub:∀q∈r,q∈railA++railB):regValue r w.basis=regValue r v.basis:=
-    regValue_congr _ _ _ (fun q h=>keep _ (pot _ (sub q h)).1 (pot _ (sub q h)).2)
-  have xe:=erase_values w t2 _ _ sg small cv
-    ((vals _ (fun _ h=>List.mem_append_left _ h)).trans left)
-    ((vals _ (fun _ h=>List.mem_append_right _ h)).trans right) (by rw [wf];simp [long,writeBit])
-  have scanned:=scan_run 528 1013 300 1693 pairs geom origin m fresh
-  rw [←scan_shape] at scanned
-  have sign:(origin.basis 528 ^^ origin.basis 1013)=negative sg z.u:=scanned.2.1.symm.trans neg
-  rw [sign,pair_split] at scanned
-  have clearHi:∀p∈hiPairs,x.basis p.2=false:=by
-    intro p hp
-    have hy:p.2∈hiPairs.map Prod.snd:=List.mem_map.mpr ⟨p,hp,rfl⟩
-    exact (regValue_zero _ _).mp xe.2.2 p.2 (hi_y ▸ hy)
-  have stored:=store_run 300 1693 loPairs hiPairs bankLayout.store x t3 clearHi
-  rw [←store_shape] at stored
-  rw [emitted]
-  simp only [run_append,run_take]
-  apply packed loPairs hiPairs 300 1693 1691 1692 _ far long origin v w x (run store t3 x)
-    bankLayout scanned.1 neg scanned.2.2.1 scanned.2.2.2 wf
-  · rw [hi_y];exact xe
-  · exact stored.1
-  · exact stored.2.1
-  · exact stored.2.2.1
-  · exact stored.2.2.2
-  · exact noOverlap
-theorem physical_frame_for (d:Bool) (seed p:Nat) (hp0:0<p) (hx0:0<seed) (hpo:p%2=1) (hp:p<2^256)
-    (hq:p+2^32≤2^256) (hx:seed<p) (hc:seed.Coprime p) (raw:State) (m:List Bool)
-    (h:Rolling1588.Integer.Stage base d seed p 285 raw.basis)
-    (route sg:Bool)
-    (record:let z:=SkywalkNat.step^[285] (SkywalkNat.init seed p)
-      SkywalkIntegerInput (W.compactSkywalkTickLayout base 285) (SkywalkRails.encode route sg z.u z.v).a
-      (SkywalkRails.encode route sg z.u z.v).b route raw.basis) :
-    let z:=SkywalkNat.step^[285] (SkywalkNat.init seed p)
-    let origin:=pullState (OB5.sig 284) raw
-    PackedCut loPairs hiPairs 300 1693 1691 1692 (negative sg z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u))
-      origin (run Partial.portal285 m origin) := by
-  have _input:=original_input d seed p 285 hp0 hx0 hpo hp hq hx hc (by decide) raw h
-  exact physical_frame_local _ (true_small seed p 285 (by omega) hp (by decide)) raw m route sg record
-theorem physical_frame (d:Bool) (seed p:Nat) (hp0:0<p) (hx0:0<seed) (hpo:p%2=1) (hp:p<2^256)
-    (hq:p+2^32≤2^256) (hx:seed<p) (hc:seed.Coprime p) (raw:State) (m:List Bool)
-    (h:Rolling1588.Integer.Stage base d seed p 285 raw.basis) :
-    let z:=SkywalkNat.step^[285] (SkywalkNat.init seed p)
-    let origin:=pullState (OB5.sig 284) raw
-    ∃sg:Bool,PackedCut loPairs hiPairs 300 1693 1691 1692 (negative sg z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u))
-      origin (run Partial.portal285 m origin) := by
-  obtain ⟨route,sg,input⟩:=real_input d seed p 285 hp0 hx0 hpo hp hq hx hc (by decide) raw h
-  exact ⟨sg,physical_frame_for d seed p hp0 hx0 hpo hp hq hx hc raw m h route sg input⟩
 
 end ECDSAAdd.Entrant.StairPacket.Portal285Flag
 
@@ -13662,8 +9806,6 @@ set_option maxHeartbeats 3000000
 set_option maxRecDepth 30000
 attribute [local irreducible] run routed unrouted onRails cell
 namespace NativePack285
-def program (d:Bool) := renameProgram (OB5.sig 285) (Rolling1588.packAtTick d 275)
-def reverse (d:Bool) := renameProgram (OB5.sig 285) (Rolling1588.unpackAtTick d 275)
 end NativePack285
 end ECDSAAdd.Entrant.StairPacket
 
@@ -13677,13 +9819,6 @@ set_option maxHeartbeats 3000000
 set_option maxRecDepth 30000
 attribute [local irreducible] run routed unrouted onRails cell
 namespace NativePack285
-def history (q:Fin 10) := OB5.sig 285 (History5.historyMap base 270 q)
-theorem histInj : Function.Injective history := by decide +kernel
-theorem equals (d:Bool) : program d=Rolling1588.codeEncodeAt d history ∧ reverse d=Rolling1588.codeDecodeAt d history := by cases d <;> decide +kernel
-theorem source_law (d:Bool) (s:State) (m:List Bool) (ok:MeasuredCodec5.legalAt history s.basis) :
-    (run (program d) m s).phase=s.phase ∧ ∀t,run (reverse d) t (run (program d) m s)=s:=by
-  rw [(equals d).1,(equals d).2]
-  exact ⟨(Rolling1588.codeEncodeAt_correct d history histInj s m ok).1, fun t=>Rolling1588.codeRoundtripAt d history histInj s m t ok⟩
 end NativePack285
 end ECDSAAdd.Entrant.StairPacket
 
@@ -13760,16 +9895,6 @@ namespace ECDSAAdd.Entrant.StairPacket
 open Arithmetic MappedCompressed RailPair
 namespace Portal285Flag
 set_option exponentiation.threshold 1024
-theorem release (z:SkywalkNat.State) (small:min z.u z.v<2^114) (raw packed:State) (m:List Bool)
-    (route sg:Bool)
-    (record:SkywalkIntegerInput (W.compactSkywalkTickLayout base 285) (SkywalkRails.encode route sg z.u z.v).a
-      (SkywalkRails.encode route sg z.u z.v).b route raw.basis)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 (PortalValues.negative sg z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u))
-      (pullState (OB5.sig 284) raw) packed) :
-    run Partial.portal285Inv m packed=pullState (OB5.sig 284) raw := by
-  rw [cut.unique (physical_frame_local z small raw [] route sg record)]
-  exact portal_return _ [] m (clean_for raw z route sg record)
 
 end Portal285Flag
 end ECDSAAdd.Entrant.StairPacket
@@ -13817,9 +9942,9 @@ open Partial LeaveRelocation Leave270OutputPorts
 set_option maxRecDepth 50000
 set_option maxHeartbeats 5000000
 
-def moves : List (Wire×Wire) := [(934, 919), (935, 920), (936, 921), (937, 922), (938, 923), (939, 924), (940, 925), (941, 926), (942, 927), (943, 928), (944, 929), (945, 930), (946, 931), (947, 932), (948, 933), (949, 934), (950, 935), (951, 936), (952, 937), (953, 938), (954, 939), (955, 940), (956, 941), (957, 942), (958, 943), (959, 944), (960, 945), (961, 946), (962, 947), (963, 948), (964, 949), (965, 950), (966, 951), (967, 952), (968, 953), (969, 954), (970, 955), (971, 956), (972, 957), (973, 958), (974, 959), (975, 960), (976, 961), (977, 962), (978, 963), (979, 964), (980, 965), (981, 966), (982, 967), (983, 968), (984, 969), (985, 970), (986, 971), (987, 972), (988, 973), (989, 974), (990, 975), (991, 976), (992, 977), (993, 978), (994, 979), (995, 980), (996, 981), (997, 982), (998, 983), (999, 984), (1000, 985), (1001, 986), (1002, 987), (1003, 988), (1004, 989), (1005, 990), (1006, 991), (1007, 992), (1008, 993), (1009, 994), (1010, 995), (1011, 996), (1012, 997), (1013, 998), (1014, 999), (1015, 1000), (1016, 1001), (1017, 1002), (1018, 1003), (1019, 1004), (1020, 1005), (1021, 1006), (1022, 1007), (1023, 1008), (1024, 1009), (1025, 1010), (1026, 1011), (1027, 1012), (1028, 1013), (1557, 1691), (1558, 1692), (1700, 1693), (1698, 1694), (1702, 1695), (1701, 1696)]
+def moves : List (Wire×Wire) := [(934, 919), (935, 920), (936, 921), (937, 922), (938, 923), (939, 924), (940, 925), (941, 926), (942, 927), (943, 928), (944, 929), (945, 930), (946, 931), (947, 932), (948, 933), (949, 934), (950, 935), (951, 936), (952, 937), (953, 938), (954, 939), (955, 940), (956, 941), (957, 942), (958, 943), (959, 944), (960, 945), (961, 946), (962, 947), (963, 948), (964, 949), (965, 950), (966, 951), (967, 952), (968, 953), (969, 954), (970, 955), (971, 956), (972, 957), (973, 958), (974, 959), (975, 960), (976, 961), (977, 962), (978, 963), (979, 964), (980, 965), (981, 966), (982, 967), (983, 968), (984, 969), (985, 970), (986, 971), (987, 972), (988, 973), (989, 974), (990, 975), (991, 976), (992, 977), (993, 978), (994, 979), (995, 980), (996, 981), (997, 982), (998, 983), (999, 984), (1000, 985), (1001, 986), (1002, 987), (1003, 988), (1004, 989), (1005, 990), (1006, 991), (1007, 992), (1008, 993), (1009, 994), (1010, 995), (1011, 996), (1012, 997), (1013, 998), (1014, 999), (1015, 1000), (1016, 1001), (1017, 1002), (1018, 1003), (1019, 1004), (1020, 1005), (1021, 1006), (1022, 1007), (1023, 1008), (1024, 1009), (1025, 1010), (1026, 1011), (1027, 1012), (1028, 1013), (1029, 1014), (1030, 1015), (1031, 1016), (1032, 1017), (1033, 1018), (1034, 1019), (1035, 1020), (1036, 1021), (1037, 1022), (1038, 1023), (1039, 1024), (1040, 1025), (1041, 1026), (1042, 1027), (1598, 1028), (1599, 1029), (1600, 1030), (1601, 1031), (1602, 1032), (1603, 1033), (1604, 1034), (1605, 1035), (1606, 1036), (1607, 1037), (1608, 1038), (1609, 1039), (1610, 1040), (1611, 1041), (1612, 1042), (1557, 1691), (1558, 1692), (1700, 1693), (1698, 1694), (1702, 1695), (1701, 1696)]
 def lastPart := leave270.drop 3360
-def firstBack := leave270Inv.take 303
+def firstBack := leave270Inv.take 390
 theorem emitted : lastPart=program moves := by decide +kernel
 theorem inverseEmitted : firstBack=program moves.reverse := by decide +kernel
 theorem properMoves : ∀p∈moves,p.1≠p.2 := by decide +kernel
@@ -13833,17 +9958,17 @@ theorem reverse (s : State) (m n : List Bool) : run firstBack n (run lastPart m 
   cases s with
   | mk phase basis => exact congrArg (State.mk phase) (funext (fun q=>congrArg basis (undoSources moves q)))
 
-theorem upperMap : ∀i:Fin 95,source moves (919+i.val)=live (11+i.val) ∧
+theorem upperMap : ∀i:Fin 124,source moves (919+i.val)=live (11+i.val) ∧
     source moves (434+i.val)=434+i.val := by
   have lo : ∀ p ∈ moves, 900 ≤ p.1 ∧ 900 ≤ p.2 := by decide +kernel
-  have hi : ∀ i : Fin 95, ECDSAAdd.Entrant.WSlimMain.sourceR moves (919+i.val) = live (11+i.val) := by decide +kernel
+  have hi : ∀ i : Fin 124, ECDSAAdd.Entrant.WSlimMain.sourceR moves (919+i.val) = live (11+i.val) := by decide +kernel
   intro i
   exact ⟨(ECDSAAdd.Entrant.WSlimMain.source_eq_sourceR _ _).trans (hi i),
     ECDSAAdd.Entrant.WSlimMain.source_fresh_of_lt lo (by omega)⟩
 
 theorem rails (s : State) (m : List Bool) (Z : Nat)
-    (pos:∀i:Fin 95,s.basis (live (11+i.val))=Z.testBit (11+i.val))
-    (zero:∀i:Fin 95,s.basis (434+i.val)=false) (i:Fin 95) :
+    (pos:∀i:Fin 124,s.basis (live (11+i.val))=Z.testBit (11+i.val))
+    (zero:∀i:Fin 124,s.basis (434+i.val)=false) (i:Fin 124) :
     let v:=run lastPart m s
     v.basis (434+i.val)=false ∧ v.basis (919+i.val)=Z.testBit (11+i.val) := by
   rw [forward];simp only [(upperMap i).1,(upperMap i).2,zero i,pos i,and_self]
@@ -13909,16 +10034,6 @@ set_option maxHeartbeats 3000000
 attribute [local irreducible] run onRails routed cell
 namespace NativePack285
 open ArchiveBoundary285
-theorem prefixMap : ∀r:Fin 5,history ⟨2*r.val,by omega⟩=windowNet sourceIdx (ports (shape sourceIdx) r).a0 ∧
-    history ⟨2*r.val+1,by omega⟩=windowNet sourceIdx (ports (shape sourceIdx) r).history := by decide +kernel
-theorem legal_prefix (s t:State) (legal:StairArchiveRaw.legal (readCells (shape sourceIdx) 0 15 (mappedBasis sourceIdx s.basis)))
-    (kept:∀i,t.basis (history i)=s.basis (history i)) : MeasuredCodec5.legalAt history t.basis := by
-  apply (MeasuredCodec5.legalAt_iff _ _).mpr
-  intro i
-  rw [kept,kept,(prefixMap i).1,(prefixMap i).2]
-  have good:=legal _ (member_cell (shape sourceIdx) 15 0 i (mappedBasis sourceIdx s.basis) (by have h:=i.isLt;omega))
-  apply not_both
-  simpa only [Nat.zero_add,cell,mappedBasis] using good
 end NativePack285
 end ECDSAAdd.Entrant.StairPacket
 
@@ -13932,48 +10047,9 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
 set_option exponentiation.threshold 1024
-def src : List Wire := [1694, 1695, 1696]
-def dst : List Wire := [1029, 1030, 1031]
-def pairs : List (Wire×Wire) := [(1029, 1694), (1030, 1695), (1031, 1696)]
-def stash (payload:State) (s:State) : State :=
-  ⟨s.phase,fun q=>if q∈dst then payload.basis (backMap pairs q) else s.basis q⟩
 
-theorem commutes (p:Program) (free:∀q∈dst,q∉wires p) (m:List Bool) (payload s:State):
-    run p m (stash payload s)=stash payload (run p m s) := by
-  have inc:=run_measured_locality p (wires p) (Finset.Subset.refl _) (stash payload s) s m rfl
-    (fun q h=>by simp [stash,show q∉dst from fun eq=>free _ eq h])
-  apply congrArg₂ State.mk inc.1
-  funext q
-  by_cases h:q∈wires p
-  · simpa [stash,show q∉dst from fun eq=>free _ eq h] using inc.2 q h
-  · rw [run_preserves_outside _ m _ _ h]
-    simp only [stash,run_preserves_outside _ m s _ h]
 
-theorem park (s:State) (m:List Bool) (empty:∀q∈dst,s.basis q=false) :
-    run Partial.park285 m s=stash s (eraseSites src s) := by
-  rw [show Partial.park285=moves pairs by rfl,moves_run _ (by decide) s m]
-  apply congrArg₂ State.mk rfl
-  funext q
-  by_cases dest:q∈dst
-  · simp [stash,dest]
-  by_cases source:q∈src
-  · have toDst:∀w∈src,backMap pairs w∈dst:=by decide
-    simp [stash,eraseSites,dest,source,empty _ (toDst _ source)]
-  · simp only [src,List.mem_cons,List.not_mem_nil,or_false,not_or] at source
-    have nod:=dest
-    simp only [dst,List.mem_cons,List.not_mem_nil,or_false,not_or] at nod
-    simp [stash,eraseSites,dest,src,pairs,backMap,source.1,source.2.1,source.2.2,nod.1,nod.2.1,nod.2.2]
 
-theorem park_undo (s:State) (m n:List Bool) : run Partial.park285Inv n (run Partial.park285 m s)=s := by
-  rw [show Partial.park285=moves pairs by rfl,show Partial.park285Inv=moves pairs.reverse by rfl,moves_run _ (by decide),moves_run _ (by decide)]
-  apply congrArg₂ State.mk rfl
-  funext q
-  by_cases h:q∈src++dst
-  · have inv:∀w∈src++dst,backMap pairs (backMap pairs.reverse w)=w:=by decide
-    exact congrArg s.basis (inv _ h)
-  · simp only [List.mem_append,src,dst,List.mem_cons,List.not_mem_nil,or_false,not_or] at h
-    rcases h with ⟨⟨h1,h2,h3⟩,⟨h4,h5,h6⟩⟩
-    simp [pairs,backMap,h1,h2,h3,h4,h5,h6]
 
 
 end ECDSAAdd.Entrant.StairPacket.ParkEndpoint
@@ -14065,39 +10141,7 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 6000000
 set_option exponentiation.threshold 1024
 def misses (i:Instr) := decide (1029∉i.wires ∧ 1030∉i.wires ∧ 1031∉i.wires)
-theorem misses_all (P:Program) (h:P.all misses=true) : ∀q∈dst,q∉wires P:=by
-  intro q hq
-  induction P with
-  | nil=>simp [wires]
-  | cons i P ih=>
-    simp only [List.all_cons,Bool.and_eq_true] at h
-    have hi:1029∉i.wires ∧ 1030∉i.wires ∧ 1031∉i.wires:=of_decide_eq_true h.1
-    simp only [wires,Finset.mem_union,not_or]
-    exact ⟨by rcases List.mem_cons.mp hq with rfl|h'
-              · exact hi.1
-              · rcases List.mem_cons.mp h' with rfl|h''
-                · exact hi.2.1
-                · obtain rfl:=List.mem_singleton.mp h'';exact hi.2.2,ih h.2⟩
-theorem avoid : ∀q∈dst,q∉wires Partial.portal285:=misses_all _ (by decide +kernel)
-theorem avoidInv : ∀q∈dst,q∉wires Partial.portal285Inv:=misses_all _ (by decide +kernel)
 
-theorem parked_release (z:SkywalkNat.State) (small:min z.u z.v<2^114) (raw s:State) (m n:List Bool)
-    (route sg:Bool)
-    (input:SkywalkIntegerInput (W.compactSkywalkTickLayout base 285) (SkywalkRails.encode route sg z.u z.v).a
-      (SkywalkRails.encode route sg z.u z.v).b route raw.basis)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 (PortalValues.negative sg z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u))
-      (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (empty:∀q∈dst,s.basis q=false) :
-    let out:=run Partial.portal285Inv n (run Partial.park285 m s)
-    out=stash s (pullState (OB5.sig 284) raw) ∧ ∀a b,
-      run Partial.park285Inv b (run Partial.portal285 a out)=s := by
-  have fw (a:List Bool):=cut.unique (physical_frame_local z small raw a route sg input)
-  have endEq:run Partial.portal285Inv n (run Partial.park285 m s)=stash s (pullState (OB5.sig 284) raw):=by
-    rw [park _ _ empty,commutes _ avoidInv,release z small raw _ n route sg input cut]
-  refine ⟨endEq,?_⟩
-  intro a b
-  rw [endEq,commutes _ avoid,←fw,←park s m empty,park_undo]
 
 end ECDSAAdd.Entrant.StairPacket.ParkEndpoint
 
@@ -14158,7 +10202,6 @@ namespace ECDSAAdd.Entrant.StairPacket.ParkEndpoint
 open Arithmetic MappedCompressed
 set_option maxRecDepth 30000
 set_option maxHeartbeats 2500000
-theorem released : ∀q∈dst,OB5.sig 284 q∈(W.compactSkywalkSignPoolB base 285).released := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.ParkEndpoint
 
 end
@@ -14170,28 +10213,6 @@ open Arithmetic MappedCompressed
 set_option maxRecDepth 30000
 set_option maxHeartbeats 2500000
 attribute [local irreducible] run
-theorem dormant (i:Nat) (d:Bool) (seed p:Nat) (raw:State) (q:Wire)
-    (stage:Rolling1588.Integer.Stage base d seed p i raw.basis)
-    (outside:q∉wires (Rolling1588.Integer.encodePrefix base d i))
-    (inHigh:q∈(W.compactSkywalkSignPoolB base i).released) : raw.basis q=false := by
-  obtain ⟨s,hs,eq⟩:=stage
-  have clean:(W.compactSkywalkSignPoolB base i).Clean s.basis:=hs.2.2
-  rw [eq,run_preserves_outside _ _ s q outside]
-  exact clean q inHigh
-theorem above_history (i:Nat) (lim:i≤512) (d:Bool) (q:Nat)
-    (q0:i+16<q) (q1:q<1044) : q∉wires (Rolling1588.Integer.encodePrefix base d i):=by
-  rw [Rolling1588.Integer.prefix_support_eq]
-  intro mem
-  obtain ⟨j,where',side⟩:=StackOB5Base.encodePrefix_mem i lim _ mem
-  change q=j+16 at where'
-  omega
-theorem clear_dest (d:Bool) (seed p:Nat) (raw:State)
-    (stage:Rolling1588.Integer.Stage base d seed p 285 raw.basis) :
-    ∀q∈dst,(pullState (OB5.sig 284) raw).basis q=false:=by
-  have bounds:∀q∈dst,285+16<OB5.sig 284 q ∧ OB5.sig 284 q<1044:=by decide +kernel
-  intro q hit
-  exact dormant 285 d seed p raw (OB5.sig 284 q) stage
-    (above_history 285 (by decide) d _ (bounds _ hit).1 (bounds _ hit).2) (released _ hit)
 
 end ECDSAAdd.Entrant.StairPacket.ParkEndpoint
 
@@ -14203,25 +10224,6 @@ namespace ECDSAAdd.Entrant.StairPacket.EndTick
 open Arithmetic MappedCompressed Secp256k1
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
-def L:=W.compactSkywalkTickLayout base 285
-def P:=TickRanges.tick base 285
-def Q:=W.ReverseCarry.compactReceiverTick base 285
-def physP:=renameProgram (OB5.sig 285) P
-def physQ:=renameProgram (OB5.sig 285) Q
-theorem supports : wires P⊆L.wires.toFinset ∧ wires Q⊆L.wires.toFinset :=
-  ⟨(TickRanges.tick_support base 285 (by decide) base_pool_nodup).trans
-    (W.repairedTick_support base 285 (by decide) base_pool_nodup),
-    W.ReverseCarry.compactReceiverTick_support base 285 (by decide) base_pool_nodup⟩
-theorem physical_free (R:Program) (sub:wires R⊆L.wires.toFinset) (q:Wire)
-    (off:OB5.sig 285 q∉L.wires) : q∉wires (renameProgram (OB5.sig 285) R) := by
-  rw [JointForward1588.wires_rename_image]
-  intro h
-  obtain ⟨w,mem,rfl⟩:=Finset.mem_image.mp h
-  rw [OB5.sig_invol 285 (by decide)] at off
-  exact off (List.mem_toFinset.mp (sub mem))
-theorem spared : ∀q∈ParkEndpoint.dst,OB5.sig 285 q∉L.wires := by decide +kernel
-theorem stashP : ∀q∈ParkEndpoint.dst,q∉wires physP := fun q hit=>physical_free P supports.1 q (spared q hit)
-theorem stashQ : ∀q∈ParkEndpoint.dst,q∉wires physQ := fun q hit=>physical_free Q supports.2 q (spared q hit)
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
 end
@@ -14233,52 +10235,7 @@ open Arithmetic Secp256k1 MappedCompressed
 set_option maxRecDepth 16000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run
-theorem local_reference (i:Nat) (hi:i<512) (d:Bool) (x:Nat) (original:State)
-    (stage:Rolling1588.Integer.Stage base d x p i original.basis) :
-    ∃raw:State,W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) i raw.basis ∧
-      ∀q∈(W.compactSkywalkTickLayout base i).wires.toFinset, original.basis q=raw.basis q := by
-  obtain ⟨raw,hraw,eq⟩:=stage
-  refine ⟨raw,hraw,fun q hq=>?_⟩
-  rw [eq]
-  exact run_preserves_outside _ _ _ q (fun used=>Finset.disjoint_left.mp
-    (Rolling1588.Integer.prefix_disjoint_layout base d base_pool_nodup i i (le_refl _) hi) used hq)
 
-theorem undo_on_domain (w:Nat→Wire) (hn:(skywalkPoolWires w).Nodup) (x p i:Nat)
-    (hi:i<512) (hp0:0<p) (hx0:0<x) (hpo:p%2=1) (hp:p<2^256) (hgap:p+2^32≤2^256) (hx:x<p) (hc:x.Coprime p)
-    (t raw:State) (a b:List Bool)
-    (hraw:W.CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i raw.basis)
-    (read:∀q∈(W.compactSkywalkTickLayout w i).wires,t.basis q=raw.basis q) :
-    run (W.ReverseCarry.compactReceiverTick w i) b (run (W.compactSkywalkTick w i) a t)=t:=by
-  have loc := W.compactSkywalkStage_local_input w hn x p i hp0 hx0 hpo hp hgap hx hc hi raw hraw
-  have hh : t.basis (W.compactSkywalkTickLayout w i).history=false := by
-    rw [read _ (by simp [SkywalkIntegerLayout.wires])]
-    exact loc.2.2.2.2.1
-  have tops : W.trimTick i →
-      t.basis (w (i+W.compactSkywalkTickPreWidth i-1))=t.basis (w (i+W.compactSkywalkTickPreWidth i-2)) ∧
-      t.basis (w (770+W.compactSkywalkTickPreWidth i-1))=t.basis (w (770+W.compactSkywalkTickPreWidth i-2)) := by
-    intro htr
-    have st := W.compactSkywalkStage_tops w hn x p i hp0 hx0 hpo hp hgap hx hc hi htr raw hraw
-    have split := W.compactSkywalkTick_aMid_split w i hi
-    have mem (q : Wire) (h : q∈(W.compactSkywalkTickLayout w i).aMid ∨ q=(W.compactSkywalkTickLayout w i).aSign ∨
-        q∈(W.compactSkywalkTickLayout w i).bMid ∨ q=(W.compactSkywalkTickLayout w i).bSign) :
-        q∈(W.compactSkywalkTickLayout w i).wires := by
-      simp only [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh,
-        List.mem_cons,List.mem_append]
-      itauto
-    have ra := read _ (mem _ (Or.inr (Or.inl rfl)))
-    have rb := read _ (mem _ (Or.inr (Or.inr (Or.inr rfl))))
-    have la := read (w (i+W.compactSkywalkTickPreWidth i-2))
-      (mem _ (Or.inl (by rw [split.1]; simp)))
-    have lb := read (w (770+W.compactSkywalkTickPreWidth i-2))
-      (mem _ (Or.inr (Or.inr (Or.inl (by rw [split.2]; simp)))))
-    simp only [W.compactSkywalkTickLayout] at ra rb
-    exact ⟨by rw [ra,la]; exact st.1,by rw [rb,lb]; exact st.2⟩
-  have clean : regValue (W.compactSkywalkTickLayout w i).carry t.basis=0 := by
-    rw [regValue_congr _ t.basis raw.basis (by
-      intro q hq
-      exact read q (by simp only [SkywalkIntegerLayout.wires,List.mem_append,List.mem_cons]; itauto))]
-    exact loc.2.2.2.2.2
-  exact W.ReverseCarry.compactReceiverTick_roundtrip w i hi hn t a b hh clean tops
 
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
@@ -14292,29 +10249,7 @@ set_option maxHeartbeats 4000000
 set_option maxRecDepth 30000
 set_option exponentiation.threshold 1024
 attribute [local irreducible] run
-def canonical:= W.compactSkywalkTick base 285
-def Reads (a b:State) := ∀q∈L.wires.toFinset,a.basis q=b.basis q
-theorem apply_old (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (actual original:State)
-    (read:Reads actual original) (stage:Rolling1588.Integer.Stage base d x p 285 original.basis) (a b:List Bool) :
-    run P a actual=run canonical b actual:=by
-  obtain ⟨w,sw,agree⟩:=Rolling1588.Integer.old_stage_local base d base_pool_nodup x p 285 (by decide) original stage
-  have old:=TickRanges.tick_eq5 x hx0 hx 285 (by decide) w a sw
-  have same:=Stack5.local_replace P (W.repairedTick base 285) L.wires.toFinset supports.1
-    (W.repairedTick_support base 285 (by decide) base_pool_nodup) original w a a agree old
-  have ⟨hp0,hpo,hp,cop⟩:=StackOB5.prime_facts x hx0 hx
-  have gap:p+2^32≤2^256:=by norm_num [p]
-  have reference:=Rolling1588.Integer.repaired_eq base d base_pool_nodup x p 285 hp0 hx0 hpo hp gap hx cop (by decide) original a b stage
-  exact Stack5.local_replace P canonical L.wires.toFinset supports.1
-    (W.compactSkywalkTick_support base 285 (by decide) base_pool_nodup) actual original a b read (same.trans reference)
 
-theorem compact_undo (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (actual original:State)
-    (read:Reads actual original) (stage:Rolling1588.Integer.Stage base d x p 285 original.basis) (a b:List Bool) :
-    run Q b (run canonical a actual)=actual:=by
-  obtain ⟨ref,stock,agree⟩:=local_reference 285 (by decide) d x original stage
-  have ⟨hp0,hpo,hp,cop⟩:=StackOB5.prime_facts x hx0 hx
-  have gap:p+2^32≤2^256:=by norm_num [p]
-  exact undo_on_domain base base_pool_nodup x p 285 (by decide) hp0 hx0 hpo hp gap hx cop actual ref a b stock
-    (fun q h=>(read _ (List.mem_toFinset.mpr h)).trans (agree _ (List.mem_toFinset.mpr h)))
 
 
 end ECDSAAdd.Entrant.StairPacket.EndTick
@@ -14328,22 +10263,6 @@ open Arithmetic MappedCompressed Secp256k1
 attribute [local irreducible] run
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3500000
-theorem physical (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original tags:State)
-    (read:Reads raw original) (stage:Rolling1588.Integer.Stage base d x p 285 original.basis)
-    (hist:raw.basis (base (1028+285))=false) (swapSlot:raw.basis (base (2053-285))=false)
-    (m:List Bool) :
-    let start:=ParkEndpoint.stash tags (pullState (OB5.sig 284) raw)
-    let out:=run physP m start
-    out=ParkEndpoint.stash tags (pullState (OB5.sig 285) (run canonical [] raw)) ∧
-      ∀t,run physQ t out=start := by
-  have pre:pullState (OB5.sig 284) raw=pullState (OB5.sig 285) raw:=
-    OB5.pull_step 285 (by decide) raw hist (fun _=>swapSlot)
-  have result:run physP m (ParkEndpoint.stash tags (pullState (OB5.sig 284) raw))=
-      ParkEndpoint.stash tags (pullState (OB5.sig 285) (run canonical [] raw)):=by
-    rw [ParkEndpoint.commutes _ stashP,pre,physP,OB5.run_rename _ (by decide),apply_old d x hx0 hx raw original read stage m []]
-  refine ⟨result,?_⟩
-  intro t
-  rw [result,ParkEndpoint.commutes _ stashQ,physQ,OB5.run_rename _ (by decide),compact_undo d x hx0 hx raw original read stage,←pre]
 
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
@@ -14356,14 +10275,6 @@ open Arithmetic MappedCompressed IntegerPacket
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 attribute [local irreducible] run
-def readOnly (q:Wire) := OB5.sig 285 q∉L.wires ∨ q=300
-instance (q:Wire) : Decidable (readOnly q) := by unfold readOnly;infer_instance
-theorem observes (q:Wire) (h:readOnly q) (s:State) (m:List Bool) (prev:(run physP m s).basis 300=s.basis 300) : (run physP m s).basis q=s.basis q := by
-  rcases h with h|rfl
-  · exact run_preserves_outside _ _ _ _ (physical_free P supports.1 _ h)
-  · exact prev
-theorem oldPrefix : ∀i,readOnly (NativePack285.history i) := by ((try unfold ECDSAAdd.Entrant.StairPacket.EndTick.readOnly); open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem oldBank : ∀i:Fin 23,readOnly (ArchiveBoundary285.rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩) := by ((try unfold ECDSAAdd.Entrant.StairPacket.EndTick.readOnly); open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
 end
@@ -14377,38 +10288,13 @@ set_option maxRecDepth 18000
 set_option exponentiation.threshold 1024
 attribute [local irreducible] run
 
-theorem canonical_reads (i:Nat) (hi:i<512) (w s:State)
-    (view:∀q∈(W.compactSkywalkTickLayout base i).wires.toFinset,s.basis q=w.basis q) (m:List Bool) :
-    ∀q∈(W.compactSkywalkTickLayout base i).wires.toFinset,
-      (run (W.compactSkywalkTick base i) m s).basis q=(run (W.compactSkywalkTick base i) m w).basis q := by
-  let P:=W.compactSkywalkTick base i
-  have sub:=W.compactSkywalkTick_support base i hi base_pool_nodup
-  have touched:=(run_local_increment P s w m (fun q h=>view _ (sub h))).2
-  intro q hit
-  by_cases used:q∈wires P
-  · exact touched q used
-  · exact (run_preserves_outside _ m s q used).trans ((view _ hit).trans (run_preserves_outside _ m w q used).symm)
 
-theorem after_reference (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original:State) (read:Reads raw original)
-    (stage:Rolling1588.Integer.Stage base d x p 285 original.basis) :
-    ∃ref:State,W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 285 ref.basis ∧
-      W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 286 (run canonical [] ref).basis ∧
-      Reads raw ref ∧ Reads (run canonical [] raw) (run canonical [] ref) := by
-  obtain ⟨ref,hs,agree⟩:=local_reference 285 (by decide) d x original stage
-  have ⟨hp0,hpo,hp,cop⟩:=StackOB5.prime_facts x hx0 hx
-  have gap:p+2^32≤2^256:=by norm_num [p]
-  have r:Reads raw ref:=fun q h=>(read q h).trans (agree q h)
-  exact ⟨ref,hs,(W.compactSkywalkStageStep base base_pool_nodup x p 285 hp0 hx0 hpo hp gap hx cop (by decide) ref [] hs).2,r,
-    canonical_reads 285 (by decide) ref raw r []⟩
 
 theorem pastG (i j:Nat) (hi:i≤512) (hj:j < i) (r:SkywalkRails.State) (b:BasisState)
     (hs:W.CompactSkywalkStage base r i b) :
     b (base j)=(SkywalkTrace.code (SkywalkTrace.next^[j] r)).1 :=
   (((W.compactSkywalkStage_fields_iff base r i hi base_pool_nodup b).mp hs).2.2.2.1 j hj).1
 
-theorem full_carry (i:Nat) (hi:i≤512) (r:SkywalkRails.State) (b:BasisState) (hs:W.CompactSkywalkStage base r i b) :
-    ∀q∈wireBlock base 1540 257,b q=false :=
-  (regValue_zero _ _).mp (((W.compactSkywalkStage_fields_iff base r i hi base_pool_nodup b).mp hs).2.2.2.2.2.1)
 
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
@@ -14580,38 +10466,6 @@ theorem selected (s : State) (m : List Bool) (v : BasisState) (small : Nat)
   rw [preparedState false s m v small k mode a b input exchange]
   exact congrArg (Expr.read v) (tagCertificate k i)
 
-
-/-- R1: the selector ops in front of the cross mux, and the program prefix that runs them. -/
-def crossAt : List Op := far ++ zero ++ suffix ++ select
-def crossPrefix := ((program false).drop (initPC false)).take 60
-theorem crossShape : crossPrefix = withHits 1698 1699 false swaps (crossAt.map Op.enter) := by rfl
-theorem crossCertificate : ∀k:Mode,
-    sim crossAt (LeaveSelector.start ports false k) 1701 = .bit false ∧
-    Partial.leave270Rows.all (fun r => decide (sim crossAt (LeaveSelector.start ports false k) r.1 =
-      .bit (enabled k && decide (r.2 = 423 + key k)))) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-/-- R1 precondition: in front of the mux the crossing wire is clean and every hot tag selects the same cell. -/
-theorem crossReady (s : State) (m : List Bool) (v : BasisState) (small : Nat)
-    (k : Mode) (mode : k=farMode (s.basis 1698) (s.basis 1699) small)
-    (a:s.basis 1559=false) (b:s.basis 1560=false)
-    (input : ∀q,q≠1559 → q≠1560 → s.basis q=(before ports false k q).read v)
-    (exchange : right k=true → ∀i<15,i≤key k → s.basis (swaps i)=decide (i=key k)) :
-    (run crossPrefix m s).basis 1701=false ∧
-      ∀r∈Partial.leave270Rows,(run crossPrefix m s).basis r.1=true → r.2=423+key k := by
-  have sep : ∀i : Fin 15, swaps i≠1559 ∧ swaps i≠1560 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have state : run crossPrefix m s = ⟨s.phase,fun q=>(sim crossAt (LeaveSelector.start ports false k) q).read v⟩ := by
-    rw [crossShape]
-    exact allSites ports 1698 1699 false _ swaps sites (fun i hi=>sep ⟨i,hi⟩) s m v small
-      (by decide) (by decide) a b k mode input exchange
-  obtain ⟨c0,tg⟩ := crossCertificate k
-  rw [state]
-  refine ⟨congrArg (Expr.read v) c0,?_⟩
-  intro r hr on
-  have e : sim crossAt (LeaveSelector.start ports false k) r.1 = .bit (enabled k && decide (r.2 = 423 + key k)) :=
-    of_decide_eq_true (List.all_eq_true.mp tg r hr)
-  have on' : (sim crossAt (LeaveSelector.start ports false k) r.1).read v = true := on
-  rw [e] at on'
-  have on'' : (enabled k && decide (r.2 = 423 + key k)) = true := on'
-  exact of_decide_eq_true (Bool.and_eq_true_iff.mp on'').2
 end ECDSAAdd.Entrant.StairPacket.Leave270Selector
 
 end
@@ -14696,10 +10550,11 @@ theorem guardleave270Part35 : (Partial.leave270Part35).all (ok watched)=true ∧
 theorem guardleave270Part36 : (Partial.leave270Part36).all (ok watched)=true ∧ log watched Partial.leave270Part36=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270Part37 : (Partial.leave270Part37).all (ok watched)=true ∧ log watched Partial.leave270Part37=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270Part38 : (Partial.leave270Part38).all (ok watched)=true ∧ log watched Partial.leave270Part38=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem guardleave270Part39 : (Partial.leave270Part39).all (ok watched)=true ∧ log watched Partial.leave270Part39=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem admissible : (Partial.leave270).all (ok watched)=true := by
-  simp only [Partial.leave270,List.all_append,guardleave270Part0.1,guardleave270Part1.1,guardleave270Part2.1,guardleave270Part3.1,guardleave270Part4.1,guardleave270Part5.1,guardleave270Part6.1,guardleave270Part7.1,guardleave270Part8.1,guardleave270Part9.1,guardleave270Part10.1,guardleave270Part11.1,guardleave270Part12.1,guardleave270Part13.1,guardleave270Part14.1,guardleave270Part15.1,guardleave270Part16.1,guardleave270Part17.1,guardleave270Part18.1,guardleave270Part19.1,guardleave270Part20.1,guardleave270Part21.1,guardleave270Part22.1,guardleave270Part23.1,guardleave270Part24.1,guardleave270Part25.1,guardleave270Part26.1,guardleave270Part27.1,guardleave270Part28.1,guardleave270Part29.1,guardleave270Part30.1,guardleave270Part31.1,guardleave270Part32.1,guardleave270Part33.1,guardleave270Part34.1,guardleave270Part35.1,guardleave270Part36.1,guardleave270Part37.1,guardleave270Part38.1,Bool.and_self]
+  simp only [Partial.leave270,List.all_append,guardleave270Part0.1,guardleave270Part1.1,guardleave270Part2.1,guardleave270Part3.1,guardleave270Part4.1,guardleave270Part5.1,guardleave270Part6.1,guardleave270Part7.1,guardleave270Part8.1,guardleave270Part9.1,guardleave270Part10.1,guardleave270Part11.1,guardleave270Part12.1,guardleave270Part13.1,guardleave270Part14.1,guardleave270Part15.1,guardleave270Part16.1,guardleave270Part17.1,guardleave270Part18.1,guardleave270Part19.1,guardleave270Part20.1,guardleave270Part21.1,guardleave270Part22.1,guardleave270Part23.1,guardleave270Part24.1,guardleave270Part25.1,guardleave270Part26.1,guardleave270Part27.1,guardleave270Part28.1,guardleave270Part29.1,guardleave270Part30.1,guardleave270Part31.1,guardleave270Part32.1,guardleave270Part33.1,guardleave270Part34.1,guardleave270Part35.1,guardleave270Part36.1,guardleave270Part37.1,guardleave270Part38.1,guardleave270Part39.1,Bool.and_self]
 theorem ledger : log watched Partial.leave270=[286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 1799, 1798, 1797, 1796, 1795, 1795, 1796, 1797, 1798, 1799] := by
-  simp only [Partial.leave270,log_cat,guardleave270Part0.2,guardleave270Part1.2,guardleave270Part2.2,guardleave270Part3.2,guardleave270Part4.2,guardleave270Part5.2,guardleave270Part6.2,guardleave270Part7.2,guardleave270Part8.2,guardleave270Part9.2,guardleave270Part10.2,guardleave270Part11.2,guardleave270Part12.2,guardleave270Part13.2,guardleave270Part14.2,guardleave270Part15.2,guardleave270Part16.2,guardleave270Part17.2,guardleave270Part18.2,guardleave270Part19.2,guardleave270Part20.2,guardleave270Part21.2,guardleave270Part22.2,guardleave270Part23.2,guardleave270Part24.2,guardleave270Part25.2,guardleave270Part26.2,guardleave270Part27.2,guardleave270Part28.2,guardleave270Part29.2,guardleave270Part30.2,guardleave270Part31.2,guardleave270Part32.2,guardleave270Part33.2,guardleave270Part34.2,guardleave270Part35.2,guardleave270Part36.2,guardleave270Part37.2,guardleave270Part38.2];rfl
+  simp only [Partial.leave270,log_cat,guardleave270Part0.2,guardleave270Part1.2,guardleave270Part2.2,guardleave270Part3.2,guardleave270Part4.2,guardleave270Part5.2,guardleave270Part6.2,guardleave270Part7.2,guardleave270Part8.2,guardleave270Part9.2,guardleave270Part10.2,guardleave270Part11.2,guardleave270Part12.2,guardleave270Part13.2,guardleave270Part14.2,guardleave270Part15.2,guardleave270Part16.2,guardleave270Part17.2,guardleave270Part18.2,guardleave270Part19.2,guardleave270Part20.2,guardleave270Part21.2,guardleave270Part22.2,guardleave270Part23.2,guardleave270Part24.2,guardleave270Part25.2,guardleave270Part26.2,guardleave270Part27.2,guardleave270Part28.2,guardleave270Part29.2,guardleave270Part30.2,guardleave270Part31.2,guardleave270Part32.2,guardleave270Part33.2,guardleave270Part34.2,guardleave270Part35.2,guardleave270Part36.2,guardleave270Part37.2,guardleave270Part38.2,guardleave270Part39.2];rfl
 theorem preserves (s:State) (m:List Bool) (q:Wire) (hq:watched q=true) :
     (run Partial.leave270 m s).basis q=s.basis q := by
   rw [sound watched _ _ hq admissible,ledger]
@@ -14709,8 +10564,8 @@ theorem preserves (s:State) (m:List Bool) (q:Wire) (hq:watched q=true) :
 theorem guardleave270InvPart0 : (Partial.leave270InvPart0).all (ok watched)=true ∧ log watched Partial.leave270InvPart0=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart1 : (Partial.leave270InvPart1).all (ok watched)=true ∧ log watched Partial.leave270InvPart1=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart2 : (Partial.leave270InvPart2).all (ok watched)=true ∧ log watched Partial.leave270InvPart2=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem guardleave270InvPart3 : (Partial.leave270InvPart3).all (ok watched)=true ∧ log watched Partial.leave270InvPart3=[1799, 1798, 1797, 1796, 1795, 1795, 1796, 1797, 1798, 1799, 300, 299, 298, 297, 296, 295, 294, 293, 292, 291, 290, 289] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem guardleave270InvPart4 : (Partial.leave270InvPart4).all (ok watched)=true ∧ log watched Partial.leave270InvPart4=[288, 287, 286] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem guardleave270InvPart3 : (Partial.leave270InvPart3).all (ok watched)=true ∧ log watched Partial.leave270InvPart3=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem guardleave270InvPart4 : (Partial.leave270InvPart4).all (ok watched)=true ∧ log watched Partial.leave270InvPart4=[1799, 1798, 1797, 1796, 1795, 1795, 1796, 1797, 1798, 1799, 300, 299, 298, 297, 296, 295, 294, 293, 292, 291, 290, 289, 288, 287, 286] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart5 : (Partial.leave270InvPart5).all (ok watched)=true ∧ log watched Partial.leave270InvPart5=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart6 : (Partial.leave270InvPart6).all (ok watched)=true ∧ log watched Partial.leave270InvPart6=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart7 : (Partial.leave270InvPart7).all (ok watched)=true ∧ log watched Partial.leave270InvPart7=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -14743,12 +10598,13 @@ theorem guardleave270InvPart33 : (Partial.leave270InvPart33).all (ok watched)=tr
 theorem guardleave270InvPart34 : (Partial.leave270InvPart34).all (ok watched)=true ∧ log watched Partial.leave270InvPart34=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart35 : (Partial.leave270InvPart35).all (ok watched)=true ∧ log watched Partial.leave270InvPart35=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem guardleave270InvPart36 : (Partial.leave270InvPart36).all (ok watched)=true ∧ log watched Partial.leave270InvPart36=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem guardleave270InvPart37 : (Partial.leave270InvPart37).all (ok watched)=true ∧ log watched Partial.leave270InvPart37=[300, 299, 298, 297, 296, 295, 294, 293, 292, 291, 290, 289, 288, 287, 286] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem guardleave270InvPart38 : (Partial.leave270InvPart38).all (ok watched)=true ∧ log watched Partial.leave270InvPart38=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem guardleave270InvPart37 : (Partial.leave270InvPart37).all (ok watched)=true ∧ log watched Partial.leave270InvPart37=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem guardleave270InvPart38 : (Partial.leave270InvPart38).all (ok watched)=true ∧ log watched Partial.leave270InvPart38=[300, 299, 298, 297, 296, 295, 294, 293, 292, 291, 290, 289, 288, 287, 286] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem guardleave270InvPart39 : (Partial.leave270InvPart39).all (ok watched)=true ∧ log watched Partial.leave270InvPart39=[] := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem admissibleInv : (Partial.leave270Inv).all (ok watched)=true := by
-  simp only [Partial.leave270Inv,List.all_append,guardleave270InvPart0.1,guardleave270InvPart1.1,guardleave270InvPart2.1,guardleave270InvPart3.1,guardleave270InvPart4.1,guardleave270InvPart5.1,guardleave270InvPart6.1,guardleave270InvPart7.1,guardleave270InvPart8.1,guardleave270InvPart9.1,guardleave270InvPart10.1,guardleave270InvPart11.1,guardleave270InvPart12.1,guardleave270InvPart13.1,guardleave270InvPart14.1,guardleave270InvPart15.1,guardleave270InvPart16.1,guardleave270InvPart17.1,guardleave270InvPart18.1,guardleave270InvPart19.1,guardleave270InvPart20.1,guardleave270InvPart21.1,guardleave270InvPart22.1,guardleave270InvPart23.1,guardleave270InvPart24.1,guardleave270InvPart25.1,guardleave270InvPart26.1,guardleave270InvPart27.1,guardleave270InvPart28.1,guardleave270InvPart29.1,guardleave270InvPart30.1,guardleave270InvPart31.1,guardleave270InvPart32.1,guardleave270InvPart33.1,guardleave270InvPart34.1,guardleave270InvPart35.1,guardleave270InvPart36.1,guardleave270InvPart37.1,guardleave270InvPart38.1,Bool.and_self]
+  simp only [Partial.leave270Inv,List.all_append,guardleave270InvPart0.1,guardleave270InvPart1.1,guardleave270InvPart2.1,guardleave270InvPart3.1,guardleave270InvPart4.1,guardleave270InvPart5.1,guardleave270InvPart6.1,guardleave270InvPart7.1,guardleave270InvPart8.1,guardleave270InvPart9.1,guardleave270InvPart10.1,guardleave270InvPart11.1,guardleave270InvPart12.1,guardleave270InvPart13.1,guardleave270InvPart14.1,guardleave270InvPart15.1,guardleave270InvPart16.1,guardleave270InvPart17.1,guardleave270InvPart18.1,guardleave270InvPart19.1,guardleave270InvPart20.1,guardleave270InvPart21.1,guardleave270InvPart22.1,guardleave270InvPart23.1,guardleave270InvPart24.1,guardleave270InvPart25.1,guardleave270InvPart26.1,guardleave270InvPart27.1,guardleave270InvPart28.1,guardleave270InvPart29.1,guardleave270InvPart30.1,guardleave270InvPart31.1,guardleave270InvPart32.1,guardleave270InvPart33.1,guardleave270InvPart34.1,guardleave270InvPart35.1,guardleave270InvPart36.1,guardleave270InvPart37.1,guardleave270InvPart38.1,guardleave270InvPart39.1,Bool.and_self]
 theorem ledgerInv : log watched Partial.leave270Inv=[1799, 1798, 1797, 1796, 1795, 1795, 1796, 1797, 1798, 1799, 300, 299, 298, 297, 296, 295, 294, 293, 292, 291, 290, 289, 288, 287, 286, 300, 299, 298, 297, 296, 295, 294, 293, 292, 291, 290, 289, 288, 287, 286] := by
-  simp only [Partial.leave270Inv,log_cat,guardleave270InvPart0.2,guardleave270InvPart1.2,guardleave270InvPart2.2,guardleave270InvPart3.2,guardleave270InvPart4.2,guardleave270InvPart5.2,guardleave270InvPart6.2,guardleave270InvPart7.2,guardleave270InvPart8.2,guardleave270InvPart9.2,guardleave270InvPart10.2,guardleave270InvPart11.2,guardleave270InvPart12.2,guardleave270InvPart13.2,guardleave270InvPart14.2,guardleave270InvPart15.2,guardleave270InvPart16.2,guardleave270InvPart17.2,guardleave270InvPart18.2,guardleave270InvPart19.2,guardleave270InvPart20.2,guardleave270InvPart21.2,guardleave270InvPart22.2,guardleave270InvPart23.2,guardleave270InvPart24.2,guardleave270InvPart25.2,guardleave270InvPart26.2,guardleave270InvPart27.2,guardleave270InvPart28.2,guardleave270InvPart29.2,guardleave270InvPart30.2,guardleave270InvPart31.2,guardleave270InvPart32.2,guardleave270InvPart33.2,guardleave270InvPart34.2,guardleave270InvPart35.2,guardleave270InvPart36.2,guardleave270InvPart37.2,guardleave270InvPart38.2];rfl
+  simp only [Partial.leave270Inv,log_cat,guardleave270InvPart0.2,guardleave270InvPart1.2,guardleave270InvPart2.2,guardleave270InvPart3.2,guardleave270InvPart4.2,guardleave270InvPart5.2,guardleave270InvPart6.2,guardleave270InvPart7.2,guardleave270InvPart8.2,guardleave270InvPart9.2,guardleave270InvPart10.2,guardleave270InvPart11.2,guardleave270InvPart12.2,guardleave270InvPart13.2,guardleave270InvPart14.2,guardleave270InvPart15.2,guardleave270InvPart16.2,guardleave270InvPart17.2,guardleave270InvPart18.2,guardleave270InvPart19.2,guardleave270InvPart20.2,guardleave270InvPart21.2,guardleave270InvPart22.2,guardleave270InvPart23.2,guardleave270InvPart24.2,guardleave270InvPart25.2,guardleave270InvPart26.2,guardleave270InvPart27.2,guardleave270InvPart28.2,guardleave270InvPart29.2,guardleave270InvPart30.2,guardleave270InvPart31.2,guardleave270InvPart32.2,guardleave270InvPart33.2,guardleave270InvPart34.2,guardleave270InvPart35.2,guardleave270InvPart36.2,guardleave270InvPart37.2,guardleave270InvPart38.2,guardleave270InvPart39.2];rfl
 theorem preservesInv (s:State) (m:List Bool) (q:Wire) (hq:watched q=true) :
     (run Partial.leave270Inv m s).basis q=s.basis q := by
   rw [sound watched _ _ hq admissibleInv,ledgerInv]
@@ -14852,15 +10708,6 @@ set_option maxRecDepth 30000
 attribute [local irreducible] run
 namespace Leave270Records
 open ArchiveBoundary285
-theorem chosen : ∀r:Fin 15,watched (windowNet sourceIdx (ports (shape sourceIdx) r).a0)=true ∧
-    watched (windowNet sourceIdx (ports (shape sourceIdx) r).history)=true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem history (s:State) (m:List Bool) :
-    let t:=run Partial.leave270 m s
-    readCells (shape sourceIdx) 0 15 (mappedBasis sourceIdx t.basis)=
-      readCells (shape sourceIdx) 0 15 (mappedBasis sourceIdx s.basis) := by
-  apply cells_congr _ _ _ _ _ _ (by decide)
-  intro r
-  exact Prod.ext (preserves _ _ _ (chosen r).1) (preserves _ _ _ (chosen r).2)
 end Leave270Records
 end ECDSAAdd.Entrant.StairPacket
 
@@ -14877,17 +10724,6 @@ theorem carry_member (i:Nat) (q:Wire) (mem:q∈(W.compactSkywalkTickLayout base 
     q∈(W.compactSkywalkTickLayout base i).wires.toFinset := List.mem_toFinset.mpr (by simp [SkywalkIntegerLayout.wires,mem])
 theorem previous_member (i:Nat) : (W.compactSkywalkTickLayout base i).previous∈(W.compactSkywalkTickLayout base i).wires.toFinset :=
   List.mem_toFinset.mpr (by simp [SkywalkIntegerLayout.wires])
-theorem scratch_lanes : ∀k:Fin 134,1556+k.val∈L.carry ∧ 1556+k.val∈wireBlock base 1540 257 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem after_cells (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original:State) (read:Reads raw original)
-    (stage:Rolling1588.Integer.Stage base d x p 285 original.basis) :
-    (run canonical [] raw).basis 300=raw.basis 300 ∧
-    ∀k:Fin 134,(run canonical [] raw).basis (1556+k.val)=false := by
-  obtain ⟨ref,old,next,pre,post⟩:=after_reference d x hx0 hx raw original read stage
-  have prev:300∈L.wires.toFinset:=previous_member 285
-  have a:=pastG 285 284 (by decide) (by decide) _ _ old
-  have b:=pastG 286 284 (by decide) (by decide) _ _ next
-  exact ⟨(post _ prev).trans (b.trans (a.symm.trans (pre _ prev).symm)),
-    fun k=>(post _ (carry_member 285 _ (scratch_lanes k).1)).trans (full_carry 286 (by decide) _ _ next _ (scratch_lanes k).2)⟩
 
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
@@ -15185,21 +11021,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.LeaveTerminalBound
 open SkywalkNat HighBankSum
 
-/-- The stock stage at 285 has a narrower signed rail than the intermediate
-    barrel. The fourteen sites above its physical destination contain zero. -/
-theorem fit (x p : Nat) (xp:0<x) (pp:0<p) (odd:p%2=1) (bound:p<2^256)
-    (small:x<p) (cop:x.Coprime p) :
-    let z:=step^[270] (init x p)
-    Leave270TrueMiddle.F z<2^106 := by
-  have bounds:=iter_width p x 256 285 pp xp odd bound small cop (by decide)
-  dsimp only at bounds
-  change (step^[285] (init x p)).u<2^227 ∧ (step^[285] (init x p)).v<2^227 at bounds
-  change total (step^[15] (step^[270] (init x p)))/2^122<2^106
-  rw [←Function.iterate_add_apply]
-  unfold total
-  change ((step^[285] (init x p)).u+(step^[285] (init x p)).v)/2^122<2^106
-  apply (Nat.div_lt_iff_lt_mul (by decide)).mpr
-  omega
 
 
 end ECDSAAdd.Entrant.StairPacket.LeaveTerminalBound
@@ -15260,49 +11081,10 @@ open Arithmetic MappedCompressed Secp256k1 ArchiveBoundary285 ParkEndpoint
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run
-theorem no_phase (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original:State) (read:Reads raw original)
-    (stage:Rolling1588.Integer.Stage base d x p 285 original.basis) : (run canonical [] raw).phase=raw.phase := by
-  obtain ⟨ref,hs,ag⟩:=local_reference 285 (by decide) d x original stage
-  have ⟨hp0,hpo,hp,cop⟩:=StackOB5.prime_facts x hx0 hx
-  have gap:p+2^32≤2^256:=by norm_num [p]
-  have step:=(W.compactSkywalkStageStep base base_pool_nodup x p 285 hp0 hx0 hpo hp gap hx cop (by decide) ref [] hs).1
-  have inc:=(run_local_increment canonical raw ref [] (fun q h=>by
-    have mem:=(W.compactSkywalkTick_support base 285 (by decide) base_pool_nodup) h
-    exact (read q mem).trans (ag q mem))).1
-  change (run canonical [] ref).phase=ref.phase at step
-  rw [step,Bool.xor_self] at inc
-  cases h:(run canonical [] raw).phase <;> cases k:raw.phase <;> simp_all
 
-theorem scratch_table : ∀i:Fin 157,23≤ i.val →
-    rawPorts i∉dst ∧ OB5.sig 285 (rawPorts i)=1556+(i.val-23) ∧ ∀v:Fin 10,rawPorts i≠NativePack285.history v := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
-theorem coordinate (s raw:State) : (stash s (pullState (OB5.sig 285) raw)).basis 300=raw.basis 300 ∧
-    (stash s (pullState (OB5.sig 284) raw)).basis 300=raw.basis 300 := ⟨rfl,rfl⟩
 
-theorem stash_slots (raw after tags:State) (phase:after.phase=raw.phase) (same:after.basis 300=raw.basis 300)
-    (zero:∀k:Fin 134,after.basis (1556+k.val)=false) :
-    let start:=stash tags (pullState (OB5.sig 284) raw)
-    let out:=stash tags (pullState (OB5.sig 285) after)
-    out.phase=start.phase ∧ out.basis 300=start.basis 300 ∧
-      ∀i:Fin 157,23≤ i.val → out.basis (rawPorts i)=false := by
-  refine ⟨phase,(coordinate _ _).1.trans (same.trans (coordinate _ _).2.symm),?_⟩
-  intro i hi
-  have ⟨off,eq,_⟩:=scratch_table i hi
-  simp only [stash,if_neg off]
-  exact (congrArg after.basis eq).trans (zero ⟨i.val-23,by have h:=i.isLt;omega⟩)
 
-theorem exposed (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original tags:State) (read:Reads raw original)
-    (stage:Rolling1588.Integer.Stage base d x p 285 original.basis)
-    (hist:raw.basis (base (1028+285))=false) (swapSlot:raw.basis (base (2053-285))=false) (m:List Bool) :
-    let start:=stash tags (pullState (OB5.sig 284) raw)
-    let out:=run physP m start
-    out.phase=start.phase ∧ out.basis 300=start.basis 300 ∧
-      ∀i:Fin 157,23≤ i.val → out.basis (rawPorts i)=false := by
-  have out:=(physical d x hx0 hx raw original tags read stage hist swapSlot m).1
-  have bits:=after_cells d x hx0 hx raw original read stage
-  dsimp only
-  rw [out]
-  exact stash_slots raw (run canonical [] raw) tags (no_phase d x hx0 hx raw original read stage) bits.1 bits.2
 
 end ECDSAAdd.Entrant.StairPacket.EndTick
 
@@ -15649,27 +11431,7 @@ namespace ECDSAAdd.Entrant.StairPacket.ParkEndpoint
 open Arithmetic MappedCompressed IntegerPacket RailPair Portal285Flag ArchiveBoundary285
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
-def ordinary (q:Wire) : Prop := q∉src ∧ q∉dst ∧ q≠1693 ∧ q≠1691 ∧ q≠1692 ∧ q∉sites hiPairs
-instance (q:Wire) : Decidable (ordinary q):=by unfold ordinary;infer_instance
-theorem past_sites : ∀r:Fin 15,ordinary (windowNet sourceIdx (ports (shape sourceIdx) r).a0) ∧
-    ordinary (windowNet sourceIdx (ports (shape sourceIdx) r).history) := by ((try unfold ECDSAAdd.Entrant.StairPacket.ParkEndpoint.ordinary); open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem earlier (raw s:State) (n f u:Bool) (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 n f u
-    (pullState (OB5.sig 284) raw) (eraseSites src s)) (q:Wire) (clean:ordinary q) :
-    (stash s (pullState (OB5.sig 284) raw)).basis q=s.basis q := by
-  obtain ⟨hs,hd,hn,hf,hu,hh⟩:=clean
-  have eq:=cut.unchanged _ hn hf hu hh
-  simpa [stash,eraseSites,hs,hd] using eq.symm
 
-theorem past_cells (raw s:State) (n f u:Bool) (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 n f u
-    (pullState (OB5.sig 284) raw) (eraseSites src s)) :
-    physicalCells sourceIdx (stash s (pullState (OB5.sig 284) raw))=physicalCells sourceIdx s := by
-  apply cells_congr _ _ _ _ _ _ (by decide)
-  intro r
-  exact Prod.ext (earlier _ _ _ _ _ cut _ (past_sites r).1) (earlier _ _ _ _ _ cut _ (past_sites r).2)
-theorem tag_address (s other:State) :
-    (stash s other).basis (rawPorts 20)=s.basis 1694 ∧
-    (stash s other).basis (rawPorts 21)=s.basis 1695 ∧
-    (stash s other).basis (rawPorts 22)=s.basis 1696:=⟨rfl,rfl,rfl⟩
 end ECDSAAdd.Entrant.StairPacket.ParkEndpoint
 
 end
@@ -15680,66 +11442,6 @@ namespace ECDSAAdd.Entrant.StairPacket.Partial
 open Arithmetic
 set_option maxRecDepth 20000
 open MappedCompressed StairArchiveGates
-def forward60plus1 (d:Bool) : Program :=
-  portal225 ++
-  enter225 ++
-  routed ⟨10,by decide⟩ 0 1 ++
-  renameProgram (OB5.sig 225) (Rolling1588.packAtTick d 225) ++
-  routed ⟨10,by decide⟩ 1 14 ++
-  leave225Move ++
-  enter240 ++
-  routed ⟨11,by decide⟩ 0 1 ++
-  renameProgram (OB5.sig 240) (Rolling1588.packAtTick d 230) ++
-  archiveLoad240 d ++
-  routed ⟨11,by decide⟩ 1 14 ++
-  leave240Move ++
-  enter255 ++
-  routed ⟨12,by decide⟩ 0 1 ++
-  renameProgram (OB5.sig 255) (Rolling1588.packAtTick d 245) ++
-  archiveLoad255 d ++
-  routed ⟨12,by decide⟩ 1 14 ++
-  leave255Move ++
-  enter270 ++
-  routed ⟨13,by decide⟩ 0 1 ++
-  renameProgram (OB5.sig 270) (Rolling1588.packAtTick d 260) ++
-  archiveLoad270 d ++
-  routed ⟨13,by decide⟩ 1 14 ++
-  leave270Move ++
-  park285 ++
-  portal285Inv ++
-  renameProgram (OB5.sig 285) (TickRanges.tick base 285) ++
-  renameProgram (OB5.sig 285) (Rolling1588.packAtTick d 275) ++
-  archiveLoad285 d
-def reverse60plus1 (d:Bool) : Program :=
-  archiveRestore285 d ++
-  renameProgram (OB5.sig 285) (Rolling1588.unpackAtTick d 275) ++
-  renameProgram (OB5.sig 285) (W.ReverseCarry.compactReceiverTick base 285) ++
-  portal285 ++
-  park285Inv ++
-  leave270MoveInv ++
-  unrouted ⟨13,by decide⟩ 1 14 ++
-  archiveRestore270 d ++
-  renameProgram (OB5.sig 270) (Rolling1588.unpackAtTick d 260) ++
-  unrouted ⟨13,by decide⟩ 0 1 ++
-  enter270Inv ++
-  leave255MoveInv ++
-  unrouted ⟨12,by decide⟩ 1 14 ++
-  archiveRestore255 d ++
-  renameProgram (OB5.sig 255) (Rolling1588.unpackAtTick d 245) ++
-  unrouted ⟨12,by decide⟩ 0 1 ++
-  enter255Inv ++
-  leave240MoveInv ++
-  unrouted ⟨11,by decide⟩ 1 14 ++
-  archiveRestore240 d ++
-  renameProgram (OB5.sig 240) (Rolling1588.unpackAtTick d 230) ++
-  unrouted ⟨11,by decide⟩ 0 1 ++
-  enter240Inv ++
-  leave225MoveInv ++
-  unrouted ⟨10,by decide⟩ 1 14 ++
-  renameProgram (OB5.sig 225) (Rolling1588.unpackAtTick d 225) ++
-  unrouted ⟨10,by decide⟩ 0 1 ++
-  enter225Inv ++
-  portal225Inv
 end ECDSAAdd.Entrant.StairPacket.Partial
 
 end
@@ -15751,7 +11453,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part60 : toffoliCount (enter270) = 20 ∧ measurementCount (enter270) = 6 :=
+theorem part60 : toffoliCount (enter270) = 23 ∧ measurementCount (enter270) = 6 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
 theorem part61 : toffoliCount (routed ⟨13,by decide⟩ 0 1) = 278 ∧ measurementCount (routed ⟨13,by decide⟩ 0 1) = 139 := by
@@ -15770,71 +11472,28 @@ theorem part62 : toffoliCount (routed ⟨13,by decide⟩ 1 14) = 3892 ∧ measur
   dsimp only [j]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
-theorem part63 : toffoliCount (leave270Move) = 946 ∧ measurementCount (leave270Move) = 344 :=
+theorem part63 : toffoliCount (leave270) = 962 ∧ measurementCount (leave270) = 344 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part64 : toffoliCount (park285) = 0 ∧ measurementCount (park285) = 0 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part65 : toffoliCount (portal285Inv) = 486 ∧ measurementCount (portal285Inv) = 289 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part66 : toffoliCount (TickRanges.tick base 285) = 451 ∧ measurementCount (TickRanges.tick base 285) = 227 := by
-  have a := TickRanges.tick_counts base 285 (by decide) base_pool_nodup
-  have b := W.repairedTick_counts base 285 (by decide) base_pool_nodup
-  have c := W.compactSkywalkTick_counts base 285 (by decide) base_pool_nodup
-  have width : W.compactSkywalkTickPreWidth 285 - 1 + (W.compactSkywalkTickPostWidth 285 - 1) = 453 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have post : W.compactSkywalkTickPostWidth 285 - 1 = 226 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have due : TickRanges.due 285 = 1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have rep : W.repairDue 285 = 1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have fwd : W.fwdDue 285 = 0 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  omega
 
 theorem part67 : toffoliCount (Rolling1588.packAtTick false 275) = 9 ∧ measurementCount (Rolling1588.packAtTick false 275) = 4 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part68 : toffoliCount (archiveLoad285 false) = 77 ∧ measurementCount (archiveLoad285 false) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad285
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load1_toffoliCount, integer_load1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
 theorem part69 : toffoliCount (Rolling1588.packAtTick true 275) = 9 ∧ measurementCount (Rolling1588.packAtTick true 275) = 4 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part70 : toffoliCount (archiveLoad285 true) = 78 ∧ measurementCount (archiveLoad285 true) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad285
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load0_toffoliCount, integer_load0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
-theorem part71 : toffoliCount (archiveRestore285 false) = 87 ∧ measurementCount (archiveRestore285 false) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore285
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore1_toffoliCount, integer_restore1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
 theorem part72 : toffoliCount (Rolling1588.unpackAtTick false 275) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 275) = 2 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part73 : toffoliCount (W.ReverseCarry.compactReceiverTick base 285) = 451 ∧ measurementCount (W.ReverseCarry.compactReceiverTick base 285) = 226 := by
-  have a := W.ReverseCarry.compactReceiverTick_counts base 285 (by decide) base_pool_nodup
-  have b := W.compactSkywalkReverseTick_counts base 285 (by decide) base_pool_nodup
-  have width : W.compactSkywalkTickPreWidth 285 - 1 + (W.compactSkywalkTickPostWidth 285 - 1) = 453 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have post : W.compactSkywalkTickPostWidth 285 - 1 = 226 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have trim : (if W.trimTick 285 then 1 else 0) = 1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  omega
 
-theorem part74 : toffoliCount (portal285) = 486 ∧ measurementCount (portal285) = 289 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part75 : toffoliCount (park285Inv) = 0 ∧ measurementCount (park285Inv) = 0 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part76 : toffoliCount (leave270MoveInv) = 945 ∧ measurementCount (leave270MoveInv) = 345 :=
+theorem part76 : toffoliCount (leave270Inv) = 961 ∧ measurementCount (leave270Inv) = 345 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
 theorem part77 : toffoliCount (unrouted ⟨13,by decide⟩ 1 14) = 3892 ∧ measurementCount (unrouted ⟨13,by decide⟩ 1 14) = 1946 := by
@@ -15853,15 +11512,9 @@ theorem part78 : toffoliCount (unrouted ⟨13,by decide⟩ 0 1) = 278 ∧ measur
   dsimp only [j]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
-theorem part79 : toffoliCount (enter270Inv) = 20 ∧ measurementCount (enter270Inv) = 6 :=
+theorem part79 : toffoliCount (enter270Inv) = 23 ∧ measurementCount (enter270Inv) = 6 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part80 : toffoliCount (archiveRestore285 true) = 87 ∧ measurementCount (archiveRestore285 true) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore285
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore0_toffoliCount, integer_restore0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
 theorem part81 : toffoliCount (Rolling1588.unpackAtTick true 275) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 275) = 2 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
@@ -15883,49 +11536,24 @@ theorem part61 : gateSlots (routed ⟨13,by decide⟩ 0 1) ≤ 5000 := (route �
 
 theorem part62 : gateSlots (routed ⟨13,by decide⟩ 1 14) ≤ 70000 := (route ⟨13,by decide⟩ 1 14).1
 
-theorem part63 : gateSlots (leave270Move) ≤ 4023 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part63 : gateSlots (leave270) ≤ 4094 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part64 : gateSlots (park285) ≤ 9 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part65 : gateSlots (portal285Inv) ≤ 2051 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part66 : gateSlots (TickRanges.tick base 285) ≤ 6004 := by
-  have h := TickRanges.tick_slots base 285 (by decide) base_pool_nodup
-  have r := W.repairedTick_slots base 285 (by decide) base_pool_nodup
-  have c := (W.compactTick_gateSlots_le base 285 (by decide)).1
-  omega
 
 theorem part67 : gateSlots (Rolling1588.packAtTick false 275) ≤ 156 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
-theorem part68 : gateSlots (archiveLoad285 false) ≤ 3288 := by
-  have move : gateSlots moveLoad285 = 33 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  simp only [archiveLoad285,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load1_gateSlots,move]
-  decide
 
 theorem part69 : gateSlots (Rolling1588.packAtTick true 275) ≤ 168 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part70 : gateSlots (archiveLoad285 true) ≤ 3278 := by
-  have move : gateSlots moveLoad285 = 33 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  simp only [archiveLoad285,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load0_gateSlots,move]
-  decide
 
-theorem part71 : gateSlots (archiveRestore285 false) ≤ 3562 := by
-  have move : gateSlots moveRestore285 = 54 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  simp only [archiveRestore285,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_restore1_gateSlots,move]
-  decide
 
 theorem part72 : gateSlots (Rolling1588.unpackAtTick false 275) ≤ 154 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part73 : gateSlots (W.ReverseCarry.compactReceiverTick base 285) ≤ 6001 := by
-  have h := W.ReverseCarry.compactReceiverTick_slots base 285 (by decide) base_pool_nodup
-  have c := (W.compactTick_gateSlots_le base 285 (by decide)).2
-  omega
 
-theorem part74 : gateSlots (portal285) ≤ 2051 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part75 : gateSlots (park285Inv) ≤ 9 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part76 : gateSlots (leave270MoveInv) ≤ 4024 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part76 : gateSlots (leave270Inv) ≤ 4095 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
 theorem part77 : gateSlots (unrouted ⟨13,by decide⟩ 1 14) ≤ 70000 := (route ⟨13,by decide⟩ 1 14).2
 
@@ -15933,10 +11561,6 @@ theorem part78 : gateSlots (unrouted ⟨13,by decide⟩ 0 1) ≤ 5000 := (route 
 
 theorem part79 : gateSlots (enter270Inv) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 
-theorem part80 : gateSlots (archiveRestore285 true) ≤ 3542 := by
-  have move : gateSlots moveRestore285 = 54 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  simp only [archiveRestore285,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_restore0_gateSlots,move]
-  decide
 
 theorem part81 : gateSlots (Rolling1588.unpackAtTick true 275) ≤ 166 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
@@ -15959,66 +11583,31 @@ theorem part61 : GatePhysical (routed ⟨13,by decide⟩ 0 1) := by
 theorem part62 : GatePhysical (routed ⟨13,by decide⟩ 1 14) := by
   exact (route ⟨13, by decide⟩ 1 14 (by decide)).1
 
-theorem part63 : GatePhysical (leave270Move) := by
+theorem part63 : GatePhysical (leave270) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part64 : GatePhysical (park285) := by
-  exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part65 : GatePhysical (portal285Inv) := by
-  exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part66 : GatePhysical (renameProgram (OB5.sig 285) (TickRanges.tick base 285)) := by
-  apply gatePhysical_rename _ (OB5.sig_injective 285 (by decide))
-  exact TickRanges.tick_physical base 285 (by decide) base_pool_nodup
 
 theorem part67 : GatePhysical (renameProgram (OB5.sig 285) (Rolling1588.packAtTick false 275)) := by
   apply gatePhysical_rename _ (OB5.sig_injective 285 (by decide))
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part68 : GatePhysical (archiveLoad285 false) := by
-  apply physicalGateCheck_correct
-  unfold Partial.archiveLoad285
-  rw [ECDSAAdd.Entrant.WSlimV3.rename_getD _ 11]
-  · simp only [↓reduceIte, Bool.false_eq_true, List.append_assoc, ECDSAAdd.Entrant.StairArchiveGates.integer_load1]
-    (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
 theorem part69 : GatePhysical (renameProgram (OB5.sig 285) (Rolling1588.packAtTick true 275)) := by
   apply gatePhysical_rename _ (OB5.sig_injective 285 (by decide))
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part70 : GatePhysical (archiveLoad285 true) := by
-  apply physicalGateCheck_correct
-  unfold Partial.archiveLoad285
-  rw [ECDSAAdd.Entrant.WSlimV3.rename_getD _ 11]
-  · simp only [↓reduceIte, List.append_assoc, ECDSAAdd.Entrant.StairArchiveGates.integer_load0]
-    (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
-theorem part71 : GatePhysical (archiveRestore285 false) := by
-  apply physicalGateCheck_correct
-  unfold Partial.archiveRestore285
-  rw [ECDSAAdd.Entrant.WSlimV3.rename_getD _ 11]
-  · simp only [↓reduceIte, Bool.false_eq_true, List.append_assoc, ECDSAAdd.Entrant.StairArchiveGates.integer_restore1]
-    (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
 theorem part72 : GatePhysical (renameProgram (OB5.sig 285) (Rolling1588.unpackAtTick false 275)) := by
   apply gatePhysical_rename _ (OB5.sig_injective 285 (by decide))
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part73 : GatePhysical (renameProgram (OB5.sig 285) (W.ReverseCarry.compactReceiverTick base 285)) := by
-  apply gatePhysical_rename _ (OB5.sig_injective 285 (by decide))
-  exact W.ReverseCarry.compactReceiverTick_physical base 285 (by decide) base_pool_nodup
 
-theorem part74 : GatePhysical (portal285) := by
-  exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part75 : GatePhysical (park285Inv) := by
-  exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part76 : GatePhysical (leave270MoveInv) := by
+theorem part76 : GatePhysical (leave270Inv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
 theorem part77 : GatePhysical (unrouted ⟨13,by decide⟩ 1 14) := by
@@ -16030,13 +11619,6 @@ theorem part78 : GatePhysical (unrouted ⟨13,by decide⟩ 0 1) := by
 theorem part79 : GatePhysical (enter270Inv) := by
   exact physicalGateCheck_correct _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 
-theorem part80 : GatePhysical (archiveRestore285 true) := by
-  apply physicalGateCheck_correct
-  unfold Partial.archiveRestore285
-  rw [ECDSAAdd.Entrant.WSlimV3.rename_getD _ 11]
-  · simp only [↓reduceIte, List.append_assoc, ECDSAAdd.Entrant.StairArchiveGates.integer_restore0]
-    (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
 theorem part81 : GatePhysical (renameProgram (OB5.sig 285) (Rolling1588.unpackAtTick true 275)) := by
   apply gatePhysical_rename _ (OB5.sig_injective 285 (by decide))
@@ -16052,21 +11634,9 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem forward60plus1_false : toffoliCount (forward60plus1 false) = 23413 ∧ measurementCount (forward60plus1 false) = 11702 := by
-  simp only [forward60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part0.1, part0.2, part1.1, part1.2, part2.1, part2.2, part3.1, part3.2, part4.1, part4.2, part5.1, part5.2, part6.1, part6.2, part7.1, part7.2, part8.1, part8.2, part9.1, part9.2, part10.1, part10.2, part11.1, part11.2, part12.1, part12.2, part13.1, part13.2, part14.1, part14.2, part15.1, part15.2, part16.1, part16.2, part17.1, part17.2, part60.1, part60.2, part61.1, part61.2, part21.1, part21.2, part22.1, part22.2, part62.1, part62.2, part63.1, part63.2, part64.1, part64.2, part65.1, part65.2, part66.1, part66.2, part67.1, part67.2, part68.1, part68.2]
-  decide
 
-theorem forward60plus1_true : toffoliCount (forward60plus1 true) = 23417 ∧ measurementCount (forward60plus1 true) = 11702 := by
-  simp only [forward60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part0.1, part0.2, part1.1, part1.2, part2.1, part2.2, part23.1, part23.2, part4.1, part4.2, part5.1, part5.2, part6.1, part6.2, part7.1, part7.2, part24.1, part24.2, part25.1, part25.2, part10.1, part10.2, part11.1, part11.2, part12.1, part12.2, part13.1, part13.2, part26.1, part26.2, part27.1, part27.2, part16.1, part16.2, part17.1, part17.2, part60.1, part60.2, part61.1, part61.2, part28.1, part28.2, part29.1, part29.2, part62.1, part62.2, part63.1, part63.2, part64.1, part64.2, part65.1, part65.2, part66.1, part66.2, part69.1, part69.2, part70.1, part70.2]
-  decide
 
-theorem reverse60plus1_false : toffoliCount (reverse60plus1 false) = 23459 ∧ measurementCount (reverse60plus1 false) = 11647 := by
-  simp only [reverse60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part71.1, part71.2, part72.1, part72.2, part73.1, part73.2, part74.1, part74.2, part75.1, part75.2, part76.1, part76.2, part77.1, part77.2, part30.1, part30.2, part31.1, part31.2, part78.1, part78.2, part79.1, part79.2, part35.1, part35.2, part36.1, part36.2, part37.1, part37.2, part38.1, part38.2, part39.1, part39.2, part40.1, part40.2, part41.1, part41.2, part42.1, part42.2, part43.1, part43.2, part44.1, part44.2, part45.1, part45.2, part46.1, part46.2, part47.1, part47.2, part48.1, part48.2, part49.1, part49.2, part50.1, part50.2, part51.1, part51.2, part52.1, part52.2]
-  decide
 
-theorem reverse60plus1_true : toffoliCount (reverse60plus1 true) = 23459 ∧ measurementCount (reverse60plus1 true) = 11647 := by
-  simp only [reverse60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part80.1, part80.2, part81.1, part81.2, part73.1, part73.2, part74.1, part74.2, part75.1, part75.2, part76.1, part76.2, part77.1, part77.2, part53.1, part53.2, part54.1, part54.2, part78.1, part78.2, part79.1, part79.2, part35.1, part35.2, part36.1, part36.2, part55.1, part55.2, part56.1, part56.2, part39.1, part39.2, part40.1, part40.2, part41.1, part41.2, part42.1, part42.2, part57.1, part57.2, part58.1, part58.2, part45.1, part45.2, part46.1, part46.2, part47.1, part47.2, part48.1, part48.2, part59.1, part59.2, part50.1, part50.2, part51.1, part51.2, part52.1, part52.2]
-  decide
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -16080,25 +11650,9 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-private theorem forward60plus1_false_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) (x23:Nat) (x24:Nat) (x25:Nat) (x26:Nat) (x27:Nat) (x28:Nat) : x0 ≤ 2030 → x1 ≤ 93 → x2 ≤ 5000 → x3 ≤ 156 → x4 ≤ 70000 → x5 ≤ 3505 → x6 ≤ 93 → x7 ≤ 5000 → x8 ≤ 156 → x9 ≤ 3288 → x10 ≤ 70000 → x11 ≤ 3720 → x12 ≤ 93 → x13 ≤ 5000 → x14 ≤ 156 → x15 ≤ 3288 → x16 ≤ 70000 → x17 ≤ 3895 → x18 ≤ 93 → x19 ≤ 5000 → x20 ≤ 156 → x21 ≤ 3288 → x22 ≤ 70000 → x23 ≤ 4023 → x24 ≤ 9 → x25 ≤ 2051 → x26 ≤ 6004 → x27 ≤ 156 → x28 ≤ 3288 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27+x28 ≤ 339541 := by omega
-theorem forward60plus1_false : gateSlots (forward60plus1 false) ≤ 339541 := by
-  simp only [forward60plus1,gateSlots_append,rename_gateSlots]
-  exact forward60plus1_false_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part0 part1 part2 part3 part4 part5 part6 part7 part8 part9 part10 part11 part12 part13 part14 part15 part16 part17 part60 part61 part21 part22 part62 part63 part64 part65 part66 part67 part68
 
-private theorem forward60plus1_true_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) (x23:Nat) (x24:Nat) (x25:Nat) (x26:Nat) (x27:Nat) (x28:Nat) : x0 ≤ 2030 → x1 ≤ 93 → x2 ≤ 5000 → x3 ≤ 168 → x4 ≤ 70000 → x5 ≤ 3505 → x6 ≤ 93 → x7 ≤ 5000 → x8 ≤ 168 → x9 ≤ 3278 → x10 ≤ 70000 → x11 ≤ 3720 → x12 ≤ 93 → x13 ≤ 5000 → x14 ≤ 168 → x15 ≤ 3278 → x16 ≤ 70000 → x17 ≤ 3895 → x18 ≤ 93 → x19 ≤ 5000 → x20 ≤ 168 → x21 ≤ 3278 → x22 ≤ 70000 → x23 ≤ 4023 → x24 ≤ 9 → x25 ≤ 2051 → x26 ≤ 6004 → x27 ≤ 168 → x28 ≤ 3278 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27+x28 ≤ 339561 := by omega
-theorem forward60plus1_true : gateSlots (forward60plus1 true) ≤ 339561 := by
-  simp only [forward60plus1,gateSlots_append,rename_gateSlots]
-  exact forward60plus1_true_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part0 part1 part2 part23 part4 part5 part6 part7 part24 part25 part10 part11 part12 part13 part26 part27 part16 part17 part60 part61 part28 part29 part62 part63 part64 part65 part66 part69 part70
 
-private theorem reverse60plus1_false_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) (x23:Nat) (x24:Nat) (x25:Nat) (x26:Nat) (x27:Nat) (x28:Nat) : x0 ≤ 3562 → x1 ≤ 154 → x2 ≤ 6001 → x3 ≤ 2051 → x4 ≤ 9 → x5 ≤ 4024 → x6 ≤ 70000 → x7 ≤ 3562 → x8 ≤ 154 → x9 ≤ 5000 → x10 ≤ 93 → x11 ≤ 3896 → x12 ≤ 70000 → x13 ≤ 3562 → x14 ≤ 154 → x15 ≤ 5000 → x16 ≤ 93 → x17 ≤ 3721 → x18 ≤ 70000 → x19 ≤ 3562 → x20 ≤ 154 → x21 ≤ 5000 → x22 ≤ 93 → x23 ≤ 3506 → x24 ≤ 70000 → x25 ≤ 154 → x26 ≤ 5000 → x27 ≤ 93 → x28 ≤ 2030 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27+x28 ≤ 340628 := by omega
-theorem reverse60plus1_false : gateSlots (reverse60plus1 false) ≤ 340628 := by
-  simp only [reverse60plus1,gateSlots_append,rename_gateSlots]
-  exact reverse60plus1_false_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part71 part72 part73 part74 part75 part76 part77 part30 part31 part78 part79 part35 part36 part37 part38 part39 part40 part41 part42 part43 part44 part45 part46 part47 part48 part49 part50 part51 part52
 
-private theorem reverse60plus1_true_sum (x0:Nat) (x1:Nat) (x2:Nat) (x3:Nat) (x4:Nat) (x5:Nat) (x6:Nat) (x7:Nat) (x8:Nat) (x9:Nat) (x10:Nat) (x11:Nat) (x12:Nat) (x13:Nat) (x14:Nat) (x15:Nat) (x16:Nat) (x17:Nat) (x18:Nat) (x19:Nat) (x20:Nat) (x21:Nat) (x22:Nat) (x23:Nat) (x24:Nat) (x25:Nat) (x26:Nat) (x27:Nat) (x28:Nat) : x0 ≤ 3542 → x1 ≤ 166 → x2 ≤ 6001 → x3 ≤ 2051 → x4 ≤ 9 → x5 ≤ 4024 → x6 ≤ 70000 → x7 ≤ 3542 → x8 ≤ 166 → x9 ≤ 5000 → x10 ≤ 93 → x11 ≤ 3896 → x12 ≤ 70000 → x13 ≤ 3542 → x14 ≤ 166 → x15 ≤ 5000 → x16 ≤ 93 → x17 ≤ 3721 → x18 ≤ 70000 → x19 ≤ 3542 → x20 ≤ 166 → x21 ≤ 5000 → x22 ≤ 93 → x23 ≤ 3506 → x24 ≤ 70000 → x25 ≤ 166 → x26 ≤ 5000 → x27 ≤ 93 → x28 ≤ 2030 → x0+x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27+x28 ≤ 340608 := by omega
-theorem reverse60plus1_true : gateSlots (reverse60plus1 true) ≤ 340608 := by
-  simp only [reverse60plus1,gateSlots_append,rename_gateSlots]
-  exact reverse60plus1_true_sum (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) (_) part80 part81 part73 part74 part75 part76 part77 part53 part54 part78 part79 part35 part36 part55 part56 part39 part40 part41 part42 part57 part58 part45 part46 part47 part48 part59 part50 part51 part52
 
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
@@ -16111,19 +11665,7 @@ open Arithmetic MappedCompressed Partial
 
 attribute [local irreducible] GatePhysical
 
-theorem forward60plus1_physical (d : Bool) : GatePhysical (forward60plus1 d) := by
-  cases d
-  · simp only [forward60plus1, gatePhysical_append, and_assoc]
-    exact ⟨part0, part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11, part12, part13, part14, part15, part16, part17, part60, part61, part21, part22, part62, part63, part64, part65, part66, part67, part68⟩
-  · simp only [forward60plus1, gatePhysical_append, and_assoc]
-    exact ⟨part0, part1, part2, part23, part4, part5, part6, part7, part24, part25, part10, part11, part12, part13, part26, part27, part16, part17, part60, part61, part28, part29, part62, part63, part64, part65, part66, part69, part70⟩
 
-theorem reverse60plus1_physical (d : Bool) : GatePhysical (reverse60plus1 d) := by
-  cases d
-  · simp only [reverse60plus1, gatePhysical_append, and_assoc]
-    exact ⟨part71, part72, part73, part74, part75, part76, part77, part30, part31, part78, part79, part35, part36, part37, part38, part39, part40, part41, part42, part43, part44, part45, part46, part47, part48, part49, part50, part51, part52⟩
-  · simp only [reverse60plus1, gatePhysical_append, and_assoc]
-    exact ⟨part80, part81, part73, part74, part75, part76, part77, part53, part54, part78, part79, part35, part36, part55, part56, part39, part40, part41, part42, part57, part58, part45, part46, part47, part48, part59, part50, part51, part52⟩
 
 end ECDSAAdd.Entrant.StairPacket.PartialPhysical
 
@@ -20568,91 +16110,6 @@ theorem inverts (s:State) (phase:∀m,(run Partial.leave255 m s).phase=s.phase)
   have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
   rw [←bEq,←fEq]
   exact invert ops s phys (all_prepared ops s phys (by rwa [fEq])) ready m n
-
-/-- R1: the gate list of the physical leave255Move, spliced from the reference list. -/
-private def moveKept : List Gate := Partial.leave255Kept.map GateMirror.gateOf
-private def opsMove : List Gate :=
-  ops.take 302 ++ (GateMirror.rowGates 1709 Partial.leave255Rows ++ ((ops.drop 318).take 2017 ++ (moveKept ++ ops.drop 2367)))
-private theorem opsShape : ops = ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 2017 ++
-    ((ops.drop 2335).take 32 ++ ops.drop 2367))) := by decide +kernel
-private theorem fMove : GateMirror.forward opsMove = Partial.leave255Move := by decide +kernel
-private theorem bMove : GateMirror.inverse opsMove = Partial.leave255MoveInv := by decide +kernel
-private theorem prefixEq : GateMirror.forward (ops.take 302) = Partial.leave255.take 302 := by decide +kernel
-private theorem refShape : Partial.leave255 = Partial.leave255.take 302 ++ (MoveChain.mux 1709 Partial.leave255Rows ++
-    ((Partial.leave255.drop 318).take 2017 ++ (MoveChain.weave 1709 Partial.leave255Rows Partial.leave255Kept ++
-      Partial.leave255.drop 2367))) := by decide +kernel
-
-/-- R1 bridge: the physical leave255Move runs exactly like the reference leave255 whenever, in front of the mux,
-the crossing wire is clean and the hot tags select one cell. -/
-theorem sameRun (s : State) (m : List Bool) (a0 : Wire)
-    (clean : (run (Partial.leave255.take 302) m s).basis 1709 = false)
-    (sel : ∀ r ∈ Partial.leave255Rows, (run (Partial.leave255.take 302) m s).basis r.1 = true → r.2 = a0) :
-    run Partial.leave255Move m s = run Partial.leave255 m s := by
-  have geo : MoveChain.apart 1709 Partial.leave255Rows = true := by decide +kernel
-  have nd : MoveChain.lone Partial.leave255Rows = true := by decide +kernel
-  have still : Partial.leave255Rows.all (fun r => ((Partial.leave255.drop 318).take 2017).all (MoveChain.quiet 1709 r)) = true := by
-    decide +kernel
-  have wv : MoveChain.woven 1709 Partial.leave255Rows Partial.leave255Kept = true := by decide +kernel
-  have e := MoveChain.splice 1709 Partial.leave255Rows (Partial.leave255.take 302) ((Partial.leave255.drop 318).take 2017)
-    (Partial.leave255.drop 2367) Partial.leave255Kept s m a0 geo nd still wv clean sel
-  exact e.trans (congrArg (fun P => run P m s) refShape.symm)
-
-/-- R1: the facts `inverts` derives about the reference gate list, exported. -/
-theorem grounded (s:State)
-    (initial:∀q, 1556≤q → q≤1702 → s.basis q=false)
-    (extra:∀q, 1713≤q → q≤1718 → s.basis q=false)
-    (core:zeros (run (Partial.leave255.take 2515) [] s) [1560,1576,1596,1613,1614])
-    (post:(run (Partial.leave255.take 3162) [] s).basis 1556=false) :
-    (∀g∈ops,proper g=true) ∧ Ready s ops:=by
-  let s1:=run (GateMirror.forward group0) [] s
-  let s2:=run (GateMirror.forward group1) [] s1
-  have s2e:s2=run (GateMirror.forward (group0++group1)) [] s:=by
-    simp [s2,s1,GateMirror.forward,List.map_append,run_append]
-  have i0:Masked s (0x7e007fffffffffffffffffffffffffeffffeffffe <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks (fromRange (lo:=1556) (width:=147) (fun q h1 h2=>initial q h1 (Nat.le_of_lt_succ h2))) (fromRange (lo:=1713) (width:=6) (fun q h1 h2=>extra q h1 (Nat.le_of_lt_succ h2))))
-  obtain ⟨h0,r0,z0⟩:=bit_sound group0 s _ _ cert0 i0
-  have kc:zeros s1 [1560,1576,1596,1613,1614]:=by simpa only [s1,pEq] using core
-  have i1:Masked s1 (0xfffffffffffffffffffe0003fffffffff8 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z0 (fromList kc))
-  obtain ⟨h1,r1,z1⟩:=bit_sound group1 s1 _ _ cert1 i1
-  have kp:zeros s2 [1556]:=by
-    intro q hq
-    obtain rfl: q=1556:=by simpa using hq
-    rw [s2e,qEq];exact post
-  have i2:Masked s2 (0x79 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z1 (fromList kp))
-  obtain ⟨h2,r2,z2⟩:=bit_sound group2 s2 _ _ cert2 i2
-  have phys:∀g∈ops,proper g=true:=by
-    intro g hg
-    rcases List.mem_append.mp hg with h|h
-    · exact h0 g h
-    · rcases List.mem_append.mp h with h|h
-      · exact h1 g h
-      · exact h2 g h
-  have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
-  exact ⟨phys,ready⟩
-/-- R1: the physical inverse undoes the physical forward program (it is the mirror of the same gate list). -/
-theorem invertsMove (s:State) (phase:∀m,(run Partial.leave255 m s).phase=s.phase)
-    (initial:∀q, 1556≤q → q≤1702 → s.basis q=false)
-    (extra:∀q, 1713≤q → q≤1718 → s.basis q=false)
-    (core:zeros (run (Partial.leave255.take 2515) [] s) [1560,1576,1596,1613,1614])
-    (post:(run (Partial.leave255.take 3162) [] s).basis 1556=false) (a0:Wire)
-    (hot:∀o,(run (Partial.leave255.take 302) o s).basis 1709=false ∧
-      ∀r∈Partial.leave255Rows,(run (Partial.leave255.take 302) o s).basis r.1=true → r.2=a0) (m n:List Bool):
-    run Partial.leave255MoveInv n (run Partial.leave255Move m s)=s:=by
-  obtain ⟨phys,ready⟩ := grounded s initial extra core post
-  have same (o : List Bool) : run Partial.leave255Move o s = run Partial.leave255 o s := sameRun s o a0 (hot o).1 (hot o).2
-  have physAll : opsMove.all proper = true := by decide +kernel
-  have physM : ∀ g ∈ opsMove, proper g = true := List.all_eq_true.mp physAll
-  have rd : Ready s (ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 2017 ++
-      ((ops.drop 2335).take 32 ++ ops.drop 2367)))) := by
-    rw [← opsShape]
-    exact ready
-  have readyM : Ready s opsMove :=
-    GateMirror.ready_move 1709 Partial.leave255Rows (ops.take 302) ((ops.drop 318).take 2017) (ops.drop 2367)
-      ((ops.drop 302).take 16) ((ops.drop 2335).take 32) moveKept s a0
-      (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (by rw [prefixEq]; exact (hot []).1) (by rw [prefixEq]; exact (hot []).2) rd
-  rw [← bMove, ← fMove]
-  exact invert opsMove s physM (all_prepared opsMove s physM (by intro o; rw [fMove, same o]; exact phase o)) readyM m n
 end ECDSAAdd.Entrant.StairPacket.Leave255Mirror
 
 end
@@ -20691,7 +16148,8 @@ private def block3360 : List Gate := [
   .cx 934 919,
   .cx 935 920,
   .cx 920 935,
-  .cx 935 920,
+  .cx 935 920]
+private def block3366 : List Gate := [
   .cx 936 921,
   .cx 921 936,
   .cx 936 921,
@@ -20700,8 +16158,7 @@ private def block3360 : List Gate := [
   .cx 937 922,
   .cx 938 923,
   .cx 923 938,
-  .cx 938 923]
-private def block3375 : List Gate := [
+  .cx 938 923,
   .cx 939 924,
   .cx 924 939,
   .cx 939 924,
@@ -20792,7 +16249,8 @@ private def block3456 : List Gate := [
 private def block3459 : List Gate := [
   .cx 967 952,
   .cx 952 967,
-  .cx 967 952,
+  .cx 967 952]
+private def block3462 : List Gate := [
   .cx 968 953,
   .cx 953 968,
   .cx 968 953,
@@ -20801,8 +16259,7 @@ private def block3459 : List Gate := [
   .cx 969 954,
   .cx 970 955,
   .cx 955 970,
-  .cx 970 955]
-private def block3471 : List Gate := [
+  .cx 970 955,
   .cx 971 956,
   .cx 956 971,
   .cx 971 956,
@@ -20892,7 +16349,8 @@ private def block3552 : List Gate := [
   .cx 998 983,
   .cx 999 984,
   .cx 984 999,
-  .cx 999 984,
+  .cx 999 984]
+private def block3558 : List Gate := [
   .cx 1000 985,
   .cx 985 1000,
   .cx 1000 985,
@@ -20901,8 +16359,7 @@ private def block3552 : List Gate := [
   .cx 1001 986,
   .cx 1002 987,
   .cx 987 1002,
-  .cx 1002 987]
-private def block3567 : List Gate := [
+  .cx 1002 987,
   .cx 1003 988,
   .cx 988 1003,
   .cx 1003 988,
@@ -20983,56 +16440,159 @@ private def block3619 : List Gate := [
   .cx 1028 1013,
   .cx 1013 1028,
   .cx 1028 1013,
+  .cx 1029 1014,
+  .cx 1014 1029,
+  .cx 1029 1014]
+private def block3648 : List Gate := [
+  .cx 1030 1015,
+  .cx 1015 1030,
+  .cx 1030 1015,
+  .cx 1031 1016,
+  .cx 1016 1031,
+  .cx 1031 1016]
+private def block3654 : List Gate := [
+  .cx 1032 1017,
+  .cx 1017 1032,
+  .cx 1032 1017,
+  .cx 1033 1018,
+  .cx 1018 1033]
+private def block3659 : List Gate := [
+  .cx 1033 1018,
+  .cx 1034 1019,
+  .cx 1019 1034,
+  .cx 1034 1019,
+  .cx 1035 1020,
+  .cx 1020 1035,
+  .cx 1035 1020,
+  .cx 1036 1021,
+  .cx 1021 1036,
+  .cx 1036 1021,
+  .cx 1037 1022,
+  .cx 1022 1037,
+  .cx 1037 1022,
+  .cx 1038 1023,
+  .cx 1023 1038,
+  .cx 1038 1023,
+  .cx 1039 1024,
+  .cx 1024 1039,
+  .cx 1039 1024,
+  .cx 1040 1025,
+  .cx 1025 1040,
+  .cx 1040 1025,
+  .cx 1041 1026,
+  .cx 1026 1041,
+  .cx 1041 1026,
+  .cx 1042 1027,
+  .cx 1027 1042,
+  .cx 1042 1027,
+  .cx 1598 1028,
+  .cx 1028 1598,
+  .cx 1598 1028,
+  .cx 1599 1029,
+  .cx 1029 1599,
+  .cx 1599 1029,
+  .cx 1600 1030,
+  .cx 1030 1600,
+  .cx 1600 1030,
+  .cx 1601 1031,
+  .cx 1031 1601,
+  .cx 1601 1031]
+private def block3699 : List Gate := [
+  .cx 1602 1032,
+  .cx 1032 1602,
+  .cx 1602 1032,
+  .cx 1603 1033,
+  .cx 1033 1603,
+  .cx 1603 1033,
+  .cx 1604 1034,
+  .cx 1034 1604,
+  .cx 1604 1034,
+  .cx 1605 1035,
+  .cx 1035 1605,
+  .cx 1605 1035,
+  .cx 1606 1036,
+  .cx 1036 1606,
+  .cx 1606 1036,
+  .cx 1607 1037,
+  .cx 1037 1607,
+  .cx 1607 1037,
+  .cx 1608 1038,
+  .cx 1038 1608,
+  .cx 1608 1038,
+  .cx 1609 1039,
+  .cx 1039 1609,
+  .cx 1609 1039,
+  .cx 1610 1040,
+  .cx 1040 1610,
+  .cx 1610 1040,
+  .cx 1611 1041,
+  .cx 1041 1611,
+  .cx 1611 1041,
+  .cx 1612 1042,
+  .cx 1042 1612,
+  .cx 1612 1042,
   .cx 1557 1691,
   .cx 1691 1557,
-  .cx 1557 1691]
-private def block3648 : List Gate := [
+  .cx 1557 1691,
   .cx 1558 1692,
   .cx 1692 1558,
   .cx 1558 1692,
-  .cx 1700 1693,
+  .cx 1700 1693]
+private def block3739 : List Gate := [
   .cx 1693 1700,
   .cx 1700 1693,
   .cx 1698 1694,
   .cx 1694 1698,
-  .cx 1698 1694,
+  .cx 1698 1694]
+private def block3744 : List Gate := [
   .cx 1702 1695,
-  .cx 1695 1702]
-private def block3659 : List Gate := [
+  .cx 1695 1702,
   .cx 1702 1695,
   .cx 1701 1696,
   .cx 1696 1701,
   .cx 1701 1696]
+private theorem check3744 : bitCheck block3744 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3744 := block3744 ++ ([]:List Gate)
+private theorem valid3744 : bitCheck suffix3744 0 = some 0 := bit_join block3744 ([]:List Gate) _ 0 _ check3744 rfl
+private theorem check3739 : bitCheck block3739 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3739 := block3739 ++ suffix3744
+private theorem valid3739 : bitCheck suffix3739 0 = some 0 := bit_join block3739 suffix3744 _ 0 _ check3739 valid3744
+private theorem check3699 : bitCheck block3699 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3699 := block3699 ++ suffix3739
+private theorem valid3699 : bitCheck suffix3699 0 = some 0 := bit_join block3699 suffix3739 _ 0 _ check3699 valid3739
 private theorem check3659 : bitCheck block3659 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3659 := block3659 ++ ([]:List Gate)
-private theorem valid3659 : bitCheck suffix3659 0 = some 0 := bit_join block3659 ([]:List Gate) _ 0 _ check3659 rfl
+private def suffix3659 := block3659 ++ suffix3699
+private theorem valid3659 : bitCheck suffix3659 0 = some 0 := bit_join block3659 suffix3699 _ 0 _ check3659 valid3699
+private theorem check3654 : bitCheck block3654 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3654 := block3654 ++ suffix3659
+private theorem valid3654 : bitCheck suffix3654 0 = some 0 := bit_join block3654 suffix3659 _ 0 _ check3654 valid3659
 private theorem check3648 : bitCheck block3648 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3648 := block3648 ++ suffix3659
-private theorem valid3648 : bitCheck suffix3648 0 = some 0 := bit_join block3648 suffix3659 _ 0 _ check3648 valid3659
+private def suffix3648 := block3648 ++ suffix3654
+private theorem valid3648 : bitCheck suffix3648 0 = some 0 := bit_join block3648 suffix3654 _ 0 _ check3648 valid3654
 private theorem check3619 : bitCheck block3619 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3619 := block3619 ++ suffix3648
 private theorem valid3619 : bitCheck suffix3619 0 = some 0 := bit_join block3619 suffix3648 _ 0 _ check3619 valid3648
 private theorem check3579 : bitCheck block3579 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3579 := block3579 ++ suffix3619
 private theorem valid3579 : bitCheck suffix3579 0 = some 0 := bit_join block3579 suffix3619 _ 0 _ check3579 valid3619
-private theorem check3567 : bitCheck block3567 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3567 := block3567 ++ suffix3579
-private theorem valid3567 : bitCheck suffix3567 0 = some 0 := bit_join block3567 suffix3579 _ 0 _ check3567 valid3579
+private theorem check3558 : bitCheck block3558 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3558 := block3558 ++ suffix3579
+private theorem valid3558 : bitCheck suffix3558 0 = some 0 := bit_join block3558 suffix3579 _ 0 _ check3558 valid3579
 private theorem check3552 : bitCheck block3552 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3552 := block3552 ++ suffix3567
-private theorem valid3552 : bitCheck suffix3552 0 = some 0 := bit_join block3552 suffix3567 _ 0 _ check3552 valid3567
+private def suffix3552 := block3552 ++ suffix3558
+private theorem valid3552 : bitCheck suffix3552 0 = some 0 := bit_join block3552 suffix3558 _ 0 _ check3552 valid3558
 private theorem check3539 : bitCheck block3539 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3539 := block3539 ++ suffix3552
 private theorem valid3539 : bitCheck suffix3539 0 = some 0 := bit_join block3539 suffix3552 _ 0 _ check3539 valid3552
 private theorem check3499 : bitCheck block3499 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3499 := block3499 ++ suffix3539
 private theorem valid3499 : bitCheck suffix3499 0 = some 0 := bit_join block3499 suffix3539 _ 0 _ check3499 valid3539
-private theorem check3471 : bitCheck block3471 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3471 := block3471 ++ suffix3499
-private theorem valid3471 : bitCheck suffix3471 0 = some 0 := bit_join block3471 suffix3499 _ 0 _ check3471 valid3499
+private theorem check3462 : bitCheck block3462 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3462 := block3462 ++ suffix3499
+private theorem valid3462 : bitCheck suffix3462 0 = some 0 := bit_join block3462 suffix3499 _ 0 _ check3462 valid3499
 private theorem check3459 : bitCheck block3459 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3459 := block3459 ++ suffix3471
-private theorem valid3459 : bitCheck suffix3459 0 = some 0 := bit_join block3459 suffix3471 _ 0 _ check3459 valid3471
+private def suffix3459 := block3459 ++ suffix3462
+private theorem valid3459 : bitCheck suffix3459 0 = some 0 := bit_join block3459 suffix3462 _ 0 _ check3459 valid3462
 private theorem check3456 : bitCheck block3456 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3456 := block3456 ++ suffix3459
 private theorem valid3456 : bitCheck suffix3456 0 = some 0 := bit_join block3456 suffix3459 _ 0 _ check3456 valid3459
@@ -21042,12 +16602,12 @@ private theorem valid3419 : bitCheck suffix3419 0 = some 0 := bit_join block3419
 private theorem check3379 : bitCheck block3379 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3379 := block3379 ++ suffix3419
 private theorem valid3379 : bitCheck suffix3379 0 = some 0 := bit_join block3379 suffix3419 _ 0 _ check3379 valid3419
-private theorem check3375 : bitCheck block3375 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3375 := block3375 ++ suffix3379
-private theorem valid3375 : bitCheck suffix3375 0 = some 0 := bit_join block3375 suffix3379 _ 0 _ check3375 valid3379
+private theorem check3366 : bitCheck block3366 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3366 := block3366 ++ suffix3379
+private theorem valid3366 : bitCheck suffix3366 0 = some 0 := bit_join block3366 suffix3379 _ 0 _ check3366 valid3379
 private theorem check3360 : bitCheck block3360 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3360 := block3360 ++ suffix3375
-private theorem valid3360 : bitCheck suffix3360 0 = some 0 := bit_join block3360 suffix3375 _ 0 _ check3360 valid3375
+private def suffix3360 := block3360 ++ suffix3366
+private theorem valid3360 : bitCheck suffix3360 0 = some 0 := bit_join block3360 suffix3366 _ 0 _ check3360 valid3366
 private theorem check3339 : bitCheck block3339 0 = some (0x79 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3339 := block3339 ++ suffix3360
 private theorem valid3339 : bitCheck suffix3339 0 = some (0x79 <<< 1556) := bit_join block3339 suffix3360 _ 0 _ check3339 valid3360
@@ -21099,7 +16659,8 @@ private def block2690 : List Gate := [
   .cx 1564 914,
   .pop 913 1563 1564,
   .cx 1563 913,
-  .pop 912 1562 1563,
+  .pop 912 1562 1563]
+private def block2694 : List Gate := [
   .cx 1562 912,
   .pop 911 1561 1562,
   .cx 1561 911,
@@ -21108,8 +16669,7 @@ private def block2690 : List Gate := [
   .pop 909 1559 1560,
   .cx 1559 909,
   .pop 908 1558 1559,
-  .cx 1558 908]
-private def block2703 : List Gate := [
+  .cx 1558 908,
   .x 908,
   .x 909,
   .x 910,
@@ -21199,7 +16759,8 @@ private def block2784 : List Gate := [
   .x 1000,
   .x 1001,
   .x 1002,
-  .x 1003,
+  .x 1003]
+private def block2790 : List Gate := [
   .x 1004,
   .x 1005,
   .x 1006,
@@ -21208,8 +16769,7 @@ private def block2784 : List Gate := [
   .x 1009,
   .x 1010,
   .x 1011,
-  .x 1012]
-private def block2799 : List Gate := [
+  .x 1012,
   .x 1013,
   .x 1014,
   .x 1015,
@@ -21299,7 +16859,8 @@ private def block2880 : List Gate := [
   .make 1596 971 1597,
   .make 1597 972 1613,
   .make 1613 973 1614,
-  .make 1614 974 1615,
+  .make 1614 974 1615]
+private def block2886 : List Gate := [
   .make 1615 975 1616,
   .make 1616 976 1617,
   .make 1617 977 1618,
@@ -21309,8 +16870,7 @@ private def block2890 : List Gate := [
   .make 1620 980 1621,
   .make 1621 981 1622,
   .make 1622 982 1623,
-  .make 1623 983 1624]
-private def block2895 : List Gate := [
+  .make 1623 983 1624,
   .make 1624 984 1625,
   .make 1625 985 1626,
   .make 1626 986 1627,
@@ -21400,7 +16960,8 @@ private def block2976 : List Gate := [
   .pop 1690 1605 1691,
   .pop 1689 1604 1690,
   .pop 1688 1603 1689,
-  .pop 1687 1602 1688,
+  .pop 1687 1602 1688]
+private def block2982 : List Gate := [
   .pop 1686 1601 1687,
   .pop 1685 1600 1686,
   .pop 1684 1599 1685,
@@ -21409,8 +16970,7 @@ private def block2976 : List Gate := [
   .pop 1681 1041 1682,
   .pop 1680 1040 1681,
   .pop 1679 1039 1680,
-  .pop 1678 1038 1679]
-private def block2991 : List Gate := [
+  .pop 1678 1038 1679,
   .pop 1677 1037 1678,
   .pop 1676 1036 1677,
   .pop 1675 1035 1676,
@@ -21500,7 +17060,8 @@ private def block3072 : List Gate := [
   .pop 1579 954 1580,
   .pop 1578 953 1579,
   .pop 1577 952 1578,
-  .pop 1576 951 1577,
+  .pop 1576 951 1577]
+private def block3078 : List Gate := [
   .pop 1575 950 1576,
   .pop 1574 949 1575,
   .pop 1573 948 1574,
@@ -21509,8 +17070,7 @@ private def block3072 : List Gate := [
   .pop 1570 945 1571,
   .pop 1569 944 1570,
   .pop 1568 943 1569,
-  .pop 1567 942 1568]
-private def block3087 : List Gate := [
+  .pop 1567 942 1568,
   .pop 1566 941 1567,
   .pop 1565 940 1566,
   .pop 1564 939 1565]
@@ -21601,7 +17161,8 @@ private def block3170 : List Gate := [
   .x 983,
   .x 982,
   .x 981,
-  .x 980,
+  .x 980]
+private def block3174 : List Gate := [
   .x 979,
   .x 978,
   .x 977,
@@ -21610,8 +17171,7 @@ private def block3170 : List Gate := [
   .x 974,
   .x 973,
   .x 972,
-  .x 971]
-private def block3183 : List Gate := [
+  .x 971,
   .x 970,
   .x 969,
   .x 968,
@@ -21701,7 +17261,8 @@ private def block3264 : List Gate := [
   .x 915,
   .x 914,
   .x 913,
-  .x 912,
+  .x 912]
+private def block3270 : List Gate := [
   .x 911,
   .x 910,
   .x 909,
@@ -21710,8 +17271,7 @@ private def block3264 : List Gate := [
   .x 1558,
   .x 286,
   .x 287,
-  .x 288]
-private def block3279 : List Gate := [
+  .x 288,
   .x 289,
   .x 290,
   .x 291,
@@ -21780,24 +17340,24 @@ private theorem valid3330 : bitCheck suffix3330 (0x78 <<< 1556) = some (0x78 <<<
 private theorem check3290 : bitCheck block3290 (0x78 <<< 1556) = some (0x78 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3290 := block3290 ++ suffix3330
 private theorem valid3290 : bitCheck suffix3290 (0x78 <<< 1556) = some (0x78 <<< 1556) := bit_join block3290 suffix3330 _ (0x78 <<< 1556) _ check3290 valid3330
-private theorem check3279 : bitCheck block3279 (0x78 <<< 1556) = some (0x78 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3279 := block3279 ++ suffix3290
-private theorem valid3279 : bitCheck suffix3279 (0x78 <<< 1556) = some (0x78 <<< 1556) := bit_join block3279 suffix3290 _ (0x78 <<< 1556) _ check3279 valid3290
+private theorem check3270 : bitCheck block3270 (0x78 <<< 1556) = some (0x78 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3270 := block3270 ++ suffix3290
+private theorem valid3270 : bitCheck suffix3270 (0x78 <<< 1556) = some (0x78 <<< 1556) := bit_join block3270 suffix3290 _ (0x78 <<< 1556) _ check3270 valid3290
 private theorem check3264 : bitCheck block3264 (0x78 <<< 1556) = some (0x78 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3264 := block3264 ++ suffix3279
-private theorem valid3264 : bitCheck suffix3264 (0x78 <<< 1556) = some (0x78 <<< 1556) := bit_join block3264 suffix3279 _ (0x78 <<< 1556) _ check3264 valid3279
+private def suffix3264 := block3264 ++ suffix3270
+private theorem valid3264 : bitCheck suffix3264 (0x78 <<< 1556) = some (0x78 <<< 1556) := bit_join block3264 suffix3270 _ (0x78 <<< 1556) _ check3264 valid3270
 private theorem check3250 : bitCheck block3250 (0x78 <<< 1556) = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3250 := block3250 ++ suffix3264
 private theorem valid3250 : bitCheck suffix3250 (0x78 <<< 1556) = some 0 := bit_join block3250 suffix3264 _ (0x78 <<< 1556) _ check3250 valid3264
 private theorem check3210 : bitCheck block3210 0 = some (0x7ff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3210 := block3210 ++ suffix3250
 private theorem valid3210 : bitCheck suffix3210 (0x78 <<< 1556) = some (0x7ff8 <<< 1556) := bit_join block3210 suffix3250 _ 0 _ check3210 valid3250
-private theorem check3183 : bitCheck block3183 (0x7ff8 <<< 1556) = some (0x7ff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3183 := block3183 ++ suffix3210
-private theorem valid3183 : bitCheck suffix3183 (0x78 <<< 1556) = some (0x7ff8 <<< 1556) := bit_join block3183 suffix3210 _ (0x7ff8 <<< 1556) _ check3183 valid3210
+private theorem check3174 : bitCheck block3174 (0x7ff8 <<< 1556) = some (0x7ff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3174 := block3174 ++ suffix3210
+private theorem valid3174 : bitCheck suffix3174 (0x78 <<< 1556) = some (0x7ff8 <<< 1556) := bit_join block3174 suffix3210 _ (0x7ff8 <<< 1556) _ check3174 valid3210
 private theorem check3170 : bitCheck block3170 (0x7ff8 <<< 1556) = some (0x7ff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3170 := block3170 ++ suffix3183
-private theorem valid3170 : bitCheck suffix3170 (0x78 <<< 1556) = some (0x7ff8 <<< 1556) := bit_join block3170 suffix3183 _ (0x7ff8 <<< 1556) _ check3170 valid3183
+private def suffix3170 := block3170 ++ suffix3174
+private theorem valid3170 : bitCheck suffix3170 (0x78 <<< 1556) = some (0x7ff8 <<< 1556) := bit_join block3170 suffix3174 _ (0x7ff8 <<< 1556) _ check3170 valid3174
 private theorem check3168 : bitCheck block3168 (0x7ff8 <<< 1556) = some (0x7ff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3168 := block3168 ++ suffix3170
 private theorem valid3168 : bitCheck suffix3168 (0x78 <<< 1556) = some (0x7ff8 <<< 1556) := bit_join block3168 suffix3170 _ (0x7ff8 <<< 1556) _ check3168 valid3170
@@ -21807,63 +17367,63 @@ private theorem valid3130 : bitCheck suffix3130 (0x78 <<< 1556) = some (0x7ff8 <
 private theorem check3090 : bitCheck block3090 (0x7ff8 <<< 1556) = some (0x7e00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3090 := block3090 ++ suffix3130
 private theorem valid3090 : bitCheck suffix3090 (0x78 <<< 1556) = some (0x7e00 <<< 1556) := bit_join block3090 suffix3130 _ (0x7ff8 <<< 1556) _ check3090 valid3130
-private theorem check3087 : bitCheck block3087 (0x7e00 <<< 1556) = some (0x7000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3087 := block3087 ++ suffix3090
-private theorem valid3087 : bitCheck suffix3087 (0x78 <<< 1556) = some (0x7000 <<< 1556) := bit_join block3087 suffix3090 _ (0x7e00 <<< 1556) _ check3087 valid3090
-private theorem check3072 : bitCheck block3072 (0x7000 <<< 1556) = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix3072 := block3072 ++ suffix3087
-private theorem valid3072 : bitCheck suffix3072 (0x78 <<< 1556) = some 0 := bit_join block3072 suffix3087 _ (0x7000 <<< 1556) _ check3072 valid3087
+private theorem check3078 : bitCheck block3078 (0x7e00 <<< 1556) = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3078 := block3078 ++ suffix3090
+private theorem valid3078 : bitCheck suffix3078 (0x78 <<< 1556) = some 0 := bit_join block3078 suffix3090 _ (0x7e00 <<< 1556) _ check3078 valid3090
+private theorem check3072 : bitCheck block3072 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix3072 := block3072 ++ suffix3078
+private theorem valid3072 : bitCheck suffix3072 (0x78 <<< 1556) = some 0 := bit_join block3072 suffix3078 _ 0 _ check3072 valid3078
 private theorem check3050 : bitCheck block3050 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3050 := block3050 ++ suffix3072
 private theorem valid3050 : bitCheck suffix3050 (0x78 <<< 1556) = some 0 := bit_join block3050 suffix3072 _ 0 _ check3050 valid3072
 private theorem check3010 : bitCheck block3010 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix3010 := block3010 ++ suffix3050
 private theorem valid3010 : bitCheck suffix3010 (0x78 <<< 1556) = some 0 := bit_join block3010 suffix3050 _ 0 _ check3010 valid3050
-private theorem check2991 : bitCheck block2991 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2991 := block2991 ++ suffix3010
-private theorem valid2991 : bitCheck suffix2991 (0x78 <<< 1556) = some 0 := bit_join block2991 suffix3010 _ 0 _ check2991 valid3010
+private theorem check2982 : bitCheck block2982 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2982 := block2982 ++ suffix3010
+private theorem valid2982 : bitCheck suffix2982 (0x78 <<< 1556) = some 0 := bit_join block2982 suffix3010 _ 0 _ check2982 valid3010
 private theorem check2976 : bitCheck block2976 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2976 := block2976 ++ suffix2991
-private theorem valid2976 : bitCheck suffix2976 (0x78 <<< 1556) = some 0 := bit_join block2976 suffix2991 _ 0 _ check2976 valid2991
+private def suffix2976 := block2976 ++ suffix2982
+private theorem valid2976 : bitCheck suffix2976 (0x78 <<< 1556) = some 0 := bit_join block2976 suffix2982 _ 0 _ check2976 valid2982
 private theorem check2970 : bitCheck block2970 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2970 := block2970 ++ suffix2976
 private theorem valid2970 : bitCheck suffix2970 (0x78 <<< 1556) = some 0 := bit_join block2970 suffix2976 _ 0 _ check2970 valid2976
 private theorem check2930 : bitCheck block2930 0 = some (0x1e007ffffffff00000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2930 := block2930 ++ suffix2970
 private theorem valid2930 : bitCheck suffix2930 (0x78 <<< 1556) = some (0x1e007ffffffff00000000000000000000000000 <<< 1556) := bit_join block2930 suffix2970 _ 0 _ check2930 valid2970
-private theorem check2895 : bitCheck block2895 (0x1e007ffffffff00000000000000000000000000 <<< 1556) = some (0x1e007ffffffffffffffffe00000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2895 := block2895 ++ suffix2930
-private theorem valid2895 : bitCheck suffix2895 (0x78 <<< 1556) = some (0x1e007ffffffffffffffffe00000000000000000 <<< 1556) := bit_join block2895 suffix2930 _ (0x1e007ffffffff00000000000000000000000000 <<< 1556) _ check2895 valid2930
-private theorem check2890 : bitCheck block2890 (0x1e007ffffffffffffffffe00000000000000000 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2890 := block2890 ++ suffix2895
-private theorem valid2890 : bitCheck suffix2890 (0x78 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := bit_join block2890 suffix2895 _ (0x1e007ffffffffffffffffe00000000000000000 <<< 1556) _ check2890 valid2895
-private theorem check2880 : bitCheck block2880 (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) = some (0x1e007fffffffffffffffffffe00038000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2880 := block2880 ++ suffix2890
-private theorem valid2880 : bitCheck suffix2880 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe00038000000000 <<< 1556) := bit_join block2880 suffix2890 _ (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) _ check2880 valid2890
+private theorem check2890 : bitCheck block2890 (0x1e007ffffffff00000000000000000000000000 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2890 := block2890 ++ suffix2930
+private theorem valid2890 : bitCheck suffix2890 (0x78 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := bit_join block2890 suffix2930 _ (0x1e007ffffffff00000000000000000000000000 <<< 1556) _ check2890 valid2930
+private theorem check2886 : bitCheck block2886 (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2886 := block2886 ++ suffix2890
+private theorem valid2886 : bitCheck suffix2886 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffff000000000000000 <<< 1556) := bit_join block2886 suffix2890 _ (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) _ check2886 valid2890
+private theorem check2880 : bitCheck block2880 (0x1e007fffffffffffffffffff000000000000000 <<< 1556) = some (0x1e007fffffffffffffffffffe00038000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2880 := block2880 ++ suffix2886
+private theorem valid2880 : bitCheck suffix2880 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe00038000000000 <<< 1556) := bit_join block2880 suffix2886 _ (0x1e007fffffffffffffffffff000000000000000 <<< 1556) _ check2880 valid2886
 private theorem check2850 : bitCheck block2850 (0x1e007fffffffffffffffffffe00038000000000 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2850 := block2850 ++ suffix2880
 private theorem valid2850 : bitCheck suffix2850 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) := bit_join block2850 suffix2880 _ (0x1e007fffffffffffffffffffe00038000000000 <<< 1556) _ check2850 valid2880
 private theorem check2810 : bitCheck block2810 (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2810 := block2810 ++ suffix2850
 private theorem valid2810 : bitCheck suffix2810 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2810 suffix2850 _ (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) _ check2810 valid2850
-private theorem check2799 : bitCheck block2799 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2799 := block2799 ++ suffix2810
-private theorem valid2799 : bitCheck suffix2799 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2799 suffix2810 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2799 valid2810
+private theorem check2790 : bitCheck block2790 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2790 := block2790 ++ suffix2810
+private theorem valid2790 : bitCheck suffix2790 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2790 suffix2810 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2790 valid2810
 private theorem check2784 : bitCheck block2784 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2784 := block2784 ++ suffix2799
-private theorem valid2784 : bitCheck suffix2784 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2784 suffix2799 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2784 valid2799
+private def suffix2784 := block2784 ++ suffix2790
+private theorem valid2784 : bitCheck suffix2784 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2784 suffix2790 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2784 valid2790
 private theorem check2770 : bitCheck block2770 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2770 := block2770 ++ suffix2784
 private theorem valid2770 : bitCheck suffix2770 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2770 suffix2784 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2770 valid2784
 private theorem check2730 : bitCheck block2730 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2730 := block2730 ++ suffix2770
 private theorem valid2730 : bitCheck suffix2730 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2730 suffix2770 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2730 valid2770
-private theorem check2703 : bitCheck block2703 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2703 := block2703 ++ suffix2730
-private theorem valid2703 : bitCheck suffix2703 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) := bit_join block2703 suffix2730 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2703 valid2730
-private theorem check2690 : bitCheck block2690 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2690 := block2690 ++ suffix2703
-private theorem valid2690 : bitCheck suffix2690 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) := bit_join block2690 suffix2703 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2690 valid2703
+private theorem check2694 : bitCheck block2694 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) = some (0x1e007fffffffffffffffffffe0003ffffffff80 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2694 := block2694 ++ suffix2730
+private theorem valid2694 : bitCheck suffix2694 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003ffffffff80 <<< 1556) := bit_join block2694 suffix2730 _ (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556) _ check2694 valid2730
+private theorem check2690 : bitCheck block2690 (0x1e007fffffffffffffffffffe0003ffffffff80 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2690 := block2690 ++ suffix2694
+private theorem valid2690 : bitCheck suffix2690 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) := bit_join block2690 suffix2694 _ (0x1e007fffffffffffffffffffe0003ffffffff80 <<< 1556) _ check2690 valid2694
 private theorem check2688 : bitCheck block2688 (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffc00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2688 := block2688 ++ suffix2690
 private theorem valid2688 : bitCheck suffix2688 (0x78 <<< 1556) = some (0x1e007fffffffffffffffffffe0003fffffffc00 <<< 1556) := bit_join block2688 suffix2690 _ (0x1e007fffffffffffffffffffe0003fffffffe00 <<< 1556) _ check2688 valid2690
@@ -21878,7 +17438,8 @@ private def block0 : List Gate := [
   .cx 422 907,
   .ccx 300 907 422,
   .cx 422 907,
-  .cx 423 908,
+  .cx 423 908]
+private def block6 : List Gate := [
   .ccx 300 908 423,
   .cx 423 908,
   .cx 424 909,
@@ -21887,8 +17448,7 @@ private def block0 : List Gate := [
   .cx 425 910,
   .ccx 300 910 425,
   .cx 425 910,
-  .cx 426 911]
-private def block15 : List Gate := [
+  .cx 426 911,
   .ccx 300 911 426,
   .cx 426 911,
   .cx 427 912,
@@ -21978,7 +17538,8 @@ private def block96 : List Gate := [
   .x 912,
   .x 913,
   .x 914,
-  .x 915,
+  .x 915]
+private def block102 : List Gate := [
   .x 916,
   .x 917,
   .x 918,
@@ -21987,8 +17548,7 @@ private def block96 : List Gate := [
   .x 921,
   .x 922,
   .x 923,
-  .x 924]
-private def block111 : List Gate := [
+  .x 924,
   .x 925,
   .make 907 908 1557,
   .make 1557 909 1558,
@@ -22078,7 +17638,8 @@ private def block192 : List Gate := [
   .pop 922 1572 1573,
   .cx 1572 922,
   .pop 921 1571 1572,
-  .cx 1571 921,
+  .cx 1571 921]
+private def block198 : List Gate := [
   .pop 920 1570 1571,
   .cx 1570 920]
 private def block200 : List Gate := [
@@ -22088,8 +17649,7 @@ private def block200 : List Gate := [
   .cx 1568 918,
   .pop 917 1567 1568,
   .cx 1567 917,
-  .pop 916 1566 1567]
-private def block207 : List Gate := [
+  .pop 916 1566 1567,
   .cx 1566 916,
   .pop 915 1565 1566,
   .cx 1565 915,
@@ -22179,7 +17739,8 @@ private def block288 : List Gate := [
   .make 292 1583 1584,
   .make 291 1584 1585,
   .make 290 1585 1586,
-  .make 289 1586 1587,
+  .make 289 1586 1587]
+private def block294 : List Gate := [
   .make 288 1587 1588,
   .make 1562 1588 1589,
   .make 1563 1586 1590,
@@ -22188,8 +17749,7 @@ private def block288 : List Gate := [
   .make 1566 1580 1593,
   .make 1567 1578 1594,
   .make 1568 300 1595,
-  .ccx 1576 423 1701]
-private def block303 : List Gate := [
+  .ccx 1576 423 1701,
   .ccx 1562 424 1701,
   .ccx 1563 425 1701,
   .ccx 1564 426 1701,
@@ -22279,7 +17839,8 @@ private def block384 : List Gate := [
   .cx 1597 975,
   .cx 1597 976,
   .cx 1597 977,
-  .cx 1597 978,
+  .cx 1597 978]
+private def block390 : List Gate := [
   .cx 1597 979,
   .cx 1597 980,
   .cx 1597 981,
@@ -22288,8 +17849,7 @@ private def block384 : List Gate := [
   .cx 1597 984,
   .cx 1597 985,
   .cx 1597 986,
-  .cx 1597 987]
-private def block399 : List Gate := [
+  .cx 1597 987,
   .cx 1597 988]
 private def block400 : List Gate := [
   .cx 1597 989,
@@ -22379,7 +17939,8 @@ private def block480 : List Gate := [
   .make 951 1625 1626,
   .make 952 1626 1627,
   .make 953 1627 1628,
-  .make 954 1628 1629,
+  .make 954 1628 1629]
+private def block486 : List Gate := [
   .make 955 1629 1630,
   .make 956 1630 1631,
   .make 957 1631 1632,
@@ -22388,8 +17949,7 @@ private def block480 : List Gate := [
   .make 960 1634 1635,
   .make 961 1635 1636,
   .make 962 1636 1637,
-  .make 963 1637 1638]
-private def block495 : List Gate := [
+  .make 963 1637 1638,
   .make 964 1638 1639,
   .make 965 1639 1640,
   .make 966 1640 1641,
@@ -22479,7 +18039,8 @@ private def block576 : List Gate := [
   .pop 1039 1723 1724,
   .cx 1723 1039,
   .pop 1038 1722 1723,
-  .cx 1722 1038,
+  .cx 1722 1038]
+private def block582 : List Gate := [
   .pop 1037 1721 1722,
   .cx 1721 1037,
   .pop 1036 1720 1721,
@@ -22488,8 +18049,7 @@ private def block576 : List Gate := [
   .cx 1719 1035,
   .pop 1034 1718 1719,
   .cx 1718 1034,
-  .pop 1033 1717 1718]
-private def block591 : List Gate := [
+  .pop 1033 1717 1718,
   .cx 1717 1033,
   .pop 1032 1716 1717,
   .cx 1716 1032,
@@ -22579,7 +18139,8 @@ private def block672 : List Gate := [
   .pop 991 1665 1666,
   .cx 1665 991,
   .pop 990 1664 1665,
-  .cx 1664 990,
+  .cx 1664 990]
+private def block678 : List Gate := [
   .pop 989 1663 1664,
   .cx 1663 989]
 private def block680 : List Gate := [
@@ -22589,8 +18150,7 @@ private def block680 : List Gate := [
   .cx 1661 987,
   .pop 986 1660 1661,
   .cx 1660 986,
-  .pop 985 1659 1660]
-private def block687 : List Gate := [
+  .pop 985 1659 1660,
   .cx 1659 985,
   .pop 984 1658 1659,
   .cx 1658 984,
@@ -22680,7 +18240,8 @@ private def block768 : List Gate := [
   .pop 943 1617 1618,
   .cx 1617 943,
   .pop 942 1616 1617,
-  .cx 1616 942,
+  .cx 1616 942]
+private def block774 : List Gate := [
   .pop 941 1615 1616,
   .cx 1615 941,
   .pop 940 1614 1615,
@@ -22689,8 +18250,7 @@ private def block768 : List Gate := [
   .cx 1613 939,
   .pop 938 1612 1613,
   .cx 1612 938,
-  .pop 937 1611 1612]
-private def block783 : List Gate := [
+  .pop 937 1611 1612,
   .cx 1611 937,
   .pop 936 1610 1611,
   .cx 1610 936,
@@ -22780,7 +18340,8 @@ private def block864 : List Gate := [
   .cx 1597 977,
   .cx 1597 978,
   .cx 1597 979,
-  .cx 1597 980,
+  .cx 1597 980]
+private def block870 : List Gate := [
   .cx 1597 981,
   .cx 1597 982,
   .cx 1597 983,
@@ -22789,8 +18350,7 @@ private def block864 : List Gate := [
   .cx 1597 986,
   .cx 1597 987,
   .cx 1597 988,
-  .cx 1597 989]
-private def block879 : List Gate := [
+  .cx 1597 989,
   .cx 1597 990]
 private def block880 : List Gate := [
   .cx 1597 991,
@@ -22880,7 +18440,8 @@ private def block960 : List Gate := [
   .ccx 1613 1036 1035,
   .cx 1035 1036,
   .cx 1034 1035,
-  .ccx 1613 1035 1034,
+  .ccx 1613 1035 1034]
+private def block966 : List Gate := [
   .cx 1034 1035,
   .cx 1033 1034,
   .ccx 1613 1034 1033,
@@ -22889,8 +18450,7 @@ private def block960 : List Gate := [
   .ccx 1613 1033 1032,
   .cx 1032 1033,
   .cx 1031 1032,
-  .ccx 1613 1032 1031]
-private def block975 : List Gate := [
+  .ccx 1613 1032 1031,
   .cx 1031 1032,
   .cx 1030 1031,
   .ccx 1613 1031 1030,
@@ -22980,7 +18540,8 @@ private def block1056 : List Gate := [
   .ccx 1613 1004 1003,
   .cx 1003 1004,
   .cx 1002 1003,
-  .ccx 1613 1003 1002,
+  .ccx 1613 1003 1002]
+private def block1062 : List Gate := [
   .cx 1002 1003,
   .cx 1001 1002,
   .ccx 1613 1002 1001,
@@ -22989,8 +18550,7 @@ private def block1056 : List Gate := [
   .ccx 1613 1001 1000,
   .cx 1000 1001,
   .cx 999 1000,
-  .ccx 1613 1000 999]
-private def block1071 : List Gate := [
+  .ccx 1613 1000 999,
   .cx 999 1000,
   .cx 998 999,
   .ccx 1613 999 998,
@@ -23080,7 +18640,8 @@ private def block1152 : List Gate := [
   .ccx 1613 972 971,
   .cx 971 972,
   .cx 970 971,
-  .ccx 1613 971 970,
+  .ccx 1613 971 970]
+private def block1158 : List Gate := [
   .cx 970 971,
   .cx 969 970]
 private def block1160 : List Gate := [
@@ -23090,8 +18651,7 @@ private def block1160 : List Gate := [
   .ccx 1613 969 968,
   .cx 968 969,
   .cx 967 968,
-  .ccx 1613 968 967]
-private def block1167 : List Gate := [
+  .ccx 1613 968 967,
   .cx 967 968,
   .cx 966 967,
   .ccx 1613 967 966,
@@ -23181,7 +18741,8 @@ private def block1248 : List Gate := [
   .ccx 1613 940 939,
   .cx 939 940,
   .cx 938 939,
-  .ccx 1613 939 938,
+  .ccx 1613 939 938]
+private def block1254 : List Gate := [
   .cx 938 939,
   .cx 937 938,
   .ccx 1613 938 937,
@@ -23190,8 +18751,7 @@ private def block1248 : List Gate := [
   .ccx 1613 937 936,
   .cx 936 937,
   .cx 935 936,
-  .ccx 1613 936 935]
-private def block1263 : List Gate := [
+  .ccx 1613 936 935,
   .cx 935 936,
   .cx 934 935,
   .ccx 1613 935 934,
@@ -23281,7 +18841,8 @@ private def block1344 : List Gate := [
   .cx 1033 1035,
   .ccx 1613 1035 1033,
   .cx 1033 1035,
-  .cx 1032 1034,
+  .cx 1032 1034]
+private def block1350 : List Gate := [
   .ccx 1613 1034 1032,
   .cx 1032 1034,
   .cx 1031 1033,
@@ -23290,8 +18851,7 @@ private def block1344 : List Gate := [
   .cx 1030 1032,
   .ccx 1613 1032 1030,
   .cx 1030 1032,
-  .cx 1029 1031]
-private def block1359 : List Gate := [
+  .cx 1029 1031,
   .ccx 1613 1031 1029]
 private def block1360 : List Gate := [
   .cx 1029 1031,
@@ -23381,7 +18941,8 @@ private def block1440 : List Gate := [
   .cx 1001 1003,
   .ccx 1613 1003 1001,
   .cx 1001 1003,
-  .cx 1000 1002,
+  .cx 1000 1002]
+private def block1446 : List Gate := [
   .ccx 1613 1002 1000,
   .cx 1000 1002,
   .cx 999 1001,
@@ -23390,8 +18951,7 @@ private def block1440 : List Gate := [
   .cx 998 1000,
   .ccx 1613 1000 998,
   .cx 998 1000,
-  .cx 997 999]
-private def block1455 : List Gate := [
+  .cx 997 999,
   .ccx 1613 999 997,
   .cx 997 999,
   .cx 996 998,
@@ -23481,7 +19041,8 @@ private def block1536 : List Gate := [
   .cx 969 971,
   .ccx 1613 971 969,
   .cx 969 971,
-  .cx 968 970,
+  .cx 968 970]
+private def block1542 : List Gate := [
   .ccx 1613 970 968,
   .cx 968 970,
   .cx 967 969,
@@ -23490,8 +19051,7 @@ private def block1536 : List Gate := [
   .cx 966 968,
   .ccx 1613 968 966,
   .cx 966 968,
-  .cx 965 967]
-private def block1551 : List Gate := [
+  .cx 965 967,
   .ccx 1613 967 965,
   .cx 965 967,
   .cx 964 966,
@@ -23581,7 +19141,8 @@ private def block1632 : List Gate := [
   .cx 937 939,
   .ccx 1613 939 937,
   .cx 937 939,
-  .cx 936 938,
+  .cx 936 938]
+private def block1638 : List Gate := [
   .ccx 1613 938 936,
   .cx 936 938]
 private def block1640 : List Gate := [
@@ -23591,8 +19152,7 @@ private def block1640 : List Gate := [
   .cx 934 936,
   .ccx 1613 936 934,
   .cx 934 936,
-  .cx 933 935]
-private def block1647 : List Gate := [
+  .cx 933 935,
   .ccx 1613 935 933,
   .cx 933 935,
   .cx 932 934,
@@ -23682,7 +19242,8 @@ private def block1728 : List Gate := [
   .cx 1034 1038,
   .cx 1033 1037,
   .ccx 1613 1037 1033,
-  .cx 1033 1037,
+  .cx 1033 1037]
+private def block1734 : List Gate := [
   .cx 1032 1036,
   .ccx 1613 1036 1032,
   .cx 1032 1036,
@@ -23691,8 +19252,7 @@ private def block1728 : List Gate := [
   .cx 1031 1035,
   .cx 1030 1034,
   .ccx 1613 1034 1030,
-  .cx 1030 1034]
-private def block1743 : List Gate := [
+  .cx 1030 1034,
   .cx 1029 1033,
   .ccx 1613 1033 1029,
   .cx 1029 1033,
@@ -23782,7 +19342,8 @@ private def block1824 : List Gate := [
   .cx 1002 1006,
   .cx 1001 1005,
   .ccx 1613 1005 1001,
-  .cx 1001 1005,
+  .cx 1001 1005]
+private def block1830 : List Gate := [
   .cx 1000 1004,
   .ccx 1613 1004 1000,
   .cx 1000 1004,
@@ -23791,8 +19352,7 @@ private def block1824 : List Gate := [
   .cx 999 1003,
   .cx 998 1002,
   .ccx 1613 1002 998,
-  .cx 998 1002]
-private def block1839 : List Gate := [
+  .cx 998 1002,
   .cx 997 1001]
 private def block1840 : List Gate := [
   .ccx 1613 1001 997,
@@ -23882,7 +19442,8 @@ private def block1920 : List Gate := [
   .cx 970 974,
   .cx 969 973,
   .ccx 1613 973 969,
-  .cx 969 973,
+  .cx 969 973]
+private def block1926 : List Gate := [
   .cx 968 972,
   .ccx 1613 972 968,
   .cx 968 972,
@@ -23891,8 +19452,7 @@ private def block1920 : List Gate := [
   .cx 967 971,
   .cx 966 970,
   .ccx 1613 970 966,
-  .cx 966 970]
-private def block1935 : List Gate := [
+  .cx 966 970,
   .cx 965 969,
   .ccx 1613 969 965,
   .cx 965 969,
@@ -23982,7 +19542,8 @@ private def block2016 : List Gate := [
   .cx 938 942,
   .cx 937 941,
   .ccx 1613 941 937,
-  .cx 937 941,
+  .cx 937 941]
+private def block2022 : List Gate := [
   .cx 936 940,
   .ccx 1613 940 936,
   .cx 936 940,
@@ -23991,8 +19552,7 @@ private def block2016 : List Gate := [
   .cx 935 939,
   .cx 934 938,
   .ccx 1613 938 934,
-  .cx 934 938]
-private def block2031 : List Gate := [
+  .cx 934 938,
   .cx 933 937,
   .ccx 1613 937 933,
   .cx 933 937,
@@ -24082,7 +19642,8 @@ private def block2112 : List Gate := [
   .ccx 1613 1601 1038,
   .cx 1038 1601,
   .cx 1037 1600,
-  .ccx 1613 1600 1037,
+  .ccx 1613 1600 1037]
+private def block2118 : List Gate := [
   .cx 1037 1600,
   .cx 1036 1599]
 private def block2120 : List Gate := [
@@ -24092,8 +19653,7 @@ private def block2120 : List Gate := [
   .ccx 1613 1598 1035,
   .cx 1035 1598,
   .cx 1034 1042,
-  .ccx 1613 1042 1034]
-private def block2127 : List Gate := [
+  .ccx 1613 1042 1034,
   .cx 1034 1042,
   .cx 1033 1041,
   .ccx 1613 1041 1033,
@@ -24183,7 +19743,8 @@ private def block2208 : List Gate := [
   .ccx 1613 1014 1006,
   .cx 1006 1014,
   .cx 1005 1013,
-  .ccx 1613 1013 1005,
+  .ccx 1613 1013 1005]
+private def block2214 : List Gate := [
   .cx 1005 1013,
   .cx 1004 1012,
   .ccx 1613 1012 1004,
@@ -24192,8 +19753,7 @@ private def block2208 : List Gate := [
   .ccx 1613 1011 1003,
   .cx 1003 1011,
   .cx 1002 1010,
-  .ccx 1613 1010 1002]
-private def block2223 : List Gate := [
+  .ccx 1613 1010 1002,
   .cx 1002 1010,
   .cx 1001 1009,
   .ccx 1613 1009 1001,
@@ -24283,7 +19843,8 @@ private def block2304 : List Gate := [
   .ccx 1613 982 974,
   .cx 974 982,
   .cx 973 981,
-  .ccx 1613 981 973,
+  .ccx 1613 981 973]
+private def block2310 : List Gate := [
   .cx 973 981,
   .cx 972 980,
   .ccx 1613 980 972,
@@ -24292,8 +19853,7 @@ private def block2304 : List Gate := [
   .ccx 1613 979 971,
   .cx 971 979,
   .cx 970 978,
-  .ccx 1613 978 970]
-private def block2319 : List Gate := [
+  .ccx 1613 978 970,
   .cx 970 978]
 private def block2320 : List Gate := [
   .cx 969 977,
@@ -24383,7 +19943,8 @@ private def block2400 : List Gate := [
   .ccx 1613 950 942,
   .cx 942 950,
   .cx 941 949,
-  .ccx 1613 949 941,
+  .ccx 1613 949 941]
+private def block2406 : List Gate := [
   .cx 941 949,
   .cx 940 948,
   .ccx 1613 948 940,
@@ -24392,8 +19953,7 @@ private def block2400 : List Gate := [
   .ccx 1613 947 939,
   .cx 939 947,
   .cx 938 946,
-  .ccx 1613 946 938]
-private def block2415 : List Gate := [
+  .ccx 1613 946 938,
   .cx 938 946,
   .cx 937 945,
   .ccx 1613 945 937,
@@ -24483,7 +20043,8 @@ private def block2496 : List Gate := [
   .ccx 1574 1613 437,
   .ccx 1575 1701 437,
   .ccx 1575 1613 438,
-  .ccx 1560 1701 438,
+  .ccx 1560 1701 438]
+private def block2502 : List Gate := [
   .ccx 1560 1613 439,
   .cx 1576 1614,
   .cx 1695 423,
@@ -24492,8 +20053,7 @@ private def block2496 : List Gate := [
   .cx 1696 424,
   .ccx 1614 424 1696,
   .cx 1563 1614,
-  .cx 1697 425]
-private def block2511 : List Gate := [
+  .cx 1697 425,
   .ccx 1614 425 1697,
   .cx 1564 1614,
   .cx 926 426,
@@ -24583,7 +20143,8 @@ private def block2592 : List Gate := [
   .cx 1575 1596,
   .cx 1560 1596,
   .pop 1568 300 1595,
-  .pop 1567 1578 1594,
+  .pop 1567 1578 1594]
+private def block2598 : List Gate := [
   .pop 1566 1580 1593,
   .pop 1565 1582 1592]
 private def block2600 : List Gate := [
@@ -24593,8 +20154,7 @@ private def block2600 : List Gate := [
   .pop 288 1587 1588,
   .pop 289 1586 1587,
   .pop 290 1585 1586,
-  .pop 291 1584 1585]
-private def block2607 : List Gate := [
+  .pop 291 1584 1585,
   .pop 292 1583 1584,
   .pop 293 1582 1583,
   .pop 294 1581 1582,
@@ -24642,592 +20202,594 @@ private def block2640 : List Gate := [
 private theorem check2640 : bitCheck block2640 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff80002ffffeffe00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2640 := block2640 ++ ([]:List Gate)
 private theorem valid2640 : bitCheck suffix2640 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff80002ffffeffe00 <<< 1556) := bit_join block2640 ([]:List Gate) _ (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) _ check2640 rfl
-private theorem check2607 : bitCheck block2607 (0x1e007fffffffffffffffffff80002ffffeffe00 <<< 1556) = some (0x1e007fffffffffffffffffff80002ffe0000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2607 := block2607 ++ suffix2640
-private theorem valid2607 : bitCheck suffix2607 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff80002ffe0000000 <<< 1556) := bit_join block2607 suffix2640 _ (0x1e007fffffffffffffffffff80002ffffeffe00 <<< 1556) _ check2607 valid2640
-private theorem check2600 : bitCheck block2600 (0x1e007fffffffffffffffffff80002ffe0000000 <<< 1556) = some (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2600 := block2600 ++ suffix2607
-private theorem valid2600 : bitCheck suffix2600 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) := bit_join block2600 suffix2607 _ (0x1e007fffffffffffffffffff80002ffe0000000 <<< 1556) _ check2600 valid2607
-private theorem check2592 : bitCheck block2592 (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800020000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2592 := block2592 ++ suffix2600
-private theorem valid2592 : bitCheck suffix2592 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800020000000000 <<< 1556) := bit_join block2592 suffix2600 _ (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) _ check2592 valid2600
+private theorem check2600 : bitCheck block2600 (0x1e007fffffffffffffffffff80002ffffeffe00 <<< 1556) = some (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2600 := block2600 ++ suffix2640
+private theorem valid2600 : bitCheck suffix2600 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) := bit_join block2600 suffix2640 _ (0x1e007fffffffffffffffffff80002ffffeffe00 <<< 1556) _ check2600 valid2640
+private theorem check2598 : bitCheck block2598 (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) = some (0x1e007fffffffffffffffffff80002c000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2598 := block2598 ++ suffix2600
+private theorem valid2598 : bitCheck suffix2598 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff80002c000000000 <<< 1556) := bit_join block2598 suffix2600 _ (0x1e007fffffffffffffffffff80002f000000000 <<< 1556) _ check2598 valid2600
+private theorem check2592 : bitCheck block2592 (0x1e007fffffffffffffffffff80002c000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800020000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2592 := block2592 ++ suffix2598
+private theorem valid2592 : bitCheck suffix2592 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800020000000000 <<< 1556) := bit_join block2592 suffix2598 _ (0x1e007fffffffffffffffffff80002c000000000 <<< 1556) _ check2592 valid2598
 private theorem check2560 : bitCheck block2560 (0x1e007fffffffffffffffffff800020000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2560 := block2560 ++ suffix2592
 private theorem valid2560 : bitCheck suffix2560 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2560 suffix2592 _ (0x1e007fffffffffffffffffff800020000000000 <<< 1556) _ check2560 valid2592
 private theorem check2520 : bitCheck block2520 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2520 := block2520 ++ suffix2560
 private theorem valid2520 : bitCheck suffix2520 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2520 suffix2560 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2520 valid2560
-private theorem check2511 : bitCheck block2511 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2511 := block2511 ++ suffix2520
-private theorem valid2511 : bitCheck suffix2511 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2511 suffix2520 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2511 valid2520
+private theorem check2502 : bitCheck block2502 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2502 := block2502 ++ suffix2520
+private theorem valid2502 : bitCheck suffix2502 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2502 suffix2520 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2502 valid2520
 private theorem check2496 : bitCheck block2496 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2496 := block2496 ++ suffix2511
-private theorem valid2496 : bitCheck suffix2496 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2496 suffix2511 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2496 valid2511
+private def suffix2496 := block2496 ++ suffix2502
+private theorem valid2496 : bitCheck suffix2496 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2496 suffix2502 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2496 valid2502
 private theorem check2480 : bitCheck block2480 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2480 := block2480 ++ suffix2496
 private theorem valid2480 : bitCheck suffix2480 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2480 suffix2496 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2480 valid2496
 private theorem check2440 : bitCheck block2440 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2440 := block2440 ++ suffix2480
 private theorem valid2440 : bitCheck suffix2440 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2440 suffix2480 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2440 valid2480
-private theorem check2415 : bitCheck block2415 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2415 := block2415 ++ suffix2440
-private theorem valid2415 : bitCheck suffix2415 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2415 suffix2440 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2415 valid2440
+private theorem check2406 : bitCheck block2406 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2406 := block2406 ++ suffix2440
+private theorem valid2406 : bitCheck suffix2406 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2406 suffix2440 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2406 valid2440
 private theorem check2400 : bitCheck block2400 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2400 := block2400 ++ suffix2415
-private theorem valid2400 : bitCheck suffix2400 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2400 suffix2415 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2400 valid2415
+private def suffix2400 := block2400 ++ suffix2406
+private theorem valid2400 : bitCheck suffix2400 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2400 suffix2406 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2400 valid2406
 private theorem check2360 : bitCheck block2360 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2360 := block2360 ++ suffix2400
 private theorem valid2360 : bitCheck suffix2360 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2360 suffix2400 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2360 valid2400
 private theorem check2320 : bitCheck block2320 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2320 := block2320 ++ suffix2360
 private theorem valid2320 : bitCheck suffix2320 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2320 suffix2360 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2320 valid2360
-private theorem check2319 : bitCheck block2319 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2319 := block2319 ++ suffix2320
-private theorem valid2319 : bitCheck suffix2319 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2319 suffix2320 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2319 valid2320
+private theorem check2310 : bitCheck block2310 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2310 := block2310 ++ suffix2320
+private theorem valid2310 : bitCheck suffix2310 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2310 suffix2320 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2310 valid2320
 private theorem check2304 : bitCheck block2304 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2304 := block2304 ++ suffix2319
-private theorem valid2304 : bitCheck suffix2304 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2304 suffix2319 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2304 valid2319
+private def suffix2304 := block2304 ++ suffix2310
+private theorem valid2304 : bitCheck suffix2304 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2304 suffix2310 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2304 valid2310
 private theorem check2280 : bitCheck block2280 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2280 := block2280 ++ suffix2304
 private theorem valid2280 : bitCheck suffix2280 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2280 suffix2304 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2280 valid2304
 private theorem check2240 : bitCheck block2240 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2240 := block2240 ++ suffix2280
 private theorem valid2240 : bitCheck suffix2240 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2240 suffix2280 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2240 valid2280
-private theorem check2223 : bitCheck block2223 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2223 := block2223 ++ suffix2240
-private theorem valid2223 : bitCheck suffix2223 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2223 suffix2240 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2223 valid2240
+private theorem check2214 : bitCheck block2214 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2214 := block2214 ++ suffix2240
+private theorem valid2214 : bitCheck suffix2214 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2214 suffix2240 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2214 valid2240
 private theorem check2208 : bitCheck block2208 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2208 := block2208 ++ suffix2223
-private theorem valid2208 : bitCheck suffix2208 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2208 suffix2223 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2208 valid2223
+private def suffix2208 := block2208 ++ suffix2214
+private theorem valid2208 : bitCheck suffix2208 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2208 suffix2214 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2208 valid2214
 private theorem check2200 : bitCheck block2200 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2200 := block2200 ++ suffix2208
 private theorem valid2200 : bitCheck suffix2200 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2200 suffix2208 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2200 valid2208
 private theorem check2160 : bitCheck block2160 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2160 := block2160 ++ suffix2200
 private theorem valid2160 : bitCheck suffix2160 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2160 suffix2200 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2160 valid2200
-private theorem check2127 : bitCheck block2127 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2127 := block2127 ++ suffix2160
-private theorem valid2127 : bitCheck suffix2127 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2127 suffix2160 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2127 valid2160
 private theorem check2120 : bitCheck block2120 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2120 := block2120 ++ suffix2127
-private theorem valid2120 : bitCheck suffix2120 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2120 suffix2127 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2120 valid2127
+private def suffix2120 := block2120 ++ suffix2160
+private theorem valid2120 : bitCheck suffix2120 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2120 suffix2160 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2120 valid2160
+private theorem check2118 : bitCheck block2118 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2118 := block2118 ++ suffix2120
+private theorem valid2118 : bitCheck suffix2118 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2118 suffix2120 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2118 valid2120
 private theorem check2112 : bitCheck block2112 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2112 := block2112 ++ suffix2120
-private theorem valid2112 : bitCheck suffix2112 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2112 suffix2120 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2112 valid2120
+private def suffix2112 := block2112 ++ suffix2118
+private theorem valid2112 : bitCheck suffix2112 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2112 suffix2118 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2112 valid2118
 private theorem check2080 : bitCheck block2080 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2080 := block2080 ++ suffix2112
 private theorem valid2080 : bitCheck suffix2080 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2080 suffix2112 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2080 valid2112
 private theorem check2040 : bitCheck block2040 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2040 := block2040 ++ suffix2080
 private theorem valid2040 : bitCheck suffix2040 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2040 suffix2080 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2040 valid2080
-private theorem check2031 : bitCheck block2031 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2031 := block2031 ++ suffix2040
-private theorem valid2031 : bitCheck suffix2031 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2031 suffix2040 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2031 valid2040
+private theorem check2022 : bitCheck block2022 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix2022 := block2022 ++ suffix2040
+private theorem valid2022 : bitCheck suffix2022 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2022 suffix2040 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2022 valid2040
 private theorem check2016 : bitCheck block2016 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix2016 := block2016 ++ suffix2031
-private theorem valid2016 : bitCheck suffix2016 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2016 suffix2031 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2016 valid2031
+private def suffix2016 := block2016 ++ suffix2022
+private theorem valid2016 : bitCheck suffix2016 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2016 suffix2022 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2016 valid2022
 private theorem check2000 : bitCheck block2000 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix2000 := block2000 ++ suffix2016
 private theorem valid2000 : bitCheck suffix2000 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block2000 suffix2016 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check2000 valid2016
 private theorem check1960 : bitCheck block1960 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1960 := block1960 ++ suffix2000
 private theorem valid1960 : bitCheck suffix1960 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1960 suffix2000 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1960 valid2000
-private theorem check1935 : bitCheck block1935 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1935 := block1935 ++ suffix1960
-private theorem valid1935 : bitCheck suffix1935 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1935 suffix1960 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1935 valid1960
+private theorem check1926 : bitCheck block1926 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1926 := block1926 ++ suffix1960
+private theorem valid1926 : bitCheck suffix1926 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1926 suffix1960 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1926 valid1960
 private theorem check1920 : bitCheck block1920 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1920 := block1920 ++ suffix1935
-private theorem valid1920 : bitCheck suffix1920 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1920 suffix1935 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1920 valid1935
+private def suffix1920 := block1920 ++ suffix1926
+private theorem valid1920 : bitCheck suffix1920 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1920 suffix1926 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1920 valid1926
 private theorem check1880 : bitCheck block1880 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1880 := block1880 ++ suffix1920
 private theorem valid1880 : bitCheck suffix1880 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1880 suffix1920 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1880 valid1920
 private theorem check1840 : bitCheck block1840 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1840 := block1840 ++ suffix1880
 private theorem valid1840 : bitCheck suffix1840 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1840 suffix1880 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1840 valid1880
-private theorem check1839 : bitCheck block1839 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1839 := block1839 ++ suffix1840
-private theorem valid1839 : bitCheck suffix1839 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1839 suffix1840 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1839 valid1840
+private theorem check1830 : bitCheck block1830 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1830 := block1830 ++ suffix1840
+private theorem valid1830 : bitCheck suffix1830 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1830 suffix1840 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1830 valid1840
 private theorem check1824 : bitCheck block1824 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1824 := block1824 ++ suffix1839
-private theorem valid1824 : bitCheck suffix1824 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1824 suffix1839 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1824 valid1839
+private def suffix1824 := block1824 ++ suffix1830
+private theorem valid1824 : bitCheck suffix1824 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1824 suffix1830 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1824 valid1830
 private theorem check1800 : bitCheck block1800 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1800 := block1800 ++ suffix1824
 private theorem valid1800 : bitCheck suffix1800 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1800 suffix1824 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1800 valid1824
 private theorem check1760 : bitCheck block1760 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1760 := block1760 ++ suffix1800
 private theorem valid1760 : bitCheck suffix1760 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1760 suffix1800 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1760 valid1800
-private theorem check1743 : bitCheck block1743 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1743 := block1743 ++ suffix1760
-private theorem valid1743 : bitCheck suffix1743 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1743 suffix1760 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1743 valid1760
+private theorem check1734 : bitCheck block1734 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1734 := block1734 ++ suffix1760
+private theorem valid1734 : bitCheck suffix1734 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1734 suffix1760 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1734 valid1760
 private theorem check1728 : bitCheck block1728 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1728 := block1728 ++ suffix1743
-private theorem valid1728 : bitCheck suffix1728 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1728 suffix1743 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1728 valid1743
+private def suffix1728 := block1728 ++ suffix1734
+private theorem valid1728 : bitCheck suffix1728 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1728 suffix1734 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1728 valid1734
 private theorem check1720 : bitCheck block1720 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1720 := block1720 ++ suffix1728
 private theorem valid1720 : bitCheck suffix1720 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1720 suffix1728 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1720 valid1728
 private theorem check1680 : bitCheck block1680 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1680 := block1680 ++ suffix1720
 private theorem valid1680 : bitCheck suffix1680 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1680 suffix1720 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1680 valid1720
-private theorem check1647 : bitCheck block1647 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1647 := block1647 ++ suffix1680
-private theorem valid1647 : bitCheck suffix1647 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1647 suffix1680 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1647 valid1680
 private theorem check1640 : bitCheck block1640 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1640 := block1640 ++ suffix1647
-private theorem valid1640 : bitCheck suffix1640 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1640 suffix1647 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1640 valid1647
+private def suffix1640 := block1640 ++ suffix1680
+private theorem valid1640 : bitCheck suffix1640 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1640 suffix1680 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1640 valid1680
+private theorem check1638 : bitCheck block1638 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1638 := block1638 ++ suffix1640
+private theorem valid1638 : bitCheck suffix1638 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1638 suffix1640 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1638 valid1640
 private theorem check1632 : bitCheck block1632 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1632 := block1632 ++ suffix1640
-private theorem valid1632 : bitCheck suffix1632 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1632 suffix1640 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1632 valid1640
+private def suffix1632 := block1632 ++ suffix1638
+private theorem valid1632 : bitCheck suffix1632 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1632 suffix1638 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1632 valid1638
 private theorem check1600 : bitCheck block1600 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1600 := block1600 ++ suffix1632
 private theorem valid1600 : bitCheck suffix1600 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1600 suffix1632 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1600 valid1632
 private theorem check1560 : bitCheck block1560 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1560 := block1560 ++ suffix1600
 private theorem valid1560 : bitCheck suffix1560 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1560 suffix1600 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1560 valid1600
-private theorem check1551 : bitCheck block1551 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1551 := block1551 ++ suffix1560
-private theorem valid1551 : bitCheck suffix1551 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1551 suffix1560 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1551 valid1560
+private theorem check1542 : bitCheck block1542 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1542 := block1542 ++ suffix1560
+private theorem valid1542 : bitCheck suffix1542 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1542 suffix1560 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1542 valid1560
 private theorem check1536 : bitCheck block1536 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1536 := block1536 ++ suffix1551
-private theorem valid1536 : bitCheck suffix1536 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1536 suffix1551 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1536 valid1551
+private def suffix1536 := block1536 ++ suffix1542
+private theorem valid1536 : bitCheck suffix1536 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1536 suffix1542 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1536 valid1542
 private theorem check1520 : bitCheck block1520 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1520 := block1520 ++ suffix1536
 private theorem valid1520 : bitCheck suffix1520 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1520 suffix1536 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1520 valid1536
 private theorem check1480 : bitCheck block1480 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1480 := block1480 ++ suffix1520
 private theorem valid1480 : bitCheck suffix1480 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1480 suffix1520 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1480 valid1520
-private theorem check1455 : bitCheck block1455 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1455 := block1455 ++ suffix1480
-private theorem valid1455 : bitCheck suffix1455 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1455 suffix1480 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1455 valid1480
+private theorem check1446 : bitCheck block1446 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1446 := block1446 ++ suffix1480
+private theorem valid1446 : bitCheck suffix1446 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1446 suffix1480 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1446 valid1480
 private theorem check1440 : bitCheck block1440 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1440 := block1440 ++ suffix1455
-private theorem valid1440 : bitCheck suffix1440 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1440 suffix1455 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1440 valid1455
+private def suffix1440 := block1440 ++ suffix1446
+private theorem valid1440 : bitCheck suffix1440 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1440 suffix1446 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1440 valid1446
 private theorem check1400 : bitCheck block1400 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1400 := block1400 ++ suffix1440
 private theorem valid1400 : bitCheck suffix1400 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1400 suffix1440 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1400 valid1440
 private theorem check1360 : bitCheck block1360 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1360 := block1360 ++ suffix1400
 private theorem valid1360 : bitCheck suffix1360 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1360 suffix1400 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1360 valid1400
-private theorem check1359 : bitCheck block1359 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1359 := block1359 ++ suffix1360
-private theorem valid1359 : bitCheck suffix1359 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1359 suffix1360 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1359 valid1360
+private theorem check1350 : bitCheck block1350 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1350 := block1350 ++ suffix1360
+private theorem valid1350 : bitCheck suffix1350 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1350 suffix1360 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1350 valid1360
 private theorem check1344 : bitCheck block1344 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1344 := block1344 ++ suffix1359
-private theorem valid1344 : bitCheck suffix1344 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1344 suffix1359 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1344 valid1359
+private def suffix1344 := block1344 ++ suffix1350
+private theorem valid1344 : bitCheck suffix1344 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1344 suffix1350 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1344 valid1350
 private theorem check1320 : bitCheck block1320 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1320 := block1320 ++ suffix1344
 private theorem valid1320 : bitCheck suffix1320 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1320 suffix1344 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1320 valid1344
 private theorem check1280 : bitCheck block1280 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1280 := block1280 ++ suffix1320
 private theorem valid1280 : bitCheck suffix1280 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1280 suffix1320 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1280 valid1320
-private theorem check1263 : bitCheck block1263 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1263 := block1263 ++ suffix1280
-private theorem valid1263 : bitCheck suffix1263 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1263 suffix1280 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1263 valid1280
+private theorem check1254 : bitCheck block1254 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1254 := block1254 ++ suffix1280
+private theorem valid1254 : bitCheck suffix1254 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1254 suffix1280 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1254 valid1280
 private theorem check1248 : bitCheck block1248 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1248 := block1248 ++ suffix1263
-private theorem valid1248 : bitCheck suffix1248 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1248 suffix1263 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1248 valid1263
+private def suffix1248 := block1248 ++ suffix1254
+private theorem valid1248 : bitCheck suffix1248 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1248 suffix1254 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1248 valid1254
 private theorem check1240 : bitCheck block1240 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1240 := block1240 ++ suffix1248
 private theorem valid1240 : bitCheck suffix1240 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1240 suffix1248 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1240 valid1248
 private theorem check1200 : bitCheck block1200 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1200 := block1200 ++ suffix1240
 private theorem valid1200 : bitCheck suffix1200 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1200 suffix1240 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1200 valid1240
-private theorem check1167 : bitCheck block1167 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1167 := block1167 ++ suffix1200
-private theorem valid1167 : bitCheck suffix1167 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1167 suffix1200 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1167 valid1200
 private theorem check1160 : bitCheck block1160 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1160 := block1160 ++ suffix1167
-private theorem valid1160 : bitCheck suffix1160 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1160 suffix1167 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1160 valid1167
+private def suffix1160 := block1160 ++ suffix1200
+private theorem valid1160 : bitCheck suffix1160 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1160 suffix1200 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1160 valid1200
+private theorem check1158 : bitCheck block1158 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1158 := block1158 ++ suffix1160
+private theorem valid1158 : bitCheck suffix1158 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1158 suffix1160 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1158 valid1160
 private theorem check1152 : bitCheck block1152 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1152 := block1152 ++ suffix1160
-private theorem valid1152 : bitCheck suffix1152 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1152 suffix1160 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1152 valid1160
+private def suffix1152 := block1152 ++ suffix1158
+private theorem valid1152 : bitCheck suffix1152 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1152 suffix1158 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1152 valid1158
 private theorem check1120 : bitCheck block1120 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1120 := block1120 ++ suffix1152
 private theorem valid1120 : bitCheck suffix1120 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1120 suffix1152 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1120 valid1152
 private theorem check1080 : bitCheck block1080 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1080 := block1080 ++ suffix1120
 private theorem valid1080 : bitCheck suffix1080 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1080 suffix1120 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1080 valid1120
-private theorem check1071 : bitCheck block1071 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1071 := block1071 ++ suffix1080
-private theorem valid1071 : bitCheck suffix1071 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1071 suffix1080 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1071 valid1080
+private theorem check1062 : bitCheck block1062 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix1062 := block1062 ++ suffix1080
+private theorem valid1062 : bitCheck suffix1062 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1062 suffix1080 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1062 valid1080
 private theorem check1056 : bitCheck block1056 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix1056 := block1056 ++ suffix1071
-private theorem valid1056 : bitCheck suffix1056 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1056 suffix1071 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1056 valid1071
+private def suffix1056 := block1056 ++ suffix1062
+private theorem valid1056 : bitCheck suffix1056 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1056 suffix1062 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1056 valid1062
 private theorem check1040 : bitCheck block1040 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1040 := block1040 ++ suffix1056
 private theorem valid1040 : bitCheck suffix1040 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1040 suffix1056 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1040 valid1056
 private theorem check1000 : bitCheck block1000 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix1000 := block1000 ++ suffix1040
 private theorem valid1000 : bitCheck suffix1000 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block1000 suffix1040 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check1000 valid1040
-private theorem check975 : bitCheck block975 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix975 := block975 ++ suffix1000
-private theorem valid975 : bitCheck suffix975 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block975 suffix1000 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check975 valid1000
+private theorem check966 : bitCheck block966 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix966 := block966 ++ suffix1000
+private theorem valid966 : bitCheck suffix966 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block966 suffix1000 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check966 valid1000
 private theorem check960 : bitCheck block960 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix960 := block960 ++ suffix975
-private theorem valid960 : bitCheck suffix960 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block960 suffix975 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check960 valid975
+private def suffix960 := block960 ++ suffix966
+private theorem valid960 : bitCheck suffix960 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block960 suffix966 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check960 valid966
 private theorem check920 : bitCheck block920 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix920 := block920 ++ suffix960
 private theorem valid920 : bitCheck suffix920 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block920 suffix960 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check920 valid960
 private theorem check880 : bitCheck block880 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix880 := block880 ++ suffix920
 private theorem valid880 : bitCheck suffix880 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block880 suffix920 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check880 valid920
-private theorem check879 : bitCheck block879 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix879 := block879 ++ suffix880
-private theorem valid879 : bitCheck suffix879 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block879 suffix880 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check879 valid880
+private theorem check870 : bitCheck block870 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix870 := block870 ++ suffix880
+private theorem valid870 : bitCheck suffix870 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block870 suffix880 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check870 valid880
 private theorem check864 : bitCheck block864 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix864 := block864 ++ suffix879
-private theorem valid864 : bitCheck suffix864 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block864 suffix879 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check864 valid879
+private def suffix864 := block864 ++ suffix870
+private theorem valid864 : bitCheck suffix864 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block864 suffix870 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check864 valid870
 private theorem check840 : bitCheck block840 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix840 := block840 ++ suffix864
 private theorem valid840 : bitCheck suffix840 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block840 suffix864 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check840 valid864
 private theorem check800 : bitCheck block800 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix800 := block800 ++ suffix840
 private theorem valid800 : bitCheck suffix800 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block800 suffix840 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check800 valid840
-private theorem check783 : bitCheck block783 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix783 := block783 ++ suffix800
-private theorem valid783 : bitCheck suffix783 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffffff800000000000000 <<< 1556) := bit_join block783 suffix800 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check783 valid800
-private theorem check768 : bitCheck block768 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix768 := block768 ++ suffix783
-private theorem valid768 : bitCheck suffix768 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := bit_join block768 suffix783 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check768 valid783
+private theorem check774 : bitCheck block774 (0x1e007fffffffffffffffffff800000000000000 <<< 1556) = some (0x1e007ffffffffffffffffffe000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix774 := block774 ++ suffix800
+private theorem valid774 : bitCheck suffix774 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffffffffffffffffe000000000000000 <<< 1556) := bit_join block774 suffix800 _ (0x1e007fffffffffffffffffff800000000000000 <<< 1556) _ check774 valid800
+private theorem check768 : bitCheck block768 (0x1e007ffffffffffffffffffe000000000000000 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix768 := block768 ++ suffix774
+private theorem valid768 : bitCheck suffix768 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) := bit_join block768 suffix774 _ (0x1e007ffffffffffffffffffe000000000000000 <<< 1556) _ check768 valid774
 private theorem check760 : bitCheck block760 (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) = some (0x1e007fffffffffffffffff00000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix760 := block760 ++ suffix768
 private theorem valid760 : bitCheck suffix760 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffffffffffffff00000000000000000 <<< 1556) := bit_join block760 suffix768 _ (0x1e007ffffffffffffffffff0000000000000000 <<< 1556) _ check760 valid768
 private theorem check720 : bitCheck block720 (0x1e007fffffffffffffffff00000000000000000 <<< 1556) = some (0x1e007ffffffffffff0000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix720 := block720 ++ suffix760
 private theorem valid720 : bitCheck suffix720 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffffffffff0000000000000000000000 <<< 1556) := bit_join block720 suffix760 _ (0x1e007fffffffffffffffff00000000000000000 <<< 1556) _ check720 valid760
-private theorem check687 : bitCheck block687 (0x1e007ffffffffffff0000000000000000000000 <<< 1556) = some (0x1e007ffffffff00000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix687 := block687 ++ suffix720
-private theorem valid687 : bitCheck suffix687 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffffff00000000000000000000000000 <<< 1556) := bit_join block687 suffix720 _ (0x1e007ffffffffffff0000000000000000000000 <<< 1556) _ check687 valid720
-private theorem check680 : bitCheck block680 (0x1e007ffffffff00000000000000000000000000 <<< 1556) = some (0x1e007fffffff000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix680 := block680 ++ suffix687
-private theorem valid680 : bitCheck suffix680 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffff000000000000000000000000000 <<< 1556) := bit_join block680 suffix687 _ (0x1e007ffffffff00000000000000000000000000 <<< 1556) _ check680 valid687
-private theorem check672 : bitCheck block672 (0x1e007fffffff000000000000000000000000000 <<< 1556) = some (0x1e007ffffff0000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix672 := block672 ++ suffix680
-private theorem valid672 : bitCheck suffix672 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffff0000000000000000000000000000 <<< 1556) := bit_join block672 suffix680 _ (0x1e007fffffff000000000000000000000000000 <<< 1556) _ check672 valid680
+private theorem check680 : bitCheck block680 (0x1e007ffffffffffff0000000000000000000000 <<< 1556) = some (0x1e007fffffff000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix680 := block680 ++ suffix720
+private theorem valid680 : bitCheck suffix680 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007fffffff000000000000000000000000000 <<< 1556) := bit_join block680 suffix720 _ (0x1e007ffffffffffff0000000000000000000000 <<< 1556) _ check680 valid720
+private theorem check678 : bitCheck block678 (0x1e007fffffff000000000000000000000000000 <<< 1556) = some (0x1e007ffffffe000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix678 := block678 ++ suffix680
+private theorem valid678 : bitCheck suffix678 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffffe000000000000000000000000000 <<< 1556) := bit_join block678 suffix680 _ (0x1e007fffffff000000000000000000000000000 <<< 1556) _ check678 valid680
+private theorem check672 : bitCheck block672 (0x1e007ffffffe000000000000000000000000000 <<< 1556) = some (0x1e007ffffff0000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix672 := block672 ++ suffix678
+private theorem valid672 : bitCheck suffix672 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ffffff0000000000000000000000000000 <<< 1556) := bit_join block672 suffix678 _ (0x1e007ffffffe000000000000000000000000000 <<< 1556) _ check672 valid678
 private theorem check640 : bitCheck block640 (0x1e007ffffff0000000000000000000000000000 <<< 1556) = some (0x1e007ff00000000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix640 := block640 ++ suffix672
 private theorem valid640 : bitCheck suffix640 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x1e007ff00000000000000000000000000000000 <<< 1556) := bit_join block640 suffix672 _ (0x1e007ffffff0000000000000000000000000000 <<< 1556) _ check640 valid672
 private theorem check600 : bitCheck block600 (0x1e007ff00000000000000000000000000000000 <<< 1556) = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix600 := block600 ++ suffix640
 private theorem valid600 : bitCheck suffix600 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some 0 := bit_join block600 suffix640 _ (0x1e007ff00000000000000000000000000000000 <<< 1556) _ check600 valid640
-private theorem check591 : bitCheck block591 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix591 := block591 ++ suffix600
-private theorem valid591 : bitCheck suffix591 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some 0 := bit_join block591 suffix600 _ 0 _ check591 valid600
+private theorem check582 : bitCheck block582 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix582 := block582 ++ suffix600
+private theorem valid582 : bitCheck suffix582 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some 0 := bit_join block582 suffix600 _ 0 _ check582 valid600
 private theorem check576 : bitCheck block576 0 = some 0 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix576 := block576 ++ suffix591
-private theorem valid576 : bitCheck suffix576 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some 0 := bit_join block576 suffix591 _ 0 _ check576 valid591
+private def suffix576 := block576 ++ suffix582
+private theorem valid576 : bitCheck suffix576 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some 0 := bit_join block576 suffix582 _ 0 _ check576 valid582
 private theorem check560 : bitCheck block560 0 = some (0x7ffc000000000000000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix560 := block560 ++ suffix576
 private theorem valid560 : bitCheck suffix560 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffc000000000000000000000000000000000000000 <<< 1556) := bit_join block560 suffix576 _ 0 _ check560 valid576
 private theorem check520 : bitCheck block520 (0x7ffc000000000000000000000000000000000000000 <<< 1556) = some (0x7ffffe007fffffff000000000000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix520 := block520 ++ suffix560
 private theorem valid520 : bitCheck suffix520 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffff000000000000000000000000000 <<< 1556) := bit_join block520 suffix560 _ (0x7ffc000000000000000000000000000000000000000 <<< 1556) _ check520 valid560
-private theorem check495 : bitCheck block495 (0x7ffffe007fffffff000000000000000000000000000 <<< 1556) = some (0x7ffffe007fffffffffffff800000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix495 := block495 ++ suffix520
-private theorem valid495 : bitCheck suffix495 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffff800000000000000000000 <<< 1556) := bit_join block495 suffix520 _ (0x7ffffe007fffffff000000000000000000000000000 <<< 1556) _ check495 valid520
-private theorem check480 : bitCheck block480 (0x7ffffe007fffffffffffff800000000000000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffff00000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix480 := block480 ++ suffix495
-private theorem valid480 : bitCheck suffix480 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffff00000000000000000 <<< 1556) := bit_join block480 suffix495 _ (0x7ffffe007fffffffffffff800000000000000000000 <<< 1556) _ check480 valid495
+private theorem check486 : bitCheck block486 (0x7ffffe007fffffff000000000000000000000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffc000000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix486 := block486 ++ suffix520
+private theorem valid486 : bitCheck suffix486 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffc000000000000000000 <<< 1556) := bit_join block486 suffix520 _ (0x7ffffe007fffffff000000000000000000000000000 <<< 1556) _ check486 valid520
+private theorem check480 : bitCheck block480 (0x7ffffe007fffffffffffffffc000000000000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffff00000000000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix480 := block480 ++ suffix486
+private theorem valid480 : bitCheck suffix480 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffff00000000000000000 <<< 1556) := bit_join block480 suffix486 _ (0x7ffffe007fffffffffffffffc000000000000000000 <<< 1556) _ check480 valid486
 private theorem check440 : bitCheck block440 (0x7ffffe007fffffffffffffffff00000000000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix440 := block440 ++ suffix480
 private theorem valid440 : bitCheck suffix440 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block440 suffix480 _ (0x7ffffe007fffffffffffffffff00000000000000000 <<< 1556) _ check440 valid480
 private theorem check400 : bitCheck block400 (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix400 := block400 ++ suffix440
 private theorem valid400 : bitCheck suffix400 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block400 suffix440 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check400 valid440
-private theorem check399 : bitCheck block399 (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix399 := block399 ++ suffix400
-private theorem valid399 : bitCheck suffix399 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block399 suffix400 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check399 valid400
+private theorem check390 : bitCheck block390 (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix390 := block390 ++ suffix400
+private theorem valid390 : bitCheck suffix390 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block390 suffix400 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check390 valid400
 private theorem check384 : bitCheck block384 (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix384 := block384 ++ suffix399
-private theorem valid384 : bitCheck suffix384 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block384 suffix399 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check384 valid399
+private def suffix384 := block384 ++ suffix390
+private theorem valid384 : bitCheck suffix384 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block384 suffix390 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check384 valid390
 private theorem check360 : bitCheck block360 (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix360 := block360 ++ suffix384
 private theorem valid360 : bitCheck suffix360 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) := bit_join block360 suffix384 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check360 valid384
 private theorem check320 : bitCheck block320 (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix320 := block320 ++ suffix360
 private theorem valid320 : bitCheck suffix320 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) := bit_join block320 suffix360 _ (0x7ffffe007fffffffffffffffffffffffc0000000000 <<< 1556) _ check320 valid360
-private theorem check303 : bitCheck block303 (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix303 := block303 ++ suffix320
-private theorem valid303 : bitCheck suffix303 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) := bit_join block303 suffix320 _ (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) _ check303 valid320
-private theorem check288 : bitCheck block288 (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffefffc000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix288 := block288 ++ suffix303
-private theorem valid288 : bitCheck suffix288 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffefffc000000 <<< 1556) := bit_join block288 suffix303 _ (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) _ check288 valid303
+private theorem check294 : bitCheck block294 (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeff00000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix294 := block294 ++ suffix320
+private theorem valid294 : bitCheck suffix294 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeff00000000 <<< 1556) := bit_join block294 suffix320 _ (0x7ffffe007fffffffffffffffffffffffe0000000000 <<< 1556) _ check294 valid320
+private theorem check288 : bitCheck block288 (0x7ffffe007fffffffffffffffffffffffeff00000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffefffc000000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix288 := block288 ++ suffix294
+private theorem valid288 : bitCheck suffix288 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffefffc000000 <<< 1556) := bit_join block288 suffix294 _ (0x7ffffe007fffffffffffffffffffffffeff00000000 <<< 1556) _ check288 valid294
 private theorem check280 : bitCheck block280 (0x7ffffe007fffffffffffffffffffffffefffc000000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffe00000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix280 := block280 ++ suffix288
 private theorem valid280 : bitCheck suffix280 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffe00000 <<< 1556) := bit_join block280 suffix288 _ (0x7ffffe007fffffffffffffffffffffffefffc000000 <<< 1556) _ check280 valid288
 private theorem check240 : bitCheck block240 (0x7ffffe007fffffffffffffffffffffffeffffe00000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffefffe8 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix240 := block240 ++ suffix280
 private theorem valid240 : bitCheck suffix240 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffefffe8 <<< 1556) := bit_join block240 suffix280 _ (0x7ffffe007fffffffffffffffffffffffeffffe00000 <<< 1556) _ check240 valid280
-private theorem check207 : bitCheck block207 (0x7ffffe007fffffffffffffffffffffffeffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeff800 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix207 := block207 ++ suffix240
-private theorem valid207 : bitCheck suffix207 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeff800 <<< 1556) := bit_join block207 suffix240 _ (0x7ffffe007fffffffffffffffffffffffeffffefffe8 <<< 1556) _ check207 valid240
-private theorem check200 : bitCheck block200 (0x7ffffe007fffffffffffffffffffffffeffffeff800 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix200 := block200 ++ suffix207
-private theorem valid200 : bitCheck suffix200 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) := bit_join block200 suffix207 _ (0x7ffffe007fffffffffffffffffffffffeffffeff800 <<< 1556) _ check200 valid207
-private theorem check192 : bitCheck block192 (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffe80000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix192 := block192 ++ suffix200
-private theorem valid192 : bitCheck suffix192 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffe80000 <<< 1556) := bit_join block192 suffix200 _ (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) _ check192 valid200
+private theorem check200 : bitCheck block200 (0x7ffffe007fffffffffffffffffffffffeffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix200 := block200 ++ suffix240
+private theorem valid200 : bitCheck suffix200 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) := bit_join block200 suffix240 _ (0x7ffffe007fffffffffffffffffffffffeffffefffe8 <<< 1556) _ check200 valid240
+private theorem check198 : bitCheck block198 (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffef0000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix198 := block198 ++ suffix200
+private theorem valid198 : bitCheck suffix198 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffef0000 <<< 1556) := bit_join block198 suffix200 _ (0x7ffffe007fffffffffffffffffffffffeffffef8000 <<< 1556) _ check198 valid200
+private theorem check192 : bitCheck block192 (0x7ffffe007fffffffffffffffffffffffeffffef0000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffe80000 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix192 := block192 ++ suffix198
+private theorem valid192 : bitCheck suffix192 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffe80000 <<< 1556) := bit_join block192 suffix198 _ (0x7ffffe007fffffffffffffffffffffffeffffef0000 <<< 1556) _ check192 valid198
 private theorem check160 : bitCheck block160 (0x7ffffe007fffffffffffffffffffffffeffffe80000 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffc <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix160 := block160 ++ suffix192
 private theorem valid160 : bitCheck suffix160 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffc <<< 1556) := bit_join block160 suffix192 _ (0x7ffffe007fffffffffffffffffffffffeffffe80000 <<< 1556) _ check160 valid192
 private theorem check120 : bitCheck block120 (0x7ffffe007fffffffffffffffffffffffeffffeffffc <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffe00 <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix120 := block120 ++ suffix160
 private theorem valid120 : bitCheck suffix120 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffe00 <<< 1556) := bit_join block120 suffix160 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffc <<< 1556) _ check120 valid160
-private theorem check111 : bitCheck block111 (0x7ffffe007fffffffffffffffffffffffeffffeffe00 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix111 := block111 ++ suffix120
-private theorem valid111 : bitCheck suffix111 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block111 suffix120 _ (0x7ffffe007fffffffffffffffffffffffeffffeffe00 <<< 1556) _ check111 valid120
+private theorem check102 : bitCheck block102 (0x7ffffe007fffffffffffffffffffffffeffffeffe00 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix102 := block102 ++ suffix120
+private theorem valid102 : bitCheck suffix102 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block102 suffix120 _ (0x7ffffe007fffffffffffffffffffffffeffffeffe00 <<< 1556) _ check102 valid120
 private theorem check96 : bitCheck block96 (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix96 := block96 ++ suffix111
-private theorem valid96 : bitCheck suffix96 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block96 suffix111 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check96 valid111
+private def suffix96 := block96 ++ suffix102
+private theorem valid96 : bitCheck suffix96 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block96 suffix102 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check96 valid102
 private theorem check80 : bitCheck block80 (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix80 := block80 ++ suffix96
 private theorem valid80 : bitCheck suffix80 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block80 suffix96 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check80 valid96
 private theorem check40 : bitCheck block40 (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private def suffix40 := block40 ++ suffix80
 private theorem valid40 : bitCheck suffix40 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block40 suffix80 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check40 valid80
-private theorem check15 : bitCheck block15 (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix15 := block15 ++ suffix40
-private theorem valid15 : bitCheck suffix15 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block15 suffix40 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check15 valid40
+private theorem check6 : bitCheck block6 (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private def suffix6 := block6 ++ suffix40
+private theorem valid6 : bitCheck suffix6 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block6 suffix40 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check6 valid40
 private theorem check0 : bitCheck block0 (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private def suffix0 := block0 ++ suffix15
-private theorem valid0 : bitCheck suffix0 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block0 suffix15 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check0 valid15
+private def suffix0 := block0 ++ suffix6
+private theorem valid0 : bitCheck suffix0 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := bit_join block0 suffix6 _ (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) _ check0 valid6
 private def group0 := suffix0
 private theorem cert0 : bitCheck group0 (0x1e007fffffffffffffffffff80002ffffefffe8 <<< 1556) = some (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556) := valid0
 private def ops := group0 ++ (group1 ++ group2)
-private theorem fPart0 : Partial.leave270Part0 = GateMirror.forward block0 ++ GateMirror.forward block15 ++ GateMirror.forward block40 ++ GateMirror.forward block80 := by rfl
-private theorem fPart1 : Partial.leave270Part1 = GateMirror.forward block96 ++ GateMirror.forward block111 ++ GateMirror.forward block120 ++ GateMirror.forward block160 := by rfl
-private theorem fPart2 : Partial.leave270Part2 = GateMirror.forward block192 ++ GateMirror.forward block200 ++ GateMirror.forward block207 ++ GateMirror.forward block240 ++ GateMirror.forward block280 := by rfl
-private theorem fPart3 : Partial.leave270Part3 = GateMirror.forward block288 ++ GateMirror.forward block303 ++ GateMirror.forward block320 ++ GateMirror.forward block360 := by rfl
-private theorem fPart4 : Partial.leave270Part4 = GateMirror.forward block384 ++ GateMirror.forward block399 ++ GateMirror.forward block400 ++ GateMirror.forward block440 := by rfl
-private theorem fPart5 : Partial.leave270Part5 = GateMirror.forward block480 ++ GateMirror.forward block495 ++ GateMirror.forward block520 ++ GateMirror.forward block560 := by rfl
-private theorem fPart6 : Partial.leave270Part6 = GateMirror.forward block576 ++ GateMirror.forward block591 ++ GateMirror.forward block600 ++ GateMirror.forward block640 := by rfl
-private theorem fPart7 : Partial.leave270Part7 = GateMirror.forward block672 ++ GateMirror.forward block680 ++ GateMirror.forward block687 ++ GateMirror.forward block720 ++ GateMirror.forward block760 := by rfl
-private theorem fPart8 : Partial.leave270Part8 = GateMirror.forward block768 ++ GateMirror.forward block783 ++ GateMirror.forward block800 ++ GateMirror.forward block840 := by rfl
-private theorem fPart9 : Partial.leave270Part9 = GateMirror.forward block864 ++ GateMirror.forward block879 ++ GateMirror.forward block880 ++ GateMirror.forward block920 := by rfl
-private theorem fPart10 : Partial.leave270Part10 = GateMirror.forward block960 ++ GateMirror.forward block975 ++ GateMirror.forward block1000 ++ GateMirror.forward block1040 := by rfl
-private theorem fPart11 : Partial.leave270Part11 = GateMirror.forward block1056 ++ GateMirror.forward block1071 ++ GateMirror.forward block1080 ++ GateMirror.forward block1120 := by rfl
-private theorem fPart12 : Partial.leave270Part12 = GateMirror.forward block1152 ++ GateMirror.forward block1160 ++ GateMirror.forward block1167 ++ GateMirror.forward block1200 ++ GateMirror.forward block1240 := by rfl
-private theorem fPart13 : Partial.leave270Part13 = GateMirror.forward block1248 ++ GateMirror.forward block1263 ++ GateMirror.forward block1280 ++ GateMirror.forward block1320 := by rfl
-private theorem fPart14 : Partial.leave270Part14 = GateMirror.forward block1344 ++ GateMirror.forward block1359 ++ GateMirror.forward block1360 ++ GateMirror.forward block1400 := by rfl
-private theorem fPart15 : Partial.leave270Part15 = GateMirror.forward block1440 ++ GateMirror.forward block1455 ++ GateMirror.forward block1480 ++ GateMirror.forward block1520 := by rfl
-private theorem fPart16 : Partial.leave270Part16 = GateMirror.forward block1536 ++ GateMirror.forward block1551 ++ GateMirror.forward block1560 ++ GateMirror.forward block1600 := by rfl
-private theorem fPart17 : Partial.leave270Part17 = GateMirror.forward block1632 ++ GateMirror.forward block1640 ++ GateMirror.forward block1647 ++ GateMirror.forward block1680 ++ GateMirror.forward block1720 := by rfl
-private theorem fPart18 : Partial.leave270Part18 = GateMirror.forward block1728 ++ GateMirror.forward block1743 ++ GateMirror.forward block1760 ++ GateMirror.forward block1800 := by rfl
-private theorem fPart19 : Partial.leave270Part19 = GateMirror.forward block1824 ++ GateMirror.forward block1839 ++ GateMirror.forward block1840 ++ GateMirror.forward block1880 := by rfl
-private theorem fPart20 : Partial.leave270Part20 = GateMirror.forward block1920 ++ GateMirror.forward block1935 ++ GateMirror.forward block1960 ++ GateMirror.forward block2000 := by rfl
-private theorem fPart21 : Partial.leave270Part21 = GateMirror.forward block2016 ++ GateMirror.forward block2031 ++ GateMirror.forward block2040 ++ GateMirror.forward block2080 := by rfl
-private theorem fPart22 : Partial.leave270Part22 = GateMirror.forward block2112 ++ GateMirror.forward block2120 ++ GateMirror.forward block2127 ++ GateMirror.forward block2160 ++ GateMirror.forward block2200 := by rfl
-private theorem fPart23 : Partial.leave270Part23 = GateMirror.forward block2208 ++ GateMirror.forward block2223 ++ GateMirror.forward block2240 ++ GateMirror.forward block2280 := by rfl
-private theorem fPart24 : Partial.leave270Part24 = GateMirror.forward block2304 ++ GateMirror.forward block2319 ++ GateMirror.forward block2320 ++ GateMirror.forward block2360 := by rfl
-private theorem fPart25 : Partial.leave270Part25 = GateMirror.forward block2400 ++ GateMirror.forward block2415 ++ GateMirror.forward block2440 ++ GateMirror.forward block2480 := by rfl
-private theorem fPart26 : Partial.leave270Part26 = GateMirror.forward block2496 ++ GateMirror.forward block2511 ++ GateMirror.forward block2520 ++ GateMirror.forward block2560 := by rfl
-private theorem fPart27 : Partial.leave270Part27 = GateMirror.forward block2592 ++ GateMirror.forward block2600 ++ GateMirror.forward block2607 ++ GateMirror.forward block2640 ++ GateMirror.forward block2650 := by rfl
-private theorem fPart28 : Partial.leave270Part28 = GateMirror.forward block2688 ++ GateMirror.forward block2690 ++ GateMirror.forward block2703 ++ GateMirror.forward block2730 ++ GateMirror.forward block2770 := by rfl
-private theorem fPart29 : Partial.leave270Part29 = GateMirror.forward block2784 ++ GateMirror.forward block2799 ++ GateMirror.forward block2810 ++ GateMirror.forward block2850 := by rfl
-private theorem fPart30 : Partial.leave270Part30 = GateMirror.forward block2880 ++ GateMirror.forward block2890 ++ GateMirror.forward block2895 ++ GateMirror.forward block2930 ++ GateMirror.forward block2970 := by rfl
-private theorem fPart31 : Partial.leave270Part31 = GateMirror.forward block2976 ++ GateMirror.forward block2991 ++ GateMirror.forward block3010 ++ GateMirror.forward block3050 := by rfl
-private theorem fPart32 : Partial.leave270Part32 = GateMirror.forward block3072 ++ GateMirror.forward block3087 ++ GateMirror.forward block3090 ++ GateMirror.forward block3130 := by rfl
-private theorem fPart33 : Partial.leave270Part33 = GateMirror.forward block3168 ++ GateMirror.forward block3170 ++ GateMirror.forward block3183 ++ GateMirror.forward block3210 ++ GateMirror.forward block3250 := by rfl
-private theorem fPart34 : Partial.leave270Part34 = GateMirror.forward block3264 ++ GateMirror.forward block3279 ++ GateMirror.forward block3290 ++ GateMirror.forward block3330 ++ GateMirror.forward block3339 := by rfl
-private theorem fPart35 : Partial.leave270Part35 = GateMirror.forward block3360 ++ GateMirror.forward block3375 ++ GateMirror.forward block3379 ++ GateMirror.forward block3419 := by rfl
-private theorem fPart36 : Partial.leave270Part36 = GateMirror.forward block3456 ++ GateMirror.forward block3459 ++ GateMirror.forward block3471 ++ GateMirror.forward block3499 ++ GateMirror.forward block3539 := by rfl
-private theorem fPart37 : Partial.leave270Part37 = GateMirror.forward block3552 ++ GateMirror.forward block3567 ++ GateMirror.forward block3579 ++ GateMirror.forward block3619 := by rfl
-private theorem fPart38 : Partial.leave270Part38 = GateMirror.forward block3648 ++ GateMirror.forward block3659 := by rfl
+private theorem fPart0 : Partial.leave270Part0 = GateMirror.forward block0 ++ GateMirror.forward block6 ++ GateMirror.forward block40 ++ GateMirror.forward block80 := by rfl
+private theorem fPart1 : Partial.leave270Part1 = GateMirror.forward block96 ++ GateMirror.forward block102 ++ GateMirror.forward block120 ++ GateMirror.forward block160 := by rfl
+private theorem fPart2 : Partial.leave270Part2 = GateMirror.forward block192 ++ GateMirror.forward block198 ++ GateMirror.forward block200 ++ GateMirror.forward block240 ++ GateMirror.forward block280 := by rfl
+private theorem fPart3 : Partial.leave270Part3 = GateMirror.forward block288 ++ GateMirror.forward block294 ++ GateMirror.forward block320 ++ GateMirror.forward block360 := by rfl
+private theorem fPart4 : Partial.leave270Part4 = GateMirror.forward block384 ++ GateMirror.forward block390 ++ GateMirror.forward block400 ++ GateMirror.forward block440 := by rfl
+private theorem fPart5 : Partial.leave270Part5 = GateMirror.forward block480 ++ GateMirror.forward block486 ++ GateMirror.forward block520 ++ GateMirror.forward block560 := by rfl
+private theorem fPart6 : Partial.leave270Part6 = GateMirror.forward block576 ++ GateMirror.forward block582 ++ GateMirror.forward block600 ++ GateMirror.forward block640 := by rfl
+private theorem fPart7 : Partial.leave270Part7 = GateMirror.forward block672 ++ GateMirror.forward block678 ++ GateMirror.forward block680 ++ GateMirror.forward block720 ++ GateMirror.forward block760 := by rfl
+private theorem fPart8 : Partial.leave270Part8 = GateMirror.forward block768 ++ GateMirror.forward block774 ++ GateMirror.forward block800 ++ GateMirror.forward block840 := by rfl
+private theorem fPart9 : Partial.leave270Part9 = GateMirror.forward block864 ++ GateMirror.forward block870 ++ GateMirror.forward block880 ++ GateMirror.forward block920 := by rfl
+private theorem fPart10 : Partial.leave270Part10 = GateMirror.forward block960 ++ GateMirror.forward block966 ++ GateMirror.forward block1000 ++ GateMirror.forward block1040 := by rfl
+private theorem fPart11 : Partial.leave270Part11 = GateMirror.forward block1056 ++ GateMirror.forward block1062 ++ GateMirror.forward block1080 ++ GateMirror.forward block1120 := by rfl
+private theorem fPart12 : Partial.leave270Part12 = GateMirror.forward block1152 ++ GateMirror.forward block1158 ++ GateMirror.forward block1160 ++ GateMirror.forward block1200 ++ GateMirror.forward block1240 := by rfl
+private theorem fPart13 : Partial.leave270Part13 = GateMirror.forward block1248 ++ GateMirror.forward block1254 ++ GateMirror.forward block1280 ++ GateMirror.forward block1320 := by rfl
+private theorem fPart14 : Partial.leave270Part14 = GateMirror.forward block1344 ++ GateMirror.forward block1350 ++ GateMirror.forward block1360 ++ GateMirror.forward block1400 := by rfl
+private theorem fPart15 : Partial.leave270Part15 = GateMirror.forward block1440 ++ GateMirror.forward block1446 ++ GateMirror.forward block1480 ++ GateMirror.forward block1520 := by rfl
+private theorem fPart16 : Partial.leave270Part16 = GateMirror.forward block1536 ++ GateMirror.forward block1542 ++ GateMirror.forward block1560 ++ GateMirror.forward block1600 := by rfl
+private theorem fPart17 : Partial.leave270Part17 = GateMirror.forward block1632 ++ GateMirror.forward block1638 ++ GateMirror.forward block1640 ++ GateMirror.forward block1680 ++ GateMirror.forward block1720 := by rfl
+private theorem fPart18 : Partial.leave270Part18 = GateMirror.forward block1728 ++ GateMirror.forward block1734 ++ GateMirror.forward block1760 ++ GateMirror.forward block1800 := by rfl
+private theorem fPart19 : Partial.leave270Part19 = GateMirror.forward block1824 ++ GateMirror.forward block1830 ++ GateMirror.forward block1840 ++ GateMirror.forward block1880 := by rfl
+private theorem fPart20 : Partial.leave270Part20 = GateMirror.forward block1920 ++ GateMirror.forward block1926 ++ GateMirror.forward block1960 ++ GateMirror.forward block2000 := by rfl
+private theorem fPart21 : Partial.leave270Part21 = GateMirror.forward block2016 ++ GateMirror.forward block2022 ++ GateMirror.forward block2040 ++ GateMirror.forward block2080 := by rfl
+private theorem fPart22 : Partial.leave270Part22 = GateMirror.forward block2112 ++ GateMirror.forward block2118 ++ GateMirror.forward block2120 ++ GateMirror.forward block2160 ++ GateMirror.forward block2200 := by rfl
+private theorem fPart23 : Partial.leave270Part23 = GateMirror.forward block2208 ++ GateMirror.forward block2214 ++ GateMirror.forward block2240 ++ GateMirror.forward block2280 := by rfl
+private theorem fPart24 : Partial.leave270Part24 = GateMirror.forward block2304 ++ GateMirror.forward block2310 ++ GateMirror.forward block2320 ++ GateMirror.forward block2360 := by rfl
+private theorem fPart25 : Partial.leave270Part25 = GateMirror.forward block2400 ++ GateMirror.forward block2406 ++ GateMirror.forward block2440 ++ GateMirror.forward block2480 := by rfl
+private theorem fPart26 : Partial.leave270Part26 = GateMirror.forward block2496 ++ GateMirror.forward block2502 ++ GateMirror.forward block2520 ++ GateMirror.forward block2560 := by rfl
+private theorem fPart27 : Partial.leave270Part27 = GateMirror.forward block2592 ++ GateMirror.forward block2598 ++ GateMirror.forward block2600 ++ GateMirror.forward block2640 ++ GateMirror.forward block2650 := by rfl
+private theorem fPart28 : Partial.leave270Part28 = GateMirror.forward block2688 ++ GateMirror.forward block2690 ++ GateMirror.forward block2694 ++ GateMirror.forward block2730 ++ GateMirror.forward block2770 := by rfl
+private theorem fPart29 : Partial.leave270Part29 = GateMirror.forward block2784 ++ GateMirror.forward block2790 ++ GateMirror.forward block2810 ++ GateMirror.forward block2850 := by rfl
+private theorem fPart30 : Partial.leave270Part30 = GateMirror.forward block2880 ++ GateMirror.forward block2886 ++ GateMirror.forward block2890 ++ GateMirror.forward block2930 ++ GateMirror.forward block2970 := by rfl
+private theorem fPart31 : Partial.leave270Part31 = GateMirror.forward block2976 ++ GateMirror.forward block2982 ++ GateMirror.forward block3010 ++ GateMirror.forward block3050 := by rfl
+private theorem fPart32 : Partial.leave270Part32 = GateMirror.forward block3072 ++ GateMirror.forward block3078 ++ GateMirror.forward block3090 ++ GateMirror.forward block3130 := by rfl
+private theorem fPart33 : Partial.leave270Part33 = GateMirror.forward block3168 ++ GateMirror.forward block3170 ++ GateMirror.forward block3174 ++ GateMirror.forward block3210 ++ GateMirror.forward block3250 := by rfl
+private theorem fPart34 : Partial.leave270Part34 = GateMirror.forward block3264 ++ GateMirror.forward block3270 ++ GateMirror.forward block3290 ++ GateMirror.forward block3330 ++ GateMirror.forward block3339 := by rfl
+private theorem fPart35 : Partial.leave270Part35 = GateMirror.forward block3360 ++ GateMirror.forward block3366 ++ GateMirror.forward block3379 ++ GateMirror.forward block3419 := by rfl
+private theorem fPart36 : Partial.leave270Part36 = GateMirror.forward block3456 ++ GateMirror.forward block3459 ++ GateMirror.forward block3462 ++ GateMirror.forward block3499 ++ GateMirror.forward block3539 := by rfl
+private theorem fPart37 : Partial.leave270Part37 = GateMirror.forward block3552 ++ GateMirror.forward block3558 ++ GateMirror.forward block3579 ++ GateMirror.forward block3619 := by rfl
+private theorem fPart38 : Partial.leave270Part38 = GateMirror.forward block3648 ++ GateMirror.forward block3654 ++ GateMirror.forward block3659 ++ GateMirror.forward block3699 ++ GateMirror.forward block3739 := by rfl
+private theorem fPart39 : Partial.leave270Part39 = GateMirror.forward block3744 := by rfl
 private theorem fEq : GateMirror.forward ops = Partial.leave270 := by
-  simp only [ops,group0,group1,group2,suffix0,suffix15,suffix40,suffix80,suffix96,suffix111,suffix120,suffix160,suffix192,suffix200,suffix207,suffix240,suffix280,suffix288,suffix303,suffix320,suffix360,suffix384,suffix399,suffix400,suffix440,suffix480,suffix495,suffix520,suffix560,suffix576,suffix591,suffix600,suffix640,suffix672,suffix680,suffix687,suffix720,suffix760,suffix768,suffix783,suffix800,suffix840,suffix864,suffix879,suffix880,suffix920,suffix960,suffix975,suffix1000,suffix1040,suffix1056,suffix1071,suffix1080,suffix1120,suffix1152,suffix1160,suffix1167,suffix1200,suffix1240,suffix1248,suffix1263,suffix1280,suffix1320,suffix1344,suffix1359,suffix1360,suffix1400,suffix1440,suffix1455,suffix1480,suffix1520,suffix1536,suffix1551,suffix1560,suffix1600,suffix1632,suffix1640,suffix1647,suffix1680,suffix1720,suffix1728,suffix1743,suffix1760,suffix1800,suffix1824,suffix1839,suffix1840,suffix1880,suffix1920,suffix1935,suffix1960,suffix2000,suffix2016,suffix2031,suffix2040,suffix2080,suffix2112,suffix2120,suffix2127,suffix2160,suffix2200,suffix2208,suffix2223,suffix2240,suffix2280,suffix2304,suffix2319,suffix2320,suffix2360,suffix2400,suffix2415,suffix2440,suffix2480,suffix2496,suffix2511,suffix2520,suffix2560,suffix2592,suffix2600,suffix2607,suffix2640,suffix2650,suffix2688,suffix2690,suffix2703,suffix2730,suffix2770,suffix2784,suffix2799,suffix2810,suffix2850,suffix2880,suffix2890,suffix2895,suffix2930,suffix2970,suffix2976,suffix2991,suffix3010,suffix3050,suffix3072,suffix3087,suffix3090,suffix3130,suffix3168,suffix3170,suffix3183,suffix3210,suffix3250,suffix3264,suffix3279,suffix3290,suffix3330,suffix3339,suffix3360,suffix3375,suffix3379,suffix3419,suffix3456,suffix3459,suffix3471,suffix3499,suffix3539,suffix3552,suffix3567,suffix3579,suffix3619,suffix3648,suffix3659,fwAppend,List.append_nil,Partial.leave270,fPart0,fPart1,fPart2,fPart3,fPart4,fPart5,fPart6,fPart7,fPart8,fPart9,fPart10,fPart11,fPart12,fPart13,fPart14,fPart15,fPart16,fPart17,fPart18,fPart19,fPart20,fPart21,fPart22,fPart23,fPart24,fPart25,fPart26,fPart27,fPart28,fPart29,fPart30,fPart31,fPart32,fPart33,fPart34,fPart35,fPart36,fPart37,fPart38,List.append_assoc]
-private theorem bPart0 : Partial.leave270InvPart0 = GateMirror.inverse block3659 ++ GateMirror.inverse block3648 ++ GateMirror.inverse block3619 ++ GateMirror.inverse block3579 ++ GateMirror.inverse block3567 := by rfl
-private theorem bPart1 : Partial.leave270InvPart1 = GateMirror.inverse block3552 ++ GateMirror.inverse block3539 ++ GateMirror.inverse block3499 ++ GateMirror.inverse block3471 := by rfl
-private theorem bPart2 : Partial.leave270InvPart2 = GateMirror.inverse block3459 ++ GateMirror.inverse block3456 ++ GateMirror.inverse block3419 ++ GateMirror.inverse block3379 ++ GateMirror.inverse block3375 := by rfl
-private theorem bPart3 : Partial.leave270InvPart3 = GateMirror.inverse block3360 ++ GateMirror.inverse block3339 ++ GateMirror.inverse block3330 ++ GateMirror.inverse block3290 ++ GateMirror.inverse block3279 := by rfl
-private theorem bPart4 : Partial.leave270InvPart4 = GateMirror.inverse block3264 ++ GateMirror.inverse block3250 ++ GateMirror.inverse block3210 ++ GateMirror.inverse block3183 := by rfl
-private theorem bPart5 : Partial.leave270InvPart5 = GateMirror.inverse block3170 ++ GateMirror.inverse block3168 ++ GateMirror.inverse block3130 ++ GateMirror.inverse block3090 ++ GateMirror.inverse block3087 := by rfl
-private theorem bPart6 : Partial.leave270InvPart6 = GateMirror.inverse block3072 ++ GateMirror.inverse block3050 ++ GateMirror.inverse block3010 ++ GateMirror.inverse block2991 := by rfl
-private theorem bPart7 : Partial.leave270InvPart7 = GateMirror.inverse block2976 ++ GateMirror.inverse block2970 ++ GateMirror.inverse block2930 ++ GateMirror.inverse block2895 := by rfl
-private theorem bPart8 : Partial.leave270InvPart8 = GateMirror.inverse block2890 ++ GateMirror.inverse block2880 ++ GateMirror.inverse block2850 ++ GateMirror.inverse block2810 ++ GateMirror.inverse block2799 := by rfl
-private theorem bPart9 : Partial.leave270InvPart9 = GateMirror.inverse block2784 ++ GateMirror.inverse block2770 ++ GateMirror.inverse block2730 ++ GateMirror.inverse block2703 := by rfl
-private theorem bPart10 : Partial.leave270InvPart10 = GateMirror.inverse block2690 ++ GateMirror.inverse block2688 ++ GateMirror.inverse block2650 ++ GateMirror.inverse block2640 ++ GateMirror.inverse block2607 := by rfl
-private theorem bPart11 : Partial.leave270InvPart11 = GateMirror.inverse block2600 ++ GateMirror.inverse block2592 ++ GateMirror.inverse block2560 ++ GateMirror.inverse block2520 ++ GateMirror.inverse block2511 := by rfl
-private theorem bPart12 : Partial.leave270InvPart12 = GateMirror.inverse block2496 ++ GateMirror.inverse block2480 ++ GateMirror.inverse block2440 ++ GateMirror.inverse block2415 := by rfl
-private theorem bPart13 : Partial.leave270InvPart13 = GateMirror.inverse block2400 ++ GateMirror.inverse block2360 ++ GateMirror.inverse block2320 ++ GateMirror.inverse block2319 := by rfl
-private theorem bPart14 : Partial.leave270InvPart14 = GateMirror.inverse block2304 ++ GateMirror.inverse block2280 ++ GateMirror.inverse block2240 ++ GateMirror.inverse block2223 := by rfl
-private theorem bPart15 : Partial.leave270InvPart15 = GateMirror.inverse block2208 ++ GateMirror.inverse block2200 ++ GateMirror.inverse block2160 ++ GateMirror.inverse block2127 := by rfl
-private theorem bPart16 : Partial.leave270InvPart16 = GateMirror.inverse block2120 ++ GateMirror.inverse block2112 ++ GateMirror.inverse block2080 ++ GateMirror.inverse block2040 ++ GateMirror.inverse block2031 := by rfl
-private theorem bPart17 : Partial.leave270InvPart17 = GateMirror.inverse block2016 ++ GateMirror.inverse block2000 ++ GateMirror.inverse block1960 ++ GateMirror.inverse block1935 := by rfl
-private theorem bPart18 : Partial.leave270InvPart18 = GateMirror.inverse block1920 ++ GateMirror.inverse block1880 ++ GateMirror.inverse block1840 ++ GateMirror.inverse block1839 := by rfl
-private theorem bPart19 : Partial.leave270InvPart19 = GateMirror.inverse block1824 ++ GateMirror.inverse block1800 ++ GateMirror.inverse block1760 ++ GateMirror.inverse block1743 := by rfl
-private theorem bPart20 : Partial.leave270InvPart20 = GateMirror.inverse block1728 ++ GateMirror.inverse block1720 ++ GateMirror.inverse block1680 ++ GateMirror.inverse block1647 := by rfl
-private theorem bPart21 : Partial.leave270InvPart21 = GateMirror.inverse block1640 ++ GateMirror.inverse block1632 ++ GateMirror.inverse block1600 ++ GateMirror.inverse block1560 ++ GateMirror.inverse block1551 := by rfl
-private theorem bPart22 : Partial.leave270InvPart22 = GateMirror.inverse block1536 ++ GateMirror.inverse block1520 ++ GateMirror.inverse block1480 ++ GateMirror.inverse block1455 := by rfl
-private theorem bPart23 : Partial.leave270InvPart23 = GateMirror.inverse block1440 ++ GateMirror.inverse block1400 ++ GateMirror.inverse block1360 ++ GateMirror.inverse block1359 := by rfl
-private theorem bPart24 : Partial.leave270InvPart24 = GateMirror.inverse block1344 ++ GateMirror.inverse block1320 ++ GateMirror.inverse block1280 ++ GateMirror.inverse block1263 := by rfl
-private theorem bPart25 : Partial.leave270InvPart25 = GateMirror.inverse block1248 ++ GateMirror.inverse block1240 ++ GateMirror.inverse block1200 ++ GateMirror.inverse block1167 := by rfl
-private theorem bPart26 : Partial.leave270InvPart26 = GateMirror.inverse block1160 ++ GateMirror.inverse block1152 ++ GateMirror.inverse block1120 ++ GateMirror.inverse block1080 ++ GateMirror.inverse block1071 := by rfl
-private theorem bPart27 : Partial.leave270InvPart27 = GateMirror.inverse block1056 ++ GateMirror.inverse block1040 ++ GateMirror.inverse block1000 ++ GateMirror.inverse block975 := by rfl
-private theorem bPart28 : Partial.leave270InvPart28 = GateMirror.inverse block960 ++ GateMirror.inverse block920 ++ GateMirror.inverse block880 ++ GateMirror.inverse block879 := by rfl
-private theorem bPart29 : Partial.leave270InvPart29 = GateMirror.inverse block864 ++ GateMirror.inverse block840 ++ GateMirror.inverse block800 ++ GateMirror.inverse block783 := by rfl
-private theorem bPart30 : Partial.leave270InvPart30 = GateMirror.inverse block768 ++ GateMirror.inverse block760 ++ GateMirror.inverse block720 ++ GateMirror.inverse block687 := by rfl
-private theorem bPart31 : Partial.leave270InvPart31 = GateMirror.inverse block680 ++ GateMirror.inverse block672 ++ GateMirror.inverse block640 ++ GateMirror.inverse block600 ++ GateMirror.inverse block591 := by rfl
-private theorem bPart32 : Partial.leave270InvPart32 = GateMirror.inverse block576 ++ GateMirror.inverse block560 ++ GateMirror.inverse block520 ++ GateMirror.inverse block495 := by rfl
-private theorem bPart33 : Partial.leave270InvPart33 = GateMirror.inverse block480 ++ GateMirror.inverse block440 ++ GateMirror.inverse block400 ++ GateMirror.inverse block399 := by rfl
-private theorem bPart34 : Partial.leave270InvPart34 = GateMirror.inverse block384 ++ GateMirror.inverse block360 ++ GateMirror.inverse block320 ++ GateMirror.inverse block303 := by rfl
-private theorem bPart35 : Partial.leave270InvPart35 = GateMirror.inverse block288 ++ GateMirror.inverse block280 ++ GateMirror.inverse block240 ++ GateMirror.inverse block207 := by rfl
-private theorem bPart36 : Partial.leave270InvPart36 = GateMirror.inverse block200 ++ GateMirror.inverse block192 ++ GateMirror.inverse block160 ++ GateMirror.inverse block120 ++ GateMirror.inverse block111 := by rfl
-private theorem bPart37 : Partial.leave270InvPart37 = GateMirror.inverse block96 ++ GateMirror.inverse block80 ++ GateMirror.inverse block40 ++ GateMirror.inverse block15 := by rfl
-private theorem bPart38 : Partial.leave270InvPart38 = GateMirror.inverse block0 := by rfl
+  simp only [ops,group0,group1,group2,suffix0,suffix6,suffix40,suffix80,suffix96,suffix102,suffix120,suffix160,suffix192,suffix198,suffix200,suffix240,suffix280,suffix288,suffix294,suffix320,suffix360,suffix384,suffix390,suffix400,suffix440,suffix480,suffix486,suffix520,suffix560,suffix576,suffix582,suffix600,suffix640,suffix672,suffix678,suffix680,suffix720,suffix760,suffix768,suffix774,suffix800,suffix840,suffix864,suffix870,suffix880,suffix920,suffix960,suffix966,suffix1000,suffix1040,suffix1056,suffix1062,suffix1080,suffix1120,suffix1152,suffix1158,suffix1160,suffix1200,suffix1240,suffix1248,suffix1254,suffix1280,suffix1320,suffix1344,suffix1350,suffix1360,suffix1400,suffix1440,suffix1446,suffix1480,suffix1520,suffix1536,suffix1542,suffix1560,suffix1600,suffix1632,suffix1638,suffix1640,suffix1680,suffix1720,suffix1728,suffix1734,suffix1760,suffix1800,suffix1824,suffix1830,suffix1840,suffix1880,suffix1920,suffix1926,suffix1960,suffix2000,suffix2016,suffix2022,suffix2040,suffix2080,suffix2112,suffix2118,suffix2120,suffix2160,suffix2200,suffix2208,suffix2214,suffix2240,suffix2280,suffix2304,suffix2310,suffix2320,suffix2360,suffix2400,suffix2406,suffix2440,suffix2480,suffix2496,suffix2502,suffix2520,suffix2560,suffix2592,suffix2598,suffix2600,suffix2640,suffix2650,suffix2688,suffix2690,suffix2694,suffix2730,suffix2770,suffix2784,suffix2790,suffix2810,suffix2850,suffix2880,suffix2886,suffix2890,suffix2930,suffix2970,suffix2976,suffix2982,suffix3010,suffix3050,suffix3072,suffix3078,suffix3090,suffix3130,suffix3168,suffix3170,suffix3174,suffix3210,suffix3250,suffix3264,suffix3270,suffix3290,suffix3330,suffix3339,suffix3360,suffix3366,suffix3379,suffix3419,suffix3456,suffix3459,suffix3462,suffix3499,suffix3539,suffix3552,suffix3558,suffix3579,suffix3619,suffix3648,suffix3654,suffix3659,suffix3699,suffix3739,suffix3744,fwAppend,List.append_nil,Partial.leave270,fPart0,fPart1,fPart2,fPart3,fPart4,fPart5,fPart6,fPart7,fPart8,fPart9,fPart10,fPart11,fPart12,fPart13,fPart14,fPart15,fPart16,fPart17,fPart18,fPart19,fPart20,fPart21,fPart22,fPart23,fPart24,fPart25,fPart26,fPart27,fPart28,fPart29,fPart30,fPart31,fPart32,fPart33,fPart34,fPart35,fPart36,fPart37,fPart38,fPart39,List.append_assoc]
+private theorem bPart0 : Partial.leave270InvPart0 = GateMirror.inverse block3744 ++ GateMirror.inverse block3739 ++ GateMirror.inverse block3699 ++ GateMirror.inverse block3659 ++ GateMirror.inverse block3654 := by rfl
+private theorem bPart1 : Partial.leave270InvPart1 = GateMirror.inverse block3648 ++ GateMirror.inverse block3619 ++ GateMirror.inverse block3579 ++ GateMirror.inverse block3558 := by rfl
+private theorem bPart2 : Partial.leave270InvPart2 = GateMirror.inverse block3552 ++ GateMirror.inverse block3539 ++ GateMirror.inverse block3499 ++ GateMirror.inverse block3462 := by rfl
+private theorem bPart3 : Partial.leave270InvPart3 = GateMirror.inverse block3459 ++ GateMirror.inverse block3456 ++ GateMirror.inverse block3419 ++ GateMirror.inverse block3379 ++ GateMirror.inverse block3366 := by rfl
+private theorem bPart4 : Partial.leave270InvPart4 = GateMirror.inverse block3360 ++ GateMirror.inverse block3339 ++ GateMirror.inverse block3330 ++ GateMirror.inverse block3290 ++ GateMirror.inverse block3270 := by rfl
+private theorem bPart5 : Partial.leave270InvPart5 = GateMirror.inverse block3264 ++ GateMirror.inverse block3250 ++ GateMirror.inverse block3210 ++ GateMirror.inverse block3174 := by rfl
+private theorem bPart6 : Partial.leave270InvPart6 = GateMirror.inverse block3170 ++ GateMirror.inverse block3168 ++ GateMirror.inverse block3130 ++ GateMirror.inverse block3090 ++ GateMirror.inverse block3078 := by rfl
+private theorem bPart7 : Partial.leave270InvPart7 = GateMirror.inverse block3072 ++ GateMirror.inverse block3050 ++ GateMirror.inverse block3010 ++ GateMirror.inverse block2982 := by rfl
+private theorem bPart8 : Partial.leave270InvPart8 = GateMirror.inverse block2976 ++ GateMirror.inverse block2970 ++ GateMirror.inverse block2930 ++ GateMirror.inverse block2890 ++ GateMirror.inverse block2886 := by rfl
+private theorem bPart9 : Partial.leave270InvPart9 = GateMirror.inverse block2880 ++ GateMirror.inverse block2850 ++ GateMirror.inverse block2810 ++ GateMirror.inverse block2790 := by rfl
+private theorem bPart10 : Partial.leave270InvPart10 = GateMirror.inverse block2784 ++ GateMirror.inverse block2770 ++ GateMirror.inverse block2730 ++ GateMirror.inverse block2694 := by rfl
+private theorem bPart11 : Partial.leave270InvPart11 = GateMirror.inverse block2690 ++ GateMirror.inverse block2688 ++ GateMirror.inverse block2650 ++ GateMirror.inverse block2640 ++ GateMirror.inverse block2600 ++ GateMirror.inverse block2598 := by rfl
+private theorem bPart12 : Partial.leave270InvPart12 = GateMirror.inverse block2592 ++ GateMirror.inverse block2560 ++ GateMirror.inverse block2520 ++ GateMirror.inverse block2502 := by rfl
+private theorem bPart13 : Partial.leave270InvPart13 = GateMirror.inverse block2496 ++ GateMirror.inverse block2480 ++ GateMirror.inverse block2440 ++ GateMirror.inverse block2406 := by rfl
+private theorem bPart14 : Partial.leave270InvPart14 = GateMirror.inverse block2400 ++ GateMirror.inverse block2360 ++ GateMirror.inverse block2320 ++ GateMirror.inverse block2310 := by rfl
+private theorem bPart15 : Partial.leave270InvPart15 = GateMirror.inverse block2304 ++ GateMirror.inverse block2280 ++ GateMirror.inverse block2240 ++ GateMirror.inverse block2214 := by rfl
+private theorem bPart16 : Partial.leave270InvPart16 = GateMirror.inverse block2208 ++ GateMirror.inverse block2200 ++ GateMirror.inverse block2160 ++ GateMirror.inverse block2120 ++ GateMirror.inverse block2118 := by rfl
+private theorem bPart17 : Partial.leave270InvPart17 = GateMirror.inverse block2112 ++ GateMirror.inverse block2080 ++ GateMirror.inverse block2040 ++ GateMirror.inverse block2022 := by rfl
+private theorem bPart18 : Partial.leave270InvPart18 = GateMirror.inverse block2016 ++ GateMirror.inverse block2000 ++ GateMirror.inverse block1960 ++ GateMirror.inverse block1926 := by rfl
+private theorem bPart19 : Partial.leave270InvPart19 = GateMirror.inverse block1920 ++ GateMirror.inverse block1880 ++ GateMirror.inverse block1840 ++ GateMirror.inverse block1830 := by rfl
+private theorem bPart20 : Partial.leave270InvPart20 = GateMirror.inverse block1824 ++ GateMirror.inverse block1800 ++ GateMirror.inverse block1760 ++ GateMirror.inverse block1734 := by rfl
+private theorem bPart21 : Partial.leave270InvPart21 = GateMirror.inverse block1728 ++ GateMirror.inverse block1720 ++ GateMirror.inverse block1680 ++ GateMirror.inverse block1640 ++ GateMirror.inverse block1638 := by rfl
+private theorem bPart22 : Partial.leave270InvPart22 = GateMirror.inverse block1632 ++ GateMirror.inverse block1600 ++ GateMirror.inverse block1560 ++ GateMirror.inverse block1542 := by rfl
+private theorem bPart23 : Partial.leave270InvPart23 = GateMirror.inverse block1536 ++ GateMirror.inverse block1520 ++ GateMirror.inverse block1480 ++ GateMirror.inverse block1446 := by rfl
+private theorem bPart24 : Partial.leave270InvPart24 = GateMirror.inverse block1440 ++ GateMirror.inverse block1400 ++ GateMirror.inverse block1360 ++ GateMirror.inverse block1350 := by rfl
+private theorem bPart25 : Partial.leave270InvPart25 = GateMirror.inverse block1344 ++ GateMirror.inverse block1320 ++ GateMirror.inverse block1280 ++ GateMirror.inverse block1254 := by rfl
+private theorem bPart26 : Partial.leave270InvPart26 = GateMirror.inverse block1248 ++ GateMirror.inverse block1240 ++ GateMirror.inverse block1200 ++ GateMirror.inverse block1160 ++ GateMirror.inverse block1158 := by rfl
+private theorem bPart27 : Partial.leave270InvPart27 = GateMirror.inverse block1152 ++ GateMirror.inverse block1120 ++ GateMirror.inverse block1080 ++ GateMirror.inverse block1062 := by rfl
+private theorem bPart28 : Partial.leave270InvPart28 = GateMirror.inverse block1056 ++ GateMirror.inverse block1040 ++ GateMirror.inverse block1000 ++ GateMirror.inverse block966 := by rfl
+private theorem bPart29 : Partial.leave270InvPart29 = GateMirror.inverse block960 ++ GateMirror.inverse block920 ++ GateMirror.inverse block880 ++ GateMirror.inverse block870 := by rfl
+private theorem bPart30 : Partial.leave270InvPart30 = GateMirror.inverse block864 ++ GateMirror.inverse block840 ++ GateMirror.inverse block800 ++ GateMirror.inverse block774 := by rfl
+private theorem bPart31 : Partial.leave270InvPart31 = GateMirror.inverse block768 ++ GateMirror.inverse block760 ++ GateMirror.inverse block720 ++ GateMirror.inverse block680 ++ GateMirror.inverse block678 := by rfl
+private theorem bPart32 : Partial.leave270InvPart32 = GateMirror.inverse block672 ++ GateMirror.inverse block640 ++ GateMirror.inverse block600 ++ GateMirror.inverse block582 := by rfl
+private theorem bPart33 : Partial.leave270InvPart33 = GateMirror.inverse block576 ++ GateMirror.inverse block560 ++ GateMirror.inverse block520 ++ GateMirror.inverse block486 := by rfl
+private theorem bPart34 : Partial.leave270InvPart34 = GateMirror.inverse block480 ++ GateMirror.inverse block440 ++ GateMirror.inverse block400 ++ GateMirror.inverse block390 := by rfl
+private theorem bPart35 : Partial.leave270InvPart35 = GateMirror.inverse block384 ++ GateMirror.inverse block360 ++ GateMirror.inverse block320 ++ GateMirror.inverse block294 := by rfl
+private theorem bPart36 : Partial.leave270InvPart36 = GateMirror.inverse block288 ++ GateMirror.inverse block280 ++ GateMirror.inverse block240 ++ GateMirror.inverse block200 ++ GateMirror.inverse block198 := by rfl
+private theorem bPart37 : Partial.leave270InvPart37 = GateMirror.inverse block192 ++ GateMirror.inverse block160 ++ GateMirror.inverse block120 ++ GateMirror.inverse block102 := by rfl
+private theorem bPart38 : Partial.leave270InvPart38 = GateMirror.inverse block96 ++ GateMirror.inverse block80 ++ GateMirror.inverse block40 ++ GateMirror.inverse block6 := by rfl
+private theorem bPart39 : Partial.leave270InvPart39 = GateMirror.inverse block0 := by rfl
 private theorem bEq : GateMirror.inverse ops = Partial.leave270Inv := by
-  simp only [ops,group0,group1,group2,suffix0,suffix15,suffix40,suffix80,suffix96,suffix111,suffix120,suffix160,suffix192,suffix200,suffix207,suffix240,suffix280,suffix288,suffix303,suffix320,suffix360,suffix384,suffix399,suffix400,suffix440,suffix480,suffix495,suffix520,suffix560,suffix576,suffix591,suffix600,suffix640,suffix672,suffix680,suffix687,suffix720,suffix760,suffix768,suffix783,suffix800,suffix840,suffix864,suffix879,suffix880,suffix920,suffix960,suffix975,suffix1000,suffix1040,suffix1056,suffix1071,suffix1080,suffix1120,suffix1152,suffix1160,suffix1167,suffix1200,suffix1240,suffix1248,suffix1263,suffix1280,suffix1320,suffix1344,suffix1359,suffix1360,suffix1400,suffix1440,suffix1455,suffix1480,suffix1520,suffix1536,suffix1551,suffix1560,suffix1600,suffix1632,suffix1640,suffix1647,suffix1680,suffix1720,suffix1728,suffix1743,suffix1760,suffix1800,suffix1824,suffix1839,suffix1840,suffix1880,suffix1920,suffix1935,suffix1960,suffix2000,suffix2016,suffix2031,suffix2040,suffix2080,suffix2112,suffix2120,suffix2127,suffix2160,suffix2200,suffix2208,suffix2223,suffix2240,suffix2280,suffix2304,suffix2319,suffix2320,suffix2360,suffix2400,suffix2415,suffix2440,suffix2480,suffix2496,suffix2511,suffix2520,suffix2560,suffix2592,suffix2600,suffix2607,suffix2640,suffix2650,suffix2688,suffix2690,suffix2703,suffix2730,suffix2770,suffix2784,suffix2799,suffix2810,suffix2850,suffix2880,suffix2890,suffix2895,suffix2930,suffix2970,suffix2976,suffix2991,suffix3010,suffix3050,suffix3072,suffix3087,suffix3090,suffix3130,suffix3168,suffix3170,suffix3183,suffix3210,suffix3250,suffix3264,suffix3279,suffix3290,suffix3330,suffix3339,suffix3360,suffix3375,suffix3379,suffix3419,suffix3456,suffix3459,suffix3471,suffix3499,suffix3539,suffix3552,suffix3567,suffix3579,suffix3619,suffix3648,suffix3659,bwAppend,List.append_nil,Partial.leave270Inv,bPart0,bPart1,bPart2,bPart3,bPart4,bPart5,bPart6,bPart7,bPart8,bPart9,bPart10,bPart11,bPart12,bPart13,bPart14,bPart15,bPart16,bPart17,bPart18,bPart19,bPart20,bPart21,bPart22,bPart23,bPart24,bPart25,bPart26,bPart27,bPart28,bPart29,bPart30,bPart31,bPart32,bPart33,bPart34,bPart35,bPart36,bPart37,bPart38,List.append_assoc]
-private theorem len0 : block0.length=15:=rfl
-private theorem len15 : block15.length=25:=rfl
+  simp only [ops,group0,group1,group2,suffix0,suffix6,suffix40,suffix80,suffix96,suffix102,suffix120,suffix160,suffix192,suffix198,suffix200,suffix240,suffix280,suffix288,suffix294,suffix320,suffix360,suffix384,suffix390,suffix400,suffix440,suffix480,suffix486,suffix520,suffix560,suffix576,suffix582,suffix600,suffix640,suffix672,suffix678,suffix680,suffix720,suffix760,suffix768,suffix774,suffix800,suffix840,suffix864,suffix870,suffix880,suffix920,suffix960,suffix966,suffix1000,suffix1040,suffix1056,suffix1062,suffix1080,suffix1120,suffix1152,suffix1158,suffix1160,suffix1200,suffix1240,suffix1248,suffix1254,suffix1280,suffix1320,suffix1344,suffix1350,suffix1360,suffix1400,suffix1440,suffix1446,suffix1480,suffix1520,suffix1536,suffix1542,suffix1560,suffix1600,suffix1632,suffix1638,suffix1640,suffix1680,suffix1720,suffix1728,suffix1734,suffix1760,suffix1800,suffix1824,suffix1830,suffix1840,suffix1880,suffix1920,suffix1926,suffix1960,suffix2000,suffix2016,suffix2022,suffix2040,suffix2080,suffix2112,suffix2118,suffix2120,suffix2160,suffix2200,suffix2208,suffix2214,suffix2240,suffix2280,suffix2304,suffix2310,suffix2320,suffix2360,suffix2400,suffix2406,suffix2440,suffix2480,suffix2496,suffix2502,suffix2520,suffix2560,suffix2592,suffix2598,suffix2600,suffix2640,suffix2650,suffix2688,suffix2690,suffix2694,suffix2730,suffix2770,suffix2784,suffix2790,suffix2810,suffix2850,suffix2880,suffix2886,suffix2890,suffix2930,suffix2970,suffix2976,suffix2982,suffix3010,suffix3050,suffix3072,suffix3078,suffix3090,suffix3130,suffix3168,suffix3170,suffix3174,suffix3210,suffix3250,suffix3264,suffix3270,suffix3290,suffix3330,suffix3339,suffix3360,suffix3366,suffix3379,suffix3419,suffix3456,suffix3459,suffix3462,suffix3499,suffix3539,suffix3552,suffix3558,suffix3579,suffix3619,suffix3648,suffix3654,suffix3659,suffix3699,suffix3739,suffix3744,bwAppend,List.append_nil,Partial.leave270Inv,bPart0,bPart1,bPart2,bPart3,bPart4,bPart5,bPart6,bPart7,bPart8,bPart9,bPart10,bPart11,bPart12,bPart13,bPart14,bPart15,bPart16,bPart17,bPart18,bPart19,bPart20,bPart21,bPart22,bPart23,bPart24,bPart25,bPart26,bPart27,bPart28,bPart29,bPart30,bPart31,bPart32,bPart33,bPart34,bPart35,bPart36,bPart37,bPart38,bPart39,List.append_assoc]
+private theorem len0 : block0.length=6:=rfl
+private theorem len6 : block6.length=34:=rfl
 private theorem len40 : block40.length=40:=rfl
 private theorem len80 : block80.length=16:=rfl
-private theorem len96 : block96.length=15:=rfl
-private theorem len111 : block111.length=9:=rfl
+private theorem len96 : block96.length=6:=rfl
+private theorem len102 : block102.length=18:=rfl
 private theorem len120 : block120.length=40:=rfl
 private theorem len160 : block160.length=32:=rfl
-private theorem len192 : block192.length=8:=rfl
-private theorem len200 : block200.length=7:=rfl
-private theorem len207 : block207.length=33:=rfl
+private theorem len192 : block192.length=6:=rfl
+private theorem len198 : block198.length=2:=rfl
+private theorem len200 : block200.length=40:=rfl
 private theorem len240 : block240.length=40:=rfl
 private theorem len280 : block280.length=8:=rfl
-private theorem len288 : block288.length=15:=rfl
-private theorem len303 : block303.length=17:=rfl
+private theorem len288 : block288.length=6:=rfl
+private theorem len294 : block294.length=26:=rfl
 private theorem len320 : block320.length=40:=rfl
 private theorem len360 : block360.length=24:=rfl
-private theorem len384 : block384.length=15:=rfl
-private theorem len399 : block399.length=1:=rfl
+private theorem len384 : block384.length=6:=rfl
+private theorem len390 : block390.length=10:=rfl
 private theorem len400 : block400.length=40:=rfl
 private theorem len440 : block440.length=40:=rfl
-private theorem len480 : block480.length=15:=rfl
-private theorem len495 : block495.length=25:=rfl
+private theorem len480 : block480.length=6:=rfl
+private theorem len486 : block486.length=34:=rfl
 private theorem len520 : block520.length=40:=rfl
 private theorem len560 : block560.length=16:=rfl
-private theorem len576 : block576.length=15:=rfl
-private theorem len591 : block591.length=9:=rfl
+private theorem len576 : block576.length=6:=rfl
+private theorem len582 : block582.length=18:=rfl
 private theorem len600 : block600.length=40:=rfl
 private theorem len640 : block640.length=32:=rfl
-private theorem len672 : block672.length=8:=rfl
-private theorem len680 : block680.length=7:=rfl
-private theorem len687 : block687.length=33:=rfl
+private theorem len672 : block672.length=6:=rfl
+private theorem len678 : block678.length=2:=rfl
+private theorem len680 : block680.length=40:=rfl
 private theorem len720 : block720.length=40:=rfl
 private theorem len760 : block760.length=8:=rfl
-private theorem len768 : block768.length=15:=rfl
-private theorem len783 : block783.length=17:=rfl
+private theorem len768 : block768.length=6:=rfl
+private theorem len774 : block774.length=26:=rfl
 private theorem len800 : block800.length=40:=rfl
 private theorem len840 : block840.length=24:=rfl
-private theorem len864 : block864.length=15:=rfl
-private theorem len879 : block879.length=1:=rfl
+private theorem len864 : block864.length=6:=rfl
+private theorem len870 : block870.length=10:=rfl
 private theorem len880 : block880.length=40:=rfl
 private theorem len920 : block920.length=40:=rfl
-private theorem len960 : block960.length=15:=rfl
-private theorem len975 : block975.length=25:=rfl
+private theorem len960 : block960.length=6:=rfl
+private theorem len966 : block966.length=34:=rfl
 private theorem len1000 : block1000.length=40:=rfl
 private theorem len1040 : block1040.length=16:=rfl
-private theorem len1056 : block1056.length=15:=rfl
-private theorem len1071 : block1071.length=9:=rfl
+private theorem len1056 : block1056.length=6:=rfl
+private theorem len1062 : block1062.length=18:=rfl
 private theorem len1080 : block1080.length=40:=rfl
 private theorem len1120 : block1120.length=32:=rfl
-private theorem len1152 : block1152.length=8:=rfl
-private theorem len1160 : block1160.length=7:=rfl
-private theorem len1167 : block1167.length=33:=rfl
+private theorem len1152 : block1152.length=6:=rfl
+private theorem len1158 : block1158.length=2:=rfl
+private theorem len1160 : block1160.length=40:=rfl
 private theorem len1200 : block1200.length=40:=rfl
 private theorem len1240 : block1240.length=8:=rfl
-private theorem len1248 : block1248.length=15:=rfl
-private theorem len1263 : block1263.length=17:=rfl
+private theorem len1248 : block1248.length=6:=rfl
+private theorem len1254 : block1254.length=26:=rfl
 private theorem len1280 : block1280.length=40:=rfl
 private theorem len1320 : block1320.length=24:=rfl
-private theorem len1344 : block1344.length=15:=rfl
-private theorem len1359 : block1359.length=1:=rfl
+private theorem len1344 : block1344.length=6:=rfl
+private theorem len1350 : block1350.length=10:=rfl
 private theorem len1360 : block1360.length=40:=rfl
 private theorem len1400 : block1400.length=40:=rfl
-private theorem len1440 : block1440.length=15:=rfl
-private theorem len1455 : block1455.length=25:=rfl
+private theorem len1440 : block1440.length=6:=rfl
+private theorem len1446 : block1446.length=34:=rfl
 private theorem len1480 : block1480.length=40:=rfl
 private theorem len1520 : block1520.length=16:=rfl
-private theorem len1536 : block1536.length=15:=rfl
-private theorem len1551 : block1551.length=9:=rfl
+private theorem len1536 : block1536.length=6:=rfl
+private theorem len1542 : block1542.length=18:=rfl
 private theorem len1560 : block1560.length=40:=rfl
 private theorem len1600 : block1600.length=32:=rfl
-private theorem len1632 : block1632.length=8:=rfl
-private theorem len1640 : block1640.length=7:=rfl
-private theorem len1647 : block1647.length=33:=rfl
+private theorem len1632 : block1632.length=6:=rfl
+private theorem len1638 : block1638.length=2:=rfl
+private theorem len1640 : block1640.length=40:=rfl
 private theorem len1680 : block1680.length=40:=rfl
 private theorem len1720 : block1720.length=8:=rfl
-private theorem len1728 : block1728.length=15:=rfl
-private theorem len1743 : block1743.length=17:=rfl
+private theorem len1728 : block1728.length=6:=rfl
+private theorem len1734 : block1734.length=26:=rfl
 private theorem len1760 : block1760.length=40:=rfl
 private theorem len1800 : block1800.length=24:=rfl
-private theorem len1824 : block1824.length=15:=rfl
-private theorem len1839 : block1839.length=1:=rfl
+private theorem len1824 : block1824.length=6:=rfl
+private theorem len1830 : block1830.length=10:=rfl
 private theorem len1840 : block1840.length=40:=rfl
 private theorem len1880 : block1880.length=40:=rfl
-private theorem len1920 : block1920.length=15:=rfl
-private theorem len1935 : block1935.length=25:=rfl
+private theorem len1920 : block1920.length=6:=rfl
+private theorem len1926 : block1926.length=34:=rfl
 private theorem len1960 : block1960.length=40:=rfl
 private theorem len2000 : block2000.length=16:=rfl
-private theorem len2016 : block2016.length=15:=rfl
-private theorem len2031 : block2031.length=9:=rfl
+private theorem len2016 : block2016.length=6:=rfl
+private theorem len2022 : block2022.length=18:=rfl
 private theorem len2040 : block2040.length=40:=rfl
 private theorem len2080 : block2080.length=32:=rfl
-private theorem len2112 : block2112.length=8:=rfl
-private theorem len2120 : block2120.length=7:=rfl
-private theorem len2127 : block2127.length=33:=rfl
+private theorem len2112 : block2112.length=6:=rfl
+private theorem len2118 : block2118.length=2:=rfl
+private theorem len2120 : block2120.length=40:=rfl
 private theorem len2160 : block2160.length=40:=rfl
 private theorem len2200 : block2200.length=8:=rfl
-private theorem len2208 : block2208.length=15:=rfl
-private theorem len2223 : block2223.length=17:=rfl
+private theorem len2208 : block2208.length=6:=rfl
+private theorem len2214 : block2214.length=26:=rfl
 private theorem len2240 : block2240.length=40:=rfl
 private theorem len2280 : block2280.length=24:=rfl
-private theorem len2304 : block2304.length=15:=rfl
-private theorem len2319 : block2319.length=1:=rfl
+private theorem len2304 : block2304.length=6:=rfl
+private theorem len2310 : block2310.length=10:=rfl
 private theorem len2320 : block2320.length=40:=rfl
 private theorem len2360 : block2360.length=40:=rfl
-private theorem len2400 : block2400.length=15:=rfl
-private theorem len2415 : block2415.length=25:=rfl
+private theorem len2400 : block2400.length=6:=rfl
+private theorem len2406 : block2406.length=34:=rfl
 private theorem len2440 : block2440.length=40:=rfl
 private theorem len2480 : block2480.length=16:=rfl
-private theorem len2496 : block2496.length=15:=rfl
-private theorem len2511 : block2511.length=9:=rfl
+private theorem len2496 : block2496.length=6:=rfl
+private theorem len2502 : block2502.length=18:=rfl
 private theorem len2520 : block2520.length=40:=rfl
 private theorem len2560 : block2560.length=32:=rfl
-private theorem len2592 : block2592.length=8:=rfl
-private theorem len2600 : block2600.length=7:=rfl
-private theorem len2607 : block2607.length=33:=rfl
+private theorem len2592 : block2592.length=6:=rfl
+private theorem len2598 : block2598.length=2:=rfl
+private theorem len2600 : block2600.length=40:=rfl
 private theorem len2640 : block2640.length=10:=rfl
 private theorem size0 : (GateMirror.forward group0).length=2650:=by
-  simp only [GateMirror.forward,List.length_map,group0,suffix0,suffix15,suffix40,suffix80,suffix96,suffix111,suffix120,suffix160,suffix192,suffix200,suffix207,suffix240,suffix280,suffix288,suffix303,suffix320,suffix360,suffix384,suffix399,suffix400,suffix440,suffix480,suffix495,suffix520,suffix560,suffix576,suffix591,suffix600,suffix640,suffix672,suffix680,suffix687,suffix720,suffix760,suffix768,suffix783,suffix800,suffix840,suffix864,suffix879,suffix880,suffix920,suffix960,suffix975,suffix1000,suffix1040,suffix1056,suffix1071,suffix1080,suffix1120,suffix1152,suffix1160,suffix1167,suffix1200,suffix1240,suffix1248,suffix1263,suffix1280,suffix1320,suffix1344,suffix1359,suffix1360,suffix1400,suffix1440,suffix1455,suffix1480,suffix1520,suffix1536,suffix1551,suffix1560,suffix1600,suffix1632,suffix1640,suffix1647,suffix1680,suffix1720,suffix1728,suffix1743,suffix1760,suffix1800,suffix1824,suffix1839,suffix1840,suffix1880,suffix1920,suffix1935,suffix1960,suffix2000,suffix2016,suffix2031,suffix2040,suffix2080,suffix2112,suffix2120,suffix2127,suffix2160,suffix2200,suffix2208,suffix2223,suffix2240,suffix2280,suffix2304,suffix2319,suffix2320,suffix2360,suffix2400,suffix2415,suffix2440,suffix2480,suffix2496,suffix2511,suffix2520,suffix2560,suffix2592,suffix2600,suffix2607,suffix2640,len0,len15,len40,len80,len96,len111,len120,len160,len192,len200,len207,len240,len280,len288,len303,len320,len360,len384,len399,len400,len440,len480,len495,len520,len560,len576,len591,len600,len640,len672,len680,len687,len720,len760,len768,len783,len800,len840,len864,len879,len880,len920,len960,len975,len1000,len1040,len1056,len1071,len1080,len1120,len1152,len1160,len1167,len1200,len1240,len1248,len1263,len1280,len1320,len1344,len1359,len1360,len1400,len1440,len1455,len1480,len1520,len1536,len1551,len1560,len1600,len1632,len1640,len1647,len1680,len1720,len1728,len1743,len1760,len1800,len1824,len1839,len1840,len1880,len1920,len1935,len1960,len2000,len2016,len2031,len2040,len2080,len2112,len2120,len2127,len2160,len2200,len2208,len2223,len2240,len2280,len2304,len2319,len2320,len2360,len2400,len2415,len2440,len2480,len2496,len2511,len2520,len2560,len2592,len2600,len2607,len2640,List.length_append,List.length_nil]
+  simp only [GateMirror.forward,List.length_map,group0,suffix0,suffix6,suffix40,suffix80,suffix96,suffix102,suffix120,suffix160,suffix192,suffix198,suffix200,suffix240,suffix280,suffix288,suffix294,suffix320,suffix360,suffix384,suffix390,suffix400,suffix440,suffix480,suffix486,suffix520,suffix560,suffix576,suffix582,suffix600,suffix640,suffix672,suffix678,suffix680,suffix720,suffix760,suffix768,suffix774,suffix800,suffix840,suffix864,suffix870,suffix880,suffix920,suffix960,suffix966,suffix1000,suffix1040,suffix1056,suffix1062,suffix1080,suffix1120,suffix1152,suffix1158,suffix1160,suffix1200,suffix1240,suffix1248,suffix1254,suffix1280,suffix1320,suffix1344,suffix1350,suffix1360,suffix1400,suffix1440,suffix1446,suffix1480,suffix1520,suffix1536,suffix1542,suffix1560,suffix1600,suffix1632,suffix1638,suffix1640,suffix1680,suffix1720,suffix1728,suffix1734,suffix1760,suffix1800,suffix1824,suffix1830,suffix1840,suffix1880,suffix1920,suffix1926,suffix1960,suffix2000,suffix2016,suffix2022,suffix2040,suffix2080,suffix2112,suffix2118,suffix2120,suffix2160,suffix2200,suffix2208,suffix2214,suffix2240,suffix2280,suffix2304,suffix2310,suffix2320,suffix2360,suffix2400,suffix2406,suffix2440,suffix2480,suffix2496,suffix2502,suffix2520,suffix2560,suffix2592,suffix2598,suffix2600,suffix2640,len0,len6,len40,len80,len96,len102,len120,len160,len192,len198,len200,len240,len280,len288,len294,len320,len360,len384,len390,len400,len440,len480,len486,len520,len560,len576,len582,len600,len640,len672,len678,len680,len720,len760,len768,len774,len800,len840,len864,len870,len880,len920,len960,len966,len1000,len1040,len1056,len1062,len1080,len1120,len1152,len1158,len1160,len1200,len1240,len1248,len1254,len1280,len1320,len1344,len1350,len1360,len1400,len1440,len1446,len1480,len1520,len1536,len1542,len1560,len1600,len1632,len1638,len1640,len1680,len1720,len1728,len1734,len1760,len1800,len1824,len1830,len1840,len1880,len1920,len1926,len1960,len2000,len2016,len2022,len2040,len2080,len2112,len2118,len2120,len2160,len2200,len2208,len2214,len2240,len2280,len2304,len2310,len2320,len2360,len2400,len2406,len2440,len2480,len2496,len2502,len2520,len2560,len2592,len2598,len2600,len2640,List.length_append,List.length_nil]
 private theorem len2650 : block2650.length=38:=rfl
 private theorem len2688 : block2688.length=2:=rfl
-private theorem len2690 : block2690.length=13:=rfl
-private theorem len2703 : block2703.length=27:=rfl
+private theorem len2690 : block2690.length=4:=rfl
+private theorem len2694 : block2694.length=36:=rfl
 private theorem len2730 : block2730.length=40:=rfl
 private theorem len2770 : block2770.length=14:=rfl
-private theorem len2784 : block2784.length=15:=rfl
-private theorem len2799 : block2799.length=11:=rfl
+private theorem len2784 : block2784.length=6:=rfl
+private theorem len2790 : block2790.length=20:=rfl
 private theorem len2810 : block2810.length=40:=rfl
 private theorem len2850 : block2850.length=30:=rfl
-private theorem len2880 : block2880.length=10:=rfl
-private theorem len2890 : block2890.length=5:=rfl
-private theorem len2895 : block2895.length=35:=rfl
+private theorem len2880 : block2880.length=6:=rfl
+private theorem len2886 : block2886.length=4:=rfl
+private theorem len2890 : block2890.length=40:=rfl
 private theorem len2930 : block2930.length=40:=rfl
 private theorem len2970 : block2970.length=6:=rfl
-private theorem len2976 : block2976.length=15:=rfl
-private theorem len2991 : block2991.length=19:=rfl
+private theorem len2976 : block2976.length=6:=rfl
+private theorem len2982 : block2982.length=28:=rfl
 private theorem len3010 : block3010.length=40:=rfl
 private theorem len3050 : block3050.length=22:=rfl
-private theorem len3072 : block3072.length=15:=rfl
-private theorem len3087 : block3087.length=3:=rfl
+private theorem len3072 : block3072.length=6:=rfl
+private theorem len3078 : block3078.length=12:=rfl
 private theorem len3090 : block3090.length=40:=rfl
 private theorem len3130 : block3130.length=38:=rfl
 private theorem len3168 : block3168.length=2:=rfl
-private theorem len3170 : block3170.length=13:=rfl
-private theorem len3183 : block3183.length=27:=rfl
+private theorem len3170 : block3170.length=4:=rfl
+private theorem len3174 : block3174.length=36:=rfl
 private theorem len3210 : block3210.length=40:=rfl
 private theorem len3250 : block3250.length=14:=rfl
-private theorem len3264 : block3264.length=15:=rfl
-private theorem len3279 : block3279.length=11:=rfl
+private theorem len3264 : block3264.length=6:=rfl
+private theorem len3270 : block3270.length=20:=rfl
 private theorem len3290 : block3290.length=40:=rfl
 private theorem len3330 : block3330.length=9:=rfl
 private theorem size1 : (GateMirror.forward group1).length=689:=by
-  simp only [GateMirror.forward,List.length_map,group1,suffix2650,suffix2688,suffix2690,suffix2703,suffix2730,suffix2770,suffix2784,suffix2799,suffix2810,suffix2850,suffix2880,suffix2890,suffix2895,suffix2930,suffix2970,suffix2976,suffix2991,suffix3010,suffix3050,suffix3072,suffix3087,suffix3090,suffix3130,suffix3168,suffix3170,suffix3183,suffix3210,suffix3250,suffix3264,suffix3279,suffix3290,suffix3330,len2650,len2688,len2690,len2703,len2730,len2770,len2784,len2799,len2810,len2850,len2880,len2890,len2895,len2930,len2970,len2976,len2991,len3010,len3050,len3072,len3087,len3090,len3130,len3168,len3170,len3183,len3210,len3250,len3264,len3279,len3290,len3330,List.length_append,List.length_nil]
+  simp only [GateMirror.forward,List.length_map,group1,suffix2650,suffix2688,suffix2690,suffix2694,suffix2730,suffix2770,suffix2784,suffix2790,suffix2810,suffix2850,suffix2880,suffix2886,suffix2890,suffix2930,suffix2970,suffix2976,suffix2982,suffix3010,suffix3050,suffix3072,suffix3078,suffix3090,suffix3130,suffix3168,suffix3170,suffix3174,suffix3210,suffix3250,suffix3264,suffix3270,suffix3290,suffix3330,len2650,len2688,len2690,len2694,len2730,len2770,len2784,len2790,len2810,len2850,len2880,len2886,len2890,len2930,len2970,len2976,len2982,len3010,len3050,len3072,len3078,len3090,len3130,len3168,len3170,len3174,len3210,len3250,len3264,len3270,len3290,len3330,List.length_append,List.length_nil]
 private theorem pEq : GateMirror.forward group0 = Partial.leave270.take 2650 := by
   rw [←fEq,ops,fwAppend,←size0,List.take_left]
 private theorem qEq : GateMirror.forward (group0++group1) = Partial.leave270.take 3339 := by
@@ -25264,91 +20826,6 @@ theorem inverts (s:State) (phase:∀m,(run Partial.leave270 m s).phase=s.phase)
   have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
   rw [←bEq,←fEq]
   exact invert ops s phys (all_prepared ops s phys (by rwa [fEq])) ready m n
-
-/-- R1: the gate list of the physical leave270Move, spliced from the reference list. -/
-private def moveKept : List Gate := Partial.leave270Kept.map GateMirror.gateOf
-private def opsMove : List Gate :=
-  ops.take 302 ++ (GateMirror.rowGates 1701 Partial.leave270Rows ++ ((ops.drop 318).take 2153 ++ (moveKept ++ ops.drop 2503)))
-private theorem opsShape : ops = ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 2153 ++
-    ((ops.drop 2471).take 32 ++ ops.drop 2503))) := by decide +kernel
-private theorem fMove : GateMirror.forward opsMove = Partial.leave270Move := by decide +kernel
-private theorem bMove : GateMirror.inverse opsMove = Partial.leave270MoveInv := by decide +kernel
-private theorem prefixEq : GateMirror.forward (ops.take 302) = Partial.leave270.take 302 := by decide +kernel
-private theorem refShape : Partial.leave270 = Partial.leave270.take 302 ++ (MoveChain.mux 1701 Partial.leave270Rows ++
-    ((Partial.leave270.drop 318).take 2153 ++ (MoveChain.weave 1701 Partial.leave270Rows Partial.leave270Kept ++
-      Partial.leave270.drop 2503))) := by decide +kernel
-
-/-- R1 bridge: the physical leave270Move runs exactly like the reference leave270 whenever, in front of the mux,
-the crossing wire is clean and the hot tags select one cell. -/
-theorem sameRun (s : State) (m : List Bool) (a0 : Wire)
-    (clean : (run (Partial.leave270.take 302) m s).basis 1701 = false)
-    (sel : ∀ r ∈ Partial.leave270Rows, (run (Partial.leave270.take 302) m s).basis r.1 = true → r.2 = a0) :
-    run Partial.leave270Move m s = run Partial.leave270 m s := by
-  have geo : MoveChain.apart 1701 Partial.leave270Rows = true := by decide +kernel
-  have nd : MoveChain.lone Partial.leave270Rows = true := by decide +kernel
-  have still : Partial.leave270Rows.all (fun r => ((Partial.leave270.drop 318).take 2153).all (MoveChain.quiet 1701 r)) = true := by
-    decide +kernel
-  have wv : MoveChain.woven 1701 Partial.leave270Rows Partial.leave270Kept = true := by decide +kernel
-  have e := MoveChain.splice 1701 Partial.leave270Rows (Partial.leave270.take 302) ((Partial.leave270.drop 318).take 2153)
-    (Partial.leave270.drop 2503) Partial.leave270Kept s m a0 geo nd still wv clean sel
-  exact e.trans (congrArg (fun P => run P m s) refShape.symm)
-
-/-- R1: the facts `inverts` derives about the reference gate list, exported. -/
-theorem grounded (s:State)
-    (initial:∀q, 1556≤q → q≤1694 → s.basis q=false)
-    (extra:∀q, 1705≤q → q≤1726 → s.basis q=false)
-    (core:zeros (run (Partial.leave270.take 2650) [] s) [1560,1576,1596,1613,1614])
-    (post:(run (Partial.leave270.take 3339) [] s).basis 1556=false) :
-    (∀g∈ops,proper g=true) ∧ Ready s ops:=by
-  let s1:=run (GateMirror.forward group0) [] s
-  let s2:=run (GateMirror.forward group1) [] s1
-  have s2e:s2=run (GateMirror.forward (group0++group1)) [] s:=by
-    simp [s2,s1,GateMirror.forward,List.map_append,run_append]
-  have i0:Masked s (0x7ffffe007fffffffffffffffffffffffeffffeffffe <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks (fromRange (lo:=1556) (width:=139) (fun q h1 h2=>initial q h1 (Nat.le_of_lt_succ h2))) (fromRange (lo:=1705) (width:=22) (fun q h1 h2=>extra q h1 (Nat.le_of_lt_succ h2))))
-  obtain ⟨h0,r0,z0⟩:=bit_sound group0 s _ _ cert0 i0
-  have kc:zeros s1 [1560,1576,1596,1613,1614]:=by simpa only [s1,pEq] using core
-  have i1:Masked s1 (0x1e007fffffffffffffffffffe0003fffffffff8 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z0 (fromList kc))
-  obtain ⟨h1,r1,z1⟩:=bit_sound group1 s1 _ _ cert1 i1
-  have kp:zeros s2 [1556]:=by
-    intro q hq
-    obtain rfl: q=1556:=by simpa using hq
-    rw [s2e,qEq];exact post
-  have i2:Masked s2 (0x79 <<< 1556):=subMask (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (bothMasks z1 (fromList kp))
-  obtain ⟨h2,r2,z2⟩:=bit_sound group2 s2 _ _ cert2 i2
-  have phys:∀g∈ops,proper g=true:=by
-    intro g hg
-    rcases List.mem_append.mp hg with h|h
-    · exact h0 g h
-    · rcases List.mem_append.mp h with h|h
-      · exact h1 g h
-      · exact h2 g h
-  have ready:Ready s ops:=ready_append _ _ _ r0 (ready_append _ _ _ r1 r2)
-  exact ⟨phys,ready⟩
-/-- R1: the physical inverse undoes the physical forward program (it is the mirror of the same gate list). -/
-theorem invertsMove (s:State) (phase:∀m,(run Partial.leave270 m s).phase=s.phase)
-    (initial:∀q, 1556≤q → q≤1694 → s.basis q=false)
-    (extra:∀q, 1705≤q → q≤1726 → s.basis q=false)
-    (core:zeros (run (Partial.leave270.take 2650) [] s) [1560,1576,1596,1613,1614])
-    (post:(run (Partial.leave270.take 3339) [] s).basis 1556=false) (a0:Wire)
-    (hot:∀o,(run (Partial.leave270.take 302) o s).basis 1701=false ∧
-      ∀r∈Partial.leave270Rows,(run (Partial.leave270.take 302) o s).basis r.1=true → r.2=a0) (m n:List Bool):
-    run Partial.leave270MoveInv n (run Partial.leave270Move m s)=s:=by
-  obtain ⟨phys,ready⟩ := grounded s initial extra core post
-  have same (o : List Bool) : run Partial.leave270Move o s = run Partial.leave270 o s := sameRun s o a0 (hot o).1 (hot o).2
-  have physAll : opsMove.all proper = true := by decide +kernel
-  have physM : ∀ g ∈ opsMove, proper g = true := List.all_eq_true.mp physAll
-  have rd : Ready s (ops.take 302 ++ ((ops.drop 302).take 16 ++ ((ops.drop 318).take 2153 ++
-      ((ops.drop 2471).take 32 ++ ops.drop 2503)))) := by
-    rw [← opsShape]
-    exact ready
-  have readyM : Ready s opsMove :=
-    GateMirror.ready_move 1701 Partial.leave270Rows (ops.take 302) ((ops.drop 318).take 2153) (ops.drop 2503)
-      ((ops.drop 302).take 16) ((ops.drop 2471).take 32) moveKept s a0
-      (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (by rw [prefixEq]; exact (hot []).1) (by rw [prefixEq]; exact (hot []).2) rd
-  rw [← bMove, ← fMove]
-  exact invert opsMove s physM (all_prepared opsMove s physM (by intro o; rw [fMove, same o]; exact phase o)) readyM m n
 end ECDSAAdd.Entrant.StairPacket.Leave270Mirror
 
 end
@@ -25735,39 +21212,6 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 3500000
 attribute [local irreducible] run routed
 
-theorem pack_support (d:Bool) : wires (program d) ⊆ ((List.finRange 10).map history).toFinset := by cases d <;> (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem outside (d:Bool) (q:Wire) (no:∀v:Fin 10,q≠history v) (m:List Bool) (s:State) :
-    (run (program d) m s).basis q=s.basis q := by
-  apply run_preserves_outside
-  intro mem
-  obtain ⟨v,_,eq⟩:=List.mem_map.mp (List.mem_toFinset.mp (pack_support d mem))
-  exact no v eq.symm
-theorem bank_out : ∀q:Fin 23,∀v:Fin 10,rawPorts ⟨q,Nat.lt_trans q.isLt (by decide : 23<157)⟩≠history v := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem archive_ready (d:Bool) (start tick:State) (m:List Bool) (past:SkywalkNat.State) (g sign cross:Bool)
-    (odd:past.v%2=1) (small:min past.u past.v<2^121) (prior:PastFacts sourceIdx rawPorts 121 past g sign cross start)
-    (keptFive:∀i,tick.basis (history i)=start.basis (history i))
-    (bank:∀i:Fin 23,tick.basis (rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩)=start.basis (rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩))
-    (scratch:∀i:Fin 157,23≤ i.val → tick.basis (rawPorts i)=false) :
-    MeasuredCodec5.legalAt history tick.basis ∧ ∃row<63145,ArchivePortAction.Frame rawPorts raw row (run (program d) m tick) := by
-  let cells:=physicalCells sourceIdx start
-  let f:=decide (Shadow.far 121 15 past)
-  let u:=f && afterFlags (decide (past.v<past.u)) (cells.take 5)
-  let c:=f && cross
-  let data:=rawBit (read (cells.drop 5)) f u c
-  let out:=run (program d) m tick
-  have legal:StairArchiveRaw.legal (physicalCells sourceIdx start):=by rw [prior.records];exact legal_signed 15 past g sign (by omega) odd
-  have same (i:Fin 23) : out.basis (rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩)=
-      start.basis (rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩):=
-    (outside d _ (bank_out i) m tick).trans (bank i)
-  have tags:out.basis (rawPorts 20)=f ∧ out.basis (rawPorts 21)=u ∧ out.basis (rawPorts 22)=c:=
-    ⟨(same 20).trans prior.far,(same 21).trans prior.suffix,(same 22).trans prior.crossed⟩
-  have hw:∀i:Fin 157,i.val<23 → out.basis (rawPorts i)=data i :=
-    observed start out (fun q=>same ⟨q,Nat.lt_trans q.isLt (by decide : 20<23)⟩) f u c tags
-  have fresh (i:Fin 157) (hi:23≤ i.val) : out.basis (rawPorts i)=false :=
-    (outside d _ (EndTick.scratch_table i hi).2.2 m tick).trans (scratch i hi)
-  obtain ⟨row,limit,matchRow⟩:=interrupted_row 121 past small odd g sign cross cells
-    (prior.records.trans (true_records _ _ small odd _ _).symm)
-  exact ⟨legal_prefix _ _ legal keptFive,row,limit,starting_frame rawPorts out row data matchRow hw fresh⟩
 
 end ECDSAAdd.Entrant.StairPacket.NativePack285
 
@@ -26541,70 +21985,12 @@ open Arithmetic MappedCompressed Secp256k1 IntegerPacket ArchivePortAction Archi
 set_option maxRecDepth 25000
 set_option maxHeartbeats 3500000
 attribute [local irreducible] run
-def endSlice (d:Bool) := EndTick.physP ++ (program d ++ Partial.archiveLoad285 d)
-def endUndo (d:Bool) := Partial.archiveRestore285 d ++ (reverse d ++ EndTick.physQ)
-structure Transition (inverse:Program) (s tick:State) : Prop where
-  phase : tick.phase=s.phase
-  keptFive : ∀i,tick.basis (history i)=s.basis (history i)
-  keptBank : ∀i:Fin 23,tick.basis (rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩)=s.basis (rawPorts ⟨i,Nat.lt_trans i.isLt (by decide : 23<157)⟩)
-  scratch : ∀i:Fin 157,23≤ i.val → tick.basis (rawPorts i)=false
-  undo : ∀n,run inverse n tick=s
 
-abbrev TickStep:=Transition EndTick.physQ
 
-theorem tick_intro (s tick:State) (ph:tick.phase=s.phase)
-    (obs:∀q,EndTick.readOnly q → tick.basis q=s.basis q)
-    (zero:∀i:Fin 157,23≤ i.val → tick.basis (rawPorts i)=false) (undo:∀m,run EndTick.physQ m tick=s) :
-    TickStep s tick :=
-  ⟨ph,fun i=>obs _ (EndTick.oldPrefix i),fun i=>obs _ (EndTick.oldBank i),zero,undo⟩
 
-theorem observe_tick (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original tags:State) (read:EndTick.Reads raw original)
-    (stage:Rolling1588.Integer.Stage base d x p 285 original.basis)
-    (hist:raw.basis (base (1028+285))=false) (swapSlot:raw.basis (base (2053-285))=false) (m:List Bool) :
-    let start:=ParkEndpoint.stash tags (pullState (OB5.sig 284) raw)
-    TickStep start (run EndTick.physP m start) := by
-  let s:=ParkEndpoint.stash tags (pullState (OB5.sig 284) raw)
-  have h:=EndTick.exposed d x hx0 hx raw original tags read stage hist swapSlot m
-  have u:=(EndTick.physical d x hx0 hx raw original tags read stage hist swapSlot m).2
-  exact tick_intro s (run EndTick.physP m s) h.1 (fun q hq=>EndTick.observes q hq s m h.2.1) h.2.2 u
 
-theorem sequence_law (p e f r v q:Program) (s:State) (m:List Bool) (claim:State→Prop)
-    (tick:State) (first:run p m s=tick) (phase:tick.phase=s.phase) (inv:∀a,run q a tick=s)
-    (packed:State) (store:run e (m.drop (measurementCount p)) tick=packed) (middle:packed.phase=tick.phase)
-    (unpack:∀a,run v a packed=tick) (out:State)
-    (written:run f ((m.drop (measurementCount p)).drop (measurementCount e)) packed=out)
-    (endPhase:out.phase=packed.phase) (good:claim out) (unwrite:∀a,run r a out=packed) :
-    let result:=run (p++(e++f)) m s
-    result.phase=s.phase ∧ claim result ∧ ∀a,run (r++(v++q)) a result=s := by
-  dsimp only
-  simp only [run_append,run_take,first,store,written]
-  exact ⟨endPhase.trans (middle.trans phase),good,fun a=>by rw [unwrite,unpack,inv]⟩
 
-theorem finish_generic (p q:Program) (d:Bool) (s:State) (m:List Bool) (step:Transition q s (run p m s))
-    (past:SkywalkNat.State) (G S cross:Bool) (odd:past.v%2=1) (small:min past.u past.v<2^121)
-    (prior:PastFacts sourceIdx rawPorts 121 past G S cross s) :
-    let out:=run (p ++ (program d ++ Partial.archiveLoad285 d)) m s
-    out.phase=s.phase ∧ (∃row<63145,Frame codePorts (code d) row out) ∧
-      ∀n,run (Partial.archiveRestore285 d ++ (reverse d ++ q)) n out=s := by
-  let tick:=run p m s
-  let e:=m.drop (measurementCount p)
-  let pre:=run (program d) e tick
-  let f:=e.drop (measurementCount (program d))
-  have ⟨legal,row,limit,frame⟩:=archive_ready d s tick e past G S cross odd small prior step.keptFive step.keptBank step.scratch
-  have enc:=source_law d tick e legal
-  have act:=load_run d row limit pre f frame
-  exact sequence_law p (program d) (Partial.archiveLoad285 d) (Partial.archiveRestore285 d)
-    (reverse d) q s m (fun out=>∃row<63145,Frame codePorts (code d) row out)
-    tick rfl step.phase step.undo pre rfl enc.1 enc.2 (run (Partial.archiveLoad285 d) f pre) rfl act.1
-    ⟨row,limit,act.2.1⟩ (fun n=>roundtrip d row limit pre f n frame)
 
-theorem finish_slice (d:Bool) (s:State) (m:List Bool) (step:TickStep s (run EndTick.physP m s))
-    (past:SkywalkNat.State) (G S cross:Bool) (odd:past.v%2=1) (small:min past.u past.v<2^121)
-    (prior:PastFacts sourceIdx rawPorts 121 past G S cross s) :
-    let out:=run (endSlice d) m s
-    out.phase=s.phase ∧ (∃row<63145,Frame codePorts (code d) row out) ∧
-      ∀n,run (endUndo d) n out=s :=
-  finish_generic EndTick.physP EndTick.physQ d s m step past G S cross odd small prior
 
 end ECDSAAdd.Entrant.StairPacket.NativePack285
 
@@ -26718,54 +22104,8 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option exponentiation.threshold 1024
 attribute [local irreducible] run
-def lastWindow (d:Bool) := Partial.park285 ++ (Partial.portal285Inv ++ endSlice d)
-def lastUnwind (d:Bool) := endUndo d ++ (Partial.portal285 ++ Partial.park285Inv)
 
-theorem after_park (raw s:State) (n f u:Bool)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 n f u (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (past:SkywalkNat.State) (G S cross:Bool)
-    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode G S past.u past.v))
-    (mode:s.basis 1694=decide (Shadow.far 121 15 past))
-    (orientation:s.basis 1695=(decide (Shadow.far 121 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
-    (flipped:s.basis 1696=(decide (Shadow.far 121 15 past) && cross)) :
-    PastFacts sourceIdx rawPorts 121 past G S cross (stash s (pullState (OB5.sig 284) raw)) := by
-  have cells:=past_cells raw s n f u cut
-  have tag:=tag_address s (pullState (OB5.sig 284) raw)
-  refine ⟨cells.trans records,tag.1.trans mode,?_,tag.2.2.trans flipped⟩
-  rw [cells];exact tag.2.1.trans orientation
 
-theorem last_window (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original s:State) (m:List Bool)
-    (read:EndTick.Reads raw original) (stage:Rolling1588.Integer.Stage base d x p 285 original.basis)
-    (hist:raw.basis (base (1028+285))=false) (swapSlot:raw.basis (base (2053-285))=false)
-    (z:SkywalkNat.State) (small:min z.u z.v<2^114) (G S:Bool)
-    (input:SkywalkIntegerInput EndTick.L (encode G S z.u z.v).a (encode G S z.u z.v).b G raw.basis)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 (PortalValues.negative S z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u)) (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (empty:∀q∈dst,s.basis q=false) (past:SkywalkNat.State) (pg ps cross:Bool) (odd:past.v%2=1) (pm:min past.u past.v<2^121)
-    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode pg ps past.u past.v))
-    (mode:s.basis 1694=decide (Shadow.far 121 15 past))
-    (angle:s.basis 1695=(decide (Shadow.far 121 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
-    (flipped:s.basis 1696=(decide (Shadow.far 121 15 past) && cross)) :
-    let out:=run (lastWindow d) m s
-    out.phase=s.phase ∧ (∃row<63145,ArchivePortAction.Frame codePorts (code d) row out) ∧
-      ∀t,run (lastUnwind d) t out=s := by
-  let n:=m.drop (measurementCount Partial.park285)
-  let one:=run Partial.portal285Inv n (run Partial.park285 m s)
-  let tape:=n.drop (measurementCount Partial.portal285Inv)
-  have restored:=parked_release z small raw s m n G S input cut empty
-  have facts:=after_park raw s _ _ _ cut past pg ps cross records mode angle flipped
-  have tick:=observe_tick d x hx0 hx raw original s read stage hist swapSlot tape
-  have eqOne:one=stash s (pullState (OB5.sig 284) raw):=restored.1
-  have A:PastFacts sourceIdx rawPorts 121 past pg ps cross one :=by rw [eqOne];exact facts
-  have B:TickStep one (run EndTick.physP tape one):=by rw [eqOne];exact tick
-  have body:=finish_slice d one tape B past pg ps cross odd pm A
-  have phase:one.phase=s.phase:=(congrArg State.phase restored.1).trans cut.phase.symm
-  dsimp only [lastWindow,lastUnwind]
-  simp only [run_append,run_take]
-  refine ⟨body.1.trans phase,body.2.1,?_⟩
-  intro t
-  rw [body.2.2 t]
-  exact restored.2 _ _
 
 end ECDSAAdd.Entrant.StairPacket.NativePack285
 
@@ -26803,31 +22143,6 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
-
-/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
-theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^144)
-    (ready:onRails 10 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).v) s.basis)
-    (fresh:s.basis 1723=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
-    (mode:k=farMode ((run entry m s).basis 1721) ((run entry m s).basis 1722) smallU)
-    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
-    (run (entry++crossPrefix) m s).basis 1724=false ∧
-      ∀r∈Partial.leave225Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=401+key k := by
-  let a:=run entry m s
-  have keep:=Leave225FrontReady.frame s m z G sg small ready fresh scratch temp
-  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
-  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
-    unfold watched
-    apply List.mem_append_right
-    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
-  rw [run_append,run_take]
-  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
-  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
-  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave225FrontPrepare
 
 end
@@ -26946,31 +22261,6 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
-
-/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
-theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^136)
-    (ready:onRails 11 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).v) s.basis)
-    (fresh:s.basis 1715=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
-    (mode:k=farMode ((run entry m s).basis 1713) ((run entry m s).basis 1714) smallU)
-    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
-    (run (entry++crossPrefix) m s).basis 1716=false ∧
-      ∀r∈Partial.leave240Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=408+key k := by
-  let a:=run entry m s
-  have keep:=Leave240FrontReady.frame s m z G sg small ready fresh scratch temp
-  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
-  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
-    unfold watched
-    apply List.mem_append_right
-    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
-  rw [run_append,run_take]
-  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
-  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
-  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave240FrontPrepare
 
 end
@@ -27089,31 +22379,6 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
-
-/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
-theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^129)
-    (ready:onRails 12 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).v) s.basis)
-    (fresh:s.basis 1708=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
-    (mode:k=farMode ((run entry m s).basis 1706) ((run entry m s).basis 1707) smallU)
-    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
-    (run (entry++crossPrefix) m s).basis 1709=false ∧
-      ∀r∈Partial.leave255Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=416+key k := by
-  let a:=run entry m s
-  have keep:=Leave255FrontReady.frame s m z G sg small ready fresh scratch temp
-  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
-  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
-    unfold watched
-    apply List.mem_append_right
-    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
-  rw [run_append,run_take]
-  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
-  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
-  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave255FrontPrepare
 
 namespace ECDSAAdd.Entrant.StairPacket.Leave270FrontPrepare
@@ -27146,31 +22411,6 @@ theorem prepare (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
   · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
   · exact exchange
 
-
-/-- R1: the state in front of the cross mux (same hypotheses as `prepare`). -/
-theorem atCross (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^121)
-    (ready:onRails 13 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 121 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 121 15 z)).v) s.basis)
-    (fresh:s.basis 1700=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (zero:∀q∈watched,s.basis q=false) (k:Mode) (smallU:Nat)
-    (mode:k=farMode ((run entry m s).basis 1698) ((run entry m s).basis 1699) smallU)
-    (exchange:right k=true → ∀i<15,i≤key k → (run entry m s).basis (swaps i)=decide (i=key k)) :
-    (run (entry++crossPrefix) m s).basis 1701=false ∧
-      ∀r∈Partial.leave270Rows,(run (entry++crossPrefix) m s).basis r.1=true → r.2=423+key k := by
-  let a:=run entry m s
-  have keep:=Leave270FrontReady.frame s m z G sg small ready fresh scratch temp
-  have clear (q:Wire) (h:q∈watched) : a.basis q=false := (keep q h).trans (zero q h)
-  have cells (q:Nat) (lo:1561≤q) (hi:q≤1597) : q∈watched := by
-    unfold watched
-    apply List.mem_append_right
-    rw [List.mem_range']; exact ⟨q-1559,by omega,by omega⟩
-  rw [run_append,run_take]
-  apply crossReady a _ a.basis smallU k mode (clear _ (by decide)) (clear _ (by decide))
-  · exact beforeFresh ports k a.basis (fun q lo hi=>clear q (cells q lo hi)) (clear _ (by decide)) (clear _ (by decide))
-  · exact exchange
 end ECDSAAdd.Entrant.StairPacket.Leave270FrontPrepare
 
 end
@@ -28437,16 +23677,6 @@ theorem future_history {i j x p:Nat} (h:i≤j) (hj:j<512) {s:State} (dom:Domain 
   obtain ⟨ref,stage,link⟩:=leaves_reference i x p (by omega) true s dom
   have lim:1044+i≤base (1028+j):=by change 1044+i≤1028+j+16;omega
   exact (link.2 _ (outside_above lim)).trans (stock_history true x p i ref stage j h hj)
-theorem terminal (d:Bool) (x:Nat) (s:State) (dom:Domain 285 x p s) :
-    ∃ref:State,Rolling1588.Integer.Stage base d x p 285 ref.basis ∧ EndTick.Reads s ref ∧
-    s.basis (base (1028+285))=false ∧ s.basis (base (2053-285))=false ∧
-    ∀q∈ParkEndpoint.dst,(pullState (OB5.sig 284) s).basis q=false := by
-  obtain ⟨ref,stage,link⟩:=leaves_reference 285 x p (by decide) d s dom
-  have bounds:∀q∈ParkEndpoint.dst,285+16<OB5.sig 284 q ∧ OB5.sig 284 q<1044:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  refine ⟨ref,stage,reads_now (by decide) link,future_history (Nat.le_refl _) (by decide) dom,?_,?_⟩
-  · exact (link.2 _ (outside_above (by decide))).trans ((Rolling1588.Integer.stage_zero d x 285 (by decide) _ stage).2 (by decide))
-  · intro q hit
-    exact (link.2 _ (outside_between (bounds _ hit).1 (bounds _ hit).2)).trans (ParkEndpoint.clear_dest d x p ref stage q hit)
 
 end ECDSAAdd.Entrant.StairPacket.WideReference
 
@@ -28458,24 +23688,9 @@ namespace ECDSAAdd.Entrant.StairPacket.Partial
 open Arithmetic MappedCompressed IntegerPacket
 set_option maxRecDepth 16000
 set_option maxHeartbeats 2000000
-attribute [local irreducible] run routed unrouted renameProgram portal225 enter225 enter240 enter255 enter270 leave225 leave240 leave255 leave270
-  leave225Move leave240Move leave255Move leave270Move leave225MoveInv leave240MoveInv leave255MoveInv leave270MoveInv
-  portal225Inv enter225Inv enter240Inv enter255Inv enter270Inv leave225Inv leave240Inv leave255Inv leave270Inv park285 park285Inv portal285 portal285Inv
-  archiveLoad240 archiveLoad255 archiveLoad270 archiveLoad285 archiveRestore240 archiveRestore255 archiveRestore270 archiveRestore285
-theorem assembly (d:Bool) : forward60plus1 d =
-    NativePack225.firstWindow d ++ leave225Move ++ NativePack240.nextWindow d ++ leave240Move ++ NativePack255.nextWindow d ++ leave255Move ++
-      NativePack270.nextWindow d ++ leave270Move ++ NativePack285.lastWindow d := by
-  simp only [forward60plus1,NativePack225.firstWindow,NativePack240.nextWindow,NativePack255.nextWindow,NativePack270.nextWindow,NativePack285.lastWindow,
-    NativePack225.window,NativePack240.window,NativePack255.window,NativePack270.window,NativePack285.endSlice,body,
-    NativePack240.withArchive,NativePack255.withArchive,NativePack270.withArchive, List.append_assoc]
-  rfl
-theorem unwind_assembly (d:Bool) : reverse60plus1 d =
-    NativePack285.lastUnwind d ++ leave270MoveInv ++ NativePack270.nextUnwind d ++ leave255MoveInv ++ NativePack255.nextUnwind d ++ leave240MoveInv ++
-      NativePack240.nextUnwind d ++ leave225MoveInv ++ NativePack225.firstUnwind d := by
-  simp only [reverse60plus1,NativePack285.lastUnwind,NativePack270.nextUnwind,NativePack255.nextUnwind,NativePack240.nextUnwind,NativePack225.firstUnwind,
-    NativePack225.unwind,NativePack240.unwind,NativePack255.unwind,NativePack270.unwind,NativePack285.endUndo,unbody,
-    NativePack240.fromArchive,NativePack255.fromArchive,NativePack270.fromArchive,List.append_assoc]
-  rfl
+attribute [local irreducible] run routed unrouted renameProgram portal225 enter225 enter240 enter255 enter270 leave225 leave240 leave255
+  leave270 portal225Inv enter225Inv enter240Inv enter255Inv enter270Inv leave225Inv leave240Inv leave255Inv leave270Inv archiveLoad240 archiveLoad255
+  archiveLoad270 archiveRestore240 archiveRestore255 archiveRestore270
 
 
 end ECDSAAdd.Entrant.StairPacket.Partial
@@ -28933,30 +24148,6 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 3500000
 set_option exponentiation.threshold 1024
 attribute [local irreducible] run
-theorem empty_from_cut (raw s:State) (n f u:Bool)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 n f u (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (source:∀q∈dst,(pullState (OB5.sig 284) raw).basis q=false) : ∀q∈dst,s.basis q=false:=by
-  have regular:∀q∈dst,q∉src ∧ q≠1693 ∧ q≠1691 ∧ q≠1692 ∧ q∉RailPair.sites hiPairs:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  intro q member
-  obtain ⟨out,hn,hf,hu,hh⟩:=regular _ member
-  have eq:=cut.unchanged q hn hf hu hh
-  simpa [eraseSites,out] using eq.trans (source _ member)
-theorem from_domain (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw s:State) (m:List Bool)
-    (domain:WideReference.Domain 285 x p raw) (z:SkywalkNat.State) (small:min z.u z.v<2^114) (G S:Bool)
-    (input:SkywalkIntegerInput EndTick.L (encode G S z.u z.v).a (encode G S z.u z.v).b G raw.basis)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 (PortalValues.negative S z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u)) (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (past:SkywalkNat.State) (pg ps cross:Bool) (odd:past.v%2=1) (pm:min past.u past.v<2^121)
-    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode pg ps past.u past.v))
-    (mode:s.basis 1694=decide (Shadow.far 121 15 past))
-    (angle:s.basis 1695=(decide (Shadow.far 121 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
-    (flipped:s.basis 1696=(decide (Shadow.far 121 15 past) && cross)) :
-    let out:=run (lastWindow d) m s
-    out.phase=s.phase ∧ (∃row<63145,ArchivePortAction.Frame codePorts (code d) row out) ∧
-      ∀t,run (lastUnwind d) t out=s := by
-  obtain ⟨ref,stage,read,history,swapSlot,empty⟩:=WideReference.terminal d x raw domain
-  exact last_window d x hx0 hx raw ref s m read stage history swapSlot z small G S input cut
-    (empty_from_cut _ _ _ _ _ cut empty) past pg ps cross odd pm records mode angle flipped
 
 end ECDSAAdd.Entrant.StairPacket.NativePack285
 
@@ -29975,81 +25166,7 @@ set_option maxRecDepth 25000
 set_option maxHeartbeats 3500000
 attribute [local irreducible] run
 open ArchiveBoundary285 ParkEndpoint Portal285Flag Secp256k1 SkywalkRails StairArchiveTrace
-theorem matched_generic (p q:Program) (d:Bool) (s:State) (m:List Bool) (step:Transition q s (run p m s))
-    (past:SkywalkNat.State) (G S cross:Bool) (odd:past.v%2=1) (small:min past.u past.v<2^121)
-    (prior:PastFacts sourceIdx rawPorts 121 past G S cross s) :
-    let out:=run (p ++ (program d ++ Partial.archiveLoad285 d)) m s
-    out.phase=s.phase ∧ (∃row<63145,RowTruth past G S row ∧ Frame codePorts (code d) row out) ∧
-      ∀n,run (Partial.archiveRestore285 d ++ (reverse d ++ q)) n out=s := by
-  let tick:=run p m s
-  let e:=m.drop (measurementCount p)
-  let pre:=run (program d) e tick
-  let f:=e.drop (measurementCount (program d))
-  have ⟨legal,row,limit,frame⟩:=archive_ready d s tick e past G S cross odd small prior step.keptFive step.keptBank step.scratch
-  have truth:=row_truth sourceIdx rawPorts chronological row past G S s pre prior.records
-    (fun i=>(outside d _ (bank_out i) e tick).trans (step.keptBank i)) frame
-  have enc:=source_law d tick e legal
-  have act:=load_run d row limit pre f frame
-  exact sequence_law p (program d) (Partial.archiveLoad285 d) (Partial.archiveRestore285 d)
-    (reverse d) q s m (fun out=>∃row<63145,RowTruth past G S row ∧ Frame codePorts (code d) row out)
-    tick rfl step.phase step.undo pre rfl enc.1 enc.2 (run (Partial.archiveLoad285 d) f pre) rfl act.1
-    ⟨row,limit,truth,act.2.1⟩ (fun n=>roundtrip d row limit pre f n frame)
 
-theorem matched_slice (d:Bool) (s:State) (m:List Bool) (step:TickStep s (run EndTick.physP m s))
-    (past:SkywalkNat.State) (G S cross:Bool) (odd:past.v%2=1) (small:min past.u past.v<2^121)
-    (prior:PastFacts sourceIdx rawPorts 121 past G S cross s) :
-    let out:=run (endSlice d) m s
-    out.phase=s.phase ∧ (∃row<63145,RowTruth past G S row ∧ Frame codePorts (code d) row out) ∧
-      ∀n,run (endUndo d) n out=s :=
-  matched_generic EndTick.physP EndTick.physQ d s m step past G S cross odd small prior
-theorem matched_last (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original s:State) (m:List Bool)
-    (read:EndTick.Reads raw original) (stage:Rolling1588.Integer.Stage base d x p 285 original.basis)
-    (hist:raw.basis (base (1028+285))=false) (swapSlot:raw.basis (base (2053-285))=false)
-    (z:SkywalkNat.State) (small:min z.u z.v<2^114) (G S:Bool)
-    (input:SkywalkIntegerInput EndTick.L (encode G S z.u z.v).a (encode G S z.u z.v).b G raw.basis)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 (PortalValues.negative S z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u)) (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (empty:∀q∈dst,s.basis q=false) (past:SkywalkNat.State) (pg ps cross:Bool) (odd:past.v%2=1) (pm:min past.u past.v<2^121)
-    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode pg ps past.u past.v))
-    (mode:s.basis 1694=decide (Shadow.far 121 15 past))
-    (angle:s.basis 1695=(decide (Shadow.far 121 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
-    (flipped:s.basis 1696=(decide (Shadow.far 121 15 past) && cross)) :
-    let out:=run (lastWindow d) m s
-    out.phase=s.phase ∧ (∃row<63145,RowTruth past pg ps row ∧ ArchivePortAction.Frame codePorts (code d) row out) ∧
-      ∀t,run (lastUnwind d) t out=s := by
-  let n:=m.drop (measurementCount Partial.park285)
-  let one:=run Partial.portal285Inv n (run Partial.park285 m s)
-  let tape:=n.drop (measurementCount Partial.portal285Inv)
-  have restored:=parked_release z small raw s m n G S input cut empty
-  have facts:=after_park raw s _ _ _ cut past pg ps cross records mode angle flipped
-  have tick:=observe_tick d x hx0 hx raw original s read stage hist swapSlot tape
-  have eqOne:one=stash s (pullState (OB5.sig 284) raw):=restored.1
-  have A:PastFacts sourceIdx rawPorts 121 past pg ps cross one :=by rw [eqOne];exact facts
-  have B:TickStep one (run EndTick.physP tape one):=by rw [eqOne];exact tick
-  have body:=matched_slice d one tape B past pg ps cross odd pm A
-  have phase:one.phase=s.phase:=(congrArg State.phase restored.1).trans cut.phase.symm
-  dsimp only [lastWindow,lastUnwind]
-  simp only [run_append,run_take]
-  refine ⟨body.1.trans phase,body.2.1,?_⟩
-  intro t
-  rw [body.2.2 t]
-  exact restored.2 _ _
-theorem matched_from_domain (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw s:State) (m:List Bool)
-    (domain:WideReference.Domain 285 x p raw) (z:SkywalkNat.State) (small:min z.u z.v<2^114) (G S:Bool)
-    (input:SkywalkIntegerInput EndTick.L (encode G S z.u z.v).a (encode G S z.u z.v).b G raw.basis)
-    (cut:PackedCut loPairs hiPairs 300 1693 1691 1692 (PortalValues.negative S z.u)
-      (decide (3*2^130≤z.u+z.v)) (decide (3*2^130≤z.u+z.v ∧ 2^114≤z.u)) (pullState (OB5.sig 284) raw) (eraseSites src s))
-    (past:SkywalkNat.State) (pg ps cross:Bool) (odd:past.v%2=1) (pm:min past.u past.v<2^121)
-    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode pg ps past.u past.v))
-    (mode:s.basis 1694=decide (Shadow.far 121 15 past))
-    (angle:s.basis 1695=(decide (Shadow.far 121 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
-    (flipped:s.basis 1696=(decide (Shadow.far 121 15 past) && cross)) :
-    let out:=run (lastWindow d) m s
-    out.phase=s.phase ∧ (∃row<63145,RowTruth past pg ps row ∧ ArchivePortAction.Frame codePorts (code d) row out) ∧
-      ∀t,run (lastUnwind d) t out=s := by
-  obtain ⟨ref,stage,read,history,swapSlot,empty⟩:=WideReference.terminal d x raw domain
-  exact matched_last d x hx0 hx raw ref s m read stage history swapSlot z small G S input cut
-    (empty_from_cut _ _ _ _ _ cut empty) past pg ps cross odd pm records mode angle flipped
 end ECDSAAdd.Entrant.StairPacket.NativePack285
 
 end
@@ -30394,8 +25511,9 @@ private theorem maskleave270Part35 : leave270Part35.all writesInside=true:=by (o
 private theorem maskleave270Part36 : leave270Part36.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private theorem maskleave270Part37 : leave270Part37.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private theorem maskleave270Part38 : leave270Part38.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private theorem maskleave270Part39 : leave270Part39.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem writes : leave270.all writesInside=true:=by
-  simp only [leave270,List.all_append,maskleave270Part0,maskleave270Part1,maskleave270Part2,maskleave270Part3,maskleave270Part4,maskleave270Part5,maskleave270Part6,maskleave270Part7,maskleave270Part8,maskleave270Part9,maskleave270Part10,maskleave270Part11,maskleave270Part12,maskleave270Part13,maskleave270Part14,maskleave270Part15,maskleave270Part16,maskleave270Part17,maskleave270Part18,maskleave270Part19,maskleave270Part20,maskleave270Part21,maskleave270Part22,maskleave270Part23,maskleave270Part24,maskleave270Part25,maskleave270Part26,maskleave270Part27,maskleave270Part28,maskleave270Part29,maskleave270Part30,maskleave270Part31,maskleave270Part32,maskleave270Part33,maskleave270Part34,maskleave270Part35,maskleave270Part36,maskleave270Part37,maskleave270Part38,Bool.and_self]
+  simp only [leave270,List.all_append,maskleave270Part0,maskleave270Part1,maskleave270Part2,maskleave270Part3,maskleave270Part4,maskleave270Part5,maskleave270Part6,maskleave270Part7,maskleave270Part8,maskleave270Part9,maskleave270Part10,maskleave270Part11,maskleave270Part12,maskleave270Part13,maskleave270Part14,maskleave270Part15,maskleave270Part16,maskleave270Part17,maskleave270Part18,maskleave270Part19,maskleave270Part20,maskleave270Part21,maskleave270Part22,maskleave270Part23,maskleave270Part24,maskleave270Part25,maskleave270Part26,maskleave270Part27,maskleave270Part28,maskleave270Part29,maskleave270Part30,maskleave270Part31,maskleave270Part32,maskleave270Part33,maskleave270Part34,maskleave270Part35,maskleave270Part36,maskleave270Part37,maskleave270Part38,maskleave270Part39,Bool.and_self]
 theorem exterior (s:State) (m:List Bool) (q:Wire) (ext:Exterior 270 529 q):
     (run leave270 m s).basis q=s.basis q:=by
   apply preserve_readonly
@@ -30441,8 +25559,9 @@ private theorem maskleave270InvPart35 : leave270InvPart35.all writesInside=true:
 private theorem maskleave270InvPart36 : leave270InvPart36.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private theorem maskleave270InvPart37 : leave270InvPart37.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private theorem maskleave270InvPart38 : leave270InvPart38.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private theorem maskleave270InvPart39 : leave270InvPart39.all writesInside=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem writesInv : leave270Inv.all writesInside=true:=by
-  simp only [leave270Inv,List.all_append,maskleave270InvPart0,maskleave270InvPart1,maskleave270InvPart2,maskleave270InvPart3,maskleave270InvPart4,maskleave270InvPart5,maskleave270InvPart6,maskleave270InvPart7,maskleave270InvPart8,maskleave270InvPart9,maskleave270InvPart10,maskleave270InvPart11,maskleave270InvPart12,maskleave270InvPart13,maskleave270InvPart14,maskleave270InvPart15,maskleave270InvPart16,maskleave270InvPart17,maskleave270InvPart18,maskleave270InvPart19,maskleave270InvPart20,maskleave270InvPart21,maskleave270InvPart22,maskleave270InvPart23,maskleave270InvPart24,maskleave270InvPart25,maskleave270InvPart26,maskleave270InvPart27,maskleave270InvPart28,maskleave270InvPart29,maskleave270InvPart30,maskleave270InvPart31,maskleave270InvPart32,maskleave270InvPart33,maskleave270InvPart34,maskleave270InvPart35,maskleave270InvPart36,maskleave270InvPart37,maskleave270InvPart38,Bool.and_self]
+  simp only [leave270Inv,List.all_append,maskleave270InvPart0,maskleave270InvPart1,maskleave270InvPart2,maskleave270InvPart3,maskleave270InvPart4,maskleave270InvPart5,maskleave270InvPart6,maskleave270InvPart7,maskleave270InvPart8,maskleave270InvPart9,maskleave270InvPart10,maskleave270InvPart11,maskleave270InvPart12,maskleave270InvPart13,maskleave270InvPart14,maskleave270InvPart15,maskleave270InvPart16,maskleave270InvPart17,maskleave270InvPart18,maskleave270InvPart19,maskleave270InvPart20,maskleave270InvPart21,maskleave270InvPart22,maskleave270InvPart23,maskleave270InvPart24,maskleave270InvPart25,maskleave270InvPart26,maskleave270InvPart27,maskleave270InvPart28,maskleave270InvPart29,maskleave270InvPart30,maskleave270InvPart31,maskleave270InvPart32,maskleave270InvPart33,maskleave270InvPart34,maskleave270InvPart35,maskleave270InvPart36,maskleave270InvPart37,maskleave270InvPart38,maskleave270InvPart39,Bool.and_self]
 theorem exteriorInv (s:State) (m:List Bool) (q:Wire) (ext:Exterior 270 529 q):
     (run leave270Inv m s).basis q=s.basis q:=by
   apply preserve_readonly
@@ -30607,36 +25726,6 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
-
-/-- R1 precondition at the mux of leave225, under the hypotheses of `result`. -/
-theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^144)
-    (ready:onRails 10 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).v) s.basis)
-    (fresh:s.basis 1723=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (_odd:z.v%2=1) (_room:Shadow.high 144 15 z+1<2^97)
-    (_clean:∀q∈carries,s.basis q=false)
-    (_padding:∀i:Nat,97 ≤ i → i<112 → s.basis (wire i)=false)
-    (_bank:regValue ys s.basis=if Shadow.far 144 15 z then Shadow.high 144 15 z else 0)
-    (zero:∀q∈Leave225FrontReady.watched,s.basis q=false)
-    (_par:Leave225EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 144 15 z)))
-    (mode:actualMode 144 z=farMode (s.basis 1721) (s.basis 1722) z.u)
-    (events:right (actualMode 144 z)=true → ∀i<15,i≤key (actualMode 144 z) → s.basis (Leave225Hit.swaps i)=decide (i=key (actualMode 144 z)))
-    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^136)
-    (_bound:Leave225TrueMiddle.F z<2^112) :
-    (run (leave225.take 302) m s).basis 1724=false ∧
-      ∀r∈Partial.leave225Rows,(run (leave225.take 302) m s).basis r.1=true → r.2=401+key (actualMode 144 z) := by
-  let a:=run entry m s
-  let k:=actualMode 144 z
-  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
-  have sw:∀i:Fin 15,Leave225Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have shape : leave225.take 302=entry++crossPrefix := by decide +kernel
-  rw [shape]
-  exact Leave225FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
-    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
-    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave225PostReady
 
 end
@@ -30794,36 +25883,6 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
-
-/-- R1 precondition at the mux of leave240, under the hypotheses of `result`. -/
-theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^136)
-    (ready:onRails 11 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).v) s.basis)
-    (fresh:s.basis 1715=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (_odd:z.v%2=1) (_room:Shadow.high 136 15 z+1<2^105)
-    (_clean:∀q∈carries,s.basis q=false)
-    (_padding:∀i:Nat,105 ≤ i → i<120 → s.basis (wire i)=false)
-    (_bank:regValue ys s.basis=if Shadow.far 136 15 z then Shadow.high 136 15 z else 0)
-    (zero:∀q∈Leave240FrontReady.watched,s.basis q=false)
-    (_par:Leave240EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 136 15 z)))
-    (mode:actualMode 136 z=farMode (s.basis 1713) (s.basis 1714) z.u)
-    (events:right (actualMode 136 z)=true → ∀i<15,i≤key (actualMode 136 z) → s.basis (Leave240Hit.swaps i)=decide (i=key (actualMode 136 z)))
-    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^129)
-    (_bound:Leave240TrueMiddle.F z<2^120) :
-    (run (leave240.take 302) m s).basis 1716=false ∧
-      ∀r∈Partial.leave240Rows,(run (leave240.take 302) m s).basis r.1=true → r.2=408+key (actualMode 136 z) := by
-  let a:=run entry m s
-  let k:=actualMode 136 z
-  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
-  have sw:∀i:Fin 15,Leave240Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have shape : leave240.take 302=entry++crossPrefix := by decide +kernel
-  rw [shape]
-  exact Leave240FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
-    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
-    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave240PostReady
 
 end
@@ -31050,36 +26109,6 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
-
-/-- R1 precondition at the mux of leave255, under the hypotheses of `result`. -/
-theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^129)
-    (ready:onRails 12 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).v) s.basis)
-    (fresh:s.basis 1708=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (_odd:z.v%2=1) (_room:Shadow.high 129 15 z+1<2^112)
-    (_clean:∀q∈carries,s.basis q=false)
-    (_padding:∀i:Nat,112 ≤ i → i<127 → s.basis (wire i)=false)
-    (_bank:regValue ys s.basis=if Shadow.far 129 15 z then Shadow.high 129 15 z else 0)
-    (zero:∀q∈Leave255FrontReady.watched,s.basis q=false)
-    (_par:Leave255EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 129 15 z)))
-    (mode:actualMode 129 z=farMode (s.basis 1706) (s.basis 1707) z.u)
-    (events:right (actualMode 129 z)=true → ∀i<15,i≤key (actualMode 129 z) → s.basis (Leave255Hit.swaps i)=decide (i=key (actualMode 129 z)))
-    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^121)
-    (_bound:Leave255TrueMiddle.F z<2^127) :
-    (run (leave255.take 302) m s).basis 1709=false ∧
-      ∀r∈Partial.leave255Rows,(run (leave255.take 302) m s).basis r.1=true → r.2=416+key (actualMode 129 z) := by
-  let a:=run entry m s
-  let k:=actualMode 129 z
-  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
-  have sw:∀i:Fin 15,Leave255Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have shape : leave255.take 302=entry++crossPrefix := by decide +kernel
-  rw [shape]
-  exact Leave255FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
-    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
-    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave255PostReady
 
 namespace ECDSAAdd.Entrant.StairPacket.Leave270PostReady
@@ -31160,36 +26189,6 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     rcases dst with e|⟨a,b,c,hq⟩
     · rw [e];exact flags.2.1
     · exact (flags.2.2.2.2.2.2 _ a b c).trans (cleared _ hq)
-
-/-- R1 precondition at the mux of leave270, under the hypotheses of `result`. -/
-theorem crossClean (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^121)
-    (ready:onRails 13 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 121 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 121 15 z)).v) s.basis)
-    (fresh:s.basis 1700=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (_odd:z.v%2=1) (_room:Shadow.high 121 15 z+1<2^120)
-    (_clean:∀q∈carries,s.basis q=false)
-    (_padding:∀i:Nat,120 ≤ i → i<135 → s.basis (wire i)=false)
-    (_bank:regValue ys s.basis=if Shadow.far 121 15 z then Shadow.high 121 15 z else 0)
-    (zero:∀q∈Leave270FrontReady.watched,s.basis q=false)
-    (_par:Leave270EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 121 15 z)))
-    (mode:actualMode 121 z=farMode (s.basis 1698) (s.basis 1699) z.u)
-    (events:right (actualMode 121 z)=true → ∀i<15,i≤key (actualMode 121 z) → s.basis (Leave270Hit.swaps i)=decide (i=key (actualMode 121 z)))
-    (_nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^114)
-    (_bound:Leave270TrueMiddle.F z<2^135) :
-    (run (leave270.take 302) m s).basis 1701=false ∧
-      ∀r∈Partial.leave270Rows,(run (leave270.take 302) m s).basis r.1=true → r.2=423+key (actualMode 121 z) := by
-  let a:=run entry m s
-  let k:=actualMode 121 z
-  have selRaw (q:Wire) (ok:q∉entry.map destination):a.basis q=s.basis q := preserved entry s m q ok
-  have sw:∀i:Fin 15,Leave270Hit.swaps i∉entry.map destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have shape : leave270.take 302=entry++crossPrefix := by decide +kernel
-  rw [shape]
-  exact Leave270FrontPrepare.atCross s m z G sg small ready fresh scratch temp zero k z.u
-    (by change k=farMode (a.basis _) (a.basis _) z.u;rw [selRaw _ (by decide),selRaw _ (by decide)];exact mode)
-    (fun on i hi h=>(selRaw _ (sw ⟨i,hi⟩)).trans (events on i hi h))
 end ECDSAAdd.Entrant.StairPacket.Leave270PostReady
 
 end
@@ -31326,35 +26325,6 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   apply Leave225Mirror.inverts s phase initial  _ _ m n
   · exact Leave225CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1269,1556) (by decide)).2
-
-/-- R1: the physical pair runs like the reference and inverts itself. -/
-theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^144)
-    (ready:onRails 10 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 144 15 z)).v) s.basis)
-    (fresh:s.basis 1723=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (odd:z.v%2=1) (room:Shadow.high 144 15 z+1<2^97)
-    (clean:∀q∈carries,s.basis q=false)
-    (padding:∀i:Nat,97 ≤ i → i<112 → s.basis (wire i)=false)
-    (bank:regValue ys s.basis=if Shadow.far 144 15 z then Shadow.high 144 15 z else 0)
-    (zero:∀q∈Leave225FrontReady.watched,s.basis q=false)
-    (par:Leave225EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 144 15 z)))
-    (mode:actualMode 144 z=farMode (s.basis 1721) (s.basis 1722) z.u)
-    (events:right (actualMode 144 z)=true → ∀i<15,i≤key (actualMode 144 z) → s.basis (Leave225Hit.swaps i)=decide (i=key (actualMode 144 z)))
-    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^136)
-    (bound:Leave225TrueMiddle.F z<2^112)
-    (phase:∀o,(run leave225 o s).phase=s.phase)
-    (initial:∀q,1556≤q→q≤1717→s.basis q=false)
-    : (∀o,run leave225Move o s=run leave225 o s) ∧ run leave225MoveInv n (run leave225Move m s)=s:=by
-  have atCore:=Leave225CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
-  have atPost:=Leave225PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  have hot (o:List Bool):=Leave225PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  refine ⟨fun o=>Leave225Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
-  apply Leave225Mirror.invertsMove s phase initial  _ _ (401+key (actualMode 144 z)) hot m n
-  · exact Leave225CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
-  · exact (atPost.2.2.2.2 (1269,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave225Roundtrip
 
 end
@@ -31447,35 +26417,6 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   have atCore:=Leave240CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
   have atPost:=Leave240PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
   apply Leave240Mirror.inverts s phase initial  _ _ m n
-  · exact Leave240CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
-  · exact (atPost.2.2.2.2 (1284,1556) (by decide)).2
-
-/-- R1: the physical pair runs like the reference and inverts itself. -/
-theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^136)
-    (ready:onRails 11 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 136 15 z)).v) s.basis)
-    (fresh:s.basis 1715=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (odd:z.v%2=1) (room:Shadow.high 136 15 z+1<2^105)
-    (clean:∀q∈carries,s.basis q=false)
-    (padding:∀i:Nat,105 ≤ i → i<120 → s.basis (wire i)=false)
-    (bank:regValue ys s.basis=if Shadow.far 136 15 z then Shadow.high 136 15 z else 0)
-    (zero:∀q∈Leave240FrontReady.watched,s.basis q=false)
-    (par:Leave240EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 136 15 z)))
-    (mode:actualMode 136 z=farMode (s.basis 1713) (s.basis 1714) z.u)
-    (events:right (actualMode 136 z)=true → ∀i<15,i≤key (actualMode 136 z) → s.basis (Leave240Hit.swaps i)=decide (i=key (actualMode 136 z)))
-    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^129)
-    (bound:Leave240TrueMiddle.F z<2^120)
-    (phase:∀o,(run leave240 o s).phase=s.phase)
-    (initial:∀q,1556≤q→q≤1709→s.basis q=false)
-    : (∀o,run leave240Move o s=run leave240 o s) ∧ run leave240MoveInv n (run leave240Move m s)=s:=by
-  have atCore:=Leave240CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
-  have atPost:=Leave240PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  have hot (o:List Bool):=Leave240PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  refine ⟨fun o=>Leave240Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
-  apply Leave240Mirror.invertsMove s phase initial  _ _ (408+key (actualMode 136 z)) hot m n
   · exact Leave240CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1284,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave240Roundtrip
@@ -31573,36 +26514,6 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   apply Leave255Mirror.inverts s phase initial extra  _ _ m n
   · exact Leave255CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1299,1556) (by decide)).2
-
-/-- R1: the physical pair runs like the reference and inverts itself. -/
-theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^129)
-    (ready:onRails 12 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 129 15 z)).v) s.basis)
-    (fresh:s.basis 1708=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (odd:z.v%2=1) (room:Shadow.high 129 15 z+1<2^112)
-    (clean:∀q∈carries,s.basis q=false)
-    (padding:∀i:Nat,112 ≤ i → i<127 → s.basis (wire i)=false)
-    (bank:regValue ys s.basis=if Shadow.far 129 15 z then Shadow.high 129 15 z else 0)
-    (zero:∀q∈Leave255FrontReady.watched,s.basis q=false)
-    (par:Leave255EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 129 15 z)))
-    (mode:actualMode 129 z=farMode (s.basis 1706) (s.basis 1707) z.u)
-    (events:right (actualMode 129 z)=true → ∀i<15,i≤key (actualMode 129 z) → s.basis (Leave255Hit.swaps i)=decide (i=key (actualMode 129 z)))
-    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^121)
-    (bound:Leave255TrueMiddle.F z<2^127)
-    (phase:∀o,(run leave255 o s).phase=s.phase)
-    (initial:∀q,1556≤q→q≤1702→s.basis q=false)
-    (extra:∀q,1713≤q→q≤1718→s.basis q=false)
-    : (∀o,run leave255Move o s=run leave255 o s) ∧ run leave255MoveInv n (run leave255Move m s)=s:=by
-  have atCore:=Leave255CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
-  have atPost:=Leave255PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  have hot (o:List Bool):=Leave255PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  refine ⟨fun o=>Leave255Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
-  apply Leave255Mirror.invertsMove s phase initial extra  _ _ (416+key (actualMode 129 z)) hot m n
-  · exact Leave255CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
-  · exact (atPost.2.2.2.2 (1299,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave255Roundtrip
 
 namespace ECDSAAdd.Entrant.StairPacket.Leave270Roundtrip
@@ -31633,36 +26544,6 @@ theorem result (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool
   have atCore:=Leave270CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
   have atPost:=Leave270PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
   apply Leave270Mirror.inverts s phase initial extra  _ _ m n
-  · exact Leave270CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
-  · exact (atPost.2.2.2.2 (1799,1556) (by decide)).2
-
-/-- R1: the physical pair runs like the reference and inverts itself. -/
-theorem moved (s : State) (m n : List Bool) (z : SkywalkNat.State) (G sg : Bool)
-    (small:min z.u z.v<2^121)
-    (ready:onRails 13 15 (SkywalkRails.encode G sg (SkywalkNat.step^[15] (Shadow.reduced 121 15 z)).u
-        (SkywalkNat.step^[15] (Shadow.reduced 121 15 z)).v) s.basis)
-    (fresh:s.basis 1700=false)
-    (scratch:∀q∈1556::1557::1558::fullC,s.basis q=false)
-    (temp:∀p∈longPairs,s.basis p.2=false)
-    (odd:z.v%2=1) (room:Shadow.high 121 15 z+1<2^120)
-    (clean:∀q∈carries,s.basis q=false)
-    (padding:∀i:Nat,120 ≤ i → i<135 → s.basis (wire i)=false)
-    (bank:regValue ys s.basis=if Shadow.far 121 15 z then Shadow.high 121 15 z else 0)
-    (zero:∀q∈Leave270FrontReady.watched,s.basis q=false)
-    (par:Leave270EntryAction.oddRead s.basis=oddBits (letters 15 (Shadow.reduced 121 15 z)))
-    (mode:actualMode 121 z=farMode (s.basis 1698) (s.basis 1699) z.u)
-    (events:right (actualMode 121 z)=true → ∀i<15,i≤key (actualMode 121 z) → s.basis (Leave270Hit.swaps i)=decide (i=key (actualMode 121 z)))
-    (nextSmall:min (SkywalkNat.step^[15] z).u (SkywalkNat.step^[15] z).v<2^114)
-    (bound:Leave270TrueMiddle.F z<2^135)
-    (phase:∀o,(run leave270 o s).phase=s.phase)
-    (initial:∀q,1556≤q→q≤1694→s.basis q=false)
-    (extra:∀q,1705≤q→q≤1726→s.basis q=false)
-    : (∀o,run leave270Move o s=run leave270 o s) ∧ run leave270MoveInv n (run leave270Move m s)=s:=by
-  have atCore:=Leave270CoreCheckpoint.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events
-  have atPost:=Leave270PostReady.result s [] z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  have hot (o:List Bool):=Leave270PostReady.crossClean s o z G sg small ready fresh scratch temp odd room clean padding bank zero par mode events nextSmall bound
-  refine ⟨fun o=>Leave270Mirror.sameRun s o _ (hot o).1 (hot o).2,?_⟩
-  apply Leave270Mirror.invertsMove s phase initial extra  _ _ (423+key (actualMode 121 z)) hot m n
   · exact Leave270CoreCheckpoint.oracle s _ atCore.1 atCore.2.2.1 clean
   · exact (atPost.2.2.2.2 (1799,1556) (by decide)).2
 end ECDSAAdd.Entrant.StairPacket.Leave270Roundtrip
@@ -32526,7 +27407,7 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
       (∀q∈history,out.basis q=s.basis q) ∧
       (∀i:Fin 12,let pos:=(a.u+a.v).testBit (121+i.val);let neg:=mag.testBit (121+i.val) ^^ sign
                    out.basis (422+i.val)=(if G then neg else pos) ∧ out.basis (907+i.val)=(if G then pos else neg)) ∧
-      ∀i:Fin 95,out.basis (919+i.val)=(a.u+a.v).testBit (133+i.val) := by
+      ∀i:Fin 103,out.basis (919+i.val)=(a.u+a.v).testBit (133+i.val) := by
   let out:=run leave270 m s
   let v:=run Leave270StoreMapped.program m s
   let b:=run Leave270BeforeStore.program m s
@@ -32551,8 +27432,8 @@ theorem result (s : State) (m : List Bool) (z : SkywalkNat.State) (G sg : Bool)
     obtain ⟨hx,hy,dx,dy⟩:=intact i
     exact ⟨(atSite _ _ hx dx).trans (store.2.2.1 i).1,(atSite _ _ hy dy).trans (store.2.2.1 i).2⟩
   · intro i
-    have geo:∀j:Fin 95,live (11+j.val)≠1699 ∧ live (11+j.val)∉RailPair.sites low ∧ live (11+j.val)∉history := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-    have a:=flagAt _ _ (upperMap i).1 (geo i)
+    have geo:∀j:Fin 103,live (11+j.val)≠1699 ∧ live (11+j.val)∉RailPair.sites low ∧ live (11+j.val)∉history := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+    have a:=flagAt _ _ (upperMap ⟨i.val,by have:=i.isLt;omega⟩).1 (geo i)
     have n:11+i.val<135 := by have h:=i.isLt;omega
     have hi:=(before.2.2.2.2.2.1 _ n)
     unfold Leave270TrueMiddle.F at hi
@@ -33728,83 +28609,9 @@ set_option maxRecDepth 35000
 set_option maxHeartbeats 4000000
 
 def leftovers (q : Wire) : Prop :=
-  (285≤q ∧ q<301) ∨ (1314≤q ∧ q<1329) ∨ q=529 ∨ (1014≤q ∧ q≤1042) ∨ (1785≤q ∧ q≤1812)
+  (285≤q ∧ q<301) ∨ (1314≤q ∧ q<1329) ∨ (1785≤q ∧ q≤1812)
 
-private theorem indexOfRange (q start count:Nat) (a:start≤q) (b:q<start+count) :
-    ∃i:Fin count, start+i.val=q :=
-  ⟨⟨q-start,by omega⟩,by change start+(q-start)=q;omega⟩
 
-theorem result (s o : State) (neg far long : Bool)
-    (phase : s.phase=o.phase) (sign : s.basis 1693=neg) (mode : s.basis 1691=far) (side : s.basis 1692=long)
-    (low : ∀i:Fin 133, s.basis (301+i.val)=o.basis (301+i.val) ∧ s.basis (786+i.val)=o.basis (786+i.val))
-    (high : ∀i:Fin 95, s.basis (434+i.val)=false ∧
-      s.basis (919+i.val)=(if o.basis 300 then o.basis (919+i.val) else o.basis (434+i.val)))
-    (ext : ∀q,Exterior 270 529 q → s.basis q=o.basis q)
-    (left : ∀q,leftovers q → s.basis q=o.basis q)
-    (clear : ∀q∈Leave270BoundaryClean.zeros,s.basis q=false)
-    (carry : ∀q:Wire,1556≤q → q≤1784 → o.basis q=false) :
-    PackedCut Portal285Flag.loPairs Portal285Flag.hiPairs 300 1693 1691 1692 neg far long o (eraseSites ParkEndpoint.src s) := by
-  have loShape : Portal285Flag.loPairs=(List.finRange 3).map (fun j=>(301+(130+j.val),786+(130+j.val))) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have hiShape : Portal285Flag.hiPairs=(List.finRange 95).map (fun j=>(434+j.val,919+j.val)) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  have away (q:Wire) (small:q<1556) : (eraseSites ParkEndpoint.src s).basis q=s.basis q := by
-    have no:q∉ParkEndpoint.src:=by simp [ParkEndpoint.src,Wire] at *;omega
-    simp [eraseSites,no]
-  refine ⟨phase,?_,?_,?_,?_,?_,?_⟩
-  · simpa [eraseSites,ParkEndpoint.src] using sign
-  · simpa [eraseSites,ParkEndpoint.src] using mode
-  · simpa [eraseSites,ParkEndpoint.src] using side
-  · intro pair mem
-    rw [loShape] at mem
-    obtain ⟨j,_,rfl⟩:=List.mem_map.mp mem
-    dsimp only
-    have hj:=j.isLt
-    rw [away (301+(130+j.val)) (by change 301+(130+j.val)<1556;omega),away (786+(130+j.val)) (by change 786+(130+j.val)<1556;omega)]
-    exact low ⟨130+j.val,by omega⟩
-  · intro pair mem
-    rw [hiShape] at mem
-    obtain ⟨j,_,rfl⟩:=List.mem_map.mp mem
-    dsimp only
-    have hj:=j.isLt
-    rw [away (434+j.val) (by change 434+j.val<1556;omega),away (919+j.val) (by change 919+j.val<1556;omega)]
-    exact high j
-  · intro q notN notF notU _ notHi
-    by_cases pending:q∈ParkEndpoint.src
-    · have range : ∀q∈ParkEndpoint.src,1556≤q ∧ q≤1784 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-      obtain ⟨lo,hi⟩:=range q pending
-      simp [eraseSites,pending,carry q lo hi]
-    simp only [eraseSites,if_neg pending]
-    by_cases external:Exterior 270 529 q
-    · exact ext q external
-    by_cases residual:leftovers q
-    · exact left q residual
-    have hiA (i:Fin 95) : 434+i.val∈sites Portal285Flag.hiPairs := by
-      exact (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel) : ∀i:Fin 95,434+i.val∈sites Portal285Flag.hiPairs) i
-    have hiB (i:Fin 95) : 919+i.val∈sites Portal285Flag.hiPairs := by
-      exact (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel) : ∀i:Fin 95,919+i.val∈sites Portal285Flag.hiPairs) i
-    have outside (start count:Nat) (h:∀i:Fin count,start+i.val∈sites Portal285Flag.hiPairs) : ¬(start≤q ∧ q<start+count) := by
-      rintro ⟨a,b⟩
-      obtain ⟨i,eq⟩:=indexOfRange q start count a b
-      exact notHi (eq ▸ h i)
-    have notA:=outside _ _ hiA
-    have notB:=outside _ _ hiB
-    by_cases a:301≤q ∧ q<434
-    · obtain ⟨l,r⟩:=a
-      obtain ⟨i,eq⟩:=indexOfRange q 301 133 l r
-      exact eq ▸ (low i).1
-    by_cases b:786≤q ∧ q<919
-    · obtain ⟨l,r⟩:=b
-      obtain ⟨i,eq⟩:=indexOfRange q 786 133 l r
-      exact eq ▸ (low i).2
-    have bounds : 1556≤q ∧ q≤1784 := by
-      unfold Exterior at external;unfold leftovers at residual
-      simp only [Wire] at *
-      omega
-    rw [carry _ bounds.1 bounds.2]
-    apply clear
-    simp only [Leave270BoundaryClean.zeros,List.mem_append,List.mem_range'_1]
-    simp [ParkEndpoint.src,Wire] at pending
-    simp only [Wire] at *
-    omega
 end ECDSAAdd.Entrant.StairPacket.Leave270AssembleCut
 
 end
@@ -33854,7 +28661,6 @@ set_option maxRecDepth 32000
 set_option maxHeartbeats 2700000
 
 def mirrorSites:=List.range' 1301 13
-def untouched:=529::(List.range' 1314 15)
 
 /-- Window 270 leaves the placed homes 1301..1313 of the dead carries 1800..1812 clean (the history fold of
 `WideReference.advance270`). -/
@@ -33914,24 +28720,6 @@ theorem future (d:Bool) (raw s:State) (x p:Nat) (dom:Domain 270 x p raw) (a b:Li
     (cut.unchanged q hn hf hu no).trans (by simpa only [pullState,source] using original)
   simpa [eraseSites,mask] using cleared
 
-theorem agree (d:Bool) (raw s:State) (x p:Nat) (good:Bounds x p) (dom:Domain 270 x p raw)
-    (a b m:List Bool) (neg far long:Bool)
-    (cut:PackedCut Enter270.lowerPairs Enter270.upperPairs 285 1700 1698 1699 neg far long
-      (pullState (OB5.sig 269) raw) (eraseSites Enter270.pending s))
-    (band:∀q:Wire,1014≤q → q≤1042 → (run leave270 m (run (body idx (withArchive d)) b (run enter270 a s))).basis q=false) :
-    let v:=run (body idx (withArchive d)) b (run enter270 a s)
-    ∀q:Wire, Leave270ReleasedOrigin.releasedSite q → (run leave270 m v).basis q=(origin 270 raw v).basis q := by
-  have stable : ∀q∈untouched,q∉leave270.map LeaveReadoutFrame.destination := by ((try unfold ECDSAAdd.Entrant.StairPacket.Leave270ReleasedActual.untouched); open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  dsimp only
-  intro q site
-  rw [Leave270ReleasedOrigin.released _ _ good _ _ dom _ site]
-  rcases site with rfl|⟨lo,hi⟩|⟨lo,hi⟩
-  · rw [preserved _ _ _ _ (stable 529 (by decide))]
-    exact upper_clear _ _ _ _ _ dom _ _ _ _ _ cut 529 (by decide) (by decide)
-  · exact band q lo hi
-  · have mem:q∈untouched:=List.mem_cons_of_mem _ (List.mem_range'_1.mpr ⟨lo,by omega⟩)
-    rw [preserved _ _ _ _ (stable q mem)]
-    exact future d raw s x p dom a b neg far long cut q lo hi
 
 /-- leave270 never writes the physical fold homes 1800..1812 (its wires stop at 1799). -/
 theorem foldKept (s:State) (m:List Bool) (q:Wire) (h:q∈WideReference.foldSites) : (run leave270 m s).basis q=s.basis q := by
@@ -34437,7 +29225,7 @@ theorem result (x p : Nat) (good:Bounds x p) (raw s:State) (m:List Bool) (g sg:B
     (input:InputAt 270 (encode g sg (unsigned 270 x p).u (unsigned 270 x p).v) raw)
     (record:physicalCells 13 s=SkywalkTrace.trace 15 (encode g sg (unsigned 270 x p).u (unsigned 270 x p).v))
     (kept:physicalCells 13 (run leave270 m s)=physicalCells 13 s)
-    (extra:∀q:Wire,Leave270ReleasedOrigin.releasedSite q → (run leave270 m s).basis q=(origin 270 raw s).basis q) :
+    (mirror:∀q:Wire,1314≤q → q≤1328 → s.basis q=false) :
     ∀q,Leave270AssembleCut.leftovers q → q∉WideReference.foldSites → (run leave270 m s).basis q=(origin 270 raw s).basis q := by
   let out:=run leave270 m s
   let o:=origin 270 raw s
@@ -34469,10 +29257,16 @@ theorem result (x p : Nat) (good:Bounds x p) (raw s:State) (m:List Bool) (g sg:B
   by_cases sw:q∈ss
   · obtain ⟨i,_,rfl⟩:=List.mem_map.mp sw;exact (agree i).2
   have census : ∀a:Fin 1813,Leave270AssembleCut.leftovers a.val → a.val≠285 → a.val∉gs → a.val∉ss → a.val∉WideReference.foldSites →
-      Leave270ReleasedOrigin.releasedSite a.val := by
-    unfold Leave270AssembleCut.leftovers; dsimp only [gs,ss];set_option synthInstance.maxSize 4096 in decide +kernel
+      1314≤a.val ∧ a.val≤1328 := by
+    unfold Leave270AssembleCut.leftovers; dsimp only [gs,ss];(open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
   have bound:q<1813:=by unfold Leave270AssembleCut.leftovers at residual;simp only [Wire] at *;omega
-  exact extra q (census ⟨q,bound⟩ residual prev gg sw unfolded)
+  have fold:=census ⟨q,bound⟩ residual prev gg sw unfolded
+  have unwritten:∀w∈List.range' 1314 15,w∉leave270.map LeaveReadoutFrame.destination:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have homes:∀w∈List.range' 1314 15,w∉sites 270 ∧ OB5.sig (270+14) w=3113-w:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have mem:q∈List.range' 1314 15:=List.mem_range'_1.mpr ⟨fold.1,Nat.lt_succ_of_le fold.2⟩
+  rw [LeaveReadoutFrame.preserved _ _ _ _ (unwritten q mem),mirror q fold.1 fold.2,outside _ _ _ _ (homes q mem).1,(homes q mem).2]
+  exact (WideReference.full_carry 270 15 x p (by decide) good raw domain [] _
+    (Nat.le_trans (by decide) (Nat.sub_le_sub_left fold.2 3113)) (Nat.le_trans (Nat.sub_le_sub_left fold.1 3113) (by decide))).symm
 end ECDSAAdd.Entrant.StairPacket.Leave270FrameHistory
 
 end
@@ -34496,18 +29290,6 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave225 o s).phase=s.phase:=by
     exact (Leave225Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave225Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry225 _ s h.ready)
-
-theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
-    (∀o,run leave225Move o s=run leave225 o s) ∧ ∀m n,run leave225MoveInv n (run leave225Move m s)=s:=by
-  let u:=flags z g0 s0
-  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
-  have par:=Leave225RecordedParity.result s z g0 s0 h.small h.odd h.record
-  have mode : actualMode 144 z=farMode (s.basis 1721) (s.basis 1722) z.u:=by
-    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
-  have ev:=Leave225RecordedEvents.result s z g0 s0 h.small h.odd h.record
-  have ph (o:List Bool) : (run leave225 o s).phase=s.phase:=by
-    exact (Leave225Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
-  exact ⟨fun o=>(Leave225Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry225 _ s h.ready)).1 o,fun m n=>(Leave225Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry225 _ s h.ready)).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave225Admission
 
 end
@@ -34595,18 +29377,6 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave240 o s).phase=s.phase:=by
     exact (Leave240Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave240Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry240 _ s h.ready)
-
-theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
-    (∀o,run leave240Move o s=run leave240 o s) ∧ ∀m n,run leave240MoveInv n (run leave240Move m s)=s:=by
-  let u:=flags z g0 s0
-  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
-  have par:=Leave240RecordedParity.result s z g0 s0 h.small h.odd h.record
-  have mode : actualMode 136 z=farMode (s.basis 1713) (s.basis 1714) z.u:=by
-    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
-  have ev:=Leave240RecordedEvents.result s z g0 s0 h.small h.odd h.record
-  have ph (o:List Bool) : (run leave240 o s).phase=s.phase:=by
-    exact (Leave240Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
-  exact ⟨fun o=>(Leave240Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry240 _ s h.ready)).1 o,fun m n=>(Leave240Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry240 _ s h.ready)).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave240Admission
 
 end
@@ -34694,18 +29464,6 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave255 o s).phase=s.phase:=by
     exact (Leave255Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave255Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry255 _ s h.ready) h.extra
-
-theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
-    (∀o,run leave255Move o s=run leave255 o s) ∧ ∀m n,run leave255MoveInv n (run leave255Move m s)=s:=by
-  let u:=flags z g0 s0
-  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
-  have par:=Leave255RecordedParity.result s z g0 s0 h.small h.odd h.record
-  have mode : actualMode 129 z=farMode (s.basis 1706) (s.basis 1707) z.u:=by
-    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
-  have ev:=Leave255RecordedEvents.result s z g0 s0 h.small h.odd h.record
-  have ph (o:List Bool) : (run leave255 o s).phase=s.phase:=by
-    exact (Leave255Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
-  exact ⟨fun o=>(Leave255Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry255 _ s h.ready) h.extra).1 o,fun m n=>(Leave255Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry255 _ s h.ready) h.extra).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave255Admission
 
 namespace ECDSAAdd.Entrant.StairPacket.Leave270Admission
@@ -34725,18 +29483,6 @@ theorem Inputs.roundtrip {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s
   have ph (o:List Bool) : (run leave270 o s).phase=s.phase:=by
     exact (Leave270Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
   exact Leave270Roundtrip.result s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry270 _ s h.ready) h.extra
-
-theorem Inputs.moved {s:State} {z:SkywalkNat.State} {g0 s0:Bool} (h:Inputs s z g0 s0):
-    (∀o,run leave270Move o s=run leave270 o s) ∧ ∀m n,run leave270MoveInv n (run leave270Move m s)=s:=by
-  let u:=flags z g0 s0
-  let xs:=SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
-  have par:=Leave270RecordedParity.result s z g0 s0 h.small h.odd h.record
-  have mode : actualMode 121 z=farMode (s.basis 1698) (s.basis 1699) z.u:=by
-    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
-  have ev:=Leave270RecordedEvents.result s z g0 s0 h.small h.odd h.record
-  have ph (o:List Bool) : (run leave270 o s).phase=s.phase:=by
-    exact (Leave270Whole.result s o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side).1
-  exact ⟨fun o=>(Leave270Roundtrip.moved s o o z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry270 _ s h.ready) h.extra).1 o,fun m n=>(Leave270Roundtrip.moved s m n z u.1 u.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode ev.2 h.nextSmall h.bound ph (carry270 _ s h.ready) h.extra).2⟩
 end ECDSAAdd.Entrant.StairPacket.Leave270Admission
 
 end
@@ -34838,74 +29584,7 @@ set_option maxRecDepth 40000
 set_option maxHeartbeats 4500000
 attribute [local irreducible] run SkywalkNat.step
 
-private theorem flagEq (g sg:Bool) (u v:Int) : (encode g sg u v).g=g := by cases g <;> rfl
-private theorem both (P Q:Prop) [Decidable P] [Decidable Q] : (decide P && decide Q)=decide (P ∧ Q) := by
-  by_cases a:P <;> by_cases b:Q <;> simp [a,b]
 
-theorem result (x p : Nat) (good:Bounds x p) (raw s : State) (m:List Bool) (g0 s0:Bool)
-    (dom:Domain 270 x p raw)
-    (input:InputAt 270 (encode g0 s0 (unsigned 270 x p).u (unsigned 270 x p).v) raw)
-    (h:Leave270Admission.Inputs s (unsigned 270 x p) g0 s0)
-    (phase:s.phase=(origin 270 raw s).phase)
-    (ext:∀q,Exterior 270 529 q → s.basis q=(origin 270 raw s).basis q)
-    (upper:∀q:Nat,441≤q → q≤529 → s.basis q=false)
-    (quiet:∀q∈Leave270CoreCheckpoint.rawSites,s.basis q=false)
-    (extra:∀q:Wire,Leave270ReleasedOrigin.releasedSite q → (run leave270 m s).basis q=(origin 270 raw s).basis q)
-    (clean:∀q:Wire,1301≤q → q≤1313 → s.basis q=false) :
-    let z:=unsigned 270 x p
-    let flags:=Leave270Admission.flags z g0 s0
-    let a:=unsigned 285 x p
-    let out:=run leave270 m s
-    PackedCut Portal285Flag.loPairs Portal285Flag.hiPairs 300 1693 1691 1692 (PortalValues.negative flags.2 a.u)
-      (decide (Shadow.far 114 15 a)) (decide (Shadow.far 114 15 a ∧ 2^114≤a.u))
-      (pullState (OB5.sig 284) (endRawF 270 raw s)) (eraseSites ParkEndpoint.src out) := by
-  let z:=unsigned 270 x p
-  let flags:=Leave270Admission.flags z g0 s0
-  let a:=SkywalkNat.step^[15] z
-  let xs:=SkywalkTrace.trace 15 (encode g0 s0 z.u z.v)
-  have endpointState : a=unsigned 285 x p := (Function.iterate_add_apply SkywalkNat.step 15 270 _).symm
-  have signed:= (advance_signed270 121 x p good raw s clean dom g0 s0 input h.small).2
-  have nextInput : SkywalkIntegerInput Leave270WideWords.L (encode flags.1 flags.2 a.u a.v).a
-      (encode flags.1 flags.2 a.u a.v).b flags.1 (endRaw 270 raw s).basis := by
-    rw [endpointState]
-    change SkywalkIntegerInput _ (encode flags.1 flags.2 _ _).a (encode flags.1 flags.2 _ _).b (encode flags.1 flags.2 _ _).g _ at signed
-    simpa only [flagEq] using signed
-  have par:=Leave270RecordedParity.result s z g0 s0 h.small h.odd h.record
-  have md : actualMode 121 z=farMode (s.basis 1698) (s.basis 1699) z.u:=by
-    rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
-  have ev:=Leave270RecordedEvents.result s z g0 s0 h.small h.odd h.record
-  have bits:=Leave270EndWords.result s m z flags.1 flags.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par md ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side
-  have whole:=Leave270Whole.result s m z flags.1 flags.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par md ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side
-  have kept:=Leave270PreservedRecords.result s m bits.2.2.2.1
-  have left:=Leave270FrameHistory.result x p good raw s m g0 s0 dom input h.record kept extra
-  have rails:=Leave270BoundaryRails.result s m z flags.1 flags.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par md ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side (fun q lo hi=>upper q lo (Nat.le_trans hi (by decide))) (endRaw _ raw s) nextInput
-  have clear:=Leave270BoundaryClean.result s m z flags.1 flags.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par md ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side quiet (LeaveTerminalBound.fit x p good.nonzero good.positive good.odd good.cap good.small good.coprime)
-  dsimp only
-  rw [←endpointState,endpointF 270 (by decide)]
-  rw [endpoint 270 (by decide)] at rails
-  have nf:∀q:Nat,(q<1800 ∨ 1812<q) → q∉foldSites:=fun q h mem=>by have b:=List.mem_range'_1.mp mem;omega
-  apply Leave270AssembleCut.result _ _ _ _ _ ((whole.1.trans phase).trans (originF_phase 270 raw s).symm) bits.2.2.1 bits.1
-  · exact bits.2.1.trans (both _ _)
-  · intro i
-    rw [originF_eq 270 raw s _ (nf _ (Or.inl (by have:=i.isLt;omega))),originF_eq 270 raw s _ (nf _ (Or.inl (by have:=i.isLt;omega)))]
-    exact rails.1 i
-  · intro i
-    rw [originF_eq 270 raw s _ (nf 300 (Or.inl (by decide))),originF_eq 270 raw s _ (nf _ (Or.inl (by have:=i.isLt;omega))),
-      originF_eq 270 raw s _ (nf _ (Or.inl (by have:=i.isLt;omega)))]
-    exact rails.2 i
-  · intro q hq
-    rw [originF_eq 270 raw s q (fun mem=>by have b:=List.mem_range'_1.mp mem;unfold Exterior at hq;omega)]
-    exact (NativePack270.exterior s m q hq).trans (ext q hq)
-  · intro q hq
-    by_cases f:q∈foldSites
-    · rw [insideF 270 raw s q (List.mem_append.mpr (Or.inr f))]
-      exact Leave270ReleasedActual.foldKept s m q f
-    · rw [originF_eq 270 raw s q f]
-      exact left q hq f
-  · exact clear
-  · intro q lo hi
-    rw [originF_eq 270 raw s q (nf q (Or.inl (Nat.lt_of_le_of_lt hi (by decide))))]
-    exact carry_origin (by decide) (by decide) good raw s dom same_c270 q lo hi
 end ECDSAAdd.Entrant.StairPacket.Leave270CertifiedCut
 
 end
@@ -35126,16 +29805,6 @@ open Arithmetic IntegerPacket SkywalkRails Partial WideReference
 set_option maxRecDepth 30000
 set_option maxHeartbeats 2300000
 attribute [local irreducible] run
-theorem result (s:State) (m:List Bool) (z:SkywalkNat.State) (g sg:Bool)
-    (h:Leave270Admission.Inputs s z g sg) :
-    let out:=run leave270 m s
-    physicalCells 13 out=SkywalkTrace.trace 15 (encode g sg z.u z.v) ∧
-      out.basis 1694=decide (Shadow.far 121 15 z) ∧
-      out.basis 1695=(decide (Shadow.far 121 15 z) && StairArchiveTrace.afterFlags (decide (z.v<z.u)) ((physicalCells 13 out).take 5)) ∧
-      out.basis 1696=(decide (Shadow.far 121 15 z) && HighBankSum.cross (Leave270TrueMiddle.d z)) := by
-  let flags:=Leave270Admission.flags z g sg
-  have all:=Leave270ActualHistory.result s m z flags.1 flags.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero h.nextSmall h.bound h.far h.side g sg h.record
-  exact all
 end ECDSAAdd.Entrant.StairPacket.Leave270ArchiveCut
 
 end
@@ -35325,11 +29994,6 @@ theorem chronology (i x p row:Nat) (less:i<512) (good:Bounds x p) (raw:State) (d
   rw [←same]
   exact truth
 
-structure Final (d:Bool) (x p:Nat) (out:State) : Prop where
-  first : ∃row<63145,Chronology 225 x p row ∧ Kept ArchiveBoundary240.codePorts d row out
-  middle : ∃row<63145,Chronology 240 x p row ∧ Kept ArchiveBoundary255.codePorts d row out
-  third : ∃row<63145,Chronology 255 x p row ∧ Kept ArchiveBoundary270.codePorts d row out
-  last : ∃row<63145,Chronology 270 x p row ∧ Frame ArchiveBoundary285.codePorts (code d) row out
 
 end ECDSAAdd.Entrant.StairPacket.ArchiveStockRows
 
@@ -35342,104 +30006,13 @@ open Arithmetic MappedCompressed
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 def logical (sw:Bool) (r:Nat):Wire:=if sw then base (1028+r) else base r
-def site (sw:Bool) (r:Nat):Wire:=OB5.sig 285 (logical sw r)
-theorem stable (i:Nat) (lo:285 ≤ i) (hi:i ≤ 511) (r:Nat) (old:r < 285) (sw:Bool):
-    OB5.sig i (logical sw r)=site sw r:=by
-  cases sw <;> simp only [logical,Bool.false_eq_true,if_false,if_true,site,
-    StairField2V3JuncRefWalk.sig_base i hi,StairField2V3JuncRefWalk.sig_base 285 (by decide)]
-  all_goals split_ifs <;> first | rfl | omega
-private theorem no_pack (i:Nat) (lo:286 ≤ i) (hi:i < 512) (r:Nat) (old:r < 285) (d sw:Bool):
-    logical sw r∉wires (Rolling1588.Integer.packFirst base d i) ∧
-    logical sw r∉wires (Rolling1588.unpackAtTick d i):=by
-  by_cases early:i < 290
-  · have mem:i∈[286,287,288,289]:=by simp;omega
-    have none:∀k∈[286,287,288,289],Rolling1588.Integer.packFirst base d k=[] ∧ Rolling1588.unpackAtTick d k=[]:=by
-      cases d <;> (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-    rw [(none i mem).1,(none i mem).2];simp [wires]
-  · have disjoint (j:Fin 10):logical sw r≠History5.historyMap base (i-5) j:=by
-      have lim:=j.isLt
-      cases sw <;> simp only [logical,Bool.false_eq_true,if_false,if_true,History5.historyMap,History5.historyId,base,Wire]
-      all_goals split_ifs <;> omega
-    constructor
-    · intro h
-      rw [Rolling1588.Integer.packFirst,if_neg (show i≠5 by omega),Rolling1588.Integer.pack_support_eq] at h
-      unfold History5.packAfter at h
-      split at h
-      · obtain ⟨j,e⟩:=History5.history_gate_mem base (i-5) _ (Or.inl rfl) _ h
-        exact disjoint j e
-      · simp [wires] at h
-    · intro h
-      rw [←Rolling1588.Integer.unpackFirst_base,Rolling1588.Integer.unpackFirst,if_neg (show i≠5 by omega),
-        Rolling1588.Integer.decodeBefore_support_eq] at h
-      unfold History5.decodeBefore at h
-      split at h
-      · obtain ⟨j,e⟩:=History5.history_gate_mem base (i-5) _ (Or.inr rfl) _ h
-        exact disjoint j e
-      · simp [wires] at h
-theorem one (d sw:Bool) (r i:Nat) (old:r < 285) (lo:286 ≤ i) (hi:i < 512):
-    site sw r∉wires (renameProgram (OB5.sig i) (TickRanges.tick base i ++ Rolling1588.Integer.packFirst base d i)) ∧
-    site sw r∉wires (renameProgram (OB5.sig i) (Rolling1588.unpackAtTick d i ++ W.ReverseCarry.compactReceiverTick base i)):=by
-  have past:WideReference.Earlier i (logical sw r):=⟨r,by omega,by cases sw <;> simp [logical]⟩
-  have off:=WideReference.away hi past
-  have pack:=no_pack i lo hi r old d sw
-  have pre (q:Wire) (eq:OB5.sig i q=site sw r):q=logical sw r:=by
-    rw [←stable i (by omega) (by omega) r old sw] at eq
-    have inj:Function.Injective (OB5.sig i):=(OB5.sig_injective i (by omega))
-    exact inj eq
-  constructor <;> intro h <;> rw [renameProgram_support] at h <;>
-    obtain ⟨q,mem,eq⟩:=Finset.mem_image.mp h <;> rw [pre q eq,wires_append,Finset.mem_union] at mem
-  · rcases mem with tick|packet
-    · exact off (List.mem_toFinset.mp (W.repairedTick_support base i hi base_pool_nodup (TickRanges.tick_support base i hi base_pool_nodup tick)))
-    · exact pack.1 packet
-  · rcases mem with packet|tick
-    · exact pack.2 packet
-    · exact off (List.mem_toFinset.mp (W.ReverseCarry.compactReceiverTick_support base i hi base_pool_nodup tick))
-theorem suffix (d sw:Bool) (r i n:Nat) (old:r < 285) (lo:286 ≤ i) (hi:i+n≤512):
-    site sw r∉wires (Rolling1588TickGap.forward d i n) ∧ site sw r∉wires (Rolling1588.reverse d i n):=by
-  induction n generalizing i with
-  | zero=>simp [Rolling1588TickGap.forward,Rolling1588.reverse,wires]
-  | succ n ih=>
-    have a:=one d sw r i old lo (by omega)
-    have b:=ih (i+1) (by omega) (by omega)
-    simp only [Rolling1588TickGap.forward,Rolling1588.reverse,wires_append,Finset.mem_union,not_or]
-    exact ⟨⟨a.1,b.1⟩,⟨b.2,a.2⟩⟩
 def offset (j:Fin 16):Nat:=5*(j.val/8)+[0,0,1,1,2,3,3,4].getD (j.val%8) 0
 def swap (j:Fin 16):Bool:=j.val%8∈[1,3,6]
-theorem sites240:∀j:Fin 16,ArchiveBoundary240.codePorts ⟨j,by omega⟩=site (swap j) (230+offset j):=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem old240:∀j:Fin 16,230+offset j<285:=by decide
-theorem sites255:∀j:Fin 16,ArchiveBoundary255.codePorts ⟨j,by omega⟩=site (swap j) (245+offset j):=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem old255:∀j:Fin 16,245+offset j<285:=by decide
-theorem sites270:∀j:Fin 16,ArchiveBoundary270.codePorts ⟨j,by omega⟩=site (swap j) (260+offset j):=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem old270:∀j:Fin 16,260+offset j<285:=by decide
-theorem sites285:∀j:Fin 16,ArchiveBoundary285.codePorts ⟨j,by omega⟩=site (swap j) (275+offset j):=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem old285:∀j:Fin 16,275+offset j<285:=by decide
+theorem old270:∀j:Fin 16,260+offset j<300:=by decide
 def bank (n:Nat) (ports:ArchivePortAction.Ports):Finset Wire:=
   ((List.finRange n).map (fun j=>ports (Fin.ofNat 157 j.val))).toFinset
-def archives:Finset Wire:=bank 16 ArchiveBoundary240.codePorts ∪ bank 16 ArchiveBoundary255.codePorts ∪ bank 16 ArchiveBoundary270.codePorts ∪ bank 16 ArchiveBoundary285.codePorts
-theorem safe (d:Bool) (i n:Nat) (lo:286 ≤ i) (hi:i+n≤512) (q:Wire) (mem:q∈archives):
-    q∉wires (Rolling1588TickGap.forward d i n) ∧ q∉wires (Rolling1588.reverse d i n):=by
-  simp only [archives,bank,Finset.mem_union,List.mem_toFinset,List.mem_map,List.mem_finRange,true_and] at mem
-  rcases mem with ((⟨j,rfl⟩|⟨j,rfl⟩)|⟨j,rfl⟩)|⟨j,rfl⟩
-  · rw [show Fin.ofNat 157 j.val=(⟨j,by omega⟩:Fin 157) from Fin.ext (Nat.mod_eq_of_lt (by omega)),sites240]
-    exact suffix d _ _ i n (old240 j) lo hi
-  · rw [show Fin.ofNat 157 j.val=(⟨j,by omega⟩:Fin 157) from Fin.ext (Nat.mod_eq_of_lt (by omega)),sites255]
-    exact suffix d _ _ i n (old255 j) lo hi
-  · rw [show Fin.ofNat 157 j.val=(⟨j,by omega⟩:Fin 157) from Fin.ext (Nat.mod_eq_of_lt (by omega)),sites270]
-    exact suffix d _ _ i n (old270 j) lo hi
-  · rw [show Fin.ofNat 157 j.val=(⟨j,by omega⟩:Fin 157) from Fin.ext (Nat.mod_eq_of_lt (by omega)),sites285]
-    exact suffix d _ _ i n (old285 j) lo hi
-def Same (a b:State):Prop:=a.phase=b.phase ∧ ∀q∉archives,a.basis q=b.basis q
-theorem independent (P:Program) (off:∀q∈archives,q∉wires P)
-    (m:List Bool) (s t:State) (same:Same s t):
-    Same (run P m s) (run P m t) ∧ ∀q∈archives,(run P m s).basis q=s.basis q:=by
-  have eqs:=pool_run_agrees P (wires P) (Finset.Subset.refl _) m s t same.1
-    (fun q h=>same.2 q (fun mem=>off q mem h))
-  refine ⟨⟨eqs.1,?_⟩,fun q mem=>run_preserves_outside _ m s _ (off q mem)⟩
-  intro q ext
-  by_cases use:q∈wires P
-  · exact eqs.2 q use
-  · rw [run_preserves_outside _ m s _ use,run_preserves_outside _ m t _ use]
-    exact same.2 q ext
 end ECDSAAdd.Entrant.StairPacket.ArchiveStockSuffix
 
 end
@@ -35564,45 +30137,6 @@ set_option maxRecDepth 35000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run body SkywalkNat.step
 
-theorem result (d:Bool) (x p:Nat) (good:Bounds x p) (raw s:State) (a b m:List Bool)
-    (neg far long g0 s0:Bool) (domain:Domain 270 x p raw)
-    (cut:PackedCut Enter270.lowerPairs Enter270.upperPairs 285 1700 1698 1699
-      neg far long (pullState (OB5.sig 269) raw) (eraseSites Enter270.pending s))
-    (input:InputAt 270 (encode g0 s0 (unsigned 270 x p).u (unsigned 270 x p).v) raw)
-    (h:Leave270Admission.Inputs (run (body idx (withArchive d)) b (run enter270 a s)) (unsigned 270 x p) g0 s0)
-    (phase:(run (body idx (withArchive d)) b (run enter270 a s)).phase=s.phase)
-    (popped:(run (body idx (withArchive d)) b (run enter270 a s)).basis 1703=false) :
-    let v:=run (body idx (withArchive d)) b (run enter270 a s)
-    let z:=unsigned 270 x p
-    let flags:=Leave270Admission.flags z g0 s0
-    let z':=unsigned 285 x p
-    PackedCut Portal285Flag.loPairs Portal285Flag.hiPairs 300 1693 1691 1692 (PortalValues.negative flags.2 z'.u)
-      (decide (Shadow.far 114 15 z')) (decide (Shadow.far 114 15 z' ∧ 2^114≤z'.u))
-      (pullState (OB5.sig 284) (endRawF 270 raw v)) (eraseSites ParkEndpoint.src (run leave270 m v)) := by
-  have bank:=carry270 _ (run (body idx (withArchive d)) b (run enter270 a s)) h.ready
-  have tail:=tail_clean d raw s a b neg far long _ _ _ cut input (carry (by decide) domain)
-  have quiet (q:Wire) (mem:q∈Leave270CoreCheckpoint.rawSites) : (run (body idx (withArchive d)) b (run enter270 a s)).basis q=false := by
-    have layout:∀q∈Leave270CoreCheckpoint.rawSites,(1556≤q ∧ q≤1694) ∨ q=1703 ∨ q∈tailTemps := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-    rcases layout q mem with ⟨lo,hi⟩|rfl|endSite
-    · exact bank q lo hi
-    · exact popped
-    · exact tail q endSite
-  have ph:(run (body idx (withArchive d)) b (run enter270 a s)).phase=(origin 270 raw (run (body idx (withArchive d)) b (run enter270 a s))).phase := phase.trans (cut.phase.trans (origin_phase _ _ _ (by decide) good raw (run (body idx (withArchive d)) b (run enter270 a s)) domain).symm)
-  have up:=upper_clear d raw s x p domain a b neg far long cut
-  have ext:=agree_origin d raw s a b neg far long cut
-  have zband:∀q:Wire,1014≤q → q≤1042 → (run leave270 m (run (body idx (withArchive d)) b (run enter270 a s))).basis q=false := by
-    let z:=unsigned 270 x p
-    let flags:=Leave270Admission.flags z g0 s0
-    let xs:=SkywalkTrace.trace 15 (encode g0 s0 z.u z.v)
-    have par:=Leave270RecordedParity.result (run (body idx (withArchive d)) b (run enter270 a s)) z g0 s0 h.small h.odd h.record
-    have md : actualMode 121 z=farMode ((run (body idx (withArchive d)) b (run enter270 a s)).basis 1698) ((run (body idx (withArchive d)) b (run enter270 a s)).basis 1699) z.u:=by
-      rw [h.far,h.side];exact LeaveTraceHistory.flags _ _
-    have ev:=Leave270RecordedEvents.result (run (body idx (withArchive d)) b (run enter270 a s)) z g0 s0 h.small h.odd h.record
-    have clear:=Leave270BoundaryClean.result (run (body idx (withArchive d)) b (run enter270 a s)) m z flags.1 flags.2 h.small h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par md ev.2 h.nextSmall h.bound xs (SkywalkTrace.trace_length _ _) (LeaveTraceHistory.certifiedChain _ _ _ _ h.small h.odd) (LeaveTraceHistory.firstSwap _ _ _ _ h.small h.odd) ev.1 h.far h.side quiet (LeaveTerminalBound.fit x p good.nonzero good.positive good.odd good.cap good.small good.coprime)
-    intro q lo hi
-    exact clear q (List.mem_append.mpr (Or.inr (List.mem_range'_1.mpr ⟨lo,Nat.lt_succ_of_le hi⟩)))
-  have extra:=Leave270ReleasedActual.agree d raw s x p good domain a b m neg far long cut zband
-  exact Leave270CertifiedCut.result x p good raw (run (body idx (withArchive d)) b (run enter270 a s)) m g0 s0 domain input h ph ext up quiet extra (Leave270ReleasedActual.mirror d raw s x p domain a b neg far long cut)
 end ECDSAAdd.Entrant.StairPacket.Leave270BodyCut
 
 end
@@ -35748,35 +30282,10 @@ private theorem cleave270Part35:leave270Part35.all (fun g=> !third (target g))=t
 private theorem cleave270Part36:leave270Part36.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private theorem cleave270Part37:leave270Part37.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 private theorem cleave270Part38:leave270Part38.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+private theorem cleave270Part39:leave270Part39.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem leave270_keeps (q:Wire) (mem:q∈three) (t:List Bool) (s:State):(run leave270 t s).basis q=s.basis q:=by
   apply keep _ third _ _ (earliest _ mem)
-  simp only [leave270,List.all_append,cleave270Part0,cleave270Part1,cleave270Part2,cleave270Part3,cleave270Part4,cleave270Part5,cleave270Part6,cleave270Part7,cleave270Part8,cleave270Part9,cleave270Part10,cleave270Part11,cleave270Part12,cleave270Part13,cleave270Part14,cleave270Part15,cleave270Part16,cleave270Part17,cleave270Part18,cleave270Part19,cleave270Part20,cleave270Part21,cleave270Part22,cleave270Part23,cleave270Part24,cleave270Part25,cleave270Part26,cleave270Part27,cleave270Part28,cleave270Part29,cleave270Part30,cleave270Part31,cleave270Part32,cleave270Part33,cleave270Part34,cleave270Part35,cleave270Part36,cleave270Part37,cleave270Part38,Bool.and_self]
-private theorem cpark285Part0:park285Part0.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem park285_keeps (q:Wire) (mem:q∈three) (t:List Bool) (s:State):(run park285 t s).basis q=s.basis q:=by
-  apply keep _ third _ _ (earliest _ mem)
-  simp only [park285,cpark285Part0]
-private theorem cportal285InvPart0:portal285InvPart0.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart1:portal285InvPart1.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart2:portal285InvPart2.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart3:portal285InvPart3.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart4:portal285InvPart4.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart5:portal285InvPart5.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart6:portal285InvPart6.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart7:portal285InvPart7.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart8:portal285InvPart8.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart9:portal285InvPart9.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart10:portal285InvPart10.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart11:portal285InvPart11.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart12:portal285InvPart12.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart13:portal285InvPart13.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart14:portal285InvPart14.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart15:portal285InvPart15.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart16:portal285InvPart16.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart17:portal285InvPart17.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-private theorem cportal285InvPart18:portal285InvPart18.all (fun g=> !third (target g))=true:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem portal285Inv_keeps (q:Wire) (mem:q∈three) (t:List Bool) (s:State):(run portal285Inv t s).basis q=s.basis q:=by
-  apply keep _ third _ _ (earliest _ mem)
-  simp only [portal285Inv,List.all_append,cportal285InvPart0,cportal285InvPart1,cportal285InvPart2,cportal285InvPart3,cportal285InvPart4,cportal285InvPart5,cportal285InvPart6,cportal285InvPart7,cportal285InvPart8,cportal285InvPart9,cportal285InvPart10,cportal285InvPart11,cportal285InvPart12,cportal285InvPart13,cportal285InvPart14,cportal285InvPart15,cportal285InvPart16,cportal285InvPart17,cportal285InvPart18,Bool.and_self]
+  simp only [leave270,List.all_append,cleave270Part0,cleave270Part1,cleave270Part2,cleave270Part3,cleave270Part4,cleave270Part5,cleave270Part6,cleave270Part7,cleave270Part8,cleave270Part9,cleave270Part10,cleave270Part11,cleave270Part12,cleave270Part13,cleave270Part14,cleave270Part15,cleave270Part16,cleave270Part17,cleave270Part18,cleave270Part19,cleave270Part20,cleave270Part21,cleave270Part22,cleave270Part23,cleave270Part24,cleave270Part25,cleave270Part26,cleave270Part27,cleave270Part28,cleave270Part29,cleave270Part30,cleave270Part31,cleave270Part32,cleave270Part33,cleave270Part34,cleave270Part35,cleave270Part36,cleave270Part37,cleave270Part38,cleave270Part39,Bool.and_self]
 theorem next255_keeps (d:Bool) (q:Wire) (mem:q∈older) (t:List Bool) (s:State):
     (run (NativePack255.nextWindow d) t s).basis q=s.basis q:=by
   have layout:∀q∈older,¬MayTouch NativePack255.idx (windowNet NativePack255.idx q) ∧
@@ -35793,22 +30302,6 @@ theorem next270_keeps (d:Bool) (q:Wire) (mem:q∈two) (t:List Bool) (s:State):
   simp only [NativePack270.nextWindow,NativePack270.window,run_append,run_take]
   exact ext_head _ _ _ _ _ _ _ _ unseen
     (fun hit=>notEnter (List.mem_toFinset.mp (Enter270.programCover hit))) notAdmin (NativePack270.admin_cover d)
-theorem last285_keeps (d:Bool) (q:Wire) (mem:q∈three) (t:List Bool) (s:State):
-    (run (NativePack285.lastWindow d) t s).basis q=s.basis q:=by
-  have layout:∀q∈three,q∉ArchiveBoundary285.rawPortsList ∧ ∀v:Fin 10,q≠NativePack285.history v:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-  obtain ⟨notLoad,notPack⟩:=layout q mem
-  have notTick:OB5.sig 285 q∉EndTick.L.wires:=by
-    apply WideReference.away (i:=285) (by decide)
-    have olderSites:∀q∈three,∃r∈List.range' 230 40,∃sw:Bool,q=site sw r:=by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-    obtain ⟨r,hr,sw,rfl⟩:=olderSites q mem
-    obtain ⟨_,hi⟩:=List.mem_range'_1.mp hr
-    rw [←ArchiveStockSuffix.stable 285 (by decide) (by decide) r (by omega) sw,OB5.sig_invol 285 (by decide)]
-    exact ⟨r,by omega,by cases sw <;> simp [logical]⟩
-  have nT:=EndTick.physical_free EndTick.P EndTick.supports.1 q notTick
-  have nL:q∉wires (archiveLoad285 d):=fun hit=>notLoad (List.mem_toFinset.mp (ArchiveBoundary285.load_cover d hit))
-  simp only [NativePack285.lastWindow,NativePack285.endSlice,run_append,run_take]
-  rw [run_preserves_outside (archiveLoad285 d) _ _ _ nL,NativePack285.outside _ _ notPack,
-    run_preserves_outside EndTick.physP _ _ _ nT,portal285Inv_keeps _ mem,park285_keeps _ mem]
 end ECDSAAdd.Entrant.StairPacket.ArchivePersistence
 
 end
@@ -35951,45 +30444,6 @@ open Arithmetic MappedCompressed IntegerPacket SkywalkRails WideReference Partia
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run body SkywalkNat.step
-theorem stock_endpoint (d:Bool) (x p:Nat) (good:Bounds x p) (raw s:State) (m n:List Bool)
-    (domain:Domain 270 x p raw) (G S:Bool)
-    (cut:PackedCut Enter270.lowerPairs Enter270.upperPairs 285 1700 1698 1699 (PortalValues.negative S (unsigned 270 x p).u)
-      (decide (Shadow.far 121 15 (unsigned 270 x p))) (decide (Shadow.far 121 15 (unsigned 270 x p) ∧ 2^121≤(unsigned 270 x p).u))
-      (pullState (OB5.sig 269) raw) (eraseSites Enter270.pending s))
-    (input:SkywalkIntegerInput (W.compactSkywalkTickLayout base 270) (encode G S (unsigned 270 x p).u (unsigned 270 x p).v).a (encode G S (unsigned 270 x p).u (unsigned 270 x p).v).b G raw.basis)
-    (pg ps cross:Bool) (prior:PastFacts sourceIdx rawPorts 129 (unsigned 255 x p) pg ps cross s) :
-    let z:=unsigned 270 x p
-    let a:=unsigned 285 x p
-    let flags:=Leave270Admission.flags z G S
-    let v:=run (nextWindow d) m s
-    let out:=run leave270 n v
-    Leave270Admission.Inputs v z G S ∧
-    PackedCut Portal285Flag.loPairs Portal285Flag.hiPairs 300 1693 1691 1692 (PortalValues.negative flags.2 a.u)
-      (decide (Shadow.far 114 15 a)) (decide (Shadow.far 114 15 a ∧ 2^114≤a.u))
-      (pullState (OB5.sig 284) (endRawF 270 raw v)) (eraseSites ParkEndpoint.src out) ∧
-    (physicalCells 13 out=SkywalkTrace.trace 15 (encode G S z.u z.v) ∧
-      out.basis 1694=decide (Shadow.far 121 15 z) ∧
-      out.basis 1695=(decide (Shadow.far 121 15 z) && StairArchiveTrace.afterFlags (decide (z.v<z.u)) ((physicalCells 13 out).take 5)) ∧
-      out.basis 1696=(decide (Shadow.far 121 15 z) && HighBankSum.cross (Leave270TrueMiddle.d z))) := by
-  have native:=from_domain d x p good raw s m domain G S cut input pg ps cross prior
-  have hist (r:Fin 15):raw.basis (base (1028+270+r))=false:=by
-    simpa only [Nat.add_assoc] using WideReference.future_history (j:=270+r.val) (by omega) (by have hr:=r.isLt;omega) domain
-  have old:=Leave255Admission.actualNumbers x p good.positive good.odd (lt_trans good.small good.cap) good.cap
-  obtain ⟨_,_,_,popped⟩:=real_receipt d raw s m (unsigned 270 x p) G S native.1.odd native.1.small cut input hist (endScratch270 domain) (unsigned 255 x p) pg ps cross old.odd old.small prior
-  have split:(run (nextWindow d) m s)=run (body idx (withArchive d)) (m.drop (measurementCount enter270)) (run enter270 m s):=by
-    unfold nextWindow
-    rw [run_append,run_take]
-    rfl
-  have gg (g s:Bool) (u v:Int) : (encode g s u v).g=g:=by cases g <;> rfl
-  have orig:InputAt 270 (encode G S (unsigned 270 x p).u (unsigned 270 x p).v) raw:=by unfold InputAt;rw [gg];exact input
-  refine ⟨native.1,?_,Leave270ArchiveCut.result (run (nextWindow d) m s) n (unsigned 270 x p) G S native.1⟩
-  change PackedCut _ _ _ _ _ _ _ _ _ (pullState (OB5.sig 284) (endRawF 270 raw (run (nextWindow d) m s))) (eraseSites ParkEndpoint.src (run leave270 n (run (nextWindow d) m s)))
-  rw [split]
-  have bit:(run (nextWindow d) m s).basis 1703=false:=by
-    have h2:=popped (2:Fin 3)
-    rwa [show 1701+(2:Fin 3).val=1703 from rfl] at h2
-  exact Leave270BodyCut.result d x p good raw s m (m.drop (measurementCount enter270)) n _ _ _ G S domain cut orig (split ▸ native.1)
-    (split ▸ native.2.1) (split ▸ bit)
 end ECDSAAdd.Entrant.StairPacket.NativePack270
 
 end
@@ -36039,9 +30493,6 @@ theorem entering270 (d:Bool) (s:State) (m:List Bool) (q:Wire) (h:q∈both) :
 theorem after270 (s:State) (m:List Bool) (q:Wire) (h:q∈all3) : (run leave270 m s).basis q=s.basis q :=
   ArchivePersistence.leave270_keeps q (allBanks q h) m s
 
-theorem last (d:Bool) (s:State) (m:List Bool) (q:Wire) (h:q∈all3) :
-    (run (NativePack285.lastWindow d) m s).basis q=s.basis q :=
-  ArchivePersistence.last285_keeps d q (allBanks q h) m s
 end ECDSAAdd.Entrant.StairPacket.ArchiveWindowPreserve
 
 end
@@ -36124,22 +30575,7 @@ structure At270 (d:Bool) (x p:Nat) (raw s:State) (g sg pg ps:Bool) : Prop where
 
 def Ready270 (d:Bool) (x p:Nat) (s:State) := ∃raw g sg pg ps,At270 d x p raw s g sg pg ps
 
-structure At285 (d:Bool) (x p:Nat) (raw s:State) (g sg pg ps:Bool) : Prop where
-  domain:Domain 285 x p raw
-  input:InputAt 285 (signedAt 285 x p g sg) raw
-  cut:PackedCut Portal285Flag.loPairs Portal285Flag.hiPairs 300 1693 1691 1692 (flagNeg 285 x p sg)
-      (decide (farAt 114 285 x p)) (decide (farAt 114 285 x p ∧ 2^114≤(unsigned 285 x p).u))
-      (pullState (OB5.sig 284) raw) (eraseSites ParkEndpoint.src s)
-  records:physicalCells 13 s=SkywalkTrace.trace 15 (signedAt 270 x p pg ps)
-  mode:s.basis 1694=decide (farAt 121 270 x p)
-  side:s.basis 1695=(decide (farAt 121 270 x p) && StairArchiveTrace.afterFlags (decide ((unsigned 270 x p).v<(unsigned 270 x p).u)) ((physicalCells 13 s).take 5))
-  cross:s.basis 1696=(decide (farAt 121 270 x p) && HighBankSum.cross (Leave270TrueMiddle.d (unsigned 270 x p)))
-  pastCanonical:signedAt 270 x p pg ps=WideReference.canonical 270 x p
-  saved225:Saved 225 x p ArchiveBoundary240.codePorts d s
-  saved240:Saved 240 x p ArchiveBoundary255.codePorts d s
-  saved255:Saved 255 x p ArchiveBoundary270.codePorts d s
 
-def Ready285 (d:Bool) (x p:Nat) (s:State) := ∃raw g sg pg ps,At285 d x p raw s g sg pg ps
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -36179,21 +30615,6 @@ theorem pair {F R F' R':Program} {A B:State→Prop}
   intro n
   rw [run_append,run_take,inv,inv']
 
-/-- R1: a checked pair stays checked when its inner program and inverse are replaced by ones that run the same. -/
-theorem relayed {F R L I L' I':Program} {A B:State→Prop} (old:Checked (F++L) (I++R) A B)
-    (moved:∀s m,A s→(∀n,run L' n (run F m s)=run L n (run F m s)) ∧
-      (∀n k,run I' k (run L' n (run F m s))=run F m s) ∧ ∀k,run R k (run F m s)=s) :
-    Checked (F++L') (I'++R) A B := by
-  intro s m h
-  obtain ⟨ph,post,_⟩:=old s m h
-  obtain ⟨same,back,rest⟩:=moved s m h
-  have e:run (F++L') m s=run (F++L) m s:=by rw [run_append,run_append,run_take,same]
-  dsimp only
-  rw [e]
-  refine ⟨ph,post,?_⟩
-  intro n
-  rw [←e,run_append,run_append,run_take,run_take,back,rest]
-
 theorem cutPhase {lo hi:List (Wire×Wire)} {g n f u:Wire} {neg far long:Bool}
     {sig:Wire→Wire} {raw s:State} {pending:List Wire}
     (cut:PackedCut lo hi g n f u neg far long (pullState sig raw) (eraseSites pending s)) :
@@ -36212,7 +30633,7 @@ namespace ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 open Arithmetic IntegerPacket WideReference SkywalkRails Partial MappedCompressed
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3200000
-attribute [local irreducible] run body measurementCount leave225 leave225Inv NativePack225.firstWindow NativePack225.firstUnwind leave225Move leave225MoveInv
+attribute [local irreducible] run body measurementCount leave225 leave225Inv NativePack225.firstWindow NativePack225.firstUnwind
 
 private theorem physical (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
     (pre:Before d x p s) :
@@ -36239,21 +30660,6 @@ theorem step225 (d:Bool) (x p:Nat) (good:Bounds x p) :
   apply pair (F:=NativePack225.firstWindow d) (F':=leave225) (R:=NativePack225.firstUnwind d) (R':=leave225Inv)
   intro s m h
   exact physical d x p good s m _ h
-
-/-- R1: from the same precondition the physical leave225Move / leave225MoveInv run like the reference pair. -/
-theorem moved225 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Before d x p s) :
-    (∀n,run leave225Move n (run (NativePack225.firstWindow d) m s)=run leave225 n (run (NativePack225.firstWindow d) m s)) ∧
-    (∀n k,run leave225MoveInv k (run leave225Move n (run (NativePack225.firstWindow d) m s))=run (NativePack225.firstWindow d) m s) ∧
-    ∀k,run (NativePack225.firstUnwind d) k (run (NativePack225.firstWindow d) m s)=s := by
-  have old : ∀k,run (NativePack225.firstUnwind d) k (run (NativePack225.firstWindow d) m s)=s := (physical d x p good s m [] pre).2.2.2
-  obtain ⟨raw,stage,rfl⟩:=pre
-  obtain ⟨g,sg,input,h,cut,facts⟩:=NativePack225.stock_endpoint d x p good raw m [] stage
-  have mv:=Leave225Admission.Inputs.moved h
-  exact ⟨mv.1,mv.2,old⟩
-
-theorem step225Move (d:Bool) (x p:Nat) (good:Bounds x p) :
-    Checked (NativePack225.firstWindow d++leave225Move) (leave225MoveInv++NativePack225.firstUnwind d) (Before d x p) (Ready240 d x p) :=
-  relayed (L':=leave225Move) (I':=leave225MoveInv) (step225 d x p good) (fun s m h=>moved225 d x p good s m h)
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -36264,7 +30670,7 @@ namespace ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 open Arithmetic IntegerPacket WideReference SkywalkRails Partial MappedCompressed ArchivePortAction ArchiveStockRows
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3300000
-attribute [local irreducible] run body measurementCount leave240 leave240Inv NativePack240.nextWindow NativePack240.nextUnwind leave240Move leave240MoveInv
+attribute [local irreducible] run body measurementCount leave240 leave240Inv NativePack240.nextWindow NativePack240.nextUnwind
 
 private theorem finalWindowPhysical (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
     (pre:Ready240 d x p s) :
@@ -36297,22 +30703,6 @@ theorem step240 (d:Bool) (x p:Nat) (good:Bounds x p) :
   apply pair (F:=NativePack240.nextWindow d) (F':=leave240) (R:=NativePack240.nextUnwind d) (R':=leave240Inv)
   intro s m h
   exact finalWindowPhysical d x p good s m _ h
-
-/-- R1: from the same precondition the physical leave240Move / leave240MoveInv run like the reference pair. -/
-theorem moved240 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Ready240 d x p s) :
-    (∀n,run leave240Move n (run (NativePack240.nextWindow d) m s)=run leave240 n (run (NativePack240.nextWindow d) m s)) ∧
-    (∀n k,run leave240MoveInv k (run leave240Move n (run (NativePack240.nextWindow d) m s))=run (NativePack240.nextWindow d) m s) ∧
-    ∀k,run (NativePack240.nextUnwind d) k (run (NativePack240.nextWindow d) m s)=s := by
-  have old : ∀k,run (NativePack240.nextUnwind d) k (run (NativePack240.nextWindow d) m s)=s := (finalWindowPhysical d x p good s m [] pre).2.2.2
-  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
-  have curr:=readInput 240 x p raw g sg pre.input
-  obtain ⟨h,cut,facts⟩:=NativePack240.stock_endpoint d x p good raw s m [] pre.domain g sg pre.cut curr pg ps _ pre.facts
-  have mv:=Leave240Admission.Inputs.moved h
-  exact ⟨mv.1,mv.2,old⟩
-
-theorem step240Move (d:Bool) (x p:Nat) (good:Bounds x p) :
-    Checked (NativePack240.nextWindow d++leave240Move) (leave240MoveInv++NativePack240.nextUnwind d) (Ready240 d x p) (Ready255 d x p) :=
-  relayed (L':=leave240Move) (I':=leave240MoveInv) (step240 d x p good) (fun s m h=>moved240 d x p good s m h)
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -36329,154 +30719,11 @@ open Arithmetic IntegerPacket WideReference SkywalkRails Partial MappedCompresse
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3300000
 attribute [local irreducible] run body measurementCount leave255 leave255Inv NativePack255.nextWindow NativePack255.nextUnwind
-  leave270 leave270Inv NativePack270.nextWindow NativePack270.nextUnwind leave255Move leave255MoveInv leave270Move leave270MoveInv
+  leave270 leave270Inv NativePack270.nextWindow NativePack270.nextUnwind
 
-private theorem physical_wb2 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
-    (pre:Ready255 d x p s) :
-    let v:=run (NativePack255.nextWindow d) m s
-    let out:=run leave255 n v
-    out.phase=s.phase ∧ Ready270 d x p out ∧ (∀k,run leave255Inv k out=v) ∧ (∀k,run (NativePack255.nextUnwind d) k v=s) := by
-  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
-  let v:=run (NativePack255.nextWindow d) m s
-  let out:=run leave255 n v
-  let raw':=endRaw 255 raw v
-  let flags:=Leave255Admission.flags (unsigned 255 x p) g sg
-  have curr:=readInput 255 x p raw g sg pre.input
-  have native:=NativePack255.from_domain_matched d x p good raw s m pre.domain g sg pre.cut curr pg ps _ pre.facts
-  obtain ⟨h,cut,facts⟩:=NativePack255.stock_endpoint d x p good raw s m n pre.domain g sg pre.cut curr pg ps _ pre.facts
-  have carried:=stepInput 255 129 x p (by decide) (by decide) fixed255 good raw v g sg pre.domain pre.input h.small
-  have lastPhase:out.phase=raw'.phase:=cutPhase cut
-  have prevPhase:s.phase=raw.phase:=cutPhase pre.cut
-  have ph:=lastPhase.trans ((endRaw_phase 255 x p (by decide) good raw v pre.domain).trans prevPhase.symm)
-  obtain ⟨row,bound,truth,kept⟩:=native.2.2.1
-  have chr:Chronology 240 x p row:=by unfold Chronology;rw [←pre.pastCanonical];exact truth
-  have accepted:Saved 240 x p ArchiveBoundary255.codePorts d out:=by
-    refine ⟨row,bound,chr,ArchiveWindowPreserve.keep kept ?_⟩
-    intro q hq
-    exact ArchiveWindowPreserve.after255 v n q (List.mem_append.mpr (Or.inr hq))
-  have same:=unique_input pre.input (fixed_input _ _ _ (by decide) good raw pre.domain)
-  have older:Saved 225 x p ArchiveBoundary240.codePorts d out:=by
-    obtain ⟨r,lim,yes,old⟩:=pre.saved225
-    refine ⟨r,lim,yes,ArchiveWindowPreserve.keep old ?_⟩
-    intro q hq
-    exact (ArchiveWindowPreserve.after255 v n q (List.mem_append.mpr (Or.inl hq))).trans
-      (ArchiveWindowPreserve.entering255 d s m q hq)
-  exact ⟨ph,⟨raw',flags.1,flags.2,g,sg,carried.1,carried.2,cut,facts,same,older,accepted⟩,h.roundtrip n,native.2.2.2⟩
 
-theorem step255 (d:Bool) (x p:Nat) (good:Bounds x p) :
-    Checked (NativePack255.nextWindow d++leave255) (leave255Inv++NativePack255.nextUnwind d) (Ready255 d x p) (Ready270 d x p) := by
-  apply pair (F:=NativePack255.nextWindow d) (F':=leave255) (R:=NativePack255.nextUnwind d) (R':=leave255Inv)
-  intro s m h
-  exact physical_wb2 d x p good s m _ h
 
-/-- R1: from the same precondition the physical leave255Move / leave255MoveInv run like the reference pair. -/
-theorem moved255 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Ready255 d x p s) :
-    (∀n,run leave255Move n (run (NativePack255.nextWindow d) m s)=run leave255 n (run (NativePack255.nextWindow d) m s)) ∧
-    (∀n k,run leave255MoveInv k (run leave255Move n (run (NativePack255.nextWindow d) m s))=run (NativePack255.nextWindow d) m s) ∧
-    ∀k,run (NativePack255.nextUnwind d) k (run (NativePack255.nextWindow d) m s)=s := by
-  have old : ∀k,run (NativePack255.nextUnwind d) k (run (NativePack255.nextWindow d) m s)=s := (physical_wb2 d x p good s m [] pre).2.2.2
-  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
-  have curr:=readInput 255 x p raw g sg pre.input
-  obtain ⟨h,cut,facts⟩:=NativePack255.stock_endpoint d x p good raw s m [] pre.domain g sg pre.cut curr pg ps _ pre.facts
-  have mv:=Leave255Admission.Inputs.moved h
-  exact ⟨mv.1,mv.2,old⟩
 
-theorem step255Move (d:Bool) (x p:Nat) (good:Bounds x p) :
-    Checked (NativePack255.nextWindow d++leave255Move) (leave255MoveInv++NativePack255.nextUnwind d) (Ready255 d x p) (Ready270 d x p) :=
-  relayed (L':=leave255Move) (I':=leave255MoveInv) (step255 d x p good) (fun s m h=>moved255 d x p good s m h)
-private theorem physical270 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m n:List Bool)
-    (pre:Ready270 d x p s) :
-    let v:=run (NativePack270.nextWindow d) m s
-    let out:=run leave270 n v
-    out.phase=s.phase ∧ Ready285 d x p out ∧ (∀k,run leave270Inv k out=v) ∧ (∀k,run (NativePack270.nextUnwind d) k v=s) := by
-  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
-  let v:=run (NativePack270.nextWindow d) m s
-  let out:=run leave270 n v
-  let raw':=endRawF 270 raw v
-  let flags:=Leave270Admission.flags (unsigned 270 x p) g sg
-  have curr:=readInput 270 x p raw g sg pre.input
-  have native:=NativePack270.from_domain_matched d x p good raw s m pre.domain g sg pre.cut curr pg ps _ pre.facts
-  obtain ⟨h,cut,facts⟩:=NativePack270.stock_endpoint d x p good raw s m n pre.domain g sg pre.cut curr pg ps _ pre.facts
-  have clean:=Leave270ReleasedActual.clean d raw s x p pre.domain m _ _ _ pre.cut
-  have carried:=stepInput270 121 x p good raw v g sg pre.domain pre.input clean h.small
-  have lastPhase:out.phase=raw'.phase:=cutPhase cut
-  have prevPhase:s.phase=raw.phase:=cutPhase pre.cut
-  have ph:=lastPhase.trans ((endRawF_phase 270 raw v).trans ((endRaw_phase 270 x p (by decide) good raw v pre.domain).trans prevPhase.symm))
-  obtain ⟨row,bound,truth,kept⟩:=native.2.2.1
-  have chr:Chronology 255 x p row:=by unfold Chronology;rw [←pre.pastCanonical];exact truth
-  have accepted:Saved 255 x p ArchiveBoundary270.codePorts d out:=by
-    refine ⟨row,bound,chr,ArchiveWindowPreserve.keep kept ?_⟩
-    intro q hq
-    exact ArchiveWindowPreserve.after270 v n q (List.mem_append.mpr (Or.inr hq))
-  have same:=unique_input pre.input (fixed_input _ _ _ (by decide) good raw pre.domain)
-  have older:Saved 225 x p ArchiveBoundary240.codePorts d out:=by
-    obtain ⟨r,lim,yes,old⟩:=pre.saved225
-    refine ⟨r,lim,yes,ArchiveWindowPreserve.keep old ?_⟩
-    intro q hq
-    exact (ArchiveWindowPreserve.after270 v n q (List.mem_append.mpr (Or.inl (List.mem_append.mpr (Or.inl hq))))).trans
-      (ArchiveWindowPreserve.entering270 d s m q (List.mem_append.mpr (Or.inl hq)))
-  have middle:Saved 240 x p ArchiveBoundary255.codePorts d out:=by
-    obtain ⟨r,lim,yes,old⟩:=pre.saved240
-    refine ⟨r,lim,yes,ArchiveWindowPreserve.keep old ?_⟩
-    intro q hq
-    exact (ArchiveWindowPreserve.after270 v n q (List.mem_append.mpr (Or.inl (List.mem_append.mpr (Or.inr hq))))).trans
-      (ArchiveWindowPreserve.entering270 d s m q (List.mem_append.mpr (Or.inr hq)))
-  have domF:=domain_congr carried.1 (endRawF_phase 270 raw v) (fun q off=>endRawF_eq 270 raw v q (fun hf=>off (fold_earlier q hf)))
-  exact ⟨ph,⟨raw',flags.1,flags.2,g,sg,domF,inputF raw v _ carried.2,cut,facts.1,facts.2.1,facts.2.2.1,facts.2.2.2,same,older,middle,accepted⟩,h.roundtrip n,native.2.2.2⟩
-
-theorem step270 (d:Bool) (x p:Nat) (good:Bounds x p) :
-    Checked (NativePack270.nextWindow d++leave270) (leave270Inv++NativePack270.nextUnwind d) (Ready270 d x p) (Ready285 d x p) := by
-  apply pair (F:=NativePack270.nextWindow d) (F':=leave270) (R:=NativePack270.nextUnwind d) (R':=leave270Inv)
-  intro s m h
-  exact physical270 d x p good s m _ h
-
-/-- R1: from the same precondition the physical leave270Move / leave270MoveInv run like the reference pair. -/
-theorem moved270 (d:Bool) (x p:Nat) (good:Bounds x p) (s:State) (m:List Bool) (pre:Ready270 d x p s) :
-    (∀n,run leave270Move n (run (NativePack270.nextWindow d) m s)=run leave270 n (run (NativePack270.nextWindow d) m s)) ∧
-    (∀n k,run leave270MoveInv k (run leave270Move n (run (NativePack270.nextWindow d) m s))=run (NativePack270.nextWindow d) m s) ∧
-    ∀k,run (NativePack270.nextUnwind d) k (run (NativePack270.nextWindow d) m s)=s := by
-  have old : ∀k,run (NativePack270.nextUnwind d) k (run (NativePack270.nextWindow d) m s)=s := (physical270 d x p good s m [] pre).2.2.2
-  obtain ⟨raw,g,sg,pg,ps,pre⟩:=pre
-  have curr:=readInput 270 x p raw g sg pre.input
-  obtain ⟨h,cut,facts⟩:=NativePack270.stock_endpoint d x p good raw s m [] pre.domain g sg pre.cut curr pg ps _ pre.facts
-  have mv:=Leave270Admission.Inputs.moved h
-  exact ⟨mv.1,mv.2,old⟩
-
-theorem step270Move (d:Bool) (x p:Nat) (good:Bounds x p) :
-    Checked (NativePack270.nextWindow d++leave270Move) (leave270MoveInv++NativePack270.nextUnwind d) (Ready270 d x p) (Ready285 d x p) :=
-  relayed (L':=leave270Move) (I':=leave270MoveInv) (step270 d x p good) (fun s m h=>moved270 d x p good s m h)
-
-theorem pinned270 (d:Bool) (x p:Nat) (good:Bounds x p) (raw s:State) (g sg pg ps:Bool) (m n:List Bool) (pre:At270 d x p raw s g sg pg ps) :
-    let v:=run (NativePack270.nextWindow d) m s
-    ∃a b c e,At285 d x p (endRawF 270 raw v) (run leave270 n v) a b c e := by
-  have curr:=readInput 270 x p raw g sg pre.input
-  have native:=NativePack270.from_domain_matched d x p good raw s m pre.domain g sg pre.cut curr pg ps _ pre.facts
-  obtain ⟨h,cut,facts⟩:=NativePack270.stock_endpoint d x p good raw s m n pre.domain g sg pre.cut curr pg ps _ pre.facts
-  have clean:=Leave270ReleasedActual.clean d raw s x p pre.domain m _ _ _ pre.cut
-  have carried:=stepInput270 121 x p good raw (run (NativePack270.nextWindow d) m s) g sg pre.domain pre.input clean h.small
-  obtain ⟨row,bound,truth,kept⟩:=native.2.2.1
-  have chr:Chronology 255 x p row:=by unfold Chronology;rw [←pre.pastCanonical];exact truth
-  have accepted:Saved 255 x p ArchiveBoundary270.codePorts d (run leave270 n (run (NativePack270.nextWindow d) m s)):=by
-    refine ⟨row,bound,chr,ArchiveWindowPreserve.keep kept ?_⟩
-    intro q hq
-    exact ArchiveWindowPreserve.after270 (run (NativePack270.nextWindow d) m s) n q (List.mem_append.mpr (Or.inr hq))
-  have same:=unique_input pre.input (fixed_input _ _ _ (by decide) good raw pre.domain)
-  have older:Saved 225 x p ArchiveBoundary240.codePorts d (run leave270 n (run (NativePack270.nextWindow d) m s)):=by
-    obtain ⟨r,lim,yes,old⟩:=pre.saved225
-    refine ⟨r,lim,yes,ArchiveWindowPreserve.keep old ?_⟩
-    intro q hq
-    exact (ArchiveWindowPreserve.after270 (run (NativePack270.nextWindow d) m s) n q (List.mem_append.mpr (Or.inl (List.mem_append.mpr (Or.inl hq))))).trans
-      (ArchiveWindowPreserve.entering270 d s m q (List.mem_append.mpr (Or.inl hq)))
-  have middle:Saved 240 x p ArchiveBoundary255.codePorts d (run leave270 n (run (NativePack270.nextWindow d) m s)):=by
-    obtain ⟨r,lim,yes,old⟩:=pre.saved240
-    refine ⟨r,lim,yes,ArchiveWindowPreserve.keep old ?_⟩
-    intro q hq
-    exact (ArchiveWindowPreserve.after270 (run (NativePack270.nextWindow d) m s) n q (List.mem_append.mpr (Or.inl (List.mem_append.mpr (Or.inr hq))))).trans
-      (ArchiveWindowPreserve.entering270 d s m q (List.mem_append.mpr (Or.inr hq)))
-  have domF:=domain_congr carried.1 (endRawF_phase 270 raw (run (NativePack270.nextWindow d) m s))
-    (fun q off=>endRawF_eq 270 raw _ q (fun hf=>off (fold_earlier q hf)))
-  exact ⟨(Leave270Admission.flags (unsigned 270 x p) g sg).1,(Leave270Admission.flags (unsigned 270 x p) g sg).2,g,sg,domF,
-    inputF raw _ _ carried.2,cut,facts.1,facts.2.1,facts.2.2.1,facts.2.2.2,same,older,middle,accepted⟩
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -36487,28 +30734,8 @@ namespace ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 open Arithmetic MappedCompressed IntegerPacket Secp256k1 WideReference SkywalkRails Partial ArchivePortAction ArchiveStockRows
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3800000
-attribute [local irreducible] run body measurementCount NativePack285.lastWindow NativePack285.lastUnwind
+attribute [local irreducible] run body measurementCount
 
-theorem step285 (d:Bool) (x:Nat) (good:Bounds x p) :
-    Checked (NativePack285.lastWindow d) (NativePack285.lastUnwind d) (Ready285 d x p) (Final d x p) := by
-  rintro s m ⟨raw,g,sg,pg,ps,pre⟩
-  let z:=unsigned 285 x p
-  have short:min z.u z.v<2^114:=true_small x p 285 (lt_trans good.small good.cap) good.cap (by decide)
-  have old:=Leave270Admission.actualNumbers x p good.positive good.odd (lt_trans good.small good.cap) good.cap
-  have eq:farAt 114 285 x p=(3*2^130≤z.u+z.v):=by
-    apply propext;unfold farAt Shadow.far Shadow.high Shadow.limb;exact Nat.le_div_iff_mul_le (by positivity)
-  have last:=NativePack285.matched_from_domain d x good.nonzero good.small raw s m pre.domain z short g sg
-    (readInput 285 x p raw g sg pre.input) (by simpa only [eq] using pre.cut) (unsigned 270 x p) pg ps _
-    old.odd old.small pre.records pre.mode pre.side pre.cross
-  obtain ⟨r,lim,truth,frame⟩:=last.2.1
-  have chr:Chronology 270 x p r:=by unfold Chronology;rw [←pre.pastCanonical];exact truth
-  refine ⟨last.1,⟨?_,?_,?_,⟨r,lim,chr,frame⟩⟩,last.2.2⟩
-  · obtain ⟨k,limit,actual,kept⟩:=pre.saved225
-    exact ⟨k,limit,actual,ArchiveWindowPreserve.keep kept (fun q mem=>ArchiveWindowPreserve.last d s m q (List.mem_append.mpr (Or.inl (List.mem_append.mpr (Or.inl mem)))))⟩
-  · obtain ⟨k,limit,actual,kept⟩:=pre.saved240
-    exact ⟨k,limit,actual,ArchiveWindowPreserve.keep kept (fun q mem=>ArchiveWindowPreserve.last d s m q (List.mem_append.mpr (Or.inl (List.mem_append.mpr (Or.inr mem)))))⟩
-  · obtain ⟨k,limit,actual,kept⟩:=pre.saved255
-    exact ⟨k,limit,actual,ArchiveWindowPreserve.keep kept (fun q mem=>ArchiveWindowPreserve.last d s m q (List.mem_append.mpr (Or.inr mem)))⟩
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -36518,25 +30745,9 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.StockWindowChain
 open Arithmetic MappedCompressed WideReference Secp256k1 StockWindowTicket Partial
 attribute [local irreducible] run measurementCount Checked body leave225 leave240 leave255 leave270 leave225Inv leave240Inv leave255Inv leave270Inv
-  leave225Move leave240Move leave255Move leave270Move leave225MoveInv leave240MoveInv leave255MoveInv leave270MoveInv
-  NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.nextWindow NativePack285.lastWindow
-  NativePack225.firstUnwind NativePack240.nextUnwind NativePack255.nextUnwind NativePack270.nextUnwind NativePack285.lastUnwind
+  NativePack225.firstWindow NativePack240.nextWindow NativePack255.nextWindow NativePack270.nextWindow NativePack225.firstUnwind NativePack240.nextUnwind NativePack255.nextUnwind NativePack270.nextUnwind
 
-theorem checked (d:Bool) (x:Nat) (good:Bounds x p) :
-    Checked (forward60plus1 d) (reverse60plus1 d) (Before d x p) (ArchiveStockRows.Final d x p) := by
-  rw [assembly,unwind_assembly]
-  simpa only [List.append_assoc] using
-    composition (step225Move d x p good) (composition (step240Move d x p good) (composition (step255Move d x p good)
-      (composition (step270Move d x p good) (step285 d x good))))
 
-theorem result (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 225 raw.basis) :
-    let start:=pullState (OB5.sig 224) raw
-    let out:=run (forward60plus1 d) m start
-    out.phase=raw.phase ∧ ArchiveStockRows.Final d x p out ∧ ∀n,run (reverse60plus1 d) n out=start := by
-  have law:=checked d x good
-  unfold Checked at law
-  exact law _ m ⟨raw,stage,rfl⟩
 end ECDSAAdd.Entrant.StairPacket.StockWindowChain
 
 end
@@ -52890,3 +47101,4 @@ end
 
 
 -- ==== end Window2 ====
+
