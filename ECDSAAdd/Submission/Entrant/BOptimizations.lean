@@ -2441,22 +2441,7 @@ def selected : Program := [
  .CX 4377 4763
 ]
 
-open ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout in
-theorem selected_sublist : selected.Sublist LocalEightBody99.body := by
-  let layout := LowAccCarryDevelop.L
-  let loop := LocalEightLoop.improved
-  let folded := LowAccCarryDevelop.foldFor layout loop
-  have first : (selected.take 448).Sublist (measuredFoldQTq layout (negP layout)) := by
-    decide +kernel
-  have last : (selected.drop 448).Sublist loop := by decide +kernel
-  have inside : loop.Sublist folded :=
-    (List.sublist_append_left _ _).trans (List.sublist_append_right _ _)
-  have afterFirst : folded.Sublist
-      (measuredFoldQTq layout (rot128F layout) ++
-        (folded ++ (LocalEFoldOptimize.improved ++ LocalRebuild.improved))) :=
-    (List.sublist_append_left _ _).trans (List.sublist_append_right _ _)
-  rw [← List.take_append_drop 448 selected]
-  exact first.append (last.trans (inside.trans afterFirst))
+theorem selected_sublist : selected.Sublist LocalEightBody99.body := by decide +kernel
 
 theorem selected_covers : domain.all (C163Touch.touched selected)=true := by decide +kernel
 

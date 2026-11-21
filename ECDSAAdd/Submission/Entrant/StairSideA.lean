@@ -59400,8 +59400,7 @@ def leaveFix12 (s h : Nat) : List Gate := [
 
 def enterFix (s h : Nat) : List Gate := [
   .cx (s+h+31) (h+801),
-  .make (s+15) (h+801) 1558,
-  .cx 1558 (s+h+31),
+  .ccx (s+15) (h+801) (s+h+31),
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59419,13 +59418,14 @@ def enterFix (s h : Nat) : List Gate := [
   .x 1556,
   .cx (s+h+31) 1556,
   .make (h+801) 1556 1557,
-  .make (h+802) 1557 1559,
+  .make 1557 (h+1578) 1558,
+  .make (h+802) 1558 1559,
   .make (h+803) 1559 1560,
   .cx 1560 (h+804),
   .pop (h+803) 1559 1560,
   .cx 1559 (h+803),
-  .pop (h+802) 1557 1559,
-  .cx 1557 (h+802),
+  .pop (h+802) 1558 1559,
+  .cx 1558 (h+802),
   .cx (s+h+32) 1559,
   .ccx (h+1577) 1559 (s+h+32),
   .cx (s+h+32) 1559,
@@ -59444,16 +59444,17 @@ def enterFix (s h : Nat) : List Gate := [
   .x (h+802),
   .x (h+803),
   .x (h+804),
-  .make (h+802) 1557 1562,
+  .make (h+802) 1558 1562,
   .make (h+803) 1562 1563,
   .cx 1563 (h+804),
   .pop (h+803) 1562 1563,
   .cx 1562 (h+803),
-  .pop (h+802) 1557 1562,
-  .cx 1557 (h+802),
+  .pop (h+802) 1558 1562,
+  .cx 1558 (h+802),
   .x (h+802),
   .x (h+803),
   .x (h+804),
+  .pop 1557 (h+1578) 1558,
   .pop (h+801) 1556 1557,
   .cx (s+h+31) 1556,
   .x 1556,
@@ -59462,8 +59463,7 @@ def enterFix (s h : Nat) : List Gate := [
   .cx (h+1579) (h+803),
   .cx (h+1579) (h+804),
   .cx (s+h+31) (h+801),
-  .cx 1558 (s+h+31),
-  .pop (s+15) (h+801) 1558,
+  .ccx (s+15) (h+801) (s+h+31),
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59994,7 +59994,7 @@ theorem counts_leaveFix8 (s h : Nat) : Counts (leaveFix8 s h) 0 0 0 2 := ⟨rfl,
 theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 20 37 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
-theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 14 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
 theorem counts_leaveAdjust (s : Nat) (hw : 1 ≤ wpP s) :
@@ -60144,7 +60144,7 @@ theorem leave_counts (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   · rw [leaveP, s1]; omega
   · rw [leaveInvP, s2]; omega
 theorem enter_counts (j : Fin 23) :
-    toffoliCount (enterP j) = 18 ∧ toffoliCount (enterInvP j) = 18 ∧
+    toffoliCount (enterP j) = 20 ∧ toffoliCount (enterInvP j) = 20 ∧
     measurementCount (enterP j) = 6 ∧ measurementCount (enterInvP j) = 6 ∧
     gateSlots (enterP j) = 92 ∧ gateSlots (enterInvP j) = 92 :=
   (counts_enterFix _ _).programs
@@ -63359,7 +63359,7 @@ theorem renamed_footW (P : Program) (ports : List Wire) (n t f : Nat) (hP : ∀ 
   exact hports p (hP p hp)
 
 /-- Window-form archives of block `j` (tick `t = start j + 15`, flags `e0(t)+6..8`). -/
-theorem archiveLoadP_wiresW (j : Fin 23) (d : Bool) (hj : j.val ≤ 20) :
+theorem archiveLoadP_wiresW (j : Fin 23) (d : Bool) (hj : j.val ≤ 21) :
     ∀ q ∈ wires (archiveLoadP j d), archFootW (start j + 15) (e0P (start j + 15) + 6) q := by
   have ht : start j + 15 < 512 := by simp [start]; omega
   intro q hq
@@ -63368,7 +63368,7 @@ theorem archiveLoadP_wiresW (j : Fin 23) (d : Bool) (hj : j.val ≤ 20) :
   · exact renamed_footW _ _ 155 _ _ (by cases d <;> first | exact load0_ports | exact load1_ports)
       (fun p hp => loadPortsWP_footW _ _ p ht hp) q hq
   · exact (allW_programs (moves_footW _ (e0P (start j + 15) + 6) (by omega)).1).1 q hq
-theorem archiveRestoreP_wiresW (j : Fin 23) (d : Bool) (hj : j.val ≤ 20) :
+theorem archiveRestoreP_wiresW (j : Fin 23) (d : Bool) (hj : j.val ≤ 21) :
     ∀ q ∈ wires (archiveRestoreP j d), archFootW (start j + 15) (e0P (start j + 15) + 6) q := by
   have ht : start j + 15 < 512 := by simp [start]; omega
   intro q hq
@@ -66107,12 +66107,12 @@ theorem stock (d : Bool) :
     h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 
 /-- The stock walk over the ticks the 90..375 window (exit 390) replaces: [90,391). -/
-theorem stock390 (d : Bool) :
-    toffoliCount (Rolling1588TickGap.forward d 90 301)=136505 ∧
-    measurementCount (Rolling1588TickGap.forward d 90 301)=68391 ∧
-    toffoliCount (Rolling1588.reverse d 90 301)=136493 ∧
-    measurementCount (Rolling1588.reverse d 90 301)=68132 := by
-  have h := walks d 90 301 (by decide) (by decide)
+theorem stock405 (d : Bool) :
+    toffoliCount (Rolling1588TickGap.forward d 90 316)=139922 ∧
+    measurementCount (Rolling1588TickGap.forward d 90 316)=70113 ∧
+    toffoliCount (Rolling1588.reverse d 90 316)=139916 ∧
+    measurementCount (Rolling1588.reverse d 90 316)=69833 := by
+  have h := walks d 90 316 (by decide) (by decide)
   exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
     h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 
@@ -68535,7 +68535,7 @@ theorem scratch_nodup (i : Fin 23) : (scratch i).Nodup :=
     List.nodup_range
 
 /-- Head facts, one `decide` over the window archives `i ≤ 18` (short lists only). -/
-theorem heads_all : ∀ i : Fin 23, i.val≤20 →
+theorem heads_all : ∀ i : Fin 23, i.val≤21 →
     (rawHead i).Nodup ∧ (∀q∈rawHead i, Band (start i+15) q) ∧
     (cellsRestoreP (start i+15)++codeTail i).Nodup ∧ (∀q∈cellsRestoreP (start i+15)++codeTail i, Band (start i+15) q) ∧
     (∀q∈cellsRestoreP (start i+15)++codeTail i, q∈rawHead i) ∧
@@ -68543,7 +68543,7 @@ theorem heads_all : ∀ i : Fin 23, i.val≤20 →
     (∀p∈restoreMoves i, p.1≠p.2 ∧ (p.1∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, p.1=scratchS (start i+15) c) ∧
       (p.2∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, p.2=scratchS (start i+15) c)) := by
   decide +kernel
-theorem routes_head_all : ∀ i : Fin 23, i.val≤20 → ∀k:Fin 157,
+theorem routes_head_all : ∀ i : Fin 23, i.val≤21 → ∀k:Fin 157,
     ((k.val<16 ∨ 150≤k.val) → backMap (loadMoves i) (codePorts i k)=rawPorts i (loadRoute k)) ∧
     (k.val<30 → backMap (restoreMoves i) (rawPorts i k)=codePorts i (restoreRoute k)) := by
   decide +kernel
@@ -68552,14 +68552,14 @@ theorem routes_mid : ∀k:Fin 157, (16≤k.val → k.val<150 → (loadRoute k).v
 theorem load_sort : ∀ k, loadRoute k=k ∨ (16≤ k.val ∧ 16≤(loadRoute k).val) := by decide +kernel
 theorem restore_sort : ∀ k, restoreRoute k=k ∨ (23≤ k.val ∧ 23≤(restoreRoute k).val) := by decide +kernel
 
-theorem rawNodup (i : Fin 23) (hi : i.val≤20) : (rawPortsList i).Nodup := by
+theorem rawNodup (i : Fin 23) (hi : i.val≤21) : (rawPortsList i).Nodup := by
   obtain ⟨hn,hb,-⟩:=heads_all i hi
   rw [raw_split,List.nodup_append]
   refine ⟨hn,scratch_nodup i,?_⟩
   intro a ha b hb' eq
   obtain ⟨k,hk,rfl⟩:=List.mem_map.mp hb'
   exact band_off _ (tick_lt i) (List.mem_range.mp hk) (hb a ha) eq.symm
-theorem codeNodup (i : Fin 23) (hi : i.val≤20) : (codePortsList i).Nodup := by
+theorem codeNodup (i : Fin 23) (hi : i.val≤21) : (codePortsList i).Nodup := by
   obtain ⟨-,-,hn,hb,-⟩:=heads_all i hi
   rw [code_split,List.nodup_append,List.nodup_append]
   rw [List.nodup_append] at hn
@@ -68572,9 +68572,9 @@ theorem codeNodup (i : Fin 23) (hi : i.val≤20) : (codePortsList i).Nodup := by
     · exact hn.2.2 a ha b hb' eq
     · obtain ⟨k,hk,rfl⟩:=List.mem_map.mp ha
       exact band_off _ (tick_lt i) (List.mem_range.mp hk) (hb b (List.mem_append_right _ hb')) eq
-theorem load_unique (i : Fin 23) (hi : i.val≤20) : Function.Injective (rawPorts i) :=
+theorem load_unique (i : Fin 23) (hi : i.val≤21) : Function.Injective (rawPorts i) :=
   injective_list (rawPortsList i) (rawLength i) (rawNodup i hi)
-theorem restore_unique (i : Fin 23) (hi : i.val≤20) : Function.Injective (codePorts i) :=
+theorem restore_unique (i : Fin 23) (hi : i.val≤21) : Function.Injective (codePorts i) :=
   injective_list (codePortsList i) (codeLength i) (codeNodup i hi)
 theorem load_map (i : Fin 23) : ∀q:Fin 155, loadMap i q=rawPorts i ⟨q,by omega⟩ := by
   intro q
@@ -68585,7 +68585,7 @@ theorem restore_map (i : Fin 23) : ∀q:Fin 150, restoreMap i q=codePorts i ⟨q
   simp only [restoreMap,codePorts,codePortsList]
   rw [List.getD_append _ _ _ _ (by rw [restorePortsWP_length]; exact q.isLt)]
 
-theorem load_route (i : Fin 23) (hi : i.val≤20) : ∀k,backMap (loadMoves i) (codePorts i k)=rawPorts i (loadRoute k) := by
+theorem load_route (i : Fin 23) (hi : i.val≤21) : ∀k,backMap (loadMoves i) (codePorts i k)=rawPorts i (loadRoute k) := by
   intro k
   by_cases h:k.val<16 ∨ 150≤k.val
   · exact (routes_head_all i hi k).1 h
@@ -68600,7 +68600,7 @@ theorem load_route (i : Fin 23) (hi : i.val≤20) : ∀k,backMap (loadMoves i) (
     obtain ⟨h1,h2,-⟩:=(heads_all i hi).2.2.2.2.2.1 p hp
     have b:=(heads_all i hi).2.1
     exact ⟨band_off _ (tick_lt i) (by omega) (b _ h1),band_off _ (tick_lt i) (by omega) (b _ h2)⟩
-theorem restore_route (i : Fin 23) (hi : i.val≤20) :
+theorem restore_route (i : Fin 23) (hi : i.val≤21) :
     ∀k,backMap (restoreMoves i) (rawPorts i k)=codePorts i (restoreRoute k) := by
   intro k
   by_cases h:k.val<30
@@ -68622,11 +68622,11 @@ theorem restore_route (i : Fin 23) (hi : i.val≤20) :
       · intro eq; have:=scratchS_inj _ _ _ (tick_lt i) (by omega) (by omega) eq; omega
     exact ⟨off _ h1,off _ h2⟩
 
-theorem load_scope (i : Fin 23) (hi : i.val≤20) : ∀p∈loadMoves i,(∃k,rawPorts i k=p.1) ∧ (∃k,rawPorts i k=p.2) := by
+theorem load_scope (i : Fin 23) (hi : i.val≤21) : ∀p∈loadMoves i,(∃k,rawPorts i k=p.1) ∧ (∃k,rawPorts i k=p.2) := by
   intro p hp
   obtain ⟨h1,h2,-⟩:=(heads_all i hi).2.2.2.2.2.1 p hp
   exact ⟨rawIndex i (raw_split i ▸ List.mem_append_left _ h1),rawIndex i (raw_split i ▸ List.mem_append_left _ h2)⟩
-theorem restore_scope (i : Fin 23) (hi : i.val≤20) : ∀p∈restoreMoves i,(∃k,codePorts i k=p.1) ∧ (∃k,codePorts i k=p.2) := by
+theorem restore_scope (i : Fin 23) (hi : i.val≤21) : ∀p∈restoreMoves i,(∃k,codePorts i k=p.1) ∧ (∃k,codePorts i k=p.2) := by
   intro p hp
   obtain ⟨-,h1,h2⟩:=(heads_all i hi).2.2.2.2.2.2 p hp
   have mem (q : Wire) (hq : q∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, q=scratchS (start i+15) c) :
@@ -68638,9 +68638,9 @@ theorem restore_scope (i : Fin 23) (hi : i.val≤20) : ∀p∈restoreMoves i,(�
       · exact List.mem_append_right _ hq
     · exact List.mem_append_left _ (List.mem_append_right _ (scratch_mem i (by omega)))
   exact ⟨codeIndex i (mem _ h1),codeIndex i (mem _ h2)⟩
-theorem load_proper (i : Fin 23) (hi : i.val≤20) : ∀p∈loadMoves i,p.1≠p.2 :=
+theorem load_proper (i : Fin 23) (hi : i.val≤21) : ∀p∈loadMoves i,p.1≠p.2 :=
   fun p hp=>((heads_all i hi).2.2.2.2.2.1 p hp).2.2
-theorem restore_proper (i : Fin 23) (hi : i.val≤20) : ∀p∈restoreMoves i,p.1≠p.2 :=
+theorem restore_proper (i : Fin 23) (hi : i.val≤21) : ∀p∈restoreMoves i,p.1≠p.2 :=
   fun p hp=>((heads_all i hi).2.2.2.2.2.2 p hp).1
 
 theorem load_program (i : Fin 23) (d : Bool) : archiveLoadP i d=placed (loadMap i) (op true d)++moves (loadMoves i) := by
@@ -68649,7 +68649,7 @@ theorem restore_program (i : Fin 23) (d : Bool) :
     archiveRestoreP i d=placed (restoreMap i) (op false d)++moves (restoreMoves i) := by
   cases d <;> rfl
 
-theorem load_run (i : Fin 23) (hi : i.val≤20) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
+theorem load_run (i : Fin 23) (hi : i.val≤21) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
     (ready:Frame (rawPorts i) (startCols true d) row s) :
     let t:=run (archiveLoadP i d) m s
     t.phase=s.phase ∧ Frame (codePorts i) (endCols true d) row t ∧ ∀q,(∀k,rawPorts i k≠q) → t.basis q=s.basis q := by
@@ -68659,7 +68659,7 @@ theorem load_run (i : Fin 23) (hi : i.val≤20) (d:Bool) (row:Nat) (hr:row<63145
   intro q h
   have lim:q<155:=by cases d <;> exact h
   exact ⟨⟨q,by omega⟩,rfl,load_map i ⟨q,lim⟩⟩
-theorem restore_run (i : Fin 23) (hi : i.val≤20) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
+theorem restore_run (i : Fin 23) (hi : i.val≤21) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
     (ready:Frame (codePorts i) (startCols false d) row s) :
     let t:=run (archiveRestoreP i d) m s
     t.phase=s.phase ∧ Frame (rawPorts i) (endCols false d) row t ∧ ∀q,(∀k,codePorts i k≠q) → t.basis q=s.basis q := by
@@ -68669,7 +68669,7 @@ theorem restore_run (i : Fin 23) (hi : i.val≤20) (d:Bool) (row:Nat) (hr:row<63
   intro q h
   have lim:q<150:=by cases d <;> exact h
   exact ⟨⟨q,by omega⟩,rfl,restore_map i ⟨q,lim⟩⟩
-theorem code_from_raw (i : Fin 23) (hi : i.val≤20) : ∀k,∃m,rawPorts i m=codePorts i k := by
+theorem code_from_raw (i : Fin 23) (hi : i.val≤21) : ∀k,∃m,rawPorts i m=codePorts i k := by
   intro k
   have sub:=(heads_all i hi).2.2.2.2.1
   have mem:codePorts i k∈codePortsList i:=by
@@ -68683,7 +68683,7 @@ theorem code_from_raw (i : Fin 23) (hi : i.val≤20) : ∀k,∃m,rawPorts i m=co
     · exact List.mem_append_left _ (sub _ (List.mem_append_left _ mem))
     · exact List.mem_append_right _ mem
   · exact List.mem_append_left _ (sub _ (List.mem_append_right _ mem))
-theorem roundtrip (i : Fin 23) (hi : i.val≤20) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
+theorem roundtrip (i : Fin 23) (hi : i.val≤21) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
     (ready:Frame (rawPorts i) raw row s) :
     run (archiveRestoreP i d) n (run (archiveLoadP i d) m s)=s := by
   have f:=load_run i hi d row hr s m ready
@@ -68906,7 +68906,7 @@ set_option linter.unreachableTactic false
 set_option linter.unusedSimpArgs false
 set_option linter.unusedTactic false
 set_option linter.unusedVariables false
-theorem load_record (i : Fin 23) (hi : i.val≤20) (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
+theorem load_record (i : Fin 23) (hi : i.val≤21) (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
     (legal:∃row<63145,∀q<23,(rawCol q).testBit row=data q)
     (recorded:∀k:Fin 157,k.val<23 → s.basis (rawPorts i k)=data k)
     (blank:∀k:Fin 157,23≤ k.val → s.basis (rawPorts i k)=false) :
@@ -68949,19 +68949,19 @@ def params : Pieces Program :=
 
 /-- The window: blocks 1..20 (ticks 90..375), exit tick 390. -/
 def first : Fin 23 := ⟨1,by decide⟩
-def rest : List (Fin 23) := (List.finRange 23).filter (fun j => 2 ≤ j.val && j.val ≤ 20)
+def rest : List (Fin 23) := (List.finRange 23).filter (fun j => 2 ≤ j.val && j.val ≤ 21)
 
 /-! Closed forms. Every `Pieces Nat` below takes a closed form where par-b's (or the stock) count lemma applies and
 falls back to the measured piece itself elsewhere, so it equals `params.map c` for every argument, and a `decide` on a
 window sum only ever evaluates the closed forms (the window's arguments are all inside the ranges). -/
 
-def inBlocks (j : Fin 23) : Bool := 1 ≤ j.val && j.val ≤ 20
-def portalTick (t : Nat) : Bool := 90 ≤ t && t ≤ 390 && t%15==0
+def inBlocks (j : Fin 23) : Bool := 1 ≤ j.val && j.val ≤ 21
+def portalTick (t : Nat) : Bool := 90 ≤ t && t ≤ 405 && t%15==0
 def dueTick (t : Nat) : Bool := t != 5 && History5.packDue t
 
-theorem portal_ok : ∀ t < 391, portalTick t=true → 5 ≤ wpP t := by decide
+theorem portal_ok : ∀ t < 406, portalTick t=true → 5 ≤ wpP t := by decide
 theorem portal_ok' (t : Nat) (h : portalTick t=true) : 5 ≤ wpP t := by
-  have lt : t < 391 := by simp only [portalTick,Bool.and_eq_true,decide_eq_true_eq] at h; omega
+  have lt : t < 406 := by simp only [portalTick,Bool.and_eq_true,decide_eq_true_eq] at h; omega
   exact portal_ok t lt h
 
 def tickT (e : Nat) := (W.compactSkywalkTickPreWidth e-1)+(W.compactSkywalkTickPostWidth e-1)-W.repairDue e-W.fwdDue e-TickRanges.due e
@@ -68984,8 +68984,8 @@ theorem tick_closed (e : Nat) (hi : e < 511) :
   omega
 
 def tcV : Pieces Nat where
-  enter _ := 18
-  enterInv _ := 18
+  enter _ := 20
+  enterInv _ := 20
   leave j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+193 else toffoliCount (leaveMoveP j)
   leaveInv j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+192 else toffoliCount (leaveMoveInvP j)
   load _ d := if d then 78 else 77
@@ -69149,29 +69149,29 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
 
 /-- The window 90..360 (exit 375): window counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=111000 ∧ toffoliCount (forwardW params false first rest)=110980 ∧
-    toffoliCount (reverseW params true first rest)=111182 ∧ toffoliCount (reverseW params false first rest)=111182 ∧
-    measurementCount (forwardW params true first rest)=55731 ∧ measurementCount (forwardW params false first rest)=55731 ∧
-    measurementCount (reverseW params true first rest)=55468 ∧ measurementCount (reverseW params false first rest)=55468 := by
+    toffoliCount (forwardW params true first rest)=113949 ∧ toffoliCount (forwardW params false first rest)=113928 ∧
+    toffoliCount (reverseW params true first rest)=114140 ∧ toffoliCount (reverseW params false first rest)=114140 ∧
+    measurementCount (forwardW params true first rest)=57219 ∧ measurementCount (forwardW params false first rest)=57219 ∧
+    measurementCount (reverseW params true first rest)=56943 ∧ measurementCount (reverseW params false first rest)=56943 := by
   rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
     (counts true first rest).2.2.1,(counts false first rest).2.2.1,(counts true first rest).2.2.2,(counts false first rest).2.2.2]
   decide +kernel
 
 /-- The window sizes (blocks 1..19, exit 375), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=111000 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=113949 := by
   rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=110980 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=113928 := by
   rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=111182 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=114140 := by
   rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=111182 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=114140 := by
   rw [(counts false first rest).2.1]; decide +kernel
-theorem ship_measureF : measurementCount (forwardW params true first rest)=55731 ∧
-    measurementCount (forwardW params false first rest)=55731 := by
+theorem ship_measureF : measurementCount (forwardW params true first rest)=57219 ∧
+    measurementCount (forwardW params false first rest)=57219 := by
   rw [(counts true first rest).2.2.1,(counts false first rest).2.2.1]; decide +kernel
-theorem ship_measureR : measurementCount (reverseW params true first rest)=55468 ∧
-    measurementCount (reverseW params false first rest)=55468 := by
+theorem ship_measureR : measurementCount (reverseW params true first rest)=56943 ∧
+    measurementCount (reverseW params false first rest)=56943 := by
   rw [(counts true first rest).2.2.2,(counts false first rest).2.2.2]; decide +kernel
 
 /-- `slotsV`: upper bounds of the piece slot counts. Exact closed forms where par-b's count lemmas apply (enter,
@@ -69251,8 +69251,8 @@ theorem slots_le : (params.map gateSlots).Le slotsV := by
     · exact Nat.le_refl _
 
 /-- The window 90..360 (exit 375): the slot sums of `slotsV`, one Nat evaluation (no program is evaluated). -/
-theorem slot_sums : (forwardL slotsV true first rest).sum ≤ 1632867 ∧ (forwardL slotsV false first rest).sum ≤ 1632867 ∧
-    (reverseL slotsV true first rest).sum ≤ 1638378 ∧ (reverseL slotsV false first rest).sum ≤ 1638526 := by
+theorem slot_sums : (forwardL slotsV true first rest).sum ≤ 1760000 ∧ (forwardL slotsV false first rest).sum ≤ 1760000 ∧
+    (reverseL slotsV true first rest).sum ≤ 1766000 ∧ (reverseL slotsV false first rest).sum ≤ 1766200 := by
   decide +kernel
 
 
@@ -69445,7 +69445,7 @@ theorem parkFoot_dom {e q : Nat} (lo : 225 ≤ e) (h : parkFootP e q) : domainW 
   have b : railP e ≤ 257 := by unfold railP; split <;> (try split) <;> omega
   rw [dom_iff]; unfold parkFootP at h; omega
 /-- Window-form archives (flags at `e0(t)+6..8`) for ticks up to 390, on the sharp footprint `archFootW`. -/
-theorem archFoot_dom {t q : Nat} (lo : 105 ≤ t) (hi : t ≤ 390) (h : archFootW t (e0P t + 6) q) : domainW q = true := by
+theorem archFoot_dom {t q : Nat} (lo : 105 ≤ t) (hi : t ≤ 405) (h : archFootW t (e0P t + 6) q) : domainW q = true := by
   rw [dom_iff]; unfold archFootW e0P sbP at h; omega
 /-- Stock-form exit archives (flags at `bTop(e)+1..3`) for exit ticks 225..405. -/
 theorem exitFoot_dom {e q : Nat} (lo : 225 ≤ e) (hi : e ≤ 405) (h : archFootW e (bTopP e + 1) q) : domainW q = true := by
@@ -69483,10 +69483,10 @@ theorem portal_cov (t : Nat) (lo : 90 ≤ t) (hi : t ≤ 405) : CoveredW (portal
 theorem park_cov (e : Nat) (lo : 225 ≤ e) (hi : e ≤ 405) : CoveredW (parkP e) ∧ CoveredW (parkInvP e) := by
   have w := park_wires e (by omega) hi
   exact ⟨fun q hq => parkFoot_dom lo (w.1 q hq), fun q hq => parkFoot_dom lo (w.2 q hq)⟩
-theorem archive_cov (j : Fin 23) (d : Bool) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 20) :
+theorem archive_cov (j : Fin 23) (d : Bool) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
     CoveredW (archiveLoadP j d) ∧ CoveredW (archiveRestoreP j d) := by
   have lo : 105 ≤ start j+15 := by simp only [start]; omega
-  have hi : start j+15 ≤ 390 := by simp only [start]; omega
+  have hi : start j+15 ≤ 405 := by simp only [start]; omega
   exact ⟨fun q hq => archFoot_dom lo hi (archiveLoadP_wiresW j d (by omega) q hq),
     fun q hq => archFoot_dom lo hi (archiveRestoreP_wiresW j d (by omega) q hq)⟩
 theorem exitArch_cov (e : Nat) (d : Bool) (lo : 225 ≤ e) (hi : e ≤ 405) :
@@ -69575,14 +69575,14 @@ theorem exit_tick (e : Nat) (he : e < 511)
   · exact List.all_eq_true.mp table x (List.mem_toFinset.mp
       (W.ReverseCarry.compactReceiverTick_support base e (by omega) base_pool_nodup hx))
 
-theorem exit390 (d : Bool) :
-    CoveredW (renameProgram (OB5.sig 390) (TickRanges.tick base 390)) ∧
-    CoveredW (renameProgram (OB5.sig 390) (W.ReverseCarry.compactReceiverTick base 390)) ∧
-    CoveredW (exitLoadP 390 d) ∧ CoveredW (exitRestoreP 390 d) := by
-  have t := exit_tick 390 (by decide) (by decide +kernel)
-  exact ⟨t.1,t.2,(exitArch_cov 390 d (by omega) (by omega)).1,(exitArch_cov 390 d (by omega) (by omega)).2⟩
+theorem exit405 (d : Bool) :
+    CoveredW (renameProgram (OB5.sig 405) (TickRanges.tick base 405)) ∧
+    CoveredW (renameProgram (OB5.sig 405) (W.ReverseCarry.compactReceiverTick base 405)) ∧
+    CoveredW (exitLoadP 405 d) ∧ CoveredW (exitRestoreP 405 d) := by
+  have t := exit_tick 405 (by decide) (by decide +kernel)
+  exact ⟨t.1,t.2,(exitArch_cov 405 d (by omega) (by omega)).1,(exitArch_cov 405 d (by omega) (by omega)).2⟩
 
-theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 1 20 where
+theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 1 21 where
   block j h0 h1 := by
     have e := enter_cov j h0 (by omega)
     have l := leaveMove_cov j h0 (by omega)
@@ -69603,18 +69603,18 @@ theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 1 20 where
     exact ⟨p.1,p.2⟩
   saved j h0 h1 := archive_cov j d h0 (by omega)
   exit j h := by
-    have hs : start j = 390 := by simp only [start]; omega
+    have hs : start j = 405 := by simp only [start]; omega
     rw [hs]
-    have k := park_cov 390 (by omega) (by omega)
-    have o := portal_cov 390 (by omega) (by omega)
-    have p := pack_cov d 390 380 (by omega) (by omega) (by omega) (by omega)
-    have x := exit390 d
+    have k := park_cov 405 (by omega) (by omega)
+    have o := portal_cov 405 (by omega) (by omega)
+    have p := pack_cov d 405 395 (by omega) (by omega) (by omega) (by omega)
+    have x := exit405 d
     exact ⟨k.1,k.2,o.1,o.2,x.1,x.2.1,p.1,p.2,x.2.2.1,x.2.2.2⟩
 
-theorem rest_eq : WindowParams.rest = [⟨2,by decide⟩,⟨3,by decide⟩,⟨4,by decide⟩,⟨5,by decide⟩,⟨6,by decide⟩,⟨7,by decide⟩,⟨8,by decide⟩,⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩,⟨13,by decide⟩,⟨14,by decide⟩,⟨15,by decide⟩,⟨16,by decide⟩,⟨17,by decide⟩,⟨18,by decide⟩,⟨19,by decide⟩,⟨20,by decide⟩] := by decide
+theorem rest_eq : WindowParams.rest = [⟨2,by decide⟩,⟨3,by decide⟩,⟨4,by decide⟩,⟨5,by decide⟩,⟨6,by decide⟩,⟨7,by decide⟩,⟨8,by decide⟩,⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩,⟨13,by decide⟩,⟨14,by decide⟩,⟨15,by decide⟩,⟨16,by decide⟩,⟨17,by decide⟩,⟨18,by decide⟩,⟨19,by decide⟩,⟨20,by decide⟩,⟨21,by decide⟩] := by decide
 theorem consec : Consec WindowParams.first WindowParams.rest := by
-  rw [rest_eq]; exact ⟨rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,trivial⟩
-theorem last : (lastBlock WindowParams.first WindowParams.rest).val = 20 := by rw [rest_eq]; rfl
+  rw [rest_eq]; exact ⟨rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,trivial⟩
+theorem last : (lastBlock WindowParams.first WindowParams.rest).val = 21 := by rw [rest_eq]; rfl
 
 /-- The window (both directions, both kernels) lies in the K2 domain. -/
 theorem window_covered (d : Bool) :
@@ -69673,11 +69673,11 @@ theorem leaveMove_phys (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   rw [leaveMoveP, leaveMoveInvP]; exact physical_of_proper _ (leaveMove_proper j h0 h1)
 
 theorem portal_properW90 : (portalOps 90).all proper = true := by decide +kernel
-theorem portal_proper390 : (portalOps 390).all proper = true := by decide +kernel
+theorem portal_proper405 : (portalOps 405).all proper = true := by decide +kernel
 theorem portal_phys90 : GatePhysical (portalP 90) ∧ GatePhysical (portalInvP 90) :=
   physical_of_proper _ (List.all_eq_true.mp portal_properW90)
-theorem portal_phys390 : GatePhysical (portalP 390) ∧ GatePhysical (portalInvP 390) :=
-  physical_of_proper _ (List.all_eq_true.mp portal_proper390)
+theorem portal_phys405 : GatePhysical (portalP 405) ∧ GatePhysical (portalInvP 405) :=
+  physical_of_proper _ (List.all_eq_true.mp portal_proper405)
 
 /-- Packs and unpacks at any due tick, in any `OB5.sig s` frame. -/
 theorem pack_phys (d : Bool) (s t : Nat) (hs : s ≤ 511) (ten : 10 ≤ t) (hi : t ≤ 511)
@@ -69745,7 +69745,7 @@ theorem restore_codec_phys (ports : List Wire) (nd : ports.Nodup) (len : 150 ≤
   · exact codec_phys ports 150 _ nd len restore0_ports integer_restore0_GatePhysical
 
 /-- Window-form archives of block `j` (tick `start j + 15`), every window block up to 20. -/
-theorem archive_phys (j : Fin 23) (d : Bool) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 20) :
+theorem archive_phys (j : Fin 23) (d : Bool) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
     GatePhysical (archiveLoadP j d) ∧ GatePhysical (archiveRestoreP j d) := by
   have lo : 90 ≤ start j+15 := by simp only [start]; omega
   have hi : start j+15 ≤ 405 := by simp only [start]; omega
@@ -69760,10 +69760,10 @@ theorem archive_phys (j : Fin 23) (d : Bool) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 
     exact appP (restore_codec_phys _ nr (by rw [restorePortsWP_length]) d) (moveRestore_phys _ _ lo hi fl)
 
 /-- Stock-form exit archives at 390 (the two port lists by one decide each). -/
-theorem exit_phys390 (d : Bool) : GatePhysical (exitLoadP 390 d) ∧ GatePhysical (exitRestoreP 390 d) := by
-  have hb : bTopP 390+1 = 909 := by decide
-  have nl : (loadPortsXP 390 909).Nodup := by decide +kernel
-  have nr : (restorePortsXP 390).Nodup := by decide +kernel
+theorem exit_phys405 (d : Bool) : GatePhysical (exitLoadP 405 d) ∧ GatePhysical (exitRestoreP 405 d) := by
+  have hb : bTopP 405+1 = 894 := by decide
+  have nl : (loadPortsXP 405 894).Nodup := by decide +kernel
+  have nr : (restorePortsXP 405).Nodup := by decide +kernel
   constructor
   · rw [exitLoadP, hb]
     exact appP (load_codec_phys _ nl (by rw [loadPortsXP_length]) d) (moveLoad_phys _ (by omega) (by omega))
@@ -69774,7 +69774,7 @@ theorem exit_phys390 (d : Bool) : GatePhysical (exitLoadP 390 d) ∧ GatePhysica
 attribute [local irreducible] GatePhysical enterP enterInvP leaveP leaveInvP leaveMoveP leaveMoveInvP archiveLoadP archiveRestoreP portalP
   portalInvP parkP parkInvP exitLoadP exitRestoreP StairPacket.routed StairPacket.unrouted Rolling1588.packAtTick
   Rolling1588.unpackAtTick in
-theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 1 20 where
+theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 1 21 where
   block j h0 h1 := by
     have e := enterP_physical j (by omega) (by omega)
     have l := leaveMove_phys j (by omega) (by omega)
@@ -69795,13 +69795,13 @@ theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 1 20
     exact ⟨p.1,p.2⟩
   saved j h0 h1 := archive_phys j d h0 (by omega)
   exit j h := by
-    have hs : start j = 390 := by simp only [start]; omega
+    have hs : start j = 405 := by simp only [start]; omega
     rw [hs]
-    have k := parkP_physical 390 (by omega) (by omega)
-    have p := pack_phys d 390 380 (by omega) (by omega) (by omega) (by decide)
-    have t := tick_phys 390 (by omega)
-    have x := exit_phys390 d
-    exact ⟨k.1,k.2,portal_phys390.1,portal_phys390.2,t.1,t.2,p.1,p.2,x.1,x.2⟩
+    have k := parkP_physical 405 (by omega) (by omega)
+    have p := pack_phys d 405 395 (by omega) (by omega) (by omega) (by decide)
+    have t := tick_phys 405 (by omega)
+    have x := exit_phys405 d
+    exact ⟨k.1,k.2,portal_phys405.1,portal_phys405.2,t.1,t.2,p.1,p.2,x.1,x.2⟩
 
 /-- The window (both directions, both kernels) is physical. -/
 theorem window_physical (d : Bool) :
@@ -69827,15 +69827,15 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParams
 open ECDSAAdd.Entrant.StairPacket.WindowFold ECDSAAdd.Challenge
 
 /-- Slot bounds of the window (upper bounds only; the judge has no slot ceiling). -/
-theorem ship_slotsF : gateSlots (Partial.forward45plus1 true) ≤ 1632867 ∧
-    gateSlots (Partial.forward45plus1 false) ≤ 1632867 := by
-  show gateSlots (forwardW params true first rest) ≤ 1632867 ∧ gateSlots (forwardW params false first rest) ≤ 1632867
+theorem ship_slotsF : gateSlots (Partial.forward45plus1 true) ≤ 1760000 ∧
+    gateSlots (Partial.forward45plus1 false) ≤ 1760000 := by
+  show gateSlots (forwardW params true first rest) ≤ 1760000 ∧ gateSlots (forwardW params false first rest) ≤ 1760000
   rw [measure_forward gateSlots gateSlots_append, measure_forward gateSlots gateSlots_append]
   exact ⟨(forwardL_le slots_le true first rest).trans slot_sums.1,
     (forwardL_le slots_le false first rest).trans slot_sums.2.1⟩
-theorem ship_slotsR : gateSlots (Partial.reverse45plus1 true) ≤ 1638378 ∧
-    gateSlots (Partial.reverse45plus1 false) ≤ 1638526 := by
-  show gateSlots (reverseW params true first rest) ≤ 1638378 ∧ gateSlots (reverseW params false first rest) ≤ 1638526
+theorem ship_slotsR : gateSlots (Partial.reverse45plus1 true) ≤ 1766000 ∧
+    gateSlots (Partial.reverse45plus1 false) ≤ 1766200 := by
+  show gateSlots (reverseW params true first rest) ≤ 1766000 ∧ gateSlots (reverseW params false first rest) ≤ 1766200
   rw [measure_reverse gateSlots gateSlots_append, measure_reverse gateSlots gateSlots_append]
   exact ⟨(reverseL_le slots_le true first rest).trans slot_sums.2.2.1,
     (reverseL_le slots_le false first rest).trans slot_sums.2.2.2⟩
