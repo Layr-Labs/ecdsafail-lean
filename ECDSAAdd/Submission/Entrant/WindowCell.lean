@@ -1,12 +1,14 @@
-import ECDSAAdd.Submission.Entrant.Window
+import ECDSAAdd.Arithmetic.Copy
+import ECDSAAdd.Arithmetic.SignedWord
+import ECDSAAdd.Arithmetic.SkywalkIntegerTick
+import ECDSAAdd.Framework.GateInverse
+import ECDSAAdd.Submission.Entrant.MainPart07Core
+import ECDSAAdd.Submission.Entrant.StairSideA0
+import ECDSAAdd.Arithmetic.SignedRecordProgram
+import ECDSAAdd.Framework.Cost
+import ECDSAAdd.Framework.MeasuredLocality
+import ECDSAAdd.Math.SkywalkTrace
 
-/-! The odd-word half-cell (ercumentyildirim 3697b163, as carried by 3f26822d / e7f82313; restored through the
-generic window's field ten-blocks as in kshitij-hash 0c726009): odd packets, P1Life / DirectPass laws, RouteA routes
-and the slice lemmas the field group uses. Own module (imports Window, imported by Main) so Window keeps its command
-count and its own replay task. -/
-
--- ==== F1: odd-word cell restored (packets 1..84, ten-blocks included) ====
--- Same code as in submission 3f26822d (ercumentyildirim 3697b163 lineage), in place of the empty section shells.
 -- ===== odd division cell on packets 1..45 =====
 -- Odd-word half-cell laws and odd packets (P1Life, DirectPass, RouteA), the odd division slice on packets 1..45
 -- (slice45) with its frames, counts and slots, and the cell lemmas used by the window.
@@ -16351,3 +16353,4 @@ theorem c45_mslice45_sub : wires RouteA.Rolling1588.mslice45 ⊆ wires (Rolling1
 end ECDSAAdd.Entrant.StairLoanGroupSupport
 end
 -- ===== end odd multiplication cell =====
+
