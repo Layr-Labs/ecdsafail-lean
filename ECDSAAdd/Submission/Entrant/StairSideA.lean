@@ -59400,7 +59400,8 @@ def leaveFix12 (s h : Nat) : List Gate := [
 
 def enterFix (s h : Nat) : List Gate := [
   .cx (s+h+31) (h+801),
-  .ccx (s+15) (h+801) (s+h+31),
+  .make (s+15) (h+801) 1558,
+  .cx 1558 (s+h+31),
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59418,14 +59419,13 @@ def enterFix (s h : Nat) : List Gate := [
   .x 1556,
   .cx (s+h+31) 1556,
   .make (h+801) 1556 1557,
-  .make 1557 (h+1578) 1558,
-  .make (h+802) 1558 1559,
+  .make (h+802) 1557 1559,
   .make (h+803) 1559 1560,
   .cx 1560 (h+804),
   .pop (h+803) 1559 1560,
   .cx 1559 (h+803),
-  .pop (h+802) 1558 1559,
-  .cx 1558 (h+802),
+  .pop (h+802) 1557 1559,
+  .cx 1557 (h+802),
   .cx (s+h+32) 1559,
   .ccx (h+1577) 1559 (s+h+32),
   .cx (s+h+32) 1559,
@@ -59444,17 +59444,16 @@ def enterFix (s h : Nat) : List Gate := [
   .x (h+802),
   .x (h+803),
   .x (h+804),
-  .make (h+802) 1558 1562,
+  .make (h+802) 1557 1562,
   .make (h+803) 1562 1563,
   .cx 1563 (h+804),
   .pop (h+803) 1562 1563,
   .cx 1562 (h+803),
-  .pop (h+802) 1558 1562,
-  .cx 1558 (h+802),
+  .pop (h+802) 1557 1562,
+  .cx 1557 (h+802),
   .x (h+802),
   .x (h+803),
   .x (h+804),
-  .pop 1557 (h+1578) 1558,
   .pop (h+801) 1556 1557,
   .cx (s+h+31) 1556,
   .x 1556,
@@ -59463,7 +59462,8 @@ def enterFix (s h : Nat) : List Gate := [
   .cx (h+1579) (h+803),
   .cx (h+1579) (h+804),
   .cx (s+h+31) (h+801),
-  .ccx (s+15) (h+801) (s+h+31),
+  .cx 1558 (s+h+31),
+  .pop (s+15) (h+801) 1558,
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59994,7 +59994,7 @@ theorem counts_leaveFix8 (s h : Nat) : Counts (leaveFix8 s h) 0 0 0 2 := ⟨rfl,
 theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 20 37 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
-theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 14 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
 theorem counts_leaveAdjust (s : Nat) (hw : 1 ≤ wpP s) :
@@ -60144,7 +60144,7 @@ theorem leave_counts (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   · rw [leaveP, s1]; omega
   · rw [leaveInvP, s2]; omega
 theorem enter_counts (j : Fin 23) :
-    toffoliCount (enterP j) = 20 ∧ toffoliCount (enterInvP j) = 20 ∧
+    toffoliCount (enterP j) = 18 ∧ toffoliCount (enterInvP j) = 18 ∧
     measurementCount (enterP j) = 6 ∧ measurementCount (enterInvP j) = 6 ∧
     gateSlots (enterP j) = 92 ∧ gateSlots (enterInvP j) = 92 :=
   (counts_enterFix _ _).programs
@@ -68984,8 +68984,8 @@ theorem tick_closed (e : Nat) (hi : e < 511) :
   omega
 
 def tcV : Pieces Nat where
-  enter _ := 20
-  enterInv _ := 20
+  enter _ := 18
+  enterInv _ := 18
   leave j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+193 else toffoliCount (leaveMoveP j)
   leaveInv j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+192 else toffoliCount (leaveMoveInvP j)
   load _ d := if d then 78 else 77
@@ -69149,8 +69149,8 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
 
 /-- The window 90..360 (exit 375): window counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=111040 ∧ toffoliCount (forwardW params false first rest)=111020 ∧
-    toffoliCount (reverseW params true first rest)=111222 ∧ toffoliCount (reverseW params false first rest)=111222 ∧
+    toffoliCount (forwardW params true first rest)=111000 ∧ toffoliCount (forwardW params false first rest)=110980 ∧
+    toffoliCount (reverseW params true first rest)=111182 ∧ toffoliCount (reverseW params false first rest)=111182 ∧
     measurementCount (forwardW params true first rest)=55731 ∧ measurementCount (forwardW params false first rest)=55731 ∧
     measurementCount (reverseW params true first rest)=55468 ∧ measurementCount (reverseW params false first rest)=55468 := by
   rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
@@ -69159,13 +69159,13 @@ theorem ship_counts :
 
 /-- The window sizes (blocks 1..19, exit 375), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=111040 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=111000 := by
   rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=111020 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=110980 := by
   rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=111222 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=111182 := by
   rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=111222 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=111182 := by
   rw [(counts false first rest).2.1]; decide +kernel
 theorem ship_measureF : measurementCount (forwardW params true first rest)=55731 ∧
     measurementCount (forwardW params false first rest)=55731 := by
