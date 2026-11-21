@@ -2006,7 +2006,7 @@ private theorem opartition (c : Cost) (d : Bool) :
   omega
 
 theorem ooverhead (j : Nat) (d : Bool) :
-    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 195 else 193) ∧
+    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 195 else 192) ∧
     measurementCount (oten j (!d)) = measurementCount (ogroup d j 2)+277 := by
   cases d <;>
     simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
@@ -2104,9 +2104,9 @@ private theorem osolve (c : Cost) (d : Bool) (delta : Nat)
 
 /-- the field group (odd cell on packets 1..84, ten-blocks included) against the record packets 1..84. -/
 theorem group_cost (d : Bool) :
-    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 31 else 23) ∧
+    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 31 else 19) ∧
     measurementCount (group84 d)+61=measurementCount (group d 1 84)+0 := by
-  have t := osolve tc d (if d then 195 else 193) (fun j => (ooverhead j d).1)
+  have t := osolve tc d (if d then 195 else 192) (fun j => (ooverhead j d).1)
   have m := osolve mc d 277 (fun j => (ooverhead j d).2)
   have f := ofield_counts d
   rw [show tc.measure = toffoliCount from rfl] at t
@@ -3157,7 +3157,7 @@ private theorem fieldMcDiv :
   rw [show mc.measure=measurementCount from rfl]
   exact (WindowFieldCosts.group_cost true).2
 private theorem fieldTcMul :
-    tc.measure (WindowFieldCosts.group84 false)+0=tc.measure (WindowFieldCosts.group false 1 84)+23 := by
+    tc.measure (WindowFieldCosts.group84 false)+0=tc.measure (WindowFieldCosts.group false 1 84)+19 := by
   rw [show tc.measure=toffoliCount from rfl]
   have h := (WindowFieldCosts.group_cost false).1
   rw [if_neg (show ¬(false = true) by decide)] at h
@@ -3188,8 +3188,8 @@ theorem tc_div : tc.measure divide+6940+6925+0=tc.measure Stair44Outer.divide+31
   kernels tc 6940 6925 0 31 (WindowWalkCosts.inst true 139 409 6940 6925 rfl rfl rfl).1
     (WindowWalkCosts.inst false 220 490 6944 6925 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+6944+6925+0=tc.measure (Stair44Outer.multiply k)+23 :=
-  kernelsM tc k 6944 6925 0 23 (WindowWalkCosts.inst false 219 489 6944 6925 rfl rfl rfl).1
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+6944+6925+0=tc.measure (Stair44Outer.multiply k)+19 :=
+  kernelsM tc k 6944 6925 0 19 (WindowWalkCosts.inst false 219 489 6944 6925 rfl rfl rfl).1
     (WindowWalkCosts.inst true 139 409 6940 6925 rfl rfl rfl).2.1 fieldTcMul
 
 theorem mc_div : mc.measure divide+3532+3530+61=mc.measure Stair44Outer.divide+0 :=
@@ -3201,12 +3201,12 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+3532+3530+61=mc.measure (Stai
     (WindowWalkCosts.inst true 139 409 6940 6925 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+27680=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+27684=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+14246=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 27680 (pair_gain tc_div (tc_mul _) rfl),
+  ⟨finite_delta tc C cx cy 27684 (pair_gain tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 14246 (pair_gain mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2141416 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2141412 ∧
     measurementCount (program C) ≤ 1505998 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -3954,7 +3954,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2141416,1505998,1543,52243599⟩
+def bounds : Challenge.Bounds := ⟨2141412,1505998,1543,52243599⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -5386,8 +5386,8 @@ def guarded (labels neg : List Wire) (pivot : Option Wire) : Clause :=
   ⟨ph++neg.map Aff.x,labels[0]!,labels[1]!,labels.getLast!, mid.zipIdx.map (fun ⟨c,i⟩=>(c,18+i)),false⟩
 
 def firstPair : Clause :=
-  let c := guarded [0,3,1,2,4,5] [4,5] none
-  { c with prep := (((List.range 16).erase 5).erase 12).map (fun i=>Aff.cx i 5) ++ c.prep }
+  let c := guarded [1,2,0,3,4,5] [4,5] none
+  { c with prep := (((List.range 16).erase 5).erase 12).map (fun i=>Aff.cx i 5) ++ c.prep, backwards := true }
 
 def commonPrep : List Aff :=
   [8,9,10,11].map (Aff.cx 0) ++ ((List.range 16).erase 1).map (fun i=>Aff.cx i 1) ++ [Aff.x 1]
@@ -5398,8 +5398,7 @@ def tailRight : Clause :=
   let c := guarded [8,9,10,11,1,2,3,5,6,7,12,13,14,15] [2,3,5,6,7,12,13,14,15] none
   { c with prep := [2,3].map (Aff.cx 0) ++ [6,7,12,14,15].map (Aff.cx 4) ++ c.prep }
 
-def positivePair : Clause :=
-  { guarded [0,3,4,5,6,7,1] [] (some 1) with backwards := true }
+def positivePair : Clause := guarded [4,5,0,3,6,7,1] [] (some 1)
 
 def negativePair : Clause := { tailLeft with prep := commonPrep ++ tailLeft.prep }
 
@@ -6742,7 +6741,7 @@ open StairConcreteAssembly WindowFieldParity
 set_option maxRecDepth 16000
 set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
-private theorem leaf : toffoliCount region=88 ∧ measurementCount region=0 ∧ gateSlots region=210 := by
+private theorem leaf : toffoliCount region=86 ∧ measurementCount region=0 ∧ gateSlots region=208 := by
   decide +kernel
 private theorem correction_eq (c : Cost) : c.measure correction=4*c.measure region := by
   simp only [correction,bankCorrection,c.append,c.rename]; omega
@@ -6761,8 +6760,8 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+16*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2142824 ∧
-    measurementCount (program C) ≤ 1505998 ∧ gateSlots (program C) ≤ 52246959 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2142788 ∧
+    measurementCount (program C) ≤ 1505998 ∧ gateSlots (program C) ≤ 52246927 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
   cases C with
@@ -7556,7 +7555,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2142824,1505998,1543,52246959⟩
+def bounds : Challenge.Bounds := ⟨2142788,1505998,1543,52246927⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -7573,7 +7572,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 52246959
+    change gateSlots (normalizeProgram _) ≤ 52246927
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 

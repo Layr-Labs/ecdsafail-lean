@@ -12818,7 +12818,7 @@ private theorem switch1Block13Ok : GatePhysical switch1Block13 ∧ toffoliCount 
 
 def switch1Block14 : Program := [
   .CX 87 36,
-  .CCX 35 36 88,
+  .CX 36 88,
   .CX 87 36,
   .CX 80 35,
   .CX 78 35,
@@ -12844,7 +12844,7 @@ def switch1Block14 : Program := [
   .CX 91 36
 ]
 
-private theorem switch1Block14Ok : GatePhysical switch1Block14 ∧ toffoliCount switch1Block14 = 5 ∧ measurementCount switch1Block14 = 0 ∧ gateSlots switch1Block14 = 25 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem switch1Block14Ok : GatePhysical switch1Block14 ∧ toffoliCount switch1Block14 = 4 ∧ measurementCount switch1Block14 = 0 ∧ gateSlots switch1Block14 = 25 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 def switch1Block15 : Program := [
   .CX 90 36,
@@ -13079,7 +13079,7 @@ def switch1 : Program := switch1Block0 ++ switch1Block1 ++ switch1Block2 ++ swit
 theorem switch1_GatePhysical : GatePhysical switch1 := by
   simp only [switch1, gatePhysical_append, and_true, switch1Block0Ok.1, switch1Block1Ok.1, switch1Block2Ok.1, switch1Block3Ok.1, switch1Block4Ok.1, switch1Block5Ok.1, switch1Block6Ok.1, switch1Block7Ok.1, switch1Block8Ok.1, switch1Block9Ok.1, switch1Block10Ok.1, switch1Block11Ok.1, switch1Block12Ok.1, switch1Block13Ok.1, switch1Block14Ok.1, switch1Block15Ok.1, switch1Block16Ok.1, switch1Block17Ok.1, switch1Block18Ok.1, switch1Block19Ok.1]
 
-theorem switch1_toffoliCount : toffoliCount switch1 = 55 := by
+theorem switch1_toffoliCount : toffoliCount switch1 = 54 := by
   simp only [switch1, toffoliCount_append, switch1Block0Ok.2.1, switch1Block1Ok.2.1, switch1Block2Ok.2.1, switch1Block3Ok.2.1, switch1Block4Ok.2.1, switch1Block5Ok.2.1, switch1Block6Ok.2.1, switch1Block7Ok.2.1, switch1Block8Ok.2.1, switch1Block9Ok.2.1, switch1Block10Ok.2.1, switch1Block11Ok.2.1, switch1Block12Ok.2.1, switch1Block13Ok.2.1, switch1Block14Ok.2.1, switch1Block15Ok.2.1, switch1Block16Ok.2.1, switch1Block17Ok.2.1, switch1Block18Ok.2.1, switch1Block19Ok.2.1]
 
 theorem switch1_measurementCount : measurementCount switch1 = 82 := by
