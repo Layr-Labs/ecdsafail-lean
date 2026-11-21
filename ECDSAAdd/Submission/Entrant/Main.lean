@@ -1671,8 +1671,8 @@ open Partial Arithmetic MappedCompressed StairSiteAvoidance
 set_option maxRecDepth 50000
 set_option maxHeartbeats 4000000
 
--- The generic window's domain (K2's `WindowCovered.domainW`): `[116,529] [786,1045] [1049,1300] [1556,1812]`.
-def domain (q : Nat) := (116 ≤ q && q ≤ 529) || (786 ≤ q && q ≤ 1045) || (1049 ≤ q && q ≤ 1300) || (1556 ≤ q && q ≤ 1812)
+-- The generic window's domain (K2's `WindowCovered.domainW`): `[131,529] [786,1045] [1049,1300] [1556,1812]`.
+def domain (q : Nat) := (131 ≤ q && q ≤ 529) || (786 ≤ q && q ≤ 1045) || (1049 ≤ q && q ≤ 1300) || (1556 ≤ q && q ≤ 1812)
 
 theorem domain_eq (q : Nat) : domain q = WindowCovered.domainW q := rfl
 
@@ -1685,7 +1685,7 @@ theorem covered_append {P Q : Program} (a : Covered P) (b : Covered Q) : Covered
 
 theorem from_check {P : Program} (h : allSites domain P = true) : Covered P := allSites_sound h
 
-private theorem interval0 : (List.range' 116 414).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
+private theorem interval0 : (List.range' 131 399).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
 private theorem interval1 : (List.range' 786 260).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
 private theorem interval2 : (List.range' 1049 252).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
 private theorem interval3 : (List.range' 1556 257).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
@@ -1700,6 +1700,59 @@ theorem valid {q : Wire} (h : domain q = true) : Stair44PhaseSites.valid (Stair4
 
 end ECDSAAdd.Entrant.StairPacket.PartialSites
 
+end
+
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.RouteA.Rolling1588
+open Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField OffsetBorrowedCanonical CompressedFieldSupport Rolling1588Lifetime
+open ECDSAAdd.Entrant.Rolling1588
+attribute [local irreducible] run wires
+
+/-- the `mstart` packet at any position (`mstartPacket_counts` is the case 84). -/
+theorem ot_mstartPacket_counts (j : Nat) :
+    toffoliCount (mstartPacket j)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet false j)+242 ∧
+    measurementCount (mstartPacket j)=measurementCount (ECDSAAdd.Entrant.Rolling1588.packet false j)+237 := by
+  have a := cell_count_delta false j 3 2
+  have b := cell_count_delta false j 4 2
+  have c := cellWith_counts false (P1Life.mstart (base 760) base (base 2409)) j 4 2
+  have d := route_mstart_counts
+  have e := cell_counts false j 4 2
+  simp only [mstartPacket,ECDSAAdd.Entrant.Rolling1588.packet,renameProgram_counts,mstartBasePacket,
+    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,toffoliCount_append,
+    measurementCount_append]
+  exact ⟨by omega,by omega⟩
+
+/-- gate slots of the `mstart` packet at any position (`mstartPacket_slots` is the case 84). -/
+theorem ot_mstartPacket_slots (j : Nat) :
+    Challenge.gateSlots (mstartPacket j)+112=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet false j)+4543 := by
+  have a := cell_slot_delta false j 3 2
+  have b := cell_slot_delta false j 4 2
+  have c := cellWith_slots false (P1Life.mstart (base 760) base (base 2409)) j 4 2
+  have d := slot_mstart (base 760) base (base 2409) Rolling1588Lifetime.half_ports_nodup route_retired_count_member
+  have h := slot_half (base 760) false base (base 2409)
+  have regular := cellWith_slots false (P1Life.half (base 760) false base (base 2409)) j 4 2
+  have eq : cell false j 4 2=cellWith false (P1Life.half (base 760) false base (base 2409)) j 4 2 := rfl
+  rw [←eq] at regular
+  simp only [Bool.false_eq_true,if_false] at h
+  simp only [mstartPacket,ECDSAAdd.Entrant.Rolling1588.packet,Baselines.rename_gateSlots,mstartBasePacket,
+    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,Challenge.gateSlots_append]
+  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at a b
+  omega
+
+theorem ot_dstartPacket_physical : GatePhysical (dstartPacket 1) :=
+  gatePhysical_rename _ (shifted (Placement5.pi 1)).injective _ (c45_dstartBasePacket_physical 1 (by decide))
+theorem ot_dendPacket_physical (j : Nat) (hj : j<102) : GatePhysical (dendPacket j) :=
+  gatePhysical_rename _ (shifted (Placement5.pi j)).injective _ (c45_dendBasePacket_physical j hj)
+theorem ot_mstartPacket_physical (j : Nat) (hj : j<102) : GatePhysical (mstartPacket j) :=
+  gatePhysical_rename _ (shifted (Placement5.pi j)).injective _ (mstartBasePacket_physical j hj)
+theorem ot_mendPacket_physical (j : Nat) (hj : j<102) : GatePhysical (mendPacket j) :=
+  gatePhysical_rename _ (shifted (Placement5.pi j)).injective _ (mendBasePacket_physical j hj)
+
+end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
 
 section
@@ -1749,13 +1802,118 @@ def group (d : Bool) (j n : Nat) := StairHostsSchedule.hostedGroup hostPlan d 0 
 def ordered (d : Bool) (a b : Program) := if d then a++b else b++a
 
 
-/-- The field group of the window ship: one archive ten-block per window block 105..255 (banks 25, 28, ..., 52;
+/-- The field group of the window ship: one archive ten-block per window block 120..255 (banks 25, 28, ..., 52;
 bank `b` belongs to the block starting at tick `5b-5`). The odd cells of packets 1..45 are gone. -/
 def group84rec (d : Bool) : Program :=
-  ordered d (group d 1 21) (ordered d (ten 22 (!d)) (ordered d (group d 24 1) (ordered d (ten 25 (!d)) (ordered d (group d 27 1) (ordered d (ten 28 (!d)) (ordered d (group d 30 1) (ordered d (ten 31 (!d)) (ordered d (group d 33 1) (ordered d (ten 34 (!d)) (ordered d (group d 36 1) (ordered d (ten 37 (!d)) (ordered d (group d 39 1) (ordered d (ten 40 (!d)) (ordered d (group d 42 1) (ordered d (ten 43 (!d)) (ordered d (group d 45 1) (ordered d (ten 46 (!d)) (ordered d (group d 48 1) (ordered d (ten 49 (!d)) (ordered d (group d 51 1) (ordered d (ten 52 (!d)) (group d 54 31))))))))))))))))))))))
+  ordered d (group d 1 24) (ordered d (ten 25 (!d)) (ordered d (group d 27 1) (ordered d (ten 28 (!d)) (ordered d (group d 30 1) (ordered d (ten 31 (!d)) (ordered d (group d 33 1) (ordered d (ten 34 (!d)) (ordered d (group d 36 1) (ordered d (ten 37 (!d)) (ordered d (group d 39 1) (ordered d (ten 40 (!d)) (ordered d (group d 42 1) (ordered d (ten 43 (!d)) (ordered d (group d 45 1) (ordered d (ten 46 (!d)) (ordered d (group d 48 1) (ordered d (ten 49 (!d)) (ordered d (group d 51 1) (ordered d (ten 52 (!d)) (ordered d (group d 54 1) (ordered d (ten 55 (!d)) (ordered d (group d 57 1) (ordered d (ten 58 (!d)) (ordered d (group d 60 1) (ordered d (ten 61 (!d)) (ordered d (group d 63 1) (ordered d (ten 64 (!d)) (ordered d (group d 66 1) (ordered d (ten 67 (!d)) (ordered d (group d 69 1) (ordered d (ten 70 (!d)) (group d 72 13))))))))))))))))))))))))))))))))
 
-/-- the actual field group is the reference group (no cell any more). -/
-def group84 (d : Bool) : Program := group84rec d
+/-- packets `1..84` of both kernels run the odd-word cell (`dstart` / `dend` on the division kernel,
+`mend` / `mstart` on the multiplication kernel), inside the archive ten-blocks too; packets `85..84` run the
+record packets. -/
+def oddPk (d : Bool) (k : Nat) : Program :=
+  if k=1 then (if d then RouteA.Rolling1588.dstartPacket 1 else RouteA.Rolling1588.mendPacket 1)
+  else if k<84 then RouteA.Rolling1588.packet d k
+  else if k=84 then (if d then RouteA.Rolling1588.dendPacket 84 else RouteA.Rolling1588.mstartPacket 84)
+  else ECDSAAdd.Entrant.Rolling1588.packet d k
+
+/-- packet `k` of the field group, hosted like the record packets. -/
+def opk (d : Bool) (k : Nat) : Program :=
+  StairLoan.rebindMany StairSchedule.exclusiveRoles (StairPhysicalLayout.hosts 87)
+    (renameProgram (OB5.sig 511) (oddPk d k))
+
+def ogroup (d : Bool) (j n : Nat) : Program := PacketSequence.program d (opk d) j n
+def ofirst (j : Nat) (rev : Bool) := opk (!rev) (if rev then j+1 else j)
+def osecond (j : Nat) (rev : Bool) := opk (!rev) (if rev then j else j+1)
+/-- archive ten-block around the field group's own packets `j`, `j+1`. -/
+def oten (j : Nat) (rev : Bool) :=
+  fieldHook j (enter rev) ++ (ofirst j rev ++ (fieldHook j (shift rev) ++
+    (osecond j rev ++ fieldHook j (leave rev))))
+
+/-- the field group: the odd-word cell on packets 1..84 with the archive ten-blocks of the window banks
+25, 28, 31, 34, 37, 40, 43, 46, 49, 52, 55, 58, 61, 64, 67, 70 (bank `b` belongs to the block starting at tick `5b-5`) around the cell's own packets. -/
+def group84 (d : Bool) : Program :=
+  ordered d (ogroup d 1 24) (ordered d (oten 25 (!d)) (ordered d (ogroup d 27 1) (ordered d (oten 28 (!d)) (ordered d (ogroup d 30 1) (ordered d (oten 31 (!d)) (ordered d (ogroup d 33 1) (ordered d (oten 34 (!d)) (ordered d (ogroup d 36 1) (ordered d (oten 37 (!d)) (ordered d (ogroup d 39 1) (ordered d (oten 40 (!d)) (ordered d (ogroup d 42 1) (ordered d (oten 43 (!d)) (ordered d (ogroup d 45 1) (ordered d (oten 46 (!d)) (ordered d (ogroup d 48 1) (ordered d (oten 49 (!d)) (ordered d (ogroup d 51 1) (ordered d (oten 52 (!d)) (ordered d (ogroup d 54 1) (ordered d (oten 55 (!d)) (ordered d (ogroup d 57 1) (ordered d (oten 58 (!d)) (ordered d (ogroup d 60 1) (ordered d (oten 61 (!d)) (ordered d (ogroup d 63 1) (ordered d (oten 64 (!d)) (ordered d (ogroup d 66 1) (ordered d (oten 67 (!d)) (ordered d (ogroup d 69 1) (ordered d (oten 70 (!d)) (ogroup d 72 13))))))))))))))))))))))))))))))))
+
+theorem oddPk_one (d : Bool) :
+    oddPk d 1=(if d then RouteA.Rolling1588.dstartPacket 1 else RouteA.Rolling1588.mendPacket 1) := by
+  unfold oddPk; rw [if_pos rfl]
+theorem oddPk_mid (d : Bool) (k : Nat) (h1 : 2≤k) (h2 : k<84) : oddPk d k=RouteA.Rolling1588.packet d k := by
+  unfold oddPk; rw [if_neg (by omega),if_pos h2]
+theorem oddPk_end (d : Bool) :
+    oddPk d 84=(if d then RouteA.Rolling1588.dendPacket 84 else RouteA.Rolling1588.mstartPacket 84) := by
+  unfold oddPk; rw [if_neg (by decide),if_neg (by decide),if_pos rfl]
+theorem oddPk_std (d : Bool) (k : Nat) (h : 84<k) : oddPk d k=ECDSAAdd.Entrant.Rolling1588.packet d k := by
+  unfold oddPk; rw [if_neg (by omega),if_neg (by omega),if_neg (by omega)]
+
+/-- every packet of the family uses only wires of the record packet at its place (no new wire). -/
+theorem oddPk_sub (d : Bool) (k : Nat) : wires (oddPk d k) ⊆ wires (ECDSAAdd.Entrant.Rolling1588.packet d k) := by
+  by_cases h1 : k=1
+  · subst h1
+    rw [oddPk_one]
+    cases d
+    · simp only [Bool.false_eq_true,if_false]
+      unfold RouteA.Rolling1588.mendPacket ECDSAAdd.Entrant.Rolling1588.packet
+      exact StairLoanGroupSupport.rename_sub _ _ _ (StairLoanGroupSupport.c45_mendBasePacket_sub 1)
+    · simp only [if_true]
+      unfold RouteA.Rolling1588.dstartPacket ECDSAAdd.Entrant.Rolling1588.packet
+      exact StairLoanGroupSupport.rename_sub _ _ _ (StairLoanGroupSupport.c45_dstartBasePacket_sub 1)
+  by_cases h2 : k<84
+  · rw [show oddPk d k=RouteA.Rolling1588.packet d k by unfold oddPk; rw [if_neg h1,if_pos h2]]
+    cases d
+    · exact StairLoanGroupSupport.c45_oddPacket_sub_false k
+    · exact StairLoanGroupSupport.c45_oddPacket_sub k
+  by_cases h3 : k=84
+  · subst h3
+    rw [oddPk_end]
+    cases d
+    · simp only [Bool.false_eq_true,if_false]
+      unfold RouteA.Rolling1588.mstartPacket ECDSAAdd.Entrant.Rolling1588.packet
+      exact StairLoanGroupSupport.rename_sub _ _ _ (StairLoanGroupSupport.c45_mstartBasePacket_sub 84)
+    · simp only [if_true]
+      unfold RouteA.Rolling1588.dendPacket ECDSAAdd.Entrant.Rolling1588.packet
+      exact StairLoanGroupSupport.rename_sub _ _ _ (StairLoanGroupSupport.c45_dendBasePacket_sub 84)
+  · intro q hq
+    rwa [oddPk_std d k (by omega)] at hq
+
+/-- the odd packets are physical. -/
+theorem oddPk_physical (d : Bool) (k : Nat) (hk : k≤84) : GatePhysical (oddPk d k) := by
+  by_cases h1 : k=1
+  · subst h1
+    rw [oddPk_one]
+    cases d
+    · exact RouteA.Rolling1588.ot_mendPacket_physical 1 (by decide)
+    · exact RouteA.Rolling1588.ot_dstartPacket_physical
+  by_cases h2 : k<84
+  · rw [show oddPk d k=RouteA.Rolling1588.packet d k by unfold oddPk; rw [if_neg h1,if_pos h2]]
+    exact RouteA.Rolling1588.packet_physical d k (by omega)
+  · have h3 : k=84 := by omega
+    subst h3
+    rw [oddPk_end]
+    cases d
+    · exact RouteA.Rolling1588.ot_mstartPacket_physical 84 (by decide)
+    · exact RouteA.Rolling1588.ot_dendPacket_physical 84 (by decide)
+
+theorem ot_opk_sub (d : Bool) (k : Nat) : wires (opk d k) ⊆ wires (StairArchiveInactive.packet d k) := by
+  simp only [opk,StairArchiveInactive.packet,StairArchiveInactive.hosts_eq,StairGroups.packet_zero]
+  exact StairLoanGroupSupport.rename_sub _ _ _ (StairLoanGroupSupport.rename_sub _ _ _ (oddPk_sub d k))
+
+theorem ot_opk_std (d : Bool) (k : Nat) (h : 84<k) : opk d k=StairArchiveInactive.packet d k := by
+  simp only [opk,StairArchiveInactive.packet,StairGroups.packet_zero,oddPk_std d k h]
+
+theorem ot_group_eq (d : Bool) (j n : Nat) : group d j n=StairLoan.rebindMany StairSchedule.exclusiveRoles
+    (StairPhysicalLayout.hosts 87) (renameProgram (OB5.sig 511) (PacketSequence.program d (StairGroups.packet d 0) j n)) :=
+  rfl
+
+theorem ot_ogroup_sub (d : Bool) (j n : Nat) : wires (ogroup d j n) ⊆ wires (group d j n) := by
+  rw [group,distribute]
+  exact StairLoanGroupSupport.sequence_sub d _ _ (fun k => ot_opk_sub d k) j n
+
+theorem ot_oten_sub (j : Nat) (rev : Bool) : wires (oten j rev) ⊆ wires (ten j rev) := by
+  simp only [oten,ten,ofirst,osecond,StairArchiveTen.first,StairArchiveTen.second]
+  exact StairLoanGroupSupport.append_sub _ _ _ _ (Finset.Subset.refl _)
+    (StairLoanGroupSupport.append_sub _ _ _ _ (ot_opk_sub _ _)
+      (StairLoanGroupSupport.append_sub _ _ _ _ (Finset.Subset.refl _)
+        (StairLoanGroupSupport.append_sub _ _ _ _ (ot_opk_sub _ _) (Finset.Subset.refl _))))
 
 /-- the tape of the reference run is the actual tape (no cell any more). -/
 def cellTape (_d : Bool) (m : List Bool) : List Bool := m
@@ -1766,6 +1924,17 @@ def cellTape (_d : Bool) (m : List Bool) : List Bool := m
 private theorem ord (c : Cost) (d : Bool) (a b : Program) :
     c.measure (ordered d a b)=c.measure a+c.measure b := by
   cases d <;> simp [ordered,c.append,Nat.add_comm]
+
+/-- every cost measure of a hosted record group is that of the record group. -/
+theorem group_measure (c : Cost) (d : Bool) (j n : Nat) :
+    c.measure (group d j n) = c.measure (ECDSAAdd.Entrant.Rolling1588.groups d j n) := by
+  rw [group, distribute]
+  unfold distributed ECDSAAdd.Entrant.Rolling1588.groups
+  induction n generalizing j with
+  | zero => rfl
+  | succ n ih =>
+    cases d <;> simp only [PacketSequence.program, if_true, if_false, Bool.false_eq_true, c.append, ih,
+      StairArchiveInactive.packet, StairArchiveInactive.hosts_eq, c.rename, StairGroups.packet_zero]
 
 theorem overhead (j : Nat) (d : Bool) :
     toffoliCount (ten j (!d)) = toffoliCount (group d j 2)+(if d then 195 else 192) ∧
@@ -1781,11 +1950,9 @@ theorem overhead (j : Nat) (d : Bool) :
       switch1_measurementCount,leave1_measurementCount] <;> constructor <;> omega
 
 private theorem partition (c : Cost) (d : Bool) :
-    c.measure (group d 1 84) = c.measure (group d 1 21)+c.measure (group d 22 2)+c.measure (group d 24 1)+c.measure (group d 25 2)+c.measure (group d 27 1)+c.measure (group d 28 2)+c.measure (group d 30 1)+c.measure (group d 31 2)+c.measure (group d 33 1)+c.measure (group d 34 2)+c.measure (group d 36 1)+c.measure (group d 37 2)+c.measure (group d 39 1)+c.measure (group d 40 2)+c.measure (group d 42 1)+c.measure (group d 43 2)+c.measure (group d 45 1)+c.measure (group d 46 2)+c.measure (group d 48 1)+c.measure (group d 49 2)+c.measure (group d 51 1)+c.measure (group d 52 2)+c.measure (group d 54 31) := by
+    c.measure (group d 1 84) = c.measure (group d 1 24)+c.measure (group d 25 2)+c.measure (group d 27 1)+c.measure (group d 28 2)+c.measure (group d 30 1)+c.measure (group d 31 2)+c.measure (group d 33 1)+c.measure (group d 34 2)+c.measure (group d 36 1)+c.measure (group d 37 2)+c.measure (group d 39 1)+c.measure (group d 40 2)+c.measure (group d 42 1)+c.measure (group d 43 2)+c.measure (group d 45 1)+c.measure (group d 46 2)+c.measure (group d 48 1)+c.measure (group d 49 2)+c.measure (group d 51 1)+c.measure (group d 52 2)+c.measure (group d 54 1)+c.measure (group d 55 2)+c.measure (group d 57 1)+c.measure (group d 58 2)+c.measure (group d 60 1)+c.measure (group d 61 2)+c.measure (group d 63 1)+c.measure (group d 64 2)+c.measure (group d 66 1)+c.measure (group d 67 2)+c.measure (group d 69 1)+c.measure (group d 70 2)+c.measure (group d 72 13) := by
   simp only [group,distribute]
-  have p0 := split c d 1 21 63
-  have pa := split c d 22 2 61
-  have pb := split c d 24 1 60
+  have p0 := split c d 1 24 60
   have p1 := split c d 25 2 58
   have p2 := split c d 27 1 57
   have p3 := split c d 28 2 55
@@ -1805,49 +1972,247 @@ private theorem partition (c : Cost) (d : Bool) :
   have p17 := split c d 49 2 34
   have p18 := split c d 51 1 33
   have p19 := split c d 52 2 31
-  norm_num only [] at p0 pa pb p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19
+  have p20 := split c d 54 1 30
+  have p21 := split c d 55 2 28
+  have p22 := split c d 57 1 27
+  have p23 := split c d 58 2 25
+  have p24 := split c d 60 1 24
+  have p25 := split c d 61 2 22
+  have p26 := split c d 63 1 21
+  have p27 := split c d 64 2 19
+  have p28 := split c d 66 1 18
+  have p29 := split c d 67 2 16
+  have p30 := split c d 69 1 15
+  have p31 := split c d 70 2 13
+  norm_num only [] at p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 p23 p24 p25 p26 p27 p28 p29 p30 p31
   omega
 
 
 
 
-/-- the field group with its ten archive ten-blocks. -/
-private theorem solve (c : Cost) (d : Bool) (delta : Nat)
-    (h : ∀j,c.measure (ten j (!d))=c.measure (group d j 2)+delta) :
-    c.measure (group84 d) = c.measure (group d 1 84)+11*delta := by
-  simp only [group84,group84rec,ord,h,partition]
+attribute [local irreducible] opk
+
+theorem opk_measure (c : Cost) (d : Bool) (k : Nat) : c.measure (opk d k)=c.measure (oddPk d k) := by
+  simp only [opk,StairArchiveInactive.hosts_eq,c.rename]
+
+theorem ogroup_measure (c : Cost) (d : Bool) (j n : Nat) :
+    c.measure (ogroup d j n)=c.measure (PacketSequence.program d (oddPk d) j n) := by
+  unfold ogroup
+  induction n generalizing j with
+  | zero => rfl
+  | succ n ih =>
+    cases d <;> simp only [PacketSequence.program,if_true,if_false,Bool.false_eq_true,c.append,ih,opk_measure]
+
+private theorem gsplit (c : Cost) (d : Bool) (p : Nat→Program) (j n k : Nat) :
+    c.measure (PacketSequence.program d p j (n+k))=
+      c.measure (PacketSequence.program d p j n)+c.measure (PacketSequence.program d p (j+n) k) := by
+  cases d
+  · rw [RouteA.Rolling1588.odd45_program_false_add,c.append]; omega
+  · rw [RouteA.Rolling1588.odd45_program_true_add,c.append]
+
+private theorem oneP (c : Cost) (d : Bool) (p : Nat→Program) (j : Nat) :
+    c.measure (PacketSequence.program d p j 1)=c.measure (p j) := by
+  cases d <;> simp only [PacketSequence.program,if_true,if_false,Bool.false_eq_true,List.append_nil,List.nil_append]
+
+private theorem oseq_congr (d : Bool) (p q : Nat→Program) :
+    ∀ (n j : Nat), (∀ k, j≤k → k<j+n → p k=q k) →
+      PacketSequence.program d p j n=PacketSequence.program d q j n
+  | 0, _, _ => rfl
+  | n+1, j, h => by
+    have hj := h j (Nat.le_refl j) (by omega)
+    have rest := oseq_congr d p q n (j+1) (fun k a b => h k (by omega) (by omega))
+    cases d <;> simp only [PacketSequence.program,if_true,if_false,Bool.false_eq_true,hj,rest]
+
+private theorem opartition (c : Cost) (d : Bool) :
+    c.measure (ogroup d 1 84)=c.measure (ogroup d 1 24)+c.measure (ogroup d 25 2)+c.measure (ogroup d 27 1)+
+      c.measure (ogroup d 28 2)+c.measure (ogroup d 30 1)+c.measure (ogroup d 31 2)+
+      c.measure (ogroup d 33 1)+c.measure (ogroup d 34 2)+c.measure (ogroup d 36 1)+
+      c.measure (ogroup d 37 2)+c.measure (ogroup d 39 1)+c.measure (ogroup d 40 2)+
+      c.measure (ogroup d 42 1)+c.measure (ogroup d 43 2)+c.measure (ogroup d 45 1)+
+      c.measure (ogroup d 46 2)+c.measure (ogroup d 48 1)+c.measure (ogroup d 49 2)+
+      c.measure (ogroup d 51 1)+c.measure (ogroup d 52 2)+c.measure (ogroup d 54 1)+
+      c.measure (ogroup d 55 2)+c.measure (ogroup d 57 1)+c.measure (ogroup d 58 2)+
+      c.measure (ogroup d 60 1)+c.measure (ogroup d 61 2)+c.measure (ogroup d 63 1)+
+      c.measure (ogroup d 64 2)+c.measure (ogroup d 66 1)+c.measure (ogroup d 67 2)+
+      c.measure (ogroup d 69 1)+c.measure (ogroup d 70 2)+c.measure (ogroup d 72 13) := by
+  have p0 := gsplit c d (opk d) 1 24 60
+  have p1 := gsplit c d (opk d) 25 2 58
+  have p2 := gsplit c d (opk d) 27 1 57
+  have p3 := gsplit c d (opk d) 28 2 55
+  have p4 := gsplit c d (opk d) 30 1 54
+  have p5 := gsplit c d (opk d) 31 2 52
+  have p6 := gsplit c d (opk d) 33 1 51
+  have p7 := gsplit c d (opk d) 34 2 49
+  have p8 := gsplit c d (opk d) 36 1 48
+  have p9 := gsplit c d (opk d) 37 2 46
+  have p10 := gsplit c d (opk d) 39 1 45
+  have p11 := gsplit c d (opk d) 40 2 43
+  have p12 := gsplit c d (opk d) 42 1 42
+  have p13 := gsplit c d (opk d) 43 2 40
+  have p14 := gsplit c d (opk d) 45 1 39
+  have p15 := gsplit c d (opk d) 46 2 37
+  have p16 := gsplit c d (opk d) 48 1 36
+  have p17 := gsplit c d (opk d) 49 2 34
+  have p18 := gsplit c d (opk d) 51 1 33
+  have p19 := gsplit c d (opk d) 52 2 31
+  have p20 := gsplit c d (opk d) 54 1 30
+  have p21 := gsplit c d (opk d) 55 2 28
+  have p22 := gsplit c d (opk d) 57 1 27
+  have p23 := gsplit c d (opk d) 58 2 25
+  have p24 := gsplit c d (opk d) 60 1 24
+  have p25 := gsplit c d (opk d) 61 2 22
+  have p26 := gsplit c d (opk d) 63 1 21
+  have p27 := gsplit c d (opk d) 64 2 19
+  have p28 := gsplit c d (opk d) 66 1 18
+  have p29 := gsplit c d (opk d) 67 2 16
+  have p30 := gsplit c d (opk d) 69 1 15
+  have p31 := gsplit c d (opk d) 70 2 13
+  simp only [ogroup]
+  norm_num only [] at p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19 p20 p21 p22 p23 p24 p25 p26 p27 p28 p29 p30 p31
   omega
 
-theorem group_cost_div :
-    toffoliCount (group84 true) = toffoliCount (group true 1 84)+2145 ∧
-    measurementCount (group84 true) = measurementCount (group true 1 84)+3047 := by
-  have t := solve tc true (if true then 195 else 192) (fun j => (overhead j true).1)
-  have m := solve mc true 277 (fun j => (overhead j true).2)
-  rw [show tc.measure = toffoliCount from rfl] at t
-  rw [show mc.measure = measurementCount from rfl] at m
-  exact ⟨t.trans (by norm_num), m.trans (by norm_num)⟩
 
-theorem group_cost_mul :
-    toffoliCount (group84 false) = toffoliCount (group false 1 84)+2112 ∧
-    measurementCount (group84 false) = measurementCount (group false 1 84)+3047 := by
-  have t := solve tc false (if false then 195 else 192) (fun j => (overhead j false).1)
-  have m := solve mc false 277 (fun j => (overhead j false).2)
+theorem ooverhead (j : Nat) (d : Bool) :
+    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 195 else 192) ∧
+    measurementCount (oten j (!d)) = measurementCount (ogroup d j 2)+277 := by
+  cases d <;>
+    simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
+      enter,shift,leave,fieldHook,program,if_true,if_false,Bool.false_eq_true,List.nil_append,
+      List.append_nil,toffoliCount_append,measurementCount_append,(renameProgram_counts _ _).1,
+      (renameProgram_counts _ _).2,enter0_toffoliCount,switch0_toffoliCount,leave0_toffoliCount,
+      enter1_toffoliCount,switch1_toffoliCount,leave1_toffoliCount,enter0_measurementCount,
+      switch0_measurementCount,leave0_measurementCount,enter1_measurementCount,
+      switch1_measurementCount,leave1_measurementCount] <;> constructor <;> omega
+
+private theorem ofield_pieces (c : Cost) (d : Bool) :
+    c.measure (ogroup d 1 84)=c.measure (oddPk d 1)+c.measure (RouteA.Rolling1588.groups d 2 82)+
+      c.measure (oddPk d 84)+c.measure (ECDSAAdd.Entrant.Rolling1588.groups d 85 0) := by
+  rw [ogroup_measure]
+  have a := gsplit c d (oddPk d) 1 1 83
+  have b := gsplit c d (oddPk d) 2 82 1
+  have e := gsplit c d (oddPk d) 84 1 0
+  have p1 := oneP c d (oddPk d) 1
+  have p3 := oneP c d (oddPk d) 84
+  have p2 := congrArg c.measure (oseq_congr d (oddPk d) (RouteA.Rolling1588.packet d) 82 2
+    (fun k l u => oddPk_mid d k l (by omega)))
+  have p4 := congrArg c.measure (oseq_congr d (oddPk d) (ECDSAAdd.Entrant.Rolling1588.packet d) 0 85
+    (fun k l u => oddPk_std d k (by omega)))
+  norm_num only [] at a b e
+  unfold RouteA.Rolling1588.groups ECDSAAdd.Entrant.Rolling1588.groups
+  omega
+
+private theorem rfield_pieces (c : Cost) (d : Bool) :
+    c.measure (group d 1 84)=c.measure (ECDSAAdd.Entrant.Rolling1588.packet d 1)+
+      c.measure (ECDSAAdd.Entrant.Rolling1588.groups d 2 82)+
+      c.measure (ECDSAAdd.Entrant.Rolling1588.packet d 84)+
+      c.measure (ECDSAAdd.Entrant.Rolling1588.groups d 85 0) := by
+  rw [group_measure]
+  unfold ECDSAAdd.Entrant.Rolling1588.groups
+  have a := gsplit c d (ECDSAAdd.Entrant.Rolling1588.packet d) 1 1 83
+  have b := gsplit c d (ECDSAAdd.Entrant.Rolling1588.packet d) 2 82 1
+  have e := gsplit c d (ECDSAAdd.Entrant.Rolling1588.packet d) 84 1 0
+  have p1 := oneP c d (ECDSAAdd.Entrant.Rolling1588.packet d) 1
+  have p3 := oneP c d (ECDSAAdd.Entrant.Rolling1588.packet d) 84
+  norm_num only [] at a b e
+  omega
+
+/-- the hosted odd field packets save 749 T / 1169 M against the record packets 1..84 on either kernel. -/
+theorem ofield_counts (d : Bool) :
+    toffoliCount (ogroup d 1 84)+749=toffoliCount (group d 1 84) ∧
+    measurementCount (ogroup d 1 84)+1169=measurementCount (group d 1 84) := by
+  have o1 := ofield_pieces tc d
+  have o2 := ofield_pieces mc d
+  have r1 := rfield_pieces tc d
+  have r2 := rfield_pieces mc d
+  rw [show tc.measure=toffoliCount from rfl] at o1 r1
+  rw [show mc.measure=measurementCount from rfl] at o2 r2
+  have g := RouteA.Rolling1588.groups_count_delta d 2 82 (by decide)
+  rw [if_neg (by cases d <;> decide)] at g
+  cases d
+  · have s := RouteA.Rolling1588.ot_mstartPacket_counts 84
+    have e := RouteA.Rolling1588.mendPacket_counts
+    rw [oddPk_one,oddPk_end] at o1 o2
+    simp only [Bool.false_eq_true,if_false] at o1 o2
+    exact ⟨by omega,by omega⟩
+  · have s := RouteA.Rolling1588.dstartPacket_counts
+    have e := RouteA.Rolling1588.dendPacket_counts 84
+    rw [oddPk_one,oddPk_end] at o1 o2
+    simp only [if_true] at o1 o2
+    exact ⟨by omega,by omega⟩
+
+/-- gate slots of the hosted odd field packets against the record packets 1..84. -/
+theorem ofield_slots (d : Bool) :
+    slots.measure (ogroup d 1 84)+(if d then 7065 else 3340)=
+      slots.measure (group d 1 84)+(if d then 0 else 0) := by
+  have o := ofield_pieces slots d
+  have r := rfield_pieces slots d
+  rw [show slots.measure=Challenge.gateSlots from rfl] at o r ⊢
+  have g := RouteA.Rolling1588.groups_slot_delta d 2 82 (by decide)
+  rw [if_neg (by cases d <;> decide)] at g
+  cases d
+  · have s := RouteA.Rolling1588.ot_mstartPacket_slots 84
+    have e := RouteA.Rolling1588.mendPacket_slots
+    simp only [RouteA.Rolling1588.halfSlotSaving,Bool.false_eq_true,if_false] at g ⊢
+    rw [oddPk_one,oddPk_end] at o
+    simp only [Bool.false_eq_true,if_false] at o
+    omega
+  · have s := RouteA.Rolling1588.dstartPacket_slots
+    have e := RouteA.Rolling1588.dendPacket_slots 84
+    simp only [RouteA.Rolling1588.halfSlotSaving,if_true] at g ⊢
+    rw [oddPk_one,oddPk_end] at o
+    simp only [if_true] at o
+    omega
+
+private theorem osolve (c : Cost) (d : Bool) (delta : Nat)
+    (h : ∀j,c.measure (oten j (!d))=c.measure (ogroup d j 2)+delta) :
+    c.measure (group84 d)=c.measure (ogroup d 1 84)+16*delta := by
+  simp only [group84,ord,h,opartition]
+  omega
+
+/-- the field group (odd cell on packets 1..84, ten-blocks included) against the record packets 1..84. -/
+theorem group_cost (d : Bool) :
+    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 2371 else 2323) ∧
+    measurementCount (group84 d)+0=measurementCount (group d 1 84)+3263 := by
+  have t := osolve tc d (if d then 195 else 192) (fun j => (ooverhead j d).1)
+  have m := osolve mc d 277 (fun j => (ooverhead j d).2)
+  have f := ofield_counts d
   rw [show tc.measure = toffoliCount from rfl] at t
   rw [show mc.measure = measurementCount from rfl] at m
-  exact ⟨t.trans (by norm_num), m.trans (by norm_num)⟩
+  cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at t ⊢ <;> exact ⟨by omega, by omega⟩
+
 /-- Static syntax counts include both correction lists of every measurement. -/
 theorem group_slots (d : Bool) :
-    slots.measure (group84 d) = slots.measure (group d 1 84)+11*(if d then 5141 else 5535) := by
-  have h (j : Nat) : slots.measure (ten j (!d)) =
-      slots.measure (group d j 2)+(if d then 5141 else 5535) := by
-    rw [show slots.measure=Challenge.gateSlots from rfl,group,distribute]
+    slots.measure (group84 d)+(if d then 7065 else 3340)=
+      slots.measure (group d 1 84)+16*(if d then 5141 else 5535)+(if d then 0 else 0) := by
+  have hc := ofield_slots d
+  have h (j : Nat) : slots.measure (oten j (!d)) =
+      slots.measure (ogroup d j 2)+(if d then 5141 else 5535) := by
+    rw [show slots.measure=Challenge.gateSlots from rfl]
     cases d <;>
-      simp only [distributed,PacketSequence.program,Bool.not_true,Bool.not_false,ten,first,second,
+      simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
         enter,shift,leave,fieldHook,program,if_true,if_false,Bool.false_eq_true,List.nil_append,
         List.append_nil,Challenge.gateSlots_append,Baselines.rename_gateSlots,enter0_gateSlots,
         switch0_gateSlots,leave0_gateSlots,enter1_gateSlots,switch1_gateSlots,leave1_gateSlots] <;> omega
-  simp only [group84,group84rec,ord,h,partition]
-  omega
+  have w := osolve slots d (if d then 5141 else 5535) h
+  cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at hc w ⊢ <;> omega
+
+theorem group_cost_div :
+    toffoliCount (group84 true) = toffoliCount (group true 1 84)+2371 ∧
+    measurementCount (group84 true) = measurementCount (group true 1 84)+3263 := by
+  have t := (group_cost true).1
+  have m := (group_cost true).2
+  simp only [if_true] at t
+  exact ⟨by omega,by omega⟩
+
+theorem group_cost_mul :
+    toffoliCount (group84 false) = toffoliCount (group false 1 84)+2323 ∧
+    measurementCount (group84 false) = measurementCount (group false 1 84)+3263 := by
+  have t := (group_cost false).1
+  have m := (group_cost false).2
+  simp only [Bool.false_eq_true,if_false] at t
+  exact ⟨by omega,by omega⟩
+
+
 end ECDSAAdd.Entrant.StairPacket.WindowFieldCosts
 
 end
@@ -1859,33 +2224,33 @@ open Arithmetic MappedCompressed Stair44Resources Partial PartialCosts
 set_option maxHeartbeats 1250000
 set_option maxRecDepth 16000
 
-/-- The replacement occupies [105,271); the initial fifteen ticks use a distinct placement. -/
+/-- The replacement occupies [120,361); the initial fifteen ticks use a distinct placement. -/
 def forward (d : Bool) (tail : Nat) : Program :=
   renameProgram Stair44WalkMap.first (Rolling1588TickGap.forward d 1 15) ++
-  renameProgram Stair44WalkMap.rest (Rolling1588TickGap.forward d 16 89 ++
-    forward45plus1 d ++ Rolling1588TickGap.forward d 271 tail)
+  renameProgram Stair44WalkMap.rest (Rolling1588TickGap.forward d 16 104 ++
+    forward45plus1 d ++ Rolling1588TickGap.forward d 361 tail)
 
 def backward (d : Bool) (tail : Nat) : Program :=
-  renameProgram Stair44WalkMap.rest (Rolling1588.reverse d 271 tail ++
-    reverse45plus1 d ++ Rolling1588.reverse d 16 89) ++
+  renameProgram Stair44WalkMap.rest (Rolling1588.reverse d 361 tail ++
+    reverse45plus1 d ++ Rolling1588.reverse d 16 104) ++
   renameProgram Stair44WalkMap.first (Rolling1588.reverse d 1 15)
 
 private theorem walk (c : Cost) (d : Bool) (tail f r : Nat)
-    (hf : c.measure (forward45plus1 d)+f=c.measure (Rolling1588TickGap.forward d 105 166))
-    (hr : c.measure (reverse45plus1 d)+r=c.measure (Rolling1588.reverse d 105 166)) :
-    c.measure (forward d tail)+f=c.measure (Stair44WalkRun.forward d (255+tail)) ∧
-    c.measure (backward d tail)+r=c.measure (Stair44WalkRun.backward d (255+tail)) := by
-  have a := StairRestSupport.forward_append d 89 16 (166+tail)
-  have b := StairRestSupport.forward_append d 166 105 tail
-  have x := StairRestSupport.reverse_append d 89 16 (166+tail)
-  have y := StairRestSupport.reverse_append d 166 105 tail
-  change Rolling1588TickGap.forward d 16 (89+(166+tail)) =
-    Rolling1588TickGap.forward d 16 89 ++ Rolling1588TickGap.forward d 105 (166+tail) at a
-  change Rolling1588.reverse d 16 (89+(166+tail)) =
-    Rolling1588.reverse d 105 (166+tail) ++ Rolling1588.reverse d 16 89 at x
+    (hf : c.measure (forward45plus1 d)+f=c.measure (Rolling1588TickGap.forward d 120 241))
+    (hr : c.measure (reverse45plus1 d)+r=c.measure (Rolling1588.reverse d 120 241)) :
+    c.measure (forward d tail)+f=c.measure (Stair44WalkRun.forward d (345+tail)) ∧
+    c.measure (backward d tail)+r=c.measure (Stair44WalkRun.backward d (345+tail)) := by
+  have a := StairRestSupport.forward_append d 104 16 (241+tail)
+  have b := StairRestSupport.forward_append d 241 120 tail
+  have x := StairRestSupport.reverse_append d 104 16 (241+tail)
+  have y := StairRestSupport.reverse_append d 241 120 tail
+  change Rolling1588TickGap.forward d 16 (104+(241+tail)) =
+    Rolling1588TickGap.forward d 16 104 ++ Rolling1588TickGap.forward d 120 (241+tail) at a
+  change Rolling1588.reverse d 16 (104+(241+tail)) =
+    Rolling1588.reverse d 120 (241+tail) ++ Rolling1588.reverse d 16 104 at x
   rw [b] at a
   rw [y] at x
-  have num : 255+tail=89+(166+tail) := by omega
+  have num : 345+tail=104+(241+tail) := by omega
   simp only [Stair44WalkRun.forward, Stair44WalkRun.backward,forward,backward,num,a,x,
     c.append,c.rename]
   norm_num only []
@@ -1897,42 +2262,42 @@ attribute [local irreducible] Partial.forward45plus1 Partial.reverse45plus1 Roll
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 14435 else 14446)=
-      toffoliCount (Stair44WalkRun.forward d (255+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 14273 else 14273)=
-      toffoliCount (Stair44WalkRun.backward d (255+tail)) ∧
-    measurementCount (forward d tail)+7171=measurementCount (Stair44WalkRun.forward d (255+tail)) ∧
-    measurementCount (backward d tail)+7232=measurementCount (Stair44WalkRun.backward d (255+tail)) := by
+    toffoliCount (forward d tail)+(if d then 22725 else 22741)=
+      toffoliCount (Stair44WalkRun.forward d (345+tail)) ∧
+    toffoliCount (backward d tail)+(if d then 22557 else 22557)=
+      toffoliCount (Stair44WalkRun.backward d (345+tail)) ∧
+    measurementCount (forward d tail)+11531=measurementCount (Stair44WalkRun.forward d (345+tail)) ∧
+    measurementCount (backward d tail)+11537=measurementCount (Stair44WalkRun.backward d (345+tail)) := by
   cases d
-  · have sf := StockWindowCosts.stock105 false
-    have a : toffoliCount (forward45plus1 false) = 70802 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_false
-    have b : toffoliCount (reverse45plus1 false) = 70925 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_false
-    have c : measurementCount (forward45plus1 false) = 35477 := by rw [Partial.assembly]; exact WindowParams.ship_measureF.2
-    have e : measurementCount (reverse45plus1 false) = 35331 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_measureR.2
-    have t := walk tc false tail 14446 14273
-      (subEq 14446 a sf.1 (by omega)) (subEq 14273 b sf.2.2.1 (by omega))
-    have m := walk mc false tail 7171 7232
-      (subEq 7171 c sf.2.1 (by omega)) (subEq 7232 e sf.2.2.2 (by omega))
+  · have sf := StockWindowCosts.stock120 false
+    have a : toffoliCount (forward45plus1 false) = 90106 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_false
+    have b : toffoliCount (reverse45plus1 false) = 90284 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_false
+    have c : measurementCount (forward45plus1 false) = 45007 := by rw [Partial.assembly]; exact WindowParams.ship_measureF.2
+    have e : measurementCount (reverse45plus1 false) = 44796 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_measureR.2
+    have t := walk tc false tail 22741 22557
+      (subEq 22741 a sf.1 (by omega)) (subEq 22557 b sf.2.2.1 (by omega))
+    have m := walk mc false tail 11531 11537
+      (subEq 11531 c sf.2.1 (by omega)) (subEq 11537 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
-  · have sf := StockWindowCosts.stock105 true
-    have a : toffoliCount (forward45plus1 true) = 70813 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_true
-    have b : toffoliCount (reverse45plus1 true) = 70925 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_true
-    have c : measurementCount (forward45plus1 true) = 35477 := by rw [Partial.assembly]; exact WindowParams.ship_measureF.1
-    have e : measurementCount (reverse45plus1 true) = 35331 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_measureR.1
-    have t := walk tc true tail 14435 14273
-      (subEq 14435 a sf.1 (by omega)) (subEq 14273 b sf.2.2.1 (by omega))
-    have m := walk mc true tail 7171 7232
-      (subEq 7171 c sf.2.1 (by omega)) (subEq 7232 e sf.2.2.2 (by omega))
+  · have sf := StockWindowCosts.stock120 true
+    have a : toffoliCount (forward45plus1 true) = 90122 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_true
+    have b : toffoliCount (reverse45plus1 true) = 90284 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_true
+    have c : measurementCount (forward45plus1 true) = 45007 := by rw [Partial.assembly]; exact WindowParams.ship_measureF.1
+    have e : measurementCount (reverse45plus1 true) = 44796 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_measureR.1
+    have t := walk tc true tail 22725 22557
+      (subEq 22725 a sf.1 (by omega)) (subEq 22557 b sf.2.2.1 (by omega))
+    have m := walk mc true tail 11531 11537
+      (subEq 11531 c sf.2.1 (by omega)) (subEq 11537 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
 
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
-theorem inst (d : Bool) (tail n f r : Nat) (hn : 255+tail=n)
-    (hf : (if d then 14435 else 14446)=f) (hr : (if d then 14273 else 14273)=r) :
+theorem inst (d : Bool) (tail n f r : Nat) (hn : 345+tail=n)
+    (hf : (if d then 22725 else 22741)=f) (hr : (if d then 22557 else 22557)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+7171=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+7232=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+11531=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+11537=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 end ECDSAAdd.Entrant.StairPacket.WindowWalkCosts
@@ -2025,15 +2390,15 @@ theorem field_delta (c : Cost) (d : Bool) (n : Nat)
 open Stair44Outer
 
 def divide : Program :=
-  phasePlace (WindowWalkCosts.forward true 154) ++ phasePlace checkpointPrimitives.firstPack ++
+  phasePlace (WindowWalkCosts.forward true 64) ++ phasePlace checkpointPrimitives.firstPack ++
     kernelPlace (entryFieldHosted checkpointPrimitives) ++
-    phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 235) ++
+    phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 145) ++
     phasePlace (renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base))
 
 def multiply (k : Nat) : Program :=
-  phasePlace (WindowWalkCosts.forward false 234) ++ phasePlace forwardEnd ++
+  phasePlace (WindowWalkCosts.forward false 144) ++ phasePlace forwardEnd ++
     kernelPlace (exitFieldHosted checkpointPrimitives) ++
-    phasePlace checkpointPrimitives.firstUnpack ++ phasePlace (WindowWalkCosts.backward true 154) ++
+    phasePlace checkpointPrimitives.firstUnpack ++ phasePlace (WindowWalkCosts.backward true 64) ++
     Stair44PointMap.switchX (phasePlace (ParityXExitInverse23Kernel.x1N k))
 
 def generic (cx cy : Fp) : Program :=
@@ -2057,8 +2422,8 @@ def program (C : Point) : Program := match C with
       renameProgram (Wrapper5.U layout) (finite (.some hc) cx cy)
 
 theorem kernels (c : Cost) (gainF gainR fieldExtra : Nat)
-    (dF : c.measure (WindowWalkCosts.forward true 154)+gainF=c.measure (Stair44WalkRun.forward true 409))
-    (dR : c.measure (WindowWalkCosts.backward false 235)+gainR=c.measure (Stair44WalkRun.backward false 490))
+    (dF : c.measure (WindowWalkCosts.forward true 64)+gainF=c.measure (Stair44WalkRun.forward true 409))
+    (dR : c.measure (WindowWalkCosts.backward false 145)+gainR=c.measure (Stair44WalkRun.backward false 490))
     (g : c.measure (WindowFieldCosts.group84 true)=c.measure (WindowFieldCosts.group true 1 84)+fieldExtra) :
     c.measure divide+gainF+gainR=c.measure Stair44Outer.divide+fieldExtra := by
   have h := field_delta c true _ g
@@ -2067,8 +2432,8 @@ theorem kernels (c : Cost) (gainF gainR fieldExtra : Nat)
   omega
 
 theorem kernelsM (c : Cost) (k gainF gainR fieldExtra : Nat)
-    (mF : c.measure (WindowWalkCosts.forward false 234)+gainF=c.measure (Stair44WalkRun.forward false 489))
-    (mR : c.measure (WindowWalkCosts.backward true 154)+gainR=c.measure (Stair44WalkRun.backward true 409))
+    (mF : c.measure (WindowWalkCosts.forward false 144)+gainF=c.measure (Stair44WalkRun.forward false 489))
+    (mR : c.measure (WindowWalkCosts.backward true 64)+gainR=c.measure (Stair44WalkRun.backward true 409))
     (g : c.measure (WindowFieldCosts.group84 false)=c.measure (WindowFieldCosts.group false 1 84)+fieldExtra) :
     c.measure (multiply k)+gainF+gainR=c.measure (Stair44Outer.multiply k)+fieldExtra := by
   have h := field_delta c false _ g
@@ -2211,19 +2576,19 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 
 private theorem fieldTcDiv :
-    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+2145 := by
+    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+2371 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_div.1
 private theorem fieldMcDiv :
-    mc.measure (WindowFieldCosts.group84 true)=mc.measure (WindowFieldCosts.group true 1 84)+3047 := by
+    mc.measure (WindowFieldCosts.group84 true)=mc.measure (WindowFieldCosts.group true 1 84)+3263 := by
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_div.2
 private theorem fieldTcMul :
-    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+2112 := by
+    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+2323 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_mul.1
 private theorem fieldMcMul :
-    mc.measure (WindowFieldCosts.group84 false)=mc.measure (WindowFieldCosts.group false 1 84)+3047 := by
+    mc.measure (WindowFieldCosts.group84 false)=mc.measure (WindowFieldCosts.group false 1 84)+3263 := by
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_mul.2
 /-- the two kernels' field extras differ (460 vs 624 T, 442 vs 831 M). -/
@@ -2241,30 +2606,30 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+14435+14273=tc.measure Stair44Outer.divide+2145 :=
-  kernels tc 14435 14273 2145 (WindowWalkCosts.inst true 154 409 14435 14273 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 235 490 14446 14273 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+22725+22557=tc.measure Stair44Outer.divide+2371 :=
+  kernels tc 22725 22557 2371 (WindowWalkCosts.inst true 64 409 22725 22557 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 145 490 22741 22557 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+14446+14273=tc.measure (Stair44Outer.multiply k)+2112 :=
-  kernelsM tc k 14446 14273 2112 (WindowWalkCosts.inst false 234 489 14446 14273 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 154 409 14435 14273 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+22741+22557=tc.measure (Stair44Outer.multiply k)+2323 :=
+  kernelsM tc k 22741 22557 2323 (WindowWalkCosts.inst false 144 489 22741 22557 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 64 409 22725 22557 rfl rfl rfl).2.1 fieldTcMul
 
-theorem mc_div : mc.measure divide+7171+7232=mc.measure Stair44Outer.divide+3047 :=
-  kernels mc 7171 7232 3047 (WindowWalkCosts.inst true 154 409 14435 14273 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 235 490 14446 14273 rfl rfl rfl).2.2.2 fieldMcDiv
+theorem mc_div : mc.measure divide+11531+11537=mc.measure Stair44Outer.divide+3263 :=
+  kernels mc 11531 11537 3263 (WindowWalkCosts.inst true 64 409 22725 22557 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 145 490 22741 22557 rfl rfl rfl).2.2.2 fieldMcDiv
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+7171+7232=mc.measure (Stair44Outer.multiply k)+3047 :=
-  kernelsM mc k 7171 7232 3047 (WindowWalkCosts.inst false 234 489 14446 14273 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 154 409 14435 14273 rfl rfl rfl).2.2.2 fieldMcMul
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+11531+11537=mc.measure (Stair44Outer.multiply k)+3263 :=
+  kernelsM mc k 11531 11537 3263 (WindowWalkCosts.inst false 144 489 22741 22557 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 64 409 22725 22557 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+53170=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+22712=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 53170 (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 22712 (sum_delta2 mc_div (mc_mul _) rfl)⟩
+    toffoliCount (finite C cx cy)+85886=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+39610=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 85886 (pair_delta2 tc_div (tc_mul _) rfl),
+    finite_delta mc C cx cy 39610 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2115936 ∧
-    measurementCount (program C) ≤ 1498616 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2083220 ∧
+    measurementCount (program C) ≤ 1480632 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -2289,30 +2654,30 @@ set_option linter.unusedSimpArgs false
 attribute [local irreducible] toffoliCount gateSlots measurementCount wires renameProgram
   Rolling1588TickGap.forward Rolling1588.reverse Partial.forward45plus1 Partial.reverse45plus1
 
-private theorem walk (c : Cost) (d : Bool) (tail f r n : Nat) (hn : 255+tail=n)
+private theorem walk (c : Cost) (d : Bool) (tail f r n : Nat) (hn : 345+tail=n)
     (hf : c.measure (Partial.forward45plus1 d) ≤ f) (hr : c.measure (Partial.reverse45plus1 d) ≤ r) :
     c.measure (WindowWalkCosts.forward d tail) ≤ c.measure (Stair44WalkRun.forward d n)+f ∧
     c.measure (WindowWalkCosts.backward d tail) ≤ c.measure (Stair44WalkRun.backward d n)+r := by
   subst n
-  have a := StairRestSupport.forward_append d 89 16 (166+tail)
-  have b := StairRestSupport.forward_append d 166 105 tail
-  have x := StairRestSupport.reverse_append d 89 16 (166+tail)
-  have y := StairRestSupport.reverse_append d 166 105 tail
-  change Rolling1588TickGap.forward d 16 (89+(166+tail)) =
-    Rolling1588TickGap.forward d 16 89 ++ Rolling1588TickGap.forward d 105 (166+tail) at a
-  change Rolling1588.reverse d 16 (89+(166+tail)) =
-    Rolling1588.reverse d 105 (166+tail) ++ Rolling1588.reverse d 16 89 at x
+  have a := StairRestSupport.forward_append d 104 16 (241+tail)
+  have b := StairRestSupport.forward_append d 241 120 tail
+  have x := StairRestSupport.reverse_append d 104 16 (241+tail)
+  have y := StairRestSupport.reverse_append d 241 120 tail
+  change Rolling1588TickGap.forward d 16 (104+(241+tail)) =
+    Rolling1588TickGap.forward d 16 104 ++ Rolling1588TickGap.forward d 120 (241+tail) at a
+  change Rolling1588.reverse d 16 (104+(241+tail)) =
+    Rolling1588.reverse d 120 (241+tail) ++ Rolling1588.reverse d 16 104 at x
   rw [b] at a
   rw [y] at x
-  have num : 255+tail=89+(166+tail) := by omega
+  have num : 345+tail=104+(241+tail) := by omega
   simp only [Stair44WalkRun.forward, Stair44WalkRun.backward,WindowWalkCosts.forward,WindowWalkCosts.backward,num,a,x,
     c.append,c.rename]
   norm_num only []
   constructor <;> omega
 
 private theorem kernels (c : Cost) (gainF gainR fieldExtra : Nat)
-    (dF : c.measure (WindowWalkCosts.forward true 154) ≤ c.measure (Stair44WalkRun.forward true 409)+gainF)
-    (dR : c.measure (WindowWalkCosts.backward false 235) ≤ c.measure (Stair44WalkRun.backward false 490)+gainR)
+    (dF : c.measure (WindowWalkCosts.forward true 64) ≤ c.measure (Stair44WalkRun.forward true 409)+gainF)
+    (dR : c.measure (WindowWalkCosts.backward false 145) ≤ c.measure (Stair44WalkRun.backward false 490)+gainR)
     (g : c.measure (WindowFieldCosts.group84 true)=c.measure (WindowFieldCosts.group true 1 84)+fieldExtra) :
     c.measure WindowCallerCosts.divide ≤ c.measure Stair44Outer.divide+gainF+gainR+fieldExtra := by
   have h  := WindowCallerCosts.field_delta c true _ g
@@ -2321,8 +2686,8 @@ private theorem kernels (c : Cost) (gainF gainR fieldExtra : Nat)
   omega
 
 private theorem kernelsM (c : Cost) (k gainF gainR fieldExtra : Nat)
-    (mF : c.measure (WindowWalkCosts.forward false 234) ≤ c.measure (Stair44WalkRun.forward false 489)+gainF)
-    (mR : c.measure (WindowWalkCosts.backward true 154) ≤ c.measure (Stair44WalkRun.backward true 409)+gainR)
+    (mF : c.measure (WindowWalkCosts.forward false 144) ≤ c.measure (Stair44WalkRun.forward false 489)+gainF)
+    (mR : c.measure (WindowWalkCosts.backward true 64) ≤ c.measure (Stair44WalkRun.backward true 409)+gainR)
     (g : c.measure (WindowFieldCosts.group84 false)=c.measure (WindowFieldCosts.group false 1 84)+fieldExtra) :
     c.measure (WindowCallerCosts.multiply k) ≤ c.measure (Stair44Outer.multiply k)+gainF+gainR+fieldExtra := by
   have h  := WindowCallerCosts.field_delta c false _ g
@@ -2340,32 +2705,34 @@ private theorem finite_upper (c : Cost) (C : Point) (cx cy : Fp) (gain : Nat)
 
 
 private theorem casts {P : Program} {n : Nat} (h : gateSlots P ≤ n) : slots.measure P ≤ n := h
-private theorem groupCap (d : Bool) (n : Nat) (hn : 11*(if d then 5141 else 5535)=n) :
+private theorem groupCap (d : Bool) (n : Nat)
+    (hn : 16*(if d then 5141 else 5535)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
     slots.measure (WindowFieldCosts.group84 d)=slots.measure (WindowFieldCosts.group d 1 84)+n := by
-  rw [WindowFieldCosts.group_slots d, hn]
+  have h := WindowFieldCosts.group_slots d
+  omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+905327+908291+56551 :=
-  kernels slots 905327 908291 56551
-    (walk slots true 154 905327 908215 409 rfl (casts WindowParams.ship_slotsF.1) (casts WindowParams.ship_slotsR.1)).1
-    (walk slots false 235 905327 908291 490 rfl (casts WindowParams.ship_slotsF.2) (casts WindowParams.ship_slotsR.2)).2
-    (groupCap true 56551 rfl)
+    slots.measure Stair44Outer.divide+1314415+1318734+75191 :=
+  kernels slots 1314415 1318734 75191
+    (walk slots true 64 1314415 1318618 409 rfl (casts WindowParams.ship_slotsF.1) (casts WindowParams.ship_slotsR.1)).1
+    (walk slots false 145 1314415 1318734 490 rfl (casts WindowParams.ship_slotsF.2) (casts WindowParams.ship_slotsR.2)).2
+    (groupCap true 75191 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+905327+908215+60885 :=
-  kernelsM slots k 905327 908215 60885
-    (walk slots false 234 905327 908291 489 rfl (casts WindowParams.ship_slotsF.2) (casts WindowParams.ship_slotsR.2)).1
-    (walk slots true 154 905327 908215 409 rfl (casts WindowParams.ship_slotsF.1) (casts WindowParams.ship_slotsR.1)).2
-    (groupCap false 60885 rfl)
+    slots.measure (Stair44Outer.multiply k)+1314415+1318618+85220 :=
+  kernelsM slots k 1314415 1318618 85220
+    (walk slots false 144 1314415 1318734 489 rfl (casts WindowParams.ship_slotsF.2) (casts WindowParams.ship_slotsR.2)).1
+    (walk slots true 64 1314415 1318618 409 rfl (casts WindowParams.ship_slotsF.1) (casts WindowParams.ship_slotsR.1)).2
+    (groupCap false 85220 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+905327+908291+56551)
-    (hm : b ≤ y+905327+908215+60885) : a+b ≤ x+y+3744596 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+1314415+1318734+75191)
+    (hm : b ≤ y+1314415+1318618+85220) : a+b ≤ x+y+5426593 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+3744596 :=
-  finite_upper slots C cx cy 3744596 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+5426593 :=
+  finite_upper slots C cx cy 5426593 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 54605078 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 56309779 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -2398,12 +2765,12 @@ private theorem emitted (op : Stage) : GatePhysical (StairArchiveRelease.program
   exacts [enter0_GatePhysical,switch0_GatePhysical,leave0_GatePhysical,
     enter1_GatePhysical,switch1_GatePhysical,leave1_GatePhysical]
 
-private theorem hook (j : Nat) (hj : j∈[22,25,28,31,34,37,40,43,46,49,52]) (op : Stage) :
+private theorem hook (j : Nat) (hj : j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) (op : Stage) :
     Sound (fieldHook j op) := by
   have span : j∈List.range' 1 83 := by simp only [List.mem_cons,List.not_mem_nil,or_false] at hj; apply List.mem_range'_1.mpr; omega
   have chk : (fieldSites j).all (fun q => decide (InDom q))=true := by
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hj
-    rcases hj with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide +kernel
+    rcases hj with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide +kernel
   refine ⟨gatePhysical_rename_support _ _ (fun a ha b hb eq => field_inj j span a (sub op ha) b (sub op hb) eq) (emitted op),?_⟩
   intro q hq
   rw [fieldHook,renameProgram_support] at hq
@@ -2447,7 +2814,7 @@ private theorem ordinary (d : Bool) (j n : Nat) (lo : 1≤j) (hi : j+n≤85) :
   rw [group,distribute,distributed_ok]
   exact fun i l u => whole d i (by omega) (by omega)
 
-private theorem pair (d : Bool) (j : Nat) (pick : j∈[22,25,28,31,34,37,40,43,46,49,52]) (lo : 1≤j) (hi : j≤83) :
+private theorem pair (d : Bool) (j : Nat) (pick : j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) (lo : 1≤j) (hi : j≤83) :
     Sound (ten j (!d)) := by
   have here := whole d j lo (by omega)
   have next := whole d (j+1) (by omega) (by omega)
@@ -2457,32 +2824,72 @@ private theorem pair (d : Bool) (j : Nat) (pick : j∈[22,25,28,31,34,37,40,43,4
 
 
 
+/-- the field group's own packets are sound (record footprint, odd packets physical). -/
+private theorem ot_opk_sound (d : Bool) (k : Nat) (lo : 1≤k) (hi : k≤84) : Sound (opk d k) := by
+  by_cases big : 84<k
+  · rw [WindowFieldCosts.ot_opk_std d k big]; exact whole d k lo (by omega)
+  · refine ⟨?_,good_of_subset (WindowFieldCosts.ot_opk_sub d k) (whole d k lo (by omega)).good⟩
+    simp only [opk,StairArchiveInactive.hosts_eq]
+    exact gatePhysical_rename _ (Equiv.injective _) _
+      (gatePhysical_rename _ (OB5.sig_injective 511 (by decide)) _ (WindowFieldCosts.oddPk_physical d k (by omega)))
+
+private theorem ot_ogroup_sound (d : Bool) (j n : Nat) (lo : 1≤j) (hi : j+n≤85) : Sound (ogroup d j n) := by
+  unfold ogroup
+  induction n generalizing j with
+  | zero =>
+    show Sound []
+    exact ⟨by simp [GatePhysical],fun _ h => by simp [wires] at h⟩
+  | succ n ih =>
+    have head := ot_opk_sound d j lo (by omega)
+    have tail := ih (j+1) (by omega) (by omega)
+    cases d <;> simp only [PacketSequence.program,Bool.false_eq_true,if_false,if_true]
+    · exact sound_append tail head
+    · exact sound_append head tail
+
+private theorem ot_pair (d : Bool) (j : Nat) (pick : j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) (lo : 1≤j) (hi : j≤83) :
+    Sound (oten j (!d)) := by
+  have here := ot_opk_sound d j lo (by omega)
+  have next := ot_opk_sound d (j+1) (by omega) (by omega)
+  have firstOK : Sound (ofirst j (!d)) := by cases d <;> first | exact here | exact next
+  have lastOK : Sound (osecond j (!d)) := by cases d <;> first | exact here | exact next
+  exact sound_append (hook j pick _) (sound_append firstOK (sound_append (hook j pick _) (sound_append lastOK (hook j pick _))))
+
 theorem group84_ok (d : Bool) : Sound (group84 d) := by
   have ord {a b : Program} (ha : Sound a) (hb : Sound b) :
       Sound (ordered d a b) := by cases d <;> first | exact sound_append ha hb | exact sound_append hb ha
-  exact ord (ordinary d 1 21 (by decide) (by decide))
-    (ord (pair d 22 (by decide) (by decide) (by decide))
-    (ord (ordinary d 24 1 (by decide) (by decide))
-    (ord (pair d 25 (by decide) (by decide) (by decide))
-    (ord (ordinary d 27 1 (by decide) (by decide))
-    (ord (pair d 28 (by decide) (by decide) (by decide))
-    (ord (ordinary d 30 1 (by decide) (by decide))
-    (ord (pair d 31 (by decide) (by decide) (by decide))
-    (ord (ordinary d 33 1 (by decide) (by decide))
-    (ord (pair d 34 (by decide) (by decide) (by decide))
-    (ord (ordinary d 36 1 (by decide) (by decide))
-    (ord (pair d 37 (by decide) (by decide) (by decide))
-    (ord (ordinary d 39 1 (by decide) (by decide))
-    (ord (pair d 40 (by decide) (by decide) (by decide))
-    (ord (ordinary d 42 1 (by decide) (by decide))
-    (ord (pair d 43 (by decide) (by decide) (by decide))
-    (ord (ordinary d 45 1 (by decide) (by decide))
-    (ord (pair d 46 (by decide) (by decide) (by decide))
-    (ord (ordinary d 48 1 (by decide) (by decide))
-    (ord (pair d 49 (by decide) (by decide) (by decide))
-    (ord (ordinary d 51 1 (by decide) (by decide))
-    (ord (pair d 52 (by decide) (by decide) (by decide))
-    (ordinary d 54 31 (by decide) (by decide)))))))))))))))))))))))
+  exact ord (ot_ogroup_sound d 1 24 (by decide) (by decide))
+    (ord (ot_pair d 25 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 27 1 (by decide) (by decide))
+    (ord (ot_pair d 28 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 30 1 (by decide) (by decide))
+    (ord (ot_pair d 31 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 33 1 (by decide) (by decide))
+    (ord (ot_pair d 34 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 36 1 (by decide) (by decide))
+    (ord (ot_pair d 37 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 39 1 (by decide) (by decide))
+    (ord (ot_pair d 40 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 42 1 (by decide) (by decide))
+    (ord (ot_pair d 43 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 45 1 (by decide) (by decide))
+    (ord (ot_pair d 46 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 48 1 (by decide) (by decide))
+    (ord (ot_pair d 49 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 51 1 (by decide) (by decide))
+    (ord (ot_pair d 52 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 54 1 (by decide) (by decide))
+    (ord (ot_pair d 55 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 57 1 (by decide) (by decide))
+    (ord (ot_pair d 58 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 60 1 (by decide) (by decide))
+    (ord (ot_pair d 61 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 63 1 (by decide) (by decide))
+    (ord (ot_pair d 64 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 66 1 (by decide) (by decide))
+    (ord (ot_pair d 67 (by decide) (by decide) (by decide))
+    (ord (ot_ogroup_sound d 69 1 (by decide) (by decide))
+    (ord (ot_pair d 70 (by decide) (by decide) (by decide))
+    (ot_ogroup_sound d 72 13 (by decide) (by decide)))))))))))))))))))))))))))))))))
 
 end ECDSAAdd.Entrant.StairPacket.WindowPhysical
 
@@ -2539,32 +2946,54 @@ private theorem pair (d : Bool) (j : Nat) (lo : 1≤j) (hi : j≤83) :
   exact (hook j jmem _).append (firstOK.append ((hook j jmem _).append (lastOK.append (hook j jmem _))))
 
 
+/-- the field group's own packets avoid the reserved holes (their wires are record wires). -/
+private theorem ot_ogroup_piece (d : Bool) (j n : Nat) (lo : 1≤j) (hi : j+n≤85) :
+    PieceOK reserved TP (ogroup d j n) := by
+  have hrec := ordinary d j n lo hi
+  exact ⟨fun x hx => hrec.1 x (WindowFieldCosts.ot_ogroup_sub d j n hx),
+    fun x hx => hrec.2 x (WindowFieldCosts.ot_ogroup_sub d j n hx)⟩
+
+private theorem ot_oten_piece (d : Bool) (j : Nat) (lo : 1≤j) (hi : j≤83) : PieceOK reserved TP (oten j (!d)) := by
+  have hrec := pair d j lo hi
+  exact ⟨fun x hx => hrec.1 x (WindowFieldCosts.ot_oten_sub j (!d) hx),
+    fun x hx => hrec.2 x (WindowFieldCosts.ot_oten_sub j (!d) hx)⟩
+
 theorem group84_ok (d : Bool) : PieceOK reserved TP (group84 d) := by
   have ord {a b : Program} (ha : PieceOK reserved TP a) (hb : PieceOK reserved TP b) :
       PieceOK reserved TP (ordered d a b) := by cases d <;> first | exact ha.append hb | exact hb.append ha
-  exact ord (ordinary d 1 21 (by decide) (by decide))
-    (ord (pair d 22 (by decide) (by decide))
-    (ord (ordinary d 24 1 (by decide) (by decide))
-    (ord (pair d 25 (by decide) (by decide))
-    (ord (ordinary d 27 1 (by decide) (by decide))
-    (ord (pair d 28 (by decide) (by decide))
-    (ord (ordinary d 30 1 (by decide) (by decide))
-    (ord (pair d 31 (by decide) (by decide))
-    (ord (ordinary d 33 1 (by decide) (by decide))
-    (ord (pair d 34 (by decide) (by decide))
-    (ord (ordinary d 36 1 (by decide) (by decide))
-    (ord (pair d 37 (by decide) (by decide))
-    (ord (ordinary d 39 1 (by decide) (by decide))
-    (ord (pair d 40 (by decide) (by decide))
-    (ord (ordinary d 42 1 (by decide) (by decide))
-    (ord (pair d 43 (by decide) (by decide))
-    (ord (ordinary d 45 1 (by decide) (by decide))
-    (ord (pair d 46 (by decide) (by decide))
-    (ord (ordinary d 48 1 (by decide) (by decide))
-    (ord (pair d 49 (by decide) (by decide))
-    (ord (ordinary d 51 1 (by decide) (by decide))
-    (ord (pair d 52 (by decide) (by decide))
-    (ordinary d 54 31 (by decide) (by decide)))))))))))))))))))))))
+  exact ord (ot_ogroup_piece d 1 24 (by decide) (by decide))
+    (ord (ot_oten_piece d 25 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 27 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 28 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 30 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 31 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 33 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 34 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 36 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 37 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 39 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 40 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 42 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 43 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 45 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 46 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 48 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 49 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 51 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 52 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 54 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 55 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 57 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 58 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 60 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 61 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 63 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 64 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 66 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 67 (by decide) (by decide))
+    (ord (ot_ogroup_piece d 69 1 (by decide) (by decide))
+    (ord (ot_oten_piece d 70 (by decide) (by decide))
+    (ot_ogroup_piece d 72 13 (by decide) (by decide)))))))))))))))))))))))))))))))))
 
 end ECDSAAdd.Entrant.StairPacket.WindowSites
 
@@ -2698,30 +3127,30 @@ private theorem native {p : Program} (h : GoodWindow p) :
   rw [StairPlaceFast.phasePlace_eqB]
   exact h x hx
 
-theorem walkF (d : Bool) (tail : Nat) (bound : 16+(255+tail)≤506)
+theorem walkF (d : Bool) (tail : Nat) (bound : 16+(345+tail)≤506)
     (new : GoodWindow (Partial.forward45plus1 d)) :
     PieceOK reserved PP (WindowWalkCosts.forward d tail) := by
-  have old := weaken (Stair44PhaseSites.forward d (255+tail) bound)
-  have a := StairRestSupport.forward_append d 89 16 (166+tail)
-  have b := StairRestSupport.forward_append d 166 105 tail
-  change Rolling1588TickGap.forward d 16 (89+(166+tail)) =
-    Rolling1588TickGap.forward d 16 89 ++ Rolling1588TickGap.forward d 105 (166+tail) at a
+  have old := weaken (Stair44PhaseSites.forward d (345+tail) bound)
+  have a := StairRestSupport.forward_append d 104 16 (241+tail)
+  have b := StairRestSupport.forward_append d 241 120 tail
+  change Rolling1588TickGap.forward d 16 (104+(241+tail)) =
+    Rolling1588TickGap.forward d 16 104 ++ Rolling1588TickGap.forward d 120 (241+tail) at a
   rw [b] at a
-  have num : 255+tail=89+(166+tail) := by omega
+  have num : 345+tail=104+(241+tail) := by omega
   simp only [Stair44WalkRun.forward,num,a,app,ren] at old
   simp only [WindowWalkCosts.forward,app,ren]
   exact ⟨old.1,⟨old.2.1,native new⟩,old.2.2.2⟩
 
-theorem walkR (d : Bool) (tail : Nat) (bound : 16+(255+tail)≤506)
+theorem walkR (d : Bool) (tail : Nat) (bound : 16+(345+tail)≤506)
     (new : GoodWindow (Partial.reverse45plus1 d)) :
     PieceOK reserved PP (WindowWalkCosts.backward d tail) := by
-  have old := weaken (Stair44PhaseSites.backward d (255+tail) bound)
-  have a := StairRestSupport.reverse_append d 89 16 (166+tail)
-  have b := StairRestSupport.reverse_append d 166 105 tail
-  change Rolling1588.reverse d 16 (89+(166+tail)) =
-    Rolling1588.reverse d 105 (166+tail) ++ Rolling1588.reverse d 16 89 at a
+  have old := weaken (Stair44PhaseSites.backward d (345+tail) bound)
+  have a := StairRestSupport.reverse_append d 104 16 (241+tail)
+  have b := StairRestSupport.reverse_append d 241 120 tail
+  change Rolling1588.reverse d 16 (104+(241+tail)) =
+    Rolling1588.reverse d 120 (241+tail) ++ Rolling1588.reverse d 16 104 at a
   rw [b] at a
-  have num : 255+tail=89+(166+tail) := by omega
+  have num : 345+tail=104+(241+tail) := by omega
   simp only [Stair44WalkRun.backward,num,a,app,ren] at old
   simp only [WindowWalkCosts.backward,app,ren]
   exact ⟨⟨⟨old.1.1.1,native new⟩,old.1.2⟩,old.2⟩
@@ -2763,35 +3192,35 @@ private theorem dom {p : Program} (cover : PartialSites.Covered p) : Good p := b
   constructor
   all_goals omega
 
-private theorem fw (d : Bool) (tail n : Nat) (hn : 15+(255+tail)=n)
+private theorem fw (d : Bool) (tail n : Nat) (hn : 15+(345+tail)=n)
     (ref_ : Sound (Rolling1588TickGap.forward d 1 n))
     (p : GatePhysical (Partial.forward45plus1 d)) : Sound (WindowWalkCosts.forward d tail) := by
   subst n
-  rw [forward_append d 15 1 (255+tail)] at ref_
+  rw [forward_append d 15 1 (345+tail)] at ref_
   obtain ⟨early,late⟩ := parts ref_
-  change Sound (Rolling1588TickGap.forward d 16 (255+tail)) at late
-  rw [show 255+tail=89+(166+tail) by omega,forward_append d 89 16 (166+tail)] at late
+  change Sound (Rolling1588TickGap.forward d 16 (345+tail)) at late
+  rw [show 345+tail=104+(241+tail) by omega,forward_append d 104 16 (241+tail)] at late
   obtain ⟨pre,ms⟩ := parts late
-  change Sound (Rolling1588TickGap.forward d 105 (166+tail)) at ms
-  rw [forward_append d 166 105 tail] at ms
+  change Sound (Rolling1588TickGap.forward d 120 (241+tail)) at ms
+  rw [forward_append d 241 120 tail] at ms
   have patch : Sound (Partial.forward45plus1 d) := ⟨p,dom (PartialSites.forward45plus1_domain d)⟩
-  have last : Sound (Rolling1588TickGap.forward d 271 tail) := (parts ms).2
+  have last : Sound (Rolling1588TickGap.forward d 361 tail) := (parts ms).2
   exact sound_append (sound_rename _ first.injective firstDom early)
     (sound_rename _ rest.injective restDom (sound_append (sound_append pre patch) last))
 
-private theorem bw (d : Bool) (tail n : Nat) (hn : 15+(255+tail)=n)
+private theorem bw (d : Bool) (tail n : Nat) (hn : 15+(345+tail)=n)
     (ref_ : Sound (Rolling1588.reverse d 1 n))
     (p : GatePhysical (Partial.reverse45plus1 d)) : Sound (WindowWalkCosts.backward d tail) := by
   subst n
-  rw [reverse_append d 15 1 (255+tail)] at ref_
+  rw [reverse_append d 15 1 (345+tail)] at ref_
   obtain ⟨late,early⟩ := parts ref_
-  change Sound (Rolling1588.reverse d 16 (255+tail)) at late
-  rw [show 255+tail=89+(166+tail) by omega,reverse_append d 89 16 (166+tail)] at late
+  change Sound (Rolling1588.reverse d 16 (345+tail)) at late
+  rw [show 345+tail=104+(241+tail) by omega,reverse_append d 104 16 (241+tail)] at late
   obtain ⟨ms,pre⟩ := parts late
-  change Sound (Rolling1588.reverse d 105 (166+tail)) at ms
-  rw [reverse_append d 166 105 tail] at ms
+  change Sound (Rolling1588.reverse d 120 (241+tail)) at ms
+  rw [reverse_append d 241 120 tail] at ms
   have patch : Sound (Partial.reverse45plus1 d) := ⟨p,dom (PartialSites.reverse45plus1_domain d)⟩
-  have last : Sound (Rolling1588.reverse d 271 tail) := (parts ms).1
+  have last : Sound (Rolling1588.reverse d 361 tail) := (parts ms).1
   exact sound_append (sound_rename _ rest.injective restDom (sound_append (sound_append last patch) pre))
     (sound_rename _ first.injective firstDom early)
 private theorem phase {P : Program} (h : Sound P) : GatePhysical (phasePlace P) :=
@@ -2812,8 +3241,8 @@ theorem dividePhysical : GatePhysical WindowCallerCosts.divide := by
   let P := primitiveSlots_v3 primitiveChecks
   have field := sound_entryFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3
   simp only [WindowCallerCosts.divide,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨phase (fw true 154 424 rfl sound_forward424 (ff _)),phase P.firstPack⟩,rest_physical _ field⟩,
-    phase tail⟩,phase (bw false 235 505 rfl walk (rr _))⟩,phase (sound_rename _ first.injective firstDom native)⟩
+  exact ⟨⟨⟨⟨⟨phase (fw true 64 424 rfl sound_forward424 (ff _)),phase P.firstPack⟩,rest_physical _ field⟩,
+    phase tail⟩,phase (bw false 145 505 rfl walk (rr _))⟩,phase (sound_rename _ first.injective firstDom native)⟩
 
 include ff rr in
 theorem multiplyPhysical (k : Nat) : GatePhysical (WindowCallerCosts.multiply k) := by
@@ -2826,8 +3255,8 @@ theorem multiplyPhysical (k : Nat) : GatePhysical (WindowCallerCosts.multiply k)
   let P := primitiveSlots_v3 primitiveChecks
   have field := sound_exitFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3
   simp only [WindowCallerCosts.multiply,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨phase (fw false 234 504 rfl walk (ff _)),phase tail⟩,rest_physical _ field⟩,phase P.firstUnpack⟩,
-    phase (bw true 154 424 rfl sound_reverse424 (rr _))⟩,
+  exact ⟨⟨⟨⟨⟨phase (fw false 144 504 rfl walk (ff _)),phase tail⟩,rest_physical _ field⟩,phase P.firstUnpack⟩,
+    phase (bw true 64 424 rfl sound_reverse424 (rr _))⟩,
     gatePhysical_rename _ Stair44PointMap.duringX.injective _ (phase (sound_x1N k))⟩
 
 include ff rr in
@@ -2939,16 +3368,16 @@ private theorem phase {P : Program} (v : PieceOK reserved PP P) :
 theorem division (f : GoodWindow (Partial.forward45plus1 true))
     (r : GoodWindow (Partial.reverse45plus1 false)) :
     PieceOK reserved UG WindowCallerCosts.divide :=
-  (((((phase (walkF true 154 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.pack)))).append
+  (((((phase (walkF true 64 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.pack)))).append
     (ok_kernel entryField)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.reverseTail)))).append
-    (phase (walkR false 235 (by decide) r))).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.native)))
+    (phase (walkR false 145 (by decide) r))).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.native)))
 
 theorem multiplication (k : Nat) (f : GoodWindow (Partial.forward45plus1 false))
     (r : GoodWindow (Partial.reverse45plus1 true)) :
     PieceOK reserved UG (WindowCallerCosts.multiply k) :=
-  (((((phase (walkF false 234 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.forwardTail)))).append
+  (((((phase (walkF false 144 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.forwardTail)))).append
     (ok_kernel exitField)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.unpack)))).append
-    (phase (walkR true 154 (by decide) r))).append (weaken (Stair44PhaseSites.exitX k))
+    (phase (walkR true 64 (by decide) r))).append (weaken (Stair44PhaseSites.exitX k))
 
 theorem program_width (C : Point) (f : ∀d, GoodWindow (Partial.forward45plus1 d))
     (r : ∀d,GoodWindow (Partial.reverse45plus1 d)) :
@@ -2997,7 +3426,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2115936,1498616,1543,54605078⟩
+def bounds : Challenge.Bounds := ⟨2083220,1480632,1543,56309779⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -3006,7 +3435,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowCallerCosts.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowCallerCosts.totals C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1498616
+    change measurementCount (normalizeProgram _) ≤ 1480632
     rw [normalize_measurements]
     exact (WindowCallerCosts.totals C).2
   qubits_le C := by
@@ -3014,7 +3443,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowCallerCosts.qubitBound C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 54605078
+    change gateSlots (normalizeProgram _) ≤ 56309779
     rw [normalize_slots]
     exact WindowSlots.slotBound C
 
@@ -3069,7 +3498,7 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
 open Arithmetic MappedCompressed ArchiveFieldScratch StairArchiveInactive StairArchiveNativeCut StairArchiveRelease
 def slots (j : Nat) := (List.range 16).map (fieldPort j)
-def banks := [22,25,28,31,34,37,40,43,46,49,52]
+def banks := [25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]
 private def fixedCover (q : Wire) : Bool := decide (
   q ∈ [base 2400,base 2409,base 2410] ∨
   q ∈ [base 765,base 768,base 767,base 766,base 2312,base 1797,base 1027,base 2311,
@@ -3127,27 +3556,6 @@ theorem restored (rev : Bool) :
   cases rev <;> decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.WindowFieldMask
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h22_1 : part 22 1 7 = true := by decide +kernel
-theorem h22_8 : part 22 8 7 = true := by decide +kernel
-theorem h22_15 : part 22 15 7 = true := by decide +kernel
-theorem h22_22 : part 22 22 7 = true := by decide +kernel
-theorem h22_29 : part 22 29 7 = true := by decide +kernel
-theorem h22_36 : part 22 36 7 = true := by decide +kernel
-theorem h22_43 : part 22 43 7 = true := by decide +kernel
-theorem h22_50 : part 22 50 7 = true := by decide +kernel
-theorem h22_57 : part 22 57 7 = true := by decide +kernel
-theorem h22_64 : part 22 64 7 = true := by decide +kernel
-theorem h22_71 : part 22 71 7 = true := by decide +kernel
-theorem h22_78 : part 22 78 7 = true := by decide +kernel
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
 
 end
 
@@ -3363,6 +3771,132 @@ end
 
 section
 
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h55_1 : part 55 1 7 = true := by decide +kernel
+theorem h55_8 : part 55 8 7 = true := by decide +kernel
+theorem h55_15 : part 55 15 7 = true := by decide +kernel
+theorem h55_22 : part 55 22 7 = true := by decide +kernel
+theorem h55_29 : part 55 29 7 = true := by decide +kernel
+theorem h55_36 : part 55 36 7 = true := by decide +kernel
+theorem h55_43 : part 55 43 7 = true := by decide +kernel
+theorem h55_50 : part 55 50 7 = true := by decide +kernel
+theorem h55_57 : part 55 57 7 = true := by decide +kernel
+theorem h55_64 : part 55 64 7 = true := by decide +kernel
+theorem h55_71 : part 55 71 7 = true := by decide +kernel
+theorem h55_78 : part 55 78 7 = true := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h58_1 : part 58 1 7 = true := by decide +kernel
+theorem h58_8 : part 58 8 7 = true := by decide +kernel
+theorem h58_15 : part 58 15 7 = true := by decide +kernel
+theorem h58_22 : part 58 22 7 = true := by decide +kernel
+theorem h58_29 : part 58 29 7 = true := by decide +kernel
+theorem h58_36 : part 58 36 7 = true := by decide +kernel
+theorem h58_43 : part 58 43 7 = true := by decide +kernel
+theorem h58_50 : part 58 50 7 = true := by decide +kernel
+theorem h58_57 : part 58 57 7 = true := by decide +kernel
+theorem h58_64 : part 58 64 7 = true := by decide +kernel
+theorem h58_71 : part 58 71 7 = true := by decide +kernel
+theorem h58_78 : part 58 78 7 = true := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h61_1 : part 61 1 7 = true := by decide +kernel
+theorem h61_8 : part 61 8 7 = true := by decide +kernel
+theorem h61_15 : part 61 15 7 = true := by decide +kernel
+theorem h61_22 : part 61 22 7 = true := by decide +kernel
+theorem h61_29 : part 61 29 7 = true := by decide +kernel
+theorem h61_36 : part 61 36 7 = true := by decide +kernel
+theorem h61_43 : part 61 43 7 = true := by decide +kernel
+theorem h61_50 : part 61 50 7 = true := by decide +kernel
+theorem h61_57 : part 61 57 7 = true := by decide +kernel
+theorem h61_64 : part 61 64 7 = true := by decide +kernel
+theorem h61_71 : part 61 71 7 = true := by decide +kernel
+theorem h61_78 : part 61 78 7 = true := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h64_1 : part 64 1 7 = true := by decide +kernel
+theorem h64_8 : part 64 8 7 = true := by decide +kernel
+theorem h64_15 : part 64 15 7 = true := by decide +kernel
+theorem h64_22 : part 64 22 7 = true := by decide +kernel
+theorem h64_29 : part 64 29 7 = true := by decide +kernel
+theorem h64_36 : part 64 36 7 = true := by decide +kernel
+theorem h64_43 : part 64 43 7 = true := by decide +kernel
+theorem h64_50 : part 64 50 7 = true := by decide +kernel
+theorem h64_57 : part 64 57 7 = true := by decide +kernel
+theorem h64_64 : part 64 64 7 = true := by decide +kernel
+theorem h64_71 : part 64 71 7 = true := by decide +kernel
+theorem h64_78 : part 64 78 7 = true := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h67_1 : part 67 1 7 = true := by decide +kernel
+theorem h67_8 : part 67 8 7 = true := by decide +kernel
+theorem h67_15 : part 67 15 7 = true := by decide +kernel
+theorem h67_22 : part 67 22 7 = true := by decide +kernel
+theorem h67_29 : part 67 29 7 = true := by decide +kernel
+theorem h67_36 : part 67 36 7 = true := by decide +kernel
+theorem h67_43 : part 67 43 7 = true := by decide +kernel
+theorem h67_50 : part 67 50 7 = true := by decide +kernel
+theorem h67_57 : part 67 57 7 = true := by decide +kernel
+theorem h67_64 : part 67 64 7 = true := by decide +kernel
+theorem h67_71 : part 67 71 7 = true := by decide +kernel
+theorem h67_78 : part 67 78 7 = true := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h70_1 : part 70 1 7 = true := by decide +kernel
+theorem h70_8 : part 70 8 7 = true := by decide +kernel
+theorem h70_15 : part 70 15 7 = true := by decide +kernel
+theorem h70_22 : part 70 22 7 = true := by decide +kernel
+theorem h70_29 : part 70 29 7 = true := by decide +kernel
+theorem h70_36 : part 70 36 7 = true := by decide +kernel
+theorem h70_43 : part 70 43 7 = true := by decide +kernel
+theorem h70_50 : part 70 50 7 = true := by decide +kernel
+theorem h70_57 : part 70 57 7 = true := by decide +kernel
+theorem h70_64 : part 70 64 7 = true := by decide +kernel
+theorem h70_71 : part 70 71 7 = true := by decide +kernel
+theorem h70_78 : part 70 78 7 = true := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
 namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
 open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
 open ArchiveFieldScratch StairArchiveTen CodecBitSliceVerify
@@ -3437,10 +3971,6 @@ set_option maxHeartbeats 1200000
 set_option exponentiation.threshold 100000
 private theorem splitRange : List.range' 1 84 = List.range' 1 7 ++ List.range' 8 7 ++ List.range' 15 7 ++ List.range' 22 7 ++ List.range' 29 7 ++ List.range' 36 7 ++ List.range' 43 7 ++ List.range' 50 7 ++ List.range' 57 7 ++ List.range' 64 7 ++ List.range' 71 7 ++ List.range' 78 7 := by decide +kernel
 attribute [local irreducible] allowed fieldPort packet cover preimage
-private theorem pass22 : (List.range' 1 84).all (allowed 22)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h22_1,h22_8⟩,h22_15⟩,h22_22⟩,h22_29⟩,h22_36⟩,h22_43⟩,h22_50⟩,h22_57⟩,h22_64⟩,h22_71⟩,h22_78⟩
 private theorem pass25 : (List.range' 1 84).all (allowed 25)=true := by
   rw [splitRange]
   simp only [List.all_append, Bool.and_eq_true]
@@ -3481,10 +4011,33 @@ private theorem pass52 : (List.range' 1 84).all (allowed 52)=true := by
   rw [splitRange]
   simp only [List.all_append, Bool.and_eq_true]
   exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h52_1,h52_8⟩,h52_15⟩,h52_22⟩,h52_29⟩,h52_36⟩,h52_43⟩,h52_50⟩,h52_57⟩,h52_64⟩,h52_71⟩,h52_78⟩
+private theorem pass55 : (List.range' 1 84).all (allowed 55)=true := by
+  rw [splitRange]
+  simp only [List.all_append, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h55_1,h55_8⟩,h55_15⟩,h55_22⟩,h55_29⟩,h55_36⟩,h55_43⟩,h55_50⟩,h55_57⟩,h55_64⟩,h55_71⟩,h55_78⟩
+private theorem pass58 : (List.range' 1 84).all (allowed 58)=true := by
+  rw [splitRange]
+  simp only [List.all_append, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h58_1,h58_8⟩,h58_15⟩,h58_22⟩,h58_29⟩,h58_36⟩,h58_43⟩,h58_50⟩,h58_57⟩,h58_64⟩,h58_71⟩,h58_78⟩
+private theorem pass61 : (List.range' 1 84).all (allowed 61)=true := by
+  rw [splitRange]
+  simp only [List.all_append, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h61_1,h61_8⟩,h61_15⟩,h61_22⟩,h61_29⟩,h61_36⟩,h61_43⟩,h61_50⟩,h61_57⟩,h61_64⟩,h61_71⟩,h61_78⟩
+private theorem pass64 : (List.range' 1 84).all (allowed 64)=true := by
+  rw [splitRange]
+  simp only [List.all_append, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h64_1,h64_8⟩,h64_15⟩,h64_22⟩,h64_29⟩,h64_36⟩,h64_43⟩,h64_50⟩,h64_57⟩,h64_64⟩,h64_71⟩,h64_78⟩
+private theorem pass67 : (List.range' 1 84).all (allowed 67)=true := by
+  rw [splitRange]
+  simp only [List.all_append, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h67_1,h67_8⟩,h67_15⟩,h67_22⟩,h67_29⟩,h67_36⟩,h67_43⟩,h67_50⟩,h67_57⟩,h67_64⟩,h67_71⟩,h67_78⟩
+private theorem pass70 : (List.range' 1 84).all (allowed 70)=true := by
+  rw [splitRange]
+  simp only [List.all_append, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h70_1,h70_8⟩,h70_15⟩,h70_22⟩,h70_29⟩,h70_36⟩,h70_43⟩,h70_50⟩,h70_57⟩,h70_64⟩,h70_71⟩,h70_78⟩
 private theorem pass (h : Nat) (hm : h ∈ banks) : (List.range' 1 84).all (allowed h) = true := by
   simp only [banks,List.mem_cons,List.mem_nil_iff,or_false] at hm
-  rcases hm with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
-  · exact pass22
+  rcases hm with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
   · exact pass25
   · exact pass28
   · exact pass31
@@ -3495,6 +4048,12 @@ private theorem pass (h : Nat) (hm : h ∈ banks) : (List.range' 1 84).all (allo
   · exact pass46
   · exact pass49
   · exact pass52
+  · exact pass55
+  · exact pass58
+  · exact pass61
+  · exact pass64
+  · exact pass67
+  · exact pass70
 
 theorem packet_free (h k : Nat) (hm : h∈banks) (km : k∈List.range' 1 84)
     (not0 : k≠h) (not1 : k≠h+1) (d : Bool) : avoids (packet d k) (bank h) := by
@@ -3533,7 +4092,7 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
 open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
 open ArchiveFieldScratch StairArchiveTen CodecBitSliceVerify
-def bankIds : Finset Nat := {22,25,28,31,34,37,40,43,46,49,52}
+def bankIds : Finset Nat := {25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70}
 def allBanks : Finset Wire := bankIds.biUnion bank
 def others (j : Nat) : Finset Wire := (bankIds.erase j).biUnion bank
 def byteFrame (j row : Nat) (cs : Cols) (a : State) := ∀ q∈Finset.range 16,
@@ -3617,7 +4176,7 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
 open Arithmetic MappedCompressed StairArchiveInactive WindowFieldCosts
 attribute [local irreducible] packet run allBanks
-def nativeRanges (j n : Nat) := (j=1 ∧ n=21) ∨ (j=24 ∧ n=1) ∨ (j=27 ∧ n=1) ∨ (j=30 ∧ n=1) ∨ (j=33 ∧ n=1) ∨ (j=36 ∧ n=1) ∨ (j=39 ∧ n=1) ∨ (j=42 ∧ n=1) ∨ (j=45 ∧ n=1) ∨ (j=48 ∧ n=1) ∨ (j=51 ∧ n=1) ∨ (j=54 ∧ n=31)
+def nativeRanges (j n : Nat) := (j=1 ∧ n=24) ∨ (j=27 ∧ n=1) ∨ (j=30 ∧ n=1) ∨ (j=33 ∧ n=1) ∨ (j=36 ∧ n=1) ∨ (j=39 ∧ n=1) ∨ (j=42 ∧ n=1) ∨ (j=45 ∧ n=1) ∨ (j=48 ∧ n=1) ∨ (j=51 ∧ n=1) ∨ (j=54 ∧ n=1) ∨ (j=57 ∧ n=1) ∨ (j=60 ∧ n=1) ∨ (j=63 ∧ n=1) ∨ (j=66 ∧ n=1) ∨ (j=69 ∧ n=1) ∨ (j=72 ∧ n=13)
 private theorem disjointRange {j n k h : Nat} (valid : nativeRanges j n) (hk : j≤k ∧ k<j+n)
     (isBank : h∈bankIds) : k∈List.range' 1 84 ∧ k≠h ∧ k≠h+1 := by
   simp only [bankIds,Finset.mem_insert,Finset.mem_singleton] at isBank
@@ -3663,7 +4222,7 @@ private theorem memberList {j : Nat} (h : j∈bankIds) : j∈WindowBankCheck.ban
   simpa [bankIds,WindowBankCheck.banks] using h
 private theorem geometry {j : Nat} (h : j∈bankIds) : j∈starts ∧ j∈List.range' 1 83 := by
   simp only [bankIds,Finset.mem_insert,Finset.mem_singleton] at h
-  rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
+  rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
 private theorem apart {j : Nat} (hj : j∈bankIds) : ∀ q∈inside j, q∉others j := by
   intro q hi ho
   obtain ⟨k,hk,mem⟩ := Finset.mem_biUnion.mp ho
@@ -3792,8 +4351,8 @@ theorem travel (d : Bool) (row : Nat→Nat) (bounded : ∀j∈bankIds,row j<6314
     exact ih _ _ _ _ tail rest one
 
 def plan : Bool→List Leg
-  | true => [.native 1 21,.paired 22,.native 24 1,.paired 25,.native 27 1,.paired 28,.native 30 1,.paired 31,.native 33 1,.paired 34,.native 36 1,.paired 37,.native 39 1,.paired 40,.native 42 1,.paired 43,.native 45 1,.paired 46,.native 48 1,.paired 49,.native 51 1,.paired 52,.native 54 31]
-  | false => [.native 54 31,.paired 52,.native 51 1,.paired 49,.native 48 1,.paired 46,.native 45 1,.paired 43,.native 42 1,.paired 40,.native 39 1,.paired 37,.native 36 1,.paired 34,.native 33 1,.paired 31,.native 30 1,.paired 28,.native 27 1,.paired 25,.native 24 1,.paired 22,.native 1 21]
+  | true => [.native 1 24,.paired 25,.native 27 1,.paired 28,.native 30 1,.paired 31,.native 33 1,.paired 34,.native 36 1,.paired 37,.native 39 1,.paired 40,.native 42 1,.paired 43,.native 45 1,.paired 46,.native 48 1,.paired 49,.native 51 1,.paired 52,.native 54 1,.paired 55,.native 57 1,.paired 58,.native 60 1,.paired 61,.native 63 1,.paired 64,.native 66 1,.paired 67,.native 69 1,.paired 70,.native 72 13]
+  | false => [.native 72 13,.paired 70,.native 69 1,.paired 67,.native 66 1,.paired 64,.native 63 1,.paired 61,.native 60 1,.paired 58,.native 57 1,.paired 55,.native 54 1,.paired 52,.native 51 1,.paired 49,.native 48 1,.paired 46,.native 45 1,.paired 43,.native 42 1,.paired 40,.native 39 1,.paired 37,.native 36 1,.paired 34,.native 33 1,.paired 31,.native 30 1,.paired 28,.native 27 1,.paired 25,.native 1 24]
 def initialCode (d : Bool) : Nat→Cols := fun _=>inputCols (enter (!d))
 private theorem emits (d : Bool) : group84rec d=concatenate d (plan d) := by
   cases d <;> simp only [group84rec,ordered,concatenate,emitted,plan,if_true,if_false,Bool.false_eq_true,
@@ -4189,6 +4748,18 @@ theorem cleared_holes (d:Bool) (row:Nat) (s:State) (frame:Frame codePorts (code 
   obtain ⟨i,hi,rfl⟩:=blank_slots q hq
   rw [frame,archive_blank d i hi,Nat.zero_testBit]
 end NativePack270
+
+-- ==== agent12 exit twin (+90) of the block above (generated: gen/twin_emit.py) ====
+namespace NativePack360
+open ArchiveBoundary360
+def fourHoles : List Wire := [1717,1715,1712,1710]
+theorem blank_slots : ∀q∈fourHoles,∃i:Fin 157,16 ≤ i.val ∧ codePorts i=q := by decide +kernel
+theorem cleared_holes (d:Bool) (row:Nat) (s:State) (frame:Frame codePorts (code d) row s) :
+    ∀q∈fourHoles,s.basis q=false := by
+  intro q hq
+  obtain ⟨i,hi,rfl⟩:=blank_slots q hq
+  rw [frame,archive_blank d i hi,Nat.zero_testBit]
+end NativePack360
 end ECDSAAdd.Entrant.StairPacket
 
 end
@@ -4392,8 +4963,8 @@ set_option maxRecDepth 8000
 set_option maxHeartbeats 900000
 private theorem shape' (d : Bool) (p : Nat→Program) : PacketSequence.program d p 1 84 =
   let seq := PacketSequence.program d p
-  if d then seq 1 21 ++ ((p 22 ++ p 23) ++ (seq 24 1 ++ ((p 25 ++ p 26) ++ (seq 27 1 ++ ((p 28 ++ p 29) ++ (seq 30 1 ++ ((p 31 ++ p 32) ++ (seq 33 1 ++ ((p 34 ++ p 35) ++ (seq 36 1 ++ ((p 37 ++ p 38) ++ (seq 39 1 ++ ((p 40 ++ p 41) ++ (seq 42 1 ++ ((p 43 ++ p 44) ++ (seq 45 1 ++ ((p 46 ++ p 47) ++ (seq 48 1 ++ ((p 49 ++ p 50) ++ (seq 51 1 ++ ((p 52 ++ p 53) ++ (seq 54 31 ++ []))))))))))))))))))))))
-  else seq 54 31 ++ ((p 53 ++ p 52) ++ (seq 51 1 ++ ((p 50 ++ p 49) ++ (seq 48 1 ++ ((p 47 ++ p 46) ++ (seq 45 1 ++ ((p 44 ++ p 43) ++ (seq 42 1 ++ ((p 41 ++ p 40) ++ (seq 39 1 ++ ((p 38 ++ p 37) ++ (seq 36 1 ++ ((p 35 ++ p 34) ++ (seq 33 1 ++ ((p 32 ++ p 31) ++ (seq 30 1 ++ ((p 29 ++ p 28) ++ (seq 27 1 ++ ((p 26 ++ p 25) ++ (seq 24 1 ++ ((p 23 ++ p 22) ++ (seq 1 21 ++ [])))))))))))))))))))))) := by
+  if d then seq 1 24 ++ ((p 25 ++ p 26) ++ (seq 27 1 ++ ((p 28 ++ p 29) ++ (seq 30 1 ++ ((p 31 ++ p 32) ++ (seq 33 1 ++ ((p 34 ++ p 35) ++ (seq 36 1 ++ ((p 37 ++ p 38) ++ (seq 39 1 ++ ((p 40 ++ p 41) ++ (seq 42 1 ++ ((p 43 ++ p 44) ++ (seq 45 1 ++ ((p 46 ++ p 47) ++ (seq 48 1 ++ ((p 49 ++ p 50) ++ (seq 51 1 ++ ((p 52 ++ p 53) ++ (seq 54 1 ++ ((p 55 ++ p 56) ++ (seq 57 1 ++ ((p 58 ++ p 59) ++ (seq 60 1 ++ ((p 61 ++ p 62) ++ (seq 63 1 ++ ((p 64 ++ p 65) ++ (seq 66 1 ++ ((p 67 ++ p 68) ++ (seq 69 1 ++ ((p 70 ++ p 71) ++ (seq 72 13 ++ []))))))))))))))))))))))))))))))))
+  else seq 72 13 ++ ((p 71 ++ p 70) ++ (seq 69 1 ++ ((p 68 ++ p 67) ++ (seq 66 1 ++ ((p 65 ++ p 64) ++ (seq 63 1 ++ ((p 62 ++ p 61) ++ (seq 60 1 ++ ((p 59 ++ p 58) ++ (seq 57 1 ++ ((p 56 ++ p 55) ++ (seq 54 1 ++ ((p 53 ++ p 52) ++ (seq 51 1 ++ ((p 50 ++ p 49) ++ (seq 48 1 ++ ((p 47 ++ p 46) ++ (seq 45 1 ++ ((p 44 ++ p 43) ++ (seq 42 1 ++ ((p 41 ++ p 40) ++ (seq 39 1 ++ ((p 38 ++ p 37) ++ (seq 36 1 ++ ((p 35 ++ p 34) ++ (seq 33 1 ++ ((p 32 ++ p 31) ++ (seq 30 1 ++ ((p 29 ++ p 28) ++ (seq 27 1 ++ ((p 26 ++ p 25) ++ (seq 1 24 ++ [])))))))))))))))))))))))))))))))) := by
   cases d <;> simp [PacketSequence.program,List.append_assoc]
 theorem reference_eq (d : Bool) : referenceProgram d (plan d)=group d 1 84 := by
   simp only [group, distribute, distributed]
@@ -4504,7 +5075,7 @@ def other (j : Nat) := if j=46 then 49 else 46
 def port (j q : Nat) : Wire :=
   if q<16 then site j q else if q=16 then FrontierEntry1591Field.host else site (other j) (q-17)
 def bankCorrection (j : Nat) := renameProgram (port j) region
-def correction := bankCorrection 22 ++ (bankCorrection 25 ++ (bankCorrection 28 ++ (bankCorrection 31 ++ (bankCorrection 34 ++ (bankCorrection 37 ++ (bankCorrection 40 ++ (bankCorrection 43 ++ (bankCorrection 46 ++ (bankCorrection 49 ++ bankCorrection 52)))))))))
+def correction := bankCorrection 25 ++ (bankCorrection 28 ++ (bankCorrection 31 ++ (bankCorrection 34 ++ (bankCorrection 37 ++ (bankCorrection 40 ++ (bankCorrection 43 ++ (bankCorrection 46 ++ (bankCorrection 49 ++ (bankCorrection 52 ++ (bankCorrection 55 ++ (bankCorrection 58 ++ (bankCorrection 61 ++ (bankCorrection 64 ++ (bankCorrection 67 ++ (bankCorrection 70)))))))))))))))
 def setup := StairSchedule.paritySetup ++ correction
 end ECDSAAdd.Entrant.StairPacket.WindowFieldParity
 
@@ -5133,6 +5704,91 @@ theorem selected_from_domain (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw s:State) (
     (empty_from_cut _ _ _ _ _ cut empty) past pg ps cross odd pm records mode angle flipped
 end ECDSAAdd.Entrant.StairPacket.NativePack270
 
+-- ==== agent12 exit twin (+90) of the block above (generated: gen/twin_emit.py) ====
+namespace ECDSAAdd.Entrant.StairPacket.NativePack360
+open Arithmetic MappedCompressed Secp256k1 IntegerPacket ArchivePortAction ArchiveBoundary360
+set_option maxRecDepth 25000
+set_option maxHeartbeats 3500000
+attribute [local irreducible] run
+open StockCanonicalRow ArchiveBoundary360 ParkEndpoint360 Portal360Flag Secp256k1 SkywalkRails StairArchiveTrace
+theorem selected_generic (p q:Program) (d:Bool) (s:State) (m:List Bool) (step:Transition q s (run p m s))
+    (past:SkywalkNat.State) (G S cross:Bool) (odd:past.v%2=1) (small:min past.u past.v<2^84)
+    (prior:PastFacts sourceIdx rawPorts 84 past G S cross s) :
+    let out:=run (p ++ (program d ++ Partial.archiveLoad360 d)) m s
+    out.phase=s.phase ∧ (let v:=key 84 past cross (SkywalkTrace.trace 15 (encode G S past.u past.v)); select v<63145 ∧ Encodes v (select v) ∧ Frame codePorts (code d) (select v) out) ∧
+      ∀n,run (Partial.archiveRestore360 d ++ (reverse d ++ q)) n out=s := by
+  let tick:=run p m s
+  let e:=m.drop (measurementCount p)
+  let pre:=run (program d) e tick
+  let f:=e.drop (measurementCount (program d))
+  have ⟨legal,row,limit,frame⟩:=archive_ready d s tick e past G S cross odd small prior step.keptFive step.keptBank step.scratch
+  have truth:=frame_key sourceIdx rawPorts chronological row 84 past G S cross s pre prior
+    (fun i=>(outside d _ (bank_out i) e tick).trans (step.keptBank i)) frame
+  have spec:=select_spec ⟨row,limit,truth⟩
+  have fresh:=reframe limit truth rawPorts pre frame
+  have enc:=source_law d tick e legal
+  have act:=load_run d _ spec.1 pre f fresh
+  exact sequence_law p (program d) (Partial.archiveLoad360 d) (Partial.archiveRestore360 d)
+    (reverse d) q s m (fun out=>let v:=key 84 past cross (SkywalkTrace.trace 15 (encode G S past.u past.v)); select v<63145 ∧ Encodes v (select v) ∧ Frame codePorts (code d) (select v) out)
+    tick rfl step.phase step.undo pre rfl enc.1 enc.2 (run (Partial.archiveLoad360 d) f pre) rfl act.1
+    ⟨spec.1,spec.2,act.2.1⟩ (fun n=>roundtrip d _ spec.1 pre f n fresh)
+theorem selected_slice (d:Bool) (s:State) (m:List Bool) (step:TickStep s (run EndTick360.physP m s))
+    (past:SkywalkNat.State) (G S cross:Bool) (odd:past.v%2=1) (small:min past.u past.v<2^84)
+    (prior:PastFacts sourceIdx rawPorts 84 past G S cross s) :
+    let out:=run (endSlice d) m s
+    out.phase=s.phase ∧ (let v:=key 84 past cross (SkywalkTrace.trace 15 (encode G S past.u past.v)); select v<63145 ∧ Encodes v (select v) ∧ Frame codePorts (code d) (select v) out) ∧
+      ∀n,run (endUndo d) n out=s :=
+  selected_generic EndTick360.physP EndTick360.physQ d s m step past G S cross odd small prior
+theorem selected_last (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw original s:State) (m:List Bool)
+    (read:EndTick360.Reads raw original) (stage:Rolling1588.Integer.Stage base d x p 360 original.basis)
+    (hist:raw.basis (base (1028+360))=false) (swapSlot:raw.basis (base (2053-360))=false)
+    (z:SkywalkNat.State) (small:min z.u z.v<2^76) (G S:Bool)
+    (input:SkywalkIntegerInput EndTick360.L (encode G S z.u z.v).a (encode G S z.u z.v).b G raw.basis)
+    (cut:PackedCut loPairs hiPairs 375 1655 1653 1654 (PortalValues.negative S z.u)
+      (decide (3*2^92≤z.u+z.v)) (decide (3*2^92≤z.u+z.v ∧ 2^76≤z.u)) (pullState (OB5.sig 359) raw) (eraseSites src s))
+    (empty:∀q∈dst,s.basis q=false) (past:SkywalkNat.State) (pg ps cross:Bool) (odd:past.v%2=1) (pm:min past.u past.v<2^84)
+    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode pg ps past.u past.v))
+    (mode:s.basis 1656=decide (Shadow.far 84 15 past))
+    (angle:s.basis 1657=(decide (Shadow.far 84 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
+    (flipped:s.basis 1658=(decide (Shadow.far 84 15 past) && cross)) :
+    let out:=run (lastWindow d) m s
+    out.phase=s.phase ∧ (let v:=key 84 past cross (SkywalkTrace.trace 15 (encode pg ps past.u past.v)); select v<63145 ∧ Encodes v (select v) ∧ ArchivePortAction.Frame codePorts (code d) (select v) out) ∧
+      ∀t,run (lastUnwind d) t out=s := by
+  let n:=m.drop (measurementCount Partial.park360)
+  let one:=run Partial.portal360Inv n (run Partial.park360 m s)
+  let tape:=n.drop (measurementCount Partial.portal360Inv)
+  have restored:=parked_release z small raw s m n G S input cut empty
+  have facts:=after_park raw s _ _ _ cut past pg ps cross records mode angle flipped
+  have tick:=observe_tick d x hx0 hx raw original s read stage hist swapSlot tape
+  have eqOne:one=stash s (pullState (OB5.sig 359) raw):=restored.1
+  have A:PastFacts sourceIdx rawPorts 84 past pg ps cross one :=by rw [eqOne];exact facts
+  have B:TickStep one (run EndTick360.physP tape one):=by rw [eqOne];exact tick
+  have body:=selected_slice d one tape B past pg ps cross odd pm A
+  have phase:one.phase=s.phase:=(congrArg State.phase restored.1).trans cut.phase.symm
+  dsimp only [lastWindow,lastUnwind]
+  simp only [run_append,run_take]
+  refine ⟨body.1.trans phase,body.2.1,?_⟩
+  intro t
+  rw [body.2.2 t]
+  exact restored.2 _ _
+theorem selected_from_domain (d:Bool) (x:Nat) (hx0:0<x) (hx:x<p) (raw s:State) (m:List Bool)
+    (domain:WideReference.Domain 360 x p raw) (z:SkywalkNat.State) (small:min z.u z.v<2^76) (G S:Bool)
+    (input:SkywalkIntegerInput EndTick360.L (encode G S z.u z.v).a (encode G S z.u z.v).b G raw.basis)
+    (cut:PackedCut loPairs hiPairs 375 1655 1653 1654 (PortalValues.negative S z.u)
+      (decide (3*2^92≤z.u+z.v)) (decide (3*2^92≤z.u+z.v ∧ 2^76≤z.u)) (pullState (OB5.sig 359) raw) (eraseSites src s))
+    (past:SkywalkNat.State) (pg ps cross:Bool) (odd:past.v%2=1) (pm:min past.u past.v<2^84)
+    (records:physicalCells sourceIdx s=SkywalkTrace.trace 15 (encode pg ps past.u past.v))
+    (mode:s.basis 1656=decide (Shadow.far 84 15 past))
+    (angle:s.basis 1657=(decide (Shadow.far 84 15 past) && afterFlags (decide (past.v<past.u)) ((physicalCells sourceIdx s).take 5)))
+    (flipped:s.basis 1658=(decide (Shadow.far 84 15 past) && cross)) :
+    let out:=run (lastWindow d) m s
+    out.phase=s.phase ∧ (let v:=key 84 past cross (SkywalkTrace.trace 15 (encode pg ps past.u past.v)); select v<63145 ∧ Encodes v (select v) ∧ ArchivePortAction.Frame codePorts (code d) (select v) out) ∧
+      ∀t,run (lastUnwind d) t out=s := by
+  obtain ⟨ref,stage,read,history,swapSlot,empty⟩:=WideReference.terminal360 d x raw domain
+  exact selected_last d x hx0 hx raw ref s m read stage history swapSlot z small G S input cut
+    (empty_from_cut _ _ _ _ _ cut empty) past pg ps cross odd pm records mode angle flipped
+end ECDSAAdd.Entrant.StairPacket.NativePack360
+
 end
 
 section
@@ -5157,15 +5813,15 @@ def exitFieldHosted (p : StairSchedule.StairPrimitives)
 open Stair44Outer
 
 def divide : Program :=
-  phasePlace (WindowWalkCosts.forward true 154) ++ phasePlace checkpointPrimitives.firstPack ++
+  phasePlace (WindowWalkCosts.forward true 64) ++ phasePlace checkpointPrimitives.firstPack ++
     kernelPlace (entryFieldHosted checkpointPrimitives) ++
-    phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 235) ++
+    phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 145) ++
     phasePlace (renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base))
 
 def multiply (k : Nat) : Program :=
-  phasePlace (WindowWalkCosts.forward false 234) ++ phasePlace forwardEnd ++
+  phasePlace (WindowWalkCosts.forward false 144) ++ phasePlace forwardEnd ++
     kernelPlace (exitFieldHosted checkpointPrimitives) ++
-    phasePlace checkpointPrimitives.firstUnpack ++ phasePlace (WindowWalkCosts.backward true 154) ++
+    phasePlace checkpointPrimitives.firstUnpack ++ phasePlace (WindowWalkCosts.backward true 64) ++
     Stair44PointMap.switchX (phasePlace (ParityXExitInverse23Kernel.x1N k))
 
 def generic (cx cy : Fp) : Program :=
@@ -5720,7 +6376,7 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 private theorem leaf : toffoliCount region=86 ∧ measurementCount region=0 ∧ gateSlots region=208 := by
   decide +kernel
-private theorem correction_eq (c : Cost) : c.measure correction=11*c.measure region := by
+private theorem correction_eq (c : Cost) : c.measure correction=16*c.measure region := by
   simp only [correction,bankCorrection,c.append,c.rename]; omega
 private theorem df (c : Cost) (p : StairSchedule.StairPrimitives) :
     c.measure (entryFieldHosted p)=c.measure (WindowCallerCosts.entryFieldHosted p)+2*c.measure correction := by
@@ -5734,11 +6390,11 @@ private theorem mul (c : Cost) (k : Nat) :
     c.measure (multiply k)=c.measure (WindowCallerCosts.multiply k)+2*c.measure correction := by
   simp only [multiply,WindowCallerCosts.multiply,kernelPlace,c.append,c.rename,mf]; omega
 private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
-    c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+44*c.measure region := by
+    c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+64*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2119720 ∧
-    measurementCount (program C) ≤ 1498616 ∧ gateSlots (program C) ≤ 54614230 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2088724 ∧
+    measurementCount (program C) ≤ 1480632 ∧ gateSlots (program C) ≤ 56323091 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
   cases C with
@@ -5901,7 +6557,7 @@ private theorem hostused : FrontierEntry1591Field.host∈wires StairSchedule.par
   simp [Instr.wires]
 private theorem regionSites : wires region⊆Finset.range 31 :=
   ECDSAAdd.Entrant.WSlimMain.wires_subset_range_of_all (by decide +kernel)
-private theorem subpart {j : Nat} (hj : j=22 ∨ j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52) : Sub (bankCorrection j) StairSchedule.paritySetup := by
+private theorem subpart {j : Nat} (hj : j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52 ∨ j=55 ∨ j=58 ∨ j=61 ∨ j=64 ∨ j=67 ∨ j=70) : Sub (bankCorrection j) StairSchedule.paritySetup := by
   intro q h
   rw [bankCorrection,renameProgram_support] at h
   obtain ⟨i,hi,rfl⟩ := Finset.mem_image.mp h
@@ -5909,15 +6565,15 @@ private theorem subpart {j : Nat} (hj : j=22 ∨ j=25 ∨ j=28 ∨ j=31 ∨ j=34
   unfold port
   split_ifs with low host
   · apply controlsG
-    exact List.mem_map.mpr ⟨8*j+i,List.mem_range.mpr (by rcases hj with h|h|h|h|h|h|h|h|h|h|h <;> omega),rfl⟩
+    exact List.mem_map.mpr ⟨8*j+i,List.mem_range.mpr (by rcases hj with h|h|h|h|h|h|h|h|h|h|h|h|h|h|h|h <;> omega),rfl⟩
   · exact hostused
   · apply controlsG
     exact List.mem_map.mpr ⟨8*(other j)+(i-17),List.mem_range.mpr (by
-      rcases hj with h|h|h|h|h|h|h|h|h|h|h <;> subst j <;> simp [other] <;> omega),rfl⟩
+      rcases hj with h|h|h|h|h|h|h|h|h|h|h|h|h|h|h|h <;> subst j <;> simp [other] <;> omega),rfl⟩
 set_option linter.constructorNameAsVariable false in
 private theorem repair : Sub setup StairSchedule.paritySetup := by
   intro q h; simp only [setup,correction,wires_append,Finset.mem_union] at h
-  rcases h with h|h|h|h|h|h|h|h|h|h|h|h
+  rcases h with h|h|h|h|h|h|h|h|h|h|h|h|h|h|h|h|h
   · exact h
   · exact subpart (Or.inl rfl) h
   · exact subpart (Or.inr (Or.inl rfl)) h
@@ -5929,7 +6585,12 @@ private theorem repair : Sub setup StairSchedule.paritySetup := by
   · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))) h
   · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))) h
   · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))) h
-  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))))))) h
+  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))) h
+  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))) h
+  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))) h
+  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))))) h
+  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))))) h
+  · exact subpart (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))))))))))) h
 
 private theorem repaired_eq : wires setup = wires StairSchedule.paritySetup :=
   Finset.Subset.antisymm repair (by rw [setup,wires_append]; exact Finset.subset_union_left)
@@ -6097,6 +6758,60 @@ theorem basis (d:Bool) (raw payload:State) (m n:List Bool)
       (by simp only [stash,if_neg notDst,pullState])
 end ECDSAAdd.Entrant.StairPacket.Ordinary270Terminal
 
+-- ==== agent12 exit twin (+90) of the block above (generated: gen/twin_emit.py) ====
+namespace ECDSAAdd.Entrant.StairPacket.Ordinary360Terminal
+open Arithmetic MappedCompressed NativePack360 ArchivePortAction ArchiveBoundary360 ParkEndpoint360 CodecBitSliceVerify
+set_option maxRecDepth 40000
+set_option maxHeartbeats 3800000
+attribute [local irreducible] run
+def newBank := (List.range' 350 10).flatMap (fun r=>[OB5.sig 360 (base r), OB5.sig 360 (base (1028+r))])
+def ordinary := (List.finRange 10).map history
+def zeros:=List.range' 1556 144++dst
+theorem basis (d:Bool) (raw payload:State) (m n:List Bool)
+    (row:Nat)
+    (clear:∀q∈zeros,raw.basis (OB5.sig 360 q)=false)
+    (frame:Frame codePorts (code d) row (run (Partial.archiveLoad360 d) n
+      (run (program d) m (stash payload (pullState (OB5.sig 360) raw))))) :
+    let out:=run (Partial.archiveLoad360 d) n (run (program d) m (stash payload (pullState (OB5.sig 360) raw)))
+    let wide:=run (Rolling1588.encodeAt base d 345) [] raw
+    ∀q∉newBank,out.basis q=wide.basis (OB5.sig 360 q) := by
+  let inp:=stash payload (pullState (OB5.sig 360) raw)
+  let mid:=run (program d) m inp
+  let wide:=run (Rolling1588.encodeAt base d 345) [] raw
+  let coords:=History5.historyMap base 345
+  have geom:∀i:Fin 10,history i∉dst ∧ OB5.sig 360 (history i)=coords i ∧ history i∉rawPortsList := by dsimp only [coords];decide +kernel
+  have agree (i:Fin 10):inp.basis (history i)=raw.basis (coords i):=by
+    simp only [inp,stash,if_neg (geom i).1,pullState,(geom i).2.1]
+  have injected:Function.Injective coords:=by dsimp only [coords];decide +kernel
+  have keep (q:Wire) (no:q∉ordinary) : wide.basis (OB5.sig 360 q)=raw.basis (OB5.sig 360 q) := by
+    have cover:wires (Rolling1588.encodeAt base d 345) ⊆ ((List.finRange 10).map coords).toFinset:=by dsimp only [coords];cases d <;> decide +kernel
+    apply run_preserves_outside
+    intro h
+    obtain ⟨i,_,e⟩:=List.mem_map.mp (List.mem_toFinset.mp (cover h))
+    have e':OB5.sig 360 (history i)=OB5.sig 360 q:=(geom i).2.1.trans e
+    have unique:history i=q:=by simpa only [OB5.sig_invol 360 (by decide)] using congrArg (OB5.sig 360) e'
+    exact no (List.mem_map.mpr ⟨i,List.mem_finRange i,unique⟩)
+  dsimp only
+  intro q outside
+  by_cases normal:q∈ordinary
+  · obtain ⟨i,_,rfl⟩:=List.mem_map.mp normal
+    rw [run_preserves_outside (Partial.archiveLoad360 d) _ _ _ (fun h=>(geom i).2.2 (List.mem_toFinset.mp (load_cover d h))), (geom i).2.1]
+    have encoded:=ArchiveOrdinaryFive.stock_relocated d history coords histInj injected inp raw m [] agree i
+    rw [←(equals d).1] at encoded
+    exact encoded
+  rw [keep q normal]
+  by_cases touched:q∈rawPortsList
+  · have mask:∀q∈rawPortsList,q∈newBank ∨ (q∈zeros ∧ ∃i:Fin 157,16≤ i.val ∧ codePorts i=q) := by decide +kernel
+    obtain ⟨blank,i,hi,slot⟩:=(mask q touched).resolve_left outside
+    rw [clear q blank,←slot,frame,archive_blank _ _ hi,Nat.zero_testBit]
+  · have no:q∉wires (Partial.archiveLoad360 d):=fun h=>touched (List.mem_toFinset.mp (load_cover d h))
+    have mask:∀q∈dst,q∈rawPortsList:=by decide +kernel
+    have notDst:q∉dst:=fun h=>touched (mask q h)
+    rw [run_preserves_outside _ _ _ _ no]
+    exact (NativePack360.outside d q (fun i e=>normal (List.mem_map.mpr ⟨i,List.mem_finRange i,e.symm⟩)) _ _).trans
+      (by simp only [stash,if_neg notDst,pullState])
+end ECDSAAdd.Entrant.StairPacket.Ordinary360Terminal
+
 end
 
 
@@ -6252,7 +6967,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2119720,1498616,1543,54614230⟩
+def bounds : Challenge.Bounds := ⟨2088724,1480632,1543,56323091⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -6261,7 +6976,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1498616
+    change measurementCount (normalizeProgram _) ≤ 1480632
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -6269,7 +6984,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 54614230
+    change gateSlots (normalizeProgram _) ≤ 56323091
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -6908,17 +7623,17 @@ open Arithmetic MappedCompressed Secp256k1 WideReference
 set_option maxRecDepth 8500
 set_option maxHeartbeats 2000000
 attribute [local irreducible] run Rolling1588TickGap.forward Rolling1588.Integer.regularForward measurementCount renameProgram
-def first (d:Bool):Program:=Stair44WalkRun.forward d 89
-def regular (d:Bool) (s:State) (m:List Bool):State:=run (Rolling1588.Integer.regularForward base d 1 104) m s
+def first (d:Bool):Program:=Stair44WalkRun.forward d 104
+def regular (d:Bool) (s:State) (m:List Bool):State:=run (Rolling1588.Integer.regularForward base d 1 119) m s
 theorem cut120 (d:Bool) (x:Nat) (good:Bounds x p) (s a:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (input:pullState Stair44WalkMap.first a=s):
-    Rolling1588.Integer.Stage base d x p 105 (regular d s m).basis ∧
-    pullState Stair44WalkMap.rest (run (first d) m a)=pullState (OB5.sig 104) (regular d s m):=by
+    Rolling1588.Integer.Stage base d x p 120 (regular d s m).basis ∧
+    pullState Stair44WalkMap.rest (run (first d) m a)=pullState (OB5.sig 119) (regular d s m):=by
   obtain ⟨hp0,odd,cap,cop⟩:=StackOB5.prime_facts x good.nonzero good.small
-  have spec:=Rolling1588.Integer.regularForward_spec base d base_pool_nodup StackOB5.historyAbove x p 1 104 hp0 good.nonzero odd cap (by norm_num [p]) good.small cop (by decide) s m stage
+  have spec:=Rolling1588.Integer.regularForward_spec base d base_pool_nodup StackOB5.historyAbove x p 1 119 hp0 good.nonzero odd cap (by norm_num [p]) good.small cop (by decide) s m stage
   refine ⟨spec.2,?_⟩
-  have entry:=Stair44WalkRun.forward_run d 89 x good.nonzero good.small s a m stage input
-  have logical:=Rolling1588TickGap.forward_gen d x good.nonzero good.small 104 1 (by decide) (by decide) s m stage
+  have entry:=Stair44WalkRun.forward_run d 104 x good.nonzero good.small s a m stage input
+  have logical:=Rolling1588TickGap.forward_gen d x good.nonzero good.small 119 1 (by decide) (by decide) s m stage
   have init:pullState (OB5.sig 0) s=s:=by
     apply State.extensionality _ s
     · rfl
@@ -6926,13 +7641,13 @@ theorem cut120 (d:Bool) (x:Nat) (good:Bounds x p) (s a:State) (m:List Bool)
   rw [show 1-1=0 from rfl,init] at logical
   exact entry.trans logical
 
-def forwardEnd (d:Bool) (n:Nat):Program:=Partial.forward45plus1 d++Rolling1588TickGap.forward d 271 n
+def forwardEnd (d:Bool) (n:Nat):Program:=Partial.forward45plus1 d++Rolling1588TickGap.forward d 361 n
 theorem split (d:Bool) (n:Nat):WindowWalkCosts.forward d n=first d++renameProgram Stair44WalkMap.rest (forwardEnd d n):=by
   simp only [WindowWalkCosts.forward,first,Stair44WalkRun.forward,forwardEnd,renameProgram,List.map_append,List.append_assoc]
 theorem placed (d:Bool) (n x:Nat) (good:Bounds x p) (s a:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (input:pullState Stair44WalkMap.first a=s):
     pullState Stair44WalkMap.rest (run (WindowWalkCosts.forward d n) m a)=
-      run (forwardEnd d n) (m.drop (measurementCount (first d))) (pullState (OB5.sig 104) (regular d s m)):=by
+      run (forwardEnd d n) (m.drop (measurementCount (first d))) (pullState (OB5.sig 119) (regular d s m)):=by
   rw [split,run_append,run_take,run_rename _ Stair44WalkMap.rest.injective,(cut120 d x good s a m stage input).2]
 end ECDSAAdd.Entrant.StairPacket.StockWalkPrefix
 
@@ -7157,7 +7872,7 @@ private theorem cleanPort (j q : Nat) (jb : j∈bankIds) (qb : q<121) (ne : fiel
   have ok := List.all_eq_true.mp (List.all_eq_true.mp portsCheck _ jm) q (List.mem_range.mpr qb)
   have eq16 : fieldPort j 16=base 720 := by
     simp only [bankIds,Finset.mem_insert,Finset.mem_singleton] at jb
-    rcases jb with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
+    rcases jb with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
   have qne : q≠16 := fun h=>ne (h ▸ eq16)
   simp only [beq_iff_eq,Bool.or_eq_true,regular,Bool.and_eq_true,Bool.not_eq_true'] at ok
   rcases ok with h|⟨f,g⟩
@@ -7324,14 +8039,906 @@ theorem three_run_rec (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankI
   have route : path d (if d then 1 else 85) (plan d) := by cases d <;> simp [path,plan,prev,next,span,feasible,bankIds]
   have all := group_run d rows rb m a r initial (trail d x rows rb origin ctx en tr history _ _ m r route ref)
   rwa [ref_run,reference_eq] at all
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairArchiveInactive
+set_option maxHeartbeats 900000
+set_option maxRecDepth 22000
+attribute [local irreducible] StairPacket.WindowFieldCosts.opk wires preimage cover savedSites
+
+/-- `packet_avoids` for the field group's own packets (through the record footprint). -/
+theorem ot_packet_avoids (j : Nat) (hj : j∈starts) (d second : Bool)
+    (q : Wire) (save : q∈savedSites j second) :
+    q∉wires (StairPacket.WindowFieldCosts.opk d (if second then j+1 else j)) :=
+  fun used => packet_avoids j hj d second q save (StairPacket.WindowFieldCosts.ot_opk_sub d _ used)
+
+/-- `advance`, packet := the field group's own packet. -/
+theorem ot_advance (start : Nat) (hs : start∈starts) (d second : Bool) (m : List Bool)
+    (reference actual : State)
+    (same : ∀ q ∉ savedSites start second, actual.basis q = reference.basis q) :
+    let p := StairPacket.WindowFieldCosts.opk d (if second then start+1 else start)
+    ((run p m actual).phase ^^ actual.phase) = ((run p m reference).phase ^^ reference.phase) ∧
+    (∀ q ∉ savedSites start second, (run p m actual).basis q = (run p m reference).basis q) ∧
+    (∀ q ∈ savedSites start second, (run p m actual).basis q = actual.basis q) := by
+  let p := StairPacket.WindowFieldCosts.opk d (if second then start+1 else start)
+  have unchanged := ot_packet_avoids start hs d second
+  have act := Arithmetic.run_local_increment p actual reference m
+    (fun q hq => same q (fun h => unchanged q h hq))
+  refine ⟨act.1, ?_, fun q hq => run_preserves_outside p m actual q (unchanged q hq)⟩
+  intro q keep
+  by_cases used : q∈wires p
+  · exact act.2 q used
+  · exact (run_preserves_outside p m actual q used).trans ((same q keep).trans
+      (run_preserves_outside p m reference q used).symm)
+
+end ECDSAAdd.Entrant.StairArchiveInactive
+end
+
+section
+namespace ECDSAAdd.Entrant.StairArchiveNativeCut
+open Arithmetic CodecBitSliceVerify StairArchiveRelease StairArchiveSlots StairArchiveNativeRows
+open StairArchiveInactive
+set_option maxRecDepth 20000
+set_option maxHeartbeats 3000000
+attribute [local irreducible] run StairPacket.WindowFieldCosts.opk fieldHook fieldPort inputCols outputCols CodecBitSliceVerify.get savedSites
+
+theorem ot_xor_cancel (a b c : Bool) (h : (a ^^ c)=(b ^^ c)) : a=b := by
+  cases a <;> cases b <;> cases c <;> simp_all
+
+/-- `stage_packet` (one hook, then the field group's own packet). -/
+theorem ot_stage_packet (j : Nat) (hstart : j∈starts) (hj : j∈List.range' 1 83)
+    (rev last : Bool) (row : Nat) (hr : row<63145) (m n : List Bool) (a ref : State)
+    (change : frame j row (inputCols (fromStage rev last)) a)
+    (out : exterior j a ref) (phase : a.phase=ref.phase)
+    (entryFrame : frame j row (before rev last) ref)
+    (endFrame : frame j row (after rev last)
+      (run (StairPacket.WindowFieldCosts.opk (!rev) (if rev ^^ last then j+1 else j)) n ref)) :
+    let c := run (fieldHook j (fromStage rev last)) m a
+    let p := StairPacket.WindowFieldCosts.opk (!rev) (if rev ^^ last then j+1 else j)
+    let s := run p n c
+    let t := run p n ref
+    s.phase=t.phase ∧ exterior j s t ∧ frame j row (inputCols (toStage rev last)) s := by
+  let active := rev ^^ last
+  let fromC := outputCols (fromStage rev last)
+  let toC := inputCols (toStage rev last)
+  let c := run (fieldHook j (fromStage rev last)) m a
+  let p := StairPacket.WindowFieldCosts.opk (!rev) (if active then j+1 else j)
+  have admin := StairArchiveAllPorts.field_run j hj _ row hr m a change
+  have hchecks := all_checks rev last
+  change (agrees active false fromC (before rev last) &&
+    agrees active false toC (after rev last) && agrees active true fromC toC)=true at hchecks
+  simp only [Bool.and_eq_true] at hchecks
+  have same : ∀ z∉savedSites j active, c.basis z=ref.basis z := by
+    intro z hz
+    by_cases hz' : z∈inside j
+    · obtain ⟨q,hq,rfl⟩ := Finset.mem_image.mp hz'
+      have hh : q∉held active := fun h => hz ((held_at j hj active q hq).mpr h)
+      exact (admin.2.1 q hq).trans ((congrArg (fun v : Nat => v.testBit row)
+        (column _ _ _ _ hchecks.1.1 q hq (decide_eq_false hh))).trans (entryFrame q hq).symm)
+    · exact (admin.2.2 z hz').trans (out z hz')
+  have body :
+      ((run p n c).phase ^^ c.phase) = ((run p n ref).phase ^^ ref.phase) ∧
+      (∀ z ∉ savedSites j active, (run p n c).basis z = (run p n ref).basis z) ∧
+      (∀ z ∈ savedSites j active, (run p n c).basis z = c.basis z) :=
+    ot_advance j hstart (!rev) active n ref c same
+  have cphase : c.phase=ref.phase := admin.1.trans phase
+  change (run p n c).phase = (run p n ref).phase ∧ exterior j (run p n c) (run p n ref) ∧ frame j row toC (run p n c)
+  refine ⟨?_, ?_, ?_⟩
+  · have v := body.1
+    change ((run p n c).phase ^^ c.phase) = ((run p n ref).phase ^^ ref.phase) at v
+    rw [cphase] at v
+    exact ot_xor_cancel _ _ _ v
+  · intro z hz
+    apply body.2.1 z
+    intro h
+    rw [held_eq j hj active] at h
+    obtain ⟨q,hq,rfl⟩ := List.mem_map.mp h
+    exact hz (Finset.mem_image.mpr ⟨q,held_bounded _ hq,rfl⟩)
+  · intro q hq
+    by_cases hold : q∈held active
+    · exact (body.2.2 _ ((held_at j hj active q hq).mpr hold)).trans
+        ((admin.2.1 q hq).trans (congrArg (fun v : Nat => v.testBit row)
+          (column _ _ _ _ hchecks.2 q hq (decide_eq_true hold))))
+    · exact (body.2.1 _ (fun z => hold ((held_at j hj active q hq).mp z))).trans
+        ((endFrame q hq).trans (congrArg (fun v : Nat => v.testBit row)
+          (column _ _ _ _ hchecks.1.2 q hq (decide_eq_false hold))).symm)
+
+end ECDSAAdd.Entrant.StairArchiveNativeCut
+end
+
+section
+namespace ECDSAAdd.Entrant.StairArchiveTen
+open CodecBitSliceVerify StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
+open ArchiveFieldScratch StairPacket.WindowFieldCosts
+
+def otapeS (j : Nat) (rev : Bool) (m : List Bool) := (tapeA j rev m).drop (measurementCount (ofirst j rev))
+def otapeB (j : Nat) (rev : Bool) (m : List Bool) := (otapeS j rev m).drop (measurementCount (fieldHook j (shift rev)))
+def otapeL (j : Nat) (rev : Bool) (m : List Bool) := (otapeB j rev m).drop (measurementCount (osecond j rev))
+def orefMiddle (j : Nat) (rev : Bool) (m : List Bool) (s : State) :=
+  run (ofirst j rev) (tapeA j rev m) s
+def orefExit (j : Nat) (rev : Bool) (m : List Bool) (s : State) :=
+  run (osecond j rev) (otapeB j rev m) (orefMiddle j rev m s)
+
+set_option maxRecDepth 20000
+set_option maxHeartbeats 800000
+
+/-- `ten_run` around the field group's own packets. -/
+theorem ot_ten_run (j : Nat) (hs : j∈starts) (hj : j∈List.range' 1 83)
+    (rev : Bool) (row : Nat) (hr : row<63145) (m : List Bool) (a r : State)
+    (arch : frame j row (inputCols (enter rev)) a)
+    (same : exterior j a r) (ph : a.phase = r.phase)
+    (before_ : frame j row (canonical (!rev) (!rev)) r)
+    (middle_ : frame j row middle (orefMiddle j rev m r))
+    (after_ : frame j row (canonical rev rev) (orefExit j rev m r)) :
+    let actual := run (oten j rev) m a
+    let final := orefExit j rev m r
+    actual.phase=final.phase ∧ exterior j actual final ∧ frame j row (outputCols (leave rev)) actual := by
+  let a0 := run (fieldHook j (enter rev)) m a
+  let a1 := run (ofirst j rev) (tapeA j rev m) a0
+  let a2 := run (fieldHook j (shift rev)) (otapeS j rev m) a1
+  let a3 := run (osecond j rev) (otapeB j rev m) a2
+  let a4 := run (fieldHook j (leave rev)) (otapeL j rev m) a3
+  have f : a1.phase=(orefMiddle j rev m r).phase ∧ exterior j a1 (orefMiddle j rev m r) ∧
+      frame j row (inputCols (shift rev)) a1 := by
+    simpa only [fromStage, toStage, before, after, Bool.false_eq_true, if_false, Bool.xor_false,
+      ofirst, orefMiddle] using ot_stage_packet j hs hj rev false row hr m (tapeA j rev m) a r
+        arch same ph before_ (by simpa only [after, Bool.false_eq_true, if_false, Bool.xor_false, ofirst, orefMiddle] using middle_)
+  have z : a3.phase=(orefExit j rev m r).phase ∧ exterior j a3 (orefExit j rev m r) ∧
+      frame j row (inputCols (leave rev)) a3 := by
+    have eq : (if rev ^^ true then j+1 else j) = (if rev then j else j+1) := by cases rev <;> rfl
+    simpa only [fromStage, toStage, before, after, if_true, eq, osecond, orefExit] using
+      ot_stage_packet j hs hj rev true row hr (otapeS j rev m) (otapeB j rev m) a1 (orefMiddle j rev m r)
+        f.2.2 f.2.1 f.1 middle_ (by simpa only [after, if_true, eq, osecond, orefExit] using after_)
+  have last := StairArchiveAllPorts.field_run j hj (leave rev) row hr (otapeL j rev m) a3 z.2.2
+  have shape : run (oten j rev) m a = a4 := by
+    simp only [oten, run_append, run_take]
+    rfl
+  rw [shape]
+  exact ⟨last.1.trans z.1, fun q hq => (last.2.2 q hq).trans (z.2.1 q hq), last.2.1⟩
+
+end ECDSAAdd.Entrant.StairArchiveTen
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
+open ArchiveFieldScratch StairArchiveTen CodecBitSliceVerify WindowFieldCosts
+
+attribute [local irreducible] run StairArchiveInactive.packet StairArchiveRelease.fieldHook
+  WindowFieldCosts.ofirst WindowFieldCosts.osecond WindowFieldCosts.oten
+  StairArchiveRelease.fieldPort StairArchiveRelease.outputCols StairArchiveRelease.inputCols
+  StairArchiveNativeCut.canonical CodecBitSliceVerify.get
+set_option maxRecDepth 1200
+set_option maxHeartbeats 360000
+set_option linter.constructorNameAsVariable false
+/-- `ten_masked` around the field group's own packets. -/
+theorem ot_ten_masked (j : Nat) (hs : j ∈ starts) (hj : j ∈ List.range' 1 83)
+    (rev : Bool) (row : Nat) (hr : row < 63145) (m : List Bool) (a r : State)
+    (other : Finset Wire) (apart : ∀ q ∈ inside j, q ∉ other)
+    (ha : avoids (ofirst j rev) other) (hb : avoids (osecond j rev) other)
+    (arch : frame j row (inputCols (enter rev)) a) (same : offBanks (bank j) other a r)
+    (ph : a.phase = r.phase)
+    (before_ : frame j row (StairArchiveNativeCut.canonical (!rev) (!rev)) r)
+    (middle_ : frame j row middle (orefMiddle j rev m r))
+    (after_ : frame j row (StairArchiveNativeCut.canonical rev rev) (orefExit j rev m r)) :
+    let next := run (oten j rev) m a
+    let final := orefExit j rev m r
+    next.phase = final.phase ∧ offBanks (bank j) other next final ∧
+      frame j row (outputCols (leave rev)) next := by
+  let shadow := mask other a r
+  have mid : orefMiddle j rev m shadow = mask other a (orefMiddle j rev m r) := by
+    exact mask_run (ofirst j rev) other _ a r ha
+  have fin : orefExit j rev m shadow = mask other a (orefExit j rev m r) := by
+    unfold orefExit
+    rw [mid, mask_run]
+    exact hb
+  have outer : exterior j a shadow := by
+    intro q hq
+    by_cases qmem : q ∈ other
+    · simp [shadow, mask, qmem]
+    · have qbank : q ∉ bank j := by
+        intro bad
+        obtain ⟨k,hk,rfl⟩ := Finset.mem_image.mp bad
+        exact hq (Finset.mem_image.mpr ⟨k,Finset.mem_range.mpr (by have := Finset.mem_range.mp hk; omega),rfl⟩)
+      simpa [shadow,mask,qmem] using same q qbank qmem
+  have mm : frame j row middle (orefMiddle j rev m shadow) := mid ▸ mask_frame _ _ _ _ _ _ apart middle_
+  have ff : frame j row (StairArchiveNativeCut.canonical rev rev) (orefExit j rev m shadow) := fin ▸ mask_frame _ _ _ _ _ _ apart after_
+  have result := ot_ten_run j hs hj rev row hr m a shadow arch outer ph
+    (mask_frame _ _ _ _ _ _ apart before_) mm ff
+  obtain ⟨phase,ext,stored⟩ := result
+  refine ⟨?_,?_,stored⟩
+  · rw [fin] at phase
+    exact phase
+  · intro q notbank notother
+    by_cases qin : q ∈ inside j
+    · obtain ⟨k,hk,rfl⟩ := Finset.mem_image.mp qin
+      have lower : 16 ≤ k := by
+        by_contra! h
+        exact notbank (Finset.mem_image.mpr ⟨k, Finset.mem_range.mpr h, rfl⟩)
+      have upper := Finset.mem_range.mp hk
+      have kn : k ∈ List.range' 16 105 := List.mem_range'_1.mpr ⟨lower,by omega⟩
+      have col := beq_iff_eq.mp (List.all_eq_true.mp (restored rev) k kn)
+      rw [stored k hk,after_ k hk,col]
+    · have x := ext q qin
+      rw [fin] at x
+      simpa [mask, notother] using x
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
+open ArchiveFieldScratch StairArchiveTen CodecBitSliceVerify WindowFieldCosts
+set_option maxRecDepth 1600
+set_option maxHeartbeats 400000
+set_option linter.constructorNameAsVariable false
+attribute [local irreducible] run packet fieldPort StairArchiveNativeCut.canonical inputCols outputCols CodecBitSliceVerify.get
+attribute [local irreducible] inside StairArchiveRelease.fieldHook WindowFieldCosts.ofirst WindowFieldCosts.osecond
+  WindowFieldCosts.oten WindowFieldCosts.opk WindowFieldCosts.ogroup WindowFieldCosts.group allBanks wires
+
+private theorem ot_native_safe (j k : Nat) (hj : j∈bankIds) (which : k=j ∨ k=j+1) (d : Bool) :
+    avoids (opk d k) (others j) :=
+  fun q ho used => native_safe j k hj which d q ho (WindowFieldCosts.ot_opk_sub d k used)
+
+/-- `stepTen` around the field group's own packets. -/
+theorem ot_stepTen (j : Nat) (hj : j∈bankIds) (rows : Nat→Nat) (code : Nat→Cols) (rev : Bool)
+    (bound : rows j < 63145) (m : List Bool) (a r : State) (h : Fits rows code a r)
+    (active : code j=inputCols (enter rev))
+    (before_ : frame j (rows j) (StairArchiveNativeCut.canonical (!rev) (!rev)) r)
+    (middle_ : frame j (rows j) middle (orefMiddle j rev m r))
+    (after_ : frame j (rows j) (StairArchiveNativeCut.canonical rev rev) (orefExit j rev m r)) :
+    Fits rows (update code j (outputCols (leave rev))) (run (oten j rev) m a) (orefExit j rev m r) := by
+  have ⟨hs,hr⟩ := geometry hj
+  have fa : avoids (ofirst j rev) (others j) := by
+    rw [ofirst]; apply ot_native_safe _ _ hj; cases rev <;> simp
+  have sa : avoids (osecond j rev) (others j) := by
+    rw [osecond]; apply ot_native_safe _ _ hj; cases rev <;> simp
+  have ea : avoids (oten j rev) (others j) := by
+    rw [oten]; exact append_safe (hook_safe j hj _)
+      (append_safe fa (append_safe (hook_safe j hj _) (append_safe sa (hook_safe j hj _))))
+  have same : offBanks (bank j) (others j) a r := by
+    intro q a0 a1; apply h.outside; rw [decompose j hj,Finset.mem_union]; exact fun hit => hit.elim a0 a1
+  have result := ot_ten_masked j hs hr rev (rows j) bound m a r (others j) (apart hj) fa sa
+    (beforeFrame j hj rows code rev a r h active (apart hj) before_ (field_inj j hr)) same h.phase before_ middle_ after_
+  refine ⟨result.1,?_,?_⟩
+  · intro q off
+    rw [decompose j hj,Finset.mem_union] at off
+    exact result.2.1 q (fun a=>off (Or.inl a)) (fun b=>off (Or.inr b))
+  · intro k hk i hi
+    by_cases eq : k=j
+    · subst k
+      simpa only [update,if_pos rfl] using result.2.2 i (Finset.mem_range.mpr (by have := Finset.mem_range.mp hi; omega))
+    · have ho : fieldPort k i∈others j := Finset.mem_biUnion.mpr
+        ⟨k,Finset.mem_erase.mpr ⟨eq,hk⟩,Finset.mem_image.mpr ⟨i,hi,rfl⟩⟩
+      rw [run_preserves_outside _ m a _ (ea _ ho)]
+      simpa only [update,if_neg eq] using h.bytes k hk i hi
+
+theorem ot_groupSafe (d : Bool) (j n : Nat) (valid : nativeRanges j n) : avoids (ogroup d j n) allBanks :=
+  fun q hq used => groupSafe d j n valid q hq (WindowFieldCosts.ot_ogroup_sub d j n used)
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldHistory
+open Arithmetic Secp256k1 MappedCompressed BalancedField Rolling1588 StairArchiveRaw StairArchiveTrace
+open CodecBitSliceVerify StairArchiveNativeRows StairField2V3Seg
+attribute [local irreducible] run wires rawCol CodecBitSliceVerify.get SkywalkTrace.next
+set_option linter.unnecessarySeqFocus false
+set_option maxRecDepth 1400
+set_option maxHeartbeats 400000
+
+/-- `cut_byte` for any word code of the field registers (the bytes are history letters). -/
+theorem ot_cut_byte (w : Fp → Nat) (cut j x row : Nat) (positive : 1≤j) (bound : j+2≤102)
+    (rowBound : row<63145) (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (tr : TraceOK x origin) (record : ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p row)
+    (X Y : Fp) (s : State) (fr : RouteA.Rolling1588.CutFrame w w cut origin X Y s) (hi : Bool) (q : Fin 10) :
+    let k := j+(if hi then 1 else 0)
+    s.basis (History5.historyMap base (5*k) q) =
+      (CodecBitSliceVerify.get (storage (native (decide (cut≤k)) hi)) q).testBit row := by
+  let k := j+(if hi then 1 else 0)
+  have boundK : k<102 := by cases hi <;> simp [k] <;> omega
+  have posK : k≠0 := by cases hi <;> simp [k] <;> omega
+  change s.basis (History5.historyMap base (5*k) q) = (CodecBitSliceVerify.get (storage (native (decide (cut≤k)) hi)) q).testBit row
+  obtain ⟨raw,_,pair,eq⟩ := fr
+  rw [eq,allEncodeCut_factor base cut base_pool_nodup 102 k (by decide) boundK raw]
+  rw [run_preserves_outside _ _ _ _ (StairField2V3LastRecXPar.other_away base cut k
+    base_pool_nodup 102 (by decide) boundK q),encodeGroup,if_neg posK,encodeAt]
+  apply (StockArchiveByte.run_byte (decide (cut≤k)) hi row rowBound (History5.historyMap base (5*k))
+    (History5.historyMap_injective base base_pool_nodup _ (by omega)) raw [] ?_).2 q
+  intro i
+  have away := History5.history_words_away base (base 2409) ctx.hn (ctx.hp _ (by simp))
+    (5*k) (by omega) i
+  rw [pair.2.2 _ away.1 away.2]
+  exact originBits j x row (by omega) (by omega) origin tr record hi i
+end ECDSAAdd.Entrant.StairPacket.WindowFieldHistory
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField Rolling1588 StairArchiveRaw StairArchiveTrace
+open CodecBitSliceVerify StairArchiveNativeRows StairArchiveNativeCut StairArchiveRelease
+open WindowFieldMask ArchiveFieldScratch StairField2V3Seg
+set_option maxRecDepth 4000
+set_option maxHeartbeats 600000
+attribute [local irreducible] run wire StairArchiveNativeCut.canonical StairArchiveRelease.fieldPort CodecBitSliceVerify.get
+
+/-- `observed` for any word code of the field registers. -/
+theorem oobserved (w : Fp → Nat) (j c x row : Nat) (hj : j∈WindowBankCheck.banks) (rb : row<63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (tr : TraceOK x origin)
+    (history : ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p row)
+    (X Y : Fp) (ideal actual : State) (cf : RouteA.Rolling1588.CutFrame w w c origin X Y (pullState wire ideal))
+    (tag : actual.basis (base 720)=false)
+    (view : ∀q∈inside j,q≠base 720→actual.basis q=ideal.basis q) :
+    frame j row (boundaryCols j c) actual := by
+  have geometry := List.all_eq_true.mp physical_ok j hj
+  simp only [physical,Bool.and_eq_true,beq_iff_eq] at geometry
+  have jBounds : 1≤j ∧ j+2≤102 := by
+    simp only [WindowBankCheck.banks,List.mem_cons,List.mem_nil_iff,or_false] at hj; omega
+  intro q hq
+  have upper := Finset.mem_range.mp hq
+  have eq16 := geometry.1.2
+  have nd := field_inj j (List.mem_range'_1.mpr (by
+      simp only [WindowBankCheck.banks,List.mem_cons,List.mem_nil_iff,or_false] at hj; omega))
+  by_cases isTag : q=16
+  · subst q
+    rw [eq16,tag]
+    have zero := beq_iff_eq.mp (List.all_eq_true.mp (upper_zero (decide (c≤j)) (decide (c≤j+1))) 16 (by decide))
+    simp [boundaryCols,zero]
+  · have off : fieldPort j q ≠ base 720 := fun he=>isTag (nd _ hq 16 (by decide) (he.trans eq16.symm))
+    rw [view _ (Finset.mem_image.mpr ⟨q,hq,rfl⟩) off]
+    by_cases low : q<16
+    · have loc := beq_iff_eq.mp (List.all_eq_true.mp geometry.1.1 q (List.mem_range.mpr low))
+      rw [loc]
+      have byte := WindowFieldHistory.ot_cut_byte w c j x row jBounds.1 jBounds.2 rb origin ctx tr history X Y
+        (pullState wire ideal) cf (high q) (lane q)
+      change ideal.basis (wire (histPort j q))=_ at byte
+      rw [byte]
+      have col := beq_iff_eq.mp (List.all_eq_true.mp (lookup_ok (decide (c≤j)) (decide (c≤j+1))) q (List.mem_range.mpr low))
+      unfold boundaryCols; rw [col]
+      cases high q <;> simp
+    · have member : q∈List.range' 17 104 := List.mem_range'_1.mpr ⟨by omega,by omega⟩
+      have loc := beq_iff_eq.mp (List.all_eq_true.mp geometry.2 q member)
+      rw [loc]
+      have clean := RouteA.Rolling1588.cutFrame_zero_region w w c origin ctx X Y _ cf (Placement5.H (8+(q-17)))
+        (Or.inr (Placement5.H_region (8+(q-17)) (by omega)))
+      change ideal.basis (wire (base (Placement5.H (8+(q-17)))))=false at clean
+      have zero := beq_iff_eq.mp (List.all_eq_true.mp (upper_zero (decide (c≤j)) (decide (c≤j+1))) q
+        (List.mem_range'_1.mpr ⟨by omega,by omega⟩))
+      simp only [boundaryCols,zero,clean,Nat.zero_testBit]
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField CompressedFieldSupport StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg
+set_option maxRecDepth 4000
+set_option maxHeartbeats 800000
+set_option linter.constructorNameAsVariable false
+attribute [local irreducible] run wires measurementCount StairArchiveInactive.packet WindowFieldCosts.opk
+  WindowFieldCosts.ogroup
+
+/-- the word code of the field registers at cut `c` (odd words on the cuts 2..84). -/
+def oddCutWord (c : Nat) : Fp → Nat := if 2≤c ∧ c≤84 then P1Life.oddWord else centerWord
+theorem oddCutWord_odd {c : Nat} (h1 : 2≤c) (h2 : c≤84) : oddCutWord c=P1Life.oddWord := if_pos ⟨h1,h2⟩
+theorem oddCutWord_center {c : Nat} (h : c<2 ∨ 84<c) : oddCutWord c=centerWord := if_neg (by omega)
+
+/-- `StockCut` with the cut's word code. -/
+def OCut (c : Nat) (origin : BasisState) (r : State) : Prop :=
+  r.basis (base 720)=false ∧ ∃ (X Y : Fp) (ideal : State),
+    RouteA.Rolling1588.CutFrame (oddCutWord c) (oddCutWord c) c origin X Y (pullState wire ideal) ∧ tracks r ideal
+
+theorem ocut_of_stock (c : Nat) (hc : c<2 ∨ 84<c) (origin : BasisState) (r : State)
+    (h : StockCut c origin r) : OCut c origin r := by
+  obtain ⟨zero,X,Y,ideal,cf,view⟩ := h
+  refine ⟨zero,X,Y,ideal,?_,view⟩
+  rw [oddCutWord_center hc]
+  exact cf
+
+/-- division-kernel packet `k` of the family between its cut frames. -/
+theorem pk_frame_div (k : Nat) (lo : 1≤k) (hi : k≤84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple (RouteA.Rolling1588.CutFrame (oddCutWord k) (oddCutWord k) k origin X Y)
+      (oddPk true k)
+      (fun state => let V := directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (X,Y)
+        RouteA.Rolling1588.CutFrame (oddCutWord (k+1)) (oddCutWord (k+1)) (k+1) origin V.1 V.2 state) := by
+  rcases (show k=1 ∨ (2≤k ∧ k<84) ∨ k=84 ∨ 84<k by omega) with h|⟨h1,h2⟩|h|h
+  · subst h
+    rw [oddPk_one,if_pos rfl,oddCutWord_center (c := 1) (by omega),oddCutWord_odd (c := 1+1) (by omega) (by omega)]
+    exact RouteA.Rolling1588.dstartPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled X Y
+  · rw [oddPk_mid true k h1 h2,oddCutWord_odd h1 (by omega),oddCutWord_odd (c := k+1) (by omega) (by omega)]
+    exact RouteA.Rolling1588.packet_cut_frame true k lo (by omega) (fun _ => by omega) origin ctx enabled X Y
+  · subst h
+    rw [oddPk_end,if_pos rfl,oddCutWord_odd (c := 84) (by omega) (by omega),oddCutWord_center (c := 84+1) (by omega)]
+    exact RouteA.Rolling1588.dendPacket_cut_frame 84 (by decide) (by decide) origin ctx enabled X Y
+  · rw [oddPk_std true k h,oddCutWord_center (c := k) (by omega),oddCutWord_center (c := k+1) (by omega)]
+    exact ECDSAAdd.Entrant.Rolling1588.packet_cut_frame true k lo (by omega) origin ctx enabled X Y
+
+/-- multiplication-kernel packet `k` of the family between its cut frames. -/
+theorem pk_frame_mul (k : Nat) (lo : 1≤k) (hi : k≤84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple (RouteA.Rolling1588.CutFrame (oddCutWord (k+1)) (oddCutWord (k+1)) (k+1) origin X Y)
+      (oddPk false k)
+      (fun state => let V := directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (X,Y)
+        RouteA.Rolling1588.CutFrame (oddCutWord k) (oddCutWord k) k origin V.1 V.2 state) := by
+  rcases (show k=1 ∨ (2≤k ∧ k<84) ∨ k=84 ∨ 84<k by omega) with h|⟨h1,h2⟩|h|h
+  · subst h
+    rw [oddPk_one,if_neg Bool.false_ne_true,oddCutWord_odd (c := 1+1) (by omega) (by omega),oddCutWord_center (c := 1) (by omega)]
+    exact RouteA.Rolling1588.mendPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled X Y
+  · rw [oddPk_mid false k h1 h2,oddCutWord_odd (c := k+1) (by omega) (by omega),oddCutWord_odd h1 (by omega)]
+    exact RouteA.Rolling1588.packet_cut_frame false k lo (by omega) (fun e => absurd e Bool.false_ne_true) origin ctx enabled X Y
+  · subst h
+    rw [oddPk_end,if_neg Bool.false_ne_true,oddCutWord_center (c := 84+1) (by omega),oddCutWord_odd (c := 84) (by omega) (by omega)]
+    exact RouteA.Rolling1588.mstartPacket_cut_frame 84 (by decide) (by decide) origin ctx enabled X Y
+  · rw [oddPk_std false k h,oddCutWord_center (c := k+1) (by omega),oddCutWord_center (c := k) (by omega)]
+    exact ECDSAAdd.Entrant.Rolling1588.packet_cut_frame false k lo (by omega) origin ctx enabled X Y
+
+private theorem ofield_cut_frame_mul' (j n : Nat) (first : 1≤j) (bound : j+n≤85)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple
+      (RouteA.Rolling1588.CutFrame (oddCutWord (j+n)) (oddCutWord (j+n)) (j+n) origin X Y)
+      (PacketSequence.program false (oddPk false) j n)
+      (fun state => let V := PacketSequence.payload false (fun k V => directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V) j n (X,Y)
+        RouteA.Rolling1588.CutFrame (oddCutWord j) (oddCutWord j) j origin V.1 V.2 state) :=
+  RouteA.Rolling1588.route_cut_sequence_frame false (oddPk false)
+    (fun k V => directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V)
+    (fun k (V : Fp×Fp) => RouteA.Rolling1588.CutFrame (oddCutWord k) (oddCutWord k) k origin V.1 V.2) 85
+    (fun k hk kb V => pk_frame_mul k hk (by omega) origin ctx enabled V.1 V.2) j n first bound (X,Y)
+
+/-- the multiplication field packets `j+n-1..j` between cut frames. -/
+theorem ofield_cut_frame_mul (j n : Nat) (first : 1≤j) (bound : j+n≤85)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple
+      (RouteA.Rolling1588.CutFrame (oddCutWord (j+n)) (oddCutWord (j+n)) (j+n) origin X Y)
+      (PacketSequence.program false (oddPk false) j n)
+      (fun state => let V := Replay5.groupsPayload false origin j n (X,Y)
+        RouteA.Rolling1588.CutFrame (oddCutWord j) (oddCutWord j) j origin V.1 V.2 state) :=
+  ofield_cut_frame_mul' j n first bound origin ctx enabled X Y
+
+/-- the division packet law in the exact shape `route_cut_sequence_frame` instantiates (payload as a redex). -/
+private theorem lawDiv (k : Nat) (hk : 1≤k) (kb : k<85) (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (V : Fp×Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple
+      ((fun k (V : Fp×Fp) => RouteA.Rolling1588.CutFrame (oddCutWord k) (oddCutWord k) k origin V.1 V.2) (if true then k else k+1) V)
+      (oddPk true k)
+      ((fun k (V : Fp×Fp) => RouteA.Rolling1588.CutFrame (oddCutWord k) (oddCutWord k) k origin V.1 V.2) (if true then k+1 else k)
+        ((fun k (V : Fp×Fp) => directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V) k V)) := by
+  have h : (fun k (V : Fp×Fp) => directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V) k V =
+      directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (V.1,V.2) := rfl
+  rw [h]
+  exact pk_frame_div k hk (by omega) origin ctx enabled V.1 V.2
+
+private theorem ofield_cut_frame_div' (j n : Nat) (first : 1≤j) (bound : j+n≤85)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple
+      (RouteA.Rolling1588.CutFrame (oddCutWord j) (oddCutWord j) j origin X Y)
+      (PacketSequence.program true (oddPk true) j n)
+      (fun state => let V := PacketSequence.payload true (fun k V => directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V) j n (X,Y)
+        RouteA.Rolling1588.CutFrame (oddCutWord (j+n)) (oddCutWord (j+n)) (j+n) origin V.1 V.2 state) :=
+  RouteA.Rolling1588.route_cut_sequence_frame true (oddPk true)
+    (fun k (V : Fp×Fp) => directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V)
+    (fun k (V : Fp×Fp) => RouteA.Rolling1588.CutFrame (oddCutWord k) (oddCutWord k) k origin V.1 V.2) 85
+    (fun k hk kb V => lawDiv k hk kb origin ctx enabled V) j n first bound (X,Y)
+
+/-- the division field packets `j..j+n-1` between cut frames. -/
+theorem ofield_cut_frame_div (j n : Nat) (first : 1≤j) (bound : j+n≤85)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    ECDSAAdd.Entrant.Rolling1588.StateTriple
+      (RouteA.Rolling1588.CutFrame (oddCutWord j) (oddCutWord j) j origin X Y)
+      (PacketSequence.program true (oddPk true) j n)
+      (fun state => let V := Replay5.groupsPayload true origin j n (X,Y)
+        RouteA.Rolling1588.CutFrame (oddCutWord (j+n)) (oddCutWord (j+n)) (j+n) origin V.1 V.2 state) :=
+  ofield_cut_frame_div' j n first bound origin ctx enabled X Y
+
+/-- the odd field packets and the record packets 1..84 end in the same state from a record cut frame. -/
+theorem ofield_run_eq (d : Bool) (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (t u : List Bool)
+    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame (if d then 1 else 85) origin X Y s) :
+    run (PacketSequence.program d (oddPk d) 1 84) t s=run (ECDSAAdd.Entrant.Rolling1588.groups d 1 84) u s := by
+  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame d 1 84 (by decide) (by decide) origin ctx enabled X Y
+  have c1 : oddCutWord 1=centerWord := oddCutWord_center (by decide)
+  have c85 : oddCutWord (1+84)=centerWord := oddCutWord_center (by decide)
+  cases d
+  · have odd := ofield_cut_frame_mul 1 84 (by decide) (by decide) origin ctx enabled X Y
+    have pre : RouteA.Rolling1588.CutFrame (oddCutWord (1+84)) (oddCutWord (1+84)) (1+84) origin X Y s := by
+      rw [c85]; exact input
+    have o := odd s t pre
+    have r := record s u input
+    have post : RouteA.Rolling1588.CutFrame (oddCutWord 1) (oddCutWord 1) 1 origin
+        (Replay5.groupsPayload false origin 1 84 (X,Y)).1 (Replay5.groupsPayload false origin 1 84 (X,Y)).2
+        (run (PacketSequence.program false (oddPk false) 1 84) t s) := o.2
+    rw [c1] at post
+    exact RouteA.Rolling1588.cutFrame_unique_route 1 origin _ _ _ _ post r.2 (o.1.trans r.1.symm)
+  · have odd := ofield_cut_frame_div 1 84 (by decide) (by decide) origin ctx enabled X Y
+    have pre : RouteA.Rolling1588.CutFrame (oddCutWord 1) (oddCutWord 1) 1 origin X Y s := by
+      rw [c1]; exact input
+    have o := odd s t pre
+    have r := record s u input
+    have post : RouteA.Rolling1588.CutFrame (oddCutWord (1+84)) (oddCutWord (1+84)) (1+84) origin
+        (Replay5.groupsPayload true origin 1 84 (X,Y)).1 (Replay5.groupsPayload true origin 1 84 (X,Y)).2
+        (run (PacketSequence.program true (oddPk true) 1 84) t s) := o.2
+    rw [c85] at post
+    exact RouteA.Rolling1588.cutFrame_unique_route (1+84) origin _ _ _ _ post r.2 (o.1.trans r.1.symm)
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField CompressedFieldSupport StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg WindowFieldJourney
+set_option maxRecDepth 2600
+set_option maxHeartbeats 800000
+set_option linter.constructorNameAsVariable false
+attribute [local irreducible] run wires measurementCount wire group StairArchiveInactive.packet WindowFieldCosts.opk
+  WindowFieldCosts.ogroup
+
+theorem ot_opk_map (d : Bool) (k : Nat) : opk d k=renameProgram wire (oddPk d k) := by
+  unfold opk
+  calc
+    _ = renameProgram StairArchiveInactive.host (renameProgram (OB5.sig 511) (oddPk d k)) :=
+      StairArchiveInactive.hosts_eq _ _ _
+    _ = _ := by rw [renameProgram_comp]; unfold wire; rfl
+
+/-- `step` for the field group's own packet, multiplication kernel (packet `k`: cut `k+1` to cut `k`). -/
+theorem ostep_mul (k : Nat) (lo : 1≤k) (hi : k≤84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
+    (r : State) (m : List Bool) (initial : OCut (k+1) origin r) :
+    OCut k origin (run (opk false k) m r) := by
+  have uses : ∀ q∈wires (opk false k), q∈surface ∧ q≠base 720 :=
+    fun q h => packetUses false k lo hi (WindowFieldCosts.ot_opk_sub false k h)
+  obtain ⟨zero,X,Y,b,fr,match_⟩ := initial
+  obtain ⟨same,afterZero⟩ := follow _ m r b match_ zero uses
+  have actual := pk_frame_mul k lo hi origin ctx enabled X Y _ m fr
+  refine ⟨afterZero,(directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (X,Y)).1,
+    (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (X,Y)).2,
+    run (opk false k) m b,?_,same⟩
+  rw [ot_opk_map,run_rename wire injective]; exact actual.2
+
+/-- `step` for the field group's own packet, division kernel (packet `k`: cut `k` to cut `k+1`). -/
+theorem ostep_div (k : Nat) (lo : 1≤k) (hi : k≤84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
+    (r : State) (m : List Bool) (initial : OCut k origin r) :
+    OCut (k+1) origin (run (opk true k) m r) := by
+  have uses : ∀ q∈wires (opk true k), q∈surface ∧ q≠base 720 :=
+    fun q h => packetUses true k lo hi (WindowFieldCosts.ot_opk_sub true k h)
+  obtain ⟨zero,X,Y,b,fr,match_⟩ := initial
+  obtain ⟨same,afterZero⟩ := follow _ m r b match_ zero uses
+  have actual := pk_frame_div k lo hi origin ctx enabled X Y _ m fr
+  refine ⟨afterZero,(directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (X,Y)).1,
+    (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) (X,Y)).2,
+    run (opk true k) m b,?_,same⟩
+  rw [ot_opk_map,run_rename wire injective]; exact actual.2
+
+/-- `step` for the field group's own packet. -/
+theorem ostep (d : Bool) (k : Nat) (lo : 1≤k) (hi : k≤84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
+    (r : State) (m : List Bool) (initial : OCut (if d then k else k+1) origin r) :
+    OCut (if d then k+1 else k) origin (run (opk d k) m r) := by
+  cases d
+  · exact ostep_mul k lo hi origin ctx enabled r m initial
+  · exact ostep_div k lo hi origin ctx enabled r m initial
+
+/-- `selected` for the field group's own packets. -/
+theorem oselected (d : Bool) (j n : Nat) (lo : 1≤j) (hi : j+n≤85)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
+    (r : State) (m : List Bool) (initial : OCut (if d then j else j+n) origin r) :
+    OCut (if d then j+n else j) origin (run (ogroup d j n) m r) := by
+  rw [ogroup]
+  induction n generalizing j r m with
+  | zero =>
+    simpa only [PacketSequence.program,run,Nat.add_zero] using initial
+  | succ n ih =>
+    cases d with
+    | false =>
+      simp only [Bool.false_eq_true,if_false] at initial ⊢
+      simp only [PacketSequence.program,Bool.false_eq_true,if_false,run_append,run_take]
+      apply ostep false j lo (by omega) origin ctx enabled
+      apply ih (j+1) (by omega) (by omega) r m
+      simpa only [Nat.add_assoc,Nat.add_comm 1 n] using initial
+    | true =>
+      simp only [if_true] at initial ⊢
+      simp only [PacketSequence.program,if_true,run_append,run_take]
+      have first := ostep true j lo (by omega) origin ctx enabled r m initial
+      have last := ih (j+1) (by omega) (by omega) _ (m.drop (measurementCount (opk true j))) first
+      simpa only [if_true,Nat.add_assoc,Nat.add_comm 1 n] using last
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField CompressedFieldSupport StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg WindowFieldJourney
+set_option maxRecDepth 1600
+set_option maxHeartbeats 800000
+set_option linter.constructorNameAsVariable false
+attribute [local irreducible] run group ten measurementCount packet surface ArchiveStockRows.Chronology
+  Rolling1588.CutFrame StairArchiveNativeCut.canonical WindowFieldCosts.opk
+
+theorem osee (j c x row : Nat) (hj : j∈bankIds) (rb : row<63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (tr : TraceOK x origin)
+    (history : ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p row)
+    (r : State) (state : OCut c origin r) : frame j row (boundaryCols j c) r := by
+  obtain ⟨zero,X,Y,model,fr,view⟩ := state
+  have list : j∈WindowBankCheck.banks := by simpa [WindowBankCheck.banks,bankIds] using hj
+  apply oobserved (oddCutWord c) j c x row list rb origin ctx tr history X Y model r fr zero
+  intro q inside_ off
+  exact view q (by rw [surface];exact Finset.mem_union_right _ (Finset.mem_biUnion.mpr ⟨j,hj,inside_⟩)) off
+
+/-- `pair_cuts` for the field group's own packets. -/
+theorem opair_cuts (d : Bool) (j x row : Nat) (hj : j∈bankIds) (rb : row<63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
+    (history : ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p row)
+    (r : State) (m : List Bool) (state : OCut (if d then j else j+2) origin r) :
+    (frame j row (StairArchiveNativeCut.canonical d d) r ∧ frame j row middle (orefMiddle j (!d) m r) ∧
+      frame j row (StairArchiveNativeCut.canonical (!d) (!d)) (orefExit j (!d) m r)) ∧
+    OCut (if d then j+2 else j) origin (orefExit j (!d) m r) := by
+  have bounds : 1≤j ∧ j+1≤84 := by simp only [bankIds,Finset.mem_insert,Finset.mem_singleton] at hj; omega
+  let observe := fun c t (h : OCut c origin t) => osee j c x row hj rb origin ctx tr history t h
+  have lo : boundaryCols j j=StairArchiveNativeCut.canonical true true := by simp [boundaryCols]
+  have mid : boundaryCols j (j+1)=middle := by simp [boundaryCols,middle]
+  have hi : boundaryCols j (j+2)=StairArchiveNativeCut.canonical false false := by simp [boundaryCols]
+  cases d
+  · have one : OCut (j+1) origin (orefMiddle j true m r) :=
+      ostep false (j+1) (by omega) (by omega) origin ctx en r _ state
+    have two : OCut j origin (orefExit j true m r) :=
+      ostep false j (by omega) (by omega) origin ctx en _ _ one
+    exact ⟨⟨hi ▸ observe _ _ state,mid ▸ observe _ _ one,lo ▸ observe _ _ two⟩,two⟩
+  · have one : OCut (j+1) origin (orefMiddle j false m r) :=
+      ostep true j (by omega) (by omega) origin ctx en r _ state
+    have two : OCut (j+2) origin (orefExit j false m r) :=
+      ostep true (j+1) (by omega) (by omega) origin ctx en _ _ one
+    exact ⟨⟨lo ▸ observe _ _ state,mid ▸ observe _ _ one,hi ▸ observe _ _ two⟩,two⟩
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldJourney
+open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveTen
+open CodecBitSliceVerify WindowFieldMask WindowFieldCosts ArchiveFieldScratch
+attribute [local irreducible] run measurementCount WindowFieldCosts.ogroup WindowFieldCosts.oten orefExit
+  inputCols outputCols StairArchiveNativeCut.canonical enter leave WindowFieldCosts.opk
+set_option linter.constructorNameAsVariable false
+
+def oemitted (d : Bool) : Leg → Program
+  | .native j n => ogroup d j n
+  | .paired j => oten j (!d)
+def ostock (d : Bool) (m : List Bool) (r : State) : Leg → State
+  | .native j n => run (ogroup d j n) m r
+  | .paired j => orefExit j (!d) m r
+def onextTape (d : Bool) (l : Leg) (m : List Bool) := m.drop (measurementCount (oemitted d l))
+def oconcatenate (d : Bool) : List Leg → Program
+  | [] => []
+  | l::ls => oemitted d l ++ oconcatenate d ls
+def odestination (d : Bool) : List Leg → List Bool → State → State
+  | [],_,r => r
+  | l::ls,m,r => odestination d ls (onextTape d l m) (ostock d m r l)
+def OCuts (d : Bool) (row : Nat→Nat) (m : List Bool) (r : State) : Leg → Prop
+  | .native _ _ => True
+  | .paired j => frame j (row j) (StairArchiveNativeCut.canonical d d) r ∧
+      frame j (row j) middle (orefMiddle j (!d) m r) ∧ frame j (row j) (StairArchiveNativeCut.canonical (!d) (!d)) (orefExit j (!d) m r)
+def ONativeTrail (d : Bool) (row : Nat→Nat) : List Leg → List Bool → State → Prop
+  | [],_,_ => True
+  | l::ls,m,r => OCuts d row m r l ∧ ONativeTrail d row ls (onextTape d l m) (ostock d m r l)
+
+theorem otravel (d : Bool) (row : Nat→Nat) (bounded : ∀j∈bankIds,row j<63145)
+    (ls : List Leg) (m : List Bool) (a r : State) (c : Nat→Cols)
+    (shape : valid d ls c) (cuts : ONativeTrail d row ls m r) (initial : Fits row c a r) :
+    Fits row (finalCode d ls c) (run (oconcatenate d ls) m a) (odestination d ls m r) := by
+  induction ls generalizing c m a r with
+  | nil =>
+    simpa only [oconcatenate,run,finalCode,odestination] using initial
+  | cons l ls ih =>
+    obtain ⟨loc,tail⟩ := shape
+    obtain ⟨here,rest⟩ := cuts
+    have one : Fits row (codes d c l) (run (oemitted d l) m a) (ostock d m r l) := by
+      cases l with
+      | native j n => exact plain _ _ _ _ _ _ initial (ot_groupSafe d j n loc)
+      | paired j =>
+        exact ot_stepTen j loc.1 row c (!d) (bounded j loc.1) m a r initial loc.2
+          (by simpa only [Bool.not_not] using here.1) here.2.1 here.2.2
+    rw [oconcatenate,run_append,run_take]
+    exact ih _ _ _ _ tail rest one
+
+theorem oemits (d : Bool) : group84 d=oconcatenate d (plan d) := by
+  cases d <;> simp only [group84,ordered,oconcatenate,oemitted,plan,if_true,if_false,Bool.false_eq_true,
+    List.append_assoc,List.append_nil]
+
+theorem ogroup_run (d : Bool) (row : Nat→Nat) (bounded : ∀j∈bankIds,row j<63145)
+    (m : List Bool) (a r : State) (initial : Fits row (initialCode d) a r)
+    (native : ONativeTrail d row (plan d) m r) :
+    Fits row (finalCode d (plan d) (initialCode d)) (run (group84 d) m a) (odestination d (plan d) m r) := by
+  rw [oemits]
+  exact otravel d row bounded _ m a r _ (valid_plan d) native initial
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldJourney
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldJourney
+open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveTen
+open WindowFieldMask WindowFieldCosts ArchiveFieldScratch StairArchiveInactive
+set_option linter.constructorNameAsVariable false
+attribute [local irreducible] run measurementCount StairArchiveInactive.packet fieldHook WindowFieldCosts.opk
+set_option maxRecDepth 8000
+set_option maxHeartbeats 900000
+
+def oreferenceLeg (d : Bool) : Leg → Program
+  | .native j n => ogroup d j n
+  | .paired j => ofirst j (!d) ++ osecond j (!d)
+def olegTape (d : Bool) (m : List Bool) : Leg → List Bool
+  | .native _ _ => m
+  | .paired j => joinTapes (ofirst j (!d)) (tapeA j (!d) m) (otapeB j (!d) m)
+theorem olocalTape (d : Bool) (m : List Bool) (s : State) (l : Leg) :
+    ostock d m s l = run (oreferenceLeg d l) (olegTape d m l) s := by
+  cases l with
+  | native j n => rfl
+  | paired j => exact (joined _ _ _ _ _).symm
+def oreferenceProgram (d : Bool) : List Leg → Program
+  | [] => []
+  | l::ls => oreferenceLeg d l ++ oreferenceProgram d ls
+def oreferenceTape (d : Bool) : List Leg → List Bool → List Bool
+  | [],_ => []
+  | l::ls,m => joinTapes (oreferenceLeg d l) (olegTape d m l) (oreferenceTape d ls (onextTape d l m))
+theorem oref_run (d : Bool) (ls : List Leg) (m : List Bool) (r : State) :
+    odestination d ls m r = run (oreferenceProgram d ls) (oreferenceTape d ls m) r := by
+  induction ls generalizing m r with
+  | nil => simp only [odestination,oreferenceProgram,oreferenceTape,run]
+  | cons l ls ih => rw [odestination,oreferenceProgram,oreferenceTape,joined,←olocalTape,←ih]
+
+theorem oreference_eq (d : Bool) : oreferenceProgram d (plan d)=PacketSequence.program d (opk d) 1 84 := by
+  rw [shape' d (opk d)]
+  cases d <;> simp only [oreferenceProgram,plan,oreferenceLeg,ofirst,osecond,ogroup,
+    Bool.not_false,Bool.not_true,Bool.false_eq_true,if_true,if_false]
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldJourney
+end
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField CompressedFieldSupport StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg WindowFieldJourney
+set_option maxRecDepth 1600
+set_option maxHeartbeats 800000
+set_option linter.constructorNameAsVariable false
+attribute [local irreducible] run group ten measurementCount packet surface ArchiveStockRows.Chronology
+  Rolling1588.CutFrame StairArchiveNativeCut.canonical WindowFieldCosts.opk
+
+/-- `trail` for the field group's own packets. -/
+theorem otrail (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows j<63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
+    (history : ∀j∈bankIds,ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
+    (c : Nat) (ls : List Leg) (m : List Bool) (r : State) (route : path d c ls) (start : OCut c origin r) :
+    ONativeTrail d rows ls m r := by
+  induction ls generalizing c m r with
+  | nil => trivial
+  | cons l ls ih =>
+    obtain ⟨rfl,good,more⟩ := route
+    cases l with
+    | native j n =>
+      have post := oselected d j n good.1 good.2 origin ctx en r m start
+      exact ⟨trivial,ih _ _ _ more post⟩
+    | paired j =>
+      have event := opair_cuts d j x (rows j) good (rb _ good) origin ctx en tr (history _ good) r m start
+      exact ⟨event.1,ih _ _ _ more event.2⟩
+
+/-- two runs that agree from `b` agree from any `a` that matches `b` on the larger footprint. -/
+theorem ot_lift (P Q : Program) (sub : wires P⊆wires Q) (m n : List Bool) (a b : State)
+    (agree : ∀ q∈wires Q, a.basis q=b.basis q) (same : run P m b=run Q n b) :
+    run P m a=run Q n a := by
+  have hp := Arithmetic.run_local_increment P a b m (fun q hq => agree q (sub hq))
+  have hq := Arithmetic.run_local_increment Q a b n agree
+  apply State.extensionality
+  · have e1 := hp.1
+    rw [same] at e1
+    have e := e1.trans hq.1.symm
+    revert e
+    generalize (run P m a).phase = x
+    generalize (run Q n a).phase = y
+    generalize a.phase = z
+    cases x <;> cases y <;> cases z <;> decide
+  · funext q
+    by_cases inQ : q∈wires Q
+    · rw [hq.2 q inQ]
+      by_cases inP : q∈wires P
+      · rw [hp.2 q inP,same]
+      · rw [run_preserves_outside P m a q inP,agree q inQ,←run_preserves_outside P m b q inP,same]
+    · have inP : q∉wires P := fun h => inQ (sub h)
+      rw [run_preserves_outside P m a q inP,run_preserves_outside Q n a q inQ]
 
 set_option linter.unusedSimpArgs false in
-/-- the actual field group is the reference group (no cell any more). -/
-theorem c45_actual (d : Bool) (m : List Bool) (a : State) :
-    run (group84 d) m a=run (group84rec d) (cellTape d m) a := rfl
+theorem ot_seqWires (d : Bool) (p : Nat→Program) (j n : Nat) {q : Wire}
+    (h : q∈wires (PacketSequence.program d p j n)) : ∃ k, j≤k ∧ k<j+n ∧ q∈wires (p k) := by
+  induction n generalizing j with
+  | zero => simp [PacketSequence.program,wires] at h
+  | succ n ih =>
+    cases d <;> simp only [PacketSequence.program,Bool.false_eq_true,if_false,if_true,
+      wires_append,Finset.mem_union] at h
+    · rcases h with h|h
+      · obtain ⟨k,l,u,hk⟩ := ih (j+1) h
+        exact ⟨k,by omega,by omega,hk⟩
+      · exact ⟨j,Nat.le_refl j,by omega,h⟩
+    · rcases h with h|h
+      · exact ⟨j,Nat.le_refl j,by omega,h⟩
+      · obtain ⟨k,l,u,hk⟩ := ih (j+1) h
+        exact ⟨k,by omega,by omega,hk⟩
 
-/-- the three windows with the odd cell on packets 1..45 of the division kernel; the reference
-side is still the record run of `group d 1 84`. -/
+theorem ot_groupUses (d : Bool) {q : Wire} (h : q∈wires (group d 1 84)) : q∈surface ∧ q≠base 720 := by
+  rw [WindowFieldCosts.group,WindowFieldCosts.distribute,WindowFieldCosts.distributed] at h
+  obtain ⟨k,l,u,hk⟩ := ot_seqWires d _ 1 84 h
+  exact packetUses d k (by omega) (by omega) hk
+
+theorem ot_group_map (d : Bool) (j n : Nat) : group d j n=renameProgram wire (Rolling1588.groups d j n) := by
+  rw [WindowFieldCosts.ot_group_eq,StairArchiveInactive.hosts_eq,renameProgram_comp]
+  have g := StairGroups.groups_zero d j n
+  unfold StairGroups.groups at g
+  rw [g]
+  unfold wire
+  rfl
+
+theorem ot_ogroup_map (d : Bool) (j n : Nat) :
+    PacketSequence.program d (opk d) j n=renameProgram wire (PacketSequence.program d (oddPk d) j n) := by
+  have ren (f : Wire → Wire) (a b : Program) : renameProgram f (a++b)=renameProgram f a++renameProgram f b :=
+    List.map_append
+  induction n generalizing j with
+  | zero => rfl
+  | succ n ih =>
+    cases d <;> simp only [PacketSequence.program,if_true,if_false,Bool.false_eq_true,ren,ih,ot_opk_map]
+
+theorem ofield_sub (d : Bool) :
+    wires (PacketSequence.program d (oddPk d) 1 84) ⊆ wires (Rolling1588.groups d 1 84) :=
+  StairLoanGroupSupport.sequence_sub d _ _ (fun k => oddPk_sub d k) 1 84
+
+/-- from a stock cut, the odd field packets and the record packets 1..84 end in the same reference state. -/
+theorem ofinal (d : Bool) (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (en : origin (base 2400)=true) (r : State) (ref : StockCut (if d then 1 else 85) origin r) (t u : List Bool) :
+    run (PacketSequence.program d (opk d) 1 84) t r=run (group d 1 84) u r := by
+  obtain ⟨_,X,Y,ideal,cf,view⟩ := ref
+  have agree : ∀ q∈wires (group d 1 84), r.basis q=ideal.basis q := by
+    intro q hq
+    have w := ot_groupUses d hq
+    exact view q w.1 w.2
+  have logical := ofield_run_eq d origin ctx en X Y (pullState wire ideal) t u cf
+  have hosted : run (renameProgram wire (PacketSequence.program d (oddPk d) 1 84)) t ideal=
+      run (renameProgram wire (Rolling1588.groups d 1 84)) u ideal :=
+    run_rename_eq_of_eq wire (wires (Rolling1588.groups d 1 84)) (fun _ _ _ _ h => injective h)
+      _ _ (ofield_sub d) (Finset.Subset.refl _) t u (pullState wire ideal) ideal (by simp only [pullState])
+      (fun _ _ => by simp only [pullState]) logical
+  have sub : wires (renameProgram wire (PacketSequence.program d (oddPk d) 1 84))⊆
+      wires (renameProgram wire (Rolling1588.groups d 1 84)) :=
+    StairLoanGroupSupport.rename_sub _ _ _ (ofield_sub d)
+  rw [ot_group_map] at agree
+  rw [ot_ogroup_map,ot_group_map]
+  exact ot_lift _ _ sub t u r ideal agree hosted
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+end
+
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg WindowFieldJourney
+set_option maxRecDepth 1600
+set_option maxHeartbeats 400000
+
+/-- the three windows with every packet of the field group in the family `oddPk` (odd cell on packets 1..84,
+inside the archive ten-blocks too); the reference side is still the record run of `group d 1 84`. -/
 theorem three_run (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows j<63145)
     (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
     (history : ∀j∈bankIds,ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
@@ -7339,11 +8946,16 @@ theorem three_run (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,r
     (ref : StockCut (if d then 1 else 85) origin r) :
     Fits rows (finalCode d (plan d) (initialCode d)) (run (group84 d) m a)
       (run (group d 1 84) (referenceTape d (plan d) m) r) := by
-  rw [c45_actual d m a]
-  exact three_run_rec d x rows rb origin ctx en tr history (cellTape d m) a r initial ref
+  have start : OCut (if d then 1 else 85) origin r :=
+    ocut_of_stock _ (by cases d <;> decide) origin r ref
+  have route : path d (if d then 1 else 85) (plan d) := by cases d <;> simp [path,plan,prev,next,span,feasible,bankIds]
+  have all := ogroup_run d rows rb m a r initial (otrail d x rows rb origin ctx en tr history _ _ m r route start)
+  rw [oref_run,oreference_eq,ofinal d origin ctx en r ref _ (referenceTape d (plan d) m)] at all
+  exact all
 end ECDSAAdd.Entrant.StairPacket.WindowFieldView
 
 end
+
 
 section
 
@@ -7354,19 +8966,24 @@ set_option maxHeartbeats 1000000
 set_option maxRecDepth 4000
 def addr (i : Nat) := OB5.sig 511 (NewHistory5.payloadWire base i)
 private def block (j : Nat) := (List.range 16).map (8*j+·)
-private def stable0 := List.range 176
-private def stable1 := List.range' 192 8
-private def stable2 := List.range' 216 8
-private def stable3 := List.range' 240 8
-private def stable4 := List.range' 264 8
-private def stable5 := List.range' 288 8
-private def stable6 := List.range' 312 8
-private def stable7 := List.range' 336 8
-private def stable8 := List.range' 360 8
-private def stable9 := List.range' 384 8
-private def stable10 := List.range' 408 8
-private def stable11 := List.range' 432 384
-private theorem split : List.range 816 = stable0 ++ block 22 ++ stable1 ++ block 25 ++ stable2 ++ block 28 ++ stable3 ++ block 31 ++ stable4 ++ block 34 ++ stable5 ++ block 37 ++ stable6 ++ block 40 ++ stable7 ++ block 43 ++ stable8 ++ block 46 ++ stable9 ++ block 49 ++ stable10 ++ block 52 ++ stable11 := by decide +kernel
+private def stable0 := List.range 200
+private def stable1 := List.range' 216 8
+private def stable2 := List.range' 240 8
+private def stable3 := List.range' 264 8
+private def stable4 := List.range' 288 8
+private def stable5 := List.range' 312 8
+private def stable6 := List.range' 336 8
+private def stable7 := List.range' 360 8
+private def stable8 := List.range' 384 8
+private def stable9 := List.range' 408 8
+private def stable10 := List.range' 432 8
+private def stable11 := List.range' 456 8
+private def stable12 := List.range' 480 8
+private def stable13 := List.range' 504 8
+private def stable14 := List.range' 528 8
+private def stable15 := List.range' 552 8
+private def stable16 := List.range' 576 240
+private theorem split : List.range 816 = stable0 ++ block 25 ++ stable1 ++ block 28 ++ stable2 ++ block 31 ++ stable3 ++ block 34 ++ stable4 ++ block 37 ++ stable5 ++ block 40 ++ stable6 ++ block 43 ++ stable7 ++ block 46 ++ stable8 ++ block 49 ++ stable9 ++ block 52 ++ stable10 ++ block 55 ++ stable11 ++ block 58 ++ stable12 ++ block 61 ++ stable13 ++ block 64 ++ stable14 ++ block 67 ++ stable15 ++ block 70 ++ stable16 := by decide +kernel
 private theorem join (l r : List Bool) : TraceParity5.parity (l++r) = (TraceParity5.parity l ^^ TraceParity5.parity r) := by
   induction l with
   | nil => simp [TraceParity5.parity]
@@ -7389,10 +9006,10 @@ private theorem fromData (s : State) (j : Nat) (cs : Cols) (r : Nat)
 private theorem stable_sum (l : List Nat) (a b : State)
     (eq : ∀i∈l,a.basis (addr i)=b.basis (addr i)) : sum l a=sum l b :=
   congrArg TraceParity5.parity (List.map_congr_left eq)
-def Elsewhere (i : Nat) := i<176 ∨ (192 ≤ i ∧ i<200) ∨ (216 ≤ i ∧ i<224) ∨ (240 ≤ i ∧ i<248) ∨ (264 ≤ i ∧ i<272) ∨ (288 ≤ i ∧ i<296) ∨ (312 ≤ i ∧ i<320) ∨ (336 ≤ i ∧ i<344) ∨ (360 ≤ i ∧ i<368) ∨ (384 ≤ i ∧ i<392) ∨ (408 ≤ i ∧ i<416) ∨ (432 ≤ i ∧ i<816)
+def Elsewhere (i : Nat) := i<200 ∨ (216 ≤ i ∧ i<224) ∨ (240 ≤ i ∧ i<248) ∨ (264 ≤ i ∧ i<272) ∨ (288 ≤ i ∧ i<296) ∨ (312 ≤ i ∧ i<320) ∨ (336 ≤ i ∧ i<344) ∨ (360 ≤ i ∧ i<368) ∨ (384 ≤ i ∧ i<392) ∨ (408 ≤ i ∧ i<416) ∨ (432 ≤ i ∧ i<440) ∨ (456 ≤ i ∧ i<464) ∨ (480 ≤ i ∧ i<488) ∨ (504 ≤ i ∧ i<512) ∨ (528 ≤ i ∧ i<536) ∨ (552 ≤ i ∧ i<560) ∨ (576 ≤ i ∧ i<816)
 def stockParity (s : State) := TraceParity5.parity (FrontierEntry1591Field.controls.map s.basis)
 private theorem allSum (s : State) : stockParity s=
-    ((((((((((((((((((((((sum stable0 s ^^ sum (block 22) s) ^^ sum stable1 s) ^^ sum (block 25) s) ^^ sum stable2 s) ^^ sum (block 28) s) ^^ sum stable3 s) ^^ sum (block 31) s) ^^ sum stable4 s) ^^ sum (block 34) s) ^^ sum stable5 s) ^^ sum (block 37) s) ^^ sum stable6 s) ^^ sum (block 40) s) ^^ sum stable7 s) ^^ sum (block 43) s) ^^ sum stable8 s) ^^ sum (block 46) s) ^^ sum stable9 s) ^^ sum (block 49) s) ^^ sum stable10 s) ^^ sum (block 52) s) ^^ sum stable11 s) := by
+    ((((((((((((((((((((((((((((((((sum stable0 s ^^ sum (block 25) s) ^^ sum stable1 s) ^^ sum (block 28) s) ^^ sum stable2 s) ^^ sum (block 31) s) ^^ sum stable3 s) ^^ sum (block 34) s) ^^ sum stable4 s) ^^ sum (block 37) s) ^^ sum stable5 s) ^^ sum (block 40) s) ^^ sum stable6 s) ^^ sum (block 43) s) ^^ sum stable7 s) ^^ sum (block 46) s) ^^ sum stable8 s) ^^ sum (block 49) s) ^^ sum stable9 s) ^^ sum (block 52) s) ^^ sum stable10 s) ^^ sum (block 55) s) ^^ sum stable11 s) ^^ sum (block 58) s) ^^ sum stable12 s) ^^ sum (block 61) s) ^^ sum stable13 s) ^^ sum (block 64) s) ^^ sum stable14 s) ^^ sum (block 67) s) ^^ sum stable15 s) ^^ sum (block 70) s) ^^ sum stable16 s) := by
   unfold stockParity FrontierEntry1591Field.controls ParityHost5.payloadControls
   rw [split]
   simp only [List.map_append,List.map_map,join,sum,Function.comp_def,addr]
@@ -7400,10 +9017,10 @@ private theorem pair_step (p q s x y : Bool) : (((p ^^ x) ^^ s) ^^ ((q ^^ y) ^^ 
   cases p <;> cases q <;> cases s <;> cases x <;> cases y <;> rfl
 theorem fold_pair (rows : Nat→Nat) (dirs : Nat→Bool) (a b : State)
     (rest : ∀i,Elsewhere i→a.basis (addr i)=b.basis (addr i))
-    (custom : ∀j,j=22 ∨ j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52 → ∀i<16,a.basis (site j i)=(get (ArchivePortAction.code (dirs j)) i).testBit (rows j))
-    (stock : ∀j,j=22 ∨ j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52 → ∀i<16,b.basis (site j i)=(get (StairArchiveNativeCut.canonical (dirs j) (dirs j)) i).testBit (rows j)) :
+    (custom : ∀j,j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52 ∨ j=55 ∨ j=58 ∨ j=61 ∨ j=64 ∨ j=67 ∨ j=70 → ∀i<16,a.basis (site j i)=(get (ArchivePortAction.code (dirs j)) i).testBit (rows j))
+    (stock : ∀j,j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52 ∨ j=55 ∨ j=58 ∨ j=61 ∨ j=64 ∨ j=67 ∨ j=70 → ∀i<16,b.basis (site j i)=(get (StairArchiveNativeCut.canonical (dirs j) (dirs j)) i).testBit (rows j)) :
     (stockParity a ^^ stockParity b) =
-    ((((((((((((parity (ArchivePortAction.code (dirs 22))).testBit (rows 22) ^^ (parity (StairArchiveNativeCut.canonical (dirs 22) (dirs 22))).testBit (rows 22)) ^^ ((parity (ArchivePortAction.code (dirs 25))).testBit (rows 25) ^^ (parity (StairArchiveNativeCut.canonical (dirs 25) (dirs 25))).testBit (rows 25))) ^^ ((parity (ArchivePortAction.code (dirs 28))).testBit (rows 28) ^^ (parity (StairArchiveNativeCut.canonical (dirs 28) (dirs 28))).testBit (rows 28))) ^^ ((parity (ArchivePortAction.code (dirs 31))).testBit (rows 31) ^^ (parity (StairArchiveNativeCut.canonical (dirs 31) (dirs 31))).testBit (rows 31))) ^^ ((parity (ArchivePortAction.code (dirs 34))).testBit (rows 34) ^^ (parity (StairArchiveNativeCut.canonical (dirs 34) (dirs 34))).testBit (rows 34))) ^^ ((parity (ArchivePortAction.code (dirs 37))).testBit (rows 37) ^^ (parity (StairArchiveNativeCut.canonical (dirs 37) (dirs 37))).testBit (rows 37))) ^^ ((parity (ArchivePortAction.code (dirs 40))).testBit (rows 40) ^^ (parity (StairArchiveNativeCut.canonical (dirs 40) (dirs 40))).testBit (rows 40))) ^^ ((parity (ArchivePortAction.code (dirs 43))).testBit (rows 43) ^^ (parity (StairArchiveNativeCut.canonical (dirs 43) (dirs 43))).testBit (rows 43))) ^^ ((parity (ArchivePortAction.code (dirs 46))).testBit (rows 46) ^^ (parity (StairArchiveNativeCut.canonical (dirs 46) (dirs 46))).testBit (rows 46))) ^^ ((parity (ArchivePortAction.code (dirs 49))).testBit (rows 49) ^^ (parity (StairArchiveNativeCut.canonical (dirs 49) (dirs 49))).testBit (rows 49))) ^^ ((parity (ArchivePortAction.code (dirs 52))).testBit (rows 52) ^^ (parity (StairArchiveNativeCut.canonical (dirs 52) (dirs 52))).testBit (rows 52))) := by
+    (((((((((((((((((parity (ArchivePortAction.code (dirs 25))).testBit (rows 25) ^^ (parity (StairArchiveNativeCut.canonical (dirs 25) (dirs 25))).testBit (rows 25)) ^^ ((parity (ArchivePortAction.code (dirs 28))).testBit (rows 28) ^^ (parity (StairArchiveNativeCut.canonical (dirs 28) (dirs 28))).testBit (rows 28))) ^^ ((parity (ArchivePortAction.code (dirs 31))).testBit (rows 31) ^^ (parity (StairArchiveNativeCut.canonical (dirs 31) (dirs 31))).testBit (rows 31))) ^^ ((parity (ArchivePortAction.code (dirs 34))).testBit (rows 34) ^^ (parity (StairArchiveNativeCut.canonical (dirs 34) (dirs 34))).testBit (rows 34))) ^^ ((parity (ArchivePortAction.code (dirs 37))).testBit (rows 37) ^^ (parity (StairArchiveNativeCut.canonical (dirs 37) (dirs 37))).testBit (rows 37))) ^^ ((parity (ArchivePortAction.code (dirs 40))).testBit (rows 40) ^^ (parity (StairArchiveNativeCut.canonical (dirs 40) (dirs 40))).testBit (rows 40))) ^^ ((parity (ArchivePortAction.code (dirs 43))).testBit (rows 43) ^^ (parity (StairArchiveNativeCut.canonical (dirs 43) (dirs 43))).testBit (rows 43))) ^^ ((parity (ArchivePortAction.code (dirs 46))).testBit (rows 46) ^^ (parity (StairArchiveNativeCut.canonical (dirs 46) (dirs 46))).testBit (rows 46))) ^^ ((parity (ArchivePortAction.code (dirs 49))).testBit (rows 49) ^^ (parity (StairArchiveNativeCut.canonical (dirs 49) (dirs 49))).testBit (rows 49))) ^^ ((parity (ArchivePortAction.code (dirs 52))).testBit (rows 52) ^^ (parity (StairArchiveNativeCut.canonical (dirs 52) (dirs 52))).testBit (rows 52))) ^^ ((parity (ArchivePortAction.code (dirs 55))).testBit (rows 55) ^^ (parity (StairArchiveNativeCut.canonical (dirs 55) (dirs 55))).testBit (rows 55))) ^^ ((parity (ArchivePortAction.code (dirs 58))).testBit (rows 58) ^^ (parity (StairArchiveNativeCut.canonical (dirs 58) (dirs 58))).testBit (rows 58))) ^^ ((parity (ArchivePortAction.code (dirs 61))).testBit (rows 61) ^^ (parity (StairArchiveNativeCut.canonical (dirs 61) (dirs 61))).testBit (rows 61))) ^^ ((parity (ArchivePortAction.code (dirs 64))).testBit (rows 64) ^^ (parity (StairArchiveNativeCut.canonical (dirs 64) (dirs 64))).testBit (rows 64))) ^^ ((parity (ArchivePortAction.code (dirs 67))).testBit (rows 67) ^^ (parity (StairArchiveNativeCut.canonical (dirs 67) (dirs 67))).testBit (rows 67))) ^^ ((parity (ArchivePortAction.code (dirs 70))).testBit (rows 70) ^^ (parity (StairArchiveNativeCut.canonical (dirs 70) (dirs 70))).testBit (rows 70))) := by
   have h0 := stable_sum stable0 a b (fun i hi=>rest i (Or.inl (List.mem_range.mp hi)))
   have h1 := stable_sum stable1 a b (fun i hi=>rest i (Or.inr (Or.inl (by
     simpa only [stable1,List.mem_range'_1] using hi))))
@@ -7425,10 +9042,20 @@ theorem fold_pair (rows : Nat→Nat) (dirs : Nat→Bool) (a b : State)
     simpa only [stable9,List.mem_range'_1] using hi))))))))))))
   have h10 := stable_sum stable10 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by
     simpa only [stable10,List.mem_range'_1] using hi)))))))))))))
-  have h11 := stable_sum stable11 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (by
-    simpa only [stable11,List.mem_range'_1] using hi)))))))))))))
-  rw [allSum a,allSum b,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,fromData _ _ _ _ (custom 22 (Or.inl rfl)),fromData _ _ _ _ (custom 25 (Or.inr (Or.inl rfl))),fromData _ _ _ _ (custom 28 (Or.inr (Or.inr (Or.inl rfl)))),fromData _ _ _ _ (custom 31 (Or.inr (Or.inr (Or.inr (Or.inl rfl))))),fromData _ _ _ _ (custom 34 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))),fromData _ _ _ _ (custom 37 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))),fromData _ _ _ _ (custom 40 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))),fromData _ _ _ _ (custom 43 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))),fromData _ _ _ _ (custom 46 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))),fromData _ _ _ _ (custom 49 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))),fromData _ _ _ _ (custom 52 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))))))),fromData _ _ _ _ (stock 22 (Or.inl rfl)),fromData _ _ _ _ (stock 25 (Or.inr (Or.inl rfl))),fromData _ _ _ _ (stock 28 (Or.inr (Or.inr (Or.inl rfl)))),fromData _ _ _ _ (stock 31 (Or.inr (Or.inr (Or.inr (Or.inl rfl))))),fromData _ _ _ _ (stock 34 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))),fromData _ _ _ _ (stock 37 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))),fromData _ _ _ _ (stock 40 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))),fromData _ _ _ _ (stock 43 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))),fromData _ _ _ _ (stock 46 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))),fromData _ _ _ _ (stock 49 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))),fromData _ _ _ _ (stock 52 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))))))))]
-  rw [pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,Bool.xor_self,Bool.false_xor]
+  have h11 := stable_sum stable11 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by
+    simpa only [stable11,List.mem_range'_1] using hi))))))))))))))
+  have h12 := stable_sum stable12 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by
+    simpa only [stable12,List.mem_range'_1] using hi)))))))))))))))
+  have h13 := stable_sum stable13 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by
+    simpa only [stable13,List.mem_range'_1] using hi))))))))))))))))
+  have h14 := stable_sum stable14 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by
+    simpa only [stable14,List.mem_range'_1] using hi)))))))))))))))))
+  have h15 := stable_sum stable15 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (by
+    simpa only [stable15,List.mem_range'_1] using hi))))))))))))))))))
+  have h16 := stable_sum stable16 a b (fun i hi=>rest i (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (by
+    simpa only [stable16,List.mem_range'_1] using hi))))))))))))))))))
+  rw [allSum a,allSum b,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,fromData _ _ _ _ (custom 25 (Or.inl rfl)),fromData _ _ _ _ (custom 28 (Or.inr (Or.inl rfl))),fromData _ _ _ _ (custom 31 (Or.inr (Or.inr (Or.inl rfl)))),fromData _ _ _ _ (custom 34 (Or.inr (Or.inr (Or.inr (Or.inl rfl))))),fromData _ _ _ _ (custom 37 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))),fromData _ _ _ _ (custom 40 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))),fromData _ _ _ _ (custom 43 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))),fromData _ _ _ _ (custom 46 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))),fromData _ _ _ _ (custom 49 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))),fromData _ _ _ _ (custom 52 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))),fromData _ _ _ _ (custom 55 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))),fromData _ _ _ _ (custom 58 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))),fromData _ _ _ _ (custom 61 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))))),fromData _ _ _ _ (custom 64 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))))),fromData _ _ _ _ (custom 67 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))))))),fromData _ _ _ _ (custom 70 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))))))))))))),fromData _ _ _ _ (stock 25 (Or.inl rfl)),fromData _ _ _ _ (stock 28 (Or.inr (Or.inl rfl))),fromData _ _ _ _ (stock 31 (Or.inr (Or.inr (Or.inl rfl)))),fromData _ _ _ _ (stock 34 (Or.inr (Or.inr (Or.inr (Or.inl rfl))))),fromData _ _ _ _ (stock 37 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))),fromData _ _ _ _ (stock 40 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))),fromData _ _ _ _ (stock 43 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))),fromData _ _ _ _ (stock 46 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))),fromData _ _ _ _ (stock 49 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))),fromData _ _ _ _ (stock 52 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))),fromData _ _ _ _ (stock 55 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))),fromData _ _ _ _ (stock 58 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))),fromData _ _ _ _ (stock 61 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))))),fromData _ _ _ _ (stock 64 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))))),fromData _ _ _ _ (stock 67 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))))))),fromData _ _ _ _ (stock 70 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))))))))))))]
+  rw [pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,pair_step,Bool.xor_self,Bool.false_xor]
 end ECDSAAdd.Entrant.StairPacket.WindowFieldParity
 
 end
@@ -8308,8 +9935,8 @@ theorem add_last (s1:Nat) (lo:10≤s1) (n:Nat) (hn:1≤n) (lim:s1+15*n+1≤512) 
   rw [chronology]
   exact h
 
-/-! First ship 105..255 (s1 = 105, n = 10 blocks, exit 270). -/
-example : group 105 0=100 ∧ group 105 10=240 ∧ newBank 105 105=[] ∧ newBank 105 120=cells10 110 := ⟨rfl,rfl,rfl,rfl⟩
+/-! First ship 120..255 (s1 = 120, n = 10 blocks, exit 270). -/
+example : group 120 0=115 ∧ group 120 9=240 ∧ newBank 120 120=[] ∧ newBank 120 135=cells10 125 := ⟨rfl,rfl,rfl,rfl⟩
 
 -- needs par-a WideReference patch (oldSites, endRaw_inside_gen/outside_gen); goes inside OrdinaryChainW after `add_last`
 /-! Hole carry, generic (`OrdinaryChain.carry240/255` and `holes225/240/255`).
@@ -8641,7 +10268,7 @@ end
 -- ==== w4: end stocktail ====
 
 -- ==== build-main2: generic OrdinaryChain (build-leaves OrdW) ====
-/-! build-ordinary (build-leaves): the generic `OrdinaryChain` Ref half for the window 105..255 (exit 270).
+/-! build-ordinary (build-leaves): the generic `OrdinaryChain` Ref half for the window 120..255 (exit 270).
 Replaces dadon's literal `OrdinaryChain` (`Ref240/255/270`, `begin225`, `next240/255`, `last270`, `terminal`, `finish`,
 `project`, `readOld`, `keepTick`, `keepEncode`, `holes240/255`, `carry255`, `seven`, `wires`) by one induction over
 the fold's blocks. Every proof here is O(1) in the number of blocks: no decide over the window's growing lists. -/
@@ -8815,7 +10442,7 @@ end
 -- ===== Part 2: the exit at 270 (dadon's `terminal`, without `At270`'s saved keys) =====
 section
 namespace ECDSAAdd.Entrant.StairPacket.OrdinaryChainG
-open Arithmetic IntegerPacket MappedCompressed Secp256k1 WideReference SkywalkRails NativePack270 Partial ParkEndpoint StockWindowTicket
+open Arithmetic IntegerPacket MappedCompressed Secp256k1 WideReference SkywalkRails NativePack360 Partial ParkEndpoint360 StockWindowTicket
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3500000
 attribute [local irreducible] run
@@ -8823,45 +10450,45 @@ attribute [local irreducible] run
 /-- `Ordinary270Native.result` with the exit frame as a hypothesis (dadon took it from `step270`, which needs
 `At270.saved225/240`; the generic hand-off `AtJ 13` has no saved keys). Proof otherwise dadon's. -/
 theorem resultW (d:Bool) (x:Nat) (good:Bounds x p) (raw s:State) (g sg:Bool) (m:List Bool)
-    (domain:Domain 270 x p raw) (input:InputAt 270 (signedAt 270 x p g sg) raw)
-    (cut:PackedCut Portal270Flag.loPairs Portal270Flag.hiPairs 285 1700 1698 1699 (flagNeg 270 x p sg)
-      (decide (farAt 121 270 x p)) (decide (farAt 121 270 x p ∧ 2^121≤(unsigned 270 x p).u))
-      (pullState (OB5.sig 269) raw) (eraseSites ParkEndpoint.src s))
+    (domain:Domain 360 x p raw) (input:InputAt 360 (signedAt 360 x p g sg) raw)
+    (cut:PackedCut Portal360Flag.loPairs Portal360Flag.hiPairs 375 1655 1653 1654 (flagNeg 360 x p sg)
+      (decide (farAt 76 360 x p)) (decide (farAt 76 360 x p ∧ 2^76≤(unsigned 360 x p).u))
+      (pullState (OB5.sig 359) raw) (eraseSites ParkEndpoint360.src s))
     (last:StockWindowW.LastW d x p (run (lastWindow d) m s)) :
-    ArchiveHistoryCompare.Except Ordinary270Terminal.newBank (run (lastWindow d) m s)
-      (pullState (OB5.sig 270) (run (Rolling1588.encodeAt base d 255) [] (run EndTick.canonical [] raw))) := by
-  obtain ⟨ref,stage,read,hist,spare,spaces⟩:=terminal d x raw domain
-  let z:=unsigned 270 x p
-  let v:=run EndTick.canonical [] raw
-  let p1:=m.drop (measurementCount park270)
-  let p2:=p1.drop (measurementCount portal270Inv)
-  let p3:=p2.drop (measurementCount EndTick.physP)
+    ArchiveHistoryCompare.Except Ordinary360Terminal.newBank (run (lastWindow d) m s)
+      (pullState (OB5.sig 360) (run (Rolling1588.encodeAt base d 345) [] (run EndTick360.canonical [] raw))) := by
+  obtain ⟨ref,stage,read,hist,spare,spaces⟩:=terminal360 d x raw domain
+  let z:=unsigned 360 x p
+  let v:=run EndTick360.canonical [] raw
+  let p1:=m.drop (measurementCount park360)
+  let p2:=p1.drop (measurementCount portal360Inv)
+  let p3:=p2.drop (measurementCount EndTick360.physP)
   let p4:=p3.drop (measurementCount (program d))
-  have lim:min z.u z.v<2^121:=true_small x p 270 (lt_trans good.small good.cap) good.cap (by decide)
-  have mode:farAt 121 270 x p=(3*2^137≤z.u+z.v):=by
+  have lim:min z.u z.v<2^76:=true_small x p 360 (lt_trans good.small good.cap) good.cap (by decide)
+  have mode:farAt 76 360 x p=(3*2^92≤z.u+z.v):=by
     apply propext;unfold farAt Shadow.far Shadow.high Shadow.limb;exact Nat.le_div_iff_mul_le (by positivity)
-  have first:=parked_release z lim raw s m p1 g sg (readInput 270 x p raw g sg input)
+  have first:=parked_release z lim raw s m p1 g sg (readInput 360 x p raw g sg input)
     (by simpa only [mode] using cut) (empty_from_cut _ _ _ _ _ cut spaces)
-  have tick:=EndTick.physical d x good.nonzero good.small raw ref s read stage hist spare p2
-  let loaded:=run (archiveLoad270 d) p4 (run (program d) p3 (stash s (pullState (OB5.sig 270) v)))
+  have tick:=EndTick360.physical d x good.nonzero good.small raw ref s read stage hist spare p2
+  let loaded:=run (archiveLoad360 d) p4 (run (program d) p3 (stash s (pullState (OB5.sig 360) v)))
   have actual:run (lastWindow d) m s=loaded := by
     simp only [lastWindow,endSlice,run_append,run_take]
-    change run (archiveLoad270 d) p4 (run (program d) p3 (run EndTick.physP p2 (run portal270Inv p1 (run park270 m s))))=_
+    change run (archiveLoad360 d) p4 (run (program d) p3 (run EndTick360.physP p2 (run portal360Inv p1 (run park360 m s))))=_
     rw [first.1,tick.1]
   obtain ⟨row,_,_,frame⟩:=last
   rw [actual] at frame
-  have zeros (q:Wire) (h:q∈Ordinary270Terminal.zeros) : v.basis (OB5.sig 270 q)=false:=by
+  have zeros (q:Wire) (h:q∈Ordinary360Terminal.zeros) : v.basis (OB5.sig 360 q)=false:=by
     rcases List.mem_append.mp h with carryLane|tag
-    · have table:∀q∈List.range' 1556 134,∃k:Fin 134,OB5.sig 270 q=1556+k.val:=by decide +kernel
+    · have table:∀q∈List.range' 1556 144,∃k:Fin 144,OB5.sig 360 q=1556+k.val:=by decide +kernel
       obtain ⟨k,eq⟩:=table _ carryLane
-      rw [eq];exact (EndTick.after_cells d x good.nonzero good.small raw ref read stage).2 k
-    · have coords:∀q∈dst,OB5.sig 270 q=OB5.sig 269 q := by decide +kernel
-      have nocell:=EndTick.spared q tag
-      have cover:=W.compactSkywalkTick_support base 270 (by decide) base_pool_nodup
-      have no:OB5.sig 270 q∉wires EndTick.canonical:=fun used=>nocell (List.mem_toFinset.mp (cover used))
+      rw [eq];exact (EndTick360.after_cells d x good.nonzero good.small raw ref read stage).2 k
+    · have coords:∀q∈dst,OB5.sig 360 q=OB5.sig 359 q := by decide +kernel
+      have nocell:=EndTick360.spared q tag
+      have cover:=W.compactSkywalkTick_support base 360 (by decide) base_pool_nodup
+      have no:OB5.sig 360 q∉wires EndTick360.canonical:=fun used=>nocell (List.mem_toFinset.mp (cover used))
       exact (run_preserves_outside _ _ _ _ no).trans (by rw [coords q tag];exact spaces q tag)
   rw [actual]
-  exact Ordinary270Terminal.basis d v s p3 p4 row zeros frame
+  exact Ordinary360Terminal.basis d v s p3 p4 row zeros frame
 
 end ECDSAAdd.Entrant.StairPacket.OrdinaryChainG
 end
@@ -8876,113 +10503,113 @@ set_option maxHeartbeats 4000000
 set_option linter.unusedVariables false
 attribute [local irreducible] run measurementCount
 
-/-- dadon's `Ref240/255/270` for any block `j` of the window from 105: the block's stock hand-off (build-chain's
+/-- dadon's `Ref240/255/270` for any block `j` of the window from 120: the block's stock hand-off (build-chain's
 `AtJ`), the logical state agrees with the stock run of `j-3` blocks off the archived cells (par-d2's `mask`/`progW`),
 and the holes of the banks of blocks `3..j-2` (cleared by blocks `4..j-1`) are zero. -/
 def RefW (j : Fin 23) (d:Bool) (x:Nat) (initial s:State) : Prop :=
   ∃raw g sg pg ps,AtJ j d x p raw s g sg pg ps ∧
-    Except (OrdinaryChainW.mask 105 (j.val-2)) raw
-      (run (OrdinaryChainW.progW 105 d (j.val-2)) [] (run (span 105 (15*(j.val-2))) [] initial)) ∧
-    ∀q∈StockWindowGeo.holes 105 (j.val-3),raw.basis q=false
+    Except (OrdinaryChainW.mask 120 (j.val-3)) raw
+      (run (OrdinaryChainW.progW 120 d (j.val-3)) [] (run (span 120 (15*(j.val-3))) [] initial)) ∧
+    ∀q∈StockWindowGeo.holes 120 (j.val-4),raw.basis q=false
 
 /-- The generic hand-off at block 13 is dadon's literal exit cut (`At270.cut`). -/
 theorem exitCut (L8:ExitBridgeSpec) (d:Bool) (x:Nat) (raw s:State) (g sg pg ps:Bool)
-    (pre:AtJ ⟨13,by decide⟩ d x p raw s g sg pg ps) :
-    PackedCut Portal270Flag.loPairs Portal270Flag.hiPairs 285 1700 1698 1699 (flagNeg 270 x p sg)
-      (decide (farAt 121 270 x p)) (decide (farAt 121 270 x p ∧ 2^121≤(unsigned 270 x p).u))
-      (pullState (OB5.sig 269) raw) (eraseSites ParkEndpoint.src s) := by
+    (pre:AtJ ⟨19,by decide⟩ d x p raw s g sg pg ps) :
+    PackedCut Portal360Flag.loPairs Portal360Flag.hiPairs 375 1655 1653 1654 (flagNeg 360 x p sg)
+      (decide (farAt 76 360 x p)) (decide (farAt 76 360 x p ∧ 2^76≤(unsigned 360 x p).u))
+      (pullState (OB5.sig 359) raw) (eraseSites ParkEndpoint360.src s) := by
   obtain ⟨bl,bu,bg,bn,bf,bu',bp,-,-,-⟩:=L8
   have cut:=pre.cut
   rw [bl,bu,bg,bn,bf,bu',bp] at cut
-  have e13:start (⟨13,by decide⟩:Fin 23)=270:=rfl
-  have sb:sbP 270=121:=by decide
-  have pl:EnterJ.pull ⟨13,by decide⟩=OB5.sig 269:=rfl
-  simp only [e13,sb,pl] at cut
+  have e19:start (⟨19,by decide⟩:Fin 23)=360:=rfl
+  have sb:sbP 360=76:=by decide
+  have pl:EnterJ.pull ⟨19,by decide⟩=OB5.sig 359:=rfl
+  simp only [e19,sb,pl] at cut
   exact cut
 
 /-- The exit frame from the generic hand-off (build-chain's `exitStep`, its `LastW` part). -/
 theorem exitLast (L8:ExitBridgeSpec) (d:Bool) (x:Nat) (good:Bounds x p) (raw s:State) (g sg pg ps:Bool)
-    (pre:AtJ ⟨13,by decide⟩ d x p raw s g sg pg ps) (m:List Bool) :
-    LastW d x p (run (NativePack270.lastWindow d) m s) := by
+    (pre:AtJ ⟨19,by decide⟩ d x p raw s g sg pg ps) (m:List Bool) :
+    LastW d x p (run (NativePack360.lastWindow d) m s) := by
   have cut:=exitCut L8 d x raw s g sg pg ps pre
   obtain ⟨bl,bu,bg,bn,bf,bu',bp,r20,r21,r22⟩:=L8
-  let z:=unsigned 270 x p
-  have short:min z.u z.v<2^121:=true_small x p 270 (lt_trans good.small good.cap) good.cap (by decide)
-  have old:=LeaveJ.Admission.actualNumbers ⟨12,by decide⟩ (by decide) (by decide) x p good
-  have eq:farAt 121 270 x p=(3*2^137≤z.u+z.v):=by
+  let z:=unsigned 360 x p
+  have short:min z.u z.v<2^76:=true_small x p 360 (lt_trans good.small good.cap) good.cap (by decide)
+  have old:=LeaveJ.Admission.actualNumbers ⟨18,by decide⟩ (by decide) (by decide) x p good
+  have eq:farAt 76 360 x p=(3*2^92≤z.u+z.v):=by
     apply propext;unfold farAt Shadow.far Shadow.high Shadow.limb;exact Nat.le_div_iff_mul_le (by positivity)
   have facts:=pre.facts
-  have mode:s.basis 1701=decide (Shadow.far 129 15 (unsigned 255 x p)):=by rw [←r20]; exact facts.far
-  have side:s.basis 1702=(decide (Shadow.far 129 15 (unsigned 255 x p)) &&
-      StairArchiveTrace.afterFlags (decide ((unsigned 255 x p).v<(unsigned 255 x p).u))
-        ((physicalCells ArchiveBoundary270.sourceIdx s).take 5)):=by rw [←r21]; exact facts.suffix
-  have cross:s.basis 1703=(decide (Shadow.far 129 15 (unsigned 255 x p)) &&
-      HighBankSum.cross (LeaveJ.TrueMiddle.d ⟨12,by decide⟩ (unsigned 255 x p))):=by rw [←r22]; exact facts.crossed
-  have last:=NativePack270.matched_from_domain d x good.nonzero good.small raw s m pre.domain z short g sg
-    (readInput 270 x p raw g sg pre.input) (by simpa only [eq] using cut) (unsigned 255 x p) pg ps _
+  have mode:s.basis 1656=decide (Shadow.far 84 15 (unsigned 345 x p)):=by rw [←r20]; exact facts.far
+  have side:s.basis 1657=(decide (Shadow.far 84 15 (unsigned 345 x p)) &&
+      StairArchiveTrace.afterFlags (decide ((unsigned 345 x p).v<(unsigned 345 x p).u))
+        ((physicalCells ArchiveBoundary360.sourceIdx s).take 5)):=by rw [←r21]; exact facts.suffix
+  have cross:s.basis 1658=(decide (Shadow.far 84 15 (unsigned 345 x p)) &&
+      HighBankSum.cross (LeaveJ.TrueMiddle.d ⟨18,by decide⟩ (unsigned 345 x p))):=by rw [←r22]; exact facts.crossed
+  have last:=NativePack360.matched_from_domain d x good.nonzero good.small raw s m pre.domain z short g sg
+    (readInput 360 x p raw g sg pre.input) (by simpa only [eq] using cut) (unsigned 345 x p) pg ps _
     old.odd old.small facts.records mode side cross
   obtain ⟨r,lim,truth,frame⟩:=last.2.1
-  have pc:signedAt 255 x p pg ps=WideReference.canonical 255 x p:=pre.pastCanonical
-  have chr:Chronology 255 x p r:=by unfold Chronology;rw [←pc];exact truth
+  have pc:signedAt 345 x p pg ps=WideReference.canonical 345 x p:=pre.pastCanonical
+  have chr:Chronology 345 x p r:=by unfold Chronology;rw [←pc];exact truth
   exact ⟨r,lim,chr,frame⟩
 
-/-- dadon's `OrdinaryChain.project` (exit unchanged at 270; `lastBank = cells10 260`). -/
+/-- dadon's `OrdinaryChain.project` (exit unchanged at 360; `lastBank = cells10 350`). -/
 theorem projectW (d:Bool) (raw out:State)
-    (direct:Except Ordinary270Terminal.newBank out
-      (pullState (OB5.sig 270) (run (Rolling1588.encodeAt base d 255) [] (run EndTick.canonical [] raw)))) :
-    Except (OrdinaryChainW.cells10 260) (pullState (OB5.sig 270) out)
-      (run (Rolling1588.encodeAt base d 255) [] (run (span 270 1) [] raw)) := by
-  have one:span 270 1=EndTick.canonical:=by simp [span,EndTick.canonical]
+    (direct:Except Ordinary360Terminal.newBank out
+      (pullState (OB5.sig 360) (run (Rolling1588.encodeAt base d 345) [] (run EndTick360.canonical [] raw)))) :
+    Except (OrdinaryChainW.cells10 350) (pullState (OB5.sig 360) out)
+      (run (Rolling1588.encodeAt base d 345) [] (run (span 360 1) [] raw)) := by
+  have one:span 360 1=EndTick360.canonical:=by simp [span,EndTick360.canonical]
   rw [one]
   intro q absent
-  have map:∀w∈Ordinary270Terminal.newBank,OB5.sig 270 w∈OrdinaryChainW.cells10 260:=by decide +kernel
-  have free:OB5.sig 270 q∉Ordinary270Terminal.newBank:=fun hit=>absent (by simpa only [OB5.sig_invol 270 (by decide)] using map _ hit)
-  simpa only [pullState,OB5.sig_invol 270 (by decide)] using direct _ free
+  have map:∀w∈Ordinary360Terminal.newBank,OB5.sig 360 w∈OrdinaryChainW.cells10 350:=by decide +kernel
+  have free:OB5.sig 360 q∉Ordinary360Terminal.newBank:=fun hit=>absent (by simpa only [OB5.sig_invol 360 (by decide)] using map _ hit)
+  simpa only [pullState,OB5.sig_invol 360 (by decide)] using direct _ free
 
-/-- dadon's `readOld`/`keepTick`/`keepEncode` for one older hole (a B-side cell of a tick `r ≤ 254`). -/
-theorem old_hole_270 (d:Bool) (raw out:State) (r:Nat) (r1:105≤r) (r2:r≤254)
-    (direct:Except Ordinary270Terminal.newBank out
-      (pullState (OB5.sig 270) (run (Rolling1588.encodeAt base d 255) [] (run EndTick.canonical [] raw))))
+/-- dadon's `readOld`/`keepTick`/`keepEncode` for one older hole (a B-side cell of a tick `r ≤ 344`), read through
+`OB5.sig 360`. -/
+theorem old_hole_270 (d:Bool) (raw out:State) (r:Nat) (r1:120≤r) (r2:r≤344)
+    (direct:Except Ordinary360Terminal.newBank out
+      (pullState (OB5.sig 360) (run (Rolling1588.encodeAt base d 345) [] (run EndTick360.canonical [] raw))))
     (clear:raw.basis (base (1028+r))=false) :
-    out.basis (base (1028+r))=false := by
-  have notNew:base (1028+r)∉Ordinary270Terminal.newBank:=by
+    out.basis (OB5.sig 360 (base (1028+r)))=false := by
+  have notNew:OB5.sig 360 (base (1028+r))∉Ordinary360Terminal.newBank:=by
     intro hit
-    simp only [Ordinary270Terminal.newBank,List.mem_flatMap,List.mem_range'_1,List.mem_cons,List.not_mem_nil,
+    simp only [Ordinary360Terminal.newBank,List.mem_flatMap,List.mem_range'_1,List.mem_cons,List.not_mem_nil,
       or_false] at hit
     obtain ⟨r',⟨a,b⟩,e|e⟩:=hit <;> simp only [OB5.sig,base,Wire] at e <;> split_ifs at e <;> omega
   have eq:=direct _ notNew
-  change out.basis _=(run (Rolling1588.encodeAt base d 255) [] (run EndTick.canonical [] raw)).basis
-    (OB5.sig 270 (base (1028+r))) at eq
-  rw [sig_fixed 270 r (by decide) (by omega)] at eq
-  have enc:base (1028+r)∉wires (Rolling1588.encodeAt base d 255):=by
+  change out.basis _=(run (Rolling1588.encodeAt base d 345) [] (run EndTick360.canonical [] raw)).basis
+    (OB5.sig 360 (OB5.sig 360 (base (1028+r)))) at eq
+  rw [OB5.sig_invol 360 (by decide)] at eq
+  have enc:base (1028+r)∉wires (Rolling1588.encodeAt base d 345):=by
     intro used
-    obtain ⟨r',a,b,e|e⟩:=OrdinaryChainW.encode_cells d 255 _ used <;> simp only [base,Wire] at e <;> omega
-  have one:span 270 1=EndTick.canonical:=by simp [span,EndTick.canonical]
-  have tick:base (1028+r)∉wires EndTick.canonical:=by
-    rw [←one]; exact pastOffSpan 270 1 _ (by decide) ⟨r,by omega,Or.inr rfl⟩
+    obtain ⟨r',a,b,e|e⟩:=OrdinaryChainW.encode_cells d 345 _ used <;> simp only [base,Wire] at e <;> omega
+  have one:span 360 1=EndTick360.canonical:=by simp [span,EndTick360.canonical]
+  have tick:base (1028+r)∉wires EndTick360.canonical:=by
+    rw [←one]; exact pastOffSpan 360 1 _ (by decide) ⟨r,by omega,Or.inr rfl⟩
   rw [eq,run_preserves_outside _ _ _ _ enc,run_preserves_outside _ _ _ _ tick]
   exact clear
 
 /-- dadon's `last270`/`terminal`, generic: from the hand-off at block 13 the exit pieces reach the reference. -/
 theorem lastW (L7:ExitProgSpec) (L8:ExitBridgeSpec) (d:Bool) (x:Nat) (good:Bounds x p) (initial s:State)
-    (m:List Bool) (h:RefW ⟨13,by decide⟩ d x initial s) :
-    ∀q∉StockWindowGeo.archives 105 11,(run (exitF WindowParams.params d 270).flatten m s).basis q=
-      (StockArchiveReferenceW.common 105 11 d initial).basis q := by
+    (m:List Bool) (h:RefW ⟨19,by decide⟩ d x initial s) :
+    ∀q∉StockWindowGeo.archives 120 16,(run (exitF WindowParams.params d 360).flatten m s).basis q=
+      (StockArchiveReferenceW.common 120 16 d initial).basis q := by
   rw [(L7 d).1]
   obtain ⟨raw,g,sg,pg,ps,pre,old,zeros⟩:=h
   have lastF:=exitLast L8 d x good raw s g sg pg ps pre m
   have direct:=resultW d x good raw s g sg m pre.domain pre.input (exitCut L8 d x raw s g sg pg ps pre) lastF
-  have all:=OrdinaryChainW.add_last 105 (by decide) 11 (by decide) (by decide) d raw initial _ old
+  have all:=OrdinaryChainW.add_last 120 (by decide) 16 (by decide) (by decide) d raw initial _ old
     (projectW d raw _ direct)
-  apply finishW 105 11 (by decide) (by decide) (by decide) d _ initial all
+  apply finishW 120 16 (by decide) (by decide) (by decide) d _ initial all
   obtain ⟨row,_,_,frame⟩:=lastF
-  have cleared:=NativePack270.cleared_holes d row _ frame
+  have cleared:=NativePack360.cleared_holes d row _ frame
   intro w hw
-  have hs:StockWindowGeo.holes 105 11=_:=holes_succ 105 10
+  have hs:StockWindowGeo.holes 120 16=_:=holes_succ 120 15
   rw [hs] at hw
   rcases List.mem_append.mp hw with h|h
-  · obtain ⟨r,r1,r2,rfl⟩:=hole_cell 105 10 (by decide) w h
-    rw [sig_fixed (105+15*11) r (by decide) (by omega)]
+  · obtain ⟨r,r1,r2,rfl⟩:=hole_cell 120 15 (by decide) w h
     exact old_hole_270 d raw _ r (by omega) (by omega) direct (zeros _ h)
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at h
     rcases h with rfl|rfl|rfl|rfl <;> exact cleared _ (by decide)
@@ -9000,14 +10627,14 @@ set_option maxHeartbeats 4000000
 set_option linter.unusedVariables false
 attribute [local irreducible] run measurementCount body
 
-/-- L11 (new, first form at 105; dadon's `StockWindowTicket.ordinary225`): the first block's logical end state is
-the stock run of its 15 ticks with the five pre-window letters (group 100) encoded. -/
+/-- L11 (new, first form at 120; dadon's `StockWindowTicket.ordinary225`): the first block's logical end state is
+the stock run of its 15 ticks with the five pre-window letters (group 115) encoded. -/
 abbrev FirstOrdinarySpec : Prop :=
   ∀ (d:Bool) (x p:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis),
-    Except [] (endRaw 105 raw (run (portalP 105 ++ NativeFirstJ.enteredWindow WindowParams.first d) m
-        (pullState (OB5.sig 104) raw)))
-      (run (Rolling1588.encodeAt base d 100) [] (run (span 105 15) [] raw))
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis),
+    Except [] (endRaw 120 raw (run (portalP 120 ++ NativeFirstJ.enteredWindow WindowParams.first d) m
+        (pullState (OB5.sig 119) raw)))
+      (run (Rolling1588.encodeAt base d 115) [] (run (span 120 15) [] raw))
 
 /-- The open leaves `wiresW` uses: five of build-chain's (Skel.lean statements) and the first block's ordinary. -/
 structure OrdLeaves : Prop where
@@ -9021,7 +10648,7 @@ structure OrdLeaves : Prop where
 def OrdLeaves.of (L : Leaves) (F : FirstOrdinarySpec) : OrdLeaves :=
   ⟨L.endpoint,L.scratch,L.first,L.exitProg,L.exitBridge,F⟩
 
-theorem not_first (k : Fin 23) (h4 : 3≤k.val) : start k≠firstBlock := by
+theorem not_first (k : Fin 23) (h4 : 4≤k.val) : start k≠firstBlock := by
   simp only [StairPacket.start,firstBlock]; omega
 
 /-- `OB5.sig i` is the identity below the moved band. -/
@@ -9032,7 +10659,7 @@ theorem sig_id_low (i q : Nat) (hi : i≤511) (hq : q<1301) (hq2 : q+i<2069) : O
   · rfl
 
 /-- dadon's `pinned{s}` for block `k`: the next block's hand-off (build-chain's `interior`, its `AtJ` part). -/
-theorem pinnedW (L1:EndpointSpec) (L2:ScratchSpec) (k k1:Fin 23) (hk:k1.val=k.val+1) (h4:3≤k.val) (h12:k.val≤12)
+theorem pinnedW (L1:EndpointSpec) (L2:ScratchSpec) (k k1:Fin 23) (hk:k1.val=k.val+1) (h4:4≤k.val) (h12:k.val≤18)
     (d:Bool) (x:Nat) (good:Bounds x p) (raw s:State) (g sg pg ps:Bool) (m:List Bool)
     (pre:AtJ k d x p raw s g sg pg ps) :
     ∃a b c e,AtJ k1 d x p (endRaw (start k) raw (run (NativeJ.nextWindow k d) m s))
@@ -9059,7 +10686,7 @@ theorem pinnedW (L1:EndpointSpec) (L2:ScratchSpec) (k k1:Fin 23) (hk:k1.val=k.va
   · rw [p1]; exact canon
 
 /-- dadon's `ordinary{s}` for block `k` (par-c2's `OrdinaryJ.native` on the hand-off). -/
-theorem ordinaryW (k:Fin 23) (h4:3≤k.val) (h12:k.val≤12) (d:Bool) (x:Nat) (good:Bounds x p) (raw s:State)
+theorem ordinaryW (k:Fin 23) (h4:4≤k.val) (h12:k.val≤18) (d:Bool) (x:Nat) (good:Bounds x p) (raw s:State)
     (g sg pg ps:Bool) (m:List Bool) (pre:AtJ k d x p raw s g sg pg ps) :
     Except (OrdinaryJ.newBank k) (endRaw (start k) raw (run (NativeJ.nextWindow k d) m s))
       (run (Rolling1588.encodeAt base d (start k-15)) [] (run (span (start k) 15) [] raw)) := by
@@ -9076,21 +10703,29 @@ theorem ordinaryW (k:Fin 23) (h4:3≤k.val) (h12:k.val≤12) (d:Bool) (x:Nat) (g
     pre.domain m (m.drop (measurementCount (Partial.enterP k))) _ _ _ pre.cut _ parity ready.2.1
   simpa only [NativeJ.nextWindow,NativeJ.window,run_append,run_take] using h
 
-theorem hole_in_four (k : Fin 23) (h1 : 1≤k.val) (h12 : k.val≤12) (r : Nat)
+/-- `OB5.sig (s+14)` and `OB5.sig s` agree on the B-side history cell of every tick `r < s ≤ 345`. -/
+theorem sig_shift (s r : Nat) (hs : s≤345) (hr : r+1≤s) :
+    OB5.sig (s+14) (base (1028+r))=OB5.sig s (base (1028+r)) := by
+  rw [OB5.sig_nat,OB5.sig_nat]
+  unfold OB5.sigNat
+  simp only [base,Wire]
+  split_ifs <;> omega
+
+theorem hole_in_four (k : Fin 23) (h1 : 1≤k.val) (h12 : k.val≤18) (r : Nat)
     (hr : r=start k-8 ∨ r=start k-6 ∨ r=start k-3 ∨ r=start k-1) :
-    base (1028+r)∈NativeJ.fourHoles k := by
+    OB5.sig (start k) (base (1028+r))∈NativeJ.fourHoles k := by
   rw [NativeJ.fourHoles_eq k h1]
-  have s0 : 90≤start k ∧ start k≤255 := by simp only [StairPacket.start]; omega
-  rw [sig_id_low (start k) (start k+1036) (by omega) (by omega) (by omega),
-    sig_id_low (start k) (start k+1038) (by omega) (by omega) (by omega),
-    sig_id_low (start k) (start k+1041) (by omega) (by omega) (by omega),
-    sig_id_low (start k) (start k+1043) (by omega) (by omega) (by omega)]
-  simp only [List.mem_cons,List.not_mem_nil,or_false,base,Wire]
-  rcases hr with rfl|rfl|rfl|rfl <;> omega
+  have s0 : 90≤start k ∧ start k≤345 := by simp only [StairPacket.start]; omega
+  simp only [List.mem_cons,List.not_mem_nil,or_false]
+  rcases hr with rfl|rfl|rfl|rfl
+  · exact Or.inl (congrArg (OB5.sig (start k)) (by simp only [base,Wire]; omega))
+  · exact Or.inr (Or.inl (congrArg (OB5.sig (start k)) (by simp only [base,Wire]; omega)))
+  · exact Or.inr (Or.inr (Or.inl (congrArg (OB5.sig (start k)) (by simp only [base,Wire]; omega))))
+  · exact Or.inr (Or.inr (Or.inr (congrArg (OB5.sig (start k)) (by simp only [base,Wire]; omega))))
 
 /-- dadon's `holes{s}` for block `k`: the four holes of bank `k-4` (ticks `start k-10 .. start k-1`) are zero in the
 next block's logical state (build-w4b's `NativeJ.cleared_holes`). -/
-theorem holesW (L2:ScratchSpec) (k:Fin 23) (h4:3≤k.val) (h12:k.val≤12) (d:Bool) (x:Nat) (good:Bounds x p)
+theorem holesW (L2:ScratchSpec) (k:Fin 23) (h4:4≤k.val) (h12:k.val≤18) (d:Bool) (x:Nat) (good:Bounds x p)
     (raw s:State) (g sg pg ps:Bool) (m:List Bool) (pre:AtJ k d x p raw s g sg pg ps) (r:Nat)
     (hr : r=start k-8 ∨ r=start k-6 ∨ r=start k-3 ∨ r=start k-1) :
     (endRaw (start k) raw (run (NativeJ.nextWindow k d) m s)).basis (base (1028+r))=false := by
@@ -9104,77 +10739,77 @@ theorem holesW (L2:ScratchSpec) (k:Fin 23) (h4:3≤k.val) (h12:k.val≤12) (d:Bo
   have clear:=NativeJ.cleared_holes k (by omega) (by omega) d raw s m z g sg nums.odd nums.small pre.cut inp hist scr
     _ pg ps _ old.odd old.small pre.facts
   have hne:=not_first k h4
-  have s0 : 105≤start k ∧ start k≤255 := by simp only [StairPacket.start]; omega
+  have s0 : 135≤start k ∧ start k≤345 := by simp only [StairPacket.start]; omega
   have bound:start k+14≤511:=by omega
   have r0 : start k-8≤r ∧ r≤start k-1 := by rcases hr with rfl|rfl|rfl|rfl <;> omega
   have mem:base (1028+r)∈oldSites (start k):=by
     simp only [oldSites,oldStart_interior hne,oldCount_interior hne,List.mem_flatMap,List.mem_range'_1,
       List.mem_cons,List.not_mem_nil,or_false]
     exact ⟨r,⟨by omega,by omega⟩,Or.inr rfl⟩
-  rw [endRaw_inside_gen _ bound _ _ _ mem,sig_fixed (start k+14) r (by omega) (by omega)]
+  rw [endRaw_inside_gen _ bound _ _ _ mem,sig_shift (start k) r (by omega) (by omega)]
   exact clear _ (hole_in_four k (by omega) h12 r hr)
 
 /-- dadon's `next240/next255` for any interior block `k` (4..12). -/
 theorem nextW (L1:EndpointSpec) (L2:ScratchSpec) (d:Bool) (x:Nat) (good:Bounds x p) (initial s:State) (k k1:Fin 23)
-    (hk:k1.val=k.val+1) (h4:3≤k.val) (h12:k.val≤12) (m:List Bool) (h:RefW k d x initial s) :
+    (hk:k1.val=k.val+1) (h4:4≤k.val) (h12:k.val≤18) (m:List Bool) (h:RefW k d x initial s) :
     RefW k1 d x initial (run (NativeJ.nextWindow k d++leaveP k) m s) := by
   obtain ⟨raw,g,sg,pg,ps,pre,old,zeros⟩:=h
   rw [run_append,run_take]
   obtain ⟨a,b,c,e,pre'⟩:=pinnedW L1 L2 k k1 hk h4 h12 d x good raw s g sg pg ps m pre
   have hne:=not_first k h4
-  have s0 : 105≤start k ∧ start k≤255 := by simp only [StairPacket.start]; omega
-  have sk:start k=105+15*(k.val-2):=by simp only [StairPacket.start]; omega
+  have s0 : 135≤start k ∧ start k≤345 := by simp only [StairPacket.start]; omega
+  have sk:start k=120+15*(k.val-3):=by simp only [StairPacket.start]; omega
   refine ⟨_,a,b,c,e,pre',?_,?_⟩
   · have step:=ordinaryW k h4 h12 d x good raw s g sg pg ps m pre
-    have step':Except (OrdinaryChainW.newBank 105 (105+15*(k.val-2))) (endRaw (start k) raw (run (NativeJ.nextWindow k d) m s))
-        (run (Rolling1588.encodeAt base d (OrdinaryChainW.group 105 (k.val-2))) []
-          (run (span (105+15*(k.val-2)) 15) [] raw)):=by
+    have step':Except (OrdinaryChainW.newBank 120 (120+15*(k.val-3))) (endRaw (start k) raw (run (NativeJ.nextWindow k d) m s))
+        (run (Rolling1588.encodeAt base d (OrdinaryChainW.group 120 (k.val-3))) []
+          (run (span (120+15*(k.val-3)) 15) [] raw)):=by
       rw [←sk,OrdinaryChainW.newBank,if_neg (by omega),OrdinaryChainW.group,if_neg (by omega),
-        show 105+15*(k.val-2)-15=start k-15 by omega]
+        show 120+15*(k.val-3)-15=start k-15 by omega]
       exact step
-    have e1:k1.val-2=(k.val-2)+1:=by omega
+    have e1:k1.val-3=(k.val-3)+1:=by omega
     rw [e1]
-    exact OrdinaryChainW.add 105 (by decide) (k.val-2) (by omega) (by omega) d raw initial _ old step'
-  · have e1:k1.val-3=(k.val-3)+1:=by omega
+    exact OrdinaryChainW.add 120 (by decide) (k.val-3) (by omega) (by omega) d raw initial _ old step'
+  · have e1:k1.val-4=(k.val-4)+1:=by omega
     rw [e1,holes_succ]
     intro q hq
     rcases List.mem_append.mp hq with h|h
-    · apply OrdinaryChainW.carry (start k) (by omega) (StockWindowGeo.holes 105 (k.val-3)) ?_ ?_ raw _ zeros q h
+    · apply OrdinaryChainW.carry (start k) (by omega) (StockWindowGeo.holes 120 (k.val-4)) ?_ ?_ raw _ zeros q h
       · intro w hw hit
-        obtain ⟨r,r1,r2,rfl⟩:=hole_cell 105 (k.val-3) (by decide) w hw
+        obtain ⟨r,r1,r2,rfl⟩:=hole_cell 120 (k.val-4) (by decide) w hw
         obtain ⟨r',a1,a2,e'⟩:=old_cell hit
         rw [oldStart_interior hne] at a1 a2
         rw [oldCount_interior hne] at a2
         rcases e' with e'|e' <;> simp only [base,Wire] at e' <;> omega
       · intro w hw
-        obtain ⟨r,r1,r2,rfl⟩:=hole_cell 105 (k.val-3) (by decide) w hw
+        obtain ⟨r,r1,r2,rfl⟩:=hole_cell 120 (k.val-4) (by decide) w hw
         right; simp only [base,Wire]; omega
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at h
-      have g0:∀i,StockWindowGeo.gstart 105 i=100+5*i:=fun i=>by simp only [StockWindowGeo.gstart]
+      have g0:∀i,StockWindowGeo.gstart 120 i=115+5*i:=fun i=>by simp only [StockWindowGeo.gstart]
       rcases h with rfl|rfl|rfl|rfl
       · have := holesW L2 k h4 h12 d x good raw s g sg pg ps m pre (start k-8) (Or.inl rfl)
-        rw [show 1028+StockWindowGeo.gstart 105 (2+3*(k.val-3))+2=1028+(start k-8) by rw [g0]; omega]; exact this
+        rw [show 1028+StockWindowGeo.gstart 120 (2+3*(k.val-4))+2=1028+(start k-8) by rw [g0]; omega]; exact this
       · have := holesW L2 k h4 h12 d x good raw s g sg pg ps m pre (start k-6) (Or.inr (Or.inl rfl))
-        rw [show 1028+StockWindowGeo.gstart 105 (2+3*(k.val-3))+4=1028+(start k-6) by rw [g0]; omega]; exact this
+        rw [show 1028+StockWindowGeo.gstart 120 (2+3*(k.val-4))+4=1028+(start k-6) by rw [g0]; omega]; exact this
       · have := holesW L2 k h4 h12 d x good raw s g sg pg ps m pre (start k-3) (Or.inr (Or.inr (Or.inl rfl)))
-        rw [show 1028+StockWindowGeo.gstart 105 (3+3*(k.val-3))+2=1028+(start k-3) by rw [g0]; omega]; exact this
+        rw [show 1028+StockWindowGeo.gstart 120 (3+3*(k.val-4))+2=1028+(start k-3) by rw [g0]; omega]; exact this
       · have := holesW L2 k h4 h12 d x good raw s g sg pg ps m pre (start k-1) (Or.inr (Or.inr (Or.inr rfl)))
-        rw [show 1028+StockWindowGeo.gstart 105 (3+3*(k.val-3))+4=1028+(start k-1) by rw [g0]; omega]; exact this
+        rw [show 1028+StockWindowGeo.gstart 120 (3+3*(k.val-4))+4=1028+(start k-1) by rw [g0]; omega]; exact this
 
-/-- dadon's `begin225` at 105: the first block (portal, enter, pack, leave) reaches the hand-off of block 4. -/
+/-- dadon's `begin225` at 120: the first block (portal, enter, pack, leave) reaches the hand-off of block 4. -/
 theorem beginW (L:OrdLeaves) (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) :
-    RefW ⟨3,by decide⟩ d x raw (run ((portalP 105++NativeFirstJ.enteredWindow WindowParams.first d)++
-      leaveP WindowParams.first) m (pullState (OB5.sig 104) raw)) := by
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) :
+    RefW ⟨4,by decide⟩ d x raw (run ((portalP 120++NativeFirstJ.enteredWindow WindowParams.first d)++
+      leaveP WindowParams.first) m (pullState (OB5.sig 119) raw)) := by
   rw [run_append,run_take]
-  let v:=run (portalP 105++NativeFirstJ.enteredWindow WindowParams.first d) m (pullState (OB5.sig 104) raw)
-  let n:=m.drop (measurementCount (portalP 105++NativeFirstJ.enteredWindow WindowParams.first d))
+  let v:=run (portalP 120++NativeFirstJ.enteredWindow WindowParams.first d) m (pullState (OB5.sig 119) raw)
+  let n:=m.drop (measurementCount (portalP 120++NativeFirstJ.enteredWindow WindowParams.first d))
   obtain ⟨g,sg,input,hin,cut,facts⟩:=L.first d x p good raw m n stage
-  let flags:=LeaveJ.Admission.flags (unsigned 105 x p) g sg
-  have dom:=initial 105 x p (by decide) d raw stage
-  have carried:=stepInput_gen 105 (sbP 105) x p (by decide) (by decide) good raw v g sg dom input hin.small
-  refine ⟨endRaw 105 raw v,flags.1,flags.2,g,sg,⟨carried.1,carried.2,cut,facts,
-    unique_input input (fixed_input 105 x p (by decide) good raw dom)⟩,?_,?_⟩
+  let flags:=LeaveJ.Admission.flags (unsigned 120 x p) g sg
+  have dom:=initial 120 x p (by decide) d raw stage
+  have carried:=stepInput_gen 120 (sbP 120) x p (by decide) (by decide) good raw v g sg dom input hin.small
+  refine ⟨endRaw 120 raw v,flags.1,flags.2,g,sg,⟨carried.1,carried.2,cut,facts,
+    unique_input input (fixed_input 120 x p (by decide) good raw dom)⟩,?_,?_⟩
   · exact L.firstOrdinary d x p good raw m stage
   · intro q hq
     simp [StockWindowGeo.holes,StockWindowGeo.packed] at hq
@@ -9184,7 +10819,7 @@ theorem run_nil_eq (m:List Bool) (s:State) : run [] m s=s := by
 
 /-- The interior fold (`chainF`), by induction on the block list (`WindowChain.window_strong`'s recursion). -/
 theorem chainW (L1:EndpointSpec) (L2:ScratchSpec) (d:Bool) (x:Nat) (good:Bounds x p) (initial:State) :
-    ∀(i:Fin 23) (js:List (Fin 23)),Consec i js → (∀k∈js,3≤k.val ∧ k.val≤12) →
+    ∀(i:Fin 23) (js:List (Fin 23)),Consec i js → (∀k∈js,4≤k.val ∧ k.val≤18) →
     ∀(j j':Fin 23),j.val=i.val+1 → j'.val=(lastBlock i js).val+1 → ∀s m,RefW j d x initial s →
       RefW j' d x initial (run (chainF WindowParams.params d i js).flatten m s)
   | i,[],_,_,j,j',hj,hj',s,m,h=>by
@@ -9201,38 +10836,38 @@ theorem chainW (L1:EndpointSpec) (L2:ScratchSpec) (d:Bool) (x:Nat) (good:Bounds 
       ⟨j.val+1,by omega⟩ j' rfl (by simpa only [lastBlock] using hj') _ _
       (nextW L1 L2 d x good initial s j ⟨j.val+1,by omega⟩ rfl bk.1 bk.2 _ h)
 
-theorem lastBlock_ship : lastBlock WindowParams.first WindowParams.rest=⟨12,by decide⟩ := by
+theorem lastBlock_ship : lastBlock WindowParams.first WindowParams.rest=⟨18,by decide⟩ := by
   rw [rest_eq]; rfl
 
 /-- The window program split into its first block, interior fold and exit. -/
 theorem split (d:Bool) : Partial.forward45plus1 d=
     (((WindowParams.params.portal (start WindowParams.first) :: firstF WindowParams.params d WindowParams.first).flatten++
       (chainF WindowParams.params d WindowParams.first WindowParams.rest).flatten)++
-      (exitF WindowParams.params d 270).flatten) := by
+      (exitF WindowParams.params d 360).flatten) := by
   rw [Partial.assembly,forwardW,forwardL,exitTick_ship]
   simp only [List.flatten_cons,List.flatten_append,List.append_assoc]
 
-/-- `OrdinaryChain.wires` for the window 105..255 (exit 270), generic over the fold. -/
+/-- `OrdinaryChain.wires` for the window 120..255 (exit 270), generic over the fold. -/
 theorem wiresW (L:OrdLeaves) (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) :
-    ∀q∉StockWindowGeo.archives 105 11,(run (Partial.forward45plus1 d) m (pullState (OB5.sig 104) raw)).basis q=
-      (StockArchiveReferenceW.common 105 11 d raw).basis q := by
-  have beg:∀n,RefW ⟨3,by decide⟩ d x raw (run ((WindowParams.params.portal (start WindowParams.first) ::
-      firstF WindowParams.params d WindowParams.first).flatten) n (pullState (OB5.sig 104) raw)):=by
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) :
+    ∀q∉StockWindowGeo.archives 120 16,(run (Partial.forward45plus1 d) m (pullState (OB5.sig 119) raw)).basis q=
+      (StockArchiveReferenceW.common 120 16 d raw).basis q := by
+  have beg:∀n,RefW ⟨4,by decide⟩ d x raw (run ((WindowParams.params.portal (start WindowParams.first) ::
+      firstF WindowParams.params d WindowParams.first).flatten) n (pullState (OB5.sig 119) raw)):=by
     intro n
     rw [first_eq d]
     exact beginW L d x good raw n stage
-  have mid:∀s n,RefW ⟨3,by decide⟩ d x raw s →
-      RefW ⟨13,by decide⟩ d x raw (run (chainF WindowParams.params d WindowParams.first WindowParams.rest).flatten n s):=
+  have mid:∀s n,RefW ⟨4,by decide⟩ d x raw s →
+      RefW ⟨19,by decide⟩ d x raw (run (chainF WindowParams.params d WindowParams.first WindowParams.rest).flatten n s):=
     fun s n h=>chainW L.endpoint L.scratch d x good raw WindowParams.first WindowParams.rest consec_ship
-      (fun k hk=>mem_rest hk) ⟨3,by decide⟩ ⟨13,by decide⟩ rfl (by rw [lastBlock_ship]) s n h
+      (fun k hk=>mem_rest hk) ⟨4,by decide⟩ ⟨19,by decide⟩ rfl (by rw [lastBlock_ship]) s n h
   rw [split d,run_append,run_append]
   exact lastW L.exitProg L.exitBridge d x good raw _ _ (mid _ _ (beg _))
 
 end ECDSAAdd.Entrant.StairPacket.OrdinaryChainG
 end
 
--- ===== Part 5: the first block's ordinary (`FirstOrdinarySpec`) from the portal frame at 105 =====
+-- ===== Part 5: the first block's ordinary (`FirstOrdinarySpec`) from the portal frame at 120 =====
 section
 namespace ECDSAAdd.Entrant.StairPacket.OrdinaryChainG
 open Arithmetic MappedCompressed IntegerPacket WideReference SkywalkRails Partial ArchivePortAction
@@ -9339,28 +10974,28 @@ theorem windowF (j : Fin 23) (h1 : 1≤j.val) (h21 : j.val≤21)
 theorem old_first : ∀i:Fin 10,oldRange (start WindowParams.first+1)
     (windowNet WindowParams.first (NativeFirstJ.history WindowParams.first i)) := by decide +kernel
 
-/-- `FirstOrdinarySpec` (dadon's `ordinary225` at 105), from build-chain's `NativeFirstJ.first_core` (portal frame). -/
+/-- `FirstOrdinarySpec` (dadon's `ordinary225` at 120), from build-chain's `NativeFirstJ.first_core` (portal frame). -/
 theorem firstOrdinary : FirstOrdinarySpec := by
   intro d x p good raw m stage
   let j:=WindowParams.first
-  let z:=unsigned 105 x p
-  let origin:=pullState (OB5.sig 104) raw
-  let cut:=run (portalP 105) m origin
-  let n:=m.drop (measurementCount (portalP 105))
+  let z:=unsigned 120 x p
+  let origin:=pullState (OB5.sig 119) raw
+  let cut:=run (portalP 120) m origin
+  let n:=m.drop (measurementCount (portalP 120))
   let pre:=run (Partial.enterP j) n cut
   let tape:=n.drop (measurementCount (Partial.enterP j))
-  let T:=Shadow.reduced (sbP 105) 15 z
+  let T:=Shadow.reduced (sbP 120) 15 z
   obtain ⟨G,S,inputAt,frame,-⟩:=NativeFirstJ.first_core d x p good raw m stage
-  have eqg:(SkywalkRails.encode G S (unsigned 105 x p).u (unsigned 105 x p).v).g=G:=by cases G <;> rfl
-  have input:SkywalkIntegerInput (W.compactSkywalkTickLayout base 105)
-      (SkywalkRails.encode G S (unsigned 105 x p).u (unsigned 105 x p).v).a
-      (SkywalkRails.encode G S (unsigned 105 x p).u (unsigned 105 x p).v).b G raw.basis:=by
+  have eqg:(SkywalkRails.encode G S (unsigned 120 x p).u (unsigned 120 x p).v).g=G:=by cases G <;> rfl
+  have input:SkywalkIntegerInput (W.compactSkywalkTickLayout base 120)
+      (SkywalkRails.encode G S (unsigned 120 x p).u (unsigned 120 x p).v).a
+      (SkywalkRails.encode G S (unsigned 120 x p).u (unsigned 120 x p).v).b G raw.basis:=by
     unfold InputAt at inputAt; rwa [eqg] at inputAt
   have nums:=LeaveJ.Admission.actualNumbers j (by decide) (by decide) x p good
-  have dom:=initial 105 x p (by decide) d raw stage
+  have dom:=initial 120 x p (by decide) d raw stage
   have hist:=pulled_history j rfl dom
   have ready:=EnterJ.ready_from_cut_at j raw cut z G S n nums.small frame input hist
-  have to':T.v%2=1:=shadow_odd (sbP 105) z nums.small nums.odd
+  have to':T.v%2=1:=shadow_odd (sbP 120) z nums.small nums.odd
   have parity:((encode G S T.u T.v).a+(encode G S T.u T.v).b)%2=1:=encode_odd_sum G S _ _ (by omega)
   have inp:=NativeFirstJ.history_from_stock j (by decide) (by decide) raw cut pre frame n tape rfl _ parity ready.2
   have res:=resultF j (by decide) (by decide) old_first d raw pre tape x p good dom inp
@@ -9369,7 +11004,7 @@ theorem firstOrdinary : FirstOrdinarySpec := by
     rw [fb]; exact ⟨oldStart_first,oldCount_first⟩
   intro q _
   have w:=windowF j (by decide) (by decide) firstB d raw _ res q
-  have e:run (portalP 105++NativeFirstJ.enteredWindow WindowParams.first d) m origin=
+  have e:run (portalP 120++NativeFirstJ.enteredWindow WindowParams.first d) m origin=
       run (body j (NativeFirstJ.program j d)) tape pre:=by
     simp only [NativeFirstJ.enteredWindow,NativeFirstJ.window,run_append,run_take]; rfl
   rw [e]
@@ -9389,11 +11024,11 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.OrdinaryChainG
 open Arithmetic MappedCompressed WideReference Secp256k1 StockWindowW
 
-/-- `OrdinaryChain.wires` of the ship (window 105..255, exit 270). -/
+/-- `OrdinaryChain.wires` of the ship (window 120..255, exit 270). -/
 theorem wiresShip (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) :
-    ∀q∉StockWindowGeo.archives 105 11,(run (Partial.forward45plus1 d) m (pullState (OB5.sig 104) raw)).basis q=
-      (StockArchiveReferenceW.common 105 11 d raw).basis q :=
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) :
+    ∀q∉StockWindowGeo.archives 120 16,(run (Partial.forward45plus1 d) m (pullState (OB5.sig 119) raw)).basis q=
+      (StockArchiveReferenceW.common 120 16 d raw).basis q :=
   wiresW (OrdLeaves.of leaves firstOrdinary) d x good raw m stage
 
 end ECDSAAdd.Entrant.StairPacket.OrdinaryChainG
@@ -9401,7 +11036,7 @@ end
 
 -- ==== end build-main2 OrdW ====
 
--- ==== build-main2: the ship's stock comparison API (window 105..255, exit 270, 10 banks) ====
+-- ==== build-main2: the ship's stock comparison API (window 120..255, exit 270, 10 banks) ====
 -- dadon's 3-bank names (StockArchiveReference.common, StockStrongChain.result, StockArchiveBanks.*,
 -- StockRowVector.rows/binding, StockBaseline.comparison) re-opened as instances of the generic W sections.
 section
@@ -9419,14 +11054,14 @@ def KeyS (d:Bool) (x p:Nat) (i:Fin 23) (s:State) : Prop :=
 
 /-- The last bank's key, in the exit archive (dadon's `finalBank`). -/
 def KeyLast (d:Bool) (x p:Nat) (s:State) : Prop :=
-  SavedKey (value x p 255 129 (StockRowVectorW.crossW ⟨12,by decide⟩)) ArchiveBoundary270.codePorts d s
+  SavedKey (value x p 345 84 (StockRowVectorW.crossW ⟨18,by decide⟩)) ArchiveBoundary360.codePorts d s
 
 /-- The exit: dadon's `Final.last` frame and the last bank's key. -/
 def LastS (d:Bool) (x p:Nat) (s:State) : Prop := LastW d x p s ∧ KeyLast d x p s
 
 /-- dadon's `selected{s}` receipt for any interior block `k` (saves block `i = k-1`'s key). -/
 theorem receiptS (L:Leaves) (d:Bool) (x p:Nat) (good:Bounds x p) (i k:Fin 23) (hk:k.val=i.val+1)
-    (h2:2≤k.val) (h12:k.val≤12) :
+    (h2:2≤k.val) (h12:k.val≤18) :
     ∀ s m, ReadyW d x p (start k) s → KeyS d x p i (run (nextF WindowParams.params d i k).flatten m s) := by
   intro s m h
   obtain ⟨k1',e0,raw,g,sg,pg,ps,pre⟩:=h
@@ -9449,59 +11084,59 @@ theorem receiptS (L:Leaves) (d:Bool) (x p:Nat) (good:Bounds x p) (i k:Fin 23) (h
   rw [canon] at cert
   exact ⟨cert.1,cert.2.1,ArchiveWindowPreserve.keep cert.2.2 (fun q hq=>L.keepLeave k h2 h12 q hq _ _)⟩
 
-theorem keepS (L:Leaves) (d:Bool) (x p:Nat) (i k:Fin 23) (hk:k.val=i.val+1) (h12:k.val≤12) :
-    ∀ s m, ReadyW d x p (start k) s → ∀ i' : Fin 23, 2 ≤ i'.val → i'.val < i.val → KeyS d x p i' s →
+theorem keepS (L:Leaves) (d:Bool) (x p:Nat) (i k:Fin 23) (hk:k.val=i.val+1) (h12:k.val≤18) :
+    ∀ s m, ReadyW d x p (start k) s → ∀ i' : Fin 23, 3 ≤ i'.val → i'.val < i.val → KeyS d x p i' s →
       KeyS d x p i' (run (nextF WindowParams.params d i k).flatten m s) := by
   intro s m _ i' h1 h2 key
   obtain ⟨r,c,kept⟩:=key
   exact ⟨r,c,ArchiveWindowPreserve.keep kept (fun q hq=>L.keepOlder i k i' hk (by omega) (by omega) h12 d q hq s m)⟩
 
 /-- dadon's `finalBank` from the generic hand-off at block 13 (the exit archive keeps block 12's key). -/
-theorem finalS (L:Leaves) (d:Bool) (x:Nat) (good:Bounds x p) (s:State) (m:List Bool) (h:ReadyW d x p 270 s) :
-    KeyLast d x p (run (NativePack270.lastWindow d) m s) := by
+theorem finalS (L:Leaves) (d:Bool) (x:Nat) (good:Bounds x p) (s:State) (m:List Bool) (h:ReadyW d x p 360 s) :
+    KeyLast d x p (run (NativePack360.lastWindow d) m s) := by
   obtain ⟨k,ek,raw,g,sg,pg,ps,pre⟩:=h
-  have k13:k=⟨13,by decide⟩:=Fin.ext (by have := ek; simp only [StairPacket.start] at this; show k.val=13; omega)
+  have k13:k=⟨19,by decide⟩:=Fin.ext (by have := ek; simp only [StairPacket.start] at this; show k.val=19; omega)
   subst k13
   have cut:=OrdinaryChainG.exitCut L.exitBridge d x raw s g sg pg ps pre
   obtain ⟨bl,bu,bg,bn,bf,bu',bp,r20,r21,r22⟩:=L.exitBridge
-  let z:=unsigned 270 x p
-  have short:min z.u z.v<2^121:=true_small x p 270 (lt_trans good.small good.cap) good.cap (by decide)
-  have old:=LeaveJ.Admission.actualNumbers ⟨12,by decide⟩ (by decide) (by decide) x p good
-  have eq:farAt 121 270 x p=(3*2^137≤z.u+z.v):=by
+  let z:=unsigned 360 x p
+  have short:min z.u z.v<2^76:=true_small x p 360 (lt_trans good.small good.cap) good.cap (by decide)
+  have old:=LeaveJ.Admission.actualNumbers ⟨18,by decide⟩ (by decide) (by decide) x p good
+  have eq:farAt 76 360 x p=(3*2^92≤z.u+z.v):=by
     apply propext;unfold farAt Shadow.far Shadow.high Shadow.limb;exact Nat.le_div_iff_mul_le (by positivity)
   have facts:=pre.facts
-  have mode:s.basis 1701=decide (Shadow.far 129 15 (unsigned 255 x p)):=by rw [←r20]; exact facts.far
-  have side:s.basis 1702=(decide (Shadow.far 129 15 (unsigned 255 x p)) &&
-      StairArchiveTrace.afterFlags (decide ((unsigned 255 x p).v<(unsigned 255 x p).u))
-        ((physicalCells ArchiveBoundary270.sourceIdx s).take 5)):=by rw [←r21]; exact facts.suffix
-  have cross:s.basis 1703=(decide (Shadow.far 129 15 (unsigned 255 x p)) &&
-      HighBankSum.cross (LeaveJ.TrueMiddle.d ⟨12,by decide⟩ (unsigned 255 x p))):=by rw [←r22]; exact facts.crossed
-  have last:=NativePack270.selected_from_domain d x good.nonzero good.small raw s m pre.domain z short g sg
-    (readInput 270 x p raw g sg pre.input) (by simpa only [eq] using cut) (unsigned 255 x p) pg ps _
+  have mode:s.basis 1656=decide (Shadow.far 84 15 (unsigned 345 x p)):=by rw [←r20]; exact facts.far
+  have side:s.basis 1657=(decide (Shadow.far 84 15 (unsigned 345 x p)) &&
+      StairArchiveTrace.afterFlags (decide ((unsigned 345 x p).v<(unsigned 345 x p).u))
+        ((physicalCells ArchiveBoundary360.sourceIdx s).take 5)):=by rw [←r21]; exact facts.suffix
+  have cross:s.basis 1658=(decide (Shadow.far 84 15 (unsigned 345 x p)) &&
+      HighBankSum.cross (LeaveJ.TrueMiddle.d ⟨18,by decide⟩ (unsigned 345 x p))):=by rw [←r22]; exact facts.crossed
+  have last:=NativePack360.selected_from_domain d x good.nonzero good.small raw s m pre.domain z short g sg
+    (readInput 360 x p raw g sg pre.input) (by simpa only [eq] using cut) (unsigned 345 x p) pg ps _
     old.odd old.small facts.records mode side cross
-  have canon:signedAt 255 x p pg ps=WideReference.canonical 255 x p:=pre.pastCanonical
+  have canon:signedAt 345 x p pg ps=WideReference.canonical 345 x p:=pre.pastCanonical
   unfold signedAt at canon
   have cert:=last.2.1
   dsimp only at cert
   rw [canon] at cert
   exact ⟨cert.1,cert.2.1,kept_frame _ _ _ _ cert.2.2⟩
 
-theorem keys_eq (x p b:Nat) (hb:2+b<23) :
-    StockRowVectorW.keys ⟨2,by decide⟩ x p b=value x p (start ⟨2+b,hb⟩) (sbP (start ⟨2+b,hb⟩))
-      (StockRowVectorW.crossW ⟨2+b,hb⟩) := by
-  have e:start (⟨2,by decide⟩:Fin 23)+15*b=start ⟨2+b,hb⟩:=by simp only [StairPacket.start]; omega
+theorem keys_eq (x p b:Nat) (hb:3+b<23) :
+    StockRowVectorW.keys ⟨3,by decide⟩ x p b=value x p (start ⟨3+b,hb⟩) (sbP (start ⟨3+b,hb⟩))
+      (StockRowVectorW.crossW ⟨3+b,hb⟩) := by
+  have e:start (⟨3,by decide⟩:Fin 23)+15*b=start ⟨3+b,hb⟩:=by simp only [StairPacket.start]; omega
   simp only [StockRowVectorW.keys,dif_pos hb]
   rw [e]
 
-/-- The window's strong chain (dadon's `StockStrongChain.result` at 105, 10 keys). -/
+/-- The window's strong chain (dadon's `StockStrongChain.result` at 120, 16 keys). -/
 theorem resultW (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) :
-    let start0:=pullState (OB5.sig 104) raw
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) :
+    let start0:=pullState (OB5.sig 119) raw
     let out:=run (forward45plus1 d) m start0
-    out.phase=raw.phase ∧ StockRowVectorW.final ⟨2,by decide⟩ ⟨12,by decide⟩ ArchiveBoundary270.codePorts d x p out ∧
+    out.phase=raw.phase ∧ StockRowVectorW.final ⟨3,by decide⟩ ⟨18,by decide⟩ ArchiveBoundary360.codePorts d x p out ∧
       ∀n,run (reverse45plus1 d) n out=start0 := by
   have L:=StockWindowW.leaves
-  have bl:blockOf (exitTick WindowParams.first WindowParams.rest)=13:=by rw [exitTick_ship]; rfl
+  have bl:blockOf (exitTick WindowParams.first WindowParams.rest)=19:=by rw [exitTick_ship]; rfl
   have lastC:Checked (exitF WindowParams.params d (exitTick WindowParams.first WindowParams.rest)).flatten
       (exitR WindowParams.params d (exitTick WindowParams.first WindowParams.rest)).flatten
       (ReadyW d x p (exitTick WindowParams.first WindowParams.rest)) (LastS d x p):=by
@@ -9530,29 +11165,29 @@ theorem resultW (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
   obtain ⟨ph,⟨⟨_,lastKey⟩,saved⟩,undo⟩:=strong start0 m ⟨raw,stage,rfl⟩
   refine ⟨ph,?_,undo⟩
   intro b hb
-  change 2+b ≤ 12 at hb
-  have lt:2+b<23:=by omega
+  change 3+b ≤ 18 at hb
+  have lt:3+b<23:=by omega
   rw [keys_eq x p b lt]
   unfold ArchiveStockRows.bankPorts
-  by_cases h:(⟨2,by decide⟩:Fin 23).val+b<(⟨12,by decide⟩:Fin 23).val
+  by_cases h:(⟨3,by decide⟩:Fin 23).val+b<(⟨18,by decide⟩:Fin 23).val
   · rw [dif_pos h]
-    change 2+b < 12 at h
-    exact saved ⟨2+b,lt⟩ (by show 2 ≤ 2+b; omega) (by rw [bl]; show 2+b+2 ≤ 13; omega)
+    change 3+b < 18 at h
+    exact saved ⟨3+b,lt⟩ (by show 3 ≤ 3+b; omega) (by rw [bl]; show 3+b+2 ≤ 19; omega)
   · rw [dif_neg h]
-    change ¬(2+b < 12) at h
-    have e:(⟨2+b,lt⟩:Fin 23)=⟨12,by decide⟩:=Fin.ext (by show 2+b=12; omega)
+    change ¬(3+b < 18) at h
+    have e:(⟨3+b,lt⟩:Fin 23)=⟨18,by decide⟩:=Fin.ext (by show 3+b=18; omega)
     rw [e]
-    have s12:start (⟨12,by decide⟩:Fin 23)=255:=rfl
-    have b12:sbP 255=129:=by decide
+    have s12:start (⟨18,by decide⟩:Fin 23)=345:=rfl
+    have b12:sbP 345=84:=by decide
     rw [s12,b12]
     exact lastKey
 
 /-- dadon's name: the ship's strong chain. -/
 theorem result (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) :
-    let start0:=pullState (OB5.sig 104) raw
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) :
+    let start0:=pullState (OB5.sig 119) raw
     let out:=run (forward45plus1 d) m start0
-    out.phase=raw.phase ∧ StockRowVectorW.final ⟨2,by decide⟩ ⟨12,by decide⟩ ArchiveBoundary270.codePorts d x p out ∧
+    out.phase=raw.phase ∧ StockRowVectorW.final ⟨3,by decide⟩ ⟨18,by decide⟩ ArchiveBoundary360.codePorts d x p out ∧
       ∀n,run (reverse45plus1 d) n out=start0 :=
   resultW d x good raw m stage
 
@@ -9562,8 +11197,8 @@ end
 section
 namespace ECDSAAdd.Entrant.StairPacket.StockArchiveReference
 open Arithmetic MappedCompressed WideReference
-/-- The ship's stock reference (dadon's `common` at 225..270, now 105..270). -/
-def common (d:Bool) (raw:State):State:=StockArchiveReferenceW.common 105 11 d raw
+/-- The ship's stock reference (dadon's `common` at 225..270, now 120..270). -/
+def common (d:Bool) (raw:State):State:=StockArchiveReferenceW.common 120 16 d raw
 end ECDSAAdd.Entrant.StairPacket.StockArchiveReference
 
 namespace ECDSAAdd.Entrant.StairPacket.StockArchiveBanks
@@ -9572,23 +11207,23 @@ set_option maxRecDepth 16000
 set_option maxHeartbeats 4000000
 set_option linter.unusedVariables false
 attribute [local irreducible] run span
-/-- The ship's banks: bank `b` is block `2+b`'s archive, bank 9 the exit archive. -/
-abbrev Bank := Fin 11
-def j1 : Fin 23 := ⟨2,by decide⟩
-def jn : Fin 23 := ⟨12,by decide⟩
-def ports (b:Bank):Ports:=ArchiveStockRows.bankPorts j1 jn ArchiveBoundary270.codePorts b.val
+/-- The ship's banks: bank `b` is block `3+b`'s archive, bank 15 the exit archive. -/
+abbrev Bank := Fin 16
+def j1 : Fin 23 := ⟨3,by decide⟩
+def jn : Fin 23 := ⟨18,by decide⟩
+def ports (b:Bank):Ports:=ArchiveStockRows.bankPorts j1 jn ArchiveBoundary360.codePorts b.val
 def siteAt (b:Bank) (j:Fin 16):Wire:=ports b ⟨j.val,by omega⟩
-def tick (b:Bank):Nat:=105+15*b.val
-def archives:List Wire:=StockWindowGeo.archives 105 11
-def Same (a b:State):Prop:=ArchiveStockSuffixW.Same 105 11 a b
+def tick (b:Bank):Nat:=120+15*b.val
+def archives:List Wire:=StockWindowGeo.archives 120 16
+def Same (a b:State):Prop:=ArchiveStockSuffixW.Same 120 16 a b
 def nativeAt (d:Bool) (b:Bank) (r:Nat) (s:State):Prop:=StockArchiveBanksW.nativeAt (siteAt b) d r s
 
-theorem exitCells : ∀j:Fin 16,ArchiveBoundary270.codePorts ⟨j.val,by omega⟩=
+theorem exitCells : ∀j:Fin 16,ArchiveBoundary360.codePorts ⟨j.val,by omega⟩=
     (Partial.cellsRestoreP (start jn+15)).getD j 0 := by decide +kernel
-theorem site_eq (b:Bank) (j:Fin 16) : siteAt b j=StockWindowGeo.bankSite 105 b.val j :=
-  StockArchiveBanksW.site_eq j1 jn ArchiveBoundary270.codePorts exitCells b.val (by simp only [j1,jn]; omega) j
+theorem site_eq (b:Bank) (j:Fin 16) : siteAt b j=StockWindowGeo.bankSite 120 b.val j :=
+  StockArchiveBanksW.site_eq j1 jn ArchiveBoundary360.codePorts exitCells b.val (by simp only [j1,jn]; omega) j
 theorem mem (b:Bank) (j:Fin 16) : siteAt b j∈archives := by
-  rw [site_eq]; exact StockWindowGeo.bank_mem 105 11 b.val b.isLt j
+  rw [site_eq]; exact StockWindowGeo.bank_mem 120 16 b.val b.isLt j
 theorem bank_rep (q:Wire) (h:q∈archives) : ∃(b:Bank)(j:Fin 16),siteAt b j=q := by
   simp only [archives,StockWindowGeo.archives,List.mem_flatMap,List.mem_range,List.mem_map,List.mem_finRange,
     true_and] at h
@@ -9602,13 +11237,13 @@ structure Paired (d:Bool) (x:Nat) (a s:State) (rows:Bank→Nat):Prop where
   stock:∀b,nativeAt d b (rows b) s
 
 theorem Paired.ofW {d x a s} {rows:Nat→Nat}
-    (h:StockArchiveBanksW.Paired j1 jn ArchiveBoundary270.codePorts 11 d x a s rows) :
+    (h:StockArchiveBanksW.Paired j1 jn ArchiveBoundary360.codePorts 16 d x a s rows) :
     Paired d x a s (fun b=>rows b.val) :=
   ⟨h.equality,fun b=>h.labels b.val b.isLt,fun b=>h.custom b.val b.isLt,fun b=>h.stock b.val b.isLt⟩
 
 theorem Paired.through {d x a s rows} (pair:Paired d x a s rows) (P:Program)
     (off:∀q∈archives,q∉wires P) (m:List Bool):Paired d x (run P m a) (run P m s) rows:=by
-  have h:=ArchiveStockSuffixW.independent 105 11 P off m a s pair.equality
+  have h:=ArchiveStockSuffixW.independent 120 16 P off m a s pair.equality
   refine ⟨h.1,pair.labels,?_,?_⟩
   · intro b j
     exact (h.2 (siteAt b j) (mem b j)).trans (pair.custom b j)
@@ -9616,21 +11251,21 @@ theorem Paired.through {d x a s rows} (pair:Paired d x a s rows) (P:Program)
     exact (run_preserves_outside P m s (siteAt b j) (off _ (mem b j))).trans (pair.stock b j)
 
 /-- `ArchiveStockSuffix.safe` for the ship's banks. -/
-theorem safe (d:Bool) (i n:Nat) (lo:271 ≤ i) (hi:i+n ≤ 512) (q:Wire) (mem:q∈archives) :
+theorem safe (d:Bool) (i n:Nat) (lo:361 ≤ i) (hi:i+n ≤ 512) (q:Wire) (mem:q∈archives) :
     q∉wires (Rolling1588TickGap.forward d i n) ∧ q∉wires (Rolling1588.reverse d i n) :=
-  ArchiveStockSuffixW.safe 105 11 270 (by decide) rfl (by decide) (by decide) d i n lo hi q mem
+  ArchiveStockSuffixW.safe 120 16 360 (by decide) rfl (by decide) (by decide) d i n lo hi q mem
 end ECDSAAdd.Entrant.StairPacket.StockArchiveBanks
 
 namespace ECDSAAdd.Entrant.StairPacket.StockRowVector
 open Arithmetic MappedCompressed Secp256k1 WideReference StockArchiveBanks
-/-- The ship's key-selected rows (bank `b` = block `2+b`). -/
+/-- The ship's key-selected rows (bank `b` = block `3+b`). -/
 noncomputable def rows (x p:Nat) (b:Bank):Nat:=StockRowVectorW.rows j1 x p b.val
 theorem binding (d:Bool) (x:Nat) (good:Bounds x p) (raw a:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis)
-    (stored:StockRowVectorW.final j1 jn ArchiveBoundary270.codePorts d x p a)
-    (same:Same a (run (Rolling1588TickGap.forward d 105 166) m (pullState (OB5.sig 104) raw))) :
-    Paired d x a (run (Rolling1588TickGap.forward d 105 166) m (pullState (OB5.sig 104) raw)) (rows x p) :=
-  Paired.ofW (StockRowVectorW.binding j1 jn ArchiveBoundary270.codePorts exitCells 11 rfl (by decide) d x good raw a m
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis)
+    (stored:StockRowVectorW.final j1 jn ArchiveBoundary360.codePorts d x p a)
+    (same:Same a (run (Rolling1588TickGap.forward d 120 241) m (pullState (OB5.sig 119) raw))) :
+    Paired d x a (run (Rolling1588TickGap.forward d 120 241) m (pullState (OB5.sig 119) raw)) (rows x p) :=
+  Paired.ofW (StockRowVectorW.binding j1 jn ArchiveBoundary360.codePorts exitCells 16 rfl (by decide) d x good raw a m
     stage stored same)
 end ECDSAAdd.Entrant.StairPacket.StockRowVector
 
@@ -9638,9 +11273,9 @@ namespace ECDSAAdd.Entrant.StairPacket.StockBaseline
 open Arithmetic MappedCompressed WideReference Secp256k1 StockArchiveBanks
 /-- dadon's `comparison` for the ship. -/
 theorem comparison (d:Bool) (x:Nat) (good:Bounds x p) (s a:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 s.basis) (results:ArchiveStockRows.Final d x p a) :
-    Same (run (Rolling1588TickGap.forward d 105 166) m (pullState (OB5.sig 104) s)) (StockArchiveReference.common d s) :=
-  StockBaselineW.comparison (j1:=⟨2,by decide⟩) (jn:=⟨12,by decide⟩) 11 rfl (by decide) d x good s a m stage results
+    (stage:Rolling1588.Integer.Stage base d x p 120 s.basis) (results:ArchiveStockRows.Final d x p a) :
+    Same (run (Rolling1588TickGap.forward d 120 241) m (pullState (OB5.sig 119) s)) (StockArchiveReference.common d s) :=
+  StockBaselineW.comparison (j1:=⟨3,by decide⟩) (jn:=⟨18,by decide⟩) 16 rfl (by decide) d x good s a m stage results
 end ECDSAAdd.Entrant.StairPacket.StockBaseline
 end
 -- ==== end build-main2 ship API ====
@@ -10111,9 +11746,9 @@ private theorem singleton (d:Bool) (j:Nat) (hi:j+1≤102):GoodP (packet d j):=by
   change GoodP (StairHostsSchedule.hostedGroup hostPlan d 0 j 1) at pass
   rw [distribute] at pass
   cases d <;> simpa only [distributed,PacketSequence.program,if_true,if_false,Bool.false_eq_true,List.append_nil,List.nil_append] using pass
-private theorem hook (j:Nat) (hj:j∈[22,25,28,31,34,37,40,43,46,49,52]) (op:Stage):GoodP (fieldHook j op):=by
+private theorem hook (j:Nat) (hj:j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) (op:Stage):GoodP (fieldHook j op):=by
   have span:j∈List.range' 1 83:=by simp only [List.mem_cons,List.not_mem_nil,or_false] at hj;apply List.mem_range'_1.mpr;omega
-  have table:∀(j:Nat),j∈[22,25,28,31,34,37,40,43,46,49,52]→∀q∈fieldSites j,16 ≤ q ∧ q < 2330:=by decide +kernel
+  have table:∀(j:Nat),j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]→∀q∈fieldSites j,16 ≤ q ∧ q < 2330:=by decide +kernel
   intro q hit
   rw [fieldHook,renameProgram_support] at hit
   obtain ⟨w,hw,rfl⟩:=Finset.mem_image.mp hit
@@ -10126,7 +11761,7 @@ private theorem hook (j:Nat) (hj:j∈[22,25,28,31,34,37,40,43,46,49,52]) (op:Sta
     exact base_mem_caller _ (Or.inl (by omega))
   have yes:=toCaller _ pos
   simpa only [fieldPort,List.getElem?_eq_getElem lt,Option.getD_some] using yes
-private theorem pair (d:Bool) (j:Nat) (hj:j∈[22,25,28,31,34,37,40,43,46,49,52]) (hi:j≤83):GoodP (ten j (!d)):=by
+private theorem pair (d:Bool) (j:Nat) (hj:j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) (hi:j≤83):GoodP (ten j (!d)):=by
   have here:=singleton d j (by omega)
   have next:=singleton d (j+1) (by omega)
   have a:GoodP (first j (!d)):=by cases d <;> first | exact here | exact next
@@ -10134,29 +11769,43 @@ private theorem pair (d:Bool) (j:Nat) (hj:j∈[22,25,28,31,34,37,40,43,46,49,52]
   exact app (hook j hj _) (app a (app (hook j hj _) (app b (hook j hj _))))
 theorem group84_good (d:Bool):GoodP (group84 d):=by
   have ord {a b:Program} (x:GoodP a) (y:GoodP b):GoodP (ordered d a b):=by cases d <;> first | exact app x y | exact app y x
-  exact ord (ordinary d 1 21 (by decide))
-    (ord (pair d 22 (by decide) (by decide))
-    (ord (ordinary d 24 1 (by decide))
-    (ord (pair d 25 (by decide) (by decide))
-    (ord (ordinary d 27 1 (by decide))
-    (ord (pair d 28 (by decide) (by decide))
-    (ord (ordinary d 30 1 (by decide))
-    (ord (pair d 31 (by decide) (by decide))
-    (ord (ordinary d 33 1 (by decide))
-    (ord (pair d 34 (by decide) (by decide))
-    (ord (ordinary d 36 1 (by decide))
-    (ord (pair d 37 (by decide) (by decide))
-    (ord (ordinary d 39 1 (by decide))
-    (ord (pair d 40 (by decide) (by decide))
-    (ord (ordinary d 42 1 (by decide))
-    (ord (pair d 43 (by decide) (by decide))
-    (ord (ordinary d 45 1 (by decide))
-    (ord (pair d 46 (by decide) (by decide))
-    (ord (ordinary d 48 1 (by decide))
-    (ord (pair d 49 (by decide) (by decide))
-    (ord (ordinary d 51 1 (by decide))
-    (ord (pair d 52 (by decide) (by decide))
-    (ordinary d 54 31 (by decide)))))))))))))))))))))))
+  have og (j n:Nat) (hi:j+n≤102):GoodP (ogroup d j n):=
+    Finset.Subset.trans (WindowFieldCosts.ot_ogroup_sub d j n) (ordinary d j n hi)
+  have ot (j:Nat) (hj:j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) (hi:j≤83):GoodP (oten j (!d)):=
+    Finset.Subset.trans (WindowFieldCosts.ot_oten_sub j (!d)) (pair d j hj hi)
+  exact ord (og 1 24 (by decide))
+    (ord (ot 25 (by decide) (by decide))
+    (ord (og 27 1 (by decide))
+    (ord (ot 28 (by decide) (by decide))
+    (ord (og 30 1 (by decide))
+    (ord (ot 31 (by decide) (by decide))
+    (ord (og 33 1 (by decide))
+    (ord (ot 34 (by decide) (by decide))
+    (ord (og 36 1 (by decide))
+    (ord (ot 37 (by decide) (by decide))
+    (ord (og 39 1 (by decide))
+    (ord (ot 40 (by decide) (by decide))
+    (ord (og 42 1 (by decide))
+    (ord (ot 43 (by decide) (by decide))
+    (ord (og 45 1 (by decide))
+    (ord (ot 46 (by decide) (by decide))
+    (ord (og 48 1 (by decide))
+    (ord (ot 49 (by decide) (by decide))
+    (ord (og 51 1 (by decide))
+    (ord (ot 52 (by decide) (by decide))
+    (ord (og 54 1 (by decide))
+    (ord (ot 55 (by decide) (by decide))
+    (ord (og 57 1 (by decide))
+    (ord (ot 58 (by decide) (by decide))
+    (ord (og 60 1 (by decide))
+    (ord (ot 61 (by decide) (by decide))
+    (ord (og 63 1 (by decide))
+    (ord (ot 64 (by decide) (by decide))
+    (ord (og 66 1 (by decide))
+    (ord (ot 67 (by decide) (by decide))
+    (ord (og 69 1 (by decide))
+    (ord (ot 70 (by decide) (by decide))
+    (og 72 13 (by decide)))))))))))))))))))))))))))))))))
 
 theorem entryTailPrefix_ours :
     wires (WindowCallerCosts.entryTailPrefix StairConcreteAssembly.checkpointPrimitives) ⊆ callerDomain := by
@@ -10235,11 +11884,11 @@ set_option maxRecDepth 16000
 set_option maxHeartbeats 2000000
 
 def openWalk (d:Bool) (tail:Nat):Program:=Stair44Kernel.firstR++WindowWalkCosts.forward d tail
-def divBefore:Program:=renameProgram phaseHost (openWalk true 154++checkpointPrimitives.firstPack)++WindowParityCaller.entryFieldHosted checkpointPrimitives
-def divAfter:Program:=Stair44Outer.reverseEnd++(WindowWalkCosts.backward false 235++renameProgram first (FrontierEntry1591NativeH.inverse base))
+def divBefore:Program:=renameProgram phaseHost (openWalk true 64++checkpointPrimitives.firstPack)++WindowParityCaller.entryFieldHosted checkpointPrimitives
+def divAfter:Program:=Stair44Outer.reverseEnd++(WindowWalkCosts.backward false 145++renameProgram first (FrontierEntry1591NativeH.inverse base))
 def division:Program:=divBefore++renameProgram phaseHost divAfter
-def mulBefore:Program:=(renameProgram phaseHost (openWalk false 234++Stair44Outer.forwardEnd)++WindowParityCaller.exitFieldHosted checkpointPrimitives)++renameProgram phaseHost checkpointPrimitives.firstUnpack
-def mulAfter (k:Nat):Program:=WindowWalkCosts.backward true 154++renameProgram rawX (ParityXExitInverse23Kernel.x1N k)
+def mulBefore:Program:=(renameProgram phaseHost (openWalk false 144++Stair44Outer.forwardEnd)++WindowParityCaller.exitFieldHosted checkpointPrimitives)++renameProgram phaseHost checkpointPrimitives.firstUnpack
+def mulAfter (k:Nat):Program:=WindowWalkCosts.backward true 64++renameProgram rawX (ParityXExitInverse23Kernel.x1N k)
 def multiplication (k:Nat):Program:=mulBefore++renameProgram phaseHost (mulAfter k)
 
 theorem div_split : FrontierEntry1591Callers.entry division layout = Stair44Splits.tick ++ WindowParityCaller.divide := by
@@ -10400,11 +12049,16 @@ set_option maxHeartbeats 4000000
 private theorem localSite {q:Nat} (h:16 ≤ q ∧ q < 2330):q∈callerDomain:=by
   have e:base (q-16)=q:=by simp only [base,Wire];omega
   exact e ▸ base_mem_caller _ (Or.inl (by omega))
-private theorem setup:GoodP WindowFieldParity.setup:=by
-  apply wires_sub_of_parts _ _ glue_own.2.1
-  have table:StairWireCheck.allSites (fun q=>decide (16 ≤ q ∧ q < 2330)) WindowFieldParity.correction=true:=by decide +kernel
+private theorem bankOK (j:Nat) (hj:j∈[25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]) : wires (WindowFieldParity.bankCorrection j) ⊆ callerDomain:=by
+  have table:StairWireCheck.allSites (fun q=>decide (16 ≤ q ∧ q < 2330)) (WindowFieldParity.bankCorrection j)=true:=by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hj
+    rcases hj with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide +kernel
   intro q h
   exact localSite (of_decide_eq_true (StairWireCheck.allSites_sound _ _ table q h))
+private theorem setup:GoodP WindowFieldParity.setup:=by
+  apply wires_sub_of_parts _ _ glue_own.2.1
+  unfold WindowFieldParity.correction
+  exact (wires_sub_of_parts _ _ (bankOK 25 (by decide)) (wires_sub_of_parts _ _ (bankOK 28 (by decide)) (wires_sub_of_parts _ _ (bankOK 31 (by decide)) (wires_sub_of_parts _ _ (bankOK 34 (by decide)) (wires_sub_of_parts _ _ (bankOK 37 (by decide)) (wires_sub_of_parts _ _ (bankOK 40 (by decide)) (wires_sub_of_parts _ _ (bankOK 43 (by decide)) (wires_sub_of_parts _ _ (bankOK 46 (by decide)) (wires_sub_of_parts _ _ (bankOK 49 (by decide)) (wires_sub_of_parts _ _ (bankOK 52 (by decide)) (wires_sub_of_parts _ _ (bankOK 55 (by decide)) (wires_sub_of_parts _ _ (bankOK 58 (by decide)) (wires_sub_of_parts _ _ (bankOK 61 (by decide)) (wires_sub_of_parts _ _ (bankOK 64 (by decide)) (wires_sub_of_parts _ _ (bankOK 67 (by decide)) (bankOK 70 (by decide)))))))))))))))))
 
 theorem entryFieldHosted_corrected :
     wires (WindowParityCaller.entryFieldHosted StairConcreteAssembly.checkpointPrimitives) ⊆ callerDomain := by
@@ -10433,16 +12087,16 @@ namespace ECDSAAdd.Entrant.StairPacket.StockNativeCompare
 open Arithmetic MappedCompressed WideReference Secp256k1
 attribute [local irreducible] run
 theorem common_phase (d:Bool) (x:Nat) (good:Bounds x p) (s:State)
-    (stage:Rolling1588.Integer.Stage base d x p 105 s.basis) :
-    (StockArchiveReferenceW.common 105 11 d s).phase=s.phase := by
+    (stage:Rolling1588.Integer.Stage base d x p 120 s.basis) :
+    (StockArchiveReferenceW.common 120 16 d s).phase=s.phase := by
   have final:=(StockWindowChain.result d x good s [] stage).2.1
-  have same:=StockBaselineW.comparison (j1:=⟨2,by decide⟩) (jn:=⟨12,by decide⟩) 11 rfl (by decide) d x good s _ [] stage final
-  exact same.1.symm.trans (StockBaseline.forward_phase d x good 105 166 (by decide) (by decide) s [] stage)
+  have same:=StockBaselineW.comparison (j1:=⟨3,by decide⟩) (jn:=⟨18,by decide⟩) 16 rfl (by decide) d x good s _ [] stage final
+  exact same.1.symm.trans (StockBaseline.forward_phase d x good 120 241 (by decide) (by decide) s [] stage)
 
 theorem normalized (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) :
-    ArchiveStockSuffixW.Same 105 11 (run (Partial.forward45plus1 d) m (pullState (OB5.sig 104) raw))
-      (StockArchiveReferenceW.common 105 11 d raw) :=
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) :
+    ArchiveStockSuffixW.Same 120 16 (run (Partial.forward45plus1 d) m (pullState (OB5.sig 119) raw))
+      (StockArchiveReferenceW.common 120 16 d raw) :=
   ⟨(StockWindowChain.result d x good raw m stage).1.trans (common_phase d x good raw stage).symm,
     OrdinaryChainG.wiresShip d x good raw m stage⟩
 end ECDSAAdd.Entrant.StairPacket.StockNativeCompare
@@ -10456,40 +12110,40 @@ open Arithmetic MappedCompressed Secp256k1 WideReference StockArchiveBanks Stock
 set_option maxRecDepth 9500
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run Rolling1588TickGap.forward Rolling1588.Integer.regularForward measurementCount Partial.forward45plus1
-def NewNormalized (d:Bool) (x:Nat):Prop:=∀(raw:State)(m:List Bool),Rolling1588.Integer.Stage base d x p 105 raw.basis →
-    Same (run (Partial.forward45plus1 d) m (pullState (OB5.sig 104) raw)) (StockArchiveReference.common d raw)
+def NewNormalized (d:Bool) (x:Nat):Prop:=∀(raw:State)(m:List Bool),Rolling1588.Integer.Stage base d x p 120 raw.basis →
+    Same (run (Partial.forward45plus1 d) m (pullState (OB5.sig 119) raw)) (StockArchiveReference.common d raw)
 
 theorem steady (d:Bool) (x:Nat) (good:Bounds x p) (i n:Nat) (lo:0 < i) (hi:i+n≤512) (s:State) (u v:List Bool) (stage:Rolling1588.Integer.Stage base d x p i s.basis):
     run (Rolling1588TickGap.forward d i n) u (pullState (OB5.sig (i-1)) s)=run (Rolling1588TickGap.forward d i n) v (pullState (OB5.sig (i-1)) s):=
   (StockDelayed.window d x good.nonzero good.small i n lo hi s u stage).trans
     (StockDelayed.window d x good.nonzero good.small i n lo hi s v stage).symm
-theorem suffix_independent (d:Bool) (n x:Nat) (good:Bounds x p) (bound:271+n≤512) (s:State)
-    (stage:Rolling1588.Integer.Stage base d x p 105 s.basis) (u v y z:List Bool):
-    let t:=pullState (OB5.sig 104) s
-    let old:=Rolling1588TickGap.forward d 105 166
-    let tail:=Rolling1588TickGap.forward d 271 n
+theorem suffix_independent (d:Bool) (n x:Nat) (good:Bounds x p) (bound:361+n≤512) (s:State)
+    (stage:Rolling1588.Integer.Stage base d x p 120 s.basis) (u v y z:List Bool):
+    let t:=pullState (OB5.sig 119) s
+    let old:=Rolling1588TickGap.forward d 120 241
+    let tail:=Rolling1588TickGap.forward d 361 n
     run tail u (run old v t)=run tail y (run old z t):=by
-  let t:=pullState (OB5.sig 104) s
-  let A:=Rolling1588TickGap.forward d 105 166
-  let B:=Rolling1588TickGap.forward d 271 n
+  let t:=pullState (OB5.sig 119) s
+  let A:=Rolling1588TickGap.forward d 120 241
+  let B:=Rolling1588TickGap.forward d 361 n
   let mix (v u:List Bool):=FlagEntry.pfx (measurementCount A) v++u
-  have eq:=steady d x good 105 (166+n) (by decide) (by omega) s (mix v u) (mix z y) stage
-  rw [StairRestSupport.forward_append d 166 105 n] at eq
+  have eq:=steady d x good 120 (241+n) (by decide) (by omega) s (mix v u) (mix z y) stage
+  rw [StairRestSupport.forward_append d 241 120 n] at eq
   exact (Stair44PointSecond.joinRecords A B v u t).symm.trans (eq.trans (Stair44PointSecond.joinRecords A B z y t))
 
-theorem window (d:Bool) (n x:Nat) (good:Bounds x p) (bound:271+n≤512) (raw:State)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) (m stockTape:List Bool) (norm:NewNormalized d x):
-    let s:=pullState (OB5.sig 104) raw
-    Paired d x (run (forwardEnd d n) m s) (run (Rolling1588TickGap.forward d 105 (166+n)) stockTape s) (StockRowVector.rows x p):=by
-  let s:=pullState (OB5.sig 104) raw
+theorem window (d:Bool) (n x:Nat) (good:Bounds x p) (bound:361+n≤512) (raw:State)
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) (m stockTape:List Bool) (norm:NewNormalized d x):
+    let s:=pullState (OB5.sig 119) raw
+    Paired d x (run (forwardEnd d n) m s) (run (Rolling1588TickGap.forward d 120 (241+n)) stockTape s) (StockRowVector.rows x p):=by
+  let s:=pullState (OB5.sig 119) raw
   have result:=StockWindowChain.result d x good raw m stage
   have old:=StockBaseline.comparison d x good raw _ m stage result.2.1
   have new:=norm raw m stage
   have eq:Same _ _:=⟨new.1.trans old.1.symm,fun q off=>(new.2 q off).trans (old.2 q off).symm⟩
   have h:=StockRowVector.binding d x good raw _ m stage (StockStrongChain.result d x good raw m stage).2.1 eq
-  have onward:=h.through (Rolling1588TickGap.forward d 271 n) (fun q h=>(safe d 271 n (by decide) bound q h).1) (m.drop (measurementCount (Partial.forward45plus1 d)))
-  simp only [forwardEnd,StairRestSupport.forward_append d 166 105 n,run_append,run_take]
-  rw [←suffix_independent d n x good bound raw stage (m.drop (measurementCount (Partial.forward45plus1 d))) m (stockTape.drop (measurementCount (Rolling1588TickGap.forward d 105 166))) stockTape]
+  have onward:=h.through (Rolling1588TickGap.forward d 361 n) (fun q h=>(safe d 361 n (by decide) bound q h).1) (m.drop (measurementCount (Partial.forward45plus1 d)))
+  simp only [forwardEnd,StairRestSupport.forward_append d 241 120 n,run_append,run_take]
+  rw [←suffix_independent d n x good bound raw stage (m.drop (measurementCount (Partial.forward45plus1 d))) m (stockTape.drop (measurementCount (Rolling1588TickGap.forward d 120 241))) stockTape]
   exact onward
 end ECDSAAdd.Entrant.StairPacket.StockWalkWindow
 
@@ -10522,16 +12176,16 @@ theorem unplace {d x a s rows} (pair:Paired d x (pullState Stair44WalkMap.rest a
     rw [←fixed b j]
     exact pair.stock b j
 
-theorem old_split (d:Bool) (n:Nat):Stair44WalkRun.forward d (255+n)=
-    first d++renameProgram Stair44WalkMap.rest (Rolling1588TickGap.forward d 105 (166+n)):=by
-  have e:=StairRestSupport.forward_append d 89 16 (166+n)
-  change Rolling1588TickGap.forward d 16 (89+(166+n))=Rolling1588TickGap.forward d 16 89++Rolling1588TickGap.forward d 105 (166+n) at e
-  rw [show 255+n=89+(166+n) by omega]
+theorem old_split (d:Bool) (n:Nat):Stair44WalkRun.forward d (345+n)=
+    first d++renameProgram Stair44WalkMap.rest (Rolling1588TickGap.forward d 120 (241+n)):=by
+  have e:=StairRestSupport.forward_append d 104 16 (241+n)
+  change Rolling1588TickGap.forward d 16 (104+(241+n))=Rolling1588TickGap.forward d 16 104++Rolling1588TickGap.forward d 120 (241+n) at e
+  rw [show 345+n=104+(241+n) by omega]
   simp only [Stair44WalkRun.forward,first,e,renameProgram,List.map_append,List.append_assoc]
 
-theorem forward (d:Bool) (n x:Nat) (good:Bounds x p) (bound:271+n≤512) (s a:State) (m:List Bool)
+theorem forward (d:Bool) (n x:Nat) (good:Bounds x p) (bound:361+n≤512) (s a:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (input:pullState Stair44WalkMap.first a=s) (norm:NewNormalized d x):
-    Paired d x (run (WindowWalkCosts.forward d n) m a) (run (Stair44WalkRun.forward d (255+n)) m a) (StockRowVector.rows x p):=by
+    Paired d x (run (WindowWalkCosts.forward d n) m a) (run (Stair44WalkRun.forward d (345+n)) m a) (StockRowVector.rows x p):=by
   let t:=m.drop (measurementCount (first d))
   have rel:=window d n x good bound (regular d s m) (cut120 d x good s a m stage input).1 t t norm
   apply unplace
@@ -10547,13 +12201,29 @@ namespace ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 open Arithmetic MappedCompressed Secp256k1 StockArchiveBanks StairArchiveRelease WindowFieldMask
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3500000
-/-- Field bank of the ship's bank `b` (block `2+b`, start `5*groupId-5`): banks 25, 28, …, 52. -/
-def groupId (b:Bank):Nat:=22+3*b.val
+/-- Field bank of the ship's bank `b` (block `3+b`, start `5*groupId-5`): banks 25, 28, …, 52. -/
+def groupId (b:Bank):Nat:=25+3*b.val
 def parityPort (b:Bank) (i:Fin 16):Wire:=OB5.sig 511 (NewHistory5.payloadWire base (8*groupId b+i.val))
 theorem native_ports:∀(b:Bank)(i:Fin 16),parityPort b i=siteAt b i:=by decide +kernel
 theorem host_ports:∀(b:Bank)(i:Fin 16),Rolling1588Lifetime.phaseHost (siteAt b i)=siteAt b i:=by decide +kernel
 theorem field_ports:∀(b:Bank)(i:Fin 16),fieldPort (groupId b) i.val=siteAt b i:=by decide +kernel
-theorem whole:allBanks=archives.toFinset:=by decide +kernel
+theorem whole:allBanks=archives.toFinset:=by
+  ext q
+  rw [List.mem_toFinset,allBanks]
+  constructor
+  · intro h
+    obtain ⟨j,hj,hq⟩:=Finset.mem_biUnion.mp h
+    obtain ⟨b,rfl⟩:∃b:Bank,groupId b=j:=by
+      simp only [bankIds,Finset.mem_insert,Finset.mem_singleton] at hj
+      exact ⟨⟨(j-25)/3,by omega⟩,by show 25+3*((j-25)/3)=j; omega⟩
+    obtain ⟨i,hi,rfl⟩:=Finset.mem_image.mp hq
+    have hi':=Finset.mem_range.mp hi
+    rw [show fieldPort (groupId b) i=siteAt b ⟨i,hi'⟩ from field_ports b ⟨i,hi'⟩]
+    exact StockArchiveBanks.mem b _
+  · intro h
+    obtain ⟨b,i,rfl⟩:=StockArchiveBanks.bank_rep q h
+    have pick:∀b:Bank,groupId b∈bankIds:=by decide +kernel
+    exact Finset.mem_biUnion.mpr ⟨groupId b,pick b,Finset.mem_image.mpr ⟨i.val,Finset.mem_range.mpr i.isLt,field_ports b i⟩⟩
 theorem whole_iff (q:Wire):q∈allBanks ↔ q∈archives:=by rw [whole,List.mem_toFinset]
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
@@ -10631,13 +12301,13 @@ namespace ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 open Arithmetic MappedCompressed Secp256k1 StockArchiveBanks StairArchiveRelease WindowFieldMask CodecBitSliceVerify ArchivePortAction
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
-def fieldRows (r:Bank→Nat) (j:Nat):Nat:=r ⟨((j-22)/3)%11,Nat.mod_lt _ (by decide)⟩
+def fieldRows (r:Bank→Nat) (j:Nat):Nat:=r ⟨((j-25)/3)%16,Nat.mod_lt _ (by decide)⟩
 theorem rowsAt (r:Bank→Nat) (b:Bank):fieldRows r (groupId b)=r b:=by
   unfold fieldRows groupId
   congr 1
   apply Fin.ext
   have hb:=b.isLt
-  show ((22+3*b.val-22)/3)%11=b.val
+  show ((25+3*b.val-25)/3)%16=b.val
   omega
 theorem idAt : ∀j∈bankIds,∃b:Bank,groupId b=j:=by decide +kernel
 theorem enterCode (d:Bool) (j:Nat): (code d).take 16=(WindowFieldJourney.initialCode d j).take 16:=by
@@ -10667,31 +12337,31 @@ set_option maxHeartbeats 3000000
 attribute [local irreducible] run measurementCount Rolling1588TickGap.forward Rolling1588.reverse
   Rolling1588.Integer.regularForward Partial.forward45plus1 Partial.reverse45plus1
 
-def real (d:Bool) (raw:State):State:=run (Partial.forward45plus1 d) [] (pullState (OB5.sig 104) raw)
-def stock (d:Bool) (raw:State):State:=run (Rolling1588TickGap.forward d 105 166) [] (pullState (OB5.sig 104) raw)
+def real (d:Bool) (raw:State):State:=run (Partial.forward45plus1 d) [] (pullState (OB5.sig 119) raw)
+def stock (d:Bool) (raw:State):State:=run (Rolling1588TickGap.forward d 120 241) [] (pullState (OB5.sig 119) raw)
 theorem shadow (d:Bool) (x:Nat) (good:Bounds x p) (raw:State)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) (norm:NewNormalized d x):
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) (norm:NewNormalized d x):
     Paired d x (real d raw) (stock d raw) (StockRowVector.rows x p):=by
   have e:=norm raw [] stage
   have cmp:=StockBaseline.comparison d x good raw _ [] stage (StockWindowChain.result d x good raw [] stage).2.1
   exact StockRowVector.binding d x good raw _ [] stage (StockStrongChain.result d x good raw [] stage).2.1
     ⟨e.1.trans cmp.1.symm,fun q off=>(e.2 q off).trans (cmp.2 q off).symm⟩
 theorem candidate_undo (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis):
-    run (Partial.reverse45plus1 d) m (real d raw)=pullState (OB5.sig 104) raw:=
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis):
+    run (Partial.reverse45plus1 d) m (real d raw)=pullState (OB5.sig 119) raw:=
   (StockWindowChain.result d x good raw [] stage).2.2 m
 theorem stock_undo (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis):
-    run (Rolling1588.reverse d 105 166) m (stock d raw)=pullState (OB5.sig 104) raw:=
-  reverse_forward d x good 105 166 (by decide) (by decide) raw [] m stage
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis):
+    run (Rolling1588.reverse d 120 241) m (stock d raw)=pullState (OB5.sig 119) raw:=
+  reverse_forward d x good 120 241 (by decide) (by decide) raw [] m stage
 attribute [local irreducible] real stock poolEq
 theorem inner (d:Bool) (x:Nat) (good:Bounds x p) (raw a ref:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) (norm:NewNormalized d x)
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) (norm:NewNormalized d x)
     (pair:Paired d x a ref (StockRowVector.rows x p))
     (agree:poolEq ref (stock d raw)):
-    run (Partial.reverse45plus1 d) m a=run (Rolling1588.reverse d 105 166) m ref:=by
+    run (Partial.reverse45plus1 d) m a=run (Rolling1588.reverse d 120 241) m ref:=by
   have ghost:=shadow d x good raw stage norm
-  exact replay _ _ m a ref (real d raw) (stock d raw) _ (PartialSites.pool_partial d) (PartialSites.pool_old d 105 166 (by decide) (by decide))
+  exact replay _ _ m a ref (real d raw) (stock d raw) _ (PartialSites.pool_partial d) (PartialSites.pool_old d 120 241 (by decide) (by decide))
     (fun q off=>pair.equality.2 q (fun h=>off (archives_pool q h))) pair.equality.1 ghost.equality.1
     (paired_pool pair ghost agree) agree (candidate_undo d x good raw m stage) (stock_undo d x good raw m stage)
 
@@ -10722,18 +12392,18 @@ theorem tail_cancel (d:Bool) (x i h n:Nat) (good:Bounds x p) (lo:1 ≤ i) (bound
   have eq:=Rolling1588TickGap.forward_gen d x good.nonzero good.small h i lo cut raw [] stage
   exact transport _ _ _ _ _ eq (reverse_forward d x good (i+h) n (by omega) bound t [] m st)
 
-def backwards (d:Bool) (n:Nat):Program:=Rolling1588.reverse d 271 n++Partial.reverse45plus1 d
+def backwards (d:Bool) (n:Nat):Program:=Rolling1588.reverse d 361 n++Partial.reverse45plus1 d
 
-theorem result (d:Bool) (n x:Nat) (good:Bounds x p) (bound:271+n≤512) (raw a ref:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) (norm:NewNormalized d x)
+theorem result (d:Bool) (n x:Nat) (good:Bounds x p) (bound:361+n≤512) (raw a ref:State) (m:List Bool)
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) (norm:NewNormalized d x)
     (pair:Paired d x a ref (StockRowVector.rows x p))
-    (agree:poolEq ref (run (Rolling1588TickGap.forward d 105 (166+n)) [] (pullState (OB5.sig 104) raw))):
-    run (backwards d n) m a=run (Rolling1588.reverse d 105 (166+n)) m ref:=by
-  have h:=pair.through (Rolling1588.reverse d 271 n) (fun q hq=>(safe d 271 n (by decide) bound q hq).2) m
-  have pools:=pool_run (PartialSites.pool_old d 271 n (by decide) bound) agree m
-  simp only [StairRestSupport.forward_append d 166 105 n,run_append,run_take,List.drop_nil] at pools
-  rw [tail_cancel d x 105 166 n good (by decide) bound raw stage m] at pools
-  simp only [backwards,StairRestSupport.reverse_append d 166 105 n,run_append,run_take]
+    (agree:poolEq ref (run (Rolling1588TickGap.forward d 120 (241+n)) [] (pullState (OB5.sig 119) raw))):
+    run (backwards d n) m a=run (Rolling1588.reverse d 120 (241+n)) m ref:=by
+  have h:=pair.through (Rolling1588.reverse d 361 n) (fun q hq=>(safe d 361 n (by decide) bound q hq).2) m
+  have pools:=pool_run (PartialSites.pool_old d 361 n (by decide) bound) agree m
+  simp only [StairRestSupport.forward_append d 241 120 n,run_append,run_take,List.drop_nil] at pools
+  rw [tail_cancel d x 120 241 n good (by decide) bound raw stage m] at pools
+  simp only [backwards,StairRestSupport.reverse_append d 241 120 n,run_append,run_take]
   apply inner d x good raw _ _ _ stage norm h
   unfold stock
   exact pools
@@ -10821,22 +12491,22 @@ theorem pull {d x a s rows} (h:Paired d x a s rows):
     rw [StockPlacedWindow.fixed]
     exact h.stock b j
 def R (P:Program):Program:=renameProgram Stair44WalkMap.rest P
-def remaining (d:Bool):Program:=R (Rolling1588.reverse d 16 89)++renameProgram Stair44WalkMap.first (Rolling1588.reverse d 1 15)
+def remaining (d:Bool):Program:=R (Rolling1588.reverse d 16 104)++renameProgram Stair44WalkMap.first (Rolling1588.reverse d 1 15)
 theorem split (d:Bool) (n:Nat):WindowWalkCosts.backward d n=R (StockBackWindow.backwards d n)++remaining d:=by
   simp only [WindowWalkCosts.backward,StockBackWindow.backwards,R,remaining,renameProgram,List.map_append,List.append_assoc]
-theorem old_split (d:Bool) (n:Nat):Stair44WalkRun.backward d (255+n)=R (Rolling1588.reverse d 105 (166+n))++remaining d:=by
-  have e:=StairRestSupport.reverse_append d 89 16 (166+n)
-  change Rolling1588.reverse d 16 (89+(166+n))=Rolling1588.reverse d 105 (166+n)++Rolling1588.reverse d 16 89 at e
-  rw [show 255+n=89+(166+n) by omega]
+theorem old_split (d:Bool) (n:Nat):Stair44WalkRun.backward d (345+n)=R (Rolling1588.reverse d 120 (241+n))++remaining d:=by
+  have e:=StairRestSupport.reverse_append d 104 16 (241+n)
+  change Rolling1588.reverse d 16 (104+(241+n))=Rolling1588.reverse d 120 (241+n)++Rolling1588.reverse d 16 104 at e
+  rw [show 345+n=104+(241+n) by omega]
   simp only [remaining,Stair44WalkRun.backward,e,R,renameProgram,List.map_append,List.append_assoc]
 
-theorem backward (d:Bool) (n x:Nat) (good:Bounds x p) (bound:271+n≤512) (raw a ref:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 105 raw.basis) (norm:NewNormalized d x)
+theorem backward (d:Bool) (n x:Nat) (good:Bounds x p) (bound:361+n≤512) (raw a ref:State) (m:List Bool)
+    (stage:Rolling1588.Integer.Stage base d x p 120 raw.basis) (norm:NewNormalized d x)
     (pair:Paired d x a ref (StockRowVector.rows x p))
-    (agree:poolEq (pullState Stair44WalkMap.rest ref) (run (Rolling1588TickGap.forward d 105 (166+n)) [] (pullState (OB5.sig 104) raw))):
-    ∃old,run (WindowWalkCosts.backward d n) m a=run (Stair44WalkRun.backward d (255+n)) old ref:=by
+    (agree:poolEq (pullState Stair44WalkMap.rest ref) (run (Rolling1588TickGap.forward d 120 (241+n)) [] (pullState (OB5.sig 119) raw))):
+    ∃old,run (WindowWalkCosts.backward d n) m a=run (Stair44WalkRun.backward d (345+n)) old ref:=by
   let A:=R (StockBackWindow.backwards d n)
-  let B:=R (Rolling1588.reverse d 105 (166+n))
+  let B:=R (Rolling1588.reverse d 120 (241+n))
   let tail:=m.drop (measurementCount A)
   have eq:run A m a=run B m ref:=by
     apply MappedCompressed.pullState_perm_injective Stair44WalkMap.rest
@@ -10895,42 +12565,42 @@ attribute [local irreducible] run measurementCount Rolling1588TickGap.forward Ro
 theorem bounds (x:Nat) (nz:0 < x) (lt:x<p):Bounds x p:=by
   obtain ⟨h,odd,cap,cop⟩:=StackOB5.prime_facts x nz lt
   exact ⟨h,nz,odd,cap,by norm_num [p],lt,cop⟩
-theorem opened (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (bound:271+n≤512) (s a:State) (m:List Bool)
+theorem opened (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (bound:361+n≤512) (s a:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (input:pullState Stair44WalkMap.first a=s):
-    Paired d x (run (WindowWalkCosts.forward d n) m a) (run (Stair44WalkRun.forward d (255+n)) m a) (StockRowVector.rows x p):=
+    Paired d x (run (WindowWalkCosts.forward d n) m a) (run (Stair44WalkRun.forward d (345+n)) m a) (StockRowVector.rows x p):=
   StockPlacedWindow.forward d n x (bounds x nz lt) bound s a m stage input (StockNativeCompare.normalized d x (bounds x nz lt))
 
 theorem rest_pool (q:Wire) (h:q∈pool):Stair44WalkMap.rest q∈pool:=by
   simp only [Stair44WalkMap.rest,Stair44WalkMap.shared,Equiv.trans_apply,Equiv.swap_apply_def]
   split_ifs <;> first | exact h | exact List.mem_toFinset.mpr (OB5.base_pool _ (by decide))
-theorem fixed_old (d:Bool) (n x:Nat) (good:Bounds x p) (atCut:271+n∈[425,505,506]) (s:State)
+theorem fixed_old (d:Bool) (n x:Nat) (good:Bounds x p) (atCut:361+n∈[425,505,506]) (s:State)
     (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (m:List Bool):
-    let v:=run (Rolling1588TickGap.forward d 1 (270+n)) m s
+    let v:=run (Rolling1588TickGap.forward d 1 (360+n)) m s
     pullState Stair44WalkMap.rest v=v:=by
   let a:=pullState Stair44WalkMap.first.symm s
   have input:pullState Stair44WalkMap.first a=s:=Stair44PlacedHead.unpull Stair44WalkMap.first.symm s
-  have num:15+(255+n)=270+n:=by omega
-  have cut:1+(15+(255+n))∈[425,505,506]:=by simpa only [show 1+(15+(255+n))=271+n by omega] using atCut
-  have one:=Stair44WalkRun.forward_run d (255+n) x good.nonzero good.small s a m stage input
-  have two:=Stair44WalkCuts.forward_done d (255+n) x cut good.nonzero good.small s a m stage input
+  have num:15+(345+n)=360+n:=by omega
+  have cut:1+(15+(345+n))∈[425,505,506]:=by simpa only [show 1+(15+(345+n))=361+n by omega] using atCut
+  have one:=Stair44WalkRun.forward_run d (345+n) x good.nonzero good.small s a m stage input
+  have two:=Stair44WalkCuts.forward_done d (345+n) x cut good.nonzero good.small s a m stage input
   rw [two,num] at one
   exact one
 
 theorem decompose (d:Bool) (x n:Nat) (good:Bounds x p) (s:State) (m:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (bound:271+n≤512):
+    (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (bound:361+n≤512):
     let raw:=regular d s []
-    run (Rolling1588TickGap.forward d 1 (270+n)) m s=
-      run (Rolling1588TickGap.forward d 105 (166+n)) [] (pullState (OB5.sig 104) raw):=by
+    run (Rolling1588TickGap.forward d 1 (360+n)) m s=
+      run (Rolling1588TickGap.forward d 120 (241+n)) [] (pullState (OB5.sig 119) raw):=by
   have init:pullState (OB5.sig 0) s=s:=by
     apply State.extensionality _ s
     · rfl
     · funext q;exact congrArg s.basis (OB5.sig_zero q)
-  have same:=StockWalkWindow.steady d x good 1 (270+n) (by decide) (by omega) s m [] stage
+  have same:=StockWalkWindow.steady d x good 1 (360+n) (by decide) (by omega) s m [] stage
   rw [show 1-1=0 from rfl,init] at same
-  have cut:=Rolling1588TickGap.forward_gen d x good.nonzero good.small 104 1 (by decide) (by decide) s [] stage
+  have cut:=Rolling1588TickGap.forward_gen d x good.nonzero good.small 119 1 (by decide) (by decide) s [] stage
   rw [show 1-1=0 from rfl,init] at cut
-  have shape:270+n=104+(166+n):=by omega
-  rw [same,shape,StairRestSupport.forward_append d 104 1 (166+n),run_append,run_take,List.drop_nil,cut]
+  have shape:360+n=119+(241+n):=by omega
+  rw [same,shape,StairRestSupport.forward_append d 119 1 (241+n),run_append,run_take,List.drop_nil,cut]
   rfl
 
 theorem move {f:Wire→Wire} (a b c:State) (mem:∀q∈pool,f q∈pool) (eq:poolEq a b)
@@ -10938,19 +12608,19 @@ theorem move {f:Wire→Wire} (a b c:State) (mem:∀q∈pool,f q∈pool) (eq:pool
   intro q hq
   exact (eq _ (mem q hq)).trans ((congrArg (fun s:State=>s.basis q) fixed).trans (congrArg (fun s:State=>s.basis q) next))
 theorem endpoint_stage (d:Bool) (x:Nat) (good:Bounds x p) (s:State) (stage:Rolling1588.Integer.Stage base d x p 1 s.basis):
-    Rolling1588.Integer.Stage base d x p 105 (regular d s []).basis:=StockBackWindow.stageAt d x good 1 104 (by decide) s [] stage
-theorem endpoint_pool (d:Bool) (n x:Nat) (good:Bounds x p) (atCut:271+n∈[425,505,506]) (s ref:State) (enc:List Bool)
-    (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (bound:271+n≤512)
-    (agree:poolEq ref (run (Rolling1588TickGap.forward d 1 (270+n)) enc s)):
-    poolEq (pullState Stair44WalkMap.rest ref) (run (Rolling1588TickGap.forward d 105 (166+n)) [] (pullState (OB5.sig 104) (regular d s []))):=
+    Rolling1588.Integer.Stage base d x p 120 (regular d s []).basis:=StockBackWindow.stageAt d x good 1 119 (by decide) s [] stage
+theorem endpoint_pool (d:Bool) (n x:Nat) (good:Bounds x p) (atCut:361+n∈[425,505,506]) (s ref:State) (enc:List Bool)
+    (stage:Rolling1588.Integer.Stage base d x p 1 s.basis) (bound:361+n≤512)
+    (agree:poolEq ref (run (Rolling1588TickGap.forward d 1 (360+n)) enc s)):
+    poolEq (pullState Stair44WalkMap.rest ref) (run (Rolling1588TickGap.forward d 120 (241+n)) [] (pullState (OB5.sig 119) (regular d s []))):=
   move _ _ _ rest_pool agree (fixed_old d n x good atCut s stage enc) (decompose d x n good s enc stage bound)
-theorem closed (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (atCut:271+n∈[425,505,506]) (one a ref:State) (m enc:List Bool)
+theorem closed (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (atCut:361+n∈[425,505,506]) (one a ref:State) (m enc:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 1 one.basis)
     (pair:Paired d x a ref (StockRowVector.rows x p))
-    (agree:poolEq ref (run (Rolling1588TickGap.forward d 1 (270+n)) enc one)):
-    ∃old,run (WindowWalkCosts.backward d n) m a=run (Stair44WalkRun.backward d (255+n)) old ref:=by
+    (agree:poolEq ref (run (Rolling1588TickGap.forward d 1 (360+n)) enc one)):
+    ∃old,run (WindowWalkCosts.backward d n) m a=run (Stair44WalkRun.backward d (345+n)) old ref:=by
   have good:=bounds x nz lt
-  have bound:271+n≤512:=by simp only [List.mem_cons,List.not_mem_nil,or_false] at atCut;omega
+  have bound:361+n≤512:=by simp only [List.mem_cons,List.not_mem_nil,or_false] at atCut;omega
   exact StockPlacedBack.backward d n x good bound (regular d one []) a ref m (endpoint_stage d x good one stage)
     (StockNativeCompare.normalized d x good) pair (endpoint_pool d n x good atCut one ref enc stage bound agree)
 end ECDSAAdd.Entrant.StairPacket.StockWalkEndpoints
@@ -11003,13 +12673,13 @@ def exit:Prop:=∀(k:Nat) {t:State} (F:ExitFrame k t) (m:List Bool),
     (pullState phaseHost (run oldMulHead old t)) (StockRowVector.rows F.x p)
 
 theorem div_head_split:WindowKernelPrograms.division=divHead++renameProgram phaseHost
-    (WindowWalkCosts.backward false 235++renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base)):=by
+    (WindowWalkCosts.backward false 145++renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base)):=by
   simp only [WindowKernelPrograms.division,divAfter,divHead,Six505.rename_append,List.append_assoc]
 theorem old_div_head_split:Stair44Kernel.division=oldDivHead++renameProgram phaseHost
     (Stair44WalkRun.backward false 490++renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base)):=by
   simp only [Stair44Kernel.division,oldDivHead,Stair44DivTerm.routedClose,Stair44Outer.reverseEnd,Stair44DivTerm.head,Stair44DivTerm.P1,Six505.rename_append,List.append_assoc]
 theorem mul_head_split (k:Nat):WindowKernelPrograms.multiplication k=mulHead++renameProgram phaseHost
-    (WindowWalkCosts.backward true 154++renameProgram Stair44Kernel.rawX (ParityXExitInverse23Kernel.x1N k)):=rfl
+    (WindowWalkCosts.backward true 64++renameProgram Stair44Kernel.rawX (ParityXExitInverse23Kernel.x1N k)):=rfl
 theorem old_mul_head_split (k:Nat):Stair44Kernel.multiplication k=oldMulHead++renameProgram phaseHost
     (Stair44WalkRun.backward true 409++renameProgram Stair44Kernel.rawX (ParityXExitInverse23Kernel.x1N k)):=rfl
 end ECDSAAdd.Entrant.StairPacket.WindowMiddleContract
@@ -11026,7 +12696,7 @@ set_option maxHeartbeats 2000000
 attribute [local irreducible] run measurementCount FrontierEntry1591Native.forward
 
 def opening (d:Bool) (n:Nat):Program:=renameProgram phaseHost (openWalk d n)
-def original (d:Bool) (n:Nat):Program:=renameProgram phaseHost (openR d (255+n))
+def original (d:Bool) (n:Nat):Program:=renameProgram phaseHost (openR d (345+n))
 
 private theorem fixed (x y:Nat) (s:State) (h:SkywalkArithmeticInput base x y s.basis):
     pullState Stair44WalkMap.first s=s:=by
@@ -11037,9 +12707,9 @@ private theorem fixed (x y:Nat) (s:State) (h:SkywalkArithmeticInput base x y s.b
   have b:=cleanWireRebind _ s s _ _ a (zero 1541 (by decide)) (zero 501 (by decide))
   exact cleanWireRebind _ s s _ _ b (zero 1542 (by decide)) (zero 500 (by decide))
 
-theorem open_raw (d:Bool) (n x y:Nat) (nz:0 < x) (lt:x<p) (bound:271+n≤512)
+theorem open_raw (d:Bool) (n x y:Nat) (nz:0 < x) (lt:x<p) (bound:361+n≤512)
     (hn:(skywalkSharedWires base).Nodup) (s:State) (input:SkywalkArithmeticInput base x y s.basis) (m:List Bool):
-    Paired d x (run (openWalk d n) m s) (run (openR d (255+n)) m s) (StockRowVector.rows x p):=by
+    Paired d x (run (openWalk d n) m s) (run (openR d (345+n)) m s) (StockRowVector.rows x p):=by
   let N:=FrontierEntry1591Native.forward base
   let t:=m.take (measurementCount firstR)
   have stage:=Rolling1588.Integer.stage_one base d x p _ (FrontierEntry1591Native.caller_first_stageW base hn x y nz lt s t input)
@@ -11048,15 +12718,15 @@ theorem open_raw (d:Bool) (n x y:Nat) (nz:0 < x) (lt:x<p) (bound:271+n≤512)
   simp only [openWalk,openR,run_append]
   exact StockWalkEndpoints.opened d n x nz lt bound _ _ _ stage eq
 theorem division {s:State} (F:EntryFrame s) (m:List Bool):
-    Paired true F.x (pullState phaseHost (run (opening true 154) m s))
-      (pullState phaseHost (run (original true 154) m s)) (StockRowVector.rows F.x p):=by
+    Paired true F.x (pullState phaseHost (run (opening true 64) m s))
+      (pullState phaseHost (run (original true 64) m s)) (StockRowVector.rows F.x p):=by
   rw [opening,original,run_rename _ phaseHost.injective,run_rename _ phaseHost.injective,StairField13V3Clean.pull_phaseHost_entry F]
-  exact open_raw true 154 F.x _ F.x_pos F.x_lt (by decide) F.sharedNodup s (StairField13V3Clean.entryInput F) m
+  exact open_raw true 64 F.x _ F.x_pos F.x_lt (by decide) F.sharedNodup s (StairField13V3Clean.entryInput F) m
 theorem multiplication (k:Nat) {s:State} (F:ExitFrame k s) (m:List Bool):
-    Paired false F.x (pullState phaseHost (run (opening false 234) m s))
-      (pullState phaseHost (run (original false 234) m s)) (StockRowVector.rows F.x p):=by
+    Paired false F.x (pullState phaseHost (run (opening false 144) m s))
+      (pullState phaseHost (run (original false 144) m s)) (StockRowVector.rows F.x p):=by
   rw [opening,original,run_rename _ phaseHost.injective,run_rename _ phaseHost.injective,StairField13V3Clean.pull_phaseHost_exit F]
-  exact open_raw false 234 F.x _ F.x_pos F.x_lt (by decide) F.sharedNodup s F.input m
+  exact open_raw false 144 F.x _ F.x_pos F.x_lt (by decide) F.sharedNodup s F.input m
 end ECDSAAdd.Entrant.StairPacket.WindowStartStates
 
 end
@@ -11191,16 +12861,16 @@ structure Native (d:Bool) (x:Nat) (ref:State):Prop where
   ids:∀b,StockRowVector.rows x p b<63145 ∧ ArchiveStockRows.Chronology (tick b) x p (StockRowVector.rows x p b)
   bytes:∀b,nativeAt d b (StockRowVector.rows x p b) ref
 
-theorem ofEndpoint (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (atCut:271+n∈[425,505,506]) (ref:State)
-    (h:Endpoint d x (270+n) ref):Native d x ref:=by
+theorem ofEndpoint (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (atCut:361+n∈[425,505,506]) (ref:State)
+    (h:Endpoint d x (360+n) ref):Native d x ref:=by
   obtain ⟨s,enc,stage,eq⟩:=h
   let a:=pullState Stair44WalkMap.first.symm s
   have input:pullState Stair44WalkMap.first a=s:=Stair44PlacedHead.unpull Stair44WalkMap.first.symm s
-  have bound:271+n≤512:=by simp only [List.mem_cons,List.not_mem_nil,or_false] at atCut;omega
+  have bound:361+n≤512:=by simp only [List.mem_cons,List.not_mem_nil,or_false] at atCut;omega
   have pair:=StockWalkEndpoints.opened d n x nz lt bound s a enc stage input
-  have cut:1+(15+(255+n))∈[425,505,506]:=by simpa only [show 1+(15+(255+n))=271+n by omega] using atCut
-  have same:=Stair44WalkCuts.forward_done d (255+n) x cut nz lt s a enc stage input
-  rw [show 15+(255+n)=270+n by omega] at same
+  have cut:1+(15+(345+n))∈[425,505,506]:=by simpa only [show 1+(15+(345+n))=361+n by omega] using atCut
+  have same:=Stair44WalkCuts.forward_done d (345+n) x cut nz lt s a enc stage input
+  rw [show 15+(345+n)=360+n by omega] at same
   refine ⟨pair.labels,?_⟩
   intro b j
   have loc:siteAt b j∈pool:=archives_pool _ (StockArchiveBanks.mem b j)
@@ -11208,10 +12878,10 @@ theorem ofEndpoint (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (atCut:271+n∈[425,50
 
 theorem div_native {s:State} (F:StairConcreteAssembly.EntryFrame s) (m:List Bool):
     Native false F.x (pullState phaseHost (run oldDivHead m s)):=
-  ofEndpoint false 235 F.x F.x_pos F.x_lt (by decide) _ (div_endpoint F m)
+  ofEndpoint false 145 F.x F.x_pos F.x_lt (by decide) _ (div_endpoint F m)
 theorem mul_native (k:Nat) {s:State} (F:StairConcreteAssembly.ExitFrame k s) (m:List Bool):
     Native true F.x (pullState phaseHost (run oldMulHead m s)):=
-  ofEndpoint true 154 F.x F.x_pos F.x_lt (by decide) _ (mul_endpoint k F m)
+  ofEndpoint true 64 F.x F.x_pos F.x_lt (by decide) _ (mul_endpoint k F m)
 
 theorem Native.pair {d x a ref} (old:Native d x ref) (eq:StockArchiveBanks.Same a ref)
     (bytes:∀b,Kept (ports b) d (StockRowVector.rows x p b) a):Paired d x a ref (StockRowVector.rows x p):=
@@ -11238,36 +12908,36 @@ def mulSpan:=renameProgram phaseHost Stair44Outer.forwardEnd++
 def oldMulSpan:=renameProgram phaseHost Stair44Outer.forwardEnd++
     StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan++renameProgram phaseHost checkpointPrimitives.firstUnpack
 
-theorem divisionShape:divHead=opening true 154++divSpan ∧ oldDivHead=original true 154++oldDivSpan:=by
+theorem divisionShape:divHead=opening true 64++divSpan ∧ oldDivHead=original true 64++oldDivSpan:=by
   simp only [divHead,WindowKernelPrograms.divBefore,divSpan,opening,oldDivHead,Stair44Kernel.divLead,Stair44Kernel.fieldD,original,oldDivSpan,Six505.rename_append,List.append_assoc]
   constructor <;> trivial
-theorem multiplicationShape:mulHead=opening false 234++mulSpan ∧ oldMulHead=original false 234++oldMulSpan:=by
+theorem multiplicationShape:mulHead=opening false 144++mulSpan ∧ oldMulHead=original false 144++oldMulSpan:=by
   simp only [mulHead,WindowKernelPrograms.mulBefore,mulSpan,opening,oldMulHead,Stair44Kernel.beforeX,Stair44Kernel.mulLead,original,oldMulSpan,Stair44Kernel.finishM,Stair44Outer.forwardEnd,Six505.rename_append,List.append_assoc]
   constructor <;> trivial
 
 def Related (d:Bool) (x:Nat) (a ref:State):Prop:=Paired d x (pullState phaseHost a) (pullState phaseHost ref) (StockRowVector.rows x p)
 
 theorem division (H:∀{s:State} (F:EntryFrame s) (m t:List Bool),
-    let a:=run (opening true 154) m s
-    let b:=run (original true 154) m s
+    let a:=run (opening true 64) m s
+    let b:=run (original true 64) m s
     Related true F.x a b → ∃old, Related false F.x (run divSpan t a) (run oldDivSpan old b)):
     WindowMiddleContract.entry:=by
   intro s F m
-  let A:=opening true 154
-  let B:=original true 154
+  let A:=opening true 64
+  let B:=original true 64
   obtain ⟨old,rel⟩:=H F m (m.drop (measurementCount A)) (WindowStartStates.division F m)
   refine ⟨pfx (measurementCount B) m++old,?_⟩
   rw [divisionShape.1,divisionShape.2,Stair44PointSecond.joinRecords,run_append,run_take]
   exact rel
 
 theorem multiplication (H:∀k {s:State} (F:ExitFrame k s) (m t:List Bool),
-    let a:=run (opening false 234) m s
-    let b:=run (original false 234) m s
+    let a:=run (opening false 144) m s
+    let b:=run (original false 144) m s
     Related false F.x a b → ∃old, Related true F.x (run mulSpan t a) (run oldMulSpan old b)):
     WindowMiddleContract.exit:=by
   intro k s F m
-  let A:=opening false 234
-  let B:=original false 234
+  let A:=opening false 144
+  let B:=original false 144
   obtain ⟨old,rel⟩:=H k F m (m.drop (measurementCount A)) (WindowStartStates.multiplication k F m)
   refine ⟨pfx (measurementCount B) m++old,?_⟩
   rw [multiplicationShape.1,multiplicationShape.2,Stair44PointSecond.joinRecords,run_append,run_take]
@@ -11389,20 +13059,20 @@ theorem range_ok (q:Nat) (use:PartialSites.domain q=true):q∈callerDomain:=by
 theorem part (d:Bool):wires (Partial.forward45plus1 d)⊆callerDomain ∧ wires (Partial.reverse45plus1 d)⊆callerDomain:=
   ⟨fun q h=>range_ok q (forward_domain d _ h),fun q h=>range_ok q (reverse_domain d _ h)⟩
 
-theorem forward (d:Bool) (n:Nat) (bound:270+n≤504):wires (WindowWalkCosts.forward d n)⊆callerDomain:=by
-  have stock:=forward_own d (270+n) bound
-  have shape:270+n=15+(89+(166+n)):=by omega
-  rw [shape,tickGap_forward_split d 15 1 (89+(166+n)),tickGap_forward_split d 89 16 (166+n),tickGap_forward_split d 166 105 n] at stock
+theorem forward (d:Bool) (n:Nat) (bound:360+n≤504):wires (WindowWalkCosts.forward d n)⊆callerDomain:=by
+  have stock:=forward_own d (360+n) bound
+  have shape:360+n=15+(104+(241+n)):=by omega
+  rw [shape,tickGap_forward_split d 15 1 (104+(241+n)),tickGap_forward_split d 104 16 (241+n),tickGap_forward_split d 241 120 n] at stock
   simp only [wires_append,Finset.union_subset_iff] at stock
   apply wires_sub_of_parts _ _
   · exact rename_caller _ firstOK _ stock.1
   · apply rename_caller _ restOK
     exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ stock.2.1 (part d).1) stock.2.2.2
 
-theorem backward (d:Bool) (n:Nat) (bound:270+n≤505):wires (WindowWalkCosts.backward d n)⊆callerDomain:=by
-  have stock:=reverse_own d (270+n) bound
-  have shape:270+n=15+(89+(166+n)):=by omega
-  rw [shape,reverse_split d 15 1 (89+(166+n)),reverse_split d 89 16 (166+n),reverse_split d 166 105 n] at stock
+theorem backward (d:Bool) (n:Nat) (bound:360+n≤505):wires (WindowWalkCosts.backward d n)⊆callerDomain:=by
+  have stock:=reverse_own d (360+n) bound
+  have shape:360+n=15+(104+(241+n)):=by omega
+  rw [shape,reverse_split d 15 1 (104+(241+n)),reverse_split d 104 16 (241+n),reverse_split d 241 120 n] at stock
   simp only [wires_append,Finset.union_subset_iff] at stock
   apply wires_sub_of_parts _ _
   · apply rename_caller _ restOK
@@ -11421,16 +13091,16 @@ set_option maxRecDepth 16000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run measurementCount wires renameProgram
 
-theorem tail (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (cut:271+n∈[425,505,506])
+theorem tail (d:Bool) (n x:Nat) (nz:0 < x) (lt:x<p) (cut:361+n∈[425,505,506])
     (a ref:State) (P:Program) (m:List Bool)
     (pair:Paired d x (pullState phaseHost a) (pullState phaseHost ref) (StockRowVector.rows x p))
-    (known:Endpoint d x (270+n) (pullState phaseHost ref)):
+    (known:Endpoint d x (360+n) (pullState phaseHost ref)):
     ∃old,run (renameProgram phaseHost (WindowWalkCosts.backward d n++P)) m a=
-      run (renameProgram phaseHost (Stair44WalkRun.backward d (255+n)++P)) old ref:=by
+      run (renameProgram phaseHost (Stair44WalkRun.backward d (345+n)++P)) old ref:=by
   obtain ⟨s,enc,stage,ag⟩:=known
   obtain ⟨old,eq⟩:=StockWalkEndpoints.closed d n x nz lt cut s _ _ m enc stage pair ag
   let A:=WindowWalkCosts.backward d n
-  let B:=Stair44WalkRun.backward d (255+n)
+  let B:=Stair44WalkRun.backward d (345+n)
   let suffix:=m.drop (measurementCount A)
   refine ⟨pfx (measurementCount B) old++suffix,?_⟩
   apply MappedCompressed.pullState_perm_injective phaseHost
@@ -11449,13 +13119,13 @@ theorem div_run (geometry:WindowMiddleContract.entry) {t:State} (F:EntryFrame t)
     ∃old,run WindowKernelPrograms.division m t=run Stair44Kernel.division old t:=by
   obtain ⟨head,v⟩:=geometry F m
   rw [div_head_split,old_div_head_split]
-  exact compose (old:=head) (tail false 235 F.x F.x_pos F.x_lt (by decide) _ _ _ _ v (div_endpoint F head))
+  exact compose (old:=head) (tail false 145 F.x F.x_pos F.x_lt (by decide) _ _ _ _ v (div_endpoint F head))
 
 theorem mul_run (geometry:WindowMiddleContract.exit) (k:Nat) {t:State} (F:ExitFrame k t) (m:List Bool):
     ∃old,run (WindowKernelPrograms.multiplication k) m t=run (Stair44Kernel.multiplication k) old t:=by
   obtain ⟨head,v⟩:=geometry k F m
   rw [mul_head_split,old_mul_head_split]
-  exact compose (old:=head) (tail true 154 F.x F.x_pos F.x_lt (by decide) _ _ _ _ v (mul_endpoint k F head))
+  exact compose (old:=head) (tail true 64 F.x F.x_pos F.x_lt (by decide) _ _ _ _ v (mul_endpoint k F head))
 
 theorem division_correct (geometry:WindowMiddleContract.entry):
     FrontierEntry1591Callers.EntryCorrect WindowKernelPrograms.division:=by
@@ -11505,14 +13175,14 @@ set_option maxRecDepth 16000
 set_option linter.unusedSimpArgs false
 def delta (d : Bool) (r : Nat) :=
   ((parity (ArchivePortAction.code d)).testBit r) ^^ ((parity (StairArchiveNativeCut.canonical d d)).testBit r)
-def Active (j : Nat) := j=22 ∨ j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52
+def Active (j : Nat) := j=25 ∨ j=28 ∨ j=31 ∨ j=34 ∨ j=37 ∨ j=40 ∨ j=43 ∨ j=46 ∨ j=49 ∨ j=52 ∨ j=55 ∨ j=58 ∨ j=61 ∨ j=64 ∨ j=67 ∨ j=70
 private theorem mesh : wires region⊆Finset.range 31 :=
   ECDSAAdd.Entrant.WSlimMain.wires_subset_range_of_all (by decide +kernel)
-private theorem portDistinct : ∀ j∈([22,25,28,31,34,37,40,43,46,49,52]:List Nat), ((List.range 31).map (port j)).Nodup := by decide +kernel
+private theorem portDistinct : ∀ j∈([25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]:List Nat), ((List.range 31).map (port j)).Nodup := by decide +kernel
 private theorem inj {j : Nat} (hj : Active j) :
     ∀a∈Finset.range 31,∀b∈Finset.range 31, port j a=port j b → a=b := by
   intro a ha b hb eq
-  have mem : j∈([22,25,28,31,34,37,40,43,46,49,52]:List Nat) := by rcases hj with h|h|h|h|h|h|h|h|h|h|h <;> simp [h]
+  have mem : j∈([25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70]:List Nat) := by rcases hj with h|h|h|h|h|h|h|h|h|h|h|h|h|h|h|h <;> simp [h]
   have la := Finset.mem_range.mp ha
   have lb := Finset.mem_range.mp hb
   apply (List.Nodup.getElem_inj_iff (portDistinct j mem) (i:=a) (j:=b)
@@ -11556,30 +13226,40 @@ attribute [local irreducible] bankCorrection
 theorem correction_run (dirs : Nat→Bool) (rows : Nat→Nat) (m : List Bool) (s : State)
     (hr : ∀j, Active j → rows j<63145) (hd : ∀j, Active j→Data s j (dirs j) (rows j)) :
     run correction m s = flip FrontierEntry1591Field.host
-      ((((((((((delta (dirs 22) (rows 22) ^^ delta (dirs 25) (rows 25)) ^^ delta (dirs 28) (rows 28)) ^^ delta (dirs 31) (rows 31)) ^^ delta (dirs 34) (rows 34)) ^^ delta (dirs 37) (rows 37)) ^^ delta (dirs 40) (rows 40)) ^^ delta (dirs 43) (rows 43)) ^^ delta (dirs 46) (rows 46)) ^^ delta (dirs 49) (rows 49)) ^^ delta (dirs 52) (rows 52)) s := by
-  have z : Active 22 := Or.inl rfl
-  have a : Active 25 := Or.inr (Or.inl rfl)
-  have b : Active 28 := Or.inr (Or.inr (Or.inl rfl))
-  have c : Active 31 := Or.inr (Or.inr (Or.inr (Or.inl rfl)))
-  have e : Active 34 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))
-  have f : Active 37 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
-  have g : Active 40 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))
-  have i : Active 43 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))
-  have k : Active 46 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))
-  have l : Active 49 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))
-  have n : Active 52 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))))))
+      (((((((((((((((delta (dirs 25) (rows 25) ^^ delta (dirs 28) (rows 28)) ^^ delta (dirs 31) (rows 31)) ^^ delta (dirs 34) (rows 34)) ^^ delta (dirs 37) (rows 37)) ^^ delta (dirs 40) (rows 40)) ^^ delta (dirs 43) (rows 43)) ^^ delta (dirs 46) (rows 46)) ^^ delta (dirs 49) (rows 49)) ^^ delta (dirs 52) (rows 52)) ^^ delta (dirs 55) (rows 55)) ^^ delta (dirs 58) (rows 58)) ^^ delta (dirs 61) (rows 61)) ^^ delta (dirs 64) (rows 64)) ^^ delta (dirs 67) (rows 67)) ^^ delta (dirs 70) (rows 70)) s := by
+  have v0 : Active 25 := Or.inl rfl
+  have v1 : Active 28 := Or.inr (Or.inl rfl)
+  have v2 : Active 31 := Or.inr (Or.inr (Or.inl rfl))
+  have v3 : Active 34 := Or.inr (Or.inr (Or.inr (Or.inl rfl)))
+  have v4 : Active 37 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))
+  have v5 : Active 40 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
+  have v6 : Active 43 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))
+  have v7 : Active 46 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))
+  have v8 : Active 49 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))
+  have v9 : Active 52 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))
+  have v10 : Active 55 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))
+  have v11 : Active 58 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))
+  have v12 : Active 61 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))
+  have v13 : Active 64 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))))))))))
+  have v14 : Active 67 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))))))))))
+  have v15 : Active 70 := Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))))))))))
   simp only [correction,run_append,run_take]
-  rw [bank_run 22 z _ _ (hr _ z) _ s (hd _ z),
-    bank_run 25 a _ _ (hr _ a) _ _ (data_flip _ _ a (hd _ a)),
-    bank_run 28 b _ _ (hr _ b) _ _ (data_flip _ _ b (data_flip _ _ b (hd _ b))),
-    bank_run 31 c _ _ (hr _ c) _ _ (data_flip _ _ c (data_flip _ _ c (data_flip _ _ c (hd _ c)))),
-    bank_run 34 e _ _ (hr _ e) _ _ (data_flip _ _ e (data_flip _ _ e (data_flip _ _ e (data_flip _ _ e (hd _ e))))),
-    bank_run 37 f _ _ (hr _ f) _ _ (data_flip _ _ f (data_flip _ _ f (data_flip _ _ f (data_flip _ _ f (data_flip _ _ f (hd _ f)))))),
-    bank_run 40 g _ _ (hr _ g) _ _ (data_flip _ _ g (data_flip _ _ g (data_flip _ _ g (data_flip _ _ g (data_flip _ _ g (data_flip _ _ g (hd _ g))))))),
-    bank_run 43 i _ _ (hr _ i) _ _ (data_flip _ _ i (data_flip _ _ i (data_flip _ _ i (data_flip _ _ i (data_flip _ _ i (data_flip _ _ i (data_flip _ _ i (hd _ i)))))))),
-    bank_run 46 k _ _ (hr _ k) _ _ (data_flip _ _ k (data_flip _ _ k (data_flip _ _ k (data_flip _ _ k (data_flip _ _ k (data_flip _ _ k (data_flip _ _ k (data_flip _ _ k (hd _ k))))))))),
-    bank_run 49 l _ _ (hr _ l) _ _ (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (data_flip _ _ l (hd _ l)))))))))),
-    bank_run 52 n _ _ (hr _ n) _ _ (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (data_flip _ _ n (hd _ n)))))))))))]
+  rw [bank_run 25 v0 _ _ (hr _ v0) _ s (hd _ v0),
+    bank_run 28 v1 _ _ (hr _ v1) _ _ (data_flip _ _ v1 (hd _ v1)),
+    bank_run 31 v2 _ _ (hr _ v2) _ _ (data_flip _ _ v2 (data_flip _ _ v2 (hd _ v2))),
+    bank_run 34 v3 _ _ (hr _ v3) _ _ (data_flip _ _ v3 (data_flip _ _ v3 (data_flip _ _ v3 (hd _ v3)))),
+    bank_run 37 v4 _ _ (hr _ v4) _ _ (data_flip _ _ v4 (data_flip _ _ v4 (data_flip _ _ v4 (data_flip _ _ v4 (hd _ v4))))),
+    bank_run 40 v5 _ _ (hr _ v5) _ _ (data_flip _ _ v5 (data_flip _ _ v5 (data_flip _ _ v5 (data_flip _ _ v5 (data_flip _ _ v5 (hd _ v5)))))),
+    bank_run 43 v6 _ _ (hr _ v6) _ _ (data_flip _ _ v6 (data_flip _ _ v6 (data_flip _ _ v6 (data_flip _ _ v6 (data_flip _ _ v6 (data_flip _ _ v6 (hd _ v6))))))),
+    bank_run 46 v7 _ _ (hr _ v7) _ _ (data_flip _ _ v7 (data_flip _ _ v7 (data_flip _ _ v7 (data_flip _ _ v7 (data_flip _ _ v7 (data_flip _ _ v7 (data_flip _ _ v7 (hd _ v7)))))))),
+    bank_run 49 v8 _ _ (hr _ v8) _ _ (data_flip _ _ v8 (data_flip _ _ v8 (data_flip _ _ v8 (data_flip _ _ v8 (data_flip _ _ v8 (data_flip _ _ v8 (data_flip _ _ v8 (data_flip _ _ v8 (hd _ v8))))))))),
+    bank_run 52 v9 _ _ (hr _ v9) _ _ (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (data_flip _ _ v9 (hd _ v9)))))))))),
+    bank_run 55 v10 _ _ (hr _ v10) _ _ (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (data_flip _ _ v10 (hd _ v10))))))))))),
+    bank_run 58 v11 _ _ (hr _ v11) _ _ (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (data_flip _ _ v11 (hd _ v11)))))))))))),
+    bank_run 61 v12 _ _ (hr _ v12) _ _ (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (data_flip _ _ v12 (hd _ v12))))))))))))),
+    bank_run 64 v13 _ _ (hr _ v13) _ _ (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (data_flip _ _ v13 (hd _ v13)))))))))))))),
+    bank_run 67 v14 _ _ (hr _ v14) _ _ (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (data_flip _ _ v14 (hd _ v14))))))))))))))),
+    bank_run 70 v15 _ _ (hr _ v15) _ _ (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (data_flip _ _ v15 (hd _ v15))))))))))))))))]
   simp only [flip_twice,Bool.xor_assoc]
 end ECDSAAdd.Entrant.StairPacket.WindowFieldParity
 
@@ -12579,7 +14259,7 @@ set_option maxRecDepth 12000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
 private theorem ids {j : Nat} (h : Active j) : j∈bankIds := by
-  rcases h with h|h|h|h|h|h|h|h|h|h|h <;> simp [h,bankIds]
+  rcases h with h|h|h|h|h|h|h|h|h|h|h|h|h|h|h|h <;> simp [h,bankIds]
 private theorem alive (b : Bank) : Active (groupId b) := by
   revert b; unfold Active; decide +kernel
 private def offset (w : Wire) :=
@@ -12652,8 +14332,8 @@ attribute [local irreducible] wires renameProgram
 theorem division (g:wires (WindowParityCaller.entryFieldHosted checkpointPrimitives)⊆callerDomain):
     wires WindowKernelPrograms.division⊆callerDomain:=by
   have original:=Stair44CallerSupport.division
-  have f:=phaseHost_caller _ (WindowIntegerSites.forward true 154 (by decide))
-  have b:=phaseHost_caller _ (WindowIntegerSites.backward false 235 (by decide))
+  have f:=phaseHost_caller _ (WindowIntegerSites.forward true 64 (by decide))
+  have b:=phaseHost_caller _ (WindowIntegerSites.backward false 145 (by decide))
   simp only [WindowKernelPrograms.division,WindowKernelPrograms.divBefore,WindowKernelPrograms.divAfter,
     WindowKernelPrograms.openWalk,Stair44Kernel.division,Stair44Kernel.divLead,Stair44Kernel.openR,
     Stair44DivTerm.routedClose,Stair44Outer.reverseEnd,Stair44DivTerm.head,Stair44DivTerm.P1,
@@ -12662,8 +14342,8 @@ theorem division (g:wires (WindowParityCaller.entryFieldHosted checkpointPrimiti
 theorem multiplication (k:Nat) (g:wires (WindowParityCaller.exitFieldHosted checkpointPrimitives)⊆callerDomain):
     wires (WindowKernelPrograms.multiplication k)⊆callerDomain:=by
   have original:=Stair44CallerSupport.multiplication k
-  have f:=phaseHost_caller _ (WindowIntegerSites.forward false 234 (by decide))
-  have b:=phaseHost_caller _ (WindowIntegerSites.backward true 154 (by decide))
+  have f:=phaseHost_caller _ (WindowIntegerSites.forward false 144 (by decide))
+  have b:=phaseHost_caller _ (WindowIntegerSites.backward true 64 (by decide))
   simp only [WindowKernelPrograms.multiplication,WindowKernelPrograms.mulBefore,WindowKernelPrograms.mulAfter,
     WindowKernelPrograms.openWalk,Stair44Kernel.multiplication,Stair44Kernel.beforeX,Stair44Kernel.mulLead,Stair44Kernel.openR,
     Stair44Kernel.mulRawTail,Stair44Kernel.finishM,Stair44Outer.forwardEnd,
@@ -12688,7 +14368,7 @@ section
 
 namespace ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly Stair44Outer StockArchiveBanks StairV3Primitives StairPhysicalPhase
-def free (q:Wire):Bool:=!(61302683078834518773225434680755157133632473222803583166596865976506739040523029895568267513251196792255204421816894308665018709045412178787043866194374854402116607740113365899388834408881813264115118233112171182167114619712847563562616422608398736774164093950772204709804146458462971819037884764687287906321485767472769963777556177578168222632055139401241212987656598948297899559454049887196178918835227635614462734071509674461647937936671661864030238919919279182579305749948068424610888310711911579152600430836285998315224721244031915552407552:Nat).testBit q
+def free (q:Wire):Bool:=!(61304553945348964237221931932094347027248184186971757143483482957056458161771744716981746019721641093648244897293834623248906779206905599446491027710425837530720121043275122131105610013046239979875191942483106124483936544148133052531177906636829269847729628654578182756644709842320899138843143742083426910708937542625688192413959214774383844539369323263000854368547602860438172055342482422292448548052699358491595807499017154969088460109584623313008462825095881548164159323847949823754550403509545383063112523572917850493736381191721598647795712:Nat).testBit q
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
 theorem occupied:∀(b:Bank)(i:Fin 16),free (siteAt b i)=false:=by decide +kernel
@@ -12978,7 +14658,7 @@ set_option maxRecDepth 25000
 set_option maxHeartbeats 3500000
 attribute [local irreducible] wires renameProgram
 def src (j:Nat) (b:Bank) (i:Fin 16):Wire:=(shifted (Placement5.pi j)).symm (OB5.sig 511 (siteAt b i))
-private def past (q:Wire):Bool:=(126775176741751802172534374612801623113655154196342038258976046221238575332137015227035974877338751575661213180978944232029623407886245294110638352085868556197969795766108665333657462009178065929330854992828067462896887430815690887357945379158724443526963645293744626670353701065100717627709533450553792697956420794466749189579084668649543431690325695572103376992372841165058187466424430469578752:Nat).testBit q
+private def past (q:Wire):Bool:=(156940067276095253698733677391394343846983017817254233104713614094930068954055098427992320311645586766352727436369671931860434277258298422799382343816782593023525888019104499990875051658428035536776173433911512072408444502673763277239302159837368832045758746533764362107885519802697216758252771683518666811446624881691418457860281241556626440691410900495430247753620415078645529197298880058812274221809571700693891704422400:Nat).testBit q
 private theorem fixedSources:∀j∈List.range' 85 17,∀(b:Bank)(i:Fin 16),src j b i=src 85 b i:=by decide +kernel
 private theorem tagged:∀(b:Bank)(i:Fin 16),past (src 85 b i)=true:=by decide +kernel
 private theorem globals:∀q∈[base 2400,base 2409,base 2410]++Q6EndpointCell.ids.map base,past q=false:=by decide +kernel
@@ -13151,16 +14831,16 @@ attribute [local irreducible] run measurementCount
 
 def endF := renameProgram phaseHost Stair44Outer.forwardEnd
 def unpack := renameProgram phaseHost checkpointPrimitives.firstUnpack
-def beginW := opening false 234 ++ endF
-def beginR := original false 234 ++ endF
+def beginW := opening false 144 ++ endF
+def beginR := original false 144 ++ endF
 
 theorem refBegin : beginR = Stair44Kernel.mulLead := by
   simp only [beginR,original,endF,Stair44Kernel.mulLead,Stair44Kernel.finishM,Stair44Outer.forwardEnd,Six505.rename_append,List.append_assoc]
 
 theorem begin_pair (k : Nat) {s : State} (F : ExitFrame k s) (m : List Bool) :
     ∃n, Paired false F.x (run beginW m s) (run beginR n s) (StockRowVector.rows F.x p) := by
-  let A := opening false 234
-  let B := original false 234
+  let A := opening false 144
+  let B := original false 144
   let t := m.drop (measurementCount A)
   refine ⟨joinTapes B m t,?_⟩
   rw [beginW,beginR,joined,run_append,run_take]
@@ -13820,8 +15500,8 @@ set_option maxRecDepth 15000
 attribute [local irreducible] run measurementCount wires
 
 def pack := renameProgram phaseHost checkpointPrimitives.firstPack
-def beginW := opening true 154 ++ pack
-def beginR := original true 154 ++ pack
+def beginW := opening true 64 ++ pack
+def beginR := original true 64 ++ pack
 def prefixW := (beginW ++ beforeGroup) ++ renameProgram fieldEquiv (WindowFieldCosts.group84 true)
 def prefixR := (beginR ++ beforeGroup) ++ renameProgram fieldEquiv (WindowFieldCosts.group true 1 84)
 
@@ -13830,8 +15510,8 @@ theorem refBegin : beginR = Stair44Kernel.divLead := by
 
 theorem begin_pair {s : State} (F : EntryFrame s) (m : List Bool) :
     ∃n, Paired true F.x (run beginW m s) (run beginR n s) (StockRowVector.rows F.x p) := by
-  let A := opening true 154
-  let B := original true 154
+  let A := opening true 64
+  let B := original true 64
   let t := m.drop (measurementCount A)
   refine ⟨joinTapes B m t,?_⟩
   rw [beginW,beginR,joined,run_append,run_take]
