@@ -18520,10 +18520,10 @@ private theorem ord (c : Cost) (d : Bool) (a b : Program) :
     c.measure (ordered d a b)=c.measure a+c.measure b := by
   cases d <;> simp [ordered,c.append,Nat.add_comm]
 
-/-- one window: the three hooks (208 Toffolis, 277 measurements) and its two packets at loan
+/-- one window: the three hooks (195 Toffolis for d = true, 193 for d = false; 277 measurements) and its two packets at loan
 depth 1 (20 Toffolis and 20 measurements each). -/
 theorem overhead (j : Nat) (d : Bool) :
-    toffoliCount (ten j (!d)) = toffoliCount (group d j 2)+248 ∧
+    toffoliCount (ten j (!d)) = toffoliCount (group d j 2)+(if d then 235 else 233) ∧
     measurementCount (ten j (!d)) = measurementCount (group d j 2)+317 := by
   have a := packetL_counts d j
   have b := packetL_counts d (j+1)
@@ -18581,9 +18581,9 @@ private theorem solveCell (c : Cost) (d : Bool) (delta s : Nat)
   omega
 
 theorem group_cost_div :
-    toffoliCount (group84 true) = toffoliCount (group true 1 84)+580 ∧
+    toffoliCount (group84 true) = toffoliCount (group true 1 84)+541 ∧
     measurementCount (group84 true) = measurementCount (group true 1 84)+562 := by
-  have t := solveCell tc true 248 164 (fun j => (overhead j true).1)
+  have t := solveCell tc true 235 164 (fun j => (overhead j true).1)
     (gm_cell tc 164 toffoliCount rfl ECDSAAdd.Entrant.RouteA.Rolling1588.slice45_counts.1)
   have m := solveCell mc true 317 389 (fun j => (overhead j true).2)
     (gm_cell mc 389 measurementCount rfl ECDSAAdd.Entrant.RouteA.Rolling1588.slice45_counts.2)
@@ -18603,9 +18603,9 @@ private theorem gm_cellF (c : Cost) (s : Nat) (f : Program → Nat) (hf : c.meas
 
 /-- The multiplication field group with the odd cell on packets 45..1. -/
 theorem group_cost_mul :
-    toffoliCount (group84 false) = toffoliCount (group false 1 84)+580 ∧
+    toffoliCount (group84 false) = toffoliCount (group false 1 84)+535 ∧
     measurementCount (group84 false) = measurementCount (group false 1 84)+562 := by
-  have t := solveCell tc false 248 164 (fun j => (overhead j false).1)
+  have t := solveCell tc false 233 164 (fun j => (overhead j false).1)
     (gm_cellF tc 164 toffoliCount rfl ECDSAAdd.Entrant.RouteA.Rolling1588.mslice45_counts.1)
   have m := solveCell mc false 317 389 (fun j => (overhead j false).2)
     (gm_cellF mc 389 measurementCount rfl ECDSAAdd.Entrant.RouteA.Rolling1588.mslice45_counts.2)
@@ -18697,9 +18697,9 @@ attribute [local irreducible] Partial.forward45plus1 Partial.reverse45plus1 Roll
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 5001 else 5004)=
+    toffoliCount (forward d tail)+(if d then 5043 else 5046)=
       toffoliCount (Stair44WalkRun.forward d (255+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 4993 else 4996)=
+    toffoliCount (backward d tail)+(if d then 5029 else 5032)=
       toffoliCount (Stair44WalkRun.backward d (255+tail)) ∧
     measurementCount (forward d tail)+2546=measurementCount (Stair44WalkRun.forward d (255+tail)) ∧
     measurementCount (backward d tail)+2552=measurementCount (Stair44WalkRun.backward d (255+tail)) := by
@@ -18707,23 +18707,23 @@ theorem exactWalks (d : Bool) (tail : Nat) :
   · have sf := StockWindowCosts.stock false
     have a := forward45plus1_false
     have b := reverse45plus1_false
-    have t := walk tc false tail 5004 4996
-      (subEq 5004 a.1 sf.1 rfl) (subEq 4996 b.1 sf.2.2.1 rfl)
+    have t := walk tc false tail 5046 5032
+      (subEq 5046 a.1 sf.1 rfl) (subEq 5032 b.1 sf.2.2.1 rfl)
     have m := walk mc false tail 2546 2552
       (subEq 2546 a.2 sf.2.1 rfl) (subEq 2552 b.2 sf.2.2.2 rfl)
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts.stock true
     have a := forward45plus1_true
     have b := reverse45plus1_true
-    have t := walk tc true tail 5001 4993
-      (subEq 5001 a.1 sf.1 rfl) (subEq 4993 b.1 sf.2.2.1 rfl)
+    have t := walk tc true tail 5043 5029
+      (subEq 5043 a.1 sf.1 rfl) (subEq 5029 b.1 sf.2.2.1 rfl)
     have m := walk mc true tail 2546 2552
       (subEq 2546 a.2 sf.2.1 rfl) (subEq 2552 b.2 sf.2.2.2 rfl)
     exact ⟨t.1,t.2,m⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 255+tail=n)
-    (hf : (if d then 5001 else 5004)=f) (hr : (if d then 4993 else 4996)=r) :
+    (hf : (if d then 5043 else 5046)=f) (hr : (if d then 5029 else 5032)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+2546=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -19498,7 +19498,7 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 
 private theorem fieldTcDiv :
-    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+580 := by
+    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+541 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_div.1
 private theorem fieldMcDiv :
@@ -19506,7 +19506,7 @@ private theorem fieldMcDiv :
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_div.2
 private theorem fieldTcMul :
-    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+580 := by
+    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+535 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_mul.1
 private theorem fieldMcMul :
@@ -19527,29 +19527,29 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+5001+4996=tc.measure Stair44Outer.divide+580 :=
-  kernels tc 5001 4996 580 (WindowWalkCosts.inst true 154 409 5001 4993 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 235 490 5004 4996 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+5043+5032=tc.measure Stair44Outer.divide+541 :=
+  kernels tc 5043 5032 541 (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 235 490 5046 5032 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+5004+4993=tc.measure (Stair44Outer.multiply k)+580 :=
-  kernelsM tc k 5004 4993 580 (WindowWalkCosts.inst false 234 489 5004 4996 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 154 409 5001 4993 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+5046+5029=tc.measure (Stair44Outer.multiply k)+535 :=
+  kernelsM tc k 5046 5029 535 (WindowWalkCosts.inst false 234 489 5046 5032 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).2.1 fieldTcMul
 
 theorem mc_div : mc.measure divide+2546+2552=mc.measure Stair44Outer.divide+562 :=
-  kernels mc 2546 2552 562 (WindowWalkCosts.inst true 154 409 5001 4993 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 235 490 5004 4996 rfl rfl rfl).2.2.2 fieldMcDiv
+  kernels mc 2546 2552 562 (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 235 490 5046 5032 rfl rfl rfl).2.2.2 fieldMcDiv
 
 theorem mc_mul (k : Nat) : mc.measure (multiply k)+2546+2552=mc.measure (Stair44Outer.multiply k)+562 :=
-  kernelsM mc k 2546 2552 562 (WindowWalkCosts.inst false 234 489 5004 4996 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 154 409 5001 4993 rfl rfl rfl).2.2.2 fieldMcMul
+  kernelsM mc k 2546 2552 562 (WindowWalkCosts.inst false 234 489 5046 5032 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 154 409 5043 5029 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+18834=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+19074=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+9072=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 18834 (pair_delta2 tc_div (tc_mul _) rfl),
+  ⟨finite_delta tc C cx cy 19074 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 9072 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2150954 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2150714 ∧
     measurementCount (program C) ≤ 1511852 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -20275,7 +20275,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2150954,1511852,1542,51930473⟩
+def bounds : Challenge.Bounds := ⟨2150714,1511852,1542,51930473⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -22967,7 +22967,7 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+12*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2152010 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2151770 ∧
     measurementCount (program C) ≤ 1511852 ∧ gateSlots (program C) ≤ 51932993 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
@@ -23710,7 +23710,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2152010,1511852,1542,51932993⟩
+def bounds : Challenge.Bounds := ⟨2151770,1511852,1542,51932993⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
