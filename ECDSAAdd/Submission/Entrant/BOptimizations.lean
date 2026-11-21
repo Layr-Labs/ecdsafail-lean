@@ -8072,9 +8072,9 @@ end ECDSAAdd.Entrant.StairSqLoopA
 
 end
 
--- PSQ-A: partial carry cache in the hole-free A square loop.
+-- Partial carry cache in the hole-free A square loop.
 -- The 44 hole hosts `ReorderedAFixed.hs.take 44` stay out of the cache; the other 65 of the 109 cache hosts,
--- the three status hosts `ReorderedAFixed.hosts.take 3` included (clean at loop entry), keep their carries (65 T saved).
+-- the three status hosts `ReorderedAFixed.hosts.take 3` included (clean at loop entry), keep their carries.
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
@@ -8301,7 +8301,7 @@ theorem core_plainK(s:State)(m:List Bool)
 end ECDSAAdd.Entrant.A109Research
 end
 
--- PSQ-A: the partial-cache A loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
+-- The partial-cache A loop (`loopPC`): frame, host avoidance, counts, slots, physicality, support.
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.StairSqLoopA
@@ -8644,22 +8644,15 @@ theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
-theorem hostDomain_length44:hostDomain.length=44:=by decide +kernel
-
-theorem holes_mem_hostDomain(q:Wire)(hq:q∈holes):q∈hostDomain:=by
- unfold hostDomain
- exact List.mem_append_left _ hq
-
-/-- PSQ: a hole's host is one of the 44 hole hosts `hs.take 44`, never a kept cache host. -/
-theorem hostOf_not_keep44(q:Wire)(hq:q∈hostDomain):hostOf q∉A109Research.keepK:=by
+theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉A109Research.keepK:=by
  unfold hostOf
  apply A109Research.keepK_geometry.2.2
  have h:=List.idxOf_lt_length_of_mem hq
- rw [hostDomain_length44] at h
- exact h
+ have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
+ omega
 
 theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉A109Research.keepK:=
- hostOf_not_keep44 q (holes_mem_hostDomain q hq)
+ hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
 
 theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
@@ -9921,9 +9914,9 @@ end ECDSAAdd.Entrant.StairSqLoopC
 
 end
 
--- PSQ-C: partial carry cache in the hole-free C square loop.
+-- Partial carry cache in the hole-free C square loop.
 -- The 44 hole hosts `C163Low4Middle.hs.take 44` stay out of the cache; the other 61 of the 105 cache hosts,
--- the three status hosts `ReorderedCFixed.hosts.take 3` included (clean at loop entry), keep their carries (61 T saved).
+-- the three status hosts `ReorderedCFixed.hosts.take 3` included (clean at loop entry), keep their carries.
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105Research
@@ -10147,7 +10140,7 @@ theorem core_plainK(s:State)(m:List Bool)
 end ECDSAAdd.Entrant.C105Research
 end
 
--- PSQ-C: the partial-cache C loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
+-- The partial-cache C loop (`loopPC`): frame, host avoidance, counts, slots, physicality, support.
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.StairSqLoopC
@@ -10509,16 +10502,15 @@ theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
-/-- PSQ: a hole's host is one of the 44 hole hosts `hs.take 44`, never a kept cache host. -/
 theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉C105Research.keepK:=by
  unfold hostOf
  apply C105Research.keepK_geometry.2.2
  have h:=List.idxOf_lt_length_of_mem hq
- rw [StairSqLoopA.hostDomain_length44] at h
- exact h
+ have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
+ omega
 
 theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉C105Research.keepK:=
- hostOf_not_keep44 q (StairSqLoopA.holes_mem_hostDomain q hq)
+ hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
 
 theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
@@ -13706,7 +13698,7 @@ For every sublist `hl` of the 39 holes (`hl.Sublist StairSqLoopA.holes`, the sam
 `square hl k = place L0 (newBrC hl (bodyC hl) ++ newBrB hl (bodyB hl) ++ newBrA hl (bodyA hl)) ++ entryRH (k - delta)`
 * is run-equal to the record square on every state the record square is used on (`square_base`, the exact
   conclusion of `A161Generic.squareEntry_base`; `square_run_eq`);
-* costs 157 more Toffolis and the same measurements (`square_counts`);
+* costs 328 more Toffolis and the same measurements (`square_counts`);
 * is physical (`square_physical`);
 * is field 12's `square` piece for the holes `hl` (`StairSquareFinalSites.square_pieceOK`).
 `squareEntryHL hl L k` is the layout-generic drop-in (record square on every other layout). -/
@@ -17903,7 +17895,7 @@ open StairField2V3Replay StairField2V3Couple StairField2V3Entry StairField2V3Exi
 
 theorem refArithL_shape (loans : StairSchedule.StairLoans) :
     StairLoanField7Cores.entryReferenceArithmeticFor loans =
-      prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 14 85 5 ++ (grpL loans 23 90 3 ++ (grpL loans 31 93 3 ++ (grpL loans 37 96 2 ++ (grpL loans 42 98 2 ++ tailPL loans)))))))) := by
+      prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 13 85 5 ++ (grpL loans 22 90 3 ++ (grpL loans 30 93 3 ++ (grpL loans 36 96 2 ++ (grpL loans 41 98 2 ++ tailPL loans)))))))) := by
   simp only [StairLoanField7Cores.entryReferenceArithmeticFor,
     Rolling1588TickGap.firstPhase, Rolling1588TickGap.tailPhase,
     Rolling1588TickGap.stackForward, Six505.stackForward6, forward_504,
@@ -17919,11 +17911,11 @@ theorem refArithL_shape (loans : StairSchedule.StairLoans) :
 /-! ## Division transport -/
 
 def R1L (loans : StairSchedule.StairLoans) : Program := (R0 ++ firstPkt) ++ grpL loans 0 1 84
-def R2L (loans : StairSchedule.StairLoans) : Program := R1L loans ++ grpL loans 14 85 5
-def R3L (loans : StairSchedule.StairLoans) : Program := R2L loans ++ grpL loans 23 90 3
-def R4L (loans : StairSchedule.StairLoans) : Program := R3L loans ++ grpL loans 31 93 3
-def R5L (loans : StairSchedule.StairLoans) : Program := R4L loans ++ grpL loans 37 96 2
-def R6L (loans : StairSchedule.StairLoans) : Program := R5L loans ++ grpL loans 42 98 2
+def R2L (loans : StairSchedule.StairLoans) : Program := R1L loans ++ grpL loans 13 85 5
+def R3L (loans : StairSchedule.StairLoans) : Program := R2L loans ++ grpL loans 22 90 3
+def R4L (loans : StairSchedule.StairLoans) : Program := R3L loans ++ grpL loans 30 93 3
+def R5L (loans : StairSchedule.StairLoans) : Program := R4L loans ++ grpL loans 36 96 2
+def R6L (loans : StairSchedule.StairLoans) : Program := R5L loans ++ grpL loans 41 98 2
 
 
 
@@ -18210,7 +18202,7 @@ theorem RL_shape1 (loans : StairSchedule.StairLoans) :
 
 theorem RL_shape2 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R2L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
-      (StairLoanRecordShape.slices loans true [(0, 1, 84), (14, 85, 5)])) := by
+      (StairLoanRecordShape.slices loans true [(0, 1, 84), (13, 85, 5)])) := by
   simp only [StairLoanField7Transport.R2L, StairLoanField7Transport.R1L,
     StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -18219,7 +18211,7 @@ theorem RL_shape2 (loans : StairSchedule.StairLoans) :
 
 theorem RL_shape3 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R3L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
-      (StairLoanRecordShape.slices loans true [(0, 1, 84), (14, 85, 5), (23, 90, 3)])) := by
+      (StairLoanRecordShape.slices loans true [(0, 1, 84), (13, 85, 5), (22, 90, 3)])) := by
   simp only [StairLoanField7Transport.R3L, StairLoanField7Transport.R2L,
     StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -18229,7 +18221,7 @@ theorem RL_shape3 (loans : StairSchedule.StairLoans) :
 theorem RL_shape4 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R4L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3)])) := by
+        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3)])) := by
   simp only [StairLoanField7Transport.R4L, StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -18239,7 +18231,7 @@ theorem RL_shape4 (loans : StairSchedule.StairLoans) :
 theorem RL_shape5 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R5L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3), (37, 96, 2)])) := by
+        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3), (36, 96, 2)])) := by
   simp only [StairLoanField7Transport.R5L, StairLoanField7Transport.R4L,
     StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
@@ -18250,7 +18242,7 @@ theorem RL_shape5 (loans : StairSchedule.StairLoans) :
 theorem RL_shape6 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R6L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3), (37, 96, 2), (42, 98, 2)])) := by
+        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3), (36, 96, 2), (41, 98, 2)])) := by
   simp only [StairLoanField7Transport.R6L, StairLoanField7Transport.R5L,
     StairLoanField7Transport.R4L, StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
