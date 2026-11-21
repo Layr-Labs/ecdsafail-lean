@@ -20803,7 +20803,7 @@ def integer_load0Block0 : Program := [
   .CX 0 41
 ]
 
-private theorem integer_load0Block0Ok : GatePhysical integer_load0Block0 ∧ toffoliCount integer_load0Block0 = 4 ∧ measurementCount integer_load0Block0 = 0 ∧ gateSlots integer_load0Block0 = 40 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block0Ok : GatePhysical integer_load0Block0 ∧ toffoliCount integer_load0Block0 = 4 ∧ measurementCount integer_load0Block0 = 0 ∧ gateSlots integer_load0Block0 = 40 := by decide +kernel
 
 def integer_load0Block1 : Program := [
   .CX 0 40,
@@ -20854,7 +20854,7 @@ def integer_load0Block1 : Program := [
   .CX 4 40
 ]
 
-private theorem integer_load0Block1Ok : GatePhysical integer_load0Block1 ∧ toffoliCount integer_load0Block1 = 3 ∧ measurementCount integer_load0Block1 = 0 ∧ gateSlots integer_load0Block1 = 46 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block1Ok : GatePhysical integer_load0Block1 ∧ toffoliCount integer_load0Block1 = 3 ∧ measurementCount integer_load0Block1 = 0 ∧ gateSlots integer_load0Block1 = 46 := by decide +kernel
 
 def integer_load0Block2 : Program := [
   .CX 2 40,
@@ -20905,7 +20905,7 @@ def integer_load0Block2 : Program := [
   .CX 16 41
 ]
 
-private theorem integer_load0Block2Ok : GatePhysical integer_load0Block2 ∧ toffoliCount integer_load0Block2 = 3 ∧ measurementCount integer_load0Block2 = 0 ∧ gateSlots integer_load0Block2 = 46 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block2Ok : GatePhysical integer_load0Block2 ∧ toffoliCount integer_load0Block2 = 3 ∧ measurementCount integer_load0Block2 = 0 ∧ gateSlots integer_load0Block2 = 46 := by decide +kernel
 
 def integer_load0Block3 : Program := [
   .CX 18 40,
@@ -20958,7 +20958,7 @@ def integer_load0Block3 : Program := [
   .CX 53 41
 ]
 
-private theorem integer_load0Block3Ok : GatePhysical integer_load0Block3 ∧ toffoliCount integer_load0Block3 = 4 ∧ measurementCount integer_load0Block3 = 0 ∧ gateSlots integer_load0Block3 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block3Ok : GatePhysical integer_load0Block3 ∧ toffoliCount integer_load0Block3 = 4 ∧ measurementCount integer_load0Block3 = 0 ∧ gateSlots integer_load0Block3 = 48 := by decide +kernel
 
 def integer_load0Block4 : Program := [
   .CX 51 41,
@@ -21007,7 +21007,7 @@ def integer_load0Block4 : Program := [
   .CX 15 41
 ]
 
-private theorem integer_load0Block4Ok : GatePhysical integer_load0Block4 ∧ toffoliCount integer_load0Block4 = 2 ∧ measurementCount integer_load0Block4 = 0 ∧ gateSlots integer_load0Block4 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block4Ok : GatePhysical integer_load0Block4 ∧ toffoliCount integer_load0Block4 = 2 ∧ measurementCount integer_load0Block4 = 0 ∧ gateSlots integer_load0Block4 = 44 := by decide +kernel
 
 def integer_load0Block5 : Program := [
   .CX 14 41,
@@ -21056,7 +21056,7 @@ def integer_load0Block5 : Program := [
   .CX 21 41
 ]
 
-private theorem integer_load0Block5Ok : GatePhysical integer_load0Block5 ∧ toffoliCount integer_load0Block5 = 8 ∧ measurementCount integer_load0Block5 = 0 ∧ gateSlots integer_load0Block5 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block5Ok : GatePhysical integer_load0Block5 ∧ toffoliCount integer_load0Block5 = 8 ∧ measurementCount integer_load0Block5 = 0 ∧ gateSlots integer_load0Block5 = 44 := by decide +kernel
 
 def integer_load0Block6 : Program := [
   .CX 4 40,
@@ -21107,7 +21107,7 @@ def integer_load0Block6 : Program := [
   .CX 4 41
 ]
 
-private theorem integer_load0Block6Ok : GatePhysical integer_load0Block6 ∧ toffoliCount integer_load0Block6 = 6 ∧ measurementCount integer_load0Block6 = 0 ∧ gateSlots integer_load0Block6 = 46 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block6Ok : GatePhysical integer_load0Block6 ∧ toffoliCount integer_load0Block6 = 6 ∧ measurementCount integer_load0Block6 = 0 ∧ gateSlots integer_load0Block6 = 46 := by decide +kernel
 
 def integer_load0Block7 : Program := [
   .CX 5 41,
@@ -21152,7 +21152,7 @@ def integer_load0Block7 : Program := [
   .CX 43 41
 ]
 
-private theorem integer_load0Block7Ok : GatePhysical integer_load0Block7 ∧ toffoliCount integer_load0Block7 = 3 ∧ measurementCount integer_load0Block7 = 0 ∧ gateSlots integer_load0Block7 = 40 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block7Ok : GatePhysical integer_load0Block7 ∧ toffoliCount integer_load0Block7 = 3 ∧ measurementCount integer_load0Block7 = 0 ∧ gateSlots integer_load0Block7 = 40 := by decide +kernel
 
 def integer_load0Block8 : Program := [
   .CX 44 41,
@@ -21201,7 +21201,7 @@ def integer_load0Block8 : Program := [
   .CX 66 41
 ]
 
-private theorem integer_load0Block8Ok : GatePhysical integer_load0Block8 ∧ toffoliCount integer_load0Block8 = 2 ∧ measurementCount integer_load0Block8 = 0 ∧ gateSlots integer_load0Block8 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block8Ok : GatePhysical integer_load0Block8 ∧ toffoliCount integer_load0Block8 = 2 ∧ measurementCount integer_load0Block8 = 0 ∧ gateSlots integer_load0Block8 = 44 := by decide +kernel
 
 def integer_load0Block9 : Program := [
   .CCX 40 41 78,
@@ -21244,7 +21244,7 @@ def integer_load0Block9 : Program := [
   .CX 64 41
 ]
 
-private theorem integer_load0Block9Ok : GatePhysical integer_load0Block9 ∧ toffoliCount integer_load0Block9 = 4 ∧ measurementCount integer_load0Block9 = 0 ∧ gateSlots integer_load0Block9 = 38 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block9Ok : GatePhysical integer_load0Block9 ∧ toffoliCount integer_load0Block9 = 4 ∧ measurementCount integer_load0Block9 = 0 ∧ gateSlots integer_load0Block9 = 38 := by decide +kernel
 
 def integer_load0Block10 : Program := [
   .CX 55 41,
@@ -21291,7 +21291,7 @@ def integer_load0Block10 : Program := [
   .CX 56 41
 ]
 
-private theorem integer_load0Block10Ok : GatePhysical integer_load0Block10 ∧ toffoliCount integer_load0Block10 = 2 ∧ measurementCount integer_load0Block10 = 0 ∧ gateSlots integer_load0Block10 = 42 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block10Ok : GatePhysical integer_load0Block10 ∧ toffoliCount integer_load0Block10 = 2 ∧ measurementCount integer_load0Block10 = 0 ∧ gateSlots integer_load0Block10 = 42 := by decide +kernel
 
 def integer_load0Block11 : Program := [
   .CX 72 41,
@@ -21340,7 +21340,7 @@ def integer_load0Block11 : Program := [
   .CX 54 41
 ]
 
-private theorem integer_load0Block11Ok : GatePhysical integer_load0Block11 ∧ toffoliCount integer_load0Block11 = 3 ∧ measurementCount integer_load0Block11 = 0 ∧ gateSlots integer_load0Block11 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block11Ok : GatePhysical integer_load0Block11 ∧ toffoliCount integer_load0Block11 = 3 ∧ measurementCount integer_load0Block11 = 0 ∧ gateSlots integer_load0Block11 = 44 := by decide +kernel
 
 def integer_load0Block12 : Program := [
   .CX 53 41,
@@ -21385,7 +21385,7 @@ def integer_load0Block12 : Program := [
   .CX 43 25
 ]
 
-private theorem integer_load0Block12Ok : GatePhysical integer_load0Block12 ∧ toffoliCount integer_load0Block12 = 2 ∧ measurementCount integer_load0Block12 = 0 ∧ gateSlots integer_load0Block12 = 40 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block12Ok : GatePhysical integer_load0Block12 ∧ toffoliCount integer_load0Block12 = 2 ∧ measurementCount integer_load0Block12 = 0 ∧ gateSlots integer_load0Block12 = 40 := by decide +kernel
 
 def integer_load0Block13 : Program := [
   .CX 75 25,
@@ -21438,7 +21438,7 @@ def integer_load0Block13 : Program := [
   .CX 14 32
 ]
 
-private theorem integer_load0Block13Ok : GatePhysical integer_load0Block13 ∧ toffoliCount integer_load0Block13 = 0 ∧ measurementCount integer_load0Block13 = 0 ∧ gateSlots integer_load0Block13 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block13Ok : GatePhysical integer_load0Block13 ∧ toffoliCount integer_load0Block13 = 0 ∧ measurementCount integer_load0Block13 = 0 ∧ gateSlots integer_load0Block13 = 48 := by decide +kernel
 
 def integer_load0Block14 : Program := [
   .CX 19 32,
@@ -21491,7 +21491,7 @@ def integer_load0Block14 : Program := [
   .CX 20 38
 ]
 
-private theorem integer_load0Block14Ok : GatePhysical integer_load0Block14 ∧ toffoliCount integer_load0Block14 = 0 ∧ measurementCount integer_load0Block14 = 0 ∧ gateSlots integer_load0Block14 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block14Ok : GatePhysical integer_load0Block14 ∧ toffoliCount integer_load0Block14 = 0 ∧ measurementCount integer_load0Block14 = 0 ∧ gateSlots integer_load0Block14 = 48 := by decide +kernel
 
 def integer_load0Block15 : Program := [
   .CX 56 38,
@@ -21544,7 +21544,7 @@ def integer_load0Block15 : Program := [
   .CX 98 41
 ]
 
-private theorem integer_load0Block15Ok : GatePhysical integer_load0Block15 ∧ toffoliCount integer_load0Block15 = 8 ∧ measurementCount integer_load0Block15 = 0 ∧ gateSlots integer_load0Block15 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block15Ok : GatePhysical integer_load0Block15 ∧ toffoliCount integer_load0Block15 = 8 ∧ measurementCount integer_load0Block15 = 0 ∧ gateSlots integer_load0Block15 = 48 := by decide +kernel
 
 def integer_load0Block16 : Program := [
   .CCX 40 41 99,
@@ -21593,7 +21593,7 @@ def integer_load0Block16 : Program := [
   .CX 28 41
 ]
 
-private theorem integer_load0Block16Ok : GatePhysical integer_load0Block16 ∧ toffoliCount integer_load0Block16 = 6 ∧ measurementCount integer_load0Block16 = 0 ∧ gateSlots integer_load0Block16 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block16Ok : GatePhysical integer_load0Block16 ∧ toffoliCount integer_load0Block16 = 6 ∧ measurementCount integer_load0Block16 = 0 ∧ gateSlots integer_load0Block16 = 44 := by decide +kernel
 
 def integer_load0Block17 : Program := [
   .CX 59 108,
@@ -21610,7 +21610,7 @@ def integer_load0Block17 : Program := [
   .CX 94 41
 ]
 
-private theorem integer_load0Block17Ok : GatePhysical integer_load0Block17 ∧ toffoliCount integer_load0Block17 = 0 ∧ measurementCount integer_load0Block17 = 0 ∧ gateSlots integer_load0Block17 = 12 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block17Ok : GatePhysical integer_load0Block17 ∧ toffoliCount integer_load0Block17 = 0 ∧ measurementCount integer_load0Block17 = 0 ∧ gateSlots integer_load0Block17 = 12 := by decide +kernel
 
 def integer_load0Block18 : Program := [
   .CX 94 41,
@@ -21647,7 +21647,7 @@ def integer_load0Block18 : Program := [
   .CX 117 41
 ]
 
-private theorem integer_load0Block18Ok : GatePhysical integer_load0Block18 ∧ toffoliCount integer_load0Block18 = 3 ∧ measurementCount integer_load0Block18 = 0 ∧ gateSlots integer_load0Block18 = 32 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block18Ok : GatePhysical integer_load0Block18 ∧ toffoliCount integer_load0Block18 = 3 ∧ measurementCount integer_load0Block18 = 0 ∧ gateSlots integer_load0Block18 = 32 := by decide +kernel
 
 def integer_load0Block19 : Program := [
   .CX 94 41,
@@ -21665,7 +21665,7 @@ def integer_load0Block19 : Program := [
   .CX 23 40
 ]
 
-private theorem integer_load0Block19Ok : GatePhysical integer_load0Block19 ∧ toffoliCount integer_load0Block19 = 1 ∧ measurementCount integer_load0Block19 = 0 ∧ gateSlots integer_load0Block19 = 13 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block19Ok : GatePhysical integer_load0Block19 ∧ toffoliCount integer_load0Block19 = 1 ∧ measurementCount integer_load0Block19 = 0 ∧ gateSlots integer_load0Block19 = 13 := by decide +kernel
 
 def integer_load0Block20 : Program := [
   .CX 31 40,
@@ -21689,7 +21689,7 @@ def integer_load0Block20 : Program := [
   .CX 34 41
 ]
 
-private theorem integer_load0Block20Ok : GatePhysical integer_load0Block20 ∧ toffoliCount integer_load0Block20 = 3 ∧ measurementCount integer_load0Block20 = 0 ∧ gateSlots integer_load0Block20 = 19 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block20Ok : GatePhysical integer_load0Block20 ∧ toffoliCount integer_load0Block20 = 3 ∧ measurementCount integer_load0Block20 = 0 ∧ gateSlots integer_load0Block20 = 19 := by decide +kernel
 
 def integer_load0Block21 : Program := [
   .CX 38 41,
@@ -21727,7 +21727,7 @@ def integer_load0Block21 : Program := [
   .CCX 40 41 132
 ]
 
-private theorem integer_load0Block21Ok : GatePhysical integer_load0Block21 ∧ toffoliCount integer_load0Block21 = 4 ∧ measurementCount integer_load0Block21 = 0 ∧ gateSlots integer_load0Block21 = 33 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block21Ok : GatePhysical integer_load0Block21 ∧ toffoliCount integer_load0Block21 = 4 ∧ measurementCount integer_load0Block21 = 0 ∧ gateSlots integer_load0Block21 = 33 := by decide +kernel
 
 def integer_load0Block22 : Program := [
   .CX 128 41,
@@ -21745,7 +21745,7 @@ def integer_load0Block22 : Program := [
   .CX 32 40
 ]
 
-private theorem integer_load0Block22Ok : GatePhysical integer_load0Block22 ∧ toffoliCount integer_load0Block22 = 1 ∧ measurementCount integer_load0Block22 = 0 ∧ gateSlots integer_load0Block22 = 13 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block22Ok : GatePhysical integer_load0Block22 ∧ toffoliCount integer_load0Block22 = 1 ∧ measurementCount integer_load0Block22 = 0 ∧ gateSlots integer_load0Block22 = 13 := by decide +kernel
 
 def integer_load0Block23 : Program := [
   .CX 31 40,
@@ -21771,7 +21771,7 @@ def integer_load0Block23 : Program := [
   .CCX 40 41 137
 ]
 
-private theorem integer_load0Block23Ok : GatePhysical integer_load0Block23 ∧ toffoliCount integer_load0Block23 = 1 ∧ measurementCount integer_load0Block23 = 0 ∧ gateSlots integer_load0Block23 = 21 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block23Ok : GatePhysical integer_load0Block23 ∧ toffoliCount integer_load0Block23 = 1 ∧ measurementCount integer_load0Block23 = 0 ∧ gateSlots integer_load0Block23 = 21 := by decide +kernel
 
 def integer_load0Block24 : Program := [
   .CX 136 41,
@@ -21824,7 +21824,7 @@ def integer_load0Block24 : Program := [
   .CX 76 140
 ]
 
-private theorem integer_load0Block24Ok : GatePhysical integer_load0Block24 ∧ toffoliCount integer_load0Block24 = 0 ∧ measurementCount integer_load0Block24 = 0 ∧ gateSlots integer_load0Block24 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block24Ok : GatePhysical integer_load0Block24 ∧ toffoliCount integer_load0Block24 = 0 ∧ measurementCount integer_load0Block24 = 0 ∧ gateSlots integer_load0Block24 = 48 := by decide +kernel
 
 def integer_load0Block25 : Program := [
   .CX 94 140,
@@ -21877,7 +21877,7 @@ def integer_load0Block25 : Program := [
   .CCX 40 41 143
 ]
 
-private theorem integer_load0Block25Ok : GatePhysical integer_load0Block25 ∧ toffoliCount integer_load0Block25 = 1 ∧ measurementCount integer_load0Block25 = 0 ∧ gateSlots integer_load0Block25 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block25Ok : GatePhysical integer_load0Block25 ∧ toffoliCount integer_load0Block25 = 1 ∧ measurementCount integer_load0Block25 = 0 ∧ gateSlots integer_load0Block25 = 48 := by decide +kernel
 
 def integer_load0Block26 : Program := [
   .CX 142 41,
@@ -21930,7 +21930,7 @@ def integer_load0Block26 : Program := [
   .CX 100 41
 ]
 
-private theorem integer_load0Block26Ok : GatePhysical integer_load0Block26 ∧ toffoliCount integer_load0Block26 = 0 ∧ measurementCount integer_load0Block26 = 0 ∧ gateSlots integer_load0Block26 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block26Ok : GatePhysical integer_load0Block26 ∧ toffoliCount integer_load0Block26 = 0 ∧ measurementCount integer_load0Block26 = 0 ∧ gateSlots integer_load0Block26 = 48 := by decide +kernel
 
 def integer_load0Block27 : Program := [
   .CX 101 41,
@@ -21983,7 +21983,7 @@ def integer_load0Block27 : Program := [
   .CX 10 150
 ]
 
-private theorem integer_load0Block27Ok : GatePhysical integer_load0Block27 ∧ toffoliCount integer_load0Block27 = 2 ∧ measurementCount integer_load0Block27 = 0 ∧ gateSlots integer_load0Block27 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block27Ok : GatePhysical integer_load0Block27 ∧ toffoliCount integer_load0Block27 = 2 ∧ measurementCount integer_load0Block27 = 0 ∧ gateSlots integer_load0Block27 = 48 := by decide +kernel
 
 def integer_load0Block28 : Program := [
   .CX 14 150,
@@ -22036,7 +22036,7 @@ def integer_load0Block28 : Program := [
   .CX 19 152
 ]
 
-private theorem integer_load0Block28Ok : GatePhysical integer_load0Block28 ∧ toffoliCount integer_load0Block28 = 1 ∧ measurementCount integer_load0Block28 = 0 ∧ gateSlots integer_load0Block28 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block28Ok : GatePhysical integer_load0Block28 ∧ toffoliCount integer_load0Block28 = 1 ∧ measurementCount integer_load0Block28 = 0 ∧ gateSlots integer_load0Block28 = 48 := by decide +kernel
 
 def integer_load0Block29 : Program := [
   .CX 20 152,
@@ -22089,7 +22089,7 @@ def integer_load0Block29 : Program := [
   .measureX 80 [] [.CZ 0 20, .CZ 2 20, .CZ 10 20, .CZ 20 48, .CZ 20 70]
 ]
 
-private theorem integer_load0Block29Ok : GatePhysical integer_load0Block29 ∧ toffoliCount integer_load0Block29 = 1 ∧ measurementCount integer_load0Block29 = 9 ∧ gateSlots integer_load0Block29 = 109 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block29Ok : GatePhysical integer_load0Block29 ∧ toffoliCount integer_load0Block29 = 1 ∧ measurementCount integer_load0Block29 = 9 ∧ gateSlots integer_load0Block29 = 109 := by decide +kernel
 
 def integer_load0Block30 : Program := [
   .measureX 79 [] [.CZ 0 20, .CZ 1 20, .CZ 4 20, .CZ 20 46, .CZ 20 47, .CZ 20 68],
@@ -22142,7 +22142,7 @@ def integer_load0Block30 : Program := [
   .measureX 9 [] [.Z 26, .Z 27, .Z 39, .Z 91, .Z 92, .Z 97, .Z 102, .Z 117, .Z 118, .Z 121, .Z 123, .Z 139, .Z 140, .Z 141, .Z 143, .Z 144, .Z 145, .CZ 26 27, .CZ 26 100, .CZ 26 101, .CZ 26 142, .CZ 26 144, .CZ 27 102, .CZ 27 142, .CZ 91 139, .CZ 91 140, .CZ 91 144, .CZ 92 139, .CZ 92 140, .CZ 92 141, .CZ 97 121, .CZ 97 123, .CZ 97 140, .CZ 97 142, .CZ 100 121, .CZ 100 123, .CZ 100 139, .CZ 100 140, .CZ 101 121, .CZ 101 123, .CZ 101 139, .CZ 101 140, .CZ 102 121, .CZ 102 123, .CZ 102 140, .CZ 117 118, .CZ 118 142, .CZ 123 142, .CZ 142 144, .Z 23, .Z 24, .Z 25, .Z 94, .Z 104, .Z 105, .Z 112, .Z 136, .Z 138, .CZ 10 20, .CZ 23 27]
 ]
 
-private theorem integer_load0Block30Ok : GatePhysical integer_load0Block30 ∧ toffoliCount integer_load0Block30 = 0 ∧ measurementCount integer_load0Block30 = 48 ∧ gateSlots integer_load0Block30 = 519 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block30Ok : GatePhysical integer_load0Block30 ∧ toffoliCount integer_load0Block30 = 0 ∧ measurementCount integer_load0Block30 = 48 ∧ gateSlots integer_load0Block30 = 519 := by decide +kernel
 
 def integer_load0Block31 : Program := [
   .measureX 10 [] [.Z 91, .Z 92, .Z 97, .Z 100, .Z 101, .Z 102, .Z 126, .Z 130, .Z 146],
@@ -22195,7 +22195,7 @@ def integer_load0Block31 : Program := [
   .measureX 120 [] []
 ]
 
-private theorem integer_load0Block31Ok : GatePhysical integer_load0Block31 ∧ toffoliCount integer_load0Block31 = 0 ∧ measurementCount integer_load0Block31 = 48 ∧ gateSlots integer_load0Block31 = 788 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block31Ok : GatePhysical integer_load0Block31 ∧ toffoliCount integer_load0Block31 = 0 ∧ measurementCount integer_load0Block31 = 48 ∧ gateSlots integer_load0Block31 = 788 := by decide +kernel
 
 def integer_load0Block32 : Program := [
   .measureX 119 [] [.CZ 28 30, .CZ 28 117, .CZ 30 118, .CZ 117 118],
@@ -22248,7 +22248,7 @@ def integer_load0Block32 : Program := [
   .CX 7 30
 ]
 
-private theorem integer_load0Block32Ok : GatePhysical integer_load0Block32 ∧ toffoliCount integer_load0Block32 = 0 ∧ measurementCount integer_load0Block32 = 31 ∧ gateSlots integer_load0Block32 = 103 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block32Ok : GatePhysical integer_load0Block32 ∧ toffoliCount integer_load0Block32 = 0 ∧ measurementCount integer_load0Block32 = 31 ∧ gateSlots integer_load0Block32 = 103 := by decide +kernel
 
 def integer_load0Block33 : Program := [
   .CX 31 8,
@@ -22269,7 +22269,7 @@ def integer_load0Block33 : Program := [
   .CX 15 38
 ]
 
-private theorem integer_load0Block33Ok : GatePhysical integer_load0Block33 ∧ toffoliCount integer_load0Block33 = 0 ∧ measurementCount integer_load0Block33 = 0 ∧ gateSlots integer_load0Block33 = 16 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block33Ok : GatePhysical integer_load0Block33 ∧ toffoliCount integer_load0Block33 = 0 ∧ measurementCount integer_load0Block33 = 0 ∧ gateSlots integer_load0Block33 = 16 := by decide +kernel
 
 def integer_load0 : Program := integer_load0Block0 ++ integer_load0Block1 ++ integer_load0Block2 ++ integer_load0Block3 ++ integer_load0Block4 ++ integer_load0Block5 ++ integer_load0Block6 ++ integer_load0Block7 ++ integer_load0Block8 ++ integer_load0Block9 ++ integer_load0Block10 ++ integer_load0Block11 ++ integer_load0Block12 ++ integer_load0Block13 ++ integer_load0Block14 ++ integer_load0Block15 ++ integer_load0Block16 ++ integer_load0Block17 ++ integer_load0Block18 ++ integer_load0Block19 ++ integer_load0Block20 ++ integer_load0Block21 ++ integer_load0Block22 ++ integer_load0Block23 ++ integer_load0Block24 ++ integer_load0Block25 ++ integer_load0Block26 ++ integer_load0Block27 ++ integer_load0Block28 ++ integer_load0Block29 ++ integer_load0Block30 ++ integer_load0Block31 ++ integer_load0Block32 ++ integer_load0Block33
 
@@ -22392,9 +22392,7 @@ col130] ++ List.replicate 89 0
 
 theorem integer_load0Trace0_checked : eval col263 (integer_load0Block0 ++ integer_load0Block1 ++ integer_load0Block2 ++ integer_load0Block3 ++ integer_load0Block4 ++ integer_load0Block5) integer_load0Trace0In =
 
-    (true, integer_load0Trace0Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block0 [integer_load0Block1, integer_load0Block2, integer_load0Block3, integer_load0Block4, integer_load0Block5] _ _ (by decide +kernel)
+    (true, integer_load0Trace0Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -22567,9 +22565,7 @@ col76] ++ List.replicate 68 0
 
 theorem integer_load0Trace1_checked : eval col263 (integer_load0Block6 ++ integer_load0Block7 ++ integer_load0Block8 ++ integer_load0Block9 ++ integer_load0Block10 ++ integer_load0Block11) integer_load0Trace1In =
 
-    (true, integer_load0Trace1Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block6 [integer_load0Block7, integer_load0Block8, integer_load0Block9, integer_load0Block10, integer_load0Block11] _ _ (by decide +kernel)
+    (true, integer_load0Trace1Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -22792,9 +22788,7 @@ col80,
 
 theorem integer_load0Trace2_checked : eval col263 (integer_load0Block12 ++ integer_load0Block13 ++ integer_load0Block14 ++ integer_load0Block15 ++ integer_load0Block16 ++ integer_load0Block17) integer_load0Trace2In =
 
-    (true, integer_load0Trace2Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block12 [integer_load0Block13, integer_load0Block14, integer_load0Block15, integer_load0Block16, integer_load0Block17] _ _ (by decide +kernel)
+    (true, integer_load0Trace2Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -23068,9 +23062,7 @@ col30] ++ List.replicate 17 0
 
 theorem integer_load0Trace3_checked : eval col263 (integer_load0Block18 ++ integer_load0Block19 ++ integer_load0Block20 ++ integer_load0Block21 ++ integer_load0Block22 ++ integer_load0Block23) integer_load0Trace3In =
 
-    (true, integer_load0Trace3Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block18 [integer_load0Block19, integer_load0Block20, integer_load0Block21, integer_load0Block22, integer_load0Block23] _ _ (by decide +kernel)
+    (true, integer_load0Trace3Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -23383,9 +23375,7 @@ col202]
 
 theorem integer_load0Trace4_checked : eval col263 (integer_load0Block24 ++ integer_load0Block25 ++ integer_load0Block26 ++ integer_load0Block27 ++ integer_load0Block28 ++ integer_load0Block29) integer_load0Trace4In =
 
-    (true, integer_load0Trace4Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block24 [integer_load0Block25, integer_load0Block26, integer_load0Block27, integer_load0Block28, integer_load0Block29] _ _ (by decide +kernel)
+    (true, integer_load0Trace4Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -23576,9 +23566,7 @@ col231] ++ List.replicate 139 0
 
 theorem integer_load0Trace5_checked : eval col263 (integer_load0Block30 ++ integer_load0Block31 ++ integer_load0Block32 ++ integer_load0Block33) integer_load0Trace5In =
 
-    (true, integer_load0Trace5Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block30 [integer_load0Block31, integer_load0Block32, integer_load0Block33] _ _ (by decide +kernel)
+    (true, integer_load0Trace5Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -23662,10 +23650,7 @@ theorem integer_load0_checked : eval 0x1ffffffffffffffffffffffffffffffffffffffff
   rw [shape]
   exact (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace0_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace1_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace2_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace3_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace4_checked integer_load0Trace5_checked)))))
 
-private theorem integer_load0_target : ∀ i ∈ integer_load0, target i < 155 := by
-  -- WSLIM: one scan per block (the decide walked the left-nested `++` chain per instruction)
-  unfold integer_load0
-  exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
+private theorem integer_load0_target : ∀ i ∈ integer_load0, target i < 155 := by decide +kernel
 
 theorem integer_load0_run (row x : Nat) (m : List Bool) (s : State)
     (active : (0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff : Nat).testBit row = true)
@@ -26595,9 +26580,6 @@ def enter225Part0 : Program := [
     .CX 1559 947,
     .measureX 1559 [] [.CZ 946 1558],
     .CX 1558 946,
-    .CCX 1722 401 946,
-    .CCX 1722 402 947,
-    .CCX 1722 403 948,
     .CX 401 1559,
     .CCX 1721 1559 401,
     .CX 401 1559,
@@ -26608,9 +26590,11 @@ def enter225Part0 : Program := [
     .CCX 1721 1561 403,
     .CX 403 1561,
     .CX 1721 402,
-    .CCX 1722 401 946,
-    .CCX 1722 402 947,
-    .CCX 1722 403 948,
+    .CCX 1722 1559 946,
+    .CX 1721 1560,
+    .CCX 1722 1560 947,
+    .CX 1721 1560,
+    .CCX 1722 1561 948,
     .X 946,
     .X 947,
     .X 948,
@@ -26701,9 +26685,11 @@ def enter225InvPart0 : Program := [
     .X 948,
     .X 947,
     .X 946,
-    .CCX 1722 403 948,
-    .CCX 1722 402 947,
-    .CCX 1722 401 946,
+    .CCX 1722 1561 948,
+    .CX 1721 1560,
+    .CCX 1722 1560 947,
+    .CX 1721 1560,
+    .CCX 1722 1559 946,
     .CX 1721 402,
     .CX 403 1561,
     .CCX 1721 1561 403,
@@ -26714,9 +26700,6 @@ def enter225InvPart0 : Program := [
     .CX 401 1559,
     .CCX 1721 1559 401,
     .CX 401 1559,
-    .CCX 1722 403 948,
-    .CCX 1722 402 947,
-    .CCX 1722 401 946,
     .CX 1558 946,
     .CCX 946 1558 1559,
     .CX 1559 947,
@@ -26781,9 +26764,6 @@ def enter240Part0 : Program := [
     .CX 1559 939,
     .measureX 1559 [] [.CZ 938 1558],
     .CX 1558 938,
-    .CCX 1714 408 938,
-    .CCX 1714 409 939,
-    .CCX 1714 410 940,
     .CX 408 1559,
     .CCX 1713 1559 408,
     .CX 408 1559,
@@ -26794,9 +26774,11 @@ def enter240Part0 : Program := [
     .CCX 1713 1561 410,
     .CX 410 1561,
     .CX 1713 409,
-    .CCX 1714 408 938,
-    .CCX 1714 409 939,
-    .CCX 1714 410 940,
+    .CCX 1714 1559 938,
+    .CX 1713 1560,
+    .CCX 1714 1560 939,
+    .CX 1713 1560,
+    .CCX 1714 1561 940,
     .X 938,
     .X 939,
     .X 940,
@@ -26887,9 +26869,11 @@ def enter240InvPart0 : Program := [
     .X 940,
     .X 939,
     .X 938,
-    .CCX 1714 410 940,
-    .CCX 1714 409 939,
-    .CCX 1714 408 938,
+    .CCX 1714 1561 940,
+    .CX 1713 1560,
+    .CCX 1714 1560 939,
+    .CX 1713 1560,
+    .CCX 1714 1559 938,
     .CX 1713 409,
     .CX 410 1561,
     .CCX 1713 1561 410,
@@ -26900,9 +26884,6 @@ def enter240InvPart0 : Program := [
     .CX 408 1559,
     .CCX 1713 1559 408,
     .CX 408 1559,
-    .CCX 1714 410 940,
-    .CCX 1714 409 939,
-    .CCX 1714 408 938,
     .CX 1558 938,
     .CCX 938 1558 1559,
     .CX 1559 939,
@@ -26967,9 +26948,6 @@ def enter255Part0 : Program := [
     .CX 1559 932,
     .measureX 1559 [] [.CZ 931 1558],
     .CX 1558 931,
-    .CCX 1707 416 931,
-    .CCX 1707 417 932,
-    .CCX 1707 418 933,
     .CX 416 1559,
     .CCX 1706 1559 416,
     .CX 416 1559,
@@ -26980,9 +26958,11 @@ def enter255Part0 : Program := [
     .CCX 1706 1561 418,
     .CX 418 1561,
     .CX 1706 417,
-    .CCX 1707 416 931,
-    .CCX 1707 417 932,
-    .CCX 1707 418 933,
+    .CCX 1707 1559 931,
+    .CX 1706 1560,
+    .CCX 1707 1560 932,
+    .CX 1706 1560,
+    .CCX 1707 1561 933,
     .X 931,
     .X 932,
     .X 933,
@@ -27073,9 +27053,11 @@ def enter255InvPart0 : Program := [
     .X 933,
     .X 932,
     .X 931,
-    .CCX 1707 418 933,
-    .CCX 1707 417 932,
-    .CCX 1707 416 931,
+    .CCX 1707 1561 933,
+    .CX 1706 1560,
+    .CCX 1707 1560 932,
+    .CX 1706 1560,
+    .CCX 1707 1559 931,
     .CX 1706 417,
     .CX 418 1561,
     .CCX 1706 1561 418,
@@ -27086,9 +27068,6 @@ def enter255InvPart0 : Program := [
     .CX 416 1559,
     .CCX 1706 1559 416,
     .CX 416 1559,
-    .CCX 1707 418 933,
-    .CCX 1707 417 932,
-    .CCX 1707 416 931,
     .CX 1558 931,
     .CCX 931 1558 1559,
     .CX 1559 932,
@@ -56884,7 +56863,7 @@ set_option maxHeartbeats 4000000
 theorem part0 : toffoliCount (portal225) = 481 ∧ measurementCount (portal225) = 286 := by
   decide +kernel
 
-theorem part1 : toffoliCount (enter225) = 23 ∧ measurementCount (enter225) = 6 := by
+theorem part1 : toffoliCount (enter225) = 20 ∧ measurementCount (enter225) = 6 := by
   decide +kernel
 
 theorem part2 : toffoliCount (routed ⟨10,by decide⟩ 0 1) = 324 ∧ measurementCount (routed ⟨10,by decide⟩ 0 1) = 162 := by
@@ -56920,7 +56899,7 @@ set_option maxHeartbeats 4000000
 theorem part5 : toffoliCount (leave225) = 821 ∧ measurementCount (leave225) = 297 := by
   decide +kernel
 
-theorem part6 : toffoliCount (enter240) = 23 ∧ measurementCount (enter240) = 6 := by
+theorem part6 : toffoliCount (enter240) = 20 ∧ measurementCount (enter240) = 6 := by
   decide +kernel
 
 theorem part7 : toffoliCount (routed ⟨11,by decide⟩ 0 1) = 308 ∧ measurementCount (routed ⟨11,by decide⟩ 0 1) = 154 := by
@@ -56956,7 +56935,7 @@ theorem part50 : toffoliCount (unrouted ⟨10,by decide⟩ 0 1) = 324 ∧ measur
   dsimp only [j]
   decide +kernel
 
-theorem part51 : toffoliCount (enter225Inv) = 23 ∧ measurementCount (enter225Inv) = 6 := by
+theorem part51 : toffoliCount (enter225Inv) = 20 ∧ measurementCount (enter225Inv) = 6 := by
   decide +kernel
 
 theorem part52 : toffoliCount (portal225Inv) = 481 ∧ measurementCount (portal225Inv) = 286 := by
@@ -57016,7 +56995,7 @@ theorem part10 : toffoliCount (routed ⟨11,by decide⟩ 1 14) = 4312 ∧ measur
 theorem part11 : toffoliCount (leave240) = 872 ∧ measurementCount (leave240) = 314 := by
   decide +kernel
 
-theorem part12 : toffoliCount (enter255) = 23 ∧ measurementCount (enter255) = 6 := by
+theorem part12 : toffoliCount (enter255) = 20 ∧ measurementCount (enter255) = 6 := by
   decide +kernel
 
 theorem part13 : toffoliCount (routed ⟨12,by decide⟩ 0 1) = 294 ∧ measurementCount (routed ⟨12,by decide⟩ 0 1) = 147 := by
@@ -57199,7 +57178,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part40 : toffoliCount (enter255Inv) = 23 ∧ measurementCount (enter255Inv) = 6 := by
+theorem part40 : toffoliCount (enter255Inv) = 20 ∧ measurementCount (enter255Inv) = 6 := by
   decide +kernel
 
 theorem part41 : toffoliCount (leave240Inv) = 871 ∧ measurementCount (leave240Inv) = 315 := by
@@ -57238,7 +57217,7 @@ theorem part45 : toffoliCount (unrouted ⟨11,by decide⟩ 0 1) = 308 ∧ measur
   dsimp only [j]
   decide +kernel
 
-theorem part46 : toffoliCount (enter240Inv) = 23 ∧ measurementCount (enter240Inv) = 6 := by
+theorem part46 : toffoliCount (enter240Inv) = 20 ∧ measurementCount (enter240Inv) = 6 := by
   decide +kernel
 
 theorem part47 : toffoliCount (leave225Inv) = 820 ∧ measurementCount (leave225Inv) = 298 := by
@@ -57652,9 +57631,9 @@ theorem part30 : gateSlots (archiveRestore270 false) ≤ 3562 := by
 
 theorem part31 : gateSlots (Rolling1588.unpackAtTick false 260) ≤ 154 := by decide +kernel
 
-theorem part32 : gateSlots (W.ReverseCarry.compactReceiverTick base 270) ≤ 6001 := by
-  have h := W.ReverseCarry.compactReceiverTick_slots base 270 (by decide) base_pool_nodup
-  have c := (W.compactTick_gateSlots_le base 270 (by decide)).2
+theorem part32 : gateSlots (W.ReverseCarry.compactReceiverTick base 300) ≤ 6001 := by
+  have h := W.ReverseCarry.compactReceiverTick_slots base 300 (by decide) base_pool_nodup
+  have c := (W.compactTick_gateSlots_le base 300 (by decide)).2
   omega
 
 theorem part33 : gateSlots (portal270) ≤ 2219 := by decide +kernel
@@ -59088,6 +59067,16 @@ def exitLoadP (e : Nat) (d : Bool) : Program :=
 def exitRestoreP (e : Nat) (d : Bool) : Program :=
   renameProgram (fun q => (restorePortsWP e).getD q 0)
     (if d then integer_restore0 else integer_restore1) ++ moveRestoreP e (bTopP e + 1)
+
+/-- The exit pieces at tick 300 (the window's exit), named as dadon's literal exit pieces at 270 were. -/
+def portal300 : Program := portalP 300
+def portal300Inv : Program := portalInvP 300
+def park300 : Program := parkP 300
+def park300Inv : Program := parkInvP 300
+def moveLoad300 : Program := moveLoadP 300
+def moveRestore300 : Program := moveRestoreP 300 (bTopP 300 + 1)
+def archiveLoad300 (d : Bool) : Program := exitLoadP 300 d
+def archiveRestore300 (d : Bool) : Program := exitRestoreP 300 d
 
 end
 
@@ -63713,20 +63702,21 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+
+namespace ECDSAAdd.Entrant.StairPacket.Portal300Flag
 open Arithmetic PortalAnd
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
-def thresholdPairs : List (Wire×Wire) := [(425, 1558), (426, 1559), (427, 1560), (428, 1561), (429, 1562), (430, 1563), (431, 1564), (432, 1565), (433, 1566), (434, 1567), (435, 1568), (436, 1569), (437, 1570), (438, 1571), (439, 1572), (440, 1573), (441, 1574), (442, 1575), (443, 1576), (444, 1577), (445, 1578), (446, 1579), (447, 1580), (448, 1581), (449, 1582), (450, 1583), (451, 1584), (452, 1585), (453, 1586), (454, 1587), (455, 1588), (456, 1589), (457, 1590), (458, 1591), (459, 1592), (460, 1593), (461, 1594), (462, 1595), (463, 1596), (464, 1597), (465, 1598), (466, 1599), (467, 1600), (468, 1601), (469, 1602), (470, 1603), (471, 1604), (472, 1605), (473, 1606), (474, 1607), (475, 1608), (476, 1609), (477, 1610), (478, 1611), (479, 1612), (480, 1613), (481, 1614), (482, 1615), (483, 1616), (484, 1617), (485, 1618), (486, 1619), (487, 1620), (488, 1621), (489, 1622), (490, 1623), (491, 1624), (492, 1625), (493, 1626), (494, 1627), (495, 1628), (496, 1629), (497, 1630), (498, 1631), (499, 1632), (500, 1633), (501, 1634), (502, 1635), (503, 1636), (504, 1637), (505, 1638), (506, 1639), (507, 1640), (508, 1641), (509, 1642), (510, 1643), (511, 1644), (512, 1645), (513, 1646), (514, 1647), (515, 1648), (516, 1649), (517, 1650), (518, 1651), (519, 1652), (520, 1653), (521, 1654), (522, 1655), (523, 1656), (524, 1657), (525, 1658), (526, 1659), (527, 1660), (528, 1661)]
+def thresholdPairs : List (Wire×Wire) := [(440, 1558), (441, 1559), (442, 1560), (443, 1561), (444, 1562), (445, 1563), (446, 1564), (447, 1565), (448, 1566), (449, 1567), (450, 1568), (451, 1569), (452, 1570), (453, 1571), (454, 1572), (455, 1573), (456, 1574), (457, 1575), (458, 1576), (459, 1577), (460, 1578), (461, 1579), (462, 1580), (463, 1581), (464, 1582), (465, 1583), (466, 1584), (467, 1585), (468, 1586), (469, 1587), (470, 1588), (471, 1589), (472, 1590), (473, 1591), (474, 1592), (475, 1593), (476, 1594), (477, 1595), (478, 1596), (479, 1597), (480, 1598), (481, 1599), (482, 1600), (483, 1601), (484, 1602), (485, 1603), (486, 1604), (487, 1605), (488, 1606), (489, 1607), (490, 1608), (491, 1609), (492, 1610), (493, 1611), (494, 1612), (495, 1613), (496, 1614), (497, 1615), (498, 1616), (499, 1617), (500, 1618), (501, 1619), (502, 1620), (503, 1621), (504, 1622), (505, 1623), (506, 1624), (507, 1625), (508, 1626), (509, 1627), (510, 1628), (511, 1629), (512, 1630), (513, 1631), (514, 1632), (515, 1633), (516, 1634), (517, 1635), (518, 1636), (519, 1637), (520, 1638), (521, 1639), (522, 1640), (523, 1641), (524, 1642), (525, 1643), (526, 1644), (527, 1645), (528, 1646)]
 def threshold := latch true none 1556 1557 thresholdPairs
 theorem threshold_layout : (1556::1557::sites thresholdPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem threshold_slice : ((Partial.portal270).drop 427).take 420=threshold := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-def orientationPairs : List (Wire×Wire) := [(924, 1556), (925, 1557), (926, 1558), (927, 1559), (928, 1560), (929, 1561), (930, 1562), (931, 1563), (932, 1564), (933, 1565), (934, 1566), (935, 1567), (936, 1568), (937, 1569), (938, 1570), (939, 1571), (940, 1572), (941, 1573), (942, 1574), (943, 1575), (944, 1576), (945, 1577), (946, 1578), (947, 1579), (948, 1580), (949, 1581), (950, 1582), (951, 1583), (952, 1584), (953, 1585), (954, 1586), (955, 1587), (956, 1588), (957, 1589), (958, 1590), (959, 1591), (960, 1592), (961, 1593), (962, 1594), (963, 1595), (964, 1596), (965, 1597), (966, 1598), (967, 1599), (968, 1600), (969, 1601), (970, 1602), (971, 1603), (972, 1604), (973, 1605), (974, 1606), (975, 1607), (976, 1608), (977, 1609), (978, 1610), (979, 1611), (980, 1612), (981, 1613), (982, 1614), (983, 1615), (984, 1616), (985, 1617), (986, 1618), (987, 1619), (988, 1620), (989, 1621), (990, 1622), (991, 1623), (992, 1624), (993, 1625), (994, 1626), (995, 1627), (996, 1628), (997, 1629), (998, 1630), (999, 1631), (1000, 1632), (1001, 1633), (1002, 1634), (1003, 1635), (1004, 1636), (1005, 1637), (1006, 1638), (1007, 1639), (1008, 1640), (1009, 1641), (1010, 1642), (1011, 1643), (1012, 1644), (1013, 1645), (1014, 1646), (1015, 1647), (1016, 1648), (1017, 1649), (1018, 1650), (1019, 1651), (1020, 1652), (1021, 1653), (1022, 1654), (1023, 1655), (1024, 1656), (1025, 1657), (1026, 1658), (1027, 1659), (1028, 1660)]
-def orientation := latch false (some 1698) 1699 923 orientationPairs
-theorem orientation_layout : (1699::923::sites orientationPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem orientation_slice : ((Partial.portal270).drop 850).take 424=orientation := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem orientation_enable : 1698∉1699::923::sites orientationPairs := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+theorem threshold_slice : ((Partial.portal300).drop 367).take 360=threshold := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+def orientationPairs : List (Wire×Wire) := [(909, 1556), (910, 1557), (911, 1558), (912, 1559), (913, 1560), (914, 1561), (915, 1562), (916, 1563), (917, 1564), (918, 1565), (919, 1566), (920, 1567), (921, 1568), (922, 1569), (923, 1570), (924, 1571), (925, 1572), (926, 1573), (927, 1574), (928, 1575), (929, 1576), (930, 1577), (931, 1578), (932, 1579), (933, 1580), (934, 1581), (935, 1582), (936, 1583), (937, 1584), (938, 1585), (939, 1586), (940, 1587), (941, 1588), (942, 1589), (943, 1590), (944, 1591), (945, 1592), (946, 1593), (947, 1594), (948, 1595), (949, 1596), (950, 1597), (951, 1598), (952, 1599), (953, 1600), (954, 1601), (955, 1602), (956, 1603), (957, 1604), (958, 1605), (959, 1606), (960, 1607), (961, 1608), (962, 1609), (963, 1610), (964, 1611), (965, 1612), (966, 1613), (967, 1614), (968, 1615), (969, 1616), (970, 1617), (971, 1618), (972, 1619), (973, 1620), (974, 1621), (975, 1622), (976, 1623), (977, 1624), (978, 1625), (979, 1626), (980, 1627), (981, 1628), (982, 1629), (983, 1630), (984, 1631), (985, 1632), (986, 1633), (987, 1634), (988, 1635), (989, 1636), (990, 1637), (991, 1638), (992, 1639), (993, 1640), (994, 1641), (995, 1642), (996, 1643), (997, 1644), (998, 1645)]
+def orientation := latch false (some 1683) 1684 908 orientationPairs
+theorem orientation_layout : (1684::908::sites orientationPairs).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem orientation_slice : ((Partial.portal300).drop 730).take 364=orientation := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem orientation_enable : 1683∉1684::908::sites orientationPairs := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+end ECDSAAdd.Entrant.StairPacket.Portal300Flag
 
 end
 
@@ -64522,32 +64512,33 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+
+namespace ECDSAAdd.Entrant.StairPacket.Portal300Flag
 open Arithmetic PortalAnd
 set_option maxRecDepth 30000
 set_option maxHeartbeats 6000000
-def railA : List Wire := [423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528]
-def railB : List Wire := [923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028]
-def carry : List Wire := [1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658]
+def railA : List Wire := [438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528]
+def railB : List Wire := [908, 909, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998]
+def carry : List Wire := [1557, 1558, 1559, 1560, 1561, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643]
 def bulkA := railA.drop 3
 def bulkB := railB.drop 3
-def scan : Program := [.CX 528 1700,.CX 1028 1700] ++
-  RailPair.exchange 285 (railA.zip railB) ++ signComplement 1700 railB
-def flags : Program := [.CCX 423 424 1557] ++ threshold ++
-  [.measureX 1557 [] [.CZ 423 424],.CX 1556 1698,.CX 1698 1556] ++ orientation
-def erase : Program := [.X 425,.CCX 925 425 1556] ++
-  Companion.erase bulkA bulkB carry 1699 1556 ++
-  [.measureX 1556 [] [.CZ 925 425],.X 425]
+def scan : Program := [.CX 528 1685,.CX 998 1685] ++
+  RailPair.exchange 315 (railA.zip railB) ++ signComplement 1685 railB
+def flags : Program := [.CCX 438 439 1557] ++ threshold ++
+  [.measureX 1557 [] [.CZ 438 439],.CX 1556 1683,.CX 1683 1556] ++ orientation
+def erase : Program := [.X 440,.CCX 910 440 1556] ++
+  Companion.erase bulkA bulkB carry 1684 1556 ++
+  [.measureX 1556 [] [.CZ 910 440],.X 440]
 def store : Program := RailPair.transfer false (bulkA.zip bulkB) ++
-  signComplement 1700 (railB.take 3) ++ RailPair.exchange 285 ((railA.take 3).zip (railB.take 3))
-theorem emitted : Partial.portal270=scan++flags++erase++store := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem exchange_good : (285::RailPair.sites (railA.zip railB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem complement_good : railB.Nodup ∧ 1700∉railB := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  signComplement 1685 (railB.take 3) ++ RailPair.exchange 315 ((railA.take 3).zip (railB.take 3))
+theorem emitted : Partial.portal300=scan++flags++erase++store := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem exchange_good : (315::RailPair.sites (railA.zip railB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem complement_good : railB.Nodup ∧ 1685∉railB := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem move_good : (RailPair.sites (bulkA.zip bulkB)).Nodup := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem copy_good : Companion.Geometry bulkA bulkB carry 1699 1556 := by
+theorem copy_good : Companion.Geometry bulkA bulkB carry 1684 1556 := by
   constructor <;> (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+end ECDSAAdd.Entrant.StairPacket.Portal300Flag
 
 end
 
@@ -64899,13 +64890,13 @@ theorem stock (d : Bool) :
   exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
     h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 
-/-- The stock walk over the ticks the 120..255 window (exit 270) replaces: [120,271). -/
+/-- The stock walk over the ticks the 120..285 window (exit 300) replaces: [120,301). -/
 theorem stock120 (d : Bool) :
-    toffoliCount (Rolling1588TickGap.forward d 120 151)=77511 ∧
-    measurementCount (Rolling1588TickGap.forward d 120 151)=38781 ∧
-    toffoliCount (Rolling1588.reverse d 120 151)=77470 ∧
-    measurementCount (Rolling1588.reverse d 120 151)=38702 := by
-  have h := walks d 120 151 (by decide) (by decide)
+    toffoliCount (Rolling1588TickGap.forward d 120 181)=91079 ∧
+    measurementCount (Rolling1588TickGap.forward d 120 181)=45600 ∧
+    toffoliCount (Rolling1588.reverse d 120 181)=91049 ∧
+    measurementCount (Rolling1588.reverse d 120 181)=45479 := by
+  have h := walks d 120 181 (by decide) (by decide)
   exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
     h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 
@@ -65630,19 +65621,20 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+
+namespace ECDSAAdd.Entrant.StairPacket.Portal300Flag
 open Arithmetic
 set_option maxRecDepth 30000
 set_option maxHeartbeats 7000000
-def backFlags := PortalAnd.flagsBack 423 424 1557 1556 1698 1699 923 thresholdPairs orientationPairs
-def backErase := PortalBorrow.wrap 425 925 1556 (PortalBorrow.restore bulkA bulkB carry 1699 1556)
-theorem emitted_back : Partial.portal270Inv=store.reverse++backErase++backFlags++scan.reverse := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
-theorem flags_spec : flags=PortalAnd.flags 423 424 1557 1556 1698 1699 923 thresholdPairs orientationPairs := by rfl
-theorem erase_spec : erase=PortalBorrow.wrap 425 925 1556 (Companion.erase bulkA bulkB carry 1699 1556) := by rfl
+def backFlags := PortalAnd.flagsBack 438 439 1557 1556 1683 1684 908 thresholdPairs orientationPairs
+def backErase := PortalBorrow.wrap 440 910 1556 (PortalBorrow.restore bulkA bulkB carry 1684 1556)
+theorem emitted_back : Partial.portal300Inv=store.reverse++backErase++backFlags++scan.reverse := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+theorem flags_spec : flags=PortalAnd.flags 438 439 1557 1556 1683 1684 908 thresholdPairs orientationPairs := by rfl
+theorem erase_spec : erase=PortalBorrow.wrap 440 910 1556 (Companion.erase bulkA bulkB carry 1684 1556) := by rfl
 theorem scan_proper : ProperProgram scan := PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem store_proper : ProperProgram store := PortalStatic.proper _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
-def activeScratch : List Wire := [1557,1556,1698,1699,1556]++thresholdPairs.map Prod.snd++orientationPairs.map Prod.snd++carry
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+def activeScratch : List Wire := [1557,1556,1683,1684,1556]++thresholdPairs.map Prod.snd++orientationPairs.map Prod.snd++carry
+end ECDSAAdd.Entrant.StairPacket.Portal300Flag
 
 end
 
@@ -65681,10 +65673,10 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part20 : gateSlots (TickRanges.tick base 270) ≤ 6004 := by
-  have h := TickRanges.tick_slots base 270 (by decide) base_pool_nodup
-  have r := W.repairedTick_slots base 270 (by decide) base_pool_nodup
-  have c := (W.compactTick_gateSlots_le base 270 (by decide)).1
+theorem part20 : gateSlots (TickRanges.tick base 300) ≤ 6004 := by
+  have h := TickRanges.tick_slots base 300 (by decide) base_pool_nodup
+  have r := W.repairedTick_slots base 300 (by decide) base_pool_nodup
+  have c := (W.compactTick_gateSlots_le base 300 (by decide)).1
   omega
 
 theorem part21 : gateSlots (Rolling1588.packAtTick false 260) ≤ 156 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -65955,15 +65947,16 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.Portal270Flag
+
+namespace ECDSAAdd.Entrant.StairPacket.Portal300Flag
 open Arithmetic
 set_option maxRecDepth 30000
 set_option maxHeartbeats 7000000
-theorem away_scan : ∀q∈activeScratch,q∉wires scan := PortalStatic.separated _ _ 1700 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
+theorem away_scan : ∀q∈activeScratch,q∉wires scan := PortalStatic.separated _ _ 1685 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem flags_do (s:State) (m:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    let f:=PortalAnd.high 423 424 thresholdPairs s.basis
-    let u:=f && (PortalAnd.digits 923 orientationPairs).any s.basis
-    run flags m s=⟨s.phase,writeBit (writeBit s.basis 1698 f) 1699 u⟩ := by
+    let f:=PortalAnd.high 438 439 thresholdPairs s.basis
+    let u:=f && (PortalAnd.digits 908 orientationPairs).any s.basis
+    run flags m s=⟨s.phase,writeBit (writeBit s.basis 1683 f) 1684 u⟩ := by
   rw [flags_spec]
   apply PortalAnd.flags_run
   · (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -66001,12 +65994,12 @@ theorem erase_return (s:State) (m n:List Bool) (h:s.basis 1556=false ∧ ∀q∈
   · exact h.1
   · exact h.2
 theorem portal_return (s:State) (m tape:List Bool) (h:∀q∈activeScratch,s.basis q=false) :
-    run Partial.portal270Inv tape (run Partial.portal270 m s)=s := by
+    run Partial.portal300Inv tape (run Partial.portal300 m s)=s := by
   let v:=run scan m s
   have vh:∀q∈activeScratch,v.basis q=false:=fun q hp=>(run_preserves_outside _ _ _ _ (away_scan _ hp)).trans (h _ hp)
   have hc (m0:List Bool) : (run flags m0 v).basis 1556=false ∧ ∀q∈carry,(run flags m0 v).basis q=false := by
     rw [flags_do v m0 vh]
-    have dis: ∀q∈carry,q≠1698 ∧ q≠1699 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+    have dis: ∀q∈carry,q≠1683 ∧ q≠1684 := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
     constructor
     · simpa [writeBit] using vh 1556 (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
     · intro q hq; simp [writeBit,(dis _ hq).1,(dis _ hq).2,vh q (by simp [activeScratch,hq])]
@@ -66014,7 +66007,7 @@ theorem portal_return (s:State) (m tape:List Bool) (h:∀q∈activeScratch,s.bas
   simp only [run_append,run_take]
   rw [run_reverse_proper _ store_proper,erase_return _ _ _ (hc _),flags_return _ _ _ vh,run_reverse_proper _ scan_proper]
 
-end ECDSAAdd.Entrant.StairPacket.Portal270Flag
+end ECDSAAdd.Entrant.StairPacket.Portal300Flag
 
 end
 
@@ -67488,20 +67481,21 @@ end
 
 section
 
-namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
-open ArchivePortAction StairArchiveIntegerHook CodecBitSliceVerify
+
+namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary300
+open ArchivePortAction StairArchiveIntegerHook CodecBitSliceVerify Partial
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-def rawPortsList : List Wire := [276,1809,277,1808,278,1807,279,1806,280,1805,281,1804,282,1803,283,1802,284,1801,285,1800,1029,1030,1031,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689]
+def rawPortsList : List Wire := loadPortsWP 300 (bTopP 300 + 1) ++ [scratchS 300 132, scratchS 300 133]
 def rawPorts (i:Fin 157) : Wire := rawPortsList.getD i 0
-def codePortsList : List Wire := [276,1809,277,1808,278,279,1806,280,281,1804,282,1803,283,284,1801,285,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689,1807,1805,1802,1800,1029,1030,1031]
+def codePortsList : List Wire := restorePortsWP 300 ++ [OB5.sig 300 (300+1036), OB5.sig 300 (300+1038), OB5.sig 300 (300+1041), OB5.sig 300 (300+1043), bTopP 300 + 1, bTopP 300 + 1 + 1, bTopP 300 + 1 + 2]
 def codePorts (i:Fin 157) : Wire := codePortsList.getD i 0
-def loadMapList : List Wire := [276,1809,277,1808,278,1807,279,1806,280,1805,281,1804,282,1803,283,1802,284,1801,285,1800,1029,1030,1031,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687]
+def loadMapList : List Wire := loadPortsWP 300 (bTopP 300 + 1)
 def loadMap (q:Wire) := loadMapList.getD q 0
-def loadMoves : List (Wire×Wire) := [(279,1807),(1806,1807),(280,1807),(281,1807),(1804,1805),(282,1807),(1803,1805),(283,1807),(284,1805),(1801,1807),(285,1802)]
-def loadRouteList : List (Fin 157) := [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,17,16,18,19,20,21,22]
+def loadMoves : List (Wire×Wire) := (moveLoadPairs 300).map Prod.swap
+def loadRouteList : List (Fin 157) := ArchiveJ.loadRouteList
 def loadRoute (i:Fin 157) := loadRouteList.getD i 0
-theorem load_program (d:Bool) : Partial.archiveLoad270 d=placed loadMap (op true d) ++ moves loadMoves := by cases d <;> rfl
+theorem load_program (d:Bool) : Partial.archiveLoad300 d=placed loadMap (op true d) ++ moves loadMoves := by cases d <;> rfl
 theorem load_unique : Function.Injective rawPorts := by exact injective_list rawPortsList (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem load_map : ∀q:Fin 155, loadMap q=rawPorts ⟨q,by omega⟩ := by
   have h1 : (loadMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -67529,19 +67523,19 @@ theorem load_sort : ∀ i, loadRoute i=i ∨ (16≤ i.val ∧ 16≤(loadRoute i)
 theorem load_scope : ∀p∈loadMoves,(∃i,rawPorts i=p.1) ∧ (∃i,rawPorts i=p.2) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem load_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
     (ready:Frame rawPorts (startCols true d) row s) :
-    let t:=run (Partial.archiveLoad270 d) m s
+    let t:=run (Partial.archiveLoad300 d) m s
     t.phase=s.phase ∧ Frame codePorts (endCols true d) row t ∧ ∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q := by
   rw [load_program]
   apply packet true d rawPorts codePorts loadMap loadMoves loadRoute load_unique _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) load_route load_sort load_scope row hr s m ready
   intro q h
   have lim:q<155:=by cases d <;> exact h
   exact ⟨⟨q,by omega⟩,rfl,load_map ⟨q,lim⟩⟩
-def restoreMapList : List Wire := [276,1809,277,1808,278,279,1806,280,281,1804,282,1803,283,284,1801,285,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689]
+def restoreMapList : List Wire := restorePortsWP 300
 def restoreMap (q:Wire) := restoreMapList.getD q 0
-def restoreMoves : List (Wire×Wire) := [(1807,279),(279,1806),(1806,280),(280,281),(1805,1804),(281,282),(1804,1803),(282,283),(1803,284),(283,1801),(1802,285),(284,1556),(1801,1557),(285,1558),(1800,1559),(1029,1560),(1030,1561),(1031,1562)]
-def restoreRouteList : List (Fin 157) := [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,151,150,152,153,154,155,156,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149]
+def restoreMoves : List (Wire×Wire) := (moveRestorePairs 300 (bTopP 300 + 1)).map Prod.swap
+def restoreRouteList : List (Fin 157) := ArchiveJ.restoreRouteList
 def restoreRoute (i:Fin 157) := restoreRouteList.getD i 0
-theorem restore_program (d:Bool) : Partial.archiveRestore270 d=placed restoreMap (op false d) ++ moves restoreMoves := by cases d <;> rfl
+theorem restore_program (d:Bool) : Partial.archiveRestore300 d=placed restoreMap (op false d) ++ moves restoreMoves := by cases d <;> rfl
 theorem restore_unique : Function.Injective codePorts := by exact injective_list codePortsList (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))
 theorem restore_map : ∀q:Fin 150, restoreMap q=codePorts ⟨q,by omega⟩ := by
   have h1 : (restoreMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
@@ -67569,7 +67563,7 @@ theorem restore_sort : ∀ i, restoreRoute i=i ∨ (23≤ i.val ∧ 23≤(restor
 theorem restore_scope : ∀p∈restoreMoves,(∃i,codePorts i=p.1) ∧ (∃i,codePorts i=p.2) := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem restore_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
     (ready:Frame codePorts (startCols false d) row s) :
-    let t:=run (Partial.archiveRestore270 d) m s
+    let t:=run (Partial.archiveRestore300 d) m s
     t.phase=s.phase ∧ Frame rawPorts (endCols false d) row t ∧ ∀q,(∀i,codePorts i≠q) → t.basis q=s.basis q := by
   rw [restore_program]
   apply packet false d codePorts rawPorts restoreMap restoreMoves restoreRoute restore_unique _ (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)) restore_route restore_sort restore_scope row hr s m ready
@@ -67579,7 +67573,7 @@ theorem restore_run (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
 theorem code_from_raw : ∀i,∃j,rawPorts j=codePorts i := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 theorem roundtrip (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
     (ready:Frame rawPorts raw row s) :
-    run (Partial.archiveRestore270 d) n (run (Partial.archiveLoad270 d) m s)=s := by
+    run (Partial.archiveRestore300 d) n (run (Partial.archiveLoad300 d) m s)=s := by
   have f:=load_run d row hr s m ready
   have b:=restore_run d row hr _ n f.2.1
   apply state_eq
@@ -67593,7 +67587,7 @@ theorem roundtrip (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
         intro i; obtain ⟨j,eq⟩:=code_from_raw i
         exact eq ▸ no j
       exact (b.2.2 q noc).trans (f.2.2 q no)
-end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary300
 
 end
 
@@ -67656,24 +67650,25 @@ theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
   intro i
   exact (fr ⟨i,by omega⟩).trans (congrArg (fun x:Nat=>x.testBit row) (field_bits d i))
 end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary255
-namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+
+namespace ECDSAAdd.Entrant.StairPacket.ArchiveBoundary300
 open ArchivePortAction CodecBitSliceVerify StairArchiveRaw StairArchiveGates
 theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
     (legal:∃row<63145,∀q<23,(rawCol q).testBit row=data q)
     (recorded:∀i:Fin 157,i.val<23 → s.basis (rawPorts i)=data i)
     (scratch:∀i:Fin 157,23≤ i.val → s.basis (rawPorts i)=false) :
-    let t:=run (Partial.archiveLoad270 d) m s
+    let t:=run (Partial.archiveLoad300 d) m s
     ∃row<63145, t.phase=s.phase ∧ Frame codePorts (code d) row t ∧
         (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then enter0Trace0In else enter1Trace0In) i).testBit row) ∧
         (∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q) ∧
-        (∀ tape, run (Partial.archiveRestore270 d) tape t=s) := by
+        (∀ tape, run (Partial.archiveRestore300 d) tape t=s) := by
   obtain ⟨row,hr,h⟩:=legal
   have ready:=starting_frame rawPorts s row data h recorded scratch
   have ⟨ph,fr,away⟩:=load_run d row hr s m ready
   refine ⟨row,hr,ph,fr,?_,away,fun tape=>roundtrip d row hr s m tape ready⟩
   intro i
   exact (fr ⟨i,by omega⟩).trans (congrArg (fun x:Nat=>x.testBit row) (field_bits d i))
-end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary270
+end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary300
 
 end
 end
@@ -67729,9 +67724,9 @@ def params : Pieces Program :=
   ofParts enterP enterInvP leaveP leaveInvP archiveLoadP archiveRestoreP portalP portalInvP parkP parkInvP
     exitLoadP exitRestoreP
 
-/-- First ship: blocks 3..12 (ticks 120..255), exit tick 270. -/
+/-- The window: blocks 3..14 (ticks 120..285), exit tick 300. -/
 def first : Fin 23 := ⟨3,by decide⟩
-def rest : List (Fin 23) := (List.finRange 23).filter (fun j => 4 ≤ j.val && j.val ≤ 12)
+def rest : List (Fin 23) := (List.finRange 23).filter (fun j => 4 ≤ j.val && j.val ≤ 14)
 
 /-! Closed forms. Every `Pieces Nat` below takes a closed form where par-b's (or the stock) count lemma applies and
 falls back to the measured piece itself elsewhere, so it equals `params.map c` for every argument, and a `decide` on a
@@ -67931,29 +67926,29 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
 
 /-- First ship 120..255 (exit 270): window counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=63619 ∧ toffoliCount (forwardW params false first rest)=63609 ∧
-    toffoliCount (reverseW params true first rest)=63721 ∧ toffoliCount (reverseW params false first rest)=63721 ∧
-    measurementCount (forwardW params true first rest)=31846 ∧ measurementCount (forwardW params false first rest)=31846 ∧
-    measurementCount (reverseW params true first rest)=31713 ∧ measurementCount (reverseW params false first rest)=31713 := by
+    toffoliCount (forwardW params true first rest)=73534 ∧ toffoliCount (forwardW params false first rest)=73522 ∧
+    toffoliCount (reverseW params true first rest)=73656 ∧ toffoliCount (reverseW params false first rest)=73656 ∧
+    measurementCount (forwardW params true first rest)=36743 ∧ measurementCount (forwardW params false first rest)=36743 ∧
+    measurementCount (reverseW params true first rest)=36584 ∧ measurementCount (reverseW params false first rest)=36584 := by
   rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
     (counts true first rest).2.2.1,(counts false first rest).2.2.1,(counts true first rest).2.2.2,(counts false first rest).2.2.2]
   decide +kernel
 
 /-- The window sizes of the first ship (blocks 3..12, exit 270), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=63619 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=73534 := by
   rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=63609 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=73522 := by
   rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=63721 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=73656 := by
   rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=63721 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=73656 := by
   rw [(counts false first rest).2.1]; decide +kernel
-theorem ship_measureF : measurementCount (forwardW params true first rest)=31846 ∧
-    measurementCount (forwardW params false first rest)=31846 := by
+theorem ship_measureF : measurementCount (forwardW params true first rest)=36743 ∧
+    measurementCount (forwardW params false first rest)=36743 := by
   rw [(counts true first rest).2.2.1,(counts false first rest).2.2.1]; decide +kernel
-theorem ship_measureR : measurementCount (reverseW params true first rest)=31713 ∧
-    measurementCount (reverseW params false first rest)=31713 := by
+theorem ship_measureR : measurementCount (reverseW params true first rest)=36584 ∧
+    measurementCount (reverseW params false first rest)=36584 := by
   rw [(counts true first rest).2.2.2,(counts false first rest).2.2.2]; decide +kernel
 
 /-- `slotsV`: upper bounds of the piece slot counts. Exact closed forms where par-b's count lemmas apply (enter,
@@ -67980,8 +67975,8 @@ def slotsV : Pieces Nat where
     gateSlots (renameProgram (OB5.sig s) (Rolling1588.packAtTick d t))
   unpack d s t := if dueTick t then 142+(if d then 24 else 12) else
     gateSlots (renameProgram (OB5.sig s) (Rolling1588.unpackAtTick d t))
-  tick e := if e = 270 then 6004 else gateSlots (renameProgram (OB5.sig e) (TickRanges.tick base e))
-  receiver e := if e = 270 then 6001 else
+  tick e := if e = 300 then 6004 else gateSlots (renameProgram (OB5.sig e) (TickRanges.tick base e))
+  receiver e := if e = 300 then 6001 else
     gateSlots (renameProgram (OB5.sig e) (W.ReverseCarry.compactReceiverTick base e))
 
 theorem slots_le : (params.map gateSlots).Le slotsV := by
@@ -68033,8 +68028,8 @@ theorem slots_le : (params.map gateSlots).Le slotsV := by
     · exact Nat.le_refl _
 
 /-- First ship 120..255 (exit 270): the slot sums of `slotsV`, one Nat evaluation (no program is evaluated). -/
-theorem slot_sums : (forwardL slotsV true first rest).sum ≤ 825001 ∧ (forwardL slotsV false first rest).sum ≤ 825001 ∧
-    (reverseL slotsV true first rest).sum ≤ 827626 ∧ (reverseL slotsV false first rest).sum ≤ 827694 := by
+theorem slot_sums : (forwardL slotsV true first rest).sum ≤ 988907 ∧ (forwardL slotsV false first rest).sum ≤ 988907 ∧
+    (reverseL slotsV true first rest).sum ≤ 992058 ∧ (reverseL slotsV false first rest).sum ≤ 992142 := by
   decide +kernel
 
 
@@ -68346,14 +68341,14 @@ theorem exit_tick (e : Nat) (he : e < 511)
   · exact List.all_eq_true.mp table x (List.mem_toFinset.mp
       (W.ReverseCarry.compactReceiverTick_support base e (by omega) base_pool_nodup hx))
 
-theorem exit270 (d : Bool) :
-    CoveredW (renameProgram (OB5.sig 270) (TickRanges.tick base 270)) ∧
-    CoveredW (renameProgram (OB5.sig 270) (W.ReverseCarry.compactReceiverTick base 270)) ∧
-    CoveredW (exitLoadP 270 d) ∧ CoveredW (exitRestoreP 270 d) := by
-  have t := exit_tick 270 (by decide) (by decide +kernel)
-  exact ⟨t.1,t.2,(exitArch_cov 270 d (by omega) (by omega)).1,(exitArch_cov 270 d (by omega) (by omega)).2⟩
+theorem exit300 (d : Bool) :
+    CoveredW (renameProgram (OB5.sig 300) (TickRanges.tick base 300)) ∧
+    CoveredW (renameProgram (OB5.sig 300) (W.ReverseCarry.compactReceiverTick base 300)) ∧
+    CoveredW (exitLoadP 300 d) ∧ CoveredW (exitRestoreP 300 d) := by
+  have t := exit_tick 300 (by decide) (by decide +kernel)
+  exact ⟨t.1,t.2,(exitArch_cov 300 d (by omega) (by omega)).1,(exitArch_cov 300 d (by omega) (by omega)).2⟩
 
-theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 3 12 where
+theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 3 14 where
   block j h0 h1 := by
     have e := enter_cov j h0 (by omega)
     have l := leave_cov j h0 (by omega)
@@ -68368,25 +68363,25 @@ theorem params_onE (d : Bool) : WindowParams.params.OnE CoveredW d 3 12 where
     exact ⟨p.1,p.2,o.1,o.2⟩
   later j h0 h1 := by
     have lo : 135 ≤ start j := by simp only [start]; omega
-    have hi : start j ≤ 255 := by simp only [start]; omega
+    have hi : start j ≤ 285 := by simp only [start]; omega
     have m : (start j-10)%5=0 := by simp only [start]; omega
     have p := pack_cov d (start j) (start j-10) (by omega) (by omega) (by omega) m
     exact ⟨p.1,p.2⟩
   saved j h0 h1 := archive_cov j d h0 (by omega)
   exit j h := by
-    have hs : start j = 270 := by simp only [start]; omega
+    have hs : start j = 300 := by simp only [start]; omega
     rw [hs]
-    have k := park_cov 270 (by omega) (by omega)
-    have o := portal_cov 270 (by omega) (by omega)
-    have p := pack_cov d 270 260 (by omega) (by omega) (by omega) (by omega)
-    have x := exit270 d
+    have k := park_cov 300 (by omega) (by omega)
+    have o := portal_cov 300 (by omega) (by omega)
+    have p := pack_cov d 300 290 (by omega) (by omega) (by omega) (by omega)
+    have x := exit300 d
     exact ⟨k.1,k.2,o.1,o.2,x.1,x.2.1,p.1,p.2,x.2.2.1,x.2.2.2⟩
 
 theorem rest_eq : WindowParams.rest = [⟨4,by decide⟩,⟨5,by decide⟩,⟨6,by decide⟩,⟨7,by decide⟩,⟨8,by decide⟩,
-    ⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩] := by decide
+    ⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩,⟨13,by decide⟩,⟨14,by decide⟩] := by decide
 theorem consec : Consec WindowParams.first WindowParams.rest := by
-  rw [rest_eq]; exact ⟨rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,trivial⟩
-theorem last : (lastBlock WindowParams.first WindowParams.rest).val = 12 := by rw [rest_eq]; rfl
+  rw [rest_eq]; exact ⟨rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,rfl,trivial⟩
+theorem last : (lastBlock WindowParams.first WindowParams.rest).val = 14 := by rw [rest_eq]; rfl
 
 /-- The first ship's window (both directions, both kernels) lies in the K2 domain. -/
 theorem window_covered (d : Bool) :
@@ -68435,11 +68430,11 @@ theorem leave_phys (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   rw [leaveP, leaveInvP]; exact physical_of_proper _ (leave_proper j h0 h1)
 
 theorem portal_proper120 : (portalOps 120).all proper = true := by decide +kernel
-theorem portal_proper270 : (portalOps 270).all proper = true := by decide +kernel
+theorem portal_proper300 : (portalOps 300).all proper = true := by decide +kernel
 theorem portal_phys120 : GatePhysical (portalP 120) ∧ GatePhysical (portalInvP 120) :=
   physical_of_proper _ (List.all_eq_true.mp portal_proper120)
-theorem portal_phys270 : GatePhysical (portalP 270) ∧ GatePhysical (portalInvP 270) :=
-  physical_of_proper _ (List.all_eq_true.mp portal_proper270)
+theorem portal_phys300 : GatePhysical (portalP 300) ∧ GatePhysical (portalInvP 300) :=
+  physical_of_proper _ (List.all_eq_true.mp portal_proper300)
 
 /-- Packs and unpacks at any due tick, in any `OB5.sig s` frame. -/
 theorem pack_phys (d : Bool) (s t : Nat) (hs : s ≤ 511) (ten : 10 ≤ t) (hi : t ≤ 511)
@@ -68521,11 +68516,11 @@ theorem archive_phys (j : Fin 23) (d : Bool) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 
   · rw [archiveRestoreP]
     exact appP (restore_codec_phys _ nr (by rw [restorePortsWP_length]) d) (moveRestore_phys _ _ lo hi fl)
 
-/-- Stock-form exit archives at 270 (the two port lists by one decide each). -/
-theorem exit_phys270 (d : Bool) : GatePhysical (exitLoadP 270 d) ∧ GatePhysical (exitRestoreP 270 d) := by
-  have hb : bTopP 270+1 = 1029 := rfl
-  have nl : (loadPortsWP 270 1029).Nodup := by decide +kernel
-  have nr : (restorePortsWP 270).Nodup := by decide +kernel
+/-- Stock-form exit archives at 300 (the two port lists by one decide each). -/
+theorem exit_phys300 (d : Bool) : GatePhysical (exitLoadP 300 d) ∧ GatePhysical (exitRestoreP 300 d) := by
+  have hb : bTopP 300+1 = 999 := rfl
+  have nl : (loadPortsWP 300 999).Nodup := by decide +kernel
+  have nr : (restorePortsWP 300).Nodup := by decide +kernel
   constructor
   · rw [exitLoadP, hb]
     exact appP (load_codec_phys _ nl (by rw [loadPortsWP_length]) d) (moveLoad_phys _ (by omega) (by omega))
@@ -68536,7 +68531,7 @@ theorem exit_phys270 (d : Bool) : GatePhysical (exitLoadP 270 d) ∧ GatePhysica
 attribute [local irreducible] GatePhysical enterP enterInvP leaveP leaveInvP archiveLoadP archiveRestoreP portalP
   portalInvP parkP parkInvP exitLoadP exitRestoreP StairPacket.routed StairPacket.unrouted Rolling1588.packAtTick
   Rolling1588.unpackAtTick in
-theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 3 12 where
+theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 3 14 where
   block j h0 h1 := by
     have e := enterP_physical j (by omega) (by omega)
     have l := leave_phys j (by omega) (by omega)
@@ -68550,20 +68545,20 @@ theorem params_onE_phys (d : Bool) : WindowParams.params.OnE GatePhysical d 3 12
     exact ⟨p.1,p.2,portal_phys120.1,portal_phys120.2⟩
   later j h0 h1 := by
     have lo : 135 ≤ start j := by simp only [start]; omega
-    have hi : start j ≤ 255 := by simp only [start]; omega
+    have hi : start j ≤ 285 := by simp only [start]; omega
     have due : History5.packDue (start j-10)=true := by
       simp only [History5.packDue,decide_eq_true_eq,start]; omega
     have p := pack_phys d (start j) (start j-10) (by omega) (by omega) (by omega) due
     exact ⟨p.1,p.2⟩
   saved j h0 h1 := archive_phys j d h0 (by omega)
   exit j h := by
-    have hs : start j = 270 := by simp only [start]; omega
+    have hs : start j = 300 := by simp only [start]; omega
     rw [hs]
-    have k := parkP_physical 270 (by omega) (by omega)
-    have p := pack_phys d 270 260 (by omega) (by omega) (by omega) (by decide)
-    have t := tick_phys 270 (by omega)
-    have x := exit_phys270 d
-    exact ⟨k.1,k.2,portal_phys270.1,portal_phys270.2,t.1,t.2,p.1,p.2,x.1,x.2⟩
+    have k := parkP_physical 300 (by omega) (by omega)
+    have p := pack_phys d 300 290 (by omega) (by omega) (by omega) (by decide)
+    have t := tick_phys 300 (by omega)
+    have x := exit_phys300 d
+    exact ⟨k.1,k.2,portal_phys300.1,portal_phys300.2,t.1,t.2,p.1,p.2,x.1,x.2⟩
 
 /-- The first ship's window (both directions, both kernels) is physical. -/
 theorem window_physical (d : Bool) :
@@ -68589,15 +68584,15 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParams
 open ECDSAAdd.Entrant.StairPacket.WindowFold ECDSAAdd.Challenge
 
 /-- Slot bounds of the first ship's window (upper bounds only; the judge has no slot ceiling). -/
-theorem ship_slotsF : gateSlots (Partial.forward45plus1 true) ≤ 825001 ∧
-    gateSlots (Partial.forward45plus1 false) ≤ 825001 := by
-  show gateSlots (forwardW params true first rest) ≤ 825001 ∧ gateSlots (forwardW params false first rest) ≤ 825001
+theorem ship_slotsF : gateSlots (Partial.forward45plus1 true) ≤ 988907 ∧
+    gateSlots (Partial.forward45plus1 false) ≤ 988907 := by
+  show gateSlots (forwardW params true first rest) ≤ 988907 ∧ gateSlots (forwardW params false first rest) ≤ 988907
   rw [measure_forward gateSlots gateSlots_append, measure_forward gateSlots gateSlots_append]
   exact ⟨(forwardL_le slots_le true first rest).trans slot_sums.1,
     (forwardL_le slots_le false first rest).trans slot_sums.2.1⟩
-theorem ship_slotsR : gateSlots (Partial.reverse45plus1 true) ≤ 827626 ∧
-    gateSlots (Partial.reverse45plus1 false) ≤ 827694 := by
-  show gateSlots (reverseW params true first rest) ≤ 827626 ∧ gateSlots (reverseW params false first rest) ≤ 827694
+theorem ship_slotsR : gateSlots (Partial.reverse45plus1 true) ≤ 992058 ∧
+    gateSlots (Partial.reverse45plus1 false) ≤ 992142 := by
+  show gateSlots (reverseW params true first rest) ≤ 992058 ∧ gateSlots (reverseW params false first rest) ≤ 992142
   rw [measure_reverse gateSlots gateSlots_append, measure_reverse gateSlots gateSlots_append]
   exact ⟨(reverseL_le slots_le true first rest).trans slot_sums.2.2.1,
     (reverseL_le slots_le false first rest).trans slot_sums.2.2.2⟩
