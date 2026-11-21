@@ -1768,7 +1768,7 @@ private theorem ord (c : Cost) (d : Bool) (a b : Program) :
   cases d <;> simp [ordered,c.append,Nat.add_comm]
 
 theorem overhead (j : Nat) (d : Bool) :
-    toffoliCount (ten j (!d)) = toffoliCount (group d j 2)+208 ∧
+    toffoliCount (ten j (!d)) = toffoliCount (group d j 2)+(if d then 195 else 193) ∧
     measurementCount (ten j (!d)) = measurementCount (group d j 2)+277 := by
   rw [group,distribute]
   cases d <;>
@@ -1817,27 +1817,27 @@ private theorem solve (c : Cost) (d : Bool) (delta : Nat)
   omega
 
 theorem group_cost_div :
-    toffoliCount (group84 true) = toffoliCount (group true 1 84)+2080 ∧
+    toffoliCount (group84 true) = toffoliCount (group true 1 84)+1950 ∧
     measurementCount (group84 true) = measurementCount (group true 1 84)+2770 := by
-  have t := solve tc true 208 (fun j => (overhead j true).1)
+  have t := solve tc true 195 (fun j => (overhead j true).1)
   have m := solve mc true 277 (fun j => (overhead j true).2)
   rw [show tc.measure = toffoliCount from rfl] at t
   rw [show mc.measure = measurementCount from rfl] at m
   exact ⟨t.trans (by norm_num), m.trans (by norm_num)⟩
 
 theorem group_cost_mul :
-    toffoliCount (group84 false) = toffoliCount (group false 1 84)+2080 ∧
+    toffoliCount (group84 false) = toffoliCount (group false 1 84)+1930 ∧
     measurementCount (group84 false) = measurementCount (group false 1 84)+2770 := by
-  have t := solve tc false 208 (fun j => (overhead j false).1)
+  have t := solve tc false 193 (fun j => (overhead j false).1)
   have m := solve mc false 277 (fun j => (overhead j false).2)
   rw [show tc.measure = toffoliCount from rfl] at t
   rw [show mc.measure = measurementCount from rfl] at m
   exact ⟨t.trans (by norm_num), m.trans (by norm_num)⟩
 /-- Static syntax counts include both correction lists of every measurement. -/
 theorem group_slots (d : Bool) :
-    slots.measure (group84 d) = slots.measure (group d 1 84)+10*(if d then 6042 else 6053) := by
+    slots.measure (group84 d) = slots.measure (group d 1 84)+10*(if d then 5141 else 5535) := by
   have h (j : Nat) : slots.measure (ten j (!d)) =
-      slots.measure (group d j 2)+(if d then 6042 else 6053) := by
+      slots.measure (group d j 2)+(if d then 5141 else 5535) := by
     rw [show slots.measure=Challenge.gateSlots from rfl,group,distribute]
     cases d <;>
       simp only [distributed,PacketSequence.program,Bool.not_true,Bool.not_false,ten,first,second,
@@ -1895,30 +1895,30 @@ attribute [local irreducible] Partial.forward45plus1 Partial.reverse45plus1 Roll
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 13752 else 13762)=
+    toffoliCount (forward d tail)+(if d then 13892 else 13902)=
       toffoliCount (Stair44WalkRun.forward d (255+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 13619 else 13629)=
+    toffoliCount (backward d tail)+(if d then 13749 else 13749)=
       toffoliCount (Stair44WalkRun.backward d (255+tail)) ∧
     measurementCount (forward d tail)+6935=measurementCount (Stair44WalkRun.forward d (255+tail)) ∧
     measurementCount (backward d tail)+6989=measurementCount (Stair44WalkRun.backward d (255+tail)) := by
   cases d
   · have sf := StockWindowCosts.stock120 false
-    have a : toffoliCount (forward45plus1 false) = 63749 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_false
-    have b : toffoliCount (reverse45plus1 false) = 63841 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_false
+    have a : toffoliCount (forward45plus1 false) = 63609 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_false
+    have b : toffoliCount (reverse45plus1 false) = 63721 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_false
     have c : measurementCount (forward45plus1 false) = 31846 := by rw [Partial.assembly]; exact WindowParams.ship_measureF.2
     have e : measurementCount (reverse45plus1 false) = 31713 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_measureR.2
-    have t := walk tc false tail 13762 13629
-      (subEq 13762 a sf.1 (by omega)) (subEq 13629 b sf.2.2.1 (by omega))
+    have t := walk tc false tail 13902 13749
+      (subEq 13902 a sf.1 (by omega)) (subEq 13749 b sf.2.2.1 (by omega))
     have m := walk mc false tail 6935 6989
       (subEq 6935 c sf.2.1 (by omega)) (subEq 6989 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts.stock120 true
-    have a : toffoliCount (forward45plus1 true) = 63759 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_true
-    have b : toffoliCount (reverse45plus1 true) = 63851 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_true
+    have a : toffoliCount (forward45plus1 true) = 63619 := by rw [Partial.assembly]; exact WindowParams.ship_toffoliF_true
+    have b : toffoliCount (reverse45plus1 true) = 63721 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_toffoliR_true
     have c : measurementCount (forward45plus1 true) = 31846 := by rw [Partial.assembly]; exact WindowParams.ship_measureF.1
     have e : measurementCount (reverse45plus1 true) = 31713 := by rw [Partial.unwind_assembly]; exact WindowParams.ship_measureR.1
-    have t := walk tc true tail 13752 13619
-      (subEq 13752 a sf.1 (by omega)) (subEq 13619 b sf.2.2.1 (by omega))
+    have t := walk tc true tail 13892 13749
+      (subEq 13892 a sf.1 (by omega)) (subEq 13749 b sf.2.2.1 (by omega))
     have m := walk mc true tail 6935 6989
       (subEq 6935 c sf.2.1 (by omega)) (subEq 6989 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
@@ -1926,7 +1926,7 @@ theorem exactWalks (d : Bool) (tail : Nat) :
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 255+tail=n)
-    (hf : (if d then 13752 else 13762)=f) (hr : (if d then 13619 else 13629)=r) :
+    (hf : (if d then 13892 else 13902)=f) (hr : (if d then 13749 else 13749)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+6935=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -2209,7 +2209,7 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 
 private theorem fieldTcDiv :
-    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+2080 := by
+    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+1950 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_div.1
 private theorem fieldMcDiv :
@@ -2217,7 +2217,7 @@ private theorem fieldMcDiv :
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_div.2
 private theorem fieldTcMul :
-    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+2080 := by
+    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+1930 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_mul.1
 private theorem fieldMcMul :
@@ -2239,29 +2239,29 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+13752+13629=tc.measure Stair44Outer.divide+2080 :=
-  kernels tc 13752 13629 2080 (WindowWalkCosts.inst true 154 409 13752 13619 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 235 490 13762 13629 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+13892+13749=tc.measure Stair44Outer.divide+1950 :=
+  kernels tc 13892 13749 1950 (WindowWalkCosts.inst true 154 409 13892 13749 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 235 490 13902 13749 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+13762+13619=tc.measure (Stair44Outer.multiply k)+2080 :=
-  kernelsM tc k 13762 13619 2080 (WindowWalkCosts.inst false 234 489 13762 13629 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 154 409 13752 13619 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+13902+13749=tc.measure (Stair44Outer.multiply k)+1930 :=
+  kernelsM tc k 13902 13749 1930 (WindowWalkCosts.inst false 234 489 13902 13749 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 154 409 13892 13749 rfl rfl rfl).2.1 fieldTcMul
 
 theorem mc_div : mc.measure divide+6935+6989=mc.measure Stair44Outer.divide+2770 :=
-  kernels mc 6935 6989 2770 (WindowWalkCosts.inst true 154 409 13752 13619 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 235 490 13762 13629 rfl rfl rfl).2.2.2 fieldMcDiv
+  kernels mc 6935 6989 2770 (WindowWalkCosts.inst true 154 409 13892 13749 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 235 490 13902 13749 rfl rfl rfl).2.2.2 fieldMcDiv
 
 theorem mc_mul (k : Nat) : mc.measure (multiply k)+6935+6989=mc.measure (Stair44Outer.multiply k)+2770 :=
-  kernelsM mc k 6935 6989 2770 (WindowWalkCosts.inst false 234 489 13762 13629 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 154 409 13752 13619 rfl rfl rfl).2.2.2 fieldMcMul
+  kernelsM mc k 6935 6989 2770 (WindowWalkCosts.inst false 234 489 13902 13749 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 154 409 13892 13749 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+50602=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+51412=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+22308=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 50602 (pair_delta2 tc_div (tc_mul _) rfl),
+  ⟨finite_delta tc C cx cy 51412 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 22308 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2118504 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2117694 ∧
     measurementCount (program C) ≤ 1498616 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -2338,32 +2338,32 @@ private theorem finite_upper (c : Cost) (C : Point) (cx cy : Fp) (gain : Nat)
 
 
 private theorem casts {P : Program} {n : Nat} (h : gateSlots P ≤ n) : slots.measure P ≤ n := h
-private theorem groupCap (d : Bool) (n : Nat) (hn : 10*(if d then 6042 else 6053)=n) :
+private theorem groupCap (d : Bool) (n : Nat) (hn : 10*(if d then 5141 else 5535)=n) :
     slots.measure (WindowFieldCosts.group84 d)=slots.measure (WindowFieldCosts.group d 1 84)+n := by
   rw [WindowFieldCosts.group_slots d, hn]
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+825001+827694+60420 :=
-  kernels slots 825001 827694 60420
+    slots.measure Stair44Outer.divide+825001+827694+51410 :=
+  kernels slots 825001 827694 51410
     (walk slots true 154 825001 827626 409 rfl (casts WindowParams.ship_slotsF.1) (casts WindowParams.ship_slotsR.1)).1
     (walk slots false 235 825001 827694 490 rfl (casts WindowParams.ship_slotsF.2) (casts WindowParams.ship_slotsR.2)).2
-    (groupCap true 60420 rfl)
+    (groupCap true 51410 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+825001+827626+60530 :=
-  kernelsM slots k 825001 827626 60530
+    slots.measure (Stair44Outer.multiply k)+825001+827626+55350 :=
+  kernelsM slots k 825001 827626 55350
     (walk slots false 234 825001 827694 489 rfl (casts WindowParams.ship_slotsF.2) (casts WindowParams.ship_slotsR.2)).1
     (walk slots true 154 825001 827626 409 rfl (casts WindowParams.ship_slotsF.1) (casts WindowParams.ship_slotsR.1)).2
-    (groupCap false 60530 rfl)
+    (groupCap false 55350 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+825001+827694+60420)
-    (hm : b ≤ y+825001+827626+60530) : a+b ≤ x+y+3426272 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+825001+827694+51410)
+    (hm : b ≤ y+825001+827626+55350) : a+b ≤ x+y+3412082 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+3426272 :=
-  finite_upper slots C cx cy 3426272 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+3412082 :=
+  finite_upper slots C cx cy 3412082 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 54286754 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 54272564 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -2991,7 +2991,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2118504,1498616,1543,54286754⟩
+def bounds : Challenge.Bounds := ⟨2117694,1498616,1543,54272564⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -3008,7 +3008,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowCallerCosts.qubitBound C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 54286754
+    change gateSlots (normalizeProgram _) ≤ 54272564
     rw [normalize_slots]
     exact WindowSlots.slotBound C
 
@@ -4397,36 +4397,76 @@ structure Clause where
   b : Wire
   last : Wire
   xs : Hops
+  backwards : Bool
 
 def guarded (labels neg : List Wire) (pivot : Option Wire) : Clause :=
   let ph := match pivot with
     | none => []
     | some z => ((List.range 16).erase z).map (fun i=>Aff.cx i z)
   let mid := (labels.drop 2).dropLast
-  ⟨ph++neg.map Aff.x,labels[0]!,labels[1]!,labels.getLast!, mid.zipIdx.map (fun ⟨c,i⟩=>(c,18+i))⟩
+  ⟨ph++neg.map Aff.x,labels[0]!,labels[1]!,labels.getLast!, mid.zipIdx.map (fun ⟨c,i⟩=>(c,18+i)),false⟩
 
-/-- A product of affine forms of the sixteen code bits: `mix` lists CNOTs (source, target) applied
-first, `neg` the ports negated after them, `labels` the ports multiplied. -/
-def formed (mix : List (Wire×Wire)) (labels neg : List Wire) : Clause :=
-  let mid := (labels.drop 2).dropLast
-  ⟨mix.map (fun e=>Aff.cx e.1 e.2)++neg.map Aff.x,labels[0]!,labels[1]!,labels.getLast!, mid.zipIdx.map (fun ⟨c,i⟩=>(c,18+i))⟩
+def firstPair : Clause :=
+  let c := guarded [1,2,0,3,4,5] [4,5] none
+  { c with prep := (((List.range 16).erase 5).erase 12).map (fun i=>Aff.cx i 5) ++ c.prep, backwards := true }
 
-/-- The flip is 1 on three affine sets of codes, except at the two codes `0x000F` and `0x0F00`:
-`x0 x1 x2 x3 ¬x4 ¬(parity of the fifteen bits other than 12)`, `x0 x3 x4 x5 x6 x7 parity`,
-`¬x0 x8 x9 x10 x11 ¬x12 ¬parity`, and one product of fourteen affine forms that holds at those two
-codes and at two illegal codes only. -/
-def clauses : List Clause :=
-  [formed ((((List.range 16).erase 5).erase 12).map (fun k=>(k,5))) [0,1,2,3,4,5] [4,5],
-   guarded [0,3,4,5,6,7,1] [] (some 1),
-   guarded [0,8,9,10,11,12,1] [0,12,1] (some 1),
-   formed [(8,0),(9,1),(10,2),(11,3),(9,8),(10,9),(11,10),(6,4),(7,6),(12,7),(14,12),(15,14)]
-     [0,1,2,3,4,5,6,7,8,9,10,12,13,14] [5,13,8,9,10,4,6,7,12,14]]
+def commonPrep : List Aff :=
+  [8,9,10,11].map (Aff.cx 0) ++ ((List.range 16).erase 1).map (fun i=>Aff.cx i 1) ++ [Aff.x 1]
 
-def body (c : Clause) := affine c.prep ++ (mcx c.a c.b 17 c.last 16 c.xs ++ affine c.prep.reverse)
+def tailLeft : Clause := guarded [8,9,10,11,1,0,12] [0,12] none
+
+def tailRight : Clause :=
+  let c := guarded [8,9,10,11,1,2,3,5,6,7,12,13,14,15] [2,3,5,6,7,12,13,14,15] none
+  { c with prep := [2,3].map (Aff.cx 0) ++ [6,7,12,14,15].map (Aff.cx 4) ++ c.prep }
+
+def positivePair : Clause := guarded [4,5,0,3,6,7,1] [] (some 1)
+
+def negativePair : Clause := { tailLeft with prep := commonPrep ++ tailLeft.prep }
+
+def literalPair : Clause :=
+  { tailRight with prep := commonPrep ++ tailRight.prep, backwards := true }
+
+def clauses : List Clause := [firstPair,positivePair,negativePair,literalPair]
+
+def body (c : Clause) := affine c.prep ++
+  ((if c.backwards then [Instr.CCX c.a c.b 17] ++ (chain 17 c.last 16 c.xs ++
+    ([Instr.CCX c.a c.b 17] ++ chain 17 c.last 16 c.xs)) else mcx c.a c.b 17 c.last 16 c.xs) ++
+    affine c.prep.reverse)
+
+def arm (c : Clause) : Program :=
+  affine c.prep ++ (chain 17 c.last 16 c.xs ++ affine c.prep.reverse)
+def pairWord : Program :=
+  let f := arm tailLeft ++ arm tailRight
+  f ++ ([Instr.CCX 8 9 17] ++ (f ++ [Instr.CCX 8 9 17]))
+def jointTail : Program := affine commonPrep ++ (pairWord ++ affine commonPrep.reverse)
+def groupedRegion : Program := (body firstPair ++ body positivePair) ++ jointTail
+
+-- Remove equal gates when each intervening gate can commute with them.
+def gateDst : Instr → Wire
+  | .X t | .CX _ t | .CCX _ _ t | .measureX t _ _ => t
+def gateFree (q : Wire) : Instr → Bool
+  | .X _ => true
+  | .CX c _ => decide (c≠q)
+  | .CCX a b _ => decide (a≠q ∧ b≠q)
+  | .measureX _ _ _ => false
+def swappable (g h : Instr) : Bool :=
+  gateFree (gateDst g) g && gateFree (gateDst h) h &&
+    gateFree (gateDst g) h && gateFree (gateDst h) g
+def eraseMate (g : Instr) : Program → Option Program
+  | [] => none
+  | h::p => if g=h ∧ gateFree (gateDst g) g=true then some p
+      else if swappable g h then (eraseMate g p).map (h::·) else none
+def cancelPairs : Program → Program
+  | [] => []
+  | g::p => let q := cancelPairs p
+      match eraseMate g q with
+      | none => g::q
+      | some r => r
+
 end ECDSAAdd.Entrant.StairPacket.WindowParityDirty
 namespace ECDSAAdd.Entrant.StairPacket.WindowFieldParity
 open Arithmetic MappedCompressed WindowParityDirty
-def region : Program := clauses.flatMap ECDSAAdd.Entrant.StairPacket.WindowParityDirty.body
+def region : Program := cancelPairs groupedRegion
 def site (j i : Nat) := OB5.sig 511 (NewHistory5.payloadWire base (8*j+i))
 def other (j : Nat) := if j=46 then 49 else 46
 def port (j q : Nat) : Wire :=
@@ -5646,7 +5686,7 @@ open StairConcreteAssembly WindowFieldParity
 set_option maxRecDepth 16000
 set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
-private theorem leaf : toffoliCount region=104 ∧ measurementCount region=0 ∧ gateSlots region=246 := by
+private theorem leaf : toffoliCount region=86 ∧ measurementCount region=0 ∧ gateSlots region=208 := by
   decide +kernel
 private theorem correction_eq (c : Cost) : c.measure correction=10*c.measure region := by
   simp only [correction,bankCorrection,c.append,c.rename]; omega
@@ -5665,8 +5705,8 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+40*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2122664 ∧
-    measurementCount (program C) ≤ 1498616 ∧ gateSlots (program C) ≤ 54296594 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2121134 ∧
+    measurementCount (program C) ≤ 1498616 ∧ gateSlots (program C) ≤ 54280884 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
   cases C with
@@ -6179,7 +6219,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2122664,1498616,1543,54296594⟩
+def bounds : Challenge.Bounds := ⟨2121134,1498616,1543,54280884⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -6196,7 +6236,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 54296594
+    change gateSlots (normalizeProgram _) ≤ 54280884
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -6409,12 +6449,277 @@ theorem valid_clause (c : Clause) (hc : c∈clauses) : Good c.a c.b 17 c.last 16
   all_goals constructor
   all_goals first | (constructor <;> decide +kernel) | decide +kernel
 
+def trigger : Instr → BasisState → Bool
+  | .X _,_ => true
+  | .CX c _,s => s c
+  | .CCX a b _,s => s a && s b
+  | .measureX _ _ _,_ => false
+private theorem stepGate (g : Instr) (hg : gateFree (gateDst g) g=true)
+    (p : Program) (m : List Bool) (s : State) :
+    run (g::p) m s=run p m (flip (gateDst g) (trigger g s.basis) s) := by
+  cases g with
+  | X t =>
+    simp only [run,gateDst,trigger,flip]
+    congr 2; funext q
+    by_cases e : q=t <;> simp [writeBit,e]
+  | CX c t => simp only [run,gateDst,trigger,flip]
+  | CCX a b t => simp only [run,gateDst,trigger,flip]
+  | measureX t a b => contradiction
+private theorem freeRead (g : Instr) (q : Wire) (hg : gateFree q g=true)
+    (s : State) (v : Bool) : trigger g (flip q v s).basis=trigger g s.basis := by
+  cases g with
+  | X _ => rfl
+  | CX c _ => exact at_other s c q v (of_decide_eq_true hg)
+  | CCX a b _ =>
+    obtain ⟨ha,hb⟩ := of_decide_eq_true hg
+    simp only [trigger,at_other s a q v ha,at_other s b q v hb]
+  | measureX _ _ _ => contradiction
+private theorem equalGate (g : Instr) (hg : gateFree (gateDst g) g=true)
+    (p : Program) (m : List Bool) (s : State) : run (g::g::p) m s=run p m s := by
+  rw [stepGate g hg,stepGate g hg,freeRead g _ hg,flip_twice,Bool.xor_self,flip_zero]
+private theorem swapGate (g h : Instr) (ok : swappable g h=true)
+    (p : Program) (m : List Bool) (s : State) : run (g::h::p) m s=run (h::g::p) m s := by
+  simp only [swappable,Bool.and_eq_true,decide_eq_true_eq] at ok
+  obtain ⟨⟨⟨gg,hh⟩,gh⟩,hg⟩ := ok
+  rw [stepGate g gg,stepGate h hh,freeRead h _ gh,stepGate h hh,stepGate g gg,freeRead g _ hg]
+  by_cases ne : gateDst h≠gateDst g
+  · rw [flip_comm _ _ _ _ _ ne]
+  · have eq : gateDst h=gateDst g := Decidable.byContradiction ne
+    rw [eq,flip_twice,flip_twice,Bool.xor_comm]
+private theorem eraseMate_run (g : Instr) (p r : Program) (eq : eraseMate g p=some r)
+    (m : List Bool) (s : State) : run (g::p) m s=run r m s := by
+  induction p generalizing r m s with
+  | nil => simp [eraseMate] at eq
+  | cons h p ih =>
+    simp only [eraseMate] at eq
+    split at eq
+    · next same =>
+        obtain ⟨same,hg⟩ := same
+        subst h
+        cases eq
+        exact equalGate g hg p m s
+    · next different =>
+        split at eq
+        · next commute =>
+            cases e : eraseMate g p with
+            | none => simp [e] at eq
+            | some q =>
+                simp only [e,Option.map_some,Option.some.injEq] at eq
+                subst r
+                have hh : gateFree (gateDst h) h=true := by
+                  simp only [swappable,Bool.and_eq_true] at commute
+                  exact commute.1.1.2
+                rw [swapGate g h commute,stepGate h hh,stepGate h hh]
+                exact ih q e m _
+        · simp at eq
+theorem cancelPairs_run (p : Program) (m : List Bool) (s : State) :
+    run (cancelPairs p) m s=run p m s := by
+  induction p generalizing m s with
+  | nil => rfl
+  | cons g p ih =>
+    simp only [cancelPairs]
+    split
+    · next e =>
+        cases g <;> simp only [run] <;> rw [ih]
+    · next r e =>
+        rw [←eraseMate_run g (cancelPairs p) r e]
+        cases g <;> simp only [run] <;> rw [ih]
+
+theorem mcx_back_run (a b src last t : Wire) (xs : Hops) (m : List Bool) (s : State)
+    (h : Good a b src last t xs) :
+    run ([Instr.CCX a b src] ++ (chain src last t xs ++
+      ([Instr.CCX a b src] ++ chain src last t xs))) m s =
+      flip t ((s.basis a && s.basis b) && product last s.basis xs) s := by
+  let d := s.basis a && s.basis b
+  let u := flip src d s
+  let first := value last s.basis xs (s.basis src)
+  let second := first ^^ (d && product last s.basis xs)
+  have readSrc : u.basis src=(s.basis src^^d) := at_flip _ _ _
+  have readValue : value last u.basis xs (u.basis src)=second := by
+    rw [readSrc]
+    unfold u second first
+    rw [value_away _ _ _ _ _ _ h.source,value_xor]
+  simp only [run_append,run_take,single,chain_run _ _ _ _ _ _ h.chained]
+  change flip t (value last (flip src _ (flip t _ u)).basis xs
+    ((flip src _ (flip t _ u)).basis src)) (flip src _ (flip t _ u))=_
+  simp only [at_other _ _ _ _ h.at_,at_other _ _ _ _ h.bt,
+    at_other _ _ _ _ h.as_,at_other _ _ _ _ h.bs]
+  rw [readValue]
+  change flip t (value last (flip src d (flip t second u)).basis xs
+    ((flip src d (flip t second u)).basis src)) (flip src d (flip t second u))=_
+  rw [flip_comm _ src t _ _ h.st]
+  change flip t (value last (flip t second (flip src d (flip src d s))).basis xs
+    ((flip t second (flip src d (flip src d s))).basis src))
+    (flip t second (flip src d (flip src d s)))=_
+  rw [flip_twice s src d d,Bool.xor_self,flip_zero,value_away _ _ _ _ _ _ h.target,
+    at_other _ _ _ _ h.st,flip_twice]
+  have finish : (second^^first)=(d && product last s.basis xs) := by
+    unfold second; cases first <;> cases (d && product last s.basis xs) <;> rfl
+  rw [finish]
+
 theorem body_run (c : Clause) (hc : c∈clauses) (m : List Bool) (s : State) :
     run (body c) m s=flip 16 ((predicate c).eval s.basis) s := by
   obtain ⟨bounded,valid⟩ := valid_clause c hc
-  simp only [body,run_append,run_take,aff_run,mcx_run _ _ _ _ _ _ _ _ bounded,undo _ _ valid]
+  cases back : c.backwards <;>
+    simp only [body,back,Bool.false_eq_true,if_false,if_true,run_append,run_take,aff_run,
+      mcx_run _ _ _ _ _ _ _ _ bounded,mcx_back_run _ _ _ _ _ _ _ _ bounded,undo _ _ valid] <;>
+    rw [product_eval,symbol_eval,symbol_eval] <;> rfl
+private theorem effect_flip (p : List Aff) (q : Wire) (hp : ∀g∈p,lawful q g)
+    (s : State) (v : Bool) : effect p (flip q v s)=flip q v (effect p s) := by
+  induction p generalizing s with
+  | nil => rfl
+  | cons g p ih =>
+    have hg := hp g (by simp)
+    have ht := fun k (hk : k∈p)=>hp k (List.mem_cons_of_mem _ hk)
+    change effect p (applyAff (flip q v s) g)=flip q v (effect p (applyAff s g))
+    rw [commute g q hg,ih ht]
+private theorem effect_same (p : List Aff) (q : Wire) (hp : ∀g∈p,lawful q g)
+    (s : State) : (effect p s).basis q=s.basis q := by
+  induction p generalizing s with
+  | nil => rfl
+  | cons g p ih =>
+    have hg := hp g (by simp)
+    have ht := fun k (hk : k∈p)=>hp k (List.mem_cons_of_mem _ hk)
+    change (effect p (applyAff s g)).basis q=s.basis q
+    rw [ih ht]
+    cases g with
+    | x t => exact at_other s q t _ hg.symm
+    | cx c t => exact at_other s q t _ hg.2.2.symm
+
+def armValue (c : Clause) (s : State) :=
+  value c.last (effect c.prep s).basis c.xs ((effect c.prep s).basis 17)
+def armProduct (c : Clause) (s : State) := product c.last (effect c.prep s).basis c.xs
+private theorem arm_run (c : Clause) (h : Good c.a c.b 17 c.last 16 c.xs)
+    (hp : ∀g∈c.prep,lawful 16 g) (m : List Bool) (s : State) :
+    run (arm c) m s=flip 16 (armValue c s) s := by
+  simp only [arm,run_append,run_take,aff_run,chain_run _ _ _ _ _ _ h.chained,undo _ _ hp]
+  rfl
+private theorem arm_value_flip (c : Clause) (q : Wire) (hp : ∀g∈c.prep,lawful q g)
+    (away : outside q c.last c.xs) (ne : 17≠q) (s : State) (v : Bool) :
+    armValue c (flip q v s)=armValue c s := by
+  unfold armValue
+  rw [effect_flip c.prep q hp,value_away _ _ _ _ _ _ away,at_other _ _ _ _ ne]
+private theorem arm_value_source (c : Clause) (hp : ∀g∈c.prep,lawful 17 g)
+    (away : outside 17 c.last c.xs) (s : State) (v : Bool) :
+    armValue c (flip 17 v s)=(armValue c s ^^ (v && armProduct c s)) := by
+  unfold armValue armProduct
+  rw [effect_flip c.prep 17 hp,at_flip,value_away _ _ _ _ _ _ away,value_xor]
+
+private theorem borrowed_pair_run (F : Program) (f g : State→Bool)
+    (hf : ∀m s,run F m s=flip 16 (f s) s)
+    (h16 : ∀s v,f (flip 16 v s)=f s)
+    (h17 : ∀s v,f (flip 17 v s)=(f s ^^ (v && g s)))
+    (m : List Bool) (s : State) :
+    run (F ++ ([Instr.CCX 8 9 17] ++ (F ++ [Instr.CCX 8 9 17]))) m s =
+      flip 16 ((s.basis 8 && s.basis 9) && g s) s := by
+  let d := s.basis 8 && s.basis 9
+  let first := f s
+  let u := flip 17 d (flip 16 first s)
+  let second := first ^^ (d && g s)
+  have next : f u=second := by
+    unfold u second first
+    rw [flip_comm _ 17 16 _ _ (by decide),h16,h17]
+  simp only [run_append,run_take,hf,single,
+    at_other _ 8 16 _ (by decide),at_other _ 9 16 _ (by decide),
+    at_other _ 8 17 _ (by decide),at_other _ 9 17 _ (by decide)]
+  change flip 17 ((flip 16 (f u) u).basis 8 && (flip 16 (f u) u).basis 9)
+    (flip 16 (f u) u)=_
+  rw [next]
+  simp only [at_other _ 8 16 _ (by decide),at_other _ 9 16 _ (by decide)]
+  change flip 17 d (flip 16 second u)=_
+  rw [flip_comm _ 17 16 _ _ (by decide)]
+  change flip 16 second (flip 17 d (flip 17 d (flip 16 first s)))=_
+  rw [flip_twice,Bool.xor_self,flip_zero,flip_twice]
+  have finish : (first^^second)=(d && g s) := by
+    unfold second; cases first <;> cases (d && g s) <;> rfl
+  rw [finish]
+
+private theorem leftOK : Good tailLeft.a tailLeft.b 17 tailLeft.last 16 tailLeft.xs := by
+  constructor <;> decide +kernel
+private theorem rightOK : Good tailRight.a tailRight.b 17 tailRight.last 16 tailRight.xs := by
+  constructor <;> decide +kernel
+private theorem prepOK (c : Clause) (hc : c=tailLeft ∨ c=tailRight) (q : Wire)
+    (hq : q=8 ∨ q=9 ∨ q=16 ∨ q=17) : ∀g∈c.prep,lawful q g := by
+  rcases hc with rfl|rfl <;> rcases hq with rfl|rfl|rfl|rfl <;> decide +kernel
+private theorem pair_run (m : List Bool) (s : State) :
+    run pairWord m s=flip 16 ((s.basis 8 && s.basis 9) &&
+      (armProduct tailLeft s ^^ armProduct tailRight s)) s := by
+  let f := fun s=>armValue tailLeft s ^^ armValue tailRight s
+  let g := fun s=>armProduct tailLeft s ^^ armProduct tailRight s
+  have l16 := prepOK tailLeft (Or.inl rfl) 16 (Or.inr (Or.inr (Or.inl rfl)))
+  have r16 := prepOK tailRight (Or.inr rfl) 16 (Or.inr (Or.inr (Or.inl rfl)))
+  have l17 := prepOK tailLeft (Or.inl rfl) 17 (Or.inr (Or.inr (Or.inr rfl)))
+  have r17 := prepOK tailRight (Or.inr rfl) 17 (Or.inr (Or.inr (Or.inr rfl)))
+  have lf := arm_value_flip tailLeft 16 l16 leftOK.target (by decide)
+  have rf := arm_value_flip tailRight 16 r16 rightOK.target (by decide)
+  have hs (m : List Bool) (s : State) : run (arm tailLeft++arm tailRight) m s=flip 16 (f s) s := by
+    rw [run_append,run_take,arm_run _ leftOK l16,arm_run _ rightOK r16,rf,flip_twice]
+  have h16 (s : State) (v : Bool) : f (flip 16 v s)=f s := by
+    unfold f; rw [lf,rf]
+  have h17 (s : State) (v : Bool) : f (flip 17 v s)=(f s ^^ (v && g s)) := by
+    unfold f g
+    rw [arm_value_source _ l17 leftOK.source,arm_value_source _ r17 rightOK.source]
+    cases armValue tailLeft s <;> cases armValue tailRight s <;>
+      cases armProduct tailLeft s <;> cases armProduct tailRight s <;> cases v <;> rfl
+  exact borrowed_pair_run _ f g hs h16 h17 m s
+
+private theorem predicate_value (c : Clause) (s : State) :
+    (predicate c).eval s.basis=
+      (((effect c.prep s).basis c.a && (effect c.prep s).basis c.b) &&
+        product c.last (effect c.prep s).basis c.xs) := by
   rw [product_eval,symbol_eval,symbol_eval]
   rfl
+private theorem commonEffect (p q : List Aff) (s : State) : effect (p++q) s=effect q (effect p s) := by
+  simp only [effect,List.foldl_append]
+private theorem tail_values (s : State) :
+    ((predicate negativePair).eval s.basis ^^ (predicate literalPair).eval s.basis)=
+      (((effect commonPrep s).basis 8 && (effect commonPrep s).basis 9) &&
+        (armProduct tailLeft (effect commonPrep s) ^^ armProduct tailRight (effect commonPrep s))) := by
+  rw [predicate_value,predicate_value]
+  change ((((effect (commonPrep++tailLeft.prep) s).basis 8 && (effect (commonPrep++tailLeft.prep) s).basis 9) &&
+    product tailLeft.last (effect (commonPrep++tailLeft.prep) s).basis tailLeft.xs) ^^
+    (((effect (commonPrep++tailRight.prep) s).basis 8 && (effect (commonPrep++tailRight.prep) s).basis 9) &&
+    product tailRight.last (effect (commonPrep++tailRight.prep) s).basis tailRight.xs))=_
+  rw [commonEffect,commonEffect,
+    effect_same _ 8 (prepOK tailLeft (Or.inl rfl) 8 (Or.inl rfl)),
+    effect_same _ 9 (prepOK tailLeft (Or.inl rfl) 9 (Or.inr (Or.inl rfl))),
+    effect_same _ 8 (prepOK tailRight (Or.inr rfl) 8 (Or.inl rfl)),
+    effect_same _ 9 (prepOK tailRight (Or.inr rfl) 9 (Or.inr (Or.inl rfl)))]
+  have distrib (a b c : Bool) : ((a && b) ^^ (a && c))=(a && (b^^c)) := by
+    cases a <;> cases b <;> cases c <;> rfl
+  exact distrib _ _ _
+
+private theorem product_away (xs : Hops) (last q : Wire) (s : State) (v : Bool)
+    (h : outside q last xs) : product last (flip q v s).basis xs=product last s.basis xs := by
+  induction xs with
+  | nil => exact at_other s last q v h.1.symm
+  | cons x xs ih =>
+    have ht : outside q last xs := ⟨h.1,fun e he=>h.2 e (List.mem_cons_of_mem _ he)⟩
+    simp only [product,at_other s x.1 q v (h.2 x (by simp)).1.symm,ih ht]
+
+private theorem jointTail_run (m : List Bool) (s : State) :
+    run jointTail m s=run (body negativePair++body literalPair) m s := by
+  have valid : ∀g∈commonPrep,lawful 16 g := by decide +kernel
+  have nl : negativePair∈clauses := by simp [clauses]
+  have nr : literalPair∈clauses := by simp [clauses]
+  simp only [jointTail,run_append,run_take,aff_run,pair_run,undo _ _ valid]
+  rw [body_run _ nl,body_run _ nr]
+  have unchanged : (predicate literalPair).eval (flip 16 ((predicate negativePair).eval s.basis) s).basis=
+      (predicate literalPair).eval s.basis := by
+    rw [predicate_value literalPair _,predicate_value literalPair s]
+    have h := (valid_clause literalPair nr).2
+    rw [effect_flip _ 16 h]
+    rw [at_other _ _ 16 _ (by decide),at_other _ _ 16 _ (by decide)]
+    rw [product_away _ _ 16 _ _ (valid_clause literalPair nr).1.target]
+  rw [unchanged,flip_twice,tail_values]
+
+theorem groupedRegion_run (m : List Bool) (s : State) :
+    run groupedRegion m s=run (clauses.flatMap body) m s := by
+  have eq : run ((body firstPair++body positivePair)++jointTail) m s=
+      run ((body firstPair++body positivePair)++(body negativePair++body literalPair)) m s := by
+    simp only [run_append,run_take,jointTail_run]
+  simpa only [groupedRegion,clauses,List.flatMap_cons,List.flatMap_nil,List.append_nil,List.append_assoc] using eq
+
 end ECDSAAdd.Entrant.StairPacket.WindowParityDirty
 
 end
@@ -6747,7 +7052,7 @@ theorem region_run (d : Bool) (row : Nat) (rb : row<63145) (m : List Bool) (s : 
     (data : ∀i<16,s.basis i=(get (ArchivePortAction.code d) i).testBit row) :
     run region m s = flip 16 (((parity (ArchivePortAction.code d)).testBit row) ^^
       ((parity (StairArchiveNativeCut.canonical d d)).testBit row)) s := by
-  rw [region,runList _ _ (fun _ h=>h) _ rb m s data,columnMatch d,Nat.testBit_xor]
+  rw [region,cancelPairs_run,groupedRegion_run,runList _ _ (fun _ h=>h) _ rb m s data,columnMatch d,Nat.testBit_xor]
 end ECDSAAdd.Entrant.StairPacket.WindowFieldParity
 
 end
