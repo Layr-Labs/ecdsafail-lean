@@ -37,9 +37,6 @@ def enter270Part0 : Program := [
     .CX 1559 924,
     .measureX 1559 [] [.CZ 923 1558],
     .CX 1558 923,
-    .CCX 1699 423 923,
-    .CCX 1699 424 924,
-    .CCX 1699 425 925,
     .CX 423 1559,
     .CCX 1698 1559 423,
     .CX 423 1559,
@@ -50,9 +47,11 @@ def enter270Part0 : Program := [
     .CCX 1698 1561 425,
     .CX 425 1561,
     .CX 1698 424,
-    .CCX 1699 423 923,
-    .CCX 1699 424 924,
-    .CCX 1699 425 925,
+    .CCX 1699 1559 923,
+    .CX 1698 1560,
+    .CCX 1699 1560 924,
+    .CX 1698 1560,
+    .CCX 1699 1561 925,
     .X 923,
     .X 924,
     .X 925,
@@ -143,9 +142,11 @@ def enter270InvPart0 : Program := [
     .X 925,
     .X 924,
     .X 923,
-    .CCX 1699 425 925,
-    .CCX 1699 424 924,
-    .CCX 1699 423 923,
+    .CCX 1699 1561 925,
+    .CX 1698 1560,
+    .CCX 1699 1560 924,
+    .CX 1698 1560,
+    .CCX 1699 1559 923,
     .CX 1698 424,
     .CX 425 1561,
     .CCX 1698 1561 425,
@@ -156,9 +157,6 @@ def enter270InvPart0 : Program := [
     .CX 423 1559,
     .CCX 1698 1559 423,
     .CX 423 1559,
-    .CCX 1699 425 925,
-    .CCX 1699 424 924,
-    .CCX 1699 423 923,
     .CX 1558 923,
     .CCX 923 1558 1559,
     .CX 1559 924,
@@ -15702,7 +15700,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part60 : toffoliCount (enter270) = 23 ∧ measurementCount (enter270) = 6 :=
+theorem part60 : toffoliCount (enter270) = 20 ∧ measurementCount (enter270) = 6 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
 theorem part61 : toffoliCount (routed ⟨13,by decide⟩ 0 1) = 278 ∧ measurementCount (routed ⟨13,by decide⟩ 0 1) = 139 := by
@@ -15744,7 +15742,7 @@ theorem part66 : toffoliCount (TickRanges.tick base 285) = 451 ∧ measurementCo
 theorem part67 : toffoliCount (Rolling1588.packAtTick false 275) = 9 ∧ measurementCount (Rolling1588.packAtTick false 275) = 4 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part68 : toffoliCount (archiveLoad285 false) = 88 ∧ measurementCount (archiveLoad285 false) = 136 := by
+theorem part68 : toffoliCount (archiveLoad285 false) = 77 ∧ measurementCount (archiveLoad285 false) = 136 := by
   -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
   unfold archiveLoad285
   rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
@@ -15754,14 +15752,14 @@ theorem part68 : toffoliCount (archiveLoad285 false) = 88 ∧ measurementCount (
 theorem part69 : toffoliCount (Rolling1588.packAtTick true 275) = 9 ∧ measurementCount (Rolling1588.packAtTick true 275) = 4 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part70 : toffoliCount (archiveLoad285 true) = 89 ∧ measurementCount (archiveLoad285 true) = 136 := by
+theorem part70 : toffoliCount (archiveLoad285 true) = 78 ∧ measurementCount (archiveLoad285 true) = 136 := by
   -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
   unfold archiveLoad285
   rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
     (renameProgram_counts _ _).2, integer_load0_toffoliCount, integer_load0_measurementCount]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
-theorem part71 : toffoliCount (archiveRestore285 false) = 96 ∧ measurementCount (archiveRestore285 false) = 124 := by
+theorem part71 : toffoliCount (archiveRestore285 false) = 87 ∧ measurementCount (archiveRestore285 false) = 124 := by
   -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
   unfold archiveRestore285
   rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
@@ -15804,10 +15802,10 @@ theorem part78 : toffoliCount (unrouted ⟨13,by decide⟩ 0 1) = 278 ∧ measur
   dsimp only [j]
   (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
 
-theorem part79 : toffoliCount (enter270Inv) = 23 ∧ measurementCount (enter270Inv) = 6 :=
+theorem part79 : toffoliCount (enter270Inv) = 20 ∧ measurementCount (enter270Inv) = 6 :=
   WSlimBlock.counts_sound _ _ _ (by decide +kernel)
 
-theorem part80 : toffoliCount (archiveRestore285 true) = 97 ∧ measurementCount (archiveRestore285 true) = 124 := by
+theorem part80 : toffoliCount (archiveRestore285 true) = 88 ∧ measurementCount (archiveRestore285 true) = 124 := by
   -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
   unfold archiveRestore285
   rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
@@ -16003,19 +16001,19 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem forward60plus1_false : toffoliCount (forward60plus1 false) = 23533 ∧ measurementCount (forward60plus1 false) = 11702 := by
+theorem forward60plus1_false : toffoliCount (forward60plus1 false) = 23477 ∧ measurementCount (forward60plus1 false) = 11702 := by
   simp only [forward60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part0.1, part0.2, part1.1, part1.2, part2.1, part2.2, part3.1, part3.2, part4.1, part4.2, part5.1, part5.2, part6.1, part6.2, part7.1, part7.2, part8.1, part8.2, part9.1, part9.2, part10.1, part10.2, part11.1, part11.2, part12.1, part12.2, part13.1, part13.2, part14.1, part14.2, part15.1, part15.2, part16.1, part16.2, part17.1, part17.2, part60.1, part60.2, part61.1, part61.2, part21.1, part21.2, part22.1, part22.2, part62.1, part62.2, part63.1, part63.2, part64.1, part64.2, part65.1, part65.2, part66.1, part66.2, part67.1, part67.2, part68.1, part68.2]
   decide
 
-theorem forward60plus1_true : toffoliCount (forward60plus1 true) = 23537 ∧ measurementCount (forward60plus1 true) = 11702 := by
+theorem forward60plus1_true : toffoliCount (forward60plus1 true) = 23481 ∧ measurementCount (forward60plus1 true) = 11702 := by
   simp only [forward60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part0.1, part0.2, part1.1, part1.2, part2.1, part2.2, part23.1, part23.2, part4.1, part4.2, part5.1, part5.2, part6.1, part6.2, part7.1, part7.2, part24.1, part24.2, part25.1, part25.2, part10.1, part10.2, part11.1, part11.2, part12.1, part12.2, part13.1, part13.2, part26.1, part26.2, part27.1, part27.2, part16.1, part16.2, part17.1, part17.2, part60.1, part60.2, part61.1, part61.2, part28.1, part28.2, part29.1, part29.2, part62.1, part62.2, part63.1, part63.2, part64.1, part64.2, part65.1, part65.2, part66.1, part66.2, part69.1, part69.2, part70.1, part70.2]
   decide
 
-theorem reverse60plus1_false : toffoliCount (reverse60plus1 false) = 23571 ∧ measurementCount (reverse60plus1 false) = 11647 := by
+theorem reverse60plus1_false : toffoliCount (reverse60plus1 false) = 23523 ∧ measurementCount (reverse60plus1 false) = 11647 := by
   simp only [reverse60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part71.1, part71.2, part72.1, part72.2, part73.1, part73.2, part74.1, part74.2, part75.1, part75.2, part76.1, part76.2, part77.1, part77.2, part30.1, part30.2, part31.1, part31.2, part78.1, part78.2, part79.1, part79.2, part35.1, part35.2, part36.1, part36.2, part37.1, part37.2, part38.1, part38.2, part39.1, part39.2, part40.1, part40.2, part41.1, part41.2, part42.1, part42.2, part43.1, part43.2, part44.1, part44.2, part45.1, part45.2, part46.1, part46.2, part47.1, part47.2, part48.1, part48.2, part49.1, part49.2, part50.1, part50.2, part51.1, part51.2, part52.1, part52.2]
   decide
 
-theorem reverse60plus1_true : toffoliCount (reverse60plus1 true) = 23575 ∧ measurementCount (reverse60plus1 true) = 11647 := by
+theorem reverse60plus1_true : toffoliCount (reverse60plus1 true) = 23527 ∧ measurementCount (reverse60plus1 true) = 11647 := by
   simp only [reverse60plus1, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, part80.1, part80.2, part81.1, part81.2, part73.1, part73.2, part74.1, part74.2, part75.1, part75.2, part76.1, part76.2, part77.1, part77.2, part53.1, part53.2, part54.1, part54.2, part78.1, part78.2, part79.1, part79.2, part35.1, part35.2, part36.1, part36.2, part55.1, part55.2, part56.1, part56.2, part39.1, part39.2, part40.1, part40.2, part41.1, part41.2, part42.1, part42.2, part57.1, part57.2, part58.1, part58.2, part45.1, part45.2, part46.1, part46.2, part47.1, part47.2, part48.1, part48.2, part59.1, part59.2, part50.1, part50.2, part51.1, part51.2, part52.1, part52.2]
   decide
 
