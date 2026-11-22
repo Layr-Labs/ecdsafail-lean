@@ -141,18 +141,16 @@ theorem head_copies(s:State)(m:List Bool)
  (run head m s).basis 4505=(run head m s).basis 4243 ∧
  (run head m s).basis 4506=(run head m s).basis 4244 ∧
  (run head m s).basis 4507=((run head m s).basis 4245 ^^ (run head m s).basis 4243):=by
- let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+ have ready:WReady acc pad bank cin src (regValue src s.basis) (run (ReorderedCPlain.build acc pad bank cin src) m s):=
   Ghost3CacheC.plain_ready s m hz hb hi ha
- have cp:=low_copies _ u ready
- have low(q:Wire)(hq:q∈C105LowEraseResearch.low):u.basis q=(run head m s).basis q:=by
-  dsimp [u]
+ have cp:=low_copies _ (run (ReorderedCPlain.build acc pad bank cin src) m s) ready
+ have low(q:Wire)(hq:q∈C105LowEraseResearch.low):(run (ReorderedCPlain.build acc pad bank cin src) m s).basis q=(run head m s).basis q:=by
   rw [plain_split,run_cat]
   exact run_preserves_outside _ _ _ q (rest_off q hq)
  have frame:=ReorderedCHead.head_triple acc pad bank cin src acc_length (by have h:=source_length;omega)
   fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
  have away:∀q∈src,q∉acc:=by decide +kernel
- have source(q:Wire)(hq:q∈src):u.basis q=(run head m s).basis q:=by
+ have source(q:Wire)(hq:q∈src):(run (ReorderedCPlain.build acc pad bank cin src) m s).basis q=(run head m s).basis q:=by
   have h:= (regValue_eq_iff src _ _).mp ready.2.1 q hq
   exact h.trans (frame.2.2 q (away q hq)).symm
  rw [low 4505 (by decide),low 4506 (by decide),low 4507 (by decide),source 4243 (by decide +kernel),source 4244 (by decide +kernel),source 4245 (by decide +kernel)] at cp
@@ -202,14 +200,20 @@ theorem forward_zero(s:State)(m:List Bool)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 0 0=4757 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 1 0=4758 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 2 0=4759 from rfl] at h
+     exact h
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
@@ -1478,7 +1482,9 @@ def domainSelected396 : Program := [
 ]
 
  theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by decide +kernel
- theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by decide +kernel
+ theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by
+  simp only [ECDSAAdd.Entrant.ReplayLit.touched_mask]
+  decide +kernel
  theorem checked : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched oldPrefix q)=true := by
  apply List.all_eq_true.mpr
  intro q hq
@@ -2443,7 +2449,9 @@ def selected : Program := [
 
 theorem selected_sublist : selected.Sublist LocalEightBody99.body := by decide +kernel
 
-theorem selected_covers : domain.all (C163Touch.touched selected)=true := by decide +kernel
+theorem selected_covers : domain.all (C163Touch.touched selected)=true := by
+ simp only [ECDSAAdd.Entrant.ReplayLit.touched_eq_mask]
+ decide +kernel
 
 theorem sublist_support (A P : Program) (h : A.Sublist P) : wires A ⊆ wires P := by
  intro q hq
@@ -9639,14 +9647,20 @@ theorem forward_zeroK(s:State)(m:List Bool)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 0 0=4757 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 1 0=4758 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 2 0=4759 from rfl] at h
+     exact h
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
