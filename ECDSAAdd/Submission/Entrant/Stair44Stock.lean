@@ -57909,7 +57909,7 @@ open StairConcreteAssembly
 /-! ## Codec rows -/
 
 theorem v3_pack_counts (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
-    toffoliCount (checkpointPrimitives.pack B) = 2 * B - 3 ∧
+    toffoliCount (checkpointPrimitives.pack B) = 2 * B - 4 ∧
       measurementCount (checkpointPrimitives.pack B) =
         3 * B - 3 + StairCodec.decoderCost (StairCodec.bitWidth B) := by
   have h3 := StairPhysicalPrimitives.budget_three B hB
@@ -57942,7 +57942,7 @@ theorem v3_unpack_counts (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
 /-- One codec row with its decoder constant `c`. -/
 theorem v3_codec_row (B w c : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
     (hw : StairCodec.bitWidth B = w) (hc : StairCodec.decoderCost w = c) :
-    toffoliCount (checkpointPrimitives.pack B) = 2 * B - 3 ∧
+    toffoliCount (checkpointPrimitives.pack B) = 2 * B - 4 ∧
       measurementCount (checkpointPrimitives.pack B) = 3 * B - 3 + c ∧
       toffoliCount (checkpointPrimitives.unpack B) = 3 * B - 3 + c ∧
       measurementCount (checkpointPrimitives.unpack B) = 2 * B - 3 := by
@@ -57952,7 +57952,7 @@ theorem v3_codec_row (B w c : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
   exact ⟨p1, p2, u1, u2⟩
 
 theorem v3_codec87 :
-    toffoliCount (checkpointPrimitives.pack 87) = 171 ∧
+    toffoliCount (checkpointPrimitives.pack 87) = 170 ∧
       measurementCount (checkpointPrimitives.pack 87) = 273 ∧
       toffoliCount (checkpointPrimitives.unpack 87) = 273 ∧
       measurementCount (checkpointPrimitives.unpack 87) = 171 :=
@@ -57960,7 +57960,7 @@ theorem v3_codec87 :
     (by decide)
 
 theorem v3_codec62 :
-    toffoliCount (checkpointPrimitives.pack 62) = 121 ∧
+    toffoliCount (checkpointPrimitives.pack 62) = 120 ∧
       measurementCount (checkpointPrimitives.pack 62) = 191 ∧
       toffoliCount (checkpointPrimitives.unpack 62) = 191 ∧
       measurementCount (checkpointPrimitives.unpack 62) = 121 :=
@@ -57968,7 +57968,7 @@ theorem v3_codec62 :
     (by decide)
 
 theorem v3_codec47 :
-    toffoliCount (checkpointPrimitives.pack 47) = 91 ∧
+    toffoliCount (checkpointPrimitives.pack 47) = 90 ∧
       measurementCount (checkpointPrimitives.pack 47) = 146 ∧
       toffoliCount (checkpointPrimitives.unpack 47) = 146 ∧
       measurementCount (checkpointPrimitives.unpack 47) = 91 :=
@@ -57976,7 +57976,7 @@ theorem v3_codec47 :
     (by decide)
 
 theorem v3_codec32 :
-    toffoliCount (checkpointPrimitives.pack 32) = 61 ∧
+    toffoliCount (checkpointPrimitives.pack 32) = 60 ∧
       measurementCount (checkpointPrimitives.pack 32) = 98 ∧
       toffoliCount (checkpointPrimitives.unpack 32) = 98 ∧
       measurementCount (checkpointPrimitives.unpack 32) = 61 :=
@@ -57984,7 +57984,7 @@ theorem v3_codec32 :
     (by decide)
 
 theorem v3_codec22 :
-    toffoliCount (checkpointPrimitives.pack 22) = 41 ∧
+    toffoliCount (checkpointPrimitives.pack 22) = 40 ∧
       measurementCount (checkpointPrimitives.pack 22) = 68 ∧
       toffoliCount (checkpointPrimitives.unpack 22) = 68 ∧
       measurementCount (checkpointPrimitives.unpack 22) = 41 :=
@@ -57992,7 +57992,7 @@ theorem v3_codec22 :
     (by decide)
 
 theorem v3_codec12 :
-    toffoliCount (checkpointPrimitives.pack 12) = 21 ∧
+    toffoliCount (checkpointPrimitives.pack 12) = 20 ∧
       measurementCount (checkpointPrimitives.pack 12) = 35 ∧
       toffoliCount (checkpointPrimitives.unpack 12) = 35 ∧
       measurementCount (checkpointPrimitives.unpack 12) = 21 :=
@@ -58284,7 +58284,7 @@ Six rows (letters 425/450/465/480/490/500, budgets 87/62/47/32/22/12).
 Per kernel the staircase walk costs the record walk plus one pack, one unpack
 and one repaired orientation per budget:
 
-* Toffoli  +1585 = Σ (2B−3) + Σ (3B−3+dc) + Σ (B+1) = 562 + 755 + 268,
+* Toffoli  +1579 = Σ (2B−4) + Σ (3B−3+dc) + Σ (B+1) = 500 + 811 + 268,
 * measured +1317 = Σ (3B−3+dc) + Σ (2B−3).
 -/
 
@@ -58313,7 +58313,7 @@ theorem v3_entryWalk_counts :
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490) +
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500) +
         toffoliCount (StairSchedule.forwardLast checkpointPrimitives) =
-      toffoliCount (Six505.stackForward6 true) + 1585 ∧
+      toffoliCount (Six505.stackForward6 true) + 1579 ∧
     measurementCount (StairSchedule.stackForward6 checkpointPrimitives) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465) +
@@ -58375,7 +58375,7 @@ theorem v3_exitWalk_counts :
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465) +
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450) =
-      toffoliCount (InverseFive23.stackReverse15 true) + 1585 ∧
+      toffoliCount (InverseFive23.stackReverse15 true) + 1579 ∧
     measurementCount (StairSchedule.stackReverse15 checkpointPrimitives) +
         measurementCount (StairSchedule.reverseLast checkpointPrimitives) +
         measurementCount (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500) +
@@ -58551,7 +58551,7 @@ section Merge_StairCountsHostedRest_at_Main
 /-!
 # Hosted arithmetic rests against the record rests (field 10 ledger, CANON v3)
 
-Per kernel: walk +1585 T / +1317 M (`v3_entryWalk_counts`, `v3_exitWalk_counts`),
+Per kernel: walk +1579 T / +1317 M (`v3_entryWalk_counts`, `v3_exitWalk_counts`),
 group loans +9560 T / +9560 M (`v3_entryTailPrefix_counts` …), plus the boundary
 delta `δ` of the two boundary components of that kernel.  The `_of` forms are
 PARAMETRIC in `δ` (any boundary loan design); the plain forms instantiate the
@@ -58582,7 +58582,7 @@ theorem hostedEntryRest_counts_of (δT δM : Nat)
           measurementCount R2SqEp760.canon760 + δM)
     (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10818 + δT ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δT ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δM := by
   obtain ⟨b1, b2⟩ := boundary
@@ -58614,7 +58614,7 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
           measurementCount (R2SqEp760.endPacket760 false) + δM)
     (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10818 + δT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δM := by
   obtain ⟨b1, b2⟩ := boundary
@@ -58636,7 +58636,7 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
 
 theorem hostedEntryRest_counts (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10905 ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10899 ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10635 := by
   obtain ⟨h1, h2⟩ := hostedEntryRest_counts_of 87 87 v3_boundary_counts.1 L
@@ -58644,7 +58644,7 @@ theorem hostedEntryRest_counts (L : ControlledPointLayout) :
 
 theorem hostedExitRest_counts (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10993 ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10987 ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10723 := by
   obtain ⟨h1, h2⟩ := hostedExitRest_counts_of 175 175 v3_boundary_counts.2 L k
@@ -58663,7 +58663,7 @@ section Merge_StairCountsHosted_at_Main
 with the two arithmetic rests of `FlagExit.genericN` replaced by the hosted
 staircase rests.  Counts are wire-blind, so for the k = 44 plan
 
-  T(concreteProgram C) = T(programQ C) + 2·(1585 + 9560) + δE_T + δX_T,
+  T(concreteProgram C) = T(programQ C) + 2·(1579 + 9560) + δE_T + δX_T,
   M(concreteProgram C) = M(programQ C) + 2·(1317 + 9560) + δE_M + δX_M,
 
 where δE / δX are the division / multiplication boundary deltas (endpoint +
@@ -58690,16 +58690,16 @@ attribute [local irreducible] toffoliCount measurementCount
     parametric in the two boundary deltas. -/
 theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10818 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10818 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (hostedGeneric L cx cy) ≤
-        toffoliCount (FlagExit.genericN L cx cy) + 21636 + 151 + δET + δXT ∧
+        toffoliCount (FlagExit.genericN L cx cy) + 21624 + 151 + δET + δXT ∧
       measurementCount (hostedGeneric L cx cy) =
         measurementCount (FlagExit.genericN L cx cy) + 21096 + δEM + δXM := by
   obtain ⟨e1, e2⟩ := hE L
@@ -58714,16 +58714,16 @@ theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     parametric in the two boundary deltas. -/
 theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10818 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10818 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
     toffoliCount (concreteProgram C) ≤
-        toffoliCount (AboveFieldPointDevelop.programQ C) + 21636 + 151 + δET + δXT ∧
+        toffoliCount (AboveFieldPointDevelop.programQ C) + 21624 + 151 + δET + δXT ∧
       measurementCount (concreteProgram C) ≤
         measurementCount (AboveFieldPointDevelop.programQ C) + 21096 + δEM + δXM := by
   cases C with
@@ -58744,18 +58744,18 @@ theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     constructor <;> omega
 
 /-- Exact v3 totals, parametric in the boundary deltas: the record bounds
-    plus `22316 + δ` Toffoli and `21776 + δ` measurements. -/
+    plus `22304 + δ` Toffoli and `21776 + δ` measurements. -/
 theorem count_totals_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10818 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10818 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21636 + 151 + δET + δXT ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21624 + 151 + δET + δXT ∧
       measurementCount (concreteAssembly.program C) ≤ 1498884 + 21096 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
@@ -58764,9 +58764,9 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
   constructor <;> omega
 
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
-    + the PSQ hole-free square, +151 T): **T ≤ 2,169,106, M ≤ 1,520,242**. -/
+    + the PSQ hole-free square, +151 T): **T ≤ 2,169,094, M ≤ 1,520,242**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2169106 ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2169094 ∧
       measurementCount (concreteAssembly.program C) ≤ 1520242 := by
   intro C
   have h := count_totals_of 87 87 175 175
@@ -73943,7 +73943,7 @@ theorem codec_functional :
 
 
 /-- Field 10, closed (loose v3 form), from LT12's exact ledger ported to the
-frozen program (`StairCountsHosted.count_totals`: T ≤ 2,169,106, M ≤ 1,520,242 after PSQ with status hosts). -/
+frozen program (`StairCountsHosted.count_totals`: T ≤ 2,169,094, M ≤ 1,520,242 after PSQ with status hosts). -/
 theorem count_composition : ∀ C,
     toffoliCount (StairConcreteAssembly.concreteAssembly.program C) ≤ 2170000 ∧
       measurementCount (StairConcreteAssembly.concreteAssembly.program C) ≤ 1521500 := by
@@ -74068,7 +74068,7 @@ The 15-tick block and the archive's public representation are shared with the st
 namespace ECDSAAdd.Entrant.StairPacket.Shadow7
 open Arithmetic MappedCompressed GateMirror Partial StairArchiveGates
 
-def sbP (s : Nat) : Nat := (513-s)/2 - 7
+def sbP (s : Nat) : Nat := (498-s)/2 + min (s/405) 1
 
 def smallBits (j : Fin 23) := Shadow7.sbP (start j)
 
@@ -74882,12 +74882,12 @@ def EndSmall (b : Nat) (z : SkywalkNat.State) : Prop :=
 
 namespace Envelope
 
-theorem exponent_bound (t : Nat) (h : t ≤ 405) : 512 - t ≤ sbP t + sbP t + 14 := by
+theorem exponent_bound (t : Nat) (h : t ≤ 405) : 512 - t ≤ sbP t + sbP t + 15 := by
   unfold sbP
   omega
 
 theorem small_of_far (b : Nat) (z : SkywalkNat.State)
-    (prod : z.u*z.v < 16384 * (2^b * 2^b))
+    (prod : z.u*z.v < 32768 * (2^b * 2^b))
     (far : Shadow.far b 15 z) : min z.u z.v < 2^b := by
   have positive : 0 < Shadow.limb b 15 := by unfold Shadow.limb; positivity
   have hf := (Nat.le_div_iff_mul_le positive).mp far
@@ -74899,17 +74899,17 @@ theorem small_of_far (b : Nat) (z : SkywalkNat.State)
   by_contra! large
   have hu := le_trans large (min_le_left z.u z.v)
   have hv := le_trans large (min_le_right z.u z.v)
-  have hlarge : 16384*2^b ≤ z.u ∨ 16384*2^b ≤ z.v := by omega
+  have hlarge : 32768*2^b ≤ z.u ∨ 32768*2^b ≤ z.v := by omega
   rcases hlarge with h | h
   · have q := Nat.mul_le_mul h hv
-    have e : 16384*2^b*2^b = 16384*(2^b*2^b) := Nat.mul_assoc _ _ _
+    have e : 32768*2^b*2^b = 32768*(2^b*2^b) := Nat.mul_assoc _ _ _
     omega
   · have q := Nat.mul_le_mul hu h
-    have e : 2^b*(16384*2^b) = 16384*(2^b*2^b) := by ring
+    have e : 2^b*(32768*2^b) = 32768*(2^b*2^b) := by ring
     omega
 
 theorem endpoint_small (b : Nat) (z : SkywalkNat.State)
-    (prod : z.u*z.v < 16384 * (2^b * 2^b)) :
+    (prod : z.u*z.v < 32768 * (2^b * 2^b)) :
     let e := step^[15] z
     min e.u e.v < 2^b := by
   dsimp only
@@ -74935,9 +74935,9 @@ theorem inputs_through (x p t : Nat) (hx : x < 2^256) (hp : p < 2^256) (ht : t �
     have e : (2:Nat)^512 = 2^t*2^(512-t) := by rw [← pow_add]; congr 1; omega
     rw [e] at strict
     exact Nat.lt_of_mul_lt_mul_left (lt_of_le_of_lt h strict)
-  have envelope : 512 - t ≤ sbP t + sbP t + 14 := by unfold sbP; omega
+  have envelope : 512 - t ≤ sbP t + sbP t + 15 := by unfold sbP; omega
   have power := Nat.pow_le_pow_right (by decide : 0 < 2) envelope
-  have e : 2^(sbP t + sbP t + 14) = 16384*(2^(sbP t)*2^(sbP t)) := by
+  have e : 2^(sbP t + sbP t + 15) = 32768*(2^(sbP t)*2^(sbP t)) := by
     rw [pow_add, pow_add, Nat.mul_comm]
     rfl
   have prod := lt_of_lt_of_le stepBound (power.trans_eq e)
@@ -75828,9 +75828,10 @@ fact ranges over a long list, one `decide +kernel` over the 23 blocks where it o
 
 /-- Arithmetic frame of block `j`: `s = 75+15j`, `2h+s ∈ {512,513}`, `3 < Wp`, `Wp+h ≤ 242`. -/
 theorem frame (j : Fin 23) : start j=75+15*j.val ∧ j.val<23 ∧ 2*Shadow7.sbP (start j)+start j≤499 ∧
-    498≤2*Shadow7.sbP (start j)+start j ∧ 3<Shadow7.wpP (start j) ∧ Shadow7.wpP (start j)+Shadow7.sbP (start j)≤242 := by
-  have hj:=j.isLt
-  refine ⟨rfl,hj,?_,?_,?_,?_⟩ <;> simp only [start,Shadow7.wpP,railP,Shadow7.sbP] <;> (try split_ifs) <;> omega
+    497≤2*Shadow7.sbP (start j)+start j ∧ 3<Shadow7.wpP (start j) ∧ Shadow7.wpP (start j)+Shadow7.sbP (start j)≤242 := by
+  have arith : ∀ k : Fin 23, 2*Shadow7.sbP (start k)+start k≤499 ∧ 497≤2*Shadow7.sbP (start k)+start k ∧
+      3<Shadow7.wpP (start k) ∧ Shadow7.wpP (start k)+Shadow7.sbP (start k)≤242 := by decide +kernel
+  exact ⟨rfl,j.isLt,arith j⟩
 
 theorem upperSites (j : Fin 23) {q : Wire} (h : q∈RailPair.sites (upperPairs j)) :
     (start j+Shadow7.sbP (start j)+35≤q ∧ q+3<start j+Shadow7.sbP (start j)+35+Shadow7.wpP (start j)) ∨
@@ -76710,7 +76711,7 @@ set_option linter.unnecessarySeqFocus false
 set_option linter.unreachableTactic false
 set_option linter.unusedTactic false
 theorem rail_facts (s : Nat) (h0 : 90 ≤ s) (h1 : s ≤ 405) :
-    sbP s + 54 ≤ railP s ∧ railP s ≤ 258 ∧ sbP s = (513 - s)/2 - 7 ∧ (s ≤ 255 ∨ railP s = 513 - s) := by
+    sbP s + 54 ≤ railP s ∧ railP s ≤ 258 ∧ sbP s = (498 - s)/2 + min (s/405) 1 ∧ (s ≤ 255 ∨ railP s = 513 - s) := by
   unfold railP sbP; split_ifs <;> omega
 
 theorem enter_proper (s : Nat) (h0 : 90 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ enterOps s, proper g = true := by
@@ -76889,13 +76890,13 @@ set_option linter.unusedTactic false
 constants moved by the seven-bit reduction (`61 ≤ sbP ≤ 211` -> `54 ≤ sbP ≤ 204`, `railP ≤ 2 sbP + 1` -> `+ 15`,
 `512 ≤ 2 sbP + s ≤ 513` -> `498 ≤ 2 sbP + s ≤ 499`, `sbP + 47 ≤ railP` -> `+ 54`, `sbP(s+15) + 50` -> `+ 57`). -/
 theorem rail_win {s : Nat} (h1 : 90 ≤ s) (h2 : s ≤ 390) :
-    railP s ≤ 258 ∧ sbP s + 54 ≤ railP s ∧ railP s ≤ 2 * sbP s + 15 ∧ 54 ≤ sbP s ∧ sbP s ≤ 204 ∧
+    railP s ≤ 258 ∧ sbP s + 54 ≤ railP s ∧ railP s ≤ 2 * sbP s + 16 ∧ 54 ≤ sbP s ∧ sbP s ≤ 204 ∧
     sbP (s+15) + 7 ≤ sbP s ∧ sbP s ≤ sbP (s+15) + 8 ∧ railP (s+15) ≤ railP s ∧
-    railP (s+15) ≤ 2 * sbP (s+15) + 15 ∧ sbP (s+15) + 57 ≤ railP (s+15) ∧
+    railP (s+15) ≤ 2 * sbP (s+15) + 16 ∧ sbP (s+15) + 57 ≤ railP (s+15) ∧
     wpP s + sbP s + 16 = railP s ∧ wpP (s+15) + sbP (s+15) + 16 = railP (s+15) ∧
     e0P s = 1574 + sbP s ∧ e0P (s+15) = 1574 + sbP (s+15) ∧ bTopP s = 785 + railP s ∧
     bTopP (s+15) = 785 + railP (s+15) ∧ a0P s = s + sbP s + 32 ∧ b0P s = 787 + sbP s ∧
-    lowsP s = 18 + sbP (s+15) - sbP s ∧ 2 * sbP s + s ≤ 499 ∧ 498 ≤ 2 * sbP s + s := by
+    lowsP s = 18 + sbP (s+15) - sbP s ∧ 2 * sbP s + s ≤ 499 ∧ 497 ≤ 2 * sbP s + s := by
   unfold wpP e0P bTopP a0P b0P lowsP railP sbP
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     (try split_ifs) <;> omega
@@ -80494,19 +80495,19 @@ set_option maxHeartbeats 1000000
 
 /-- block 10's selector wires. -/
 def D (q : Nat) : Prop :=
-  (1559 ≤ q ∧ q ≤ 1597) ∨ (241 ≤ q ∧ q ≤ 255) ∨ (394 ≤ q ∧ q ≤ 409) ∨ q = 1717 ∨ q = 1718
+  (1559 ≤ q ∧ q ≤ 1597) ∨ (241 ≤ q ∧ q ≤ 255) ∨ (393 ≤ q ∧ q ≤ 408) ∨ q = 1716 ∨ q = 1717
 instance (q : Nat) : Decidable (D q) := by unfold D; infer_instance
 
 /-- block 10 → block j. -/
 def ren (j : Fin 23) (q : Nat) : Nat :=
   if 241 ≤ q ∧ q ≤ 255 then q - 225 + start j
-  else if 394 ≤ q ∧ q ≤ 409 then q - 394 + Shadow7.a0P (start j)
-  else if q = 1717 then Shadow7.e0P (start j) + 6
-  else if q = 1718 then Shadow7.e0P (start j) + 7
+  else if 393 ≤ q ∧ q ≤ 408 then q - 393 + Shadow7.a0P (start j)
+  else if q = 1716 then Shadow7.e0P (start j) + 6
+  else if q = 1717 then Shadow7.e0P (start j) + 7
   else q
 
-theorem geo (j : Fin 23) : Shadow7.a0P (start j) = start j + ((513 - start j) / 2 - 7) + 32 ∧
-    Shadow7.e0P (start j) = 1574 + ((513 - start j) / 2 - 7) ∧ start j = 75 + 15 * j.val := ⟨rfl, rfl, rfl⟩
+theorem geo (j : Fin 23) : Shadow7.a0P (start j) = start j + ((498 - start j) / 2 + min (start j / 405) 1) + 32 ∧
+    Shadow7.e0P (start j) = 1574 + ((498 - start j) / 2 + min (start j / 405) 1) ∧ start j = 75 + 15 * j.val := ⟨rfl, rfl, rfl⟩
 
 theorem ren_inj (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) : InjOn D (ren j) := by
   intro a b ha hb h
@@ -80519,14 +80520,14 @@ theorem ren_const (j : Fin 23) (q : Nat) (h : 1559 ≤ q ∧ q ≤ 1597) : ren j
   unfold ren; split_ifs <;> omega
 theorem ren_g (j : Fin 23) (q : Nat) (h : 241 ≤ q ∧ q ≤ 255) : ren j q = q - 225 + start j := by
   unfold ren; rw [if_pos h]
-theorem ren_u (j : Fin 23) (q : Nat) (h : 394 ≤ q ∧ q ≤ 409) : ren j q = q - 394 + Shadow7.a0P (start j) := by
+theorem ren_u (j : Fin 23) (q : Nat) (h : 393 ≤ q ∧ q ≤ 408) : ren j q = q - 393 + Shadow7.a0P (start j) := by
   unfold ren; rw [if_neg (by omega), if_pos h]
-theorem ren_cross (j : Fin 23) : ren j 1717 = Shadow7.e0P (start j) + 6 := by unfold ren; simp
-theorem ren_near (j : Fin 23) : ren j 1718 = Shadow7.e0P (start j) + 7 := by unfold ren; simp
+theorem ren_cross (j : Fin 23) : ren j 1716 = Shadow7.e0P (start j) + 6 := by unfold ren; simp
+theorem ren_near (j : Fin 23) : ren j 1717 = Shadow7.e0P (start j) + 7 := by unfold ren; simp
 
 theorem s10 : start 10 = 225 := rfl
-theorem a10 : Shadow7.a0P 225 = 394 := rfl
-theorem e10 : Shadow7.e0P 225 = 1711 := rfl
+theorem a10 : Shadow7.a0P 225 = 393 := rfl
+theorem e10 : Shadow7.e0P 225 = 1710 := rfl
 
 /-! `prepare` and `retire` of block j are block 10's, renamed. -/
 
