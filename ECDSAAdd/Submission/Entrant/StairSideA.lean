@@ -32289,6 +32289,90 @@ theorem digit {P Q C U A S J x : Nat}
     have := (Nat.le_div_iff_mul_le c).mpr floor
     omega
 
+/-- Margin 17 (`A ∈ [U,2U)`): the digit consumed by the high-bank circuit lies in {0,1,2}; off the centre 1 the
+crossing bit selects 0 (negative) or 2. Same proof as `digit` with the window moved down by `U`. -/
+theorem digit17 {P Q C U A S J x : Nat}
+    (p : 0<P) (q : 0<Q) (c : 0<C) (scale : P*C=Q*U)
+    (low : U≤A) (high : A<2*U) (_maskBound : J<P)
+    (short : x<C) (_smallInput : Q*x<U)
+    (identity : P*S+(J+Q*Q)*x=Q*A+P*x) :
+    (S/C=0 ∨ S/C=1 ∨ S/C=2) ∧
+    (S/C≠1 → (if P<J+Q*Q then S/C=0 else S/C=2)) := by
+  have low' := Nat.mul_le_mul_left Q low
+  have high' := Nat.mul_lt_mul_of_pos_left high q
+  have room := Nat.mul_lt_mul_of_pos_left short p
+  have top : S < 3*C := by
+    by_contra! bad
+    have bad' := Nat.mul_le_mul_left P bad
+    nlinarith only [scale,high',room,identity,bad',Nat.zero_le ((J+Q*Q)*x)]
+  have top' : S/C<3 := (Nat.div_lt_iff_lt_mul c).mpr top
+  have bot' : 0≤S/C := Nat.zero_le _
+  refine ⟨by omega,fun crossed => ?_⟩
+  split
+  next negative =>
+    have neg := Nat.mul_le_mul_right x (Nat.le_of_lt negative)
+    have cap : S < 2*C := by
+      by_contra! bad
+      have bad' := Nat.mul_le_mul_left P bad
+      nlinarith only [identity,neg,scale,high',bad']
+    have := (Nat.div_lt_iff_lt_mul c).mpr cap
+    omega
+  next positive =>
+    have pos := Nat.mul_le_mul_right x (Nat.le_of_not_gt positive)
+    have floor : 1*C ≤ S := by
+      by_contra! bad
+      have bad' := Nat.mul_lt_mul_of_pos_left bad p
+      nlinarith only [identity,pos,scale,low',bad']
+    have := (Nat.le_div_iff_mul_le c).mpr floor
+    omega
+
+theorem right_digit17 (k B s V : Nat) (ready : guard k s ≤ B) (odd : B%2=1)
+    (small : s<V) (low : 2^k*V≤B+s) (high : B+s<2*(2^k*V)) :
+    let z : SkywalkNat.State := ⟨s,B⟩
+    let o := step^[k] z
+    let t := wait k s
+    let d := (o.u+o.v)/(2^t*V)
+    (d=0 ∨ d=1 ∨ d=2) ∧ (d≠1 → if 2^k<mask (letters k z)+2^(t+t) then d=0 else d=2) := by
+  dsimp only
+  have p := Nat.two_pow_pos k
+  have q := Nat.two_pow_pos (wait k s)
+  have c := Nat.mul_pos q (show 0<V by omega)
+  have w := waited k s
+  have sx : remainder k s ≤ s := by
+    calc remainder k s ≤ 2^(wait k s)*remainder k s := Nat.le_mul_of_pos_left _ q
+         _ = s := w
+  have hV := Nat.le_mul_of_pos_left V p
+  have hvq := Nat.le_mul_of_pos_left V q
+  have h := right_product k B s ready odd
+  dsimp only at h
+  rw [pow_add] at h ⊢
+  exact digit17 p q c (by ring) low high (by simpa [letters_length] using mask_lt (letters k ⟨s,B⟩))
+    (by omega) (by omega) h
+
+theorem left_digit17 (k B s V : Nat) (ready : guard k s ≤ B) (odd : s%2=1)
+    (small : s<V) (low : 2^k*V≤B+s) (high : B+s<2*(2^k*V)) :
+    let out := step^[k] ⟨B,s⟩
+    (out.u+out.v)/V=1 ∨ (out.u+out.v)/V=2 := by
+  dsimp only
+  obtain ⟨v,prod⟩ := left_product k B s ready odd
+  have mb : mask (letters k ⟨B,s⟩)<2^k := by simpa [letters_length] using mask_lt (letters k ⟨B,s⟩)
+  have maskCost := Nat.mul_le_mul_right s (show mask (letters k ⟨B,s⟩)+1 ≤ 2^k by omega)
+  have pos := Nat.two_pow_pos k
+  have vpos : 0<V := by omega
+  have cap := Nat.mul_lt_mul_of_pos_left small pos
+  rw [v]
+  have lo : 1*V≤(step^[k] ⟨B,s⟩).u+s := by
+    by_contra! h
+    have hh := Nat.mul_lt_mul_of_pos_left h pos
+    nlinarith only [hh,prod,low,maskCost]
+  have hi : (step^[k] ⟨B,s⟩).u+s<3*V := by
+    by_contra! h
+    have hh := Nat.mul_le_mul_left (2^k) h
+    nlinarith only [hh,prod,high,cap,Nat.zero_le (mask (letters k ⟨B,s⟩)*s),Nat.zero_le s]
+  have := (Nat.le_div_iff_mul_le vpos).mpr lo
+  have := (Nat.div_lt_iff_lt_mul vpos).mpr hi
+  omega
+
 theorem right_digit (k B s V : Nat) (ready : guard k s ≤ B) (odd : B%2=1)
     (small : s<V) (low : 2*(2^k*V)≤B+s) (high : B+s<3*(2^k*V)) :
     let z : SkywalkNat.State := ⟨s,B⟩
@@ -34546,6 +34630,42 @@ def enterFix (s h : Nat) : List Gate := [
   .cx (h+1576) 1561,
   .cx 1561 (h+1576)]
 
+/-- The Shadow7 window enter at register margin 17 (T3, design S2): aperture rows `sb+16`, `sb+17`. -/
+def enterFix17 (s h : Nat) : List Gate := [
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+802) (s+h+32),
+  .cx (s+h+32) (h+802),
+  .cx (s+h+33) (h+803),
+  .ccx (s+15) (h+803) (s+h+33),
+  .cx (s+h+33) (h+803),
+  .cx (h+1579) (h+802),
+  .cx (h+1579) (h+803),
+  .make (h+1577) (s+h+32) (h+1574),
+  .cx (h+1574) (s+h+32),
+  .cx (h+1577) (s+h+32),
+  .cx (s+h+33) (h+1575),
+  .cx (h+1575) (s+h+33),
+  .x (h+1574),
+  .make (h+1578) (h+1574) 1556,
+  .x (h+1574),
+  .ccx 1556 (h+802) (h+803),
+  .ccx (h+1578) (h+1575) (h+803),
+  .cx 1556 (h+802),
+  .x (h+1574),
+  .pop (h+1578) (h+1574) 1556,
+  .x (h+1574),
+  .cx (h+1579) (h+802),
+  .cx (h+1579) (h+803),
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+802) (s+h+32),
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+803) (s+h+33),
+  .cx (s+h+33) (h+803),
+  .cx (s+h+33) (h+1579),
+  .cx (h+803) (h+1579),
+  .cx (h+804) (h+1576),
+  .cx (h+1576) (h+804)]
+
 def moveLoadPairs (t : Nat) : List (Wire × Wire) := [
   ((OB5.sig t (t+1036)), (t+9)),
   ((OB5.sig t (t+1036)), (OB5.sig t (t+1037))),
@@ -35020,6 +35140,7 @@ theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rf
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 20 37 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix17 (s h : Nat) : Counts (enterFix17 s h) 6 2 1 33 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
 theorem counts_leaveAdjust (s : Nat) (hw : 1 ≤ wpP s) :
@@ -38799,6 +38920,30 @@ theorem corrected_digit (k B s V : Nat) (hk : 0<k) (ready : guard k s ≤ B)
     next neg => simpa only [if_pos (rule.mp neg)] using cross
     next pos => simpa only [if_neg (fun h => pos (rule.mpr h))] using cross
 
+
+theorem corrected_digit17 (k B s V : Nat) (hk : 0<k) (ready : guard k s ≤ B)
+    (odd : B%2=1) (small : s<V) (low : 2^k*V≤B+s) (high : B+s<2*(2^k*V)) :
+    let z : SkywalkNat.State := ⟨s,B⟩
+    let out := step^[k] z
+    let bits := oddBits (letters k z)
+    let d := (out.u+out.v)/(2^(wait k s)*V)
+    d = if d=1 then 1 else if negative bits then 0 else 2 := by
+  dsimp only
+  have len (n : Nat) (z : SkywalkNat.State) : (oddBits (letters n z)).length=n := by
+    induction n generalizing z with
+    | zero => rfl
+    | succ n ih => simpa [oddBits,letters] using congrArg Nat.succ (ih (step z))
+  have rule := selector (oddBits (letters k ⟨s,B⟩)) (by rwa [len])
+  rw [len,mask_bits,lead_wait k B s ready] at rule
+  obtain ⟨_,cross⟩ := right_digit17 k B s V ready odd small low high
+  split
+  next h => exact h
+  next h =>
+    specialize cross h
+    split
+    next neg => simpa only [if_pos (rule.mp neg)] using cross
+    next pos => simpa only [if_neg (fun h => pos (rule.mpr h))] using cross
+
 end ECDSAAdd.Entrant.IntegerHigh
 
 end
@@ -39370,9 +39515,9 @@ open SkywalkNat IntegerHigh
 
 def limb (b k : Nat) := 2^(b+k+1)
 def high (b k : Nat) (z : SkywalkNat.State) := (z.u+z.v)/limb b k
-def far (b k : Nat) (z : SkywalkNat.State) : Prop := 3≤high b k z
-instance (b k : Nat) (z : SkywalkNat.State) : Decidable (far b k z) := inferInstanceAs (Decidable (3≤_))
-def gap (b k : Nat) (z : SkywalkNat.State) := (high b k z-2)*limb b k
+def far (b k : Nat) (z : SkywalkNat.State) : Prop := 2≤high b k z
+instance (b k : Nat) (z : SkywalkNat.State) : Decidable (far b k z) := inferInstanceAs (Decidable (2≤_))
+def gap (b k : Nat) (z : SkywalkNat.State) := (high b k z-1)*limb b k
 def reduced (b k : Nat) (z : SkywalkNat.State) : SkywalkNat.State :=
   if far b k z then
     if 2^b≤z.u then ⟨z.u-gap b k z,z.v⟩ else ⟨z.u,z.v-gap b k z⟩
@@ -39381,49 +39526,61 @@ def reduced (b k : Nat) (z : SkywalkNat.State) : SkywalkNat.State :=
 theorem represented (b k : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b)
     (h : far b k z) :
     Rel k z (reduced b k z) ∧
-    2*limb b k≤(reduced b k z).u+(reduced b k z).v ∧
-    (reduced b k z).u+(reduced b k z).v<3*limb b k := by
+    limb b k≤(reduced b k z).u+(reduced b k z).v ∧
+    (reduced b k z).u+(reduced b k z).v<2*limb b k := by
+  -- margin 17 (assembleA): far := 2 ≤ high, gap := (high-1)*limb, so the reduced sum is R+U ∈ [U,2U).
+  -- The long word then only keeps U - small, and the guard needs exactly guard k s + s ≤ U, i.e. s < 2^b.
   let U:=limb b k
   let H:=high b k z
   let R:=(z.u+z.v)%U
   have hu:0<U:=by simp [U,limb]
   have hr:R<U:=Nat.mod_lt _ hu
   have decomp:z.u+z.v=R+U*H:=(Nat.mod_add_div _ _).symm
-  have hh:3≤H:=h
-  have remove : U*H=gap b k z+2*U := by
-    change U*H=(H-2)*U+2*U
-    rw [←Nat.add_mul,show H-2+2=H by omega,Nat.mul_comm]
+  have hh:2≤H:=h
+  have remove : U*H=gap b k z+U := by
+    change U*H=(H-1)*U+U
+    rw [show (H-1)*U+U=(H-1+1)*U by ring,show H-1+1=H by omega,Nat.mul_comm]
   have bound:2^b≤U:=by
     dsimp [U,limb]
     apply Nat.pow_le_pow_right (by decide)
     omega
-  have form:gap b k z=2^k*((H-2)*2^(b+1)) := by
-    change (H-2)*2^(b+k+1)=_
+  have tight (s : Nat) (hs : s < 2^b) : guard k s+s ≤ U := by
+    have a : 2*s+1 ≤ 2*2^b := by omega
+    have mul := Nat.mul_le_mul_left (2^k) a
+    have f := guard_formula k s
+    have e : U = 2^k*(2*2^b) := by
+      change 2^(b+k+1) = _
+      rw [show b+k+1=k+(b+1) by omega,pow_add,pow_succ]
+      ring
+    rw [f, e]
+    exact mul
+  have form:gap b k z=2^k*((H-1)*2^(b+1)) := by
+    change (H-1)*2^(b+k+1)=_
     rw [show b+k+1=k+(b+1) by omega,pow_add]
     ring
   rw [reduced,if_pos h]
   split
   · rename_i big
     have hv:z.v<2^b:=by omega
-    have gu:guard k z.v≤z.u-gap b k z:=
-      (guard_small k z.v b hv).trans (by change U≤_;omega)
-    have eq:z.u=(z.u-gap b k z)+2^k*((H-2)*2^(b+1)):=by omega
+    have t:=tight z.v hv
+    have gu:guard k z.v≤z.u-gap b k z:=by omega
+    have eq:z.u=(z.u-gap b k z)+2^k*((H-1)*2^(b+1)):=by omega
     constructor
-    · conv_lhs => rw [show z=⟨(z.u-gap b k z)+2^k*((H-2)*2^(b+1)),z.v⟩
+    · conv_lhs => rw [show z=⟨(z.u-gap b k z)+2^k*((H-1)*2^(b+1)),z.v⟩
                            from by cases z; exact congrArg₂ SkywalkNat.State.mk eq rfl]
       exact .left _ _ _ gu
-    · change 2*U≤z.u-gap b k z+z.v ∧ z.u-gap b k z+z.v<3*U
+    · change U≤z.u-gap b k z+z.v ∧ z.u-gap b k z+z.v<2*U
       omega
   · rename_i little
     have u:z.u<2^b:=by omega
-    have gv:guard k z.u≤z.v-gap b k z:=
-      (guard_small k z.u b u).trans (by change U≤_;omega)
-    have eq:z.v=(z.v-gap b k z)+2^k*((H-2)*2^(b+1)):=by omega
+    have t:=tight z.u u
+    have gv:guard k z.u≤z.v-gap b k z:=by omega
+    have eq:z.v=(z.v-gap b k z)+2^k*((H-1)*2^(b+1)):=by omega
     constructor
-    · conv_lhs => rw [show z=⟨z.u,(z.v-gap b k z)+2^k*((H-2)*2^(b+1))⟩
+    · conv_lhs => rw [show z=⟨z.u,(z.v-gap b k z)+2^k*((H-1)*2^(b+1))⟩
                            from by cases z; exact congrArg₂ SkywalkNat.State.mk rfl eq]
       exact .right _ _ _ gv
-    · change 2*U≤z.u+(z.v-gap b k z) ∧ z.u+(z.v-gap b k z)<3*U
+    · change U≤z.u+(z.v-gap b k z) ∧ z.u+(z.v-gap b k z)<2*U
       omega
 
 

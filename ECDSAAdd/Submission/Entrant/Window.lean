@@ -89,6 +89,53 @@ theorem unchanged (M H w : Nat) (bw:w≤1) (long:Bool) :
     guardWord M H w false long=M%8 := by
   cases long <;> simp [guardWord] <;> omega
 
+/-- margin 17 (T1): the far digit of the reduced numerator is one (gap (H-1)U), not two. -/
+def guardWord17 (m h w : Nat) (far long : Bool) :=
+  let a:=h%8
+  let na:=if far then 1 else a
+  (((((m%8+w)%8) ^^^ (if long then a else 0) ^^^ (if long then na else 0))+8-w)%8)
+
+theorem limbs17 (U X M w : Nat) (positive:0<U) (bw:w≤1) (long:Bool)
+    (far:2≤X/U) (same:long=true → X/U=M/U+w) :
+    let d:=(X/U-1)*U
+    (X-d)%U=X%U ∧ (X-d)/U=1 ∧
+    (M-(if long then d else 0))%U=M%U ∧
+    ((M-(if long then d else 0))/U)%8=guardWord17 (M/U) (X/U) w true long := by
+  let H:=X/U
+  let D:=(H-1)*U
+  have hx:=Nat.mod_add_div X U
+  have xm:=Nat.mod_lt X positive
+  have splitX:U*H=D+U*1 := by
+    change U*H=(H-1)*U+U*1
+    rw [Nat.mul_comm (H-1) U,←Nat.mul_add,show H-1+1=H by change 2≤H at far;omega]
+  have rx:X-D=X%U+U*1:=by change X%U+U*H=X at hx;omega
+  dsimp only
+  change (X-D)%U=X%U ∧ (X-D)/U=1 ∧ _
+  rw [rx,Nat.add_mul_mod_self_left,Nat.mod_mod,Nat.add_mul_div_left _ _ positive,Nat.div_eq_of_lt xm,Nat.zero_add]
+  refine ⟨rfl,rfl,?_⟩
+  cases long with
+  | false =>
+    simp [guardWord17,Nat.add_mod]
+    omega
+  | true =>
+    have eq:H=M/U+w:=same rfl
+    have ym:=Nat.mod_lt M positive
+    have hy:=Nat.mod_add_div M U
+    have q:M/U=(H-1)+(1-w):=by change 2≤H at far; omega
+    have splitM:U*(M/U)=D+U*(1-w) := by rw [q,Nat.mul_add,Nat.mul_comm U (H-1)]
+    have ry:M-D=M%U+U*(1-w):=by omega
+    change (M-D)%U=M%U ∧ ((M-D)/U)%8=_
+    rw [ry,Nat.add_mul_mod_self_left,Nat.mod_mod,Nat.add_mul_div_left _ _ positive,Nat.div_eq_of_lt ym,Nat.zero_add]
+    refine ⟨rfl,?_⟩
+    have eqMod:((M/U)%8+w)%8=H%8:=by rw [eq,Nat.mod_add_mod]
+    change (1-w)%8=(((M/U%8+w)%8 ^^^ H%8 ^^^ 1)+8-w)%8
+    rw [eqMod,Nat.xor_self,Nat.zero_xor]
+    omega
+
+theorem unchanged17 (M H w : Nat) (bw:w≤1) (long:Bool) :
+    guardWord17 M H w false long=M%8 := by
+  cases long <;> simp [guardWord17] <;> omega
+
 
 
 end ECDSAAdd.Entrant.StairPacket.EnterLimb
@@ -222,7 +269,7 @@ theorem reduced_values (b k : Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u
     let h:=limb b k
     let d:=if f then gap b k z else 0
     let lu:=decide (f ∧ 2^b≤z.u)
-    T.u=z.u-(if lu then d else 0) ∧ (T.u+T.v=z.u+z.v-d) ∧ T.u+T.v<3*h ∧
+    T.u=z.u-(if lu then d else 0) ∧ (T.u+T.v=z.u+z.v-d) ∧ T.u+T.v<2*h ∧
     PortalValues.negative sg T.u=PortalValues.negative sg z.u ∧
     (T.u-(PortalValues.negative sg T.u).toNat)=
       (z.u-(PortalValues.negative sg z.u).toNat)-(if lu then d else 0) := by
@@ -236,19 +283,19 @@ theorem reduced_values (b k : Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u
     simp only [hf,true_and,ite_true] at *
     by_cases lu:2^b≤z.u
     · simp only [lu,ite_true,decide_true] at lo hi ⊢
-      change 2*limb b k≤z.u-gap b k z+z.v at lo
+      change limb b k≤z.u-gap b k z+z.v at lo
       have hv:z.v<2^b:=by omega
       have nonzero:0<z.u-gap b k z:=by omega
       have nz:0<z.u:=by omega
       simp only [nonzero,nz,PortalValues.negative,decide_true,Bool.and_true]
       exact ⟨trivial,by omega,hi,trivial,by cases sg <;> simp; omega⟩
     · simp only [lu,ite_false,decide_false] at lo hi ⊢
-      change 2*limb b k≤z.u+(z.v-gap b k z) at lo
+      change limb b k≤z.u+(z.v-gap b k z) at lo
       have nz:0<z.v-gap b k z:=by omega
       exact ⟨rfl,by omega,hi,trivial,rfl⟩
   · have dst:reduced b k z=z:=by simp [reduced,hf]
-    have low:(z.u+z.v)/limb b k<3:=Nat.lt_of_not_ge hf
-    have lt:z.u+z.v<3*limb b k:=(Nat.div_lt_iff_lt_mul hu).mp low
+    have low:(z.u+z.v)/limb b k<2:=Nat.lt_of_not_ge hf
+    have lt:z.u+z.v<2*limb b k:=(Nat.div_lt_iff_lt_mul hu).mp low
     simp [dst,hf,lt]
 
 end ECDSAAdd.Entrant.StairPacket.Shadow
@@ -1189,6 +1236,8 @@ def rowOf (a m:Nat) (g neg f u:Bool) :=
 def borrow (a m:Nat) (u:Bool) := (u && m.testBit 0 && !a.testBit 0).toNat
 def updateA (a:Nat) (f:Bool) := 2*(if f then 2 else a/2)+a%2
 def updateM (a m:Nat) (f u:Bool) := 2*EnterLimb.guardWord (m/2) (a/2) (borrow a m u) f u+m%2
+def updateA17 (a:Nat) (f:Bool) := 2*(if f then 1 else a/2)+a%2
+def updateM17 (a m:Nat) (f u:Bool) := 2*EnterLimb.guardWord17 (m/2) (a/2) (borrow a m u) f u+m%2
 
 def expected (a m:Nat) (g neg f u:Bool) :=
   let x:=updateA a f;let y:=updateM a m f u
@@ -1447,6 +1496,52 @@ theorem near_digits (W M V:Nat) :
     have z:nibble M V<16:=Nat.mod_lt _ (by decide)
     omega
 
+theorem short_digits17 (W M V e:Nat) (pos:0<V) (ew:e≤1)
+    (rel:W/(2*V)=M/(2*V)+e) (actual:e=borrow (nibble W V) (nibble M V) true)
+    (df:2≤W/(2*V)) :
+    let d:=(W/(2*V)-1)*(2*V)
+    updateA17 (nibble W V) true=nibble (W-d) V ∧
+    updateM17 (nibble W V) (nibble M V) true true=nibble (M-d) V := by
+  have hh:=EnterLimb.limbs17 (2*V) W M e (by omega) ew true df (fun _=>rel)
+  dsimp only at hh ⊢
+  obtain ⟨wmod,wh,mm,mh⟩:=hh
+  simp only [ite_true] at mm mh
+  have p1: nibble (W-(W/(2*V)-1)*(2*V)) V%2=nibble W V%2:=by rw [frac _ _ pos,wmod,←frac _ _ pos]
+  have p2: nibble (M-(W/(2*V)-1)*(2*V)) V%2=nibble M V%2:=by rw [frac _ _ pos,mm,←frac _ _ pos]
+  constructor
+  · rw [digit_join (W-_) V,wh,p1]
+    rfl
+  · rw [digit_join (M-_) V,p2,mh]
+    unfold updateM17
+    rw [digit,digit,←actual]
+    simp [EnterLimb.guardWord17]
+
+theorem short_other17 (W M V:Nat) (pos:0<V) (df:2≤W/(2*V)) :
+    let d:=(W/(2*V)-1)*(2*V)
+    updateA17 (nibble W V) true=nibble (W-d) V ∧
+    updateM17 (nibble W V) (nibble M V) true false=nibble M V := by
+  have hh:=EnterLimb.limbs17 (2*V) W M 0 (by omega) (by decide) false df (by simp)
+  obtain ⟨wm,wh,_⟩:=hh
+  dsimp only at wm wh ⊢
+  constructor
+  · rw [digit_join (W-_) V,wh,frac (W-_) _ pos,wm,←frac];rfl
+    exact pos
+  · unfold updateM17
+    simp only [borrow,Bool.false_and,Bool.toNat_false,EnterLimb.guardWord17,Bool.false_eq_true,ite_false,
+      Nat.add_zero,Nat.sub_zero,Nat.xor_zero,Nat.add_mod_right,Nat.mod_mod]
+    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
+    omega
+
+theorem near_digits17 (W M V:Nat) :
+    updateA17 (nibble W V) false=nibble W V ∧
+    updateM17 (nibble W V) (nibble M V) false false=nibble M V := by
+  constructor
+  · simp [updateA17];omega
+  · unfold updateM17
+    rw [EnterLimb.unchanged17 _ _ _ (by simp [borrow])]
+    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
+    omega
+
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
@@ -1527,12 +1622,12 @@ theorem actual_residue (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z
     conv_rhs => rw [show N=N-V*j+V*j by omega,Nat.add_mul_mod_self_left]
   have dep:V∣gap b k z := by
     unfold gap;rw [scale]
-    exact ⟨(high b k z-2)*2,by ring⟩
+    exact ⟨(high b k z-1)*2,by ring⟩
   change (T.u+T.v)%V=(z.u+z.v)%V ∧ (T.u-e.toNat)%V=(z.u-e.toNat)%V
   have pos:0<V:=by simp [V,cutUnit]
   by_cases hf:far b k z
   · obtain ⟨_,bound,_⟩:=represented _ _ _ small hf
-    change 2*limb b k≤T.u+T.v at bound
+    change limb b k≤T.u+T.v at bound
     simp only [hf,ite_true,true_and] at tx tm tu
     have light:2^b≤limb b k:=by unfold limb;apply Nat.pow_le_pow_right (by decide);omega
     change T.u+T.v=z.u+z.v-gap b k z at tx
@@ -1554,6 +1649,44 @@ theorem actual_residue (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z
       rw [tm]
   · simp [T,reduced,hf]
 
+
+/-- margin 17 (T1): the gap (H-1)U is a multiple of the whole limb, so the residues agree modulo `limb`
+(the cut of a register that keeps only rows from b+k+1 on). -/
+theorem actual_residue_limb (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z.v<2^b) :
+    let T:=reduced b k z;let e:=PortalValues.negative sg z.u
+    (T.u+T.v)%limb b k=(z.u+z.v)%limb b k ∧ (T.u-e.toNat)%limb b k=(z.u-e.toNat)%limb b k := by
+  let T:=reduced b k z
+  let e:=PortalValues.negative sg z.u
+  obtain ⟨tu,tx,hi,sign,tm⟩:=reduced_values b k z sg small
+  rw [sign] at tm
+  have periodic (N d:Nat) (eq:N≥d) (mul:limb b k∣d):(N-d)%limb b k=N%limb b k:=by
+    obtain ⟨j,rfl⟩:=mul
+    conv_rhs => rw [show N=N-limb b k*j+limb b k*j by omega,Nat.add_mul_mod_self_left]
+  have dep:limb b k∣gap b k z := Nat.dvd_mul_left (limb b k) (high b k z-1)
+  change (T.u+T.v)%limb b k=(z.u+z.v)%limb b k ∧ (T.u-e.toNat)%limb b k=(z.u-e.toNat)%limb b k
+  by_cases hf:far b k z
+  · obtain ⟨_,bound,_⟩:=represented _ _ _ small hf
+    change limb b k≤T.u+T.v at bound
+    simp only [hf,ite_true,true_and] at tx tm tu
+    have light:2^b≤limb b k:=by unfold limb;apply Nat.pow_le_pow_right (by decide);omega
+    change T.u+T.v=z.u+z.v-gap b k z at tx
+    have enough:gap b k z≤z.u+z.v:=by omega
+    rw [tx,periodic _ _ enough dep]
+    refine ⟨rfl,?_⟩
+    by_cases hl:2^b≤z.u
+    · simp only [hl,decide_true,ite_true] at tm tu
+      have tv:T.v=z.v:=by simp [T,reduced,hf,hl]
+      have sm:z.v<2^b:=by omega
+      have boundU:0<T.u:=by omega
+      have nne:z.u≥gap b k z+1:=by change T.u=z.u-gap b k z at tu;omega
+      have eBound:e.toNat≤1:=by cases e <;> decide
+      change T.u-e.toNat=z.u-e.toNat-gap b k z at tm
+      rw [tm]
+      exact periodic _ _ (by change gap b k z≤z.u-e.toNat;omega) dep
+    · simp only [hl,decide_false] at tm
+      change T.u-e.toNat=z.u-e.toNat at tm
+      rw [tm]
+  · simp [T,reduced,hf]
 end ECDSAAdd.Entrant.StairPacket.Shadow
 
 end
@@ -3186,6 +3319,86 @@ theorem left (k B s H w E : Nat) (ready : guard k s ≤ B)
     (by simpa only [pow_zero,Nat.div_one,Bool.not_false,Bool.toNat_true,Nat.mul_one] using digit)
   exact ⟨digit,by simpa only [pow_zero,one_mul,Nat.mod_one,Nat.add_zero] using actual⟩
 
+
+/-! Margin 17: the reduced far sum lies in [U,2U), the far digit in {0,1,2}; `d+1` obeys the old law. -/
+
+def cross17 (d : Nat) := decide (d≠1)
+
+theorem decode17 (d : Nat) (n : Bool) (h : d=if d=1 then 1 else if n then 0 else 2) :
+    d+1=(cross17 d).toNat + 2*(!(cross17 d && n)).toNat := by
+  by_cases e : d=1
+  · simp [e,cross17]
+  · rw [if_neg e] at h
+    cases n <;> simp only [Bool.false_eq_true,ite_false,ite_true] at h <;> subst d <;> decide
+
+theorem value17 (F S H w E t : Nat) (c neg : Bool)
+    (gap : F=S+2^t*(2^E*(H-1))) (far : 2 ≤ H)
+    (room : H-1+S/2^E/2^t < 2^w) (legal : neg=true → c=true)
+    (digit : S/2^E/2^t+1=c.toNat+2*(!neg).toNat) :
+    F/2^E = 2^t*HighBankAdjust.adjusted H w c neg + S/2^E%2^t := by
+  have h := corrected H w _ c neg far (by omega) legal digit
+  have h' : HighBankAdjust.adjusted H w c neg = H-1+S/2^E/2^t := by omega
+  rw [h',gap,show 2^t*(2^E*(H-1))=2^E*(2^t*(H-1)) by ring,
+      Nat.add_mul_div_left _ _ (by positivity),Nat.mul_add]
+  have decomposition := Nat.mod_add_div (S/2^E) (2^t)
+  omega
+
+theorem right17 (k B s H w E : Nat) (hk : 0<k) (ready : guard k s ≤ B)
+    (odd : B%2=1) (small : s<2^E) (low : 2^k*2^E≤B+s) (high : B+s<2*(2^k*2^E))
+    (far : 2≤H) :
+    let z : SkywalkNat.State := ⟨s,B⟩
+    let S := total (step^[k] z)
+    let F := total (step^[k] ⟨s,B+2^k*(2^E*(H-1))⟩)
+    let t := wait k s
+    let d := S/2^E/2^t
+    let neg := cross17 d && negative (oddBits (letters k z))
+    H-1+d<2^w →
+      d+1=(cross17 d).toNat+2*(!neg).toNat ∧ F/2^E=2^t*HighBankAdjust.adjusted H w (cross17 d) neg+S/2^E%2^t := by
+  dsimp only
+  intro room
+  have q := corrected_digit17 k B s (2^E) hk ready odd small low high
+  dsimp only at q
+  rw [Nat.mul_comm (2^_) (2^E),←Nat.div_div_eq_div_mul] at q
+  have digit := decode17 _ _ q
+  exact ⟨digit,value17 _ _ _ _ _ _ _ _ (right_sum k B s _ ready) far room (fun hn => (Bool.and_eq_true_iff.mp hn).1) digit⟩
+
+theorem left17 (k B s H w E : Nat) (ready : guard k s ≤ B)
+    (odd : s%2=1) (small : s<2^E) (low : 2^k*2^E≤B+s) (high : B+s<2*(2^k*2^E))
+    (far : 2≤H) :
+    let S := total (step^[k] ⟨B,s⟩)
+    let F := total (step^[k] ⟨B+2^k*(2^E*(H-1)),s⟩)
+    let d := S/2^E
+    H-1+d<2^w →
+      d+1=(cross17 d).toNat+2 ∧ F/2^E=HighBankAdjust.adjusted H w (cross17 d) false := by
+  dsimp only
+  intro room
+  have h := left_digit17 k B s (2^E) ready odd small low high
+  dsimp only at h
+  have digit : total (step^[k] ⟨B,s⟩)/2^E+1=(cross17 (total (step^[k] ⟨B,s⟩)/2^E)).toNat+2 := by
+    rcases h with h|h <;> simp [total,h,cross17]
+  have gap : total (step^[k] ⟨B+2^k*(2^E*(H-1)),s⟩) =
+      total (step^[k] ⟨B,s⟩)+2^E*(H-1) := by
+    rw [long_u k B s _ ready]
+    dsimp [total]
+    omega
+  have actual := value17 _ _ H w E 0 _ false (by simpa only [pow_zero,one_mul] using gap)
+    far (by simpa only [pow_zero,Nat.div_one] using room) (by simp)
+    (by simpa only [pow_zero,Nat.div_one,Bool.not_false,Bool.toNat_true,Nat.mul_one] using digit)
+  exact ⟨digit,by simpa only [pow_zero,one_mul,Nat.mod_one,Nat.add_zero] using actual⟩
+
+/-- With carry-in 0 the adjust ignores its sign wire. -/
+theorem adjusted_idle (x w : Nat) (n : Bool) (h : x<2^w) : HighBankAdjust.adjusted x w false n=x := by
+  cases n <;> simp [HighBankAdjust.adjusted,Nat.mod_eq_of_lt h]
+
+/-- The physical crossing wire `e0+6` at margin 17: bit 0 of the far digit d ∈ {0,1,2} (this is the bit the archive stores). -/
+def crossBit (d : Nat) : Bool := !cross17 d
+
+/-- The sign wire may be read without the crossing gate: it only matters when the carry-in is set. -/
+theorem adjusted_gate (x w : Nat) (c n : Bool) (h : x<2^w) : HighBankAdjust.adjusted x w c (c && n)=HighBankAdjust.adjusted x w c n := by
+  cases c
+  · rw [Bool.false_and,adjusted_idle x w false h,adjusted_idle x w n h]
+  · rw [Bool.true_and]
+
 end ECDSAAdd.Entrant.StairPacket.HighBankSum
 
 end
@@ -3280,25 +3493,36 @@ open SkywalkNat IntegerHigh Shadow
 theorem scale (b : Nat) : limb b 15=2^15*2^(b+1) := by
   rw [limb,show b+15+1=15+(b+1) by omega,pow_add]
 
+/-- margin 17 (T1): the exact guard bound. The reduced long word only keeps U - short, and
+guard 15 s + s = 2^15 (2s+1) ≤ U holds exactly for s < 2^b. -/
+theorem guard_tight (b s : Nat) (hs : s<2^b) : guard 15 s+s≤limb b 15 := by
+  have a : 2*s+1≤2*2^b := by omega
+  have mul := Nat.mul_le_mul_left (2^15) a
+  have f := guard_formula 15 s
+  have e : limb b 15=2^15*(2*2^b) := by
+    rw [scale,pow_succ 2 b,Nat.mul_comm (2^b) 2]
+  rw [f,e]
+  exact mul
+
 theorem rail (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b) (far : Shadow.far b 15 z) :
     let r := reduced b 15 z
-    let D := 2^(b+1)*(high b 15 z-2)
+    let D := 2^(b+1)*(high b 15 z-1)
     (2^b≤z.u → r.v=z.v ∧ z.u=r.u+2^15*D ∧ guard 15 r.v≤r.u) ∧
     (z.u<2^b → r.u=z.u ∧ z.v=r.v+2^15*D ∧ guard 15 r.u≤r.v) := by
   dsimp only
   have hr := (represented b 15 z small far).2.1
-  have amount : gap b 15 z=2^15*(2^(b+1)*(high b 15 z-2)) := by rw [gap,scale];ring
+  have amount : gap b 15 z=2^15*(2^(b+1)*(high b 15 z-1)) := by rw [gap,scale];ring
   have base : 2^b≤limb b 15 := Nat.pow_le_pow_right (by decide) (by omega)
   constructor
   · intro h
     have sh : z.v<2^b := by omega
     rw [reduced,if_pos far,if_pos h] at hr ⊢
     dsimp only at hr ⊢
-    exact ⟨rfl,by omega,(guard_small 15 z.v b sh).trans (by unfold limb at hr base;omega)⟩
+    exact ⟨rfl,by omega,(by have t:=guard_tight b z.v sh; omega)⟩
   · intro h
     rw [reduced,if_pos far,if_neg (Nat.not_le.mpr h)] at hr ⊢
     dsimp only at hr ⊢
-    exact ⟨rfl,by omega,(guard_small 15 z.u b h).trans (by unfold limb at hr base;omega)⟩
+    exact ⟨rfl,by omega,(by have t:=guard_tight b z.u h; omega)⟩
 
 
 open HighBankSum
@@ -3312,17 +3536,17 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     let F:=total (step^[15] z)
     let t:=if 2^b≤z.u then 0 else wait 15 z.u
     let d:=S/2^(b+1)/2^t
-    let neg:=cross d && (!(decide (2^b≤z.u)) && negative (oddBits (letters 15 r)))
-    d=(cross d).toNat+2*(!neg).toNat ∧
-      F/2^(b+1)=2^t*HighBankAdjust.adjusted (high b 15 z) w (cross d) neg+S/2^(b+1)%2^t := by
+    let neg:=cross17 d && (!(decide (2^b≤z.u)) && negative (oddBits (letters 15 r)))
+    d+1=(cross17 d).toNat+2*(!neg).toNat ∧
+      F/2^(b+1)=2^t*HighBankAdjust.adjusted (high b 15 z) w (cross17 d) neg+S/2^(b+1)%2^t := by
   let r:=reduced b 15 z
   let H:=high b 15 z
   let V:=2^(b+1)
-  let D:=V*(H-2)
+  let D:=V*(H-1)
   have sides:=rail b z small far
   have bounds := (represented b 15 z small far).2
   rw [scale] at bounds
-  have hH : 2≤H := by have : 3≤H := far;omega
+  have hH : 2≤H := far
   have pos : 2^b<V := by dsimp [V];rw [pow_succ];have := Nat.two_pow_pos b;omega
   dsimp only
   by_cases h : 2^b≤z.u
@@ -3330,30 +3554,30 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     have shape : z=⟨r.u+2^15*D,r.v⟩:=SkywalkNat.State.ext eqU eqV.symm
     have short : r.v<V := by dsimp [r];omega
     have rodd : r.v%2=1 := eqV ▸ odd
-    have dcap := left_digit 15 r.u r.v V guarded rodd short bounds.1 bounds.2
-    change total (step^[15] r)/V=2 ∨ total (step^[15] r)/V=3 at dcap
-    have room : H-2+total (step^[15] r)/V<2^w := by change H+1<2^w at enough;omega
-    have outcome:=HighBankSum.left 15 r.u r.v H w (b+1) guarded rodd short bounds.1 bounds.2 hH room
+    have dcap := left_digit17 15 r.u r.v V guarded rodd short bounds.1 bounds.2
+    change total (step^[15] r)/V=1 ∨ total (step^[15] r)/V=2 at dcap
+    have room : H-1+total (step^[15] r)/V<2^w := by change H+1<2^w at enough;omega
+    have outcome:=HighBankSum.left17 15 r.u r.v H w (b+1) guarded rodd short bounds.1 bounds.2 hH room
     rw [←shape] at outcome
     simpa only [if_pos h,decide_eq_true h,Bool.not_true,Bool.false_and,Bool.and_false,Bool.not_false,Bool.toNat_true,Nat.mul_one,pow_zero,Nat.div_one,one_mul,Nat.mod_one,Nat.add_zero] using outcome
   · obtain ⟨eqU,eqV,guarded⟩:=sides.2 (Nat.lt_of_not_ge h)
     have shape : z=⟨r.u,r.v+2^15*D⟩:=SkywalkNat.State.ext eqU.symm eqV
     have short : r.u<V := by dsimp [r];omega
     have rodd : r.v%2=1 := by change z.v=r.v+32768*D at eqV;omega
-    have dcap := (right_digit 15 r.v r.u V guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2)).1
-    change total (step^[15] r)/(2^(wait 15 r.u)*V)=1 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=2 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=3 at dcap
+    have dcap := (right_digit17 15 r.v r.u V guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2)).1
+    change total (step^[15] r)/(2^(wait 15 r.u)*V)=0 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=1 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=2 at dcap
     rw [Nat.mul_comm (2^_) V,←Nat.div_div_eq_div_mul] at dcap
-    have room : H-2+total (step^[15] r)/V/2^(wait 15 r.u)<2^w := by change H+1<2^w at enough;omega
-    have outcome:=HighBankSum.right 15 r.v r.u H w (b+1) (by decide) guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
+    have room : H-1+total (step^[15] r)/V/2^(wait 15 r.u)<2^w := by change H+1<2^w at enough;omega
+    have outcome:=HighBankSum.right17 15 r.v r.u H w (b+1) (by decide) guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
     rw [←shape] at outcome
     have waits : wait 15 z.u=wait 15 r.u := congrArg (wait 15) eqU.symm
     simpa only [if_neg h,decide_eq_false h,Bool.not_false,Bool.true_and,waits] using outcome
 
 
 theorem near_result (b : Nat) (z : SkywalkNat.State) (close : ¬ Shadow.far b 15 z) :
-    reduced b 15 z=z ∧ total (step^[15] z)/2^(b+1)<2^18 := by
+    reduced b 15 z=z ∧ total (step^[15] z)/2^(b+1)<2^17 := by
   refine ⟨by simp [reduced,close],?_⟩
-  have lt : (z.u+z.v)/limb b 15<3 := Nat.lt_of_not_ge close
+  have lt : (z.u+z.v)/limb b 15<2 := Nat.lt_of_not_ge close
   have lim := (Nat.div_lt_iff_lt_mul (by unfold limb;positivity)).mp lt
   rw [scale] at lim
   have noninc := iter_sum_nonincrease 15 z
@@ -3441,43 +3665,6 @@ def place (b : Nat) (z : SkywalkNat.State) := if 2^b≤z.u then 0 else wait 15 z
 theorem modeKey (b : Nat) (z : SkywalkNat.State) (f : far b 15 z) :
     key (actualMode b z)=place b z ∧ right (actualMode b z)= !decide (2^b≤z.u) ∧ enabled (actualMode b z)=true := by
   by_cases h : 2^b≤z.u <;> simp [actualMode,farMode,ofFlags,key,place,right,enabled,f,h]
-
-theorem trueControls (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
-    (odd : z.v%2=1) (room : high b 15 z+1<2^w) (p : Ports) (v : BasisState)
-    (bits : ∀i<16,v (p.u+i)=((total (step^[15] (reduced b 15 z)))/2^(b+1)).testBit i)
-    (par : parityBits p v=oddBits (letters 15 (reduced b 15 z))) :
-    let k:=actualMode b z
-    let X:=total (step^[15] (reduced b 15 z))/2^(b+1)
-    let d:=X/2^(place b z)
-    (crossing p k).read v=(if far b 15 z then cross d else false) ∧
-      (far b 15 z → (signExpr p k).read v=(!(decide (2^b≤z.u)) && negative (oddBits (letters 15 (reduced b 15 z))))) := by
-  dsimp only
-  by_cases f : far b 15 z
-  · obtain ⟨idx,side,active⟩:=modeKey b z f
-    have fit : place b z<16 := by unfold place; have h:=wait_le 15 z.u; split <;> omega
-    have val:=LeaveShadowRails.far_result b w z small f odd room
-    let X:=total (step^[15] (reduced b 15 z))/2^(b+1)
-    let d:=X/2^(place b z)
-    constructor
-    · rw [crossing,active,if_pos rfl,Expr.read,idx,bits _ fit,if_pos f]
-      change X.testBit (place b z)=cross d
-      rw [Nat.testBit_eq_decide_div_mod_eq]
-      change decide (d%2=1)=cross d
-      have digit : d=(cross d).toNat+2*_ := val.1
-      cases e : cross d <;> rw [e] at digit <;> simp only [Bool.toNat_false,Bool.toNat_true] at digit <;>
-        apply Bool.eq_iff_iff.mpr <;> simp only [decide_eq_true_eq,Bool.false_eq_true,iff_false,iff_true] <;> omega
-    · intro _
-      rw [sign_value _ _ _ (by
-        intro hs
-        rw [side] at hs
-        have h : z.u<2^b := by by_contra! hh;simp [hh] at hs
-        have rails:=(LeaveShadowRails.rail b z small f).2 h
-        rw [par]
-        have eq : reduced b 15 z=⟨z.u,(reduced b 15 z).v⟩:=SkywalkNat.State.ext rails.1 rfl
-        have g:=rails.2.2
-        rw [rails.1] at g
-        rw [eq,lead_wait 15 _ _ g,idx,place,if_neg (Nat.not_le.mpr h)]) ,side,par]
-  · simp [actualMode,farMode,ofFlags,enabled,crossing,Expr.read,f]
 
 end ECDSAAdd.Entrant.StairPacket.LeaveSelector
 
@@ -4104,15 +4291,15 @@ theorem min_iter (k : Nat) (z : SkywalkNat.State) : min (step^[k] z).u (step^[k]
 
 theorem inputFit (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b) :
     let a:=step^[15] (reduced b 15 z)
-    min a.u a.v<2^b ∧ (a.u+a.v)/2^b<2^19 := by
+    min a.u a.v<2^b ∧ (a.u+a.v)/2^b<2^18 := by
   let r:=reduced b 15 z
   have rsmall : min r.u r.v<2^b := by
     unfold r reduced
     split_ifs <;> (try dsimp only) <;> omega
-  have upper : r.u+r.v<3*limb b 15 := by
+  have upper : r.u+r.v<2*limb b 15 := by
     by_cases f : far b 15 z
     · exact (represented b 15 z small f).2.2
-    · have low : (z.u+z.v)/limb b 15<3 := Nat.lt_of_not_ge f
+    · have low : (z.u+z.v)/limb b 15<2 := Nat.lt_of_not_ge f
       simpa only [r,reduced,if_neg f] using (Nat.div_lt_iff_lt_mul (by unfold limb;positivity)).mp low
   dsimp only
   refine ⟨lt_of_le_of_lt (min_iter 15 r) rsmall,?_⟩
@@ -4821,6 +5008,20 @@ theorem sameThreshold (half e : Nat) (z r : SkywalkNat.State) (rel : Rel 0 z r)
     omega
   | right => exact ⟨Iff.rfl,Iff.rfl⟩
 
+/-- margin 17 (T1): `sameThreshold` with the non-strict sum bound. After 15 ticks the reduced sum is only known
+to be ≥ 2^(b+1); the guard s+1 ≤ B then still gives half+1 ≤ B by parity (2B ≥ 2 half + 1). -/
+theorem sameThreshold17 (half e : Nat) (z r : SkywalkNat.State) (rel : Rel 0 z r)
+    (en:e≤1) (sum:2*half≤r.u+r.v) :
+    (half≤z.u-e ↔ half≤r.u-e) ∧ (0<z.u ↔ 0<r.u) := by
+  cases rel with
+  | left B s D guard =>
+    dsimp only
+    change s+1≤B at guard
+    change 2*half≤B+s at sum
+    simp only [pow_zero,one_mul]
+    omega
+  | right => exact ⟨Iff.rfl,Iff.rfl⟩
+
 theorem afterThreshold (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) (e:Nat) (en:e≤1) :
     let full:=step^[15] z
     let r:=step^[15] (reduced b 15 z)
@@ -4829,8 +5030,8 @@ theorem afterThreshold (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) 
   · have rep:=represented b 15 z small f
     have cap:=rep.2.1
     rw [scale,pow_succ 2 b] at cap
-    have low:=sumLower 15 (2*(2^b*2)) (reduced b 15 z) (by unfold total;omega)
-    apply sameThreshold _ _ _ _ (terminalRel _ _ _ rep.1) en
+    have low:=sumLower 15 (2^b*2) (reduced b 15 z) (by unfold total;omega)
+    apply sameThreshold17 _ _ _ _ (terminalRel _ _ _ rep.1) en
     unfold total at low
     have h:=Nat.two_pow_pos b
     omega
@@ -4843,7 +5044,7 @@ theorem limbGaps (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) :
     ∃a c:Nat,full.u=r.u+2^(b+1)*a ∧ full.v=r.v+2^(b+1)*c := by
   by_cases f : far b 15 z
   · let r:=reduced b 15 z
-    let H:=high b 15 z-2
+    let H:=high b 15 z-1
     let V:=2^(b+1)
     let D:=V*H
     have side:=rail b z small f
@@ -6780,26 +6981,6 @@ theorem controlsAt (j : Fin 24) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) (k : Mode
   have h := controlCert j h0 h1 k
   simp only [reads, LeaveSelector.controls, List.cons.injEq, and_true] at h
   exact ⟨h.2.1, h.2.2.2⟩
-
-/-- dadon's `Leave{s}Loaded.signed`. -/
-theorem loaded_signed (j : Fin 24) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) (z : SkywalkNat.State) (ref : BasisState)
-    (small : min z.u z.v < 2^(sbP (start j))) (odd : z.v % 2 = 1)
-    (room : high (sbP (start j)) 15 z + 1 < 2^(wpP (start j)))
-    (bits : ∀ i < 16, ref ((ports j).u + i) = (TrueMiddle.X j z).testBit i)
-    (par : parityBits (ports j) ref = oddBits (letters 15 (reduced (sbP (start j)) 15 z))) :
-    let k := actualMode (sbP (start j)) z
-    let s := fun q => (prior j k q).read ref
-    s (e0P (start j) + 6) = (if far (sbP (start j)) 15 z then cross (TrueMiddle.d j z) else false) ∧
-      s 1597 = (s (e0P (start j) + 6) && (signExpr (ports j) k).read ref) ∧
-      (far (sbP (start j)) 15 z → s 1597 = TrueMiddle.neg j z) := by
-  have h := trueControls (sbP (start j)) (wpP (start j)) z small odd room (ports j) ref bits par
-  obtain ⟨cx, gate⟩ := controlsAt j h0 h1 (actualMode (sbP (start j)) z)
-  dsimp only
-  rw [cx, gate, read_conj]
-  refine ⟨h.1, rfl, ?_⟩
-  intro f
-  rw [h.1, h.2 f, if_pos f]
-  rfl
 
 theorem dest_forward (gs : List Gate) : (GateMirror.forward gs).map LeaveReadoutFrame.destination = gs.map target := by
   induction gs with
