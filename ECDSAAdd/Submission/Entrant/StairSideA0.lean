@@ -2212,51 +2212,13 @@ def packStep (L : Layout) (B j : Nat) : Program :=
      .measureX L.t []
        [.CZ (outAt hd (k / 2 ^ lo) L.z) (outAt ld (k % 2 ^ lo) L.z)]]
 
-def packFirstStep (L : Layout) (B : Nat) : Program :=
-  .CX (L.D (B - 2)) L.t :: (packStep L B (B - 2)).tail
-
-theorem packFirstStep_support (L : Layout) (B : Nat) :
-    wires (packFirstStep L B) ⊆ wires (packStep L B (B - 2)) := by
-  let rest := (packStep L B (B - 2)).tail
-  have he : packStep L B (B - 2) =
-      .CCX (L.D (B - 2)) L.z L.t :: rest := rfl
-  change wires (.CX (L.D (B - 2)) L.t :: rest) ⊆ wires (packStep L B (B - 2))
-  rw [he]
-  change ({L.D (B - 2), L.t} : Finset Wire) ∪ wires rest ⊆
-    {L.D (B - 2), L.z, L.t} ∪ wires rest
-  apply Finset.union_subset_union _ (Finset.Subset.refl _)
-  intro q hq
-  rcases Finset.mem_insert.mp hq with hq | hq
-  · exact hq ▸ Finset.mem_insert_self _ _
-  · exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem hq)
-
-theorem packFirstStep_physical (L : Layout) (B : Nat)
-    (hp : GatePhysical (packStep L B (B - 2))) : GatePhysical (packFirstStep L B) := by
-  have he : packStep L B (B - 2) =
-      .CCX (L.D (B - 2)) L.z L.t :: (packStep L B (B - 2)).tail := rfl
-  rw [he] at hp
-  simp only [GatePhysical, List.mem_cons, forall_eq_or_imp,
-    RecordedQuantum.PhysicalInstr, ProperGate] at hp
-  simpa only [packFirstStep, GatePhysical, List.mem_cons, forall_eq_or_imp,
-    RecordedQuantum.PhysicalInstr, ProperGate] using And.intro hp.1.1 hp.2
-
-theorem packFirstStep_run_suffix (L : Layout) (B : Nat) (rest : Program)
-    (s : State) (m : List Bool) (hz : s.basis L.z = true) :
-    run (packFirstStep L B ++ rest) m s =
-      run (packStep L B (B - 2) ++ rest) m s := by
-  have he : packStep L B (B - 2) =
-      .CCX (L.D (B - 2)) L.z L.t :: (packStep L B (B - 2)).tail := rfl
-  unfold packFirstStep
-  conv_rhs => rw [he]
-  simp only [List.cons_append, run, hz, Bool.and_true]
-
 def pack (L : Layout) (B : Nat) : Program :=
   let ld := lowDecoder L B
   let hd := highDecoder L B
   cxInto (L.D (B - 1)) (reg L.D (B - 1)) ++
   xOn (reg L.S B) ++ packAdder L B ++ xOn (reg L.S B) ++ [.X (L.S 0)] ++
   [.X L.z] ++ decoderInit ld (lowBits L B) ++ decoderInit hd (highBits L B) ++
-  packFirstStep L B ++
+  packStep L B (B - 2) ++
   ((List.range (B - 2)).reverse.flatMap (packStep L B)) ++
   [.measureX L.z [] [.CZ (outAt hd 0 L.z) (outAt ld 0 L.z)]] ++
   eraseDecoder hd ++ eraseDecoder ld
@@ -3549,8 +3511,7 @@ theorem pack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
     simpa [hq] using hz
   have hp6 := decoderInit_declared_low L B
   have hp7 := decoderInit_declared_high L B
-  have hp8 := (packFirstStep_support L B).trans
-    (packStep_support L B (B - 2) (by omega))
+  have hp8 := packStep_support L B (B - 2) (by omega)
   have hp9 : wires ((List.range (B - 2)).reverse.flatMap (packStep L B)) ⊆
       (declaredSites L B).toFinset := by
     apply wires_flatMap_subset
@@ -3660,8 +3621,7 @@ theorem pack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
     simp [GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate]
   have hp6 : GatePhysical (decoderInit ld (lowBits L B)) := xOn_physical _
   have hp7 : GatePhysical (decoderInit hd (highBits L B)) := xOn_physical _
-  have hp8 := packFirstStep_physical L B
-    (packStep_physical L B (B - 2) hB hn (by omega))
+  have hp8 := packStep_physical L B (B - 2) hB hn (by omega)
   have hp9 : GatePhysical ((List.range (B - 2)).reverse.flatMap (packStep L B)) := by
     apply gatePhysical_flatMap
     intro j hj
@@ -3893,11 +3853,6 @@ private theorem packStep_counts_top (L : Layout) (B : Nat) :
     measurementCount (packStep L B (B - 2)) = 1 := by
   simp [packStep, toffoliCount, measurementCount]
 
-private theorem packFirstStep_counts (L : Layout) (B : Nat) :
-    toffoliCount (packFirstStep L B) = 0 ∧
-    measurementCount (packFirstStep L B) = 1 := by
-  simp [packFirstStep, packStep, toffoliCount, measurementCount]
-
 private theorem unpackStep_counts_normal (L : Layout) (B j : Nat) (hj : j < B - 2) :
     toffoliCount (unpackStep L B j) = 2 ∧ measurementCount (unpackStep L B j) = 1 := by
   simp [unpackStep, hj, toffoliCount, measurementCount]
@@ -3956,10 +3911,10 @@ private theorem lowHigh_program_toffoli (L : Layout) (B : Nat) :
       decoderCost (bitWidth B) := (decoder_pair_cost L B).1
 
 theorem pack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
-    toffoliCount (pack L B) = 2 * B - 4 ∧
+    toffoliCount (pack L B) = 2 * B - 3 ∧
     measurementCount (pack L B) = 3 * B - 3 + decoderCost (bitWidth B) := by
   have ha := packAdder_counts L B hB
-  have ht := packFirstStep_counts L B
+  have ht := packStep_counts_top L B
   have hs := flatMap_uniform_counts (List.range (B - 2)).reverse
     (packStep L B) 1 2 (by
       intro j hj
@@ -22272,11 +22227,6 @@ theorem k5_packStep_slots (L : StairCodec.Layout) (B j : Nat) :
   split_ifs <;> simp only [gateSlots_append, k5_cxInto_slots, List.length_map] <;>
     simp [gateSlots, instructionSlots] <;> omega
 
-theorem k5_packFirstStep_slots (L : StairCodec.Layout) (B : Nat) :
-    gateSlots (StairCodec.packFirstStep L B) =
-      gateSlots (StairCodec.packStep L B (B - 2)) := by
-  rfl
-
 theorem k5_unpackStep_slots (L : StairCodec.Layout) (B j : Nat) :
     gateSlots (StairCodec.unpackStep L B j) =
       5 + ((List.range (StairCodec.bitWidth B)).filter (fun b => (j + 1).testBit b)).length +
@@ -22322,7 +22272,7 @@ theorem codecPair87 :
     gateSlots (StairPhysicalPrimitives.pack 87) +
       gateSlots (StairPhysicalPrimitives.unpack 87) = 5758 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22330,7 +22280,7 @@ theorem codecPair62 :
     gateSlots (StairPhysicalPrimitives.pack 62) +
       gateSlots (StairPhysicalPrimitives.unpack 62) = 3902 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22338,7 +22288,7 @@ theorem codecPair47 :
     gateSlots (StairPhysicalPrimitives.pack 47) +
       gateSlots (StairPhysicalPrimitives.unpack 47) = 2911 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22346,7 +22296,7 @@ theorem codecPair32 :
     gateSlots (StairPhysicalPrimitives.pack 32) +
       gateSlots (StairPhysicalPrimitives.unpack 32) = 1883 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22354,7 +22304,7 @@ theorem codecPair22 :
     gateSlots (StairPhysicalPrimitives.pack 22) +
       gateSlots (StairPhysicalPrimitives.unpack 22) = 1259 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -42232,34 +42182,17 @@ def generatedPackA (L : Layout) (B : Nat) : Program :=
   [.measureX L.z [] [.CZ (outAt hd 0 L.z) (outAt ld 0 L.z)]] ++
   eraseDecoderA hd ++ eraseDecoderA ld
 
-theorem pack_eq_init_first_finalizeA (L : Layout) (B : Nat) :
-    pack L B = packInitA L B ++
-      (packFirstStep L B ++
-        (List.range (B - 2)).reverse.flatMap (packStep L B) ++ packFinalizeA L B) := by
-  simp [pack, packInitA, packArithmeticA, packFinalizeA, List.append_assoc]
+theorem pack_eq_generatedPackA (L : Layout) (B : Nat) :
+    pack L B = generatedPackA L B := by
   rfl
 
-theorem pack_run_core_finalizeA (L : Layout) (B u v : Nat) (sigma : Bool)
-    (hd : CodecDomain B u v sigma) (hn : L.Nodup B) (s : State) (m : List Bool)
-    (hc : CodecInput L B u v sigma s.basis) :
-    run (pack L B) m s = run (packSweepCoreA L B ++ packFinalizeA L B) m s := by
-  have hi := packInit_correctA L B u v sigma hd hn s
-    (m.take (measurementCount (packInitA L B))) hc
-  have hz : (run (packInitA L B)
-      (m.take (measurementCount (packInitA L B))) s).basis L.z = true := hi.2.2.2.1
-  rw [pack_eq_init_first_finalizeA]
-  have he : packSweepCoreA L B ++ packFinalizeA L B = packInitA L B ++
-      (packStep L B (B - 2) ++
-        ((List.range (B - 2)).reverse.flatMap (packStep L B) ++ packFinalizeA L B)) := by
-    simp only [packSweepCoreA, packSweepProgramA_eq_generated L B hd.1,
-      List.append_assoc]
-  rw [he]
-  conv_lhs => rw [run_append]
-  conv_rhs => rw [run_append]
-  simpa only [List.append_assoc] using
-    packFirstStep_run_suffix L B
-      ((List.range (B - 2)).reverse.flatMap (packStep L B) ++ packFinalizeA L B)
-      _ _ hz
+theorem pack_eq_core_finalizeA (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    pack L B = packSweepCoreA L B ++ packFinalizeA L B := by
+  rw [pack_eq_generatedPackA]
+  unfold packSweepCoreA
+  rw [packSweepProgramA_eq_generated L B hB]
+  simp [generatedPackA, packInitA, packArithmeticA, packFinalizeA,
+    List.append_assoc]
 
 set_option maxHeartbeats 1200000 in
 theorem pack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
@@ -42286,7 +42219,7 @@ theorem pack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     hinv hreal hsig hs0 hstop hcarry
   change out.phase = mid.phase ∧ CompactCode L B u v sigma out.basis at hfinal
   have hrun : run (pack L B) m s = out := by
-    rw [pack_run_core_finalizeA L B u v sigma hdomain hn s m hc]
+    rw [pack_eq_core_finalizeA L B hdomain.1]
     simp only [run_append, pc, pf, mc, mf, mid, out]
   rw [hrun]
   exact ⟨hfinal.1.trans hcore.1, hfinal.2⟩
