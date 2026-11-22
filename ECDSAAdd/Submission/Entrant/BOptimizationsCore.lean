@@ -24160,7 +24160,84 @@ def domainSelected396 : Program := [
  .CX 4482 4759
 ]
 
- theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by decide +kernel
+private def scopeA109Carry : Nat → Bool → List Wire → List Wire → List Wire → Wire → Program
+  | n+1, first, a::xs, b::ys, c::cs, cin =>
+    (if first then [Instr.CX a cin, Instr.CCX b cin c] else [Instr.CCX b cin c]) ++
+      scopeA109Carry n false xs ys cs c
+  | _, _, _, _, _, _ => []
+
+private theorem scopeA109Carry_sublist (n : Nat) (first : Bool) (xs ys cs : List Wire) (cin : Wire)
+    (hx : n < xs.length) (hy : n < ys.length) (hc : n ≤ cs.length) :
+    (scopeA109Carry n first xs ys cs cin).Sublist (addInPlace xs ys cs cin) := by
+  induction n generalizing first xs ys cs cin with
+  | zero => exact List.nil_sublist _
+  | succ n ih =>
+    cases xs with
+    | nil => simp at hx
+    | cons a xs =>
+      cases xs with
+      | nil => simp at hx
+      | cons a' xs =>
+        cases ys with
+        | nil => simp at hy
+        | cons b ys =>
+          cases ys with
+          | nil => simp at hy
+          | cons b' ys =>
+            cases cs with
+            | nil => simp at hc
+            | cons c cs =>
+              have tail := ih false (a'::xs) (b'::ys) cs c (by simpa using hx)
+                (by simpa using hy) (by simpa using hc)
+              have headPart : (if first then [Instr.CX a cin, Instr.CCX b cin c] else [Instr.CCX b cin c] : Program).Sublist
+                  (majority a b cin c) := by
+                cases first
+                · exact .cons _ (.cons _ (.cons₂ _ (List.nil_sublist _)))
+                · exact .cons _ (.cons₂ _ (.cons₂ _ (List.nil_sublist _)))
+              change ((if first then [Instr.CX a cin, Instr.CCX b cin c] else [Instr.CCX b cin c]) ++
+                scopeA109Carry n false (a'::xs) (b'::ys) cs c).Sublist _
+              exact List.sublist_append_of_sublist_left
+                (List.sublist_append_of_sublist_left (headPart.append tail))
+
+theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by
+  let src := ReorderedAFixed.src
+  let ga := ReorderedAFixed.acc
+  let pad := ReorderedAFixed.pad
+  let bank := ReorderedAFixed.bank
+  let cin := ReorderedAFixed.L.core.cin
+  let t := Acc.earlyTerm src true 6
+  let xs := Acc.tx pad 135 t
+  let ys := Acc.ty (ga.take 135) t
+  let cs := Acc.tc bank 135 t
+  let seed := Acc.seedOp ga pad 161 (Acc.earlyTerm src false 4)
+  let subtract := Acc.op (ga.take 135) pad bank cin 135 true t
+  let copies := ManyACarryDevelop.copyMany (((bank.take 127).drop 4).take 106) Ghost3CacheA.hosts
+  let cache := ReorderedGenericCache.cachedAdd 106 src ((ga.take 138).drop 10)
+    (bank.take 127) Ghost3CacheA.hosts cin
+  let rest := domainSelected396.drop 134
+  have firstEq : domainSelected396.take 134 = seed.take 134 := by rfl
+  have seedPart : (domainSelected396.take 134).Sublist seed := by
+    rw [firstEq]
+    exact List.take_sublist 134 seed
+  have middleEq : rest.take 128 = scopeA109Carry 127 true xs ys cs cin := by rfl
+  have middleAdd := scopeA109Carry_sublist 127 true xs ys cs cin (by decide +kernel)
+    (by decide +kernel) (by decide +kernel)
+  have addSub : (addInPlace xs ys cs cin).Sublist subtract :=
+    List.sublist_append_of_sublist_left (List.sublist_append_right _ _)
+  have middlePart : (rest.take 128).Sublist subtract := by
+    rw [middleEq]
+    exact middleAdd.trans addSub
+  have copiesEq : rest.drop 128 = copies := by rfl
+  have copyPart : (rest.drop 128).Sublist cache := by
+    rw [copiesEq]
+    exact List.sublist_append_of_sublist_left (List.sublist_append_right _ _)
+  have headPart : (domainSelected396.take 134 ++ rest.take 128).Sublist SignAHead.head :=
+    List.sublist_append_of_sublist_left (seedPart.append middlePart)
+  have join : (domainSelected396.take 134 ++ rest.take 128) ++ rest.drop 128 = domainSelected396 :=
+    (List.append_assoc _ _ _).trans
+      ((congrArg (fun t => domainSelected396.take 134 ++ t) (List.take_append_drop 128 rest)).trans
+        (List.take_append_drop 134 domainSelected396))
+  exact join ▸ (headPart.append copyPart)
  theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by decide +kernel
  theorem checked : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched oldPrefix q)=true := by
  apply List.all_eq_true.mpr
