@@ -42716,11 +42716,11 @@ attribute [local irreducible] enterP enterInvP leaveP leaveInvP leaveMoveP leave
 
 /-- K2's domain (kernel-checked phase-valid there): `[131,529] [786,1045] [1049,1300] [1556,1812]`. -/
 def domainW (q : Nat) : Bool :=
-  (101 ≤ q && q ≤ 529) || (786 ≤ q && q ≤ 1045) || (1049 ≤ q && q ≤ 1300) || (1556 ≤ q && q ≤ 1812)
+  (86 ≤ q && q ≤ 529) || (786 ≤ q && q ≤ 1045) || (1049 ≤ q && q ≤ 1300) || (1556 ≤ q && q ≤ 1812)
 def CoveredW (P : Program) : Prop := ∀ q ∈ wires P, domainW q = true
 
 theorem dom_iff (q : Nat) : domainW q = true ↔
-    (101 ≤ q ∧ q ≤ 529) ∨ (786 ≤ q ∧ q ≤ 1045) ∨ (1049 ≤ q ∧ q ≤ 1300) ∨ (1556 ≤ q ∧ q ≤ 1812) := by
+    (86 ≤ q ∧ q ≤ 529) ∨ (786 ≤ q ∧ q ≤ 1045) ∨ (1049 ≤ q ∧ q ≤ 1300) ∨ (1556 ≤ q ∧ q ≤ 1812) := by
   unfold domainW; simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq, or_assoc]
 theorem nilW : CoveredW [] := by intro q h; simp [wires] at h
 theorem appW {a b : Program} (ha : CoveredW a) (hb : CoveredW b) : CoveredW (a++b) := by

@@ -19095,3 +19095,235 @@ attribute [local irreducible] run
 
 end ECDSAAdd.Entrant.StairPacket.StockWindowW
 end
+
+
+/-! Shadow history boundary. Stock `WideReference` remains at tick 90. -/
+section
+namespace ECDSAAdd.Entrant.StairPacket.WideReference7
+open Arithmetic MappedCompressed SkywalkRails WideReference
+set_option maxRecDepth 20000
+set_option maxHeartbeats 3000000
+attribute [local irreducible] run
+
+def firstBlock : Nat := StairPacket.start ⟨0,by decide⟩
+
+def oldStart (i:Nat) := if i=firstBlock then i-5 else i-15
+
+def oldCount (i:Nat) := if i=firstBlock then 5 else 15
+
+theorem oldStart_first : oldStart firstBlock=firstBlock-5 := if_pos rfl
+
+theorem oldCount_first : oldCount firstBlock=5 := if_pos rfl
+
+theorem oldStart_interior {i:Nat} (h:i≠firstBlock) : oldStart i=i-15 := if_neg h
+
+theorem oldCount_interior {i:Nat} (h:i≠firstBlock) : oldCount i=15 := if_neg h
+
+def oldSites (i:Nat) := (List.range' (oldStart i) (oldCount i)).flatMap fun r=>[base r,base (1028+r)]
+
+def sites (i:Nat) := (oldSites i).map (OB5.sig (i+14))
+
+def overlay (i:Nat) (wide history:State) : State :=
+  ⟨wide.phase,fun q=>if q∈sites i then history.basis q else wide.basis q⟩
+
+def origin (i:Nat) (raw history:State) : State :=
+  overlay i (pullState (OB5.sig (i+14)) (run (span i 15) [] raw)) history
+
+def endRaw (i:Nat) (raw history:State) : State := pullState (OB5.sig (i+14)) (origin i raw history)
+
+theorem endpoint (i:Nat) (limit:i+14≤511) (raw history:State) :
+    pullState (OB5.sig (i+14)) (endRaw i raw history)=origin i raw history :=
+  OB5.pull_invol _ limit _
+
+theorem outside (i:Nat) (raw history:State) (q:Wire) (h:q∉sites i) :
+    (origin i raw history).basis q=(run (span i 15) [] raw).basis (OB5.sig (i+14) q) := by
+  simp [origin,overlay,h,pullState]
+
+theorem inside (i:Nat) (raw history:State) (q:Wire) (h:q∈sites i) :
+    (origin i raw history).basis q=history.basis q := by simp [origin,overlay,h]
+
+theorem old_cell {i q:Nat} (member:q∈oldSites i) :
+    ∃r,oldStart i≤r ∧ r<oldStart i+oldCount i ∧ (q=r+16 ∨ q=r+1044) := by
+  obtain ⟨r,hr,he⟩:=List.mem_flatMap.mp member
+  have lim:=List.mem_range'_1.mp hr
+  refine ⟨r,lim.1,lim.2,?_⟩
+  rcases List.mem_cons.mp he with h|h
+  · exact Or.inl h
+  · right
+    have h':=List.mem_singleton.mp h
+    change q=1028+r+16 at h'
+    omega
+
+theorem old_bound (i:Nat) : oldStart i+oldCount i≤ i+15 := by
+  unfold oldStart oldCount
+  split_ifs <;> omega
+
+theorem old_window {i:Nat} (lo:15≤ i) : i-15≤oldStart i ∧ oldStart i+oldCount i=i := by
+  unfold oldStart oldCount
+  split_ifs <;> omega
+
+theorem mem_sites {i:Nat} (bound:i+14≤511) (q:Wire) : q∈sites i ↔ OB5.sig (i+14) q∈oldSites i := by
+  unfold sites
+  constructor
+  · intro h
+    obtain ⟨c,hc,e⟩:=List.mem_map.mp h
+    rw [←e,OB5.sig_invol _ bound]
+    exact hc
+  · intro h
+    exact List.mem_map.mpr ⟨_,h,OB5.sig_invol _ bound q⟩
+
+theorem endRaw_inside_gen (i:Nat) (bound:i+14≤511) (raw history:State) (q:Wire) (member:q∈oldSites i) :
+    (endRaw i raw history).basis q=history.basis (OB5.sig (i+14) q) := by
+  change (origin i raw history).basis (OB5.sig (i+14) q)=_
+  apply inside
+  rw [mem_sites bound,OB5.sig_invol _ bound]
+  exact member
+
+theorem endRaw_outside_gen (i:Nat) (bound:i+14≤511) (raw history:State) (q:Wire) (off:q∉oldSites i) :
+    (endRaw i raw history).basis q=(run (span i 15) [] raw).basis q := by
+  have invol:=OB5.sig_invol (i+14) bound q
+  have out:OB5.sig (i+14) q∉sites i:=by
+    rw [mem_sites bound,invol]
+    exact off
+  change (origin i raw history).basis (OB5.sig (i+14) q)=_
+  rw [outside i raw history _ out,invol]
+
+theorem past_slot (i q:Nat) (lo:15≤ i) (member:q∈oldSites i) : Earlier (i+15) q:=by
+  obtain ⟨r,_,lt,h|h⟩:=old_cell member
+  · have w:=old_window lo
+    exact ⟨r,by omega,Or.inl h⟩
+  · have w:=old_window lo
+    exact ⟨r,by omega,Or.inr (by change q=1028+r+16;omega)⟩
+
+theorem after_coherent_gen (i:Nat) (lo:15≤ i) (hi:i+15≤512) (raw history ref:State)
+    (same:Coherent i raw ref) :
+    Coherent (i+15) (endRaw i raw history) (run (span i 15) [] ref) := by
+  have c:=coherent_span i 15 hi raw ref same []
+  refine ⟨c.1,?_⟩
+  intro q off
+  have invol:=OB5.sig_invol (i+14) (by omega) q
+  have out:OB5.sig (i+14) q∉sites i:=by
+    rw [mem_sites (by omega),invol]
+    exact fun hit=>off (past_slot i q lo hit)
+  change (origin i raw history).basis (OB5.sig (i+14) q)=_
+  rw [outside i raw history _ out,invol,c.2 q off]
+
+theorem advance_gen (i x p:Nat) (lo:15≤ i) (hi:i+15≤512) (hp0:0<p) (hx0:0<x) (odd:p%2=1) (hp:p<2^256)
+    (gap:p+2^32≤2^256) (hx:x<p) (cop:x.Coprime p) (raw history:State) (dom:Domain i x p raw) :
+    Domain (i+15) x p (endRaw i raw history) := by
+  obtain ⟨ref,same,valid⟩:=dom
+  exact ⟨_,after_coherent_gen i lo hi raw history ref same,
+    full_span i 15 x p hi hp0 hx0 odd hp gap hx cop ref [] valid⟩
+
+theorem advance_signed_gen (i b x p:Nat) (lo:15≤ i) (hi:i+15<512) (good:Bounds x p)
+    (raw history:State) (dom:Domain i x p raw) (G S:Bool)
+    (input:InputAt i (encode G S (unsigned i x p).u (unsigned i x p).v) raw)
+    (small:min (unsigned i x p).u (unsigned i x p).v<2^b) :
+    let z:=unsigned i x p
+    let t:=Shadow.reduced b 15 z
+    let flags:=SharedSigned.flags G S (SkywalkTrace.trace 15 (encode G S z.u z.v))
+    let endState:=unsigned (i+15) x p
+    SkywalkTrace.next^[15] (encode G S t.u t.v)=encode flags.1 flags.2 (SkywalkNat.step^[15] t).u (SkywalkNat.step^[15] t).v ∧
+      InputAt (i+15) (encode flags.1 flags.2 endState.u endState.v) (endRaw i raw history):=by
+  let z:=unsigned i x p
+  have odd:z.v%2=1:=(SkywalkNat.iter_valid i (SkywalkNat.init x p) good.positive good.odd).2.1
+  obtain ⟨a,b'⟩:=SharedSigned.same b z small odd G S
+  have eq:=unique_input input (fixed_input i x p (by omega) good raw dom)
+  have stepRel:WideReference.canonical (i+15) x p=SkywalkTrace.next^[15] (WideReference.canonical i x p):=by rw [Nat.add_comm];exact Function.iterate_add_apply _ _ _ _
+  have numRel:unsigned (i+15) x p=SkywalkNat.step^[15] z:=by rw [Nat.add_comm];exact Function.iterate_add_apply _ _ _ _
+  have nextDom:=advance_gen i x p lo (by omega) good.positive good.nonzero good.odd good.cap good.gap good.small good.coprime raw history dom
+  have active:=fixed_input (i+15) x p hi good (endRaw i raw history) nextDom
+  dsimp only
+  refine ⟨a,?_⟩
+  rw [stepRel,←eq,b'] at active
+  simpa only [numRel] using active
+
+theorem origin_phase (i x p:Nat) (bounds:i+15≤512) (good:Bounds x p) (raw history:State)
+    (dom:Domain i x p raw) : (origin i raw history).phase=raw.phase := by
+  obtain ⟨ref,same,stage⟩:=dom
+  have match':=fixed_span i i 15 (Nat.le_refl _) bounds raw ref [] same
+  exact match'.1.trans ((span_phase _ _ _ _ bounds good ref [] stage).trans same.1.symm)
+
+theorem endRaw_phase (i x p:Nat) (bounds:i+15≤512) (good:Bounds x p) (raw history:State)
+    (dom:Domain i x p raw) : (endRaw i raw history).phase=raw.phase :=
+  origin_phase i x p bounds good raw history dom
+
+theorem carry_origin {i upper x p:Nat} (limit:i+15≤512) (upper_ok:upper≤1812) (good:Bounds x p) (raw history:State)
+    (domain:Domain i x p raw)
+    (fixed:∀q:Nat,1556≤q → q≤upper → OB5.sig (i+14) q=q)
+    (q:Nat) (low:1556≤q) (high:q≤upper) : (origin i raw history).basis q=false:=by
+  have clear:q∉sites i:=by
+    intro hit
+    have old:=(mem_sites (by omega) q).mp hit
+    rw [fixed _ low high] at old
+    have top:=old_bound i
+    obtain ⟨r,_,lt,h|h⟩:=old_cell old <;> omega
+  rw [outside i raw history q clear,fixed _ low high]
+  exact full_carry i 15 x p limit good raw domain [] q low (Nat.le_trans high upper_ok)
+
+theorem box_origin {s:Nat} (lo:1≤ s) (hi:s≤420) {q:Wire} (out:¬Box s q) (raw history:State)
+    (same:q∉sites s → history.basis q=(pullState (OB5.sig (s-1)) raw).basis q) :
+    history.basis q=(origin s raw history).basis q:=by
+  by_cases h:q∈sites s
+  · exact (inside s raw history q h).symm
+  rw [same h,outside s raw history q h]
+  change raw.basis (OB5.sig (s-1) q)=_
+  have box:=out
+  unfold Box at box
+  have w0:=route_width s (by omega)
+  have agree:OB5.sig (s-1) q=OB5.sig (s+14) q:=by
+    rw [OB5.sig_nat,OB5.sig_nat]
+    unfold OB5.sigNat
+    split_ifs <;> first | rfl | omega
+  have away:¬Box s (OB5.sig (s+14) q):=by
+    rw [OB5.sig_nat]
+    unfold Box OB5.sigNat
+    split_ifs <;> omega
+  rw [agree,span_unchanged s 15 _ (by omega) (box_away (by omega) (by omega) away)]
+
+theorem box_origin_j (j:Fin 24) {q:Wire} (out:¬Box (StairPacket.start j) q) (raw history:State)
+    (same:q∉sites (StairPacket.start j) → history.basis q=(pullState (OB5.sig (StairPacket.start j-1)) raw).basis q) :
+    history.basis q=(origin (StairPacket.start j) raw history).basis q:=
+  box_origin (by have h:=j.isLt;change 1≤75+15*(j:Nat);omega) (by have h:=j.isLt;change 75+15*(j:Nat)≤420;omega)
+    out raw history same
+
+theorem band_origin_wide {i x p : Nat} (limit : i+15 ≤ 512) (good : Bounds x p) (raw history : State)
+    (domain : Domain i x p raw) (q : Nat) (low : 1301 ≤ q) (high : q ≤ 1058+i) :
+    (origin i raw history).basis q = false := by
+  have map : OB5.sig (i+14) q = (3113-q:Nat) := by
+    unfold OB5.sig
+    rw [if_pos (by (try simp only [Wire]); omega)]
+  have clear : q ∉ sites i := by
+    intro hit
+    have old := (mem_sites (by omega) q).mp hit
+    rw [map] at old
+    have top := old_bound i
+    obtain ⟨r, _, lt, h|h⟩ := old_cell old <;> omega
+  rw [outside i raw history q clear, map]
+  exact full_carry i 15 x p limit good raw domain [] _ (by omega) (by omega)
+
+theorem pool_origin {i x p : Nat} (limit : i+15 ≤ 512) (good : Bounds x p) (raw history : State)
+    (dom : Domain i x p raw) (q : Nat) (hq1 : i + 31 ≤ q) (hq2 : q < 1044)
+    (rel : q ∈ (W.compactSkywalkSignPoolA base (i+15)).released ∨ q ∈ (W.compactSkywalkSignPoolB base (i+15)).released) :
+    (origin i raw history).basis q = false := by
+  have ident : OB5.sig (i+14) q = q := by
+    unfold OB5.sig; rw [if_neg (by (try simp only [Wire] at *); omega)]
+  have clear : q ∉ sites i := by
+    intro hit
+    have old := (mem_sites (by omega) q).mp hit
+    rw [ident] at old
+    have top := old_bound i
+    obtain ⟨r, _, lt, h|h⟩ := old_cell old <;> ((try unfold Wire at *); omega)
+  rw [outside i raw history q clear, ident]
+  obtain ⟨reference, same, stage⟩ := dom
+  have finish := full_span i 15 x p limit good.positive good.nonzero good.odd good.cap good.gap good.small
+    good.coprime reference [] stage
+  have offHist : ¬ Earlier i q := outside_between (by omega) (by omega)
+  have link := fixed_span i i 15 (Nat.le_refl _) limit raw reference [] same
+  apply (link.2 q offHist).trans
+  rcases rel with a | b
+  · exact finish.2.1 q a
+  · exact finish.2.2 q b
+
+end ECDSAAdd.Entrant.StairPacket.WideReference7
+end
