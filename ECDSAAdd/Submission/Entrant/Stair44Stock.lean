@@ -74223,19 +74223,19 @@ def restorePortsXP (e : Nat) : List Wire := cellsRestoreP e ++ (List.range 134).
 
 def archiveLoadP (j : Fin 23) (d : Bool) : Program :=
   renameProgram (fun q => (Shadow7.loadPortsWP (start j + 15) (Shadow7.e0P (start j + 15) + 6)).getD q 0)
-    (if d then integer_load0 else integer_load1) ++ moveLoadP (start j + 15)
+    (if d then ReducedWindowArchives.load0 else ReducedWindowArchives.load1) ++ moveLoadP (start j + 15)
 
 def archiveRestoreP (j : Fin 23) (d : Bool) : Program :=
   renameProgram (fun q => (Shadow7.restorePortsWP (start j + 15)).getD q 0)
-    (if d then integer_restore0 else integer_restore1) ++ moveRestoreP (start j + 15) (Shadow7.e0P (start j + 15) + 6)
+    (if d then ReducedWindowArchives.restore0 else ReducedWindowArchives.restore1) ++ moveRestoreP (start j + 15) (Shadow7.e0P (start j + 15) + 6)
 
 def exitLoadP (e : Nat) (d : Bool) : Program :=
   renameProgram (fun q => (Shadow7.loadPortsXP e (bTopP e + 1)).getD q 0)
-    (if d then integer_load0 else integer_load1) ++ moveLoadP e
+    (if d then ReducedWindowArchives.load0 else ReducedWindowArchives.load1) ++ moveLoadP e
 
 def exitRestoreP (e : Nat) (d : Bool) : Program :=
   renameProgram (fun q => (Shadow7.restorePortsXP e).getD q 0)
-    (if d then integer_restore0 else integer_restore1) ++ moveRestoreP e (bTopP e + 1)
+    (if d then ReducedWindowArchives.restore0 else ReducedWindowArchives.restore1) ++ moveRestoreP e (bTopP e + 1)
 
 def params : WindowFold.Pieces Program :=
   {WindowFold.ofParts Shadow7.enterP Shadow7.enterInvP Shadow7.leaveMoveP Shadow7.leaveMoveInvP
@@ -77913,7 +77913,7 @@ theorem restorePortsWP_foot (t f p : Nat) (ht : t < 512) (hp : p < 150) :
   · obtain ⟨k, rfl⟩ : ∃ k, p = 16 + k := ⟨p - 16, by omega⟩
     rw [restorePortsWP_scratch t k (by omega)]; exact scratch_foot t f k (by omega) (by omega)
 
-attribute [local irreducible] integer_load0 integer_load1 integer_restore0 integer_restore1
+attribute [local irreducible] ReducedWindowArchives.load0 ReducedWindowArchives.load1 ReducedWindowArchives.restore0 ReducedWindowArchives.restore1
 /-- Window-form archives of block `j` (tick `t = start j + 15`, flags `e0(t)+6..8`). -/
 theorem archiveLoadP_wires (j : Fin 23) (d : Bool) (hj : j.val ≤ 21) :
     ∀ q ∈ wires (archiveLoadP j d), archFootP (start j + 15) (e0P (start j + 15) + 6) q := by
@@ -77996,7 +77996,7 @@ set_option linter.unreachableTactic false
 set_option linter.unusedTactic false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 2000000
-attribute [local irreducible] integer_load0 integer_load1 integer_restore0 integer_restore1
+attribute [local irreducible] ReducedWindowArchives.load0 ReducedWindowArchives.load1 ReducedWindowArchives.restore0 ReducedWindowArchives.restore1
 theorem scratch_footW (t f k : Nat) (ht : t < 512) (hk : k < 134) : archFootW t f (scratchS t k) := by
   have := scratchS_cases t k ht hk; unfold archFootW; omega
 
@@ -78444,7 +78444,7 @@ theorem load_record (i : Fin 23) (hi : i.val≤21) (d:Bool) (data:Nat→Bool) (s
     (blank:∀k:Fin 157,23≤ k.val → s.basis (rawPorts i k)=false) :
     let t:=run (Shadow7.archiveLoadP i d) m s
     ∃row<63145, t.phase=s.phase ∧ Frame (codePorts i) (code d) row t ∧
-        (∀k:Fin 16,t.basis (codePorts i ⟨k,by omega⟩)=(get (if d then enter0Trace0In else enter1Trace0In) k).testBit row) ∧
+        (∀k:Fin 16,t.basis (codePorts i ⟨k,by omega⟩)=(get (if d then ReducedWindowArchives.enter0StoredIn else ReducedWindowArchives.enter1StoredIn) k).testBit row) ∧
         (∀q,(∀k,rawPorts i k≠q) → t.basis q=s.basis q) ∧
         (∀ tape, run (Shadow7.archiveRestoreP i d) tape t=s) := by
   obtain ⟨row,hr,h⟩:=legal
@@ -81602,7 +81602,7 @@ theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
     (scratch:∀i:Fin 157,23≤ i.val → s.basis (rawPorts i)=false) :
     let t:=run ((Shadow7.exitLoadP 405) d) m s
     ∃row<63145, t.phase=s.phase ∧ Frame codePorts (code d) row t ∧
-        (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then enter0Trace0In else enter1Trace0In) i).testBit row) ∧
+        (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then ReducedWindowArchives.enter0StoredIn else ReducedWindowArchives.enter1StoredIn) i).testBit row) ∧
         (∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q) ∧
         (∀ tape, run ((Shadow7.exitRestoreP 405) d) tape t=s) := by
   obtain ⟨row,hr,h⟩:=legal
