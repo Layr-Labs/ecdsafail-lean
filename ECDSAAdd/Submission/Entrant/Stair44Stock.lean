@@ -76561,7 +76561,7 @@ theorem leave_counts (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   · rw [leaveInvP, s2]; omega
 
 theorem enter_counts (j : Fin 23) :
-    toffoliCount (enterP j) = 20 ∧ toffoliCount (enterInvP j) = 20 ∧
+    toffoliCount (enterP j) = 18 ∧ toffoliCount (enterInvP j) = 18 ∧
     measurementCount (enterP j) = 6 ∧ measurementCount (enterInvP j) = 6 ∧
     gateSlots (enterP j) = 92 ∧ gateSlots (enterInvP j) = 92 :=
   (counts_enterFix _ _).programs

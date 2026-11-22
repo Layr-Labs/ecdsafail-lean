@@ -5000,7 +5000,6 @@ def integer_restore0Block3 : Program := [
   .CX 3 41,
   .CX 9 41,
   .CX 67 41,
-  .CCX 40 41 68,
   .CX 67 41,
   .CX 9 41,
   .CX 3 41,
@@ -5031,7 +5030,7 @@ def integer_restore0Block3 : Program := [
   .CX 71 41
 ]
 
-private theorem integer_restore0Block3Ok : GatePhysical integer_restore0Block3 ∧ toffoliCount integer_restore0Block3 = 5 ∧ measurementCount integer_restore0Block3 = 0 ∧ gateSlots integer_restore0Block3 = 45 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_restore0Block3Ok : GatePhysical integer_restore0Block3 ∧ toffoliCount integer_restore0Block3 = 4 ∧ measurementCount integer_restore0Block3 = 0 ∧ gateSlots integer_restore0Block3 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 def integer_restore0Block4 : Program := [
   .CX 70 40,
@@ -6784,13 +6783,13 @@ def integer_restore0 : Program := integer_restore0Block0 ++ integer_restore0Bloc
 theorem integer_restore0_GatePhysical : GatePhysical integer_restore0 := by
   simp only [integer_restore0, gatePhysical_append, and_true, integer_restore0Block0Ok.1, integer_restore0Block1Ok.1, integer_restore0Block2Ok.1, integer_restore0Block3Ok.1, integer_restore0Block4Ok.1, integer_restore0Block5Ok.1, integer_restore0Block6Ok.1, integer_restore0Block7Ok.1, integer_restore0Block8Ok.1, integer_restore0Block9Ok.1, integer_restore0Block10Ok.1, integer_restore0Block11Ok.1, integer_restore0Block12Ok.1, integer_restore0Block13Ok.1, integer_restore0Block14Ok.1, integer_restore0Block15Ok.1, integer_restore0Block16Ok.1, integer_restore0Block17Ok.1, integer_restore0Block18Ok.1, integer_restore0Block19Ok.1, integer_restore0Block20Ok.1, integer_restore0Block21Ok.1, integer_restore0Block22Ok.1, integer_restore0Block23Ok.1, integer_restore0Block24Ok.1, integer_restore0Block25Ok.1, integer_restore0Block26Ok.1, integer_restore0Block27Ok.1, integer_restore0Block28Ok.1, integer_restore0Block29Ok.1, integer_restore0Block30Ok.1, integer_restore0Block31Ok.1, integer_restore0Block32Ok.1, integer_restore0Block33Ok.1, integer_restore0Block34Ok.1, integer_restore0Block35Ok.1, integer_restore0Block36Ok.1, integer_restore0Block37Ok.1, integer_restore0Block38Ok.1, integer_restore0Block39Ok.1, integer_restore0Block40Ok.1]
 
-theorem integer_restore0_toffoliCount : toffoliCount integer_restore0 = 86 := by
+theorem integer_restore0_toffoliCount : toffoliCount integer_restore0 = 85 := by
   simp only [integer_restore0, toffoliCount_append, integer_restore0Block0Ok.2.1, integer_restore0Block1Ok.2.1, integer_restore0Block2Ok.2.1, integer_restore0Block3Ok.2.1, integer_restore0Block4Ok.2.1, integer_restore0Block5Ok.2.1, integer_restore0Block6Ok.2.1, integer_restore0Block7Ok.2.1, integer_restore0Block8Ok.2.1, integer_restore0Block9Ok.2.1, integer_restore0Block10Ok.2.1, integer_restore0Block11Ok.2.1, integer_restore0Block12Ok.2.1, integer_restore0Block13Ok.2.1, integer_restore0Block14Ok.2.1, integer_restore0Block15Ok.2.1, integer_restore0Block16Ok.2.1, integer_restore0Block17Ok.2.1, integer_restore0Block18Ok.2.1, integer_restore0Block19Ok.2.1, integer_restore0Block20Ok.2.1, integer_restore0Block21Ok.2.1, integer_restore0Block22Ok.2.1, integer_restore0Block23Ok.2.1, integer_restore0Block24Ok.2.1, integer_restore0Block25Ok.2.1, integer_restore0Block26Ok.2.1, integer_restore0Block27Ok.2.1, integer_restore0Block28Ok.2.1, integer_restore0Block29Ok.2.1, integer_restore0Block30Ok.2.1, integer_restore0Block31Ok.2.1, integer_restore0Block32Ok.2.1, integer_restore0Block33Ok.2.1, integer_restore0Block34Ok.2.1, integer_restore0Block35Ok.2.1, integer_restore0Block36Ok.2.1, integer_restore0Block37Ok.2.1, integer_restore0Block38Ok.2.1, integer_restore0Block39Ok.2.1, integer_restore0Block40Ok.2.1]
 
 theorem integer_restore0_measurementCount : measurementCount integer_restore0 = 124 := by
   simp only [integer_restore0, measurementCount_append, integer_restore0Block0Ok.2.2.1, integer_restore0Block1Ok.2.2.1, integer_restore0Block2Ok.2.2.1, integer_restore0Block3Ok.2.2.1, integer_restore0Block4Ok.2.2.1, integer_restore0Block5Ok.2.2.1, integer_restore0Block6Ok.2.2.1, integer_restore0Block7Ok.2.2.1, integer_restore0Block8Ok.2.2.1, integer_restore0Block9Ok.2.2.1, integer_restore0Block10Ok.2.2.1, integer_restore0Block11Ok.2.2.1, integer_restore0Block12Ok.2.2.1, integer_restore0Block13Ok.2.2.1, integer_restore0Block14Ok.2.2.1, integer_restore0Block15Ok.2.2.1, integer_restore0Block16Ok.2.2.1, integer_restore0Block17Ok.2.2.1, integer_restore0Block18Ok.2.2.1, integer_restore0Block19Ok.2.2.1, integer_restore0Block20Ok.2.2.1, integer_restore0Block21Ok.2.2.1, integer_restore0Block22Ok.2.2.1, integer_restore0Block23Ok.2.2.1, integer_restore0Block24Ok.2.2.1, integer_restore0Block25Ok.2.2.1, integer_restore0Block26Ok.2.2.1, integer_restore0Block27Ok.2.2.1, integer_restore0Block28Ok.2.2.1, integer_restore0Block29Ok.2.2.1, integer_restore0Block30Ok.2.2.1, integer_restore0Block31Ok.2.2.1, integer_restore0Block32Ok.2.2.1, integer_restore0Block33Ok.2.2.1, integer_restore0Block34Ok.2.2.1, integer_restore0Block35Ok.2.2.1, integer_restore0Block36Ok.2.2.1, integer_restore0Block37Ok.2.2.1, integer_restore0Block38Ok.2.2.1, integer_restore0Block39Ok.2.2.1, integer_restore0Block40Ok.2.2.1]
 
-theorem integer_restore0_gateSlots : gateSlots integer_restore0 = 3072 := by
+theorem integer_restore0_gateSlots : gateSlots integer_restore0 = 3071 := by
   simp only [integer_restore0, gateSlots_append, integer_restore0Block0Ok.2.2.2, integer_restore0Block1Ok.2.2.2, integer_restore0Block2Ok.2.2.2, integer_restore0Block3Ok.2.2.2, integer_restore0Block4Ok.2.2.2, integer_restore0Block5Ok.2.2.2, integer_restore0Block6Ok.2.2.2, integer_restore0Block7Ok.2.2.2, integer_restore0Block8Ok.2.2.2, integer_restore0Block9Ok.2.2.2, integer_restore0Block10Ok.2.2.2, integer_restore0Block11Ok.2.2.2, integer_restore0Block12Ok.2.2.2, integer_restore0Block13Ok.2.2.2, integer_restore0Block14Ok.2.2.2, integer_restore0Block15Ok.2.2.2, integer_restore0Block16Ok.2.2.2, integer_restore0Block17Ok.2.2.2, integer_restore0Block18Ok.2.2.2, integer_restore0Block19Ok.2.2.2, integer_restore0Block20Ok.2.2.2, integer_restore0Block21Ok.2.2.2, integer_restore0Block22Ok.2.2.2, integer_restore0Block23Ok.2.2.2, integer_restore0Block24Ok.2.2.2, integer_restore0Block25Ok.2.2.2, integer_restore0Block26Ok.2.2.2, integer_restore0Block27Ok.2.2.2, integer_restore0Block28Ok.2.2.2, integer_restore0Block29Ok.2.2.2, integer_restore0Block30Ok.2.2.2, integer_restore0Block31Ok.2.2.2, integer_restore0Block32Ok.2.2.2, integer_restore0Block33Ok.2.2.2, integer_restore0Block34Ok.2.2.2, integer_restore0Block35Ok.2.2.2, integer_restore0Block36Ok.2.2.2, integer_restore0Block37Ok.2.2.2, integer_restore0Block38Ok.2.2.2, integer_restore0Block39Ok.2.2.2, integer_restore0Block40Ok.2.2.2]
 
 end ECDSAAdd.Entrant.StairArchiveGates
@@ -6975,7 +6974,6 @@ def integer_restore1Block3 : Program := [
   .CX 3 41,
   .CX 9 41,
   .CX 67 41,
-  .CCX 40 41 68,
   .CX 67 41,
   .CX 9 41,
   .CX 3 41,
@@ -7006,7 +7004,7 @@ def integer_restore1Block3 : Program := [
   .CX 71 41
 ]
 
-private theorem integer_restore1Block3Ok : GatePhysical integer_restore1Block3 ∧ toffoliCount integer_restore1Block3 = 5 ∧ measurementCount integer_restore1Block3 = 0 ∧ gateSlots integer_restore1Block3 = 45 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_restore1Block3Ok : GatePhysical integer_restore1Block3 ∧ toffoliCount integer_restore1Block3 = 4 ∧ measurementCount integer_restore1Block3 = 0 ∧ gateSlots integer_restore1Block3 = 44 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 def integer_restore1Block4 : Program := [
   .CX 70 40,
@@ -8771,13 +8769,13 @@ def integer_restore1 : Program := integer_restore1Block0 ++ integer_restore1Bloc
 theorem integer_restore1_GatePhysical : GatePhysical integer_restore1 := by
   simp only [integer_restore1, gatePhysical_append, and_true, integer_restore1Block0Ok.1, integer_restore1Block1Ok.1, integer_restore1Block2Ok.1, integer_restore1Block3Ok.1, integer_restore1Block4Ok.1, integer_restore1Block5Ok.1, integer_restore1Block6Ok.1, integer_restore1Block7Ok.1, integer_restore1Block8Ok.1, integer_restore1Block9Ok.1, integer_restore1Block10Ok.1, integer_restore1Block11Ok.1, integer_restore1Block12Ok.1, integer_restore1Block13Ok.1, integer_restore1Block14Ok.1, integer_restore1Block15Ok.1, integer_restore1Block16Ok.1, integer_restore1Block17Ok.1, integer_restore1Block18Ok.1, integer_restore1Block19Ok.1, integer_restore1Block20Ok.1, integer_restore1Block21Ok.1, integer_restore1Block22Ok.1, integer_restore1Block23Ok.1, integer_restore1Block24Ok.1, integer_restore1Block25Ok.1, integer_restore1Block26Ok.1, integer_restore1Block27Ok.1, integer_restore1Block28Ok.1, integer_restore1Block29Ok.1, integer_restore1Block30Ok.1, integer_restore1Block31Ok.1, integer_restore1Block32Ok.1, integer_restore1Block33Ok.1, integer_restore1Block34Ok.1, integer_restore1Block35Ok.1, integer_restore1Block36Ok.1, integer_restore1Block37Ok.1, integer_restore1Block38Ok.1, integer_restore1Block39Ok.1, integer_restore1Block40Ok.1]
 
-theorem integer_restore1_toffoliCount : toffoliCount integer_restore1 = 86 := by
+theorem integer_restore1_toffoliCount : toffoliCount integer_restore1 = 85 := by
   simp only [integer_restore1, toffoliCount_append, integer_restore1Block0Ok.2.1, integer_restore1Block1Ok.2.1, integer_restore1Block2Ok.2.1, integer_restore1Block3Ok.2.1, integer_restore1Block4Ok.2.1, integer_restore1Block5Ok.2.1, integer_restore1Block6Ok.2.1, integer_restore1Block7Ok.2.1, integer_restore1Block8Ok.2.1, integer_restore1Block9Ok.2.1, integer_restore1Block10Ok.2.1, integer_restore1Block11Ok.2.1, integer_restore1Block12Ok.2.1, integer_restore1Block13Ok.2.1, integer_restore1Block14Ok.2.1, integer_restore1Block15Ok.2.1, integer_restore1Block16Ok.2.1, integer_restore1Block17Ok.2.1, integer_restore1Block18Ok.2.1, integer_restore1Block19Ok.2.1, integer_restore1Block20Ok.2.1, integer_restore1Block21Ok.2.1, integer_restore1Block22Ok.2.1, integer_restore1Block23Ok.2.1, integer_restore1Block24Ok.2.1, integer_restore1Block25Ok.2.1, integer_restore1Block26Ok.2.1, integer_restore1Block27Ok.2.1, integer_restore1Block28Ok.2.1, integer_restore1Block29Ok.2.1, integer_restore1Block30Ok.2.1, integer_restore1Block31Ok.2.1, integer_restore1Block32Ok.2.1, integer_restore1Block33Ok.2.1, integer_restore1Block34Ok.2.1, integer_restore1Block35Ok.2.1, integer_restore1Block36Ok.2.1, integer_restore1Block37Ok.2.1, integer_restore1Block38Ok.2.1, integer_restore1Block39Ok.2.1, integer_restore1Block40Ok.2.1]
 
 theorem integer_restore1_measurementCount : measurementCount integer_restore1 = 124 := by
   simp only [integer_restore1, measurementCount_append, integer_restore1Block0Ok.2.2.1, integer_restore1Block1Ok.2.2.1, integer_restore1Block2Ok.2.2.1, integer_restore1Block3Ok.2.2.1, integer_restore1Block4Ok.2.2.1, integer_restore1Block5Ok.2.2.1, integer_restore1Block6Ok.2.2.1, integer_restore1Block7Ok.2.2.1, integer_restore1Block8Ok.2.2.1, integer_restore1Block9Ok.2.2.1, integer_restore1Block10Ok.2.2.1, integer_restore1Block11Ok.2.2.1, integer_restore1Block12Ok.2.2.1, integer_restore1Block13Ok.2.2.1, integer_restore1Block14Ok.2.2.1, integer_restore1Block15Ok.2.2.1, integer_restore1Block16Ok.2.2.1, integer_restore1Block17Ok.2.2.1, integer_restore1Block18Ok.2.2.1, integer_restore1Block19Ok.2.2.1, integer_restore1Block20Ok.2.2.1, integer_restore1Block21Ok.2.2.1, integer_restore1Block22Ok.2.2.1, integer_restore1Block23Ok.2.2.1, integer_restore1Block24Ok.2.2.1, integer_restore1Block25Ok.2.2.1, integer_restore1Block26Ok.2.2.1, integer_restore1Block27Ok.2.2.1, integer_restore1Block28Ok.2.2.1, integer_restore1Block29Ok.2.2.1, integer_restore1Block30Ok.2.2.1, integer_restore1Block31Ok.2.2.1, integer_restore1Block32Ok.2.2.1, integer_restore1Block33Ok.2.2.1, integer_restore1Block34Ok.2.2.1, integer_restore1Block35Ok.2.2.1, integer_restore1Block36Ok.2.2.1, integer_restore1Block37Ok.2.2.1, integer_restore1Block38Ok.2.2.1, integer_restore1Block39Ok.2.2.1, integer_restore1Block40Ok.2.2.1]
 
-theorem integer_restore1_gateSlots : gateSlots integer_restore1 = 3167 := by
+theorem integer_restore1_gateSlots : gateSlots integer_restore1 = 3166 := by
   simp only [integer_restore1, gateSlots_append, integer_restore1Block0Ok.2.2.2, integer_restore1Block1Ok.2.2.2, integer_restore1Block2Ok.2.2.2, integer_restore1Block3Ok.2.2.2, integer_restore1Block4Ok.2.2.2, integer_restore1Block5Ok.2.2.2, integer_restore1Block6Ok.2.2.2, integer_restore1Block7Ok.2.2.2, integer_restore1Block8Ok.2.2.2, integer_restore1Block9Ok.2.2.2, integer_restore1Block10Ok.2.2.2, integer_restore1Block11Ok.2.2.2, integer_restore1Block12Ok.2.2.2, integer_restore1Block13Ok.2.2.2, integer_restore1Block14Ok.2.2.2, integer_restore1Block15Ok.2.2.2, integer_restore1Block16Ok.2.2.2, integer_restore1Block17Ok.2.2.2, integer_restore1Block18Ok.2.2.2, integer_restore1Block19Ok.2.2.2, integer_restore1Block20Ok.2.2.2, integer_restore1Block21Ok.2.2.2, integer_restore1Block22Ok.2.2.2, integer_restore1Block23Ok.2.2.2, integer_restore1Block24Ok.2.2.2, integer_restore1Block25Ok.2.2.2, integer_restore1Block26Ok.2.2.2, integer_restore1Block27Ok.2.2.2, integer_restore1Block28Ok.2.2.2, integer_restore1Block29Ok.2.2.2, integer_restore1Block30Ok.2.2.2, integer_restore1Block31Ok.2.2.2, integer_restore1Block32Ok.2.2.2, integer_restore1Block33Ok.2.2.2, integer_restore1Block34Ok.2.2.2, integer_restore1Block35Ok.2.2.2, integer_restore1Block36Ok.2.2.2, integer_restore1Block37Ok.2.2.2, integer_restore1Block38Ok.2.2.2, integer_restore1Block39Ok.2.2.2, integer_restore1Block40Ok.2.2.2]
 
 end ECDSAAdd.Entrant.StairArchiveGates
@@ -57059,7 +57057,7 @@ theorem part51 : toffoliCount (enter225Inv) = 20 ∧ measurementCount (enter225I
 theorem part52 : toffoliCount (portal225Inv) = 481 ∧ measurementCount (portal225Inv) = 286 := by
   decide +kernel
 
-theorem part53 : toffoliCount (archiveRestore270 true) = 86 ∧ measurementCount (archiveRestore270 true) = 124 := by
+theorem part53 : toffoliCount (archiveRestore270 true) = 85 ∧ measurementCount (archiveRestore270 true) = 124 := by
   decide +kernel
 
 theorem part54 : toffoliCount (Rolling1588.unpackAtTick true 260) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 260) = 2 := by
@@ -57076,13 +57074,13 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part55 : toffoliCount (archiveRestore255 true) = 86 ∧ measurementCount (archiveRestore255 true) = 124 := by
+theorem part55 : toffoliCount (archiveRestore255 true) = 85 ∧ measurementCount (archiveRestore255 true) = 124 := by
   decide +kernel
 
 theorem part56 : toffoliCount (Rolling1588.unpackAtTick true 245) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 245) = 2 := by
   decide +kernel
 
-theorem part57 : toffoliCount (archiveRestore240 true) = 86 ∧ measurementCount (archiveRestore240 true) = 124 := by
+theorem part57 : toffoliCount (archiveRestore240 true) = 85 ∧ measurementCount (archiveRestore240 true) = 124 := by
   decide +kernel
 
 theorem part58 : toffoliCount (Rolling1588.unpackAtTick true 230) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 230) = 2 := by
@@ -57229,7 +57227,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part30 : toffoliCount (archiveRestore270 false) = 86 ∧ measurementCount (archiveRestore270 false) = 124 := by
+theorem part30 : toffoliCount (archiveRestore270 false) = 85 ∧ measurementCount (archiveRestore270 false) = 124 := by
   decide +kernel
 
 theorem part31 : toffoliCount (Rolling1588.unpackAtTick false 260) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 260) = 2 := by
@@ -57271,7 +57269,7 @@ theorem part36 : toffoliCount (unrouted ⟨12,by decide⟩ 1 14) = 4116 ∧ meas
   dsimp only [j]
   decide +kernel
 
-theorem part37 : toffoliCount (archiveRestore255 false) = 86 ∧ measurementCount (archiveRestore255 false) = 124 := by
+theorem part37 : toffoliCount (archiveRestore255 false) = 85 ∧ measurementCount (archiveRestore255 false) = 124 := by
   decide +kernel
 
 theorem part38 : toffoliCount (Rolling1588.unpackAtTick false 245) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 245) = 2 := by
@@ -57310,7 +57308,7 @@ theorem part42 : toffoliCount (unrouted ⟨11,by decide⟩ 1 14) = 4312 ∧ meas
   dsimp only [j]
   decide +kernel
 
-theorem part43 : toffoliCount (archiveRestore240 false) = 86 ∧ measurementCount (archiveRestore240 false) = 124 := by
+theorem part43 : toffoliCount (archiveRestore240 false) = 85 ∧ measurementCount (archiveRestore240 false) = 124 := by
   decide +kernel
 
 theorem part44 : toffoliCount (Rolling1588.unpackAtTick false 230) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 230) = 2 := by
@@ -59400,7 +59398,8 @@ def leaveFix12 (s h : Nat) : List Gate := [
 
 def enterFix (s h : Nat) : List Gate := [
   .cx (s+h+31) (h+801),
-  .ccx (s+15) (h+801) (s+h+31),
+  .make (s+15) (h+801) 1558,
+  .cx 1558 (s+h+31),
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59418,14 +59417,13 @@ def enterFix (s h : Nat) : List Gate := [
   .x 1556,
   .cx (s+h+31) 1556,
   .make (h+801) 1556 1557,
-  .make 1557 (h+1578) 1558,
-  .make (h+802) 1558 1559,
+  .make (h+802) 1557 1559,
   .make (h+803) 1559 1560,
   .cx 1560 (h+804),
   .pop (h+803) 1559 1560,
   .cx 1559 (h+803),
-  .pop (h+802) 1558 1559,
-  .cx 1558 (h+802),
+  .pop (h+802) 1557 1559,
+  .cx 1557 (h+802),
   .cx (s+h+32) 1559,
   .ccx (h+1577) 1559 (s+h+32),
   .cx (s+h+32) 1559,
@@ -59444,17 +59442,16 @@ def enterFix (s h : Nat) : List Gate := [
   .x (h+802),
   .x (h+803),
   .x (h+804),
-  .make (h+802) 1558 1562,
+  .make (h+802) 1557 1562,
   .make (h+803) 1562 1563,
   .cx 1563 (h+804),
   .pop (h+803) 1562 1563,
   .cx 1562 (h+803),
-  .pop (h+802) 1558 1562,
-  .cx 1558 (h+802),
+  .pop (h+802) 1557 1562,
+  .cx 1557 (h+802),
   .x (h+802),
   .x (h+803),
   .x (h+804),
-  .pop 1557 (h+1578) 1558,
   .pop (h+801) 1556 1557,
   .cx (s+h+31) 1556,
   .x 1556,
@@ -59463,7 +59460,8 @@ def enterFix (s h : Nat) : List Gate := [
   .cx (h+1579) (h+803),
   .cx (h+1579) (h+804),
   .cx (s+h+31) (h+801),
-  .ccx (s+15) (h+801) (s+h+31),
+  .cx 1558 (s+h+31),
+  .pop (s+15) (h+801) 1558,
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59994,7 +59992,7 @@ theorem counts_leaveFix8 (s h : Nat) : Counts (leaveFix8 s h) 0 0 0 2 := ⟨rfl,
 theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 20 37 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
-theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 14 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
 theorem counts_leaveAdjust (s : Nat) (hw : 1 ≤ wpP s) :
@@ -60144,7 +60142,7 @@ theorem leave_counts (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   · rw [leaveP, s1]; omega
   · rw [leaveInvP, s2]; omega
 theorem enter_counts (j : Fin 23) :
-    toffoliCount (enterP j) = 20 ∧ toffoliCount (enterInvP j) = 20 ∧
+    toffoliCount (enterP j) = 18 ∧ toffoliCount (enterInvP j) = 18 ∧
     measurementCount (enterP j) = 6 ∧ measurementCount (enterInvP j) = 6 ∧
     gateSlots (enterP j) = 92 ∧ gateSlots (enterInvP j) = 92 :=
   (counts_enterFix _ _).programs
@@ -67846,8 +67844,8 @@ private theorem of_member {P:Program} {g:Instr} {q:Wire} (inP:g∈P) (hit:q∈g.
     · exact Or.inr (ih tail)
 
 private def marks : Bool → Bool → List Nat
-  | false, false => [1, 2, 6, 11, 16, 31, 36, 41, 46, 47, 51, 56, 61, 301, 287, 294, 1028, 1035, 1044, 1056, 1068, 1082, 1087]
-  | false, true => [1, 2, 6, 11, 16, 31, 36, 41, 46, 47, 51, 56, 61, 301, 287, 294, 1046, 1055, 1066, 1077, 1093, 1107, 1112]
+  | false, false => [1, 2, 6, 11, 16, 31, 36, 41, 46, 47, 51, 56, 61, 300, 286, 293, 1027, 1034, 1043, 1055, 1067, 1081, 1086]
+  | false, true => [1, 2, 6, 11, 16, 31, 36, 41, 46, 47, 51, 56, 61, 300, 286, 293, 1045, 1054, 1065, 1076, 1092, 1106, 1111]
   | true, false => [1, 2, 3, 4, 11, 12, 42, 49, 44, 51, 123, 124, 125, 126, 133, 134, 164, 171, 166, 173, 327, 245, 246]
   | true, true => [34, 41, 36, 43, 10, 11, 1, 2, 3, 4, 152, 159, 154, 161, 120, 121, 111, 112, 113, 114, 312, 229, 230]
 
@@ -68984,18 +68982,18 @@ theorem tick_closed (e : Nat) (hi : e < 511) :
   omega
 
 def tcV : Pieces Nat where
-  enter _ := 20
-  enterInv _ := 20
+  enter _ := 18
+  enterInv _ := 18
   leave j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+193 else toffoliCount (leaveMoveP j)
   leaveInv j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+192 else toffoliCount (leaveMoveInvP j)
   load _ d := if d then 78 else 77
-  restore _ d := if d then 86 else 86
+  restore _ d := if d then 85 else 85
   portal t := if portalTick t then 5*wpP t-4 else toffoliCount (portalP t)
   portalInv t := if portalTick t then 5*wpP t-4 else toffoliCount (portalInvP t)
   park _ := 0
   parkInv _ := 0
   exitLoad _ d := if d then 78 else 77
-  exitRestore _ d := if d then 86 else 86
+  exitRestore _ d := if d then 85 else 85
   routed j a n := if a+n ≤ 15 then n*(2*(smallBits j+18)) else toffoliCount (StairPacket.routed j a n)
   unrouted j a n := if a+n ≤ 15 then n*(2*(smallBits j+18)) else toffoliCount (StairPacket.unrouted j a n)
   pack d s t := if dueTick t then 9 else toffoliCount (renameProgram (OB5.sig s) (Rolling1588.packAtTick d t))
@@ -69149,8 +69147,8 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
 
 /-- The window 90..360 (exit 375): window counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=113949 ∧ toffoliCount (forwardW params false first rest)=113928 ∧
-    toffoliCount (reverseW params true first rest)=114140 ∧ toffoliCount (reverseW params false first rest)=114140 ∧
+    toffoliCount (forwardW params true first rest)=113907 ∧ toffoliCount (forwardW params false first rest)=113886 ∧
+    toffoliCount (reverseW params true first rest)=114077 ∧ toffoliCount (reverseW params false first rest)=114077 ∧
     measurementCount (forwardW params true first rest)=57219 ∧ measurementCount (forwardW params false first rest)=57219 ∧
     measurementCount (reverseW params true first rest)=56943 ∧ measurementCount (reverseW params false first rest)=56943 := by
   rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
@@ -69159,13 +69157,13 @@ theorem ship_counts :
 
 /-- The window sizes (blocks 1..19, exit 375), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=113949 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=113907 := by
   rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=113928 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=113886 := by
   rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=114140 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=114077 := by
   rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=114140 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=114077 := by
   rw [(counts false first rest).2.1]; decide +kernel
 theorem ship_measureF : measurementCount (forwardW params true first rest)=57219 ∧
     measurementCount (forwardW params false first rest)=57219 := by
