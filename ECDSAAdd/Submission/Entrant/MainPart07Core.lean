@@ -2873,25 +2873,6 @@ theorem logicalM (k : Nat) : wires (logicalEntry k)⊆OB5Support.logicalSites :=
   obtain ⟨j,rfl,hj⟩ := merged_labels k q hq
   exact sw_logical _ (rhoN_range j hj)
 
-theorem sw_avoid (j : Nat)
-    (hj : j < 515 ∨ (770 ≤ j ∧ j < 1285) ∨ (1540 ≤ j ∧ j < 1798) ∨
-      j=721 ∨ j=722 ∨ j=2400) :
-    sw (rhoN j)∉[2312,766,765,767,1026,1541,1542,1797,768,718,719] := by
-  have range:=rhoN_range j hj
-  generalize rhoN j=i at range ⊢
-  simp only [List.mem_cons,List.not_mem_nil,or_false]
-  unfold Rng at range
-  unfold sw
-  split_ifs <;> omega
-
-theorem merged_omits (k i : Nat)
-    (hi : i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719]) :
-    base i∉wires (logicalEntry k) := by
-  intro h
-  obtain ⟨j,e,hj⟩ := merged_labels k (base i) h
-  have eq := base_injective e
-  exact sw_avoid j hj (eq ▸ hi)
-
 theorem entryM_counts (L : ControlledPointLayout) (k : Fp) :
     toffoliCount (entryM L k)=1022 ∧ measurementCount (entryM L k)=1027 := by
   have r := renameProgram_counts (pmapR L) (E1AffineEndpoints52Research.Forward.merged base (base 2400) k.val)
@@ -5109,19 +5090,6 @@ theorem entryR_sites (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
   have h := OB5Support.placed_support_logical L hw _ hlog
   simpa only [entryR,renameProgram_comp,pmapR,pmap,Function.comp_def] using h
 
-/-- Both the ordinary and reflected E1 programs have the same support envelope. -/
-theorem logicalR_omits (k i : Nat)
-    (hi : i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719]) :
-    base i∉wires (renameProgram sig (renameProgram rho
-      (E1Reflected.merged base (base 2400) k))) := by
-  intro h
-  simp only [renameProgram_support,Finset.mem_image] at h
-  obtain ⟨a,⟨b,hb,rfl⟩,eq⟩ := h
-  obtain ⟨j,rfl,hj⟩ := S_cases b (mergedR_S k hb)
-  rw [rho_base,sig_base] at eq
-  have e := base_injective eq
-  exact sw_avoid j hj (e.symm ▸ hi)
-
 end ECDSAAdd.Entrant.E1ReflectedPlacement
 end -- original module boundary
 
@@ -5520,121 +5488,6 @@ theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
       E1ReflectedPlacement.entryR_physical L hw hn (correction cx)⟩
   intro i hi
   exact full i (instructions_subset L cx cy hi)
-
-private def logicalTarget (i : Nat) : Nat :=
-  if i=1800 then 2312 else if i=770 then 1026 else if i=1285 then 1541 else
-    if i=1286 then 1542 else if i=769 then 1797 else i
-
-private theorem target_facts (L : ControlledPointLayout) (i : Nat)
-    (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    wireFn2 L (base (logicalTarget i))=L.core.poolWire i ∧
-    base (logicalTarget i)∈OB5Support.logicalSites ∧
-    logicalTarget i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719] := by
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
-  rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
-  all_goals refine ⟨rfl,?_,by decide⟩
-  all_goals
-    apply List.mem_toFinset.mpr
-    apply List.mem_map.mpr
-    refine ⟨_,?_,rfl⟩
-    simp only [logicalTarget,OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
-      List.mem_cons,List.not_mem_nil,or_false]
-    norm_num
-
-private theorem placed_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (P : Program) (support : wires P⊆OB5Support.logicalSites) (i : Nat)
-    (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719])
-    (free : base (logicalTarget i)∉wires P) :
-    L.core.poolWire i∉wires (renameProgram (wireFn2 L) P) := by
-  obtain ⟨map,logical,_⟩:=target_facts L i hi
-  rw [renameProgram_support]
-  intro used
-  obtain ⟨q,hq,eq⟩:=Finset.mem_image.mp used
-  have same : wireFn2 L q=wireFn2 L (base (logicalTarget i)):=eq.trans map.symm
-  have back:=(placement2 L hw hn).injectiveOnSlots q
-    (ArithmeticOB5.logical_sub_old (support hq)) (base (logicalTarget i))
-    (ArithmeticOB5.logical_sub_old logical) same
-  exact free (back ▸ hq)
-
-private theorem entry_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (k : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    L.core.poolWire i∉wires (E1QubitPlacement.entryM L k) := by
-  rw [E1QubitPlacement.entryM_eq]
-  exact placed_free L hw hn _ (E1QubitPlacement.logicalM k.val) i hi
-    (E1QubitPlacement.merged_omits k.val _ (target_facts L i hi).2.2)
-
-private theorem reflected_logical (k : Nat) :
-    wires (renameProgram E1QubitPlacement.sig (renameProgram E1QubitPlacement.rho
-      (E1Reflected.merged base (base 2400) k)))⊆OB5Support.logicalSites := by
-  intro q hq
-  simp only [renameProgram_support,Finset.mem_image] at hq
-  obtain ⟨a,⟨b,hb,rfl⟩,rfl⟩:=hq
-  obtain ⟨j,rfl,hj⟩:=E1QubitPlacement.S_cases b (E1ReflectedPlacement.mergedR_S k hb)
-  rw [E1QubitPlacement.rho_base,E1QubitPlacement.sig_base]
-  exact E1QubitPlacement.sw_logical _ (E1QubitPlacement.rhoN_range j hj)
-
-private theorem reflected_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (k : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    L.core.poolWire i∉wires (E1ReflectedPlacement.entryR L k) := by
-  have h:=placed_free L hw hn _ (reflected_logical k.val) i hi
-    (E1ReflectedPlacement.logicalR_omits k.val _ (target_facts L i hi).2.2)
-  simpa only [E1ReflectedPlacement.entryR,renameProgram_comp,E1QubitPlacement.pmapR,
-    E1QubitPlacement.pmap,Function.comp_def] using h
-
-private theorem kernel_free (entrySide : Bool) (i : Nat)
-    (hi : i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719]) :
-    base i∉wires (if entrySide then Rolling1588.entryKernel else Rolling1588.exitKernel) := by
-  by_cases a : i=768
-  · subst i;cases entrySide
-    · exact Rolling1588.exitKernel_768_free
-    · exact Rolling1588.entryKernel_768_free
-  by_cases b : i=718
-  · subst i;cases entrySide
-    · exact Rolling1588.exitKernel_718_free
-    · exact Rolling1588.entryKernel_718_free
-  by_cases c : i=719
-  · subst i;cases entrySide
-    · exact Rolling1588.exitKernel_719_free
-    · exact Rolling1588.entryKernel_719_free
-  have old : i∈logicalOmissions := by
-    simp only [logicalOmissions,List.mem_cons,List.not_mem_nil,or_false] at hi ⊢
-    itauto
-  cases entrySide
-  · exact Rolling1588.exitKernel_free i old
-  · exact Rolling1588.entryKernel_free i old
-
-theorem baseline_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    L.core.poolWire i∉wires (baselineGeneric L cx cy) := by
-  have bounds : 515≤ i ∧ i<2613 := by
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hi;omega
-  have en:=placed_free L hw hn _ Rolling1588.entryKernel_support i hi
-    (kernel_free true _ (target_facts L i hi).2.2)
-  have ex:=placed_free L hw hn _ Rolling1588.exitKernel_support i hi
-    (kernel_free false _ (target_facts L i hi).2.2)
-  have sq : L.core.poolWire i∉wires (SquareCarryLoan719BF.program L) := by
-    by_cases h : i=719
-    · subst i;exact SquareCarryLoan719BF.retired_free719 L hw hn
-    · apply SquareCarryLoan719BF.square_free L hw hn i
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hi ⊢;tauto
-  apply ControlLoan1589BFFinal.Offset.generic_free L hw hn
-    (division Rolling1588.entryKernel L) (SquareCarryLoan719BF.program L)
-    (FrontierEntry1591Callers.exit Rolling1588.exitKernel L) i bounds _ sq ex cx cy
-  intro k
-  have constant:=ExitGenericQ5.constant_ports_avoid_large L hw hn i bounds L.point.y (Or.inr rfl)
-  simp only [division,FrontierEntry1591Callers.entry,wires_append,Finset.mem_union,not_or]
-  exact ⟨fun used=>constant (fusedY_support L hw k used),en⟩
-
-theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    L.core.poolWire i∉wires (generic L cx cy) := by
-  intro used
-  have member:=support_envelope L cx cy used
-  simp only [Finset.mem_union] at member
-  rcases member with (old|ordinary)|reflected
-  · exact baseline_free L hw hn cx cy i hi old
-  · exact entry_free L hw hn (-cx) i hi ordinary
-  · exact reflected_free L hw hn (correction cx) i hi reflected
 
 theorem generic_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (generic L cx cy)+759=toffoliCount (baselineGeneric L cx cy) ∧
@@ -8128,54 +7981,6 @@ def forward (i : Nat) : Nat → Program
 
 
 
-def count (i : Nat) : Nat → Nat
-  | 0 => 0
-  | n+1 => due i+count (i+1) n
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                                                                        
-                                 
-                                       
-                
-                                                                        
-                                                                                         
-                                                                          
-                                                          
-                                           
-                                   
-
-
 end ECDSAAdd.Entrant.TickRanges
 end
 
@@ -8831,81 +8636,6 @@ theorem releasedA507 : base 513 ∈ (W.compactSkywalkSignPoolA base 507).release
 
 attribute [local irreducible] run W.compactSkywalkStageVirtual SkywalkTrace.next Nat.iterate
   W.compactSkywalkTick History5.encodePrefix
-
-theorem raw507 (x : Nat) (hx0 : 0<x) (hx : x<p) (raw : State)
-    (hraw : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 507 raw.basis) :
-    ∃ g s : Bool, ∃ uv∈pairs, ∀ q∈sites, raw.basis q = pre507 g s uv.1 uv.2 q := by
-  have hp0 : 0<p := by norm_num [p]
-  have hpo : p%2=1 := by norm_num [p]
-  have hp : p<2^256 := by norm_num [p]
-  have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
-  have fields := (W.compactSkywalkStage_fields_iff base _ 507 (by omega) base_pool_nodup raw.basis).mp hraw
-  obtain ⟨readA, readB, prev, -, future, carry, -, cleanA, -⟩ := fields
-  obtain ⟨G, S, encoded⟩ := SkywalkTrace.iter_encoded 507 false false (SkywalkNat.init x p) hp0 hpo
-  have sum := W.iter_sum_width x p 507 hp0 hx0 hpo hp hx cop (by omega)
-  have valid := SkywalkNat.iter_valid 507 (SkywalkNat.init x p) hp0 hpo
-  have term := (SkywalkNat.terminates_511 p x hp0 hx0 hpo hp hx cop).1
-  have split : SkywalkNat.step^[511] (SkywalkNat.init x p) =
-      SkywalkNat.step^[4] (SkywalkNat.step^[507] (SkywalkNat.init x p)) := by
-    rw [← Function.iterate_add_apply]
-  rw [split] at term
-  change (SkywalkNat.step^[507] (SkywalkNat.init x p)).u+
-    (SkywalkNat.step^[507] (SkywalkNat.init x p)).v ≤ 2^(511-507) at sum
-  change SkywalkTrace.next^[507] (SkywalkRails.encode false false (x : Int) (p : Int)) =
-    SkywalkRails.encode G S ((SkywalkNat.step^[507] (SkywalkNat.init x p)).u : Int)
-      ((SkywalkNat.step^[507] (SkywalkNat.init x p)).v : Int) at encoded
-  generalize SkywalkNat.step^[507] (SkywalkNat.init x p) = z at encoded sum valid term
-  have sixteen : (2:Nat)^(511-507) = 16 := by norm_num
-  rw [sixteen] at sum
-  have mem := pairs_of z sum valid.1 valid.2.1 (valid.2.2.trans cop) term
-  rw [encoded, retainedA507] at readA
-  rw [encoded, retainedB507] at readB
-  rw [encoded] at prev
-  have bA := signed6_cases _ _ _ _ _ _ raw.basis _ readA
-  have bB := signed6_cases _ _ _ _ _ _ raw.basis _ readB
-  have f7 := future 507 (le_refl _) (by omega)
-  have f8 := future 508 (by omega) (by omega)
-  have f9 := future 509 (by omega) (by omega)
-  have f10 := future 510 (by omega) (by omega)
-  have c1540 : raw.basis (base 1540) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1540, by simp, rfl⟩)
-  have c1541 : raw.basis (base 1541) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1541, by simp, rfl⟩)
-  have c1542 : raw.basis (base 1542) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1542, by simp, rfl⟩)
-  have c1543 : raw.basis (base 1543) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1543, by simp, rfl⟩)
-  have c513 : raw.basis (base 513) = false := cleanA _ releasedA507
-  have prev' : raw.basis (base 506) = G := by
-    have h : skywalkPoolPreviousId 507 = 506 := rfl
-    rw [h] at prev
-    cases G <;> simpa [SkywalkRails.encode] using prev
-  refine ⟨G,S,_,mem,?_⟩
-  intro q hq
-  simp only [sites,List.mem_cons,List.not_mem_nil,or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact prev'
-  · simpa [pre507] using bA.1
-  · exact bA.2.1
-  · exact bA.2.2.1
-  · exact bA.2.2.2.1
-  · exact bA.2.2.2.2.1
-  · exact bA.2.2.2.2.2
-  · exact c513
-  · simpa [pre507] using bB.1
-  · exact bB.2.1
-  · exact bB.2.2.1
-  · exact bB.2.2.2.1
-  · exact bB.2.2.2.2.1
-  · exact bB.2.2.2.2.2
-  · exact f7.2
-  · exact f8.2
-  · exact f9.2
-  · exact f10.2
-  · exact c1540
-  · exact c1541
-  · exact c1542
-  · exact c1543
 
 end ECDSAAdd.Entrant.MorningFour
 
