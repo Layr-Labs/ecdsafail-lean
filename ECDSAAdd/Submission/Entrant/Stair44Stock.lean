@@ -72009,7 +72009,7 @@ The 15-tick block and the archive's public representation are shared with the st
 namespace ECDSAAdd.Entrant.StairPacket.Shadow7
 open Arithmetic MappedCompressed GateMirror Partial StairArchiveGates
 
-def sbP (s : Nat) : Nat := (498-s)/2
+def sbP (s : Nat) : Nat := (498 - s - (1 - (91 - s) - s / 390))/2
 
 def smallBits (j : Fin 24) := Shadow7.sbP (start j)
 
@@ -72790,62 +72790,92 @@ def EndSmall (b : Nat) (z : SkywalkNat.State) : Prop :=
 
 namespace Envelope
 
-theorem small_of_far (b : Nat) (z : SkywalkNat.State)
-    (prod : z.u*z.v < 32768 * (2^b * 2^b))
-    (far : Shadow.far b 15 z) : min z.u z.v < 2^b := by
-  have positive : 0 < Shadow.limb b 15 := by unfold Shadow.limb; positivity
-  have hf := (Nat.le_div_iff_mul_le positive).mp far
-  have he : Shadow.limb b 15 = 65536*2^b := by
-    unfold Shadow.limb
-    rw [show b+15+1 = 16+b by omega, pow_add]
-    rfl
-  rw [he] at hf
-  by_contra! large
-  have hu := le_trans large (min_le_left z.u z.v)
-  have hv := le_trans large (min_le_right z.u z.v)
-  have hlarge : 32768*2^b ≤ z.u ∨ 32768*2^b ≤ z.v := by omega
-  rcases hlarge with h | h
-  · have q := Nat.mul_le_mul h hv
-    have e : 32768*2^b*2^b = 32768*(2^b*2^b) := Nat.mul_assoc _ _ _
-    omega
-  · have q := Nat.mul_le_mul hu h
-    have e : 2^b*(32768*2^b) = 32768*(2^b*2^b) := by ring
+private theorem half_lt {u n : Nat} (h : u < 2^n) : u/2 < 2^(n-1) := by
+  rcases n with _ | n
+  · have z : u = 0 := by simpa using h
+    subst z
+    simp
+  · have e : 2^(n+1) = 2*2^n := by rw [pow_succ]; ring
+    rw [e] at h
+    rw [Nat.add_sub_cancel]
     omega
 
-theorem endpoint_small (b : Nat) (z : SkywalkNat.State)
-    (prod : z.u*z.v < 32768 * (2^b * 2^b)) :
-    let e := step^[15] z
-    min e.u e.v < 2^b := by
-  dsimp only
-  have contracted := iter_product_bound 15 z
-  change 32768 * ((step^[15] z).u * (step^[15] z).v) ≤ z.u*z.v at contracted
-  by_contra! large
-  have hu := le_trans large (min_le_left _ _)
-  have hv := le_trans large (min_le_right _ _)
-  have both := Nat.mul_le_mul hu hv
-  omega
+/-- One tick halves one of the two bounds. -/
+theorem budget_step (z : SkywalkNat.State) (a b : Nat) (hu : z.u < 2^(256-a)) (hv : z.v < 2^(256-b)) :
+    ((step z).u < 2^(256-(a+1)) ∧ (step z).v < 2^(256-b)) ∨
+    ((step z).u < 2^(256-(b+1)) ∧ (step z).v < 2^(256-a)) := by
+  have e1 : 256-(a+1) = (256-a)-1 := by omega
+  have e2 : 256-(b+1) = (256-b)-1 := by omega
+  have ha := half_lt hu
+  have hb := half_lt hv
+  rw [← e1] at ha
+  rw [← e2] at hb
+  by_cases h0 : z.u = 0
+  · left
+    have s : step z = z := by simp [step, h0]
+    rw [s, h0]
+    exact ⟨Nat.two_pow_pos _, hv⟩
+  · by_cases he : z.u % 2 = 0
+    · left
+      have s : step z = ⟨z.u/2, z.v⟩ := by simp [step, h0, he]
+      rw [s]
+      exact ⟨ha, hv⟩
+    · by_cases hle : z.v ≤ z.u
+      · left
+        have s : step z = ⟨(z.u-z.v)/2, z.v⟩ := by simp [step, h0, he, hle]
+        rw [s]
+        exact ⟨lt_of_le_of_lt (Nat.div_le_div_right (Nat.sub_le _ _)) ha, hv⟩
+      · right
+        have s : step z = ⟨(z.v-z.u)/2, z.u⟩ := by simp [step, h0, he, hle]
+        rw [s]
+        exact ⟨lt_of_le_of_lt (Nat.div_le_div_right (Nat.sub_le _ _)) hb, hu⟩
+
+/-- After `t` ticks the two words obey `u < 2^(256-a)`, `v < 2^(256-b)` with `a+b = t`. -/
+theorem budget (x p : Nat) (hx : x < 2^256) (hp : p < 2^256) (t : Nat) :
+    ∃ a b, a + b = t ∧ (step^[t] (init x p)).u < 2^(256-a) ∧ (step^[t] (init x p)).v < 2^(256-b) := by
+  induction t with
+  | zero => exact ⟨0, 0, rfl, hx, hp⟩
+  | succ t ih =>
+    obtain ⟨a, b, hab, hu, hv⟩ := ih
+    rw [Function.iterate_succ_apply']
+    rcases budget_step _ a b hu hv with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact ⟨a+1, b, by omega, h1, h2⟩
+    · exact ⟨b+1, a, by omega, h1, h2⟩
+
+theorem min_lt (x p : Nat) (hx : x < 2^256) (hp : p < 2^256) (t : Nat) :
+    min (step^[t] (init x p)).u (step^[t] (init x p)).v < 2^(256-(t+1)/2) := by
+  obtain ⟨a, b, hab, hu, hv⟩ := budget x p hx hp t
+  by_cases h : a ≤ b
+  · exact lt_of_le_of_lt (min_le_right _ _)
+      (lt_of_lt_of_le hv (Nat.pow_le_pow_right (by decide) (by omega)))
+  · exact lt_of_le_of_lt (min_le_left _ _)
+      (lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega)))
 
 theorem inputs_through (x p t : Nat) (hx : x < 2^256) (hp : p < 2^256) (ht : t ≤ 512) :
     let b := sbP t
     let z := step^[t] (init x p)
     SmallIfFar b 15 z ∧ EndSmall b z := by
-  let z := step^[t] (init x p)
-  have strict : x*p < 2^512 := by
-    rw [show (512:Nat)=256+256 by decide, pow_add]
-    exact lt_of_le_of_lt (Nat.mul_le_mul_right _ hx.le) (Nat.mul_lt_mul_of_pos_left hp (by positivity))
-  have h := iter_product_bound t (init x p)
-  change 2^t*(z.u*z.v) ≤ x*p at h
-  have stepBound : z.u*z.v < 2^(512-t) := by
-    have e : (2:Nat)^512 = 2^t*2^(512-t) := by rw [← pow_add]; congr 1; omega
-    rw [e] at strict
-    exact Nat.lt_of_mul_lt_mul_left (lt_of_le_of_lt h strict)
-  have envelope : 512 - t ≤ sbP t + sbP t + 15 := by unfold sbP; omega
-  have power := Nat.pow_le_pow_right (by decide : 0 < 2) envelope
-  have e : 2^(sbP t + sbP t + 15) = 32768*(2^(sbP t)*2^(sbP t)) := by
-    rw [pow_add, pow_add, Nat.mul_comm]
-    rfl
-  have prod := lt_of_lt_of_le stepBound (power.trans_eq e)
-  exact ⟨small_of_far _ _ prod, endpoint_small _ _ prod⟩
+  intro b z
+  have hb : b = (498 - t - (1 - (91 - t) - t / 390))/2 := rfl
+  refine ⟨?_, ?_⟩
+  · intro hfar
+    have pos : 0 < Shadow.limb b 15 := by unfold Shadow.limb; exact Nat.two_pow_pos _
+    have hf := (Nat.le_div_iff_mul_le pos).mp hfar
+    have he : Shadow.limb b 15 = 2^(b+16) := by unfold Shadow.limb; rfl
+    rw [he] at hf
+    obtain ⟨a, c, hac, hu, hv⟩ := budget x p hx hp t
+    have hbig : 2^(b+16) ≤ z.u ∨ 2^(b+16) ≤ z.v := by omega
+    rcases hbig with h | h
+    · have ex : b+16 < 256-a := (Nat.pow_lt_pow_iff_right (by decide)).mp (lt_of_le_of_lt h hu)
+      exact lt_of_le_of_lt (min_le_right _ _)
+        (lt_of_lt_of_le hv (Nat.pow_le_pow_right (by decide) (by omega)))
+    · have ex : b+16 < 256-c := (Nat.pow_lt_pow_iff_right (by decide)).mp (lt_of_le_of_lt h hv)
+      exact lt_of_le_of_lt (min_le_left _ _)
+        (lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega)))
+  · have h := min_lt x p hx hp (15+t)
+    rw [Function.iterate_add_apply] at h
+    have e : 256 - (15+t+1)/2 ≤ b := by omega
+    exact lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) e)
 
 theorem inputs (x p t : Nat) (hx : x < 2^256) (hp : p < 2^256) (ht : t ≤ 420) :
     let b := sbP t
@@ -73722,8 +73752,8 @@ fact ranges over a long list, one `decide +kernel` over the 23 blocks where it o
 
 /-- Arithmetic frame of block `j`: `s = 75+15j`, `2h+s ∈ {512,513}`, `3 < Wp`, `Wp+h ≤ 242`. -/
 theorem frame (j : Fin 24) : start j=75+15*j.val ∧ j.val<24 ∧ 2*Shadow7.sbP (start j)+start j≤499 ∧
-    497≤2*Shadow7.sbP (start j)+start j ∧ 3<Shadow7.wpP (start j) ∧ Shadow7.wpP (start j)+Shadow7.sbP (start j)≤242 := by
-  have arith : ∀ k : Fin 24, 2*Shadow7.sbP (start k)+start k≤499 ∧ 497≤2*Shadow7.sbP (start k)+start k ∧
+    496≤2*Shadow7.sbP (start j)+start j ∧ 3<Shadow7.wpP (start j) ∧ Shadow7.wpP (start j)+Shadow7.sbP (start j)≤242 := by
+  have arith : ∀ k : Fin 24, 2*Shadow7.sbP (start k)+start k≤499 ∧ 496≤2*Shadow7.sbP (start k)+start k ∧
       3<Shadow7.wpP (start k) ∧ Shadow7.wpP (start k)+Shadow7.sbP (start k)≤242 := by decide +kernel
   exact ⟨rfl,j.isLt,arith j⟩
 
@@ -74512,7 +74542,7 @@ set_option linter.unnecessarySeqFocus false
 set_option linter.unreachableTactic false
 set_option linter.unusedTactic false
 theorem rail_facts (s : Nat) (h0 : 90 ≤ s) (h1 : s ≤ 405) :
-    sbP s + 54 ≤ railP s ∧ railP s ≤ 258 ∧ sbP s = (498 - s)/2 ∧ (s ≤ 255 ∨ railP s = 513 - s) := by
+    sbP s + 54 ≤ railP s ∧ railP s ≤ 258 ∧ sbP s = (498 - s - (1 - (91 - s) - s / 390))/2 ∧ (s ≤ 255 ∨ railP s = 513 - s) := by
   unfold railP sbP; split_ifs <;> omega
 
 theorem enter_proper (s : Nat) (h0 : 90 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ enterOps s, proper g = true := by
@@ -74528,7 +74558,7 @@ theorem enterP_physical (j : Fin 24) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 22) :
 theorem park_proper (e : Nat) (h0 : 90 ≤ e) (h1 : e ≤ 420) : ∀ g ∈ parkOps e, proper g = true := by
   have f1 : sbP e + 53 ≤ railP e := by unfold railP sbP; split_ifs <;> omega
   have f2 : railP e ≤ 258 := by unfold railP; split_ifs <;> omega
-  have f3 : sbP e = (498 - e)/2 := rfl
+  have f3 : sbP e = (498 - e - (1 - (91 - e) - e / 390))/2 := rfl
   have f4 : e ≤ 255 ∨ railP e = 513 - e := by unfold railP; split_ifs <;> omega
   have he : e0P e = 1574 + sbP e := rfl
   have hb : bTopP e = 785 + railP e := rfl
@@ -74700,17 +74730,17 @@ set_option linter.unusedSimpArgs false
 set_option linter.unnecessarySeqFocus false
 set_option linter.unreachableTactic false
 set_option linter.unusedTactic false
-/-- The window's rail and register facts at the Shadow7 widths (`sbP = (498-s)/2`): the stock statement with the
+/-- The window's rail and register facts at the Shadow7 widths (`sbP = (498-s)/2`, one lower at the even ticks 120..360): the stock statement with the
 constants moved by the seven-bit reduction (`61 ≤ sbP ≤ 211` -> `54 ≤ sbP ≤ 204`, `railP ≤ 2 sbP + 1` -> `+ 15`,
 `512 ≤ 2 sbP + s ≤ 513` -> `498 ≤ 2 sbP + s ≤ 499`, `sbP + 47 ≤ railP` -> `+ 54`, `sbP(s+15) + 50` -> `+ 57`). -/
 theorem rail_win {s : Nat} (h1 : 90 ≤ s) (h2 : s ≤ 405) :
-    railP s ≤ 258 ∧ sbP s + 54 ≤ railP s ∧ railP s ≤ 2 * sbP s + 16 ∧ 46 ≤ sbP s ∧ sbP s ≤ 204 ∧
+    railP s ≤ 258 ∧ sbP s + 54 ≤ railP s ∧ railP s ≤ 2 * sbP s + 17 ∧ 46 ≤ sbP s ∧ sbP s ≤ 204 ∧
     sbP (s+15) + 7 ≤ sbP s ∧ sbP s ≤ sbP (s+15) + 8 ∧ railP (s+15) ≤ railP s ∧
-    railP (s+15) ≤ 2 * sbP (s+15) + 16 ∧ sbP (s+15) + 53 ≤ railP (s+15) ∧
+    railP (s+15) ≤ 2 * sbP (s+15) + 17 ∧ sbP (s+15) + 53 ≤ railP (s+15) ∧
     wpP s + sbP s + 16 = railP s ∧ wpP (s+15) + sbP (s+15) + 16 = railP (s+15) ∧
     e0P s = 1574 + sbP s ∧ e0P (s+15) = 1574 + sbP (s+15) ∧ bTopP s = 785 + railP s ∧
     bTopP (s+15) = 785 + railP (s+15) ∧ a0P s = s + sbP s + 32 ∧ b0P s = 787 + sbP s ∧
-    lowsP s = 18 + sbP (s+15) - sbP s ∧ 2 * sbP s + s ≤ 499 ∧ 497 ≤ 2 * sbP s + s := by
+    lowsP s = 18 + sbP (s+15) - sbP s ∧ 2 * sbP s + s ≤ 499 ∧ 496 ≤ 2 * sbP s + s := by
   unfold wpP e0P bTopP a0P b0P lowsP railP sbP
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     (try split_ifs) <;> omega
@@ -75620,7 +75650,7 @@ set_option linter.unreachableTactic false
 set_option linter.unusedTactic false
 theorem portal_foot (t : Nat) (h0 : 90 ≤ t) (h1 : t ≤ 420) : AllW (footP t) (portalOps t) := by
   have f2 : railP t ≤ 258 := by unfold railP; split_ifs <;> omega
-  have f3 : sbP t = (498 - t)/2 := rfl
+  have f3 : sbP t = (498 - t - (1 - (91 - t) - t / 390))/2 := rfl
   have f4 : t ≤ 255 ∨ railP t = 513 - t := by unfold railP; split_ifs <;> omega
   have f1 : sbP t + 53 ≤ railP t := by unfold railP sbP; split_ifs <;> omega
   have hw : wpP t = railP t - sbP t - 16 := rfl
@@ -75707,7 +75737,7 @@ theorem portal_foot (t : Nat) (h0 : 90 ≤ t) (h1 : t ≤ 420) : AllW (footP t) 
 
 theorem park_foot (e : Nat) (h0 : 90 ≤ e) (h1 : e ≤ 420) : AllW (parkFootP e) (parkOps e) := by
   have f2 : railP e ≤ 258 := by unfold railP; split_ifs <;> omega
-  have f3 : sbP e = (498 - e)/2 := rfl
+  have f3 : sbP e = (498 - e - (1 - (91 - e) - e / 390))/2 := rfl
   have f4 : e ≤ 255 ∨ railP e = 513 - e := by unfold railP; split_ifs <;> omega
   have f1 : sbP e + 53 ≤ railP e := by unfold railP sbP; split_ifs <;> omega
   have he : e0P e = 1574 + sbP e := rfl
@@ -78262,8 +78292,8 @@ def ren (j : Fin 24) (q : Nat) : Nat :=
   else if q = 1717 then Shadow7.e0P (start j) + 7
   else q
 
-theorem geo (j : Fin 24) : Shadow7.a0P (start j) = start j + ((498 - start j) / 2) + 32 ∧
-    Shadow7.e0P (start j) = 1574 + ((498 - start j) / 2) ∧ start j = 75 + 15 * j.val := ⟨rfl, rfl, rfl⟩
+theorem geo (j : Fin 24) : Shadow7.a0P (start j) = start j + ((498 - start j - (1 - (91 - start j) - start j / 390)) / 2) + 32 ∧
+    Shadow7.e0P (start j) = 1574 + ((498 - start j - (1 - (91 - start j) - start j / 390)) / 2) ∧ start j = 75 + 15 * j.val := ⟨rfl, rfl, rfl⟩
 
 theorem ren_inj (j : Fin 24) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 22) : InjOn D (ren j) := by
   intro a b ha hb h
