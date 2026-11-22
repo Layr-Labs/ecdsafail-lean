@@ -2579,157 +2579,6 @@ attribute [local irreducible] BPatchedPaddedResearch.body ZeroSetDevelop.compile
 
 
 
-def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
- match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse _ => FullB99OptTemp.selectedBody K g
- | isTrue _ => if g=LowAccCarryDevelop.c then BPatchedPaddedResearch.body else FullB99OptTemp.selectedBody K g
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 end ECDSAAdd.Entrant.BPatchedSelectorResearch
 
 
@@ -4190,17 +4039,16 @@ theorem run_erased(s:State)(m:List Bool)
  (q0:s.basis 4757=false)(q1:s.basis 4758=false)(q2:s.basis 4759=false)
  (ci:s.basis 4760=false)(fl:s.basis 4762=false):
  run program m s=erase 4758 (run ReorderedBMiddlePatchesResearch.output m s):=by
- let t:=run a (m.take (measurementCount a)) s
  rcases BShortGhostFactsResearch.checked with ⟨ciA,_,_,flA,_,q2A,_,_,_,_,_,_,_,fbm,_,_,_⟩
- have tc:t.basis 4760=false:=(PairedWritesResearch.preserved 4760 a ciA s _).trans ci
- have tq1:t.basis 4758=false:=(PairedWritesResearch.preserved 4758 a B95FactsResearch.checked.2.2.2.1 s _).trans q1
- have tq2:t.basis 4759=false:=(PairedWritesResearch.preserved 4759 a q2A s _).trans q2
- have tf:t.basis 4762=false:=(PairedWritesResearch.preserved 4762 a flA s _).trans fl
- have eq:∀r,run fastWindow r t=run (exchange 4758 4762) [] (run b0 r t):=
-  fun r=>window_eq t r tc tq2 tq1 tf
+ have tc:(run a (m.take (measurementCount a)) s).basis 4760=false:=(PairedWritesResearch.preserved 4760 a ciA s _).trans ci
+ have tq1:(run a (m.take (measurementCount a)) s).basis 4758=false:=(PairedWritesResearch.preserved 4758 a B95FactsResearch.checked.2.2.2.1 s _).trans q1
+ have tq2:(run a (m.take (measurementCount a)) s).basis 4759=false:=(PairedWritesResearch.preserved 4759 a q2A s _).trans q2
+ have tf:(run a (m.take (measurementCount a)) s).basis 4762=false:=(PairedWritesResearch.preserved 4762 a flA s _).trans fl
+ have eq:∀r,run fastWindow r (run a (m.take (measurementCount a)) s)=run (exchange 4758 4762) [] (run b0 r (run a (m.take (measurementCount a)) s)):=
+  fun r=>window_eq (run a (m.take (measurementCount a)) s) r tc tq2 tq1 tf
  have off:4762∉wires b0:=fresh_fixed (Equiv.swap 4757 4760) (Equiv.swap 4757 4760).injective b 4762
   (by decide) (not_wire b 4762 fbm)
- have hz:∀r,(run b0 r t).basis 4762=false:=fun r=>(run_preserves_outside b0 r t 4762 off).trans tf
+ have hz:∀r,(run b0 r (run a (m.take (measurementCount a)) s)).basis 4762=false:=fun r=>(run_preserves_outside b0 r (run a (m.take (measurementCount a)) s) 4762 off).trans tf
  have h:=window_context a b0 fastWindow gap center suffix 4758 4762 (by decide)
   gap_fresh.1 gap_fresh.2 center_fresh suffix_fresh window_measurements s m eq hz
  have new_shape:program=a++fastWindow++(gap++center++suffix):=by simp only [program,List.append_assoc]
@@ -6809,11 +6657,6 @@ theorem LB_eq : LB = LBF := by
   unfold ControlledPointLayout.dialogStreamedSquareWide ControlledPointLayout.dialogStreamedSquare LBF
   rw [e1, e2, e3, e4, ex, ey, p2, p3, p4, p5, p6, p7, p8]
 
-theorem normFlag_eq : LB.core.normFlag = 4761 := by
-  rw [LB_eq]
-  rfl
-
-
 end K4DQ
 
 /-- One pass over `P`: does any instruction touch any wire of `hs`? -/
@@ -7847,39 +7690,6 @@ def suffixNC:Program:=A109LowEraseResearch.clear++A109Research.rawF++A109Researc
 
 def loopNC:Program:=SignAHead.head++suffixNC
 
-theorem loopNC_eq(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p)
- (s:State)(m:List Bool)(hf:SquareFrame L.core.out base O s.basis):
- run loopNC m s=run ncCore
-  (SignRetape.tape SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) m) s:=by
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hz:∀u∈pad,s.basis u=false:=by
-  intro u hu
-  have hu':u∈accZ L:=(FullPadDevelop.pad_sublist L).subset hu
-  rcases accZ_mem L u hu' with hu'|hu'
-  · exact (regValue_zero _ _).mp clean.pad u hu'
-  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu')
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue acc s.basis=0:=ghostAcc_zero L s.basis clean
- have h:∀a b:List Bool,run SignAHead.head a s=run (ReorderedAHead.head acc pad bank L.core.cin src) b s:=by
-  intro a b
-  exact ReorderedFrameUnique.program_eq acc s.basis 0 ((2^138-48*regValue src s.basis)%2^138) _ _
-   (SignAHead.frame s.basis hz hb clean.cin)
-   (ReorderedAHead.head_triple acc pad bank L.core.cin src lengths.1 (by decide) fits s.basis hz hb clean.cin)
-   s a b ⟨ha,fun _ _=>rfl⟩
- have eq:=SignRetape.replace SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) suffixNC s m h
- simpa only [loopNC,suffixNC,ncCore,A109Research.F,A109Research.head,List.append_assoc] using eq
-
-theorem loopNC_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loopNC
-  (SquareFrame L.core.out base
-   (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have e:=loopNC_eq base hc O hO s m hf
- have old:=ncCore_frame base hc hd O hO s
-  (SignRetape.tape SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) m) hf
- exact ReorderedAFixed.transport _ s _ _ e old
-
 end ECDSAAdd.Entrant.StairSqLoopA
 
 end
@@ -8017,21 +7827,6 @@ end counts
 
 section physical
 attribute [local irreducible] GatePhysical ECDSAAdd.wires
-
-theorem rawF_physical:GatePhysical A109Research.rawF:=by
- rw [A109Research.rawF,MixedLiteralAdderDevelop.read_add_eq]
- exact addInPlace_physical A109Research.xs A109Research.ys A109Research.cs ReorderedBPrefixResearch.cin
-  A109Research.raw_nd
-
-theorem I_physical:GatePhysical A109Research.I:=by
- simp only [A109Research.I,A109Research.rawI,ReorderedConsumedSub.plain,gatePhysical_append]
- exact ⟨A109Research.endpoint_physical.2.2.1,⟨⟨notRegister_physical _,rawF_physical⟩,notRegister_physical _⟩⟩
-
-theorem loopNC_physical:GatePhysical loopNC:=by
- simp only [loopNC,suffixNC,gatePhysical_append]
- exact ⟨SignAHeadResources.physical,⟨⟨⟨⟨⟨⟨A109LowEraseResearch.physical,rawF_physical⟩,
-  A109Research.endpoint_physical.2.1⟩,AAliasesResearch.physical⟩,I_physical⟩,A109LowEraseResearch.physical⟩,
-  A109Research.endpoint_physical.2.2.2⟩⟩
 
 end physical
 
@@ -8806,37 +8601,6 @@ theorem loopA_slots(hl:List Wire):Challenge.gateSlots (loopA hl)=Challenge.gateS
 theorem loopA_physical(hl:List Wire):GatePhysical (loopA hl):=
  StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
 
-/-- Coarse support (the `aSupport` shape of `fastCore_correct`, through `KnownProgramActual.a_coarse`). -/
-theorem loopA_coarse(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset:=
- (loopA_support hl hsub).trans KnownProgramActual.a_coarse
-
-
-theorem loopA_coarse44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset:=
- (loopA_support44 hl hsub).trans KnownProgramActual.a_coarse
-
-/-- Fine support (through `KnownProgramActual.a_fine`). -/
-theorem loopA_fine(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopA hl)⊆insert ReorderedAFixed.d
-  (wires (InverseCarryDevelop.hostedADual ReorderedAFixed.L
-   (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)):=
- (loopA_support hl hsub).trans KnownProgramActual.a_fine
-
-
-theorem loopA_fine44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopA hl)⊆insert ReorderedAFixed.d
-  (wires (InverseCarryDevelop.hostedADual ReorderedAFixed.L
-   (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)):=
- (loopA_support44 hl hsub).trans KnownProgramActual.a_fine
-
-theorem loopA_eU_free(hl:List Wire)(hsub:hl.Sublist holes):ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (loopA hl):=
- fun h=>KnownProgramActual.a_body_eU_free (loopA_support hl hsub h)
-
-
-theorem loopA_eU_free44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (loopA hl):=
- fun h=>KnownProgramActual.a_body_eU_free (loopA_support44 hl hsub h)
-
 end ECDSAAdd.Entrant.StairSqLoopA
 
 end
@@ -8878,39 +8642,6 @@ theorem touchedAny_spec (P : Program) (hs : List Wire) (h : touchedAny P hs=fals
 walked `List.range' 4115 5699` per hole; `K4DE.LB_eq` rewrites `LB` into the same layout with `List.range'`
 fields (proved symbolically) so the scans below evaluate short intervals instead of pool slices. -/
 namespace K4DE
-
-
-
-
-
-theorem LB_eq : LB = LBF := by
-  have hp : Baselines.layout.dialogPool = List.range' 4115 2613 := List.take_range'_of_length_ge (by decide)
-  have e1 : Baselines.layout.dialogPool.take 258 = List.range' 4115 258 := by
-    rw [hp]; exact List.take_range'_of_length_ge (by decide)
-  have e2 : (Baselines.layout.dialogPool.drop 258).take 128 = List.range' 4373 128 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  have e3 : (Baselines.layout.dialogPool.drop 386).take 256 = List.range' 4501 256 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  have e4 : (Baselines.layout.dialogPool.drop 649).take 126 = List.range' 4764 126 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  have ex : Baselines.layout.point.x = List.range' 2 256 := mr 2 256
-  have ey : Baselines.layout.point.y = List.range' 258 256 := mr 258 256
-  have p2 : Baselines.layout.core.poolWire 642 = 4757 := pw_lt 642 (by decide)
-  have p3 : Baselines.layout.core.poolWire 643 = 4758 := pw_lt 643 (by decide)
-  have p4 : Baselines.layout.core.poolWire 644 = 4759 := pw_lt 644 (by decide)
-  have p5 : Baselines.layout.core.poolWire 645 = 4760 := pw_lt 645 (by decide)
-  have p6 : Baselines.layout.core.poolWire 646 = 4761 := pw_lt 646 (by decide)
-  have p7 : Baselines.layout.core.poolWire 647 = 4762 := pw_lt 647 (by decide)
-  have p8 : Baselines.layout.core.poolWire 648 = 4763 := pw_lt 648 (by decide)
-  show Baselines.layout.dialogStreamedSquareWide = LBF
-  unfold ControlledPointLayout.dialogStreamedSquareWide ControlledPointLayout.dialogStreamedSquare LBF
-  rw [e1, e2, e3, e4, ex, ey, p2, p3, p4, p5, p6, p7, p8]
-
-
-
-
-
-
 
 
 
@@ -9709,36 +9440,6 @@ def suffixNC:Program:=C105LowEraseResearch.clear++C105Research.rawF++C105Researc
 
 def loopNC:Program:=SignCHead.head++suffixNC
 
-theorem loopNC_eq(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p)
- (s:State)(m:List Bool)(hf:SquareFrame L.core.out base O s.basis):
- run loopNC m s=run ncCore
-  (SignRetape.tape SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) m) s:=by
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hz:∀u∈pad,s.basis u=false:=fun u hu=>
-  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue ga s.basis=0:=ghostAcc_zero L s.basis clean
- have h:∀a b:List Bool,run SignCHead.head a s=run (ReorderedCHead.head ga pad bank L.core.cin src) b s:=by
-  intro a b
-  exact ReorderedFrameUnique.program_eq ga s.basis 0 ((2^140-48*regValue src s.basis)%2^140) _ _
-   (SignCHead.frame s.basis hz hb clean.cin)
-   (ReorderedCHead.head_triple ga pad bank L.core.cin src lengths.1 (by decide) fits s.basis hz hb clean.cin)
-   s a b ⟨ha,fun _ _=>rfl⟩
- have eq:=SignRetape.replace SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) suffixNC s m h
- simpa only [loopNC,suffixNC,ncCore,C105Research.F,C105Research.head,List.append_assoc] using eq
-
-theorem loopNC_frame(base:BasisState)(hc:L.PairClean base)(hp:base C163Low4Middle.p=false)(hd:base d=false)
- (O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loopNC
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have e:=loopNC_eq base hc O hO s m hf
- have old:=ncCore_frame base hc hp hd O hO s
-  (SignRetape.tape SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) m) hf
- exact ReorderedCFixed.transport _ s _ _ e old
-
 end ECDSAAdd.Entrant.StairSqLoopC
 
 end
@@ -9759,28 +9460,6 @@ theorem clear_wires:wires C105LowEraseResearch.clear=([4243,4505,4244,4506,4245,
  ext q
  simp [C105LowEraseResearch.clear,wires,Instr.wires,correctionWires]
  tauto
-
-theorem loopNC_off(h:Wire)(hh:h∈ReorderedCFixed.hosts):h∉wires loopNC:=by
- have hA:h∈C105Research.hosts:=by
-  simp only [C105Research.hosts,List.mem_append]
-  exact Or.inl hh
- have op:=off_plain h hh
- have hb:=op.1
- rw [ReorderedCBuild.plain_split ga pad bank L.core.cin src lengths.2.2.2] at hb
- simp only [wires_append,Finset.mem_union,not_or] at hb
- have headOff:h∉wires SignCHead.head:=fun bad=>hb.1.1 (SignCHeadSupport.support bad)
- have clearOff:h∉wires C105LowEraseResearch.clear:=by
-  rw [clear_wires]
-  intro bad
-  have sub:([4243,4505,4244,4506,4245,4507]:List Wire)⊆C105Research.ports:=by decide
-  exact C105Research.old_away h hh (sub (List.mem_toFinset.mp bad))
- have ht:=op.2
- rw [ReorderedCUnbuild.plain_split ga pad bank L.core.cin src lengths.2.2.2] at ht
- simp only [wires_append,Finset.mem_union,not_or] at ht
- have tailOff:h∉wires C105Research.tail:=fun bad=>ht.2 bad
- simp only [loopNC,suffixNC,wires_append,Finset.mem_union,not_or,and_assoc]
- exact ⟨headOff,clearOff,C105Research.rawF_off h hA,C105Research.top_off h hA,C105Research.middle_fresh h hA,
-  C105Research.I_off h hA,clearOff,tailOff⟩
 
 end ECDSAAdd.Entrant.StairSqLoopC
 
@@ -9867,53 +9546,10 @@ end counts
 section physical
 attribute [local irreducible] GatePhysical ECDSAAdd.wires
 
-theorem rawF_physical:GatePhysical C105Research.rawF:=by
- rw [C105Research.rawF,MixedLiteralAdderDevelop.read_add_eq]
- exact addInPlace_physical C105Research.xs C105Research.ys C105Research.cs C105PrefixResearch.cin
-  C105Research.raw_nd
-
-theorem I_physical:GatePhysical C105Research.I:=by
- simp only [C105Research.I,C105Research.rawI,ReorderedConsumedSub.plain,gatePhysical_append]
- exact ⟨C105Research.endpoint_physical.2.1,⟨⟨notRegister_physical _,rawF_physical⟩,notRegister_physical _⟩⟩
-
-theorem loopNC_physical:GatePhysical loopNC:=by
- simp only [loopNC,suffixNC,gatePhysical_append]
- exact ⟨SignCHeadResources.physical,⟨⟨⟨⟨⟨⟨C105LowEraseResearch.physical,rawF_physical⟩,
-  C105Research.endpoint_physical.1⟩,CKAliasesResearch.physical⟩,I_physical⟩,C105LowEraseResearch.physical⟩,
-  C105Research.endpoint_physical.2.2⟩⟩
-
 end physical
 
 section support
 attribute [local irreducible] ECDSAAdd.wires
-
-theorem rawI_support:wires C105Research.rawI⊆C105Research.domain.toFinset:=by
- have ysSub:C105Research.ys.toFinset⊆C105Research.domain.toFinset:=by
-  intro w hw
-  apply List.mem_toFinset.mpr
-  have hy:w∈C105Research.ys:=List.mem_toFinset.mp hw
-  simp only [C105Research.domain,List.mem_cons,List.mem_append]
-  tauto
- simp only [C105Research.rawI,ReorderedConsumedSub.plain,wires_append,notRegister_wires]
- change (C105Research.ys.toFinset∪wires C105Research.rawF)∪C105Research.ys.toFinset⊆C105Research.domain.toFinset
- rw [C105Research.raw_wires]
- exact Finset.union_subset (Finset.union_subset ysSub (Finset.Subset.refl _)) ysSub
-
-theorem loopNC_support:wires loopNC⊆C105Research.S:=by
- have hh:wires SignCHead.head⊆C105Research.S:=by
-  apply Finset.Subset.trans ?_ C105Research.old_prefix_support
-  rw [C105Research.oldPrefix,wires_append]
-  exact Finset.subset_union_left
- have dom:C105Research.domain.toFinset⊆C105Research.S:=Finset.subset_union_left.trans C105Research.raw_domain_in
- have rf:wires C105Research.rawF⊆C105Research.S:=by
-  rw [C105Research.raw_wires]
-  exact dom
- have ii:wires C105Research.I⊆C105Research.S:=by
-  simp only [C105Research.I,wires_append]
-  exact Finset.union_subset C105Research.endpoint_support.2.1 (rawI_support.trans dom)
- simp only [loopNC,suffixNC,wires_append,Finset.union_subset_iff]
- exact ⟨hh,⟨⟨⟨⟨⟨⟨C105Research.clear_support,rf⟩,C105Research.endpoint_support.1⟩,C105Research.middle_support⟩,ii⟩,
-  C105Research.clear_support⟩,C105Research.endpoint_support.2.2⟩⟩
 
 end support
 
@@ -10591,34 +10227,6 @@ theorem loopC_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(bas
   · exact pairs_hostFree44 hl hsub
  exact ReorderedCFixed.transport _ s _ _ eq f
 
-/-- Same statement as `C105SignResearch.fold_frame`, for `loopC hl`. -/
-theorem loopC_fold_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)
- (hv:AccView L base (OwnDiagAll12Square.accCItem L))(hc:L.PairClean base)
- (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) (loopC hl)
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec else Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have f:=loopC_frame hl hsub base hc (spare_zero L hw base M pv) hd O hO s m hf
- have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
-  (C163Fold.payload_spec L base)
- exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (loopC hl) m s).basis) e) f.2⟩
-
-
-theorem loopC_fold_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)
- (hv:AccView L base (OwnDiagAll12Square.accCItem L))(hc:L.PairClean base)
- (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) (loopC hl)
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec else Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have f:=loopC_frame44 hl hsub base hc (spare_zero L hw base M pv) hd O hO s m hf
- have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
-  (C163Fold.payload_spec L base)
- exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (loopC hl) m s).basis) e) f.2⟩
-
 theorem loopC_avoids(hl:List Wire)(hsub:hl.Sublist holes):∀q∈hl,q∉wires (loopC hl):=by
  have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
  rw [pairs_fst] at h
@@ -10669,26 +10277,6 @@ theorem loopC_slots(hl:List Wire):Challenge.gateSlots (loopC hl)=Challenge.gateS
 
 theorem loopC_physical(hl:List Wire):GatePhysical (loopC hl):=
  StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
-
-/-- Coarse support (the `cSupport` shape of `fastCore_correct`, through `KnownProgramActual.c_body_coarse`). -/
-theorem loopC_coarse(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset:=
- (loopC_support hl hsub).trans KnownProgramActual.c_body_coarse
-
-
-theorem loopC_coarse44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset:=
- (loopC_support44 hl hsub).trans KnownProgramActual.c_body_coarse
-
-/-- Fine support (through `KnownProgramActual.c_body_fine`). -/
-theorem loopC_fine(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopC hl)⊆insert C163Low4Middle.d (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)):=
- (loopC_support hl hsub).trans KnownProgramActual.c_body_fine
-
-
-theorem loopC_fine44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopC hl)⊆insert C163Low4Middle.d (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)):=
- (loopC_support44 hl hsub).trans KnownProgramActual.c_body_fine
 
 end ECDSAAdd.Entrant.StairSqLoopC
 

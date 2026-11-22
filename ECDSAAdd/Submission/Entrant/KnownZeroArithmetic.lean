@@ -2995,54 +2995,6 @@ set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.wires specialChecked bankChecked
 abbrev hosts:=ReorderedCFixed.hosts
 
-theorem body_physical:GatePhysical ReorderedKnownC.body:=by
- have f6:=ReorderedAcc.fits_prefix ga pad bank L.core.cin 163 140 (Acc.earlyTerm src true 6)
-  (by decide) (fits _ (C163NarrowAcc.terms_mem src).2.2.1) (by decide) (by decide)
- have subP:=ReorderedPhysical.op (ga.take 140) pad bank L.core.cin 140 true (Acc.earlyTerm src true 6) f6
- have seedP:GatePhysical (Acc.seedOp ga pad 163 (Acc.earlyTerm src false 4)):=by
-  have nd:=Acc.fits_nodup ga pad bank L.core.cin 163 (Acc.earlyTerm src false 4)
-   (fits _ (C163NarrowAcc.terms_mem src).1)
-  exact copyRegister_physical none _ _
-   ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
- have topP:=Acc.op_prefix_physical ga pad bank L.core.cin 163 163 (Acc.earlyTerm src false 32)
-  (by decide) (fits _ (C163NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(ga.take 140).drop 10++bank.take 129)).Nodup:=by decide +kernel
- have cacheP:=ReorderedPhysical.cached 99 src ((ga.take 140).drop 10) (bank.take 129) hosts L.core.cin
-  (by decide) (by decide) (by decide) nd (by
-   intro h hh bad
-   exact ReorderedCFixed.host_geometry.2.2 h hh (by simp [List.mem_of_mem_take bad]))
- have buildP:GatePhysical (ReorderedCBuild.build 99 ga pad bank L.core.cin src hosts):=by
-  simp only [ReorderedCBuild.build,ReorderedCHead.head,C163Carry.buildPost,gatePhysical_append]
-  exact ⟨⟨⟨seedP,subP⟩,cacheP.1⟩,topP⟩
- have notP:=notRegister_physical ((ga.take 140).drop 10)
- have inverseP:GatePhysical (ReorderedConsumedSub.consumed 99 src ((ga.take 140).drop 10) (bank.take 129) hosts L.core.cin):=by
-  simp only [ReorderedConsumedSub.consumed,gatePhysical_append]
-  exact ⟨⟨notP,cacheP.2⟩,notP⟩
- have tailP:GatePhysical (ReorderedCTail.tail ga pad bank L.core.cin src):=by
-  apply KnownOutputAdder.program_physical (mappedRead (src++pad.take 4) false) (ReorderedKnownTail.desired src)
-   ((ga.take 140).drop 6) (bank.take 133) L.core.cin
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
- have oldInv:=C163SourceAdd.unbuild_physical ga pad bank L.core.cin src lengths.1 lengths.2.2.2 fits
- simp only [C163SourceAdd.unbuild,gatePhysical_append] at oldInv
- have preInv:GatePhysical (C163Carry.unbuildPre ga pad bank L.core.cin src):=oldInv.1.1.1
- have unbuildP:GatePhysical (ReorderedCUnbuild.unbuild 99 ga pad bank L.core.cin src hosts):=by
-  simp only [ReorderedCUnbuild.unbuild,ReorderedCUnbuild.after,gatePhysical_append]
-  exact ⟨⟨preInv,inverseP⟩,⟨tailP,seedP⟩⟩
- have old:=C163Low4Middle.body_physical
- simp only [C163Low4Middle.body,C163Low4Body.bodyProgram,C163Low4Middle.loop,gatePhysical_append] at old
- have midP:GatePhysical KnownCMidStaged.body:=by
-  unfold GatePhysical
-  intro i hi
-  exact old.2.1.2 i ((KnownSparseFold.Cert.sublist _ _ _ _ _ KnownCMidStaged.cert).subset hi)
- simp only [ReorderedKnownC.body,ReorderedKnownC.rawBody,C163Low4Body.bodyProgram,ReorderedKnownC.loop,gatePhysical_append]
- exact ⟨⟨old.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
-
-
 end ECDSAAdd.Entrant.ReorderedCPhysical
 
 end
@@ -4563,58 +4515,6 @@ set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.wires A161Low4FixedFold.checked
 abbrev hosts:=ReorderedAFixed.hosts
-
-theorem body_physical:GatePhysical ReorderedKnownA.body:=by
- have f6:=ReorderedAcc.fits_prefix acc pad bank L.core.cin 161 138 (Acc.earlyTerm src true 6)
-  (by decide) (fits _ (A161NarrowAcc.terms_mem src).2.2.1) (by decide) (by decide)
- have subP:=ReorderedPhysical.op (acc.take 138) pad bank L.core.cin 138 true (Acc.earlyTerm src true 6) f6
- have seedP:GatePhysical (Acc.seedOp acc pad 161 (Acc.earlyTerm src false 4)):=by
-  have nd:=Acc.fits_nodup acc pad bank L.core.cin 161 (Acc.earlyTerm src false 4)
-   (fits _ (A161NarrowAcc.terms_mem src).1)
-  exact copyRegister_physical none _ _
-   ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
- have topP:=Acc.op_prefix_physical acc pad bank L.core.cin 161 161 (Acc.earlyTerm src false 32)
-  (by decide) (fits _ (A161NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=by decide +kernel
- have cacheP:=ReorderedPhysical.cached 103 src ((acc.take 138).drop 10) (bank.take 127) hosts L.core.cin
-  (by decide) (by decide) (by decide) nd (by
-   intro h hh bad
-   exact ReorderedAFixed.host_geometry.2.2 h hh (by simp [List.mem_of_mem_take bad]))
- have buildP:GatePhysical (ReorderedABuild.build 103 acc pad bank L.core.cin src hosts):=by
-  simp only [ReorderedABuild.build,ReorderedAHead.head,A161Carry.buildPost,gatePhysical_append]
-  exact ⟨⟨⟨seedP,subP⟩,cacheP.1⟩,topP⟩
- have notP:=notRegister_physical ((acc.take 138).drop 10)
- have inverseP:GatePhysical (ReorderedConsumedSub.consumed 103 src ((acc.take 138).drop 10) (bank.take 127) hosts L.core.cin):=by
-  simp only [ReorderedConsumedSub.consumed,gatePhysical_append]
-  exact ⟨⟨notP,cacheP.2⟩,notP⟩
- have tailP:GatePhysical (ReorderedATail.tail acc pad bank L.core.cin src):=by
-  apply KnownOutputAdder.program_physical (mappedRead (src++pad.take 4) false) (ReorderedKnownTail.desired src)
-   ((acc.take 138).drop 6) (bank.take 131) L.core.cin
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
- have oldInv:=(A161KnownTail.build8_physical acc pad bank L.core.cin src lengths.1 (by decide) fits).2
- simp only [A161KnownTail.unbuild8,gatePhysical_append] at oldInv
- have preInv:GatePhysical (A161Carry.unbuildPre acc pad bank L.core.cin src):=oldInv.1.1.1
- have unbuildP:GatePhysical (ReorderedAUnbuild.unbuild 103 acc pad bank L.core.cin src hosts):=by
-  simp only [ReorderedAUnbuild.unbuild,ReorderedAUnbuild.after,gatePhysical_append]
-  exact ⟨⟨preInv,inverseP⟩,⟨tailP,seedP⟩⟩
- have old:GatePhysical A161Low4FixedFold.body:=by
-  have base:=aBodyTriple_physical L hw g (List.nodup_cons.mpr ⟨A161Low4FixedFold.ready.1,hn⟩)
-  simp only [aBodyTriple,gatePhysical_append] at base
-  simp only [A161Low4FixedFold.body,gatePhysical_append]
-  exact ⟨base.1,base.2.1,A161Low4FixedFold.fold_physical⟩
- simp only [A161Low4FixedFold.body,A161Low4FixedFold.fold100,A161Low4GenericFold.loop,
-  gatePhysical_append] at old
- have midP:GatePhysical KnownAMidStaged.body:=by
-  unfold GatePhysical
-  intro i hi
-  exact old.2.2.1.2 i ((KnownSparseFold.Cert.sublist _ _ _ _ _ KnownAMidStaged.cert).subset hi)
- simp only [ReorderedKnownA.body,ReorderedKnownA.rawBody,ReorderedKnownA.fold,ReorderedKnownA.loop,gatePhysical_append]
- exact ⟨⟨old.1,old.2.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
 
 end ECDSAAdd.Entrant.ReorderedAPhysical
 
