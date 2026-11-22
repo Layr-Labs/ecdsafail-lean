@@ -141,19 +141,18 @@ theorem head_copies(s:State)(m:List Bool)
  (run head m s).basis 4505=(run head m s).basis 4243 ∧
  (run head m s).basis 4506=(run head m s).basis 4244 ∧
  (run head m s).basis 4507=((run head m s).basis 4245 ^^ (run head m s).basis 4243):=by
- let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+ have ready:WReady acc pad bank cin src (regValue src s.basis) (run (ReorderedCPlain.build acc pad bank cin src) m s):=
   Ghost3CacheC.plain_ready s m hz hb hi ha
- have cp:=low_copies _ u ready
- have low(q:Wire)(hq:q∈C105LowEraseResearch.low):u.basis q=(run head m s).basis q:=by
-  dsimp [u]
+ have cp:=low_copies _ (run (ReorderedCPlain.build acc pad bank cin src) m s) ready
+ have low(q:Wire)(hq:q∈C105LowEraseResearch.low):(run (ReorderedCPlain.build acc pad bank cin src) m s).basis q=(run head m s).basis q:=by
   rw [plain_split,run_cat]
   exact run_preserves_outside _ _ _ q (rest_off q hq)
  have frame:=ReorderedCHead.head_triple acc pad bank cin src acc_length (by have h:=source_length;omega)
   fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
  have away:∀q∈src,q∉acc:=by decide +kernel
- have source(q:Wire)(hq:q∈src):u.basis q=(run head m s).basis q:=by
+ have source(q:Wire)(hq:q∈src):(run (ReorderedCPlain.build acc pad bank cin src) m s).basis q=(run head m s).basis q:=by
   have h:= (regValue_eq_iff src _ _).mp ready.2.1 q hq
+  rw [show head = ReorderedCHead.head acc pad bank cin src from rfl]
   exact h.trans (frame.2.2 q (away q hq)).symm
  rw [low 4505 (by decide),low 4506 (by decide),low 4507 (by decide),source 4243 (by decide +kernel),source 4244 (by decide +kernel),source 4245 (by decide +kernel)] at cp
  exact cp
@@ -187,8 +186,7 @@ theorem forward_zero(s:State)(m:List Bool)
  (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false):
  ∀q∈hosts,(run F m s).basis q=false:=by
  rw [forward_erased s m hz hb hi ha]
- let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+ have ready:WReady acc pad bank cin src (regValue src s.basis) (run (ReorderedCPlain.build acc pad bank cin src) m s):=
   Ghost3CacheC.plain_ready s m hz hb hi ha
  intro q hq
  rcases List.mem_append.mp hq with hq|hq
@@ -198,18 +196,21 @@ theorem forward_zero(s:State)(m:List Bool)
     apply away
     simp only [C105LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
     rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q hq)
+   exact (run_preserves_outside (ReorderedCPlain.build acc pad bank cin src) m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q hq)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
-      (by rw [acc_length];decide) ready.1
+     simpa only [show acc.getD 0 0=4757 from by decide +kernel] using
+      (LowWordRecovery.low_register_zero acc (run (ReorderedCPlain.build acc pad bank cin src) m s).basis _ 0 (by decide)
+       (by rw [acc_length];decide) ready.1)
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
-      (by rw [acc_length];decide) ready.1
+     simpa only [show acc.getD 1 0=4758 from by decide +kernel] using
+      (LowWordRecovery.low_register_zero acc (run (ReorderedCPlain.build acc pad bank cin src) m s).basis _ 1 (by decide)
+       (by rw [acc_length];decide) ready.1)
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
-      (by rw [acc_length];decide) ready.1
+     simpa only [show acc.getD 2 0=4759 from by decide +kernel] using
+      (LowWordRecovery.low_register_zero acc (run (ReorderedCPlain.build acc pad bank cin src) m s).basis _ 2 (by decide)
+       (by rw [acc_length];decide) ready.1)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
@@ -323,30 +324,28 @@ theorem forward_values(s:State)(m:List Bool)
   (run (head++C105LowEraseResearch.clear) m s)).basis)=
  ReorderedCacheBits.values 4 105 (regValue src s.basis) (976*regValue src s.basis/1024):=by
  let H:=regValue src s.basis
- let u:=run head m s
- let t:=run (head++C105LowEraseResearch.clear) m s
- have te:t=C105LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
+ have te:(run (head++C105LowEraseResearch.clear) m s)=C105LowEraseResearch.erase (run head m s):=prefix_erased s m hz hb hi ha
  have hH:H<2^130:=by simpa only [H,source_length] using regValue_lt src s.basis
- have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
-  regValue ys u.basis=((2^140-48*H)%2^140)/1024:=by
-  simpa only [cs,xs,ys,u,head,H] using
+ have ready:(∀q∈cs,(run head m s).basis q=false) ∧ (run head m s).basis cin=false ∧ regValue xs (run head m s).basis=H ∧
+  regValue ys (run head m s).basis=((2^140-48*H)%2^140)/1024:=by
+  simpa only [cs,xs,ys,head,H] using
    CHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
- have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
+ have eraseBit(q:Wire)(hq:q∈domain):(run (head++C105LowEraseResearch.clear) m s).basis q=(run head m s).basis q:=by
   rw [te]
   exact C105LowEraseResearch.bit_same _ q (domain_away_low q hq)
- have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
+ have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run (head++C105LowEraseResearch.clear) m s).basis=regValue r (run head m s).basis:=
   regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
- have sy:regValue ys t.basis=((2^140-48*H)%2^140)/1024:=
+ have sy:regValue ys (run (head++C105LowEraseResearch.clear) m s).basis=((2^140-48*H)%2^140)/1024:=
   (eraseReg ys y_in).trans ready.2.2.2
- have sh:regValue xs t.basis=H:=
+ have sh:regValue xs (run (head++C105LowEraseResearch.clear) m s).basis=H:=
   (eraseReg xs x_in).trans ready.2.2.1
- have sb:∀q∈cs,t.basis q=false:=by
+ have sb:∀q∈cs,(run (head++C105LowEraseResearch.clear) m s).basis q=false:=by
   intro q hq
   exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
- have si:t.basis cin=false:=
+ have si:(run (head++C105LowEraseResearch.clear) m s).basis cin=false:=
   (eraseBit cin cin_in).trans ready.2.1
  exact ReorderedCacheBits.forward_values 4 105 H (((2^140-48*H)%2^140)/1024) (976*H/1024)
-  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  xs ys cs cin (run (head++C105LowEraseResearch.clear) m s) (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
    simpa only [show 130+10=140 by decide] using
     ReorderedCacheArithmetic.high_add_low 130 (4+j+1) H (by omega) hH)
@@ -1662,6 +1661,20 @@ end
 section
 
 
+section
+-- Peak-memory helper: gate-count triples, so count facts split into per-part kernel checks.
+namespace ECDSAAdd.Entrant.PeakBOpt
+open ECDSAAdd
+
+def trip (p : Program) : Nat × Nat × Nat := (toffoliCount p, measurementCount p, Challenge.gateSlots p)
+
+theorem trip_append (p q : Program) :
+    trip (p ++ q) = ((trip p).1 + (trip q).1, (trip p).2.1 + (trip q).2.1, (trip p).2.2 + (trip q).2.2) := by
+  simp only [trip, toffoliCount_append, measurementCount_append, Challenge.gateSlots_append]
+
+end ECDSAAdd.Entrant.PeakBOpt
+end
+
 -- Verified B optimization component BArithmeticCounts
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
@@ -1676,13 +1689,49 @@ set_option linter.unusedSimpArgs false
 def newBuild:Program:=ReorderedABuild.build 89 acc pad bank cin src hosts
 def newInv:Program:=ReorderedAUnbuild.unbuild 89 acc pad bank cin src hosts
 
+-- Peak memory: one kernel check per program part (each part is generated only in its own declaration).
+theorem peak_nb1 : PeakBOpt.trip (ReorderedAHead.head acc pad bank cin src) = (131, 131, 1995) := by decide +kernel
+theorem peak_nb2 : PeakBOpt.trip (ReorderedGenericCache.cachedAdd 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) = (127, 127, 1615) := by decide +kernel
+theorem peak_nb3 : PeakBOpt.trip (A161Carry.buildPost acc pad bank cin src) = (128, 128, 1538) := by decide +kernel
+theorem peak_nb : PeakBOpt.trip newBuild = (386, 386, 5148) := by
+  show PeakBOpt.trip ((ReorderedAHead.head acc pad bank cin src) ++ (ReorderedGenericCache.cachedAdd 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) ++ (A161Carry.buildPost acc pad bank cin src)) = _
+  rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_nb1, peak_nb2, peak_nb3]
+  rfl
+theorem peak_ni1 : PeakBOpt.trip (A161Carry.unbuildPre acc pad bank cin src) = (105, 128, 1727) := by decide +kernel
+theorem peak_ni2 : PeakBOpt.trip (ReorderedConsumedSub.consumed 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) = (38, 127, 1426) := by decide +kernel
+theorem peak_ni3 : PeakBOpt.trip (ReorderedAUnbuild.after acc pad bank cin src) = (0, 131, 1332) := by decide +kernel
+theorem peak_ni : PeakBOpt.trip newInv = (143, 386, 4485) := by
+  show PeakBOpt.trip ((A161Carry.unbuildPre acc pad bank cin src) ++ (ReorderedConsumedSub.consumed 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) ++ (ReorderedAUnbuild.after acc pad bank cin src)) = _
+  rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_ni1, peak_ni2, peak_ni3]
+  rfl
+theorem peak_sb1 : PeakBOpt.trip (InverseCarryDevelop.buildPre SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) = (128, 128, 1697) := by decide +kernel
+theorem peak_sb2 : PeakBOpt.trip (_root_.ManyACarryDevelop.cachedSubMany 86 (Acc.tx (FullBTemp.pad SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.ty (List.take 139 SixCarryLoopAnchor.ga) (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.tc (accBank SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) LowAccCarryDevelop.loans88 SixCarryLoopAnchor.L.core.cin SixCarryLoopAnchor.L.core.sumCarry (FullBTemp.hostR SixCarryLoopAnchor.L) (FullBTemp.hostP SixCarryLoopAnchor.L)) = (131, 132, 1938) := by decide +kernel
+theorem peak_sb3 : PeakBOpt.trip (InverseCarryDevelop.buildPost SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) = (128, 128, 1538) := by decide +kernel
+theorem peak_sb : PeakBOpt.trip SixCarryLoopAnchor.build = (387, 388, 5173) := by
+  show PeakBOpt.trip ((InverseCarryDevelop.buildPre SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) ++ (_root_.ManyACarryDevelop.cachedSubMany 86 (Acc.tx (FullBTemp.pad SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.ty (List.take 139 SixCarryLoopAnchor.ga) (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.tc (accBank SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) LowAccCarryDevelop.loans88 SixCarryLoopAnchor.L.core.cin SixCarryLoopAnchor.L.core.sumCarry (FullBTemp.hostR SixCarryLoopAnchor.L) (FullBTemp.hostP SixCarryLoopAnchor.L)) ++ (InverseCarryDevelop.buildPost SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L))) = _
+  rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_sb1, peak_sb2, peak_sb3]
+  rfl
+theorem peak_eu1 : PeakBOpt.trip (InverseCarryDevelop.unbuildPre LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) = (105, 128, 1727) := by decide +kernel
+theorem peak_eu2 : PeakBOpt.trip (_root_.ManyACarryDevelop.consumedAddMany 86 (hiReg LowAccCarryDevelop.L) (FullBTemp.pad LowAccCarryDevelop.L) (List.drop 6 (List.take 139 LowAccCarryDevelop.ga)) (List.take 132 (accBank LowAccCarryDevelop.L)) LowAccCarryDevelop.loans88 LowAccCarryDevelop.L.core.cin LowAccCarryDevelop.L.core.sumCarry (FullBTemp.hostR LowAccCarryDevelop.L) (FullBTemp.hostP LowAccCarryDevelop.L)) = (39, 132, 1219) := by decide +kernel
+theorem peak_eu3 : PeakBOpt.trip (InverseCarryDevelop.unbuildPost LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) = (0, 128, 1692) := by decide +kernel
+theorem peak_eu : PeakBOpt.trip LocalEightLoop.unbuild = (144, 388, 4638) := by
+  show PeakBOpt.trip ((InverseCarryDevelop.unbuildPre LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) ++ (_root_.ManyACarryDevelop.consumedAddMany 86 (hiReg LowAccCarryDevelop.L) (FullBTemp.pad LowAccCarryDevelop.L) (List.drop 6 (List.take 139 LowAccCarryDevelop.ga)) (List.take 132 (accBank LowAccCarryDevelop.L)) LowAccCarryDevelop.loans88 LowAccCarryDevelop.L.core.cin LowAccCarryDevelop.L.core.sumCarry (FullBTemp.hostR LowAccCarryDevelop.L) (FullBTemp.hostP LowAccCarryDevelop.L)) ++ (InverseCarryDevelop.unbuildPost LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L))) = _
+  rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_eu1, peak_eu2, peak_eu3]
+  rfl
+
 theorem counts:
  toffoliCount newBuild+toffoliCount newInv+2=
   toffoliCount SixCarryLoopAnchor.build+toffoliCount LocalEightLoop.unbuild ∧
  measurementCount newBuild+measurementCount newInv+4=
   measurementCount SixCarryLoopAnchor.build+measurementCount LocalEightLoop.unbuild ∧
  Challenge.gateSlots newBuild+Challenge.gateSlots newInv+178=
-  Challenge.gateSlots SixCarryLoopAnchor.build+Challenge.gateSlots LocalEightLoop.unbuild:=by decide +kernel
+  Challenge.gateSlots SixCarryLoopAnchor.build+Challenge.gateSlots LocalEightLoop.unbuild:=by
+ have h1:=peak_nb
+ have h2:=peak_ni
+ have h3:=peak_sb
+ have h4:=peak_eu
+ simp only [PeakBOpt.trip,Prod.mk.injEq] at h1 h2 h3 h4
+ refine ⟨?_,?_,?_⟩ <;> omega
 
 end ECDSAAdd.Entrant.BArithmeticCountsResearch
 
@@ -7933,8 +7982,7 @@ theorem forward_zeroK(s:State)(m:List Bool)
  (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hosts,s.basis q=false):
  ∀q∈keepK,(run F m s).basis q=false:=by
  rw [forward_erased s m hz hb hi ha]
- let u:=run (ReorderedAPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+ have ready:WReady acc pad bank cin src (regValue src s.basis) (run (ReorderedAPlain.build acc pad bank cin src) m s):=
   BRelocatedReadyResearch.plain_before s m hz hb hi ha
  intro q hk
  have hq:=keepK_sub q hk
@@ -7945,20 +7993,20 @@ theorem forward_zeroK(s:State)(m:List Bool)
     apply away
     simp only [A109LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
     rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (old_plain_off398 q hq)).trans (zero q hq)
+   exact (run_preserves_outside (ReorderedAPlain.build acc pad bank cin src) m s q (old_plain_off398 q hq)).trans (zero q hq)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
      simpa only [show acc.getD 0 0=4757 from by decide +kernel] using
-      (LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
+      (LowWordRecovery.low_register_zero acc (run (ReorderedAPlain.build acc pad bank cin src) m s).basis _ 0 (by decide)
        (by rw [acc_length];decide) ready.1)
    · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
      simpa only [show acc.getD 1 0=4758 from by decide +kernel] using
-      (LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
+      (LowWordRecovery.low_register_zero acc (run (ReorderedAPlain.build acc pad bank cin src) m s).basis _ 1 (by decide)
        (by rw [acc_length];decide) ready.1)
    · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
      simpa only [show acc.getD 2 0=4759 from by decide +kernel] using
-      (LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
+      (LowWordRecovery.low_register_zero acc (run (ReorderedAPlain.build acc pad bank cin src) m s).basis _ 2 (by decide)
        (by rw [acc_length];decide) ready.1)
    · exact A109LowEraseResearch.zero _ _ (by decide)
    · exact A109LowEraseResearch.zero _ _ (by decide)
@@ -7986,30 +8034,28 @@ theorem forward_valuesK(s:State)(m:List Bool)
   (run (head++A109LowEraseResearch.clear) m s)).basis)=
  ReorderedCacheBits.values 4 65 (regValue src s.basis) (976*regValue src s.basis/1024):=by
  let H:=regValue src s.basis
- let u:=run head m s
- let t:=run (head++A109LowEraseResearch.clear) m s
- have te:t=A109LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
+ have te:(run (head++A109LowEraseResearch.clear) m s)=A109LowEraseResearch.erase (run head m s):=prefix_erased s m hz hb hi ha
  have hH:H<2^128:=by simpa only [H,source_length] using regValue_lt src s.basis
- have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
-  regValue ys u.basis=((2^138-48*H)%2^138)/1024:=by
-  simpa only [cs,xs,ys,u,head,H] using
+ have ready:(∀q∈cs,(run head m s).basis q=false) ∧ (run head m s).basis cin=false ∧ regValue xs (run head m s).basis=H ∧
+  regValue ys (run head m s).basis=((2^138-48*H)%2^138)/1024:=by
+  simpa only [cs,xs,ys,head,H] using
    ReorderedHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
- have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
+ have eraseBit(q:Wire)(hq:q∈domain):(run (head++A109LowEraseResearch.clear) m s).basis q=(run head m s).basis q:=by
   rw [te]
   exact A109LowEraseResearch.bit_same _ q (domain_away_low q hq)
- have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
+ have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run (head++A109LowEraseResearch.clear) m s).basis=regValue r (run head m s).basis:=
   regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
- have sy:regValue ys t.basis=((2^138-48*H)%2^138)/1024:=
+ have sy:regValue ys (run (head++A109LowEraseResearch.clear) m s).basis=((2^138-48*H)%2^138)/1024:=
   (eraseReg ys y_in).trans ready.2.2.2
- have sh:regValue xs t.basis=H:=
+ have sh:regValue xs (run (head++A109LowEraseResearch.clear) m s).basis=H:=
   (eraseReg xs x_in).trans ready.2.2.1
- have sb:∀q∈cs,t.basis q=false:=by
+ have sb:∀q∈cs,(run (head++A109LowEraseResearch.clear) m s).basis q=false:=by
   intro q hq
   exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
- have si:t.basis cin=false:=
+ have si:(run (head++A109LowEraseResearch.clear) m s).basis cin=false:=
   (eraseBit cin cin_in).trans ready.2.1
  exact ReorderedCacheBits.forward_values 4 65 H (((2^138-48*H)%2^138)/1024) (976*H/1024)
-  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  xs ys cs cin (run (head++A109LowEraseResearch.clear) m s) (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
    simpa only [show 128+10=138 by decide] using
     ReorderedCacheArithmetic.high_add_low 128 (4+j+1) H (by omega) hH)
@@ -9623,8 +9669,7 @@ theorem forward_zeroK(s:State)(m:List Bool)
  (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false):
  ∀q∈keepK,(run F m s).basis q=false:=by
  rw [forward_erased s m hz hb hi ha]
- let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+ have ready:WReady acc pad bank cin src (regValue src s.basis) (run (ReorderedCPlain.build acc pad bank cin src) m s):=
   Ghost3CacheC.plain_ready s m hz hb hi ha
  intro q hk
  have hq:=keepK_sub q hk
@@ -9635,18 +9680,21 @@ theorem forward_zeroK(s:State)(m:List Bool)
     apply away
     simp only [C105LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
     rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q hq)
+   exact (run_preserves_outside (ReorderedCPlain.build acc pad bank cin src) m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q hq)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
-      (by rw [acc_length];decide) ready.1
+     simpa only [show acc.getD 0 0=4757 from by decide +kernel] using
+      (LowWordRecovery.low_register_zero acc (run (ReorderedCPlain.build acc pad bank cin src) m s).basis _ 0 (by decide)
+       (by rw [acc_length];decide) ready.1)
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
-      (by rw [acc_length];decide) ready.1
+     simpa only [show acc.getD 1 0=4758 from by decide +kernel] using
+      (LowWordRecovery.low_register_zero acc (run (ReorderedCPlain.build acc pad bank cin src) m s).basis _ 1 (by decide)
+       (by rw [acc_length];decide) ready.1)
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
-      (by rw [acc_length];decide) ready.1
+     simpa only [show acc.getD 2 0=4759 from by decide +kernel] using
+      (LowWordRecovery.low_register_zero acc (run (ReorderedCPlain.build acc pad bank cin src) m s).basis _ 2 (by decide)
+       (by rw [acc_length];decide) ready.1)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
@@ -9673,30 +9721,28 @@ theorem forward_valuesK(s:State)(m:List Bool)
   (run (head++C105LowEraseResearch.clear) m s)).basis)=
  ReorderedCacheBits.values 4 61 (regValue src s.basis) (976*regValue src s.basis/1024):=by
  let H:=regValue src s.basis
- let u:=run head m s
- let t:=run (head++C105LowEraseResearch.clear) m s
- have te:t=C105LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
+ have te:(run (head++C105LowEraseResearch.clear) m s)=C105LowEraseResearch.erase (run head m s):=prefix_erased s m hz hb hi ha
  have hH:H<2^130:=by simpa only [H,source_length] using regValue_lt src s.basis
- have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
-  regValue ys u.basis=((2^140-48*H)%2^140)/1024:=by
-  simpa only [cs,xs,ys,u,head,H] using
+ have ready:(∀q∈cs,(run head m s).basis q=false) ∧ (run head m s).basis cin=false ∧ regValue xs (run head m s).basis=H ∧
+  regValue ys (run head m s).basis=((2^140-48*H)%2^140)/1024:=by
+  simpa only [cs,xs,ys,head,H] using
    CHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
- have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
+ have eraseBit(q:Wire)(hq:q∈domain):(run (head++C105LowEraseResearch.clear) m s).basis q=(run head m s).basis q:=by
   rw [te]
   exact C105LowEraseResearch.bit_same _ q (domain_away_low q hq)
- have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
+ have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run (head++C105LowEraseResearch.clear) m s).basis=regValue r (run head m s).basis:=
   regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
- have sy:regValue ys t.basis=((2^140-48*H)%2^140)/1024:=
+ have sy:regValue ys (run (head++C105LowEraseResearch.clear) m s).basis=((2^140-48*H)%2^140)/1024:=
   (eraseReg ys y_in).trans ready.2.2.2
- have sh:regValue xs t.basis=H:=
+ have sh:regValue xs (run (head++C105LowEraseResearch.clear) m s).basis=H:=
   (eraseReg xs x_in).trans ready.2.2.1
- have sb:∀q∈cs,t.basis q=false:=by
+ have sb:∀q∈cs,(run (head++C105LowEraseResearch.clear) m s).basis q=false:=by
   intro q hq
   exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
- have si:t.basis cin=false:=
+ have si:(run (head++C105LowEraseResearch.clear) m s).basis cin=false:=
   (eraseBit cin cin_in).trans ready.2.1
  exact ReorderedCacheBits.forward_values 4 61 H (((2^140-48*H)%2^140)/1024) (976*H/1024)
-  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  xs ys cs cin (run (head++C105LowEraseResearch.clear) m s) (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
    simpa only [show 130+10=140 by decide] using
     ReorderedCacheArithmetic.high_add_low 130 (4+j+1) H (by omega) hH)
