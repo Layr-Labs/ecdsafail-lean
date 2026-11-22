@@ -24396,7 +24396,7 @@ theorem load_record (d:Bool) (data:Nat→Bool) (s:State) (m:List Bool)
     (scratch:∀i:Fin 157,23≤ i.val → s.basis (rawPorts i)=false) :
     let t:=run ((Partial.exitLoadP 405) d) m s
     ∃row<63145, t.phase=s.phase ∧ Frame codePorts (code d) row t ∧
-        (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then enter0Trace0In else enter1Trace0In) i).testBit row) ∧
+        (∀i:Fin 16,t.basis (codePorts ⟨i,by omega⟩)=(get (if d then ReducedWindowArchives.enter0StoredIn else ReducedWindowArchives.enter1StoredIn) i).testBit row) ∧
         (∀q,(∀i,rawPorts i≠q) → t.basis q=s.basis q) ∧
         (∀ tape, run ((Partial.exitRestoreP 405) d) tape t=s) := by
   obtain ⟨row,hr,h⟩:=legal
