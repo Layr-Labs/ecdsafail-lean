@@ -21076,7 +21076,7 @@ def integer_load0Block3 : Program := [
   .CX 53 41
 ]
 
-private theorem integer_load0Block3Ok : GatePhysical integer_load0Block3 ∧ toffoliCount integer_load0Block3 = 4 ∧ measurementCount integer_load0Block3 = 0 ∧ gateSlots integer_load0Block3 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block3Ok : GatePhysical integer_load0Block3 ∧ toffoliCount integer_load0Block3 = 4 ∧ measurementCount integer_load0Block3 = 0 ∧ gateSlots integer_load0Block3 = 48 := by decide +kernel
 
 def integer_load0Block4 : Program := [
   .CX 51 41,
@@ -21556,7 +21556,7 @@ def integer_load0Block13 : Program := [
   .CX 14 32
 ]
 
-private theorem integer_load0Block13Ok : GatePhysical integer_load0Block13 ∧ toffoliCount integer_load0Block13 = 0 ∧ measurementCount integer_load0Block13 = 0 ∧ gateSlots integer_load0Block13 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block13Ok : GatePhysical integer_load0Block13 ∧ toffoliCount integer_load0Block13 = 0 ∧ measurementCount integer_load0Block13 = 0 ∧ gateSlots integer_load0Block13 = 48 := by decide +kernel
 
 def integer_load0Block14 : Program := [
   .CX 19 32,
@@ -21609,7 +21609,7 @@ def integer_load0Block14 : Program := [
   .CX 20 38
 ]
 
-private theorem integer_load0Block14Ok : GatePhysical integer_load0Block14 ∧ toffoliCount integer_load0Block14 = 0 ∧ measurementCount integer_load0Block14 = 0 ∧ gateSlots integer_load0Block14 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block14Ok : GatePhysical integer_load0Block14 ∧ toffoliCount integer_load0Block14 = 0 ∧ measurementCount integer_load0Block14 = 0 ∧ gateSlots integer_load0Block14 = 48 := by decide +kernel
 
 def integer_load0Block15 : Program := [
   .CX 56 38,
@@ -21662,7 +21662,7 @@ def integer_load0Block15 : Program := [
   .CX 98 41
 ]
 
-private theorem integer_load0Block15Ok : GatePhysical integer_load0Block15 ∧ toffoliCount integer_load0Block15 = 8 ∧ measurementCount integer_load0Block15 = 0 ∧ gateSlots integer_load0Block15 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block15Ok : GatePhysical integer_load0Block15 ∧ toffoliCount integer_load0Block15 = 8 ∧ measurementCount integer_load0Block15 = 0 ∧ gateSlots integer_load0Block15 = 48 := by decide +kernel
 
 def integer_load0Block16 : Program := [
   .CCX 40 41 99,
@@ -21942,7 +21942,7 @@ def integer_load0Block24 : Program := [
   .CX 76 140
 ]
 
-private theorem integer_load0Block24Ok : GatePhysical integer_load0Block24 ∧ toffoliCount integer_load0Block24 = 0 ∧ measurementCount integer_load0Block24 = 0 ∧ gateSlots integer_load0Block24 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block24Ok : GatePhysical integer_load0Block24 ∧ toffoliCount integer_load0Block24 = 0 ∧ measurementCount integer_load0Block24 = 0 ∧ gateSlots integer_load0Block24 = 48 := by decide +kernel
 
 def integer_load0Block25 : Program := [
   .CX 94 140,
@@ -21995,7 +21995,7 @@ def integer_load0Block25 : Program := [
   .CCX 40 41 143
 ]
 
-private theorem integer_load0Block25Ok : GatePhysical integer_load0Block25 ∧ toffoliCount integer_load0Block25 = 1 ∧ measurementCount integer_load0Block25 = 0 ∧ gateSlots integer_load0Block25 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block25Ok : GatePhysical integer_load0Block25 ∧ toffoliCount integer_load0Block25 = 1 ∧ measurementCount integer_load0Block25 = 0 ∧ gateSlots integer_load0Block25 = 48 := by decide +kernel
 
 def integer_load0Block26 : Program := [
   .CX 142 41,
@@ -22048,7 +22048,7 @@ def integer_load0Block26 : Program := [
   .CX 100 41
 ]
 
-private theorem integer_load0Block26Ok : GatePhysical integer_load0Block26 ∧ toffoliCount integer_load0Block26 = 0 ∧ measurementCount integer_load0Block26 = 0 ∧ gateSlots integer_load0Block26 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block26Ok : GatePhysical integer_load0Block26 ∧ toffoliCount integer_load0Block26 = 0 ∧ measurementCount integer_load0Block26 = 0 ∧ gateSlots integer_load0Block26 = 48 := by decide +kernel
 
 def integer_load0Block27 : Program := [
   .CX 101 41,
@@ -22101,7 +22101,7 @@ def integer_load0Block27 : Program := [
   .CX 10 150
 ]
 
-private theorem integer_load0Block27Ok : GatePhysical integer_load0Block27 ∧ toffoliCount integer_load0Block27 = 2 ∧ measurementCount integer_load0Block27 = 0 ∧ gateSlots integer_load0Block27 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block27Ok : GatePhysical integer_load0Block27 ∧ toffoliCount integer_load0Block27 = 2 ∧ measurementCount integer_load0Block27 = 0 ∧ gateSlots integer_load0Block27 = 48 := by decide +kernel
 
 def integer_load0Block28 : Program := [
   .CX 14 150,
@@ -22154,7 +22154,7 @@ def integer_load0Block28 : Program := [
   .CX 19 152
 ]
 
-private theorem integer_load0Block28Ok : GatePhysical integer_load0Block28 ∧ toffoliCount integer_load0Block28 = 1 ∧ measurementCount integer_load0Block28 = 0 ∧ gateSlots integer_load0Block28 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block28Ok : GatePhysical integer_load0Block28 ∧ toffoliCount integer_load0Block28 = 1 ∧ measurementCount integer_load0Block28 = 0 ∧ gateSlots integer_load0Block28 = 48 := by decide +kernel
 
 def integer_load0Block29 : Program := [
   .CX 20 152,
@@ -22207,7 +22207,7 @@ def integer_load0Block29 : Program := [
   .measureX 80 [] [.CZ 0 20, .CZ 2 20, .CZ 10 20, .CZ 20 48, .CZ 20 70]
 ]
 
-private theorem integer_load0Block29Ok : GatePhysical integer_load0Block29 ∧ toffoliCount integer_load0Block29 = 1 ∧ measurementCount integer_load0Block29 = 9 ∧ gateSlots integer_load0Block29 = 109 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block29Ok : GatePhysical integer_load0Block29 ∧ toffoliCount integer_load0Block29 = 1 ∧ measurementCount integer_load0Block29 = 9 ∧ gateSlots integer_load0Block29 = 109 := by decide +kernel
 
 def integer_load0Block30 : Program := [
   .measureX 79 [] [.CZ 0 20, .CZ 1 20, .CZ 4 20, .CZ 20 46, .CZ 20 47, .CZ 20 68],
@@ -22387,7 +22387,7 @@ def integer_load0Block33 : Program := [
   .CX 15 38
 ]
 
-private theorem integer_load0Block33Ok : GatePhysical integer_load0Block33 ∧ toffoliCount integer_load0Block33 = 0 ∧ measurementCount integer_load0Block33 = 0 ∧ gateSlots integer_load0Block33 = 16 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block33Ok : GatePhysical integer_load0Block33 ∧ toffoliCount integer_load0Block33 = 0 ∧ measurementCount integer_load0Block33 = 0 ∧ gateSlots integer_load0Block33 = 16 := by decide +kernel
 
 def integer_load0 : Program := integer_load0Block0 ++ integer_load0Block1 ++ integer_load0Block2 ++ integer_load0Block3 ++ integer_load0Block4 ++ integer_load0Block5 ++ integer_load0Block6 ++ integer_load0Block7 ++ integer_load0Block8 ++ integer_load0Block9 ++ integer_load0Block10 ++ integer_load0Block11 ++ integer_load0Block12 ++ integer_load0Block13 ++ integer_load0Block14 ++ integer_load0Block15 ++ integer_load0Block16 ++ integer_load0Block17 ++ integer_load0Block18 ++ integer_load0Block19 ++ integer_load0Block20 ++ integer_load0Block21 ++ integer_load0Block22 ++ integer_load0Block23 ++ integer_load0Block24 ++ integer_load0Block25 ++ integer_load0Block26 ++ integer_load0Block27 ++ integer_load0Block28 ++ integer_load0Block29 ++ integer_load0Block30 ++ integer_load0Block31 ++ integer_load0Block32 ++ integer_load0Block33
 
@@ -59400,8 +59400,7 @@ def leaveFix12 (s h : Nat) : List Gate := [
 
 def enterFix (s h : Nat) : List Gate := [
   .cx (s+h+31) (h+801),
-  .make (s+15) (h+801) 1558,
-  .cx 1558 (s+h+31),
+  .ccx (s+15) (h+801) (s+h+31),
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59419,13 +59418,14 @@ def enterFix (s h : Nat) : List Gate := [
   .x 1556,
   .cx (s+h+31) 1556,
   .make (h+801) 1556 1557,
-  .make (h+802) 1557 1559,
+  .make 1557 (h+1578) 1558,
+  .make (h+802) 1558 1559,
   .make (h+803) 1559 1560,
   .cx 1560 (h+804),
   .pop (h+803) 1559 1560,
   .cx 1559 (h+803),
-  .pop (h+802) 1557 1559,
-  .cx 1557 (h+802),
+  .pop (h+802) 1558 1559,
+  .cx 1558 (h+802),
   .cx (s+h+32) 1559,
   .ccx (h+1577) 1559 (s+h+32),
   .cx (s+h+32) 1559,
@@ -59444,16 +59444,17 @@ def enterFix (s h : Nat) : List Gate := [
   .x (h+802),
   .x (h+803),
   .x (h+804),
-  .make (h+802) 1557 1562,
+  .make (h+802) 1558 1562,
   .make (h+803) 1562 1563,
   .cx 1563 (h+804),
   .pop (h+803) 1562 1563,
   .cx 1562 (h+803),
-  .pop (h+802) 1557 1562,
-  .cx 1557 (h+802),
+  .pop (h+802) 1558 1562,
+  .cx 1558 (h+802),
   .x (h+802),
   .x (h+803),
   .x (h+804),
+  .pop 1557 (h+1578) 1558,
   .pop (h+801) 1556 1557,
   .cx (s+h+31) 1556,
   .x 1556,
@@ -59462,8 +59463,7 @@ def enterFix (s h : Nat) : List Gate := [
   .cx (h+1579) (h+803),
   .cx (h+1579) (h+804),
   .cx (s+h+31) (h+801),
-  .cx 1558 (s+h+31),
-  .pop (s+15) (h+801) 1558,
+  .ccx (s+15) (h+801) (s+h+31),
   .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
@@ -59994,7 +59994,7 @@ theorem counts_leaveFix8 (s h : Nat) : Counts (leaveFix8 s h) 0 0 0 2 := ⟨rfl,
 theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 20 37 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
-theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 14 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
 theorem counts_leaveAdjust (s : Nat) (hw : 1 ≤ wpP s) :
@@ -60144,7 +60144,7 @@ theorem leave_counts (j : Fin 23) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) :
   · rw [leaveP, s1]; omega
   · rw [leaveInvP, s2]; omega
 theorem enter_counts (j : Fin 23) :
-    toffoliCount (enterP j) = 18 ∧ toffoliCount (enterInvP j) = 18 ∧
+    toffoliCount (enterP j) = 20 ∧ toffoliCount (enterInvP j) = 20 ∧
     measurementCount (enterP j) = 6 ∧ measurementCount (enterInvP j) = 6 ∧
     gateSlots (enterP j) = 92 ∧ gateSlots (enterInvP j) = 92 :=
   (counts_enterFix _ _).programs
@@ -68984,8 +68984,8 @@ theorem tick_closed (e : Nat) (hi : e < 511) :
   omega
 
 def tcV : Pieces Nat where
-  enter _ := 18
-  enterInv _ := 18
+  enter _ := 20
+  enterInv _ := 20
   leave j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+193 else toffoliCount (leaveMoveP j)
   leaveInv j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+192 else toffoliCount (leaveMoveInvP j)
   load _ d := if d then 78 else 77
@@ -69149,8 +69149,8 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
 
 /-- The window 90..360 (exit 375): window counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=113907 ∧ toffoliCount (forwardW params false first rest)=113886 ∧
-    toffoliCount (reverseW params true first rest)=114098 ∧ toffoliCount (reverseW params false first rest)=114098 ∧
+    toffoliCount (forwardW params true first rest)=113949 ∧ toffoliCount (forwardW params false first rest)=113928 ∧
+    toffoliCount (reverseW params true first rest)=114140 ∧ toffoliCount (reverseW params false first rest)=114140 ∧
     measurementCount (forwardW params true first rest)=57219 ∧ measurementCount (forwardW params false first rest)=57219 ∧
     measurementCount (reverseW params true first rest)=56943 ∧ measurementCount (reverseW params false first rest)=56943 := by
   rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
@@ -69159,13 +69159,13 @@ theorem ship_counts :
 
 /-- The window sizes (blocks 1..19, exit 375), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=113907 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=113949 := by
   rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=113886 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=113928 := by
   rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=114098 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=114140 := by
   rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=114098 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=114140 := by
   rw [(counts false first rest).2.1]; decide +kernel
 theorem ship_measureF : measurementCount (forwardW params true first rest)=57219 ∧
     measurementCount (forwardW params false first rest)=57219 := by
