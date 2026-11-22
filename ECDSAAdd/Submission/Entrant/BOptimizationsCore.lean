@@ -569,12 +569,6 @@ set_option linter.unusedSimpArgs false
 
 
 
-theorem eU_off_aBodySelected (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
- (c:Wire) (hc:c∉L.wires):eU L∉wires (aBodySelected L c):=by
- intro h
- rcases Finset.mem_insert.mp (aBodySelected_refined L hw c h) with e|h
- · exact (ThirdSavedCarryDevelop.spare_ne_eU L hw hn) e.symm
- · exact InverseCarryDevelop.eU_off_aBodyDual L hw hn c hc h
 
 theorem hostedASelected_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
  (hn:L.wires.Nodup) (ext:List Wire) (c:Wire) (hlen:300≤ext.length) (away:∀q∈ext,q∉L.wires):
@@ -2308,23 +2302,6 @@ theorem sqRet_masks :
     have h := List.mem_toFinset.mp (eraseMask_wires_subset control src (L.inputBank.take src.length) used)
     exact ne _ (cs_outer L control ext src dst _ h) rfl
 
-include hw hn hs hd hx hdx in
-theorem sqRet_cached_mask (hpos : 0<dst.length) :
-    sqRet L∉wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst)
-      src (L.inputBank.take src.length)) := by
-  have masks := sqRet_masks L hw control hn ext src dst hs hd hx hdx
-  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
-  have cacheIn : LowZero18Square.cacheWire L dst∈kOuter L control ext src dst := by
-    rw [LowZero18Square.cacheWire_fixed L hw (List.nodup_cons.mp hn).2 dst hd hpos]
-    have mem := CachedSquareCopy.head_mem dst hpos
-    simp only [kOuter,List.mem_cons,List.mem_append]
-    tauto
-  intro used
-  have h := CachedSquareCopy.wires_subset control (LowZero18Square.cacheWire L dst)
-    src (L.inputBank.take src.length) used
-  rcases Finset.mem_union.mp h with h|h
-  · exact masks.1 h
-  · exact ne _ cacheIn (Finset.mem_singleton.mp h)
 
 include hw hn hs hd hx hdx in
 theorem sqRet_kernels (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
@@ -2434,19 +2411,6 @@ theorem sqRet_body_free (src dst : List Wire)
       (ne _ (ext_outer L control ext src dst _ (DiagSq.getD_in ext 0 (by omega)))))
   exact swap_free _ _ _ (fun used => hdx _ (sqHost_in ext hext) (List.mem_toFinset.mp (hb used)))
 
-include hw hn hx hdx hext in
-theorem withLowK2_760_free (src dst : List Wire)
-    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
-    (hd : ∀q,dst.count q≤L.core.product.count q)
-    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
-    (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
-    sqRet L∉wires (LowZero18Square.withLowK2 L ext control src dst (bodySwap L ext B)) := by
-  have m := sqRet_masks L hw control hn ext src dst hs hd hx hdx
-  have k := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen hext
-  have cached := sqRet_cached_mask L hw control hn ext src dst hs hd hx hdx (by omega)
-  have f := sqRet_body_free L hw control hn ext hx hdx hext src dst hs hd B hb
-  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union,not_or]
-  exact ⟨⟨⟨⟨⟨⟨m.1,k.1⟩,m.2⟩,f⟩,cached⟩,k.2⟩,m.2⟩
 
 end Free
 
@@ -3516,21 +3480,6 @@ theorem place_fix (k : Nat) (hk : k=760 ∨ k=1363) (P : Program) (free : L.core
     OwnQ4Square.swap,OwnQ5Square.swap,OwnDiagAll12PlacedQ6.swap,OwnDiagAll12PlacedQ7.swap,
     PrefixFrontierSquare1591.swap,Prefix1590Square.swap,ControlLoan1589Square.swap] using p9
 
-include hw hn in
-/-- **R2 square deliverable**: the new square never touches physical pool site 760. -/
-theorem square760_free : L.core.poolWire 760∉wires (program760 L) := by
-  have controlND : (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup := by
-    have nd := L.streamedSquare_control_nodup hw hn
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp nd q
-    simp only [List.count_cons] at h ⊢
-    omega
-  have he := OwnDiagAll12Square.kext_ok L hw hn
-  have core := core760_free L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
-    L.core.generic controlND (OwnDiagAll12Square.kext L) he.nodup he.away he.len
-  rw [sqRet_pool760 L hw] at core
-  exact place_fix L hw hn 760 (Or.inl rfl) _ core
 
 end Placed
 
@@ -4035,149 +3984,10 @@ theorem hosts_pool (L : ControlledPointLayout) :
 section SupportPlaced
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 
-include hw hn in
-theorem place_ins (P Q : Program) (sub : wires P⊆insert (L.core.poolWire 1363) (wires Q)) :
-    wires (SquareCarryLoan719BF.place L P)⊆insert (L.core.poolWire 1363) (wires (SquareCarryLoan719BF.place L Q)) := by
-  have kb : 1363<2613 := by omega
-  have blockFix : Square5Placement.blockPerm L 202 (L.core.poolWire 1363)=L.core.poolWire 1363 := by
-    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) 1363 kb]; rfl
-  have f (a b : Nat) (ha : a<2613) (hb : b<2613) (na : 1363≠a) (nb : 1363≠b) :=
-    pool_fix L hw hn 1363 a b kb ha hb na nb
-  simp only [SquareCarryLoan719BF.place]
-  apply rename_ins _ _ _ _ _ (f 718 907 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 768 775 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 769 1539 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 1286 1538 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 1285 1537 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 770 1536 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 767 1532 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 765 1531 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins _ _ _ _ _ (f 766 1530 (by omega) (by omega) (by omega) (by omega))
-  exact rename_ins _ _ _ _ sub blockFix
 
-include hw hn in
-theorem place_ins_set (P Q : Program) (sub : wires P⊆sqSites L ∪ wires Q) :
-    wires (SquareCarryLoan719BF.place L P)⊆sqSites L ∪ wires (SquareCarryLoan719BF.place L Q) := by
-  have mem (h : Wire) (hh : h∈sqSites L) :
-      ∃ k, (k=1362 ∨ k=1363 ∨ k=1364 ∨ k=1430 ∨ k=1464 ∨ k=1533 ∨ k=1534 ∨ k=1535 ∨ k=1431 ∨ k=1432 ∨ k=1466 ∨ k=1365 ∨ k=1465) ∧ h=L.core.poolWire k := by
-    simp only [sqSites,Finset.mem_insert,Finset.mem_singleton] at hh
-    rcases hh with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
-    · exact ⟨1362,by omega,rfl⟩
-    · exact ⟨1363,by omega,rfl⟩
-    · exact ⟨1364,by omega,rfl⟩
-    · exact ⟨1430,by omega,rfl⟩
-    · exact ⟨1464,by omega,rfl⟩
-    · exact ⟨1533,by omega,rfl⟩
-    · exact ⟨1534,by omega,rfl⟩
-    · exact ⟨1535,by omega,rfl⟩
-    · exact ⟨1431,by omega,rfl⟩
-    · exact ⟨1432,by omega,rfl⟩
-    · exact ⟨1466,by omega,rfl⟩
-    · exact ⟨1365,by omega,rfl⟩
-    · exact ⟨1465,by omega,rfl⟩
-  have blockFix : ∀ h∈sqSites L, Square5Placement.blockPerm L 202 h=h := by
-    intro h hh
-    obtain ⟨k,hk,rfl⟩ := mem h hh
-    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) k (by omega)]
-    rcases hk with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> rfl
-  have f (a b : Nat) (ha : a<2613) (hb : b<2613)
-      (na : a<1362 ∨ 1535<a ∨ (1365<a ∧ a<1430) ∨ (1432<a ∧ a<1464) ∨ (1466<a ∧ a<1533))
-      (nb : b<1362 ∨ 1535<b ∨ (1365<b ∧ b<1430) ∨ (1432<b ∧ b<1464) ∨ (1466<b ∧ b<1533)) :
-      ∀ h∈sqSites L, Equiv.swap (L.core.poolWire a) (L.core.poolWire b) h=h := by
-    intro h hh
-    obtain ⟨k,hk,rfl⟩ := mem h hh
-    exact pool_fix L hw hn k a b (by omega) ha hb (by omega) (by omega)
-  simp only [SquareCarryLoan719BF.place]
-  apply rename_ins_set _ _ _ _ _ (f 718 907 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 768 775 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 769 1539 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 1286 1538 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 1285 1537 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 770 1536 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 767 1532 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 765 1531 (by omega) (by omega) (by omega) (by omega))
-  apply rename_ins_set _ _ _ _ _ (f 766 1530 (by omega) (by omega) (by omega) (by omega))
-  exact rename_ins_set _ _ _ _ sub blockFix
 
-include hw hn in
-/-- New square support: the old square's support with site 760 replaced by the host sites. -/
-theorem program760_support_subset :
-    wires (program760 L)⊆sqSites L ∪ ((wires (ReflectionE1Low48Square.program L)).erase (L.core.poolWire 760)) := by
-  have controlND : (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup := by
-    have nd := L.streamedSquare_control_nodup hw hn
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp nd q
-    simp only [List.count_cons] at h ⊢
-    omega
-  have he := OwnDiagAll12Square.kext_ok L hw hn
-  have core := core760_ins L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
-    L.core.generic controlND (OwnDiagAll12Square.kext L) he.nodup he.away he.len
-  rw [sqHost_pool1363 L,hosts_pool L] at core
-  have core' : wires (fastCore760 L)⊆sqSites L ∪ wires (ReflectionE1Low48Square.fastCore L) := by
-    intro q hq
-    rcases Finset.mem_union.mp (core hq) with h|h
-    · rcases Finset.mem_insert.mp h with e|e
-      · exact Finset.mem_union_left _ (by simp [sqSites,e])
-      · exact Finset.mem_union_right _ e
-    · apply Finset.mem_union_left
-      simp only [List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at h
-      rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
-      all_goals simp only [sqSites,Finset.mem_insert,Finset.mem_singleton,eq_self_iff_true,true_or,or_true]
-  have placed := place_ins_set L hw hn _ _ core'
-  have free := square760_free L hw hn
-  intro q hq
-  rcases Finset.mem_union.mp (placed hq) with e|e
-  · exact Finset.mem_union_left _ e
-  · apply Finset.mem_union_right
-    exact Finset.mem_erase.mpr ⟨fun h => free (h ▸ hq),e⟩
 
-include hw hn in
-theorem program760_support : wires (program760 L)⊆(OB5Support.sites L).toFinset := by
-  have old := ReflectionE1Low48Square.support L hw hn
-  intro q hq
-  rcases Finset.mem_union.mp (program760_support_subset L hw hn hq) with e|e
-  · simp only [sqSites,Finset.mem_insert,Finset.mem_singleton] at e
-    rcases e with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1362,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1363,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1364,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1430,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1464,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1533,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1534,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1535,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1431,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1432,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1466,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1365,⟨by omega,by omega⟩,rfl⟩)))))
-    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1465,⟨by omega,by omega⟩,rfl⟩)))))
-  · exact old (Finset.mem_of_mem_erase e)
 
-include hw hn in
-theorem program760_free_old (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    L.core.poolWire i∉wires (program760 L) := by
-  intro used
-  have ib : i<2613 := by simp at hi; omega
-  rcases Finset.mem_union.mp (program760_support_subset L hw hn used) with e|e
-  · simp only [sqSites,Finset.mem_insert,Finset.mem_singleton] at e
-    rcases e with e|e|e|e|e|e|e|e|e|e|e|e|e <;>
-      (have := pool_inj L hw hn i _ ib (by omega) e
-       subst this; simp at hi)
-  · exact ReflectionE1Low48Square.free L hw hn i hi (Finset.mem_of_mem_erase e)
 
 end SupportPlaced
 
@@ -4519,67 +4329,6 @@ theorem withLowK2P_swap_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Wid
   exact mid_swap _ _ _ _ _ s m ((run_preserves_outside _ _ _ _ retPre).trans retS) ub
     (sqHost_fold_free L hw control ext hx hdx he B hb) retPost fin
 
-theorem withLowK2P10_swap_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
-    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
-    (hd : ∀q,dst.count q≤L.core.product.count q)
-    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
-    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
-    (B : Program) (hb : wires B⊆(control::L.wires).toFinset)
-    (g : Wire) (hgR : sqRet L≠g) (hgH : sqHost ext≠g) (hgB : g∉L.inputBank.take src.length)
-    (s : State) (m : List Bool) (hc : L.PairClean s.basis)
-    (hzero : regValue dst s.basis=0) (hz : regValue ext s.basis=0)
-    (fin : (run (ParkCopy10.withLowK2P10 L ext control src dst B g) m s).basis (sqRet L)=false) :
-    run (ParkCopy10.withLowK2P10 L ext control src dst (bodySwap L ext B) g) m s=
-      run (ParkCopy10.withLowK2P10 L ext control src dst B g) m s := by
-  have masks := sqRet_masks L hw control hn ext src dst hs hd hx hdx
-  have kern := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen he
-  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
-  have rt := ne _ (target_outer L hw control ext src dst)
-  have r0 := ne _ (ext_outer L control ext src dst _ (DiagSq.getD_in ext 0 (by omega)))
-  have ht := sqHost_ne_target L hw control ext hdx he
-  have h0 := sqHost_ne_ext0 ext hx he
-  have pf := park_pieces_free10 L hw control hn ext hx hdx he g src dst hs hd h128 hlen hgR hgH hgB
-  have com : renameProgram (SquareCarryLoan719.foldPerm L ext) (bodySwap L ext B)=
-      renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B) := by
-    rw [SquareCarryLoan719.foldPerm_eq L hw,bodySwap,sqSwap]
-    exact swaps_commute _ _ _ _ rt r0 ht h0 B
-  let Pre := ParkCopy10.pA L control src++ParkCopy10.pM L ext src dst++ParkCopy10.pE1 L control src++
-    ParkCopy10.pD ext g++ParkCopy10.pMI L ext src g
-  let Post := ParkCopy10.pC1 L ext control src dst++ParkCopy10.pMO L ext src g++ParkCopy10.pCL L ext src dst++
-    ParkCopy10.pE L control src
-  have s0 : ParkCopy10.withLowK2P10 L ext control src dst B g=
-      Pre++renameProgram (SquareCarryLoan719.foldPerm L ext) B++Post := by
-    simp only [ParkCopy10.withLowK2P10,ParkCopy10.pB,LowZero18Square.foldPerm,Pre,Post,
-      List.append_assoc]
-  have s1 : ParkCopy10.withLowK2P10 L ext control src dst (bodySwap L ext B) g=
-      Pre++renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B)++Post := by
-    rw [← com]
-    simp only [ParkCopy10.withLowK2P10,ParkCopy10.pB,LowZero18Square.foldPerm,Pre,Post,
-      List.append_assoc]
-  rw [s0] at fin
-  rw [s1,s0]
-  have retPre : sqRet L∉wires Pre := by
-    simp only [Pre,wires_append,Finset.mem_union,not_or]
-    exact ⟨⟨⟨⟨masks.1,kern.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩
-  have retPost : sqRet L∉wires Post := by
-    simp only [Post,wires_append,Finset.mem_union,not_or]
-    exact ⟨⟨⟨pf.2.2.2.1,pf.2.2.2.2.1⟩,kern.2⟩,masks.2⟩
-  have retS : s.basis (sqRet L)=false := by
-    apply (regValue_zero _ _).mp hc.pad
-    exact DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega)
-  have pre0 : ∀ r1 r2, (run (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) r2
-      (run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s)).basis (sqHost ext)=false := by
-    intro r1 r2
-    have q := prefix_host_zero L hw control hn src dst hs hd h128 hsmax hlen ext hx hdx he s hc hzero hz r1 r2 []
-    rwa [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.2] at q
-  have ub : (run Pre (m.take (measurementCount Pre)) s).basis (sqHost ext)=false := by
-    simp only [Pre,run_append]
-    rw [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.1,run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.1,
-      run_preserves_outside _ _ _ _ pf.2.2.2.2.2.1]
-    exact pre0 _ _
-  exact mid_swap _ _ _ _ _ s m ((run_preserves_outside _ _ _ _ retPre).trans retS) ub
-    (sqHost_fold_free L hw control ext hx hdx he B hb) retPost fin
 
 theorem withLowK2S_swap_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
@@ -4782,80 +4531,6 @@ theorem eU_not_y (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires
     List.count_cons] at c
   omega
 
-/-- The A leaf with the five ext hosts plus `product[256]` (`eU`). -/
-theorem branchAFP10_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (A O : Nat) (hO : O<SquareReduction.p)
-    (s : State) (records : List Bool) (ha : regValue L.core.low s.basis=A)
-    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
-    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
-    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
-    (run (ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
-      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control) (ControlLoan1589BFFold.eU L)) records s).phase=s.phase ∧
-    regValue L.core.out (run (ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
-      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control) (ControlLoan1589BFFold.eU L)) records s).basis=
-      ControlLoan1589BFFold.resAF ((if s.basis control then A else 0)^2) O (s.basis control) ∧
-    ∀q,q∉L.core.out → (run (ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
-      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control) (ControlLoan1589BFFold.eU L)) records s).basis q=s.basis q := by
-  have nd := (List.nodup_cons.mp hn).2
-  have hcw : control∉L.wires := (List.nodup_cons.mp hn).1
-  let M := if s.basis control then A else 0
-  have ab : A<2^128 := by simpa [L.core.low_length hw.core,ha] using regValue_lt L.core.low s.basis
-  have mb : M<2^128 := by cases h : s.basis control <;> simp [M,h]; omega
-  have srcCount (q : Wire) : L.core.low.count q≤(L.core.y++[L.core.sumCarry]).count q := by
-    have h := (List.take_sublist 128 L.core.y).count_le q
-    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
-  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
-    (List.take_sublist 256 L.core.product).count_le q
-  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
-    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
-  simp only [FullASelectedDevelop.hostedASelected_eq L (LowZero18Square.foldPerm L ext) control
-    (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len
-      (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
-  have aSupport:=FullASelectedDevelop.aBodySelected_support L hw nd control
-  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (FullASelectedDevelop.aBodySelected L control) := fun q hq hw' =>
-    he.away q hq (List.mem_toFinset.mp (aSupport hw'))
-  have eUw := InverseCarryDevelop.eU_mem_wires L hw
-  have hgE : ControlLoan1589BFFold.eU L∉ext := fun h => he.away _ h (List.mem_cons_of_mem control eUw)
-  have hgB : ControlLoan1589BFFold.eU L∉L.inputBank.take L.core.low.length := fun h =>
-    InverseCarryDevelop.eU_off_aux L hw nd _ (by simp [List.mem_of_mem_take (List.mem_of_mem_take h)]) rfl
-  have hgD : ControlLoan1589BFFold.eU L∉L.core.product.take 256 := InverseCarryDevelop.eU_not_low L hw nd
-  have hgS : ControlLoan1589BFFold.eU L∉L.core.low := fun h => eU_not_y L hw nd (List.mem_of_mem_take h)
-  have hgC : ControlLoan1589BFFold.eU L≠control := fun e => hcw (e ▸ eUw)
-  have hgO : ControlLoan1589BFFold.eU L∉L.core.out := (ControlLoan1589BFFold.eReg_away L nd _ (ControlLoan1589BFFold.eK_mem L hw).2.1).1
-  have hgK : ControlLoan1589BFFold.eU L∉LowZero18LowK.ktmp L := fun h =>
-    InverseCarryDevelop.eU_off_aux L hw nd _ (by simp [List.mem_of_mem_drop h]) rfl
-  have hgW : ControlLoan1589BFFold.eU L∉ECDSAAdd.wires (FullASelectedDevelop.aBodySelected L control) :=
-    FullASelectedDevelop.eU_off_aBodySelected L hw nd control hcw
-  have hg0 : s.basis (ControlLoan1589BFFold.eU L)=false :=
-    (regValue_zero _ _).mp hp0 _ (InverseCarryDevelop.eU_mem_product L hw)
-  apply ParkCopy10.withLowK2P10_correct L hw control hn L.core.low (L.core.product.take 256) srcCount dstCount
-    (by simp [L.core.low_length hw.core]) (by simp [L.core.low_length hw.core])
-    (by simp [hw.core.product,L.core.low_length hw.core]) (L.core.low_length hw.core) ext he.nodup he.away he.len
-    (FullASelectedDevelop.aBodySelected L control) hbody (ControlLoan1589BFFold.eU L) hgE hgB hgD hgS hgC hgO hgK hgW
-    s records hc dstZero hz hg0
-  intro t m dstValue same
-  rw [ha] at dstValue
-  change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
-  have full : regValue L.core.product t.basis=M^2 :=
-    L.measured_partial_product_value nd s.basis t.basis hp0 (M^2) dstValue same
-  have clean := L.measured_product_frame_clean nd (L.core.product.take 256) dstCount s.basis t.basis hc same
-  have outAway (q : Wire) (hq : q∈L.core.out) : q∉L.core.product.take 256 := by
-    intro bad
-    exact List.disjoint_left.mp (L.product_out_disjoint nd) (List.mem_of_mem_take bad) hq
-  have outO : regValue L.core.out t.basis=O :=
-    (regValue_congr _ _ _ (fun q hq => same q (outAway q hq))).trans ho
-  have ctrlProd : control∉L.core.product.take 256 := fun h => hcw (by
-    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.mem_of_mem_take h])
-  have ctrlT : t.basis control=s.basis control := same control ctrlProd
-  have hg : t.basis control=false → M=0 := by
-    intro h; rw [ctrlT] at h; simp [M,h]
-  have sumProd:L.core.sumCarry∉L.core.product.take 256 := by
-    intro h;apply ParkCarryDevelop.sumCarry_away L nd
-    simp [ParkCarryDevelop.restWires,List.mem_of_mem_take h]
-  have hsumT:t.basis L.core.sumCarry=false := (same _ sumProd).trans hsum
-  have frame := FullASelectedDevelop.aBodySelected_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg t m ⟨outO,fun _ _ => rfl⟩
-  rw [ctrlT] at frame
-  exact ⟨frame.1,frame.2.1,frame.2.2⟩
 
 
 section Branches
@@ -4902,35 +4577,6 @@ theorem branchBF760_run_eq (B O : Nat) (hO : O<SquareReduction.p)
         (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h))) s records hc dstZero hz fin]
   exact park_state_eq L _ _ s newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
 
-include hw hn in
-theorem branchAF760_run_eq (A O : Nat) (hO : O<SquareReduction.p)
-    (s : State) (records : List Bool) (ha : regValue L.core.low s.basis=A)
-    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
-    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
-    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
-    run (branchAF760 L ext control) records s=run (LowZero18Square.branchAF L ext control) records s := by
-  have nd := (List.nodup_cons.mp hn).2
-  have srcCount (q : Wire) : L.core.low.count q≤(L.core.y++[L.core.sumCarry]).count q := by
-    have h := (List.take_sublist 128 L.core.y).count_le q
-    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢
-    omega
-  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
-    (List.take_sublist 256 L.core.product).count_le q
-  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
-    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
-  have fU := eU_760_facts L hw control hn ext he.away he.len
-  have newC := branchAFP10_correct L hw ext control hn A O hO s records ha ho hp0 hc hsum he hz
-  have oldC := LowZero18Square.branchAF_correct L hw ext control hn A O hO s records ha ho hp0 hc hsum he hz
-  have fin := newC.2.2 (sqRet L) (sqRet_not_out L hw nd)
-  rw [sqRet_clean L hw _ hc] at fin
-  rw [show branchAF760 L ext control=ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
-      (bodySwap L ext (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) (ControlLoan1589BFFold.eU L) from rfl,
-    withLowK2P10_swap_run_eq L hw control hn L.core.low (L.core.product.take 256) srcCount dstCount
-      (by simp [L.core.low_length hw.core]) (by simp [L.core.low_length hw.core])
-      (by simp [hw.core.product,L.core.low_length hw.core]) ext he.nodup he.away he.len _
-      (FullASelectedDevelop.hostedASelected_fold_support L hw nd ext control he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))
-      _ fU.1 fU.2.1 (fU.2.2.2 _) s records hc dstZero hz fin]
-  exact park_state_eq L _ _ s newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
 
 end Branches
 
@@ -12542,12 +12188,6 @@ theorem slots_le761 (L : ControlledPointLayout) (hw : L.Widths) :
 
 
 
-set_option maxHeartbeats 500000000 in
-theorem dready_actual761 : FullASelectedDevelop.DReady FullAReady.L FullAReady.c (Baselines.layout.core.poolWire 1540) := by
-  unfold FullASelectedDevelop.DReady
-  refine ⟨by decide +kernel,by decide +kernel,by decide +kernel,by decide +kernel,by decide +kernel,?_⟩
-  rw [← FullAReady.onePass_input_eq]
-  decide +kernel
 
 attribute [local irreducible] toffoliCount measurementCount gateSlots
 

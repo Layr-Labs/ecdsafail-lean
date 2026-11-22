@@ -36124,7 +36124,6 @@ noncomputable def CT.modify2 (t : CT) : Nat → (Nat → Nat) → CT :=
     (fun a q f => cond (Nat.beq q 0) (.leaf (f a)) (.leaf a))
     (fun h l r sl sr q f => cond (Nat.blt q h) (.node h (sl q f) r) (.node h l (sr (q - h) f))) t
 
-theorem get_nil (q : Nat) : CodecBitSliceVerify.get [] q = 0 := rfl
 
 theorem get_append (L R : List Nat) (q : Nat) :
     CodecBitSliceVerify.get (L ++ R) q = if q < L.length then CodecBitSliceVerify.get L q else CodecBitSliceVerify.get R (q - L.length) := by
@@ -36271,25 +36270,6 @@ theorem safeStepT_spec (i : Instr) (s : CT) (hw : s.WF) : safeStepT i s = CodecB
       ((CodecBitSliceVerify.corr c0 (s.toList.set t 0) == 0) && (CodecBitSliceVerify.corr c1 (s.toList.set t 0) == CodecBitSliceVerify.get s.toList t))
     rw [corrT_spec _ _ w, corrT_spec _ _ w, h, get2_spec s hw]
 
-theorem checkT_sound (mask : Nat) (P : Program) :
-    ∀ (s : CT) (out : List Nat), s.WF → checkT mask P s out = true → CodecBitSliceVerify.eval mask P s.toList = (true, out) := by
-  induction P with
-  | nil =>
-    intro s out _ h
-    have h' : (s.toList == out) = true := h
-    rw [beq_iff_eq] at h'
-    show (true, s.toList) = (true, out)
-    rw [h']
-  | cons i P ih =>
-    intro s out hw h
-    have h' : (safeStepT i s && checkT mask P (stepT mask i s) out) = true := h
-    rw [Bool.and_eq_true] at h'
-    obtain ⟨w1, t1⟩ := stepT_spec mask i s hw
-    have r := ih (stepT mask i s) out w1 h'.2
-    rw [t1] at r
-    show (CodecBitSliceVerify.safeStep i s.toList && (CodecBitSliceVerify.eval mask P (CodecBitSliceVerify.step mask i s.toList)).1, (CodecBitSliceVerify.eval mask P (CodecBitSliceVerify.step mask i s.toList)).2) = _
-    rw [r, ← safeStepT_spec i s hw, h'.1]
-    rfl
 
 /-- Balanced tree from a list (fuel = length suffices). -/
 def build : Nat → List Nat → CT
@@ -36327,12 +36307,6 @@ theorem build_spec : ∀ (f : Nat) (l : List Nat), l.length ≤ f → (build f l
     · show (build f _).toList ++ (build f _).toList = _
       rw [t1, t2, List.take_append_drop]
 
-/-- The fact `eval mask P inp = (true, out)` from one tree run. -/
-theorem eval_of_checkT (mask : Nat) (P : Program) (inp out : List Nat)
-    (h : checkT mask P (build inp.length inp) out = true) : CodecBitSliceVerify.eval mask P inp = (true, out) := by
-  obtain ⟨w, t⟩ := build_spec inp.length inp (Nat.le_refl _)
-  have r := checkT_sound mask P _ out w h
-  rwa [t] at r
 
 /-- CPS run: `checkK mask P s k` runs `P` on `s`, then hands the final tree to `k`. -/
 noncomputable def checkK (mask : Nat) (P : Program) : CT → (CT → Bool) → Bool :=
@@ -36508,46 +36482,18 @@ theorem targets_sound (n : Nat) (P : Program) (h : targetsB n P = true) :
       rw [← t]; exact Nat.blt_eq.mp h'.1
     · exact ih h'.2 i e
 
-theorem forall_append {P : Instr → Prop} {A B : Program} (ha : ∀ i ∈ A, P i) (hb : ∀ i ∈ B, P i) :
-    ∀ i ∈ A ++ B, P i :=
-  fun i hi => (List.mem_append.mp hi).elim (ha i) (hb i)
 
 /-- `toffoliCount p = t ∧ measurementCount p = m` from one recursor pass. -/
 noncomputable def countsB (p : Program) : Nat → Nat → Bool :=
   List.rec (motive := fun _ => Nat → Nat → Bool) (fun t m => Nat.beq t 0 && Nat.beq m 0)
     (fun i _ ih t m => Nat.ble (toffI i) t && Nat.ble (measI i) m && ih (t - toffI i) (m - measI i)) p
 
-theorem counts_sound (p : Program) : ∀ t m, countsB p t m = true →
-    toffoliCount p = t ∧ measurementCount p = m := by
-  induction p with
-  | nil =>
-    intro t m h
-    have h' : (Nat.beq t 0 && Nat.beq m 0) = true := h
-    rw [Bool.and_eq_true] at h'
-    rw [Nat.eq_of_beq_eq_true h'.1, Nat.eq_of_beq_eq_true h'.2]
-    exact ⟨rfl, rfl⟩
-  | cons i p ih =>
-    intro t m h
-    have h' : (Nat.ble (toffI i) t && Nat.ble (measI i) m && countsB p (t - toffI i) (m - measI i)) = true := h
-    simp only [Bool.and_eq_true, Nat.ble_eq] at h'
-    obtain ⟨⟨ht, hm⟩, hr⟩ := h'
-    obtain ⟨r1, r2⟩ := ih _ _ hr
-    exact ⟨by rw [toff_cons, r1]; omega, by rw [meas_cons, r2]; omega⟩
 
 /-- `gateSlots p ≤ g` from one recursor pass. -/
 noncomputable def slotsLeB (p : Program) : Nat → Bool :=
   List.rec (motive := fun _ => Nat → Bool) (fun _ => true)
     (fun i _ ih g => Nat.ble (slotI i) g && ih (g - slotI i)) p
 
-theorem slotsLe_sound (p : Program) : ∀ g, slotsLeB p g = true → gateSlots p ≤ g := by
-  induction p with
-  | nil => intro g _; exact Nat.zero_le g
-  | cons i p ih =>
-    intro g h
-    have h' : (Nat.ble (slotI i) g && slotsLeB p (g - slotI i)) = true := h
-    simp only [Bool.and_eq_true, Nat.ble_eq] at h'
-    have r := ih _ h'.2
-    rw [slots_cons]; omega
 
 end ECDSAAdd.Entrant.WSlimBlock
 end
@@ -37400,23 +37346,7 @@ def retired := [4835,4836,4837,4838,4839]
 def early := [4615,4616,4617,4618,4619]
 def spare := [4915,4916,4917,4918,4919]
 
-theorem outer_free (P : Program) (cold : ∀ w∈early,w∉wires P) :
-    ∀ q∈retired, q∉wires (encode P) := by
-  intro q hq used
-  rw [encode,renameProgram_support] at used
-  obtain ⟨w,hw,eq⟩ := Finset.mem_image.mp used
-  have inv := congrArg outer.symm eq
-  rw [Equiv.symm_apply_apply] at inv
-  exact cold w (inv ▸ (by decide +kernel : ∀ z∈retired,outer.symm z∈early) q hq) hw
 
-theorem y_free (P : Program) (cold : ∀ w∈spare,w∉wires P) :
-    ∀ q∈retired, q∉wires (encodeY P) := by
-  intro q hq used
-  rw [encodeY,renameProgram_support] at used
-  obtain ⟨w,hw,eq⟩ := Finset.mem_image.mp used
-  have inv := congrArg duringY.symm eq
-  rw [Equiv.symm_apply_apply] at inv
-  exact cold w (inv ▸ (by decide +kernel : ∀ z∈retired,duringY.symm z∈spare) q hq) hw
 
 def duringX : Equiv.Perm Wire := outer.trans (Equiv.swap 4616 4629)
 def xOld : Equiv.Perm Wire := Equiv.swap 4836 4629
@@ -37439,14 +37369,6 @@ private theorem equal_codes (a b : Equiv.Perm Wire) (xs zeroSites : List Wire)
 
 def switchX (P : Program) := renameProgram duringX P
 
-theorem x_free (P : Program) (cold : ∀ w∈early,w∉wires P) :
-    ∀ q∈retired, q∉wires (switchX P) := by
-  intro q hq used
-  rw [switchX,renameProgram_support] at used
-  obtain ⟨w,hw,eq⟩ := Finset.mem_image.mp used
-  have inv := congrArg duringX.symm eq
-  rw [Equiv.symm_apply_apply] at inv
-  exact cold w (inv ▸ (by decide +kernel : ∀z∈retired,duringX.symm z∈early) q hq) hw
 
 def changed := [4835,4836,4837,4838,4839,4615,4616,4617,4618,4619,4629]
 def firstClean := [4835,4837,4838,4839,4615,4616,4617,4618,4619,4629]

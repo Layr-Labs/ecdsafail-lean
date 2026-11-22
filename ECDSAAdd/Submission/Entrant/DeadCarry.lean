@@ -22576,52 +22576,6 @@ section Exit
 variable (K : Program) (kernelSupport : wires K⊆OB5Support.logicalSites) (correct : ExitCorrect K)
 
 def exit (K : Program) (L : ControlledPointLayout) : Program:=renameProgram (wireFn2 L) K
-include kernelSupport correct in
-theorem exit_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Nat) (hX : X < p) (hX0 : 0 < X) (hY : Y < p)
-    (s : State) (m : List Bool)
-    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y)
-    (hc : regValue L.dialogPool s.basis=0) :
-    (run (exit K L) m s).phase=s.phase ∧
-    regValue L.point.y (run (exit K L) m s).basis=
-      centerWord (((Y:Fp)*(X:Fp))/2) ∧
-    ∀q,q∉L.point.y → (run (exit K L) m s).basis q=s.basis q := by
-  have yValue : (Y:Fp).val=Y := ZMod.val_natCast_of_lt hY
-  rcases placement2 L hw hn with ⟨injective,divisorMap,numeratorMap,controlMap,sharedWork,
-    selectorG,selectorS,zeroFlag⟩
-  have dx : (wireBlock base 770 256).toFinset⊆OB5Support.logicalSites := by
-    intro q hq
-    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
-    apply List.mem_toFinset.mpr
-    apply List.mem_map.mpr
-    refine ⟨i,?_,rfl⟩
-    simp only [wireBlock,List.mem_range'_1] at hi
-    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
-      List.mem_cons,List.not_mem_nil,or_false]
-    omega
-  have dy : (wireBlock base 2056 256).toFinset⊆OB5Support.logicalSites := by
-    intro q hq
-    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
-    apply List.mem_toFinset.mpr
-    apply List.mem_map.mpr
-    refine ⟨i,?_,rfl⟩
-    simp only [wireBlock,List.mem_range'_1] at hi
-    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
-      List.mem_cons,List.not_mem_nil,or_false]
-    omega
-  have config := MappedCompressed.LaneA.laneLogical_config
-  have above : History5.HistoryAbove base := by intro j hj; simp [base]
-  have result := OwnExitFuseQ5.wordTransfer L (wireFn2 L) OB5Support.logicalSites
-    (fun a ha b hb eq => injective a (ArithmeticOB5.logical_sub_old ha) b
-      (ArithmeticOB5.logical_sub_old hb) eq)
-    divisorMap numeratorMap
-    (fun q hq used hx hy => sharedWork q hq (ArithmeticOB5.logical_sub_old used) hx hy)
-    selectorG selectorS dx dy X (Y:Fp) (centerWord (((Y:Fp)*(X:Fp))/2))
-    s m hx (hy.trans yValue.symm) hc
-    K kernelSupport
-    (fun t records input hg hs => correct
-      config.1 above config.2.1 config.2.2 X (Y:Fp) hX0 hX t records input hg hs)
-  simpa only [exit] using result
 
 end Exit
 
@@ -74076,11 +74030,8 @@ theorem original_result (w x : Nat) (hx:x<2^w) (c:MeasuredDH.clean x=true)
   have a := (clean_bit w x hx).trans c
   exact CodecBitSliceVerify.eval_sound _ x a _ _ x (by simpa only [inputs,List.length_map,List.length_range] using ok.1) (inputs_rel w _ x hx a) ok.2
 
-theorem oc10 : ∀d h cx cy : Bool, OrigCheck 10 d h cx cy := by decide +kernel
 theorem oc11 : ∀cx cy : Bool, OrigCheck 11 true true cx cy := by decide +kernel
 
-theorem safe10 (d h cx cy : Bool) (x : Nat) (hx:x<1024) (c:MeasuredDH.clean x=true) :
-    safe (MeasuredDH.original d h cx cy) x=true := (original_result 10 x hx c d h cx cy (oc10 d h cx cy)).1
 theorem safe11 (cx cy : Bool) (x : Fin 2048) (c:MeasuredDH.clean x.val=true) :
     safe (MeasuredDH.original true true cx cy) x.val=true := (original_result 11 x.val x.isLt c _ _ cx cy (oc11 cx cy)).1
 
@@ -74120,111 +74071,13 @@ theorem result (w a x : Nat) (hx:x<2^w) (ha:a.testBit x=true) (p q : Program) (o
   have b:=CodecBitSliceVerify.eval_sound _ x ha q _ x (by simpa only [inputs,List.length_map,List.length_range] using ok.2.1) r ok.2.2.2.1
   exact ⟨l.1,LegalColumnProof.row_equal l.2 b.2 ok.2.2.2.2⟩
 
-theorem same10 : ∀ e d h cx cy : Bool, Good 10 (valid 10 e d h cx cy)
-   (MeasuredDH.replacement e d h cx cy) (MeasuredDH.original d h cx cy) := by decide +kernel
-theorem equivalence10 (e d h cx cy : Bool) (x : Fin 1024) (c:MeasuredDH.clean x.val=true) (cov:MeasuredDH.covered x.val=true)
-    (yes:e=true → MeasuredDH.clears d h cx cy x.val=true) (no:e=false → x.val.testBit 4=false ∧ x.val.testBit 6=false) :
-    safe (MeasuredDH.replacement e d h cx cy) x.val=true ∧ bitRun (MeasuredDH.replacement e d h cx cy) x.val=bitRun (MeasuredDH.original d h cx cy) x.val :=
-  result 10 _ x.val x.isLt (valid_bit 10 _ (by decide) x.isLt _ _ _ _ _ (oc10 d h cx cy) c cov yes no) _ _ (same10 e d h cx cy)
 
 end ECDSAAdd.Entrant.DHColumns
 
 namespace ECDSAAdd.Entrant.MeasuredDH
 open Arithmetic RecordedQuantum Baselines
 open MeasuredCodec5 (bitRun safe)
-set_option maxRecDepth 30000 in
-set_option maxHeartbeats 8000000 in
-theorem finite_equivalence : ∀ erase enD enH cx cy : Bool, ∀ x : Fin 1024,
-    clean x.val = true → covered x.val = true →
-    (erase = true → clears enD enH cx cy x.val = true) →
-    (erase = false → x.val.testBit 4=false ∧ x.val.testBit 6=false) →
-    safe (replacement erase enD enH cx cy) x.val = true ∧
-      bitRun (replacement erase enD enH cx cy) x.val = bitRun (original enD enH cx cy) x.val :=
-  DHColumns.equivalence10
 
-set_option maxRecDepth 30000 in
-set_option maxHeartbeats 8000000 in
-theorem original_safe : ∀ enD enH cx cy : Bool, ∀ x < 1024,
-    clean x = true → safe (original enD enH cx cy) x = true :=
-  DHColumns.safe10
-
-                                                                      
-                                             
-                                                   
-                                                              
-                                                      
-                                                                                     
-                                                                                  
-                                                                     
-                                                             
-                                                                                                 
-
-
-
-
-
-
-                                                                  
-                                                                                          
-                          
-                                                                        
-                                                          
-                                                                                     
-                                                      
-                                                          
-            
-                                                   
-                                                   
-
-                                             
-                                                                                   
-
-                                                                    
-                                   
-                                                                  
-                                                
-
-                                                                       
-                                                              
-                                                           
-                                                                         
-                                                       
-                                                            
-                                                                                    
-                          
-                                                                  
-                                                                        
-                                   
-                              
-                     
-                                                                       
-                                      
-                                                                                 
-       
-                                 
-                       
-                                         
-                                                                    
-                                                              
-                       
-         
-                                
-                                        
-                                                              
-            
-                                                                          
-                                                      
-                                                      
-                                                                    
-                                                                    
-                            
-       
-                                                             
-                                               
-                                                                          
-            
-                                                                                           
-                                                                            
 
 open MeasuredCodec5 (label)
 
@@ -92004,65 +91857,13 @@ theorem whole_zero3 (P R : Program) (a b c A B A' B' z z' : Wire)
 /-! ### Instantiation at the KAdd indices -/
 open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
 
-/-- Mirror of `add_split`, peeling THREE bits. -/
-theorem add_split3 (xs ys cs : List Wire) (cin a A A' b B B' z z' : Wire)
-    (hy : xs.length=ys.length) (hc : xs.length=cs.length) :
-    addInPlace (xs++[a,A,A']) (ys++[b,B,B']) (cs++[z,z']) cin=
-      adderPrefix xs ys cs cin
-        ++ oldLeaf3At a b (lastCarry cs cin) A B A' B' z z'
-        ++ adderSuffix xs ys cs cin := by
-  induction xs generalizing ys cs cin with
-  | nil =>
-    have ey : ys=[] := List.eq_nil_of_length_eq_zero (by simpa using hy.symm)
-    have ec : cs=[] := List.eq_nil_of_length_eq_zero (by simpa using hc.symm)
-    subst ys; subst cs; rfl
-  | cons x xs ih =>
-    cases ys with
-    | nil => simp at hy
-    | cons y ys =>
-      cases cs with
-      | nil => simp at hc
-      | cons c cs =>
-        have hy' : xs.length=ys.length := by simpa using hy
-        have hc' : xs.length=cs.length := by simpa using hc
-        have step : addInPlace ((x::xs)++[a,A,A']) ((y::ys)++[b,B,B']) ((c::cs)++[z,z']) cin=
-            majority x y cin c++addInPlace (xs++[a,A,A']) (ys++[b,B,B']) (cs++[z,z']) c++
-              eraseCarry x y cin c++[ECDSAAdd.Instr.CX x y,.CX cin y] := by
-          cases xs <;> cases ys <;> rfl
-        rw [step,ih ys cs c hy' hc']
-        simp only [adderPrefix,adderSuffix,lastCarry,List.append_assoc]
 
 def P3 (w : Nat→Wire) : Program :=
   adderPrefix (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797)
 def R3 (w : Nat→Wire) : Program :=
   adderSuffix (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797)
 
-private theorem lastCarry_cat3 (xs ys : List Wire) (cin : Wire) :
-    lastCarry (xs ++ ys) cin = lastCarry ys (lastCarry xs cin) := by
-  induction xs generalizing cin with
-  | nil => rfl
-  | cons x xs ih => exact ih x
 
-/-- Peel the top THREE bits of the real KAdd adder. -/
-theorem literal_split3 (w : Nat→Wire) :
-    literalKAdd w = P3 w
-      ++ oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796)
-      ++ R3 w := by
-  have hx : wireBlock w 0 258=wireBlock w 0 255++[w 255,w 256,w 257] := by
-    rw [←wireBlock_append w 0 255 3]; rfl
-  have hy : wireBlock w 770 258=wireBlock w 770 255++[w 1025,w 1026,w 1027] := by
-    rw [←wireBlock_append w 770 255 3]; rfl
-  have hc : wireBlock w 1540 257=wireBlock w 1540 255++[w 1795,w 1796] := by
-    rw [←wireBlock_append w 1540 255 2]; rfl
-  have lastBlock : wireBlock w 1540 255 = wireBlock w 1540 254 ++ [w 1794] := by
-    rw [←wireBlock_append w 1540 254 1]; rfl
-  have last : lastCarry (wireBlock w 1540 255) (w 1797)=w 1794 := by
-    rw [lastBlock,lastCarry_cat3]; rfl
-  rw [literalKAdd,read_add,hx,hy,hc]
-  simpa only [P3,R3,last] using add_split3
-    (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255)
-    (w 1797) (w 255) (w 256) (w 257) (w 1025) (w 1026) (w 1027) (w 1795) (w 1796)
-    (by simp [wireBlock_length]) (by simp [wireBlock_length])
 
 /-- The three-bit zero replacement of the whole KAdd adder: 255 Toffolis. -/
 def zero3KAdd (w : Nat→Wire) : Program :=
@@ -92086,42 +91887,13 @@ def zero3KAdd (w : Nat→Wire) : Program :=
 
 /-! ### Side conditions for `whole_zero3` at the KAdd indices -/
 
-theorem low_avoid3 (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
-    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) :
-    w i ∉ spinePorts (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797) := by
-  intro h
-  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
-  rcases h with h|h|h|h
-  · have e:=hinj h; omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    have e:=hinj hji; subst j
-    simp only [List.mem_range'_1] at hj; omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    have e:=hinj hji; subst j
-    simp only [List.mem_range'_1] at hj; omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    have e:=hinj hji; subst j
-    simp only [List.mem_range'_1] at hj; omega
 
 attribute [local irreducible] ECDSAAdd.wires in
-theorem P3_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
-    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (P3 w) := by
-  intro h
-  exact low_avoid3 w hinj i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
 
 section R3SupportOpaque
 attribute [local irreducible] ECDSAAdd.wires
-theorem R3_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
-    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (R3 w) := by
-  intro h
-  have support := suffix_support (wireBlock w 0 255) (wireBlock w 770 255)
-    (wireBlock w 1540 255) (w 1797)
-  exact low_avoid3 w hinj i hi (List.mem_toFinset.mp (support h))
 end R3SupportOpaque
 
-theorem tail3_nd (w : Nat→Wire) (hinj : Function.Injective w) :
-    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027,w 1795,w 1796].Nodup :=
-  List.Nodup.map hinj (by decide : [255,1025,1794,256,1026,257,1027,1795,1796].Nodup)
 
 
 
@@ -92183,21 +91955,6 @@ open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridge
 
 section Exit3Opaque
 attribute [local irreducible] ECDSAAdd.wires
-set_option maxHeartbeats 16000000 in
-theorem exit3_run_eq_split (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
-    (clean5 : s.basis (w 1795)=false) (clean6 : s.basis (w 1796)=false)
-    (topB  : (run (P3 w++oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
-                (w 1795) (w 1796)++R3 w) [] s).basis (w 1026)=false)
-    (topB' : (run (P3 w++oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
-                (w 1795) (w 1796)++R3 w) [] s).basis (w 1027)=false) :
-    run (P3 w++oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
-          (w 1795) (w 1796)++R3 w) m s
-      = run (P3 w++newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)++R3 w) m s := by
-  exact whole_zero3 (P3 w) (R3 w) (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
-    (w 1795) (w 1796) (tail3_nd w hinj) s m clean5 clean6
-    (P3_avoid w hinj 1795 (Or.inl rfl)) (P3_avoid w hinj 1796 (Or.inr (Or.inl rfl)))
-    (R3_avoid w hinj 1026 (Or.inr (Or.inr (Or.inl rfl))))
-    (R3_avoid w hinj 1027 (Or.inr (Or.inr (Or.inr rfl)))) topB topB'
 end Exit3Opaque
 
 
@@ -92328,88 +92085,13 @@ theorem support3 (a b c A B A' B' z z' : Wire) :
                      
                                                              
 
-theorem tail3_nd_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
-    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027,w 1795,w 1796].Nodup := by
-  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
-    intro he
-    exact hne (skywalkPool_index_inj w hn i j hi hj he)
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true]
-  repeat' constructor
-  all_goals exact neq _ _ (by decide) (by decide) (by decide)
 
-theorem low_avoid3_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
-    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) :
-    w i ∉ spinePorts (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797) := by
-  have ir : i<1798 := by omega
-  intro h
-  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
-  rcases h with h|h|h|h
-  · have e := skywalkPool_index_inj w hn i 1797 ir (by decide) h
-    omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj
-    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
-    omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj
-    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
-    omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj
-    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
-    omega
 
-theorem P3_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
-    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (P3 w) := by
-  intro h
-  exact low_avoid3_pool w hn i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
 
 section R3PoolOpaque
-theorem R3_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
-    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (R3 w) := by
-  intro h
-  have support := suffix_support (wireBlock w 0 255) (wireBlock w 770 255)
-    (wireBlock w 1540 255) (w 1797)
-  exact low_avoid3_pool w hn i hi (List.mem_toFinset.mp (support h))
 end R3PoolOpaque
 
 
-set_option maxHeartbeats 16000000 in
-theorem exit3_run_eq_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
-    (clean5 : s.basis (w 1795)=false) (clean6 : s.basis (w 1796)=false)
-    (topB  : (run (literalKAdd w) [] s).basis (w 1026)=false)
-    (topB' : (run (literalKAdd w) [] s).basis (w 1027)=false) :
-    run (literalKAdd w) m s=run (zero3KAdd w) m s := by
-  rw [literal_split3] at topB topB'
-  rw [literal_split3, zero3KAdd]
-  exact whole_zero3 (P3 w) (R3 w) (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
-    (w 1795) (w 1796) (tail3_nd_pool w hn) s m clean5 clean6
-    (P3_avoid_pool w hn 1795 (Or.inl rfl)) (P3_avoid_pool w hn 1796 (Or.inr (Or.inl rfl)))
-    (R3_avoid_pool w hn 1026 (Or.inr (Or.inr (Or.inl rfl))))
-    (R3_avoid_pool w hn 1027 (Or.inr (Or.inr (Or.inr rfl)))) topB topB'
-
-                                                                                  
-                                                                          
-                                                              
-                                                               
-                                                                                              
-                                                                                       
-                                                  
-
-                                                                                    
-                                                                                        
-                                                                                              
-                                             
-                                                                                              
-                                                                                       
-                                                        
-
-
-                                     
-                                       
-
-                      
 
 
 
@@ -92963,43 +92645,13 @@ theorem zero4_counts (w : Nat→Wire)
 
 /-! ### Side conditions for `whole_zero4` at the KAdd indices -/
 
-theorem low_avoid4 (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
-    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) :
-    w i ∉ spinePorts (wireBlock w 0 254) (wireBlock w 770 254) (wireBlock w 1540 254) (w 1797) := by
-  intro h
-  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
-  rcases h with h|h|h|h
-  · have e:=hinj h; omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    have e:=hinj hji; subst j
-    simp only [List.mem_range'_1] at hj; omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    have e:=hinj hji; subst j
-    simp only [List.mem_range'_1] at hj; omega
-  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
-    have e:=hinj hji; subst j
-    simp only [List.mem_range'_1] at hj; omega
 
 attribute [local irreducible] ECDSAAdd.wires in
-theorem P4_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
-    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) : w i∉wires (P4 w) := by
-  intro h
-  exact low_avoid4 w hinj i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
 
 section R4SupportOpaque
 attribute [local irreducible] ECDSAAdd.wires
-theorem R4_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
-    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) : w i∉wires (R4 w) := by
-  intro h
-  have support := suffix_support (wireBlock w 0 254) (wireBlock w 770 254)
-    (wireBlock w 1540 254) (w 1797)
-  exact low_avoid4 w hinj i hi (List.mem_toFinset.mp (support h))
 end R4SupportOpaque
 
-theorem tail4_nd (w : Nat→Wire) (hinj : Function.Injective w) :
-    [w 254,w 1024,w 1793,w 255,w 1025,w 256,w 1026,w 257,w 1027,w 1794,w 1795,w 1796].Nodup :=
-  List.Nodup.map hinj
-    (by decide : [254,1024,1793,255,1025,256,1026,257,1027,1794,1795,1796].Nodup)
 
 
 
@@ -93048,29 +92700,6 @@ open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridge
 
 section Exit4Opaque
 attribute [local irreducible] ECDSAAdd.wires
-set_option maxHeartbeats 16000000 in
-theorem exit4_run_eq_split (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
-    (clean4 : s.basis (w 1794)=false) (clean5 : s.basis (w 1795)=false)
-    (clean6 : s.basis (w 1796)=false)
-    (topB   : (run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
-                (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) [] s).basis (w 1025)=false)
-    (topB'  : (run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
-                (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) [] s).basis (w 1026)=false)
-    (topB'' : (run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
-                (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) [] s).basis (w 1027)=false) :
-    run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
-          (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) m s
-      = run (P4 w++newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
-          (w 257) (w 1027)++R4 w) m s := by
-  exact whole_zero4 (P4 w) (R4 w) (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
-    (w 257) (w 1027) (w 1794) (w 1795) (w 1796) (tail4_nd w hinj) s m clean4 clean5 clean6
-    (P4_avoid w hinj 1794 (Or.inl rfl))
-    (P4_avoid w hinj 1795 (Or.inr (Or.inl rfl)))
-    (P4_avoid w hinj 1796 (Or.inr (Or.inr (Or.inl rfl))))
-    (R4_avoid w hinj 1025 (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
-    (R4_avoid w hinj 1026 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))
-    (R4_avoid w hinj 1027 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))
-    topB topB' topB''
 end Exit4Opaque
 
 

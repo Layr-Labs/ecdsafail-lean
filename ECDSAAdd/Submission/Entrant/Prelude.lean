@@ -12395,13 +12395,6 @@ theorem sorted_perm (first : Bool) (items : List MeasuredSquareFold) :
     (sortedItems first items).Perm items :=
   List.filter_append_perm _ _
 
-theorem signedSum_perm (base : BasisState) {a b : List MeasuredSquareFold} (h : a.Perm b) :
-    measuredSignedSum base a=measuredSignedSum base b := by
-  induction h with
-  | nil => rfl
-  | cons x _ ih => simp only [measuredSignedSum, ih]
-  | swap x y l => simp only [measuredSignedSum]; ring
-  | trans _ _ ih1 ih2 => exact ih1.trans ih2
 
 def fastAItems (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   sortedItems false L.measuredAItems
@@ -14654,15 +14647,6 @@ theorem accA_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : B
   simp [measuredAItems,accARaw,measuredSignedSum,measuredSignedPayload,measuredFoldPayload,rot128F,negP,nafMinusOneItems,earlyHTerms,Acc.earlyTerm]
   ring
 
-theorem accB_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
-    (hP : regValue L.core.product t=P) (hb : P<2^256) :
-    mixSignedSum t (accBMix L)=measuredSignedSum t L.measuredBItems := by
-  have cast := Acc.accVal_cast t 163 (sortedItems false (accBRaw L)) 0 (validB L hw t P hP hb)
-  rw [signedSum_perm t (sorted_perm _ _)] at cast
-  simp only [accBMix,mixSignedSum,mixSignedPayload,mixNeg,mixPayload,cast]
-  simp [measuredBItems,accBRaw,measuredSignedSum,measuredSignedPayload,measuredFoldPayload,measuredSignedSum_append,
-    rot128F,negP,rotF,rotC,topSlice,nafMinusOneItems,shiftedProductItems]
-  ring
 
 theorem accC_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
     mixSignedSum t (accCMix L)=measuredSignedSum t L.measuredCItems := by
@@ -21267,16 +21251,6 @@ theorem accAMixQ_mem (L : CuccaroStreamedSquareWideLayout) (i : MixItem) (h : i�
   simp only [accAMixQ,accAMix,List.mem_cons,List.not_mem_nil,or_false] at h ⊢; itauto
 theorem accBMixQ_mem (L : CuccaroStreamedSquareWideLayout) (i : MixItem) (h : i∈accBMixQ L) : i∈accBMix L := by
   simp only [accBMixQ,accBMix,List.mem_cons,List.not_mem_nil,or_false] at h ⊢; tauto
-theorem accAMixQ_sum (L : CuccaroStreamedSquareWideLayout) (t : BasisState) :
-    mixSignedSum t (accAMixQ L)=mixSignedSum t (accAMix L) := by
-  simp only [accAMixQ,accAMix,mixSignedSum]; ring
-theorem accBMixQ_sum (L : CuccaroStreamedSquareWideLayout) (t : BasisState) :
-    mixSignedSum t (accBMixQ L)=mixSignedSum t (accBMix L) := by
-  simp only [accBMixQ,accBMix,mixSignedSum]; ring
-theorem accQ_orientations (L : CuccaroStreamedSquareWideLayout) :
-    mixFinal true (accAMixQ L)=false ∧ mixFinal false (accBMixQ L)=true ∧
-    mixFinal false (accCMix L)=true := by
-  simp [mixFinal,mixNeg,accAMixQ,accBMixQ,accCMix,rot128F,negP,negRot,rotC]
 theorem accQ_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     (∀i∈accAMixQ L,MixStatic L i) ∧ (∀i∈accBMixQ L,MixStatic L i) :=
   ⟨fun i hi => (acc_static L hw).1 i (accAMixQ_mem L i hi),
@@ -24107,22 +24081,6 @@ theorem fastNeg_support (p k : Nat) (hw : ∃ n, K.Widths n) :
   simp only [fastNeg,maskedNot,wires_append]
   repeat' (first | exact hm _ hg _ | exact hm _ hf _ | exact ho _ | exact hnr | exact hc | exact ha | exact he | apply Finset.union_subset)
 
-theorem fastRefl_support (p k : Nat) (hw : ∃ n, K.Widths n) :
-    wires (fastRefl K g p k)⊆(g::K.wires).toFinset := by
-  obtain ⟨hm,_,hnr,hc,ha,_,he⟩ := parts_support (K:=K) (g:=g) hw
-  have hg : g∈g::K.wires := List.mem_cons_self ..
-  have hf : K.flag∈g::K.wires := by simp [MeasuredCanonicalModLayout.wires]
-  have hx (v : Nat) : wires (xorConstant K.src v)⊆(g::K.wires).toFinset := by
-    intro q hq
-    have h' := List.mem_toFinset.mp (xorConstant_wires_subset K.src v hq)
-    simp [MeasuredCanonicalModLayout.wires,h']
-  have ho : wires (notRegister K.out)⊆(g::K.wires).toFinset := by
-    intro q hq
-    rw [notRegister_wires] at hq
-    have h' := List.mem_toFinset.mp hq
-    simp [MeasuredCanonicalModLayout.wires,h']
-  simp only [fastRefl,wires_append]
-  repeat' (first | exact hm _ hg _ | exact hm _ hf _ | exact hx _ | exact ho | exact hnr | exact hc | exact ha | exact he | apply Finset.union_subset)
 
 theorem fastAdd_physical (hn : (g::K.wires).Nodup) (c k : Nat) : GatePhysical (fastAdd K g c k) := by
   have m1 := maskedConstant_physical g K.src (c+k) (g_not_src hn)
@@ -30357,67 +30315,12 @@ theorem finite_ne_x0 (hw : L.Widths) (hn : L.wires.Nodup) : L.point.finite ≠ x
   intro h
   exact finite_not_x L hn (List.mem_append_left _ (h ▸ x0_mem L hw))
 
-theorem pfix_run (hw : L.Widths) (hn : L.wires.Nodup) (s : State) (m : List Bool) :
-    run (pfix L) m s = ⟨s.phase, writeBit s.basis (x0 L)
-      (s.basis (x0 L) ^^ !s.basis L.point.finite)⟩ := by
-  have ne := finite_ne_x0 L hw hn
-  simp only [pfix, run]
-  congr 1
-  funext q
-  by_cases h1 : q = L.point.finite
-  · subst q; simp [writeBit, Function.update, ne]
-  · by_cases h2 : q = x0 L
-    · subst q; simp [writeBit, Function.update, Ne.symm ne]
-    · simp [writeBit, Function.update, h1, h2]
 
 
 
 
 
-theorem pfix_basis (hw : L.Widths) (hn : L.wires.Nodup) (s : State) (m : List Bool) (q : Wire) :
-    (run (pfix L) m s).basis q =
-      if q = x0 L then (s.basis q ^^ !s.basis L.point.finite) else s.basis q := by
-  rw [pfix_run L hw hn]
-  show writeBit s.basis (x0 L) _ q = _
-  by_cases h : q = x0 L
-  · subst h; simp [writeBit]
-  · simp [writeBit, Function.update, h]
 
-/-- The flipped divisor value. -/
-theorem pfix_value (hw : L.Widths) (hn : L.wires.Nodup) (s : State) (m : List Bool) (X : Nat)
-    (hx : regValue L.point.x s.basis = X) (hf : s.basis L.point.finite = decide (X ≠ 0)) :
-    regValue L.point.x (run (pfix L) m s).basis = directDivisor X := by
-  have hnd : (L.point.x).Nodup := by
-    have h := L.dialogUsed_nodup hn
-    simp only [dialogUsedWires, PointAddLayout.pointWires, List.cons_append, List.append_assoc] at h
-    exact ((List.nodup_cons.mp h).2.sublist (List.sublist_append_left _ _))
-  have hx0 := x_cons L hw
-  have tailNot : x0 L ∉ L.point.x.tail := by
-    have := hnd; rw [hx0] at this; exact (List.nodup_cons.mp this).1
-  have tail : regValue L.point.x.tail (run (pfix L) m s).basis = regValue L.point.x.tail s.basis := by
-    apply regValue_congr
-    intro q hq
-    have ne : q ≠ x0 L := fun e => tailNot (e ▸ hq)
-    rw [pfix_basis L hw hn, if_neg ne]
-  rw [hx0] at hx ⊢
-  change (if (run (pfix L) m s).basis (x0 L) then 1 else 0) +
-    2 * regValue L.point.x.tail (run (pfix L) m s).basis = _
-  change (if s.basis (x0 L) then 1 else 0) + 2 * regValue L.point.x.tail s.basis = X at hx
-  rw [tail, pfix_basis L hw hn, if_pos rfl, hf]
-  clear tail hx0 hnd tailNot
-  by_cases hz : X = 0
-  · subst hz
-    have h0 : s.basis (x0 L) = false := by
-      by_contra hne
-      have ht : s.basis (x0 L) = true := by simpa using hne
-      rw [ht] at hx; simp at hx
-    have h1 : regValue L.point.x.tail s.basis = 0 := by
-      rw [h0] at hx; simpa using hx
-    rw [h0, h1]
-    simp [directDivisor]
-  · have hd : decide (X ≠ 0) = true := decide_eq_true hz
-    rw [hd, Bool.not_true, Bool.xor_false, show directDivisor X = X from if_neg hz]
-    exact hx
 
 section Step
 include hw hn
@@ -41819,42 +41722,6 @@ include hn
 
 
 
-/-- The relabelled block lives in `sitesN`. -/
-theorem renamedG (Gen : Program) (hG : wires Gen ⊆ (sitesG L).toFinset) :
-    wires (renameProgram (tauM L) Gen) ⊆ (sitesN L).toFinset := by
-  rw [renameProgram_support]
-  intro q hq
-  obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
-  have h := List.mem_toFinset.mp (hG used)
-  apply List.mem_toFinset.mpr
-  have sep := dialogFlag_separation L hn
-  simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
-  by_cases hg : old = L.core.generic
-  · rw [hg, show tauM L L.core.generic = L.genericSelect by simp [tauM]]
-    exact flag_N L _ (by simp [flagsN])
-  · have hs : old ≠ L.genericSelect := by
-      intro e
-      subst e
-      simp only [sitesG, flagsG, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-      have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.genericSelect
-      have cG : 0 < List.count L.genericSelect L.inPlaceFlags :=
-        List.count_pos_iff.mpr (by simp [inPlaceFlags])
-      rcases h with ((hp | hc) | hf) | hp
-      · have := List.count_pos_iff.mpr hp
-        simp only [dialogUsedWires, List.count_append] at used
-        omega
-      · exact absurd hc.symm (by tauto)
-      · rcases hf with e | e | e
-        · exact absurd e.symm (by tauto)
-        · exact hg e
-        · exact absurd e (by tauto)
-      · have := List.count_pos_iff.mpr (sharedPool_Q_sub L hw _ hp)
-        simp only [dialogUsedWires, List.count_append] at used
-        omega
-    rw [show tauM L old = old by simp [tauM, hg, hs]]
-    simp only [sitesG, flagsG, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-    simp only [sitesN, flagsN, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-    tauto
 
 
 
@@ -73165,9 +73032,6 @@ theorem slots5_sub_old : Placement5.slots.toFinset⊆slots.toFinset := by
 theorem logical_sub_old : OB5Support.logicalSites⊆slots.toFinset :=
   OB5Support.logical_sub_slots.trans slots5_sub_old
 
-theorem arith_support (L : ControlledPointLayout) (hw : L.Widths) (multiply : Bool) :
-    wires (arith L multiply)⊆(OB5Support.sites L).toFinset :=
-  OB5Support.placed_support_logical L hw _ (OwnQ5Integer.program_support_logical (!multiply))
 
 
 
@@ -73743,16 +73607,6 @@ theorem arithS_counts (L : ControlledPointLayout) :
   omega
 
 
-theorem arithS_sub (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (multiply : Bool) : SW.InstrSub2 (arithS L multiply) (ArithmeticOB5.arith L multiply) := by
-  have sel := OwnQ5SW.selKernelQ_sel (!multiply)
-  have selected : SW.Sel (base 2400) 1020 (OwnQ5Runtime.kernelS (!multiply)) (OwnQ5Integer.program (!multiply)) := by
-    simpa only [OwnQ5Runtime.kernelS] using sel
-  simp only [arithS,ArithmeticOB5.arith]
-  exact selected.sub.rename_on (wireFn2 L) (fun a ha b hb e =>
-    (placement2 L hw hn).injectiveOnSlots a
-      (ArithmeticOB5.logical_sub_old (OwnQ5Integer.program_support_logical (!multiply) ha)) b
-      (ArithmeticOB5.logical_sub_old (OwnQ5Integer.program_support_logical (!multiply) hb)) e)
 
 end ResourcesA
 
@@ -77284,41 +77138,8 @@ open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPoint
 
 section Curve5
 
-theorem c132_lit : (132 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663) ^ 57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
-  reduce_mod_char
 
-theorem c132_pow : (132 : Fp) ^ ((p - 1) / 2) = -1 := by
-  have hp : 115792089237316195423570985008687907853269984665640564039457584007908834671663 = p := by
-    norm_num [p]
-  have he : (p - 1) / 2 = 57896044618658097711785492504343953926634992332820282019728792003954417335831 := by
-    rw [← hp]
-  rw [he]
-  have h := hp ▸ c132_lit
-  exact h
 
-/-- No curve point has `x = 5`: `5³ + 7 = 132` is not a square modulo `p`. -/
-theorem x_ne_five {x y : Fp} (h : curve.toAffine.Nonsingular x y) : x ≠ 5 := by
-  intro hx
-  subst hx
-  have heq := h.1
-  rw [WeierstrassCurve.Affine.equation_iff] at heq
-  simp [curve, curveA, curveB] at heq
-  have h132 : y ^ 2 = 132 := by rw [heq]; norm_num
-  haveI : Fact (Nat.Prime p) := ⟨p_prime⟩
-  have hy : y ≠ 0 := by
-    rintro rfl
-    have h0 : ((132 : ℕ) : Fp) = 0 := by exact_mod_cast h132.symm.trans (by ring)
-    rw [ZMod.natCast_eq_zero_iff] at h0
-    norm_num [p] at h0
-  have h1 : y ^ (p - 1) = 1 := ZMod.pow_card_sub_one_eq_one hy
-  have hodd : p - 1 = 2 * ((p - 1) / 2) := by norm_num [p]
-  rw [hodd, pow_mul, h132, c132_pow] at h1
-  have h2 : ((2 : ℕ) : Fp) = 0 := by
-    have : (-1 : Fp) + 1 = 1 + 1 := by rw [h1]
-    rw [neg_add_cancel] at this
-    exact_mod_cast (by rw [this]; norm_num : (2 : Fp) = 0)
-  rw [ZMod.natCast_eq_zero_iff] at h2
-  norm_num [p] at h2
 
 
 
@@ -78028,28 +77849,6 @@ theorem finConst_sites (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) :
   · exact inpool (by simp [h])
   · exact inpool (by simp [h])
 
-include hw hn in
-/-- Without the divisor repairs the block lives on the raw arithmetic sites
-(generic flag, coordinates, pool): it never touches the finite flag. -/
-theorem fastGeneric3F_sites (cx cy : Fp) :
-    wires (fastGeneric3F L cx cy) ⊆ (OB5Support.sites L).toFinset := by
-  have ca (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) (k : Fp) :
-      wires (fastConstAdd L r k) ⊆ (OB5Support.sites L).toFinset :=
-    (FastConst.fastAdd_support _ _ ⟨256,L.recoveryConstant_widths hw r
-      (by rcases hr with rfl|rfl; exact hw.inputX; exact hw.inputY)⟩).trans
-      (finConst_sites L hw r hr)
-  have cn : wires (fastConstNeg L cx) ⊆ (OB5Support.sites L).toFinset :=
-    (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (finConst_sites L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (OB5Support.sites L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (finConst_sites L hw L.point.x (Or.inl rfl))
-  have a0 := (arithS_sub L hw hn false).wires_sub.trans (ArithmeticOB5.arith_support L hw false)
-  have a1 := (arithS_sub L hw hn true).wires_sub.trans (ArithmeticOB5.arith_support L hw true)
-  have sq := SquareOB5.support L hw hn
-  simp only [fastGeneric3F, wires_append, Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, a0⟩, sq⟩, cr⟩, a1⟩, cn⟩,
-    ca _ (Or.inr rfl) _⟩
 
 include hw hn in
 theorem fin_not_sites : L.point.finite ∉ OB5Support.sites L := by
@@ -78063,9 +77862,6 @@ theorem fin_not_sites : L.point.finite ∉ OB5Support.sites L := by
     have hb : i < 2613 := by omega
     exact fin_not_pool L hn (e ▸ Square5Placement.pool_member L hw i hb)
 
-include hw hn in
-theorem finite_not_F (cx cy : Fp) : L.point.finite ∉ wires (fastGeneric3F L cx cy) :=
-  fun h => fin_not_sites L hw hn (List.mem_toFinset.mp (fastGeneric3F_sites L hw hn cx cy h))
 
 theorem zrep_wires (q : Wire) (hq : q ∈ wires (zrep L)) : q = L.point.finite ∨ q ∈ L.point.x := by
   simp only [zrep, wires_append, Finset.mem_union] at hq
@@ -78092,36 +77888,6 @@ theorem clrF_wires (q : Wire) (hq : q ∈ wires (clrF L)) :
     · exact Or.inr (Or.inl (List.mem_of_mem_tail e))
     · exact Or.inr (Or.inr e)
 
-include hw hn in
-/-- The finite-free block lives on the generic sites (point, generic flag, pool). -/
-theorem genF_sites (cx cy : Fp) : wires (genF L cx cy) ⊆ (OB5Support.genericSites L).toFinset := by
-  have pt (q : Wire) (hq : q ∈ PointAddLayout.pointWires L.point) :
-      q ∈ (OB5Support.genericSites L).toFinset :=
-    List.mem_toFinset.mpr (by simp [OB5Support.genericSites, hq])
-  have z : wires (zrep L) ⊆ (OB5Support.genericSites L).toFinset := by
-    intro q hq
-    rcases zrep_wires L q hq with rfl | h
-    · exact pt _ (by simp [PointAddLayout.pointWires])
-    · exact pt _ (by simp [PointAddLayout.pointWires, h])
-  have c : wires (clrF L) ⊆ (OB5Support.genericSites L).toFinset := by
-    intro q hq
-    rcases clrF_wires L hw q hq with rfl | h | h
-    · exact pt _ (by simp [PointAddLayout.pointWires])
-    · exact pt _ (by simp [PointAddLayout.pointWires, h])
-    · exact OB5Support.raw_sub_generic L (List.mem_toFinset.mpr (finLow_sites L hw 255 (by omega) q h))
-  have r : wires (renameProgram (swapF L) (fastGeneric3F L cx cy)) ⊆
-      (OB5Support.genericSites L).toFinset := by
-    rw [renameProgram_support]
-    intro q hq
-    obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
-    have hf : old ≠ L.point.finite := fun e => finite_not_F L hw hn cx cy (e ▸ used)
-    by_cases hs : old = finSpare L
-    · rw [hs, show swapF L (finSpare L) = L.point.finite by simp [swapF, finSpare_ne L hw hn]]
-      exact pt _ (by simp [PointAddLayout.pointWires])
-    · rw [swapF_fix L old hf hs]
-      exact OB5Support.raw_sub_generic L (fastGeneric3F_sites L hw hn cx cy used)
-  simp only [genF, midF, wires_append, Finset.union_subset_iff]
-  exact ⟨⟨z, ⟨c, r⟩, c⟩, z⟩
 
 
 
@@ -89174,54 +88940,12 @@ theorem pool_away (q : Wire) (hp : q∈skywalkPoolWires base) :
 def Paired (canonical actual : State) : Prop :=
   ∀q,q∉wireBlock base 2056 256 → actual.basis q=canonical.basis q
 
-theorem pool_agreement (P : Program)
-    (support : wires P⊆(skywalkPoolWires base).toFinset)
-    (a b : State) (m : List Bool) (same : Paired a b)
-    (q : Wire) (hq : q∈skywalkPoolWires base) :
-    (run P m b).basis q=(run P m a).basis q := by
-  apply run_pool_basis_agreement P (skywalkPoolWires base).toFinset support b a m
-  · intro w hw
-    exact same w (pool_away w (List.mem_toFinset.mp hw))
-  · exact List.mem_toFinset.mpr hq
-
-theorem firstPhase_pool : wires firstPhase⊆(skywalkPoolWires base).toFinset := by
-  have native := (NativeFirstDirect.prefix_support base).1
-  have first : wires (NativeFirstDirect.forward base)⊆(skywalkPoolWires base).toFinset := by
-    apply native.trans
-    intro q hq
-    exact List.mem_toFinset.mpr (NativeFirstDirect.prefix_pool_subset base (List.mem_toFinset.mp hq))
-  have stack : wires stackForwardT⊆(skywalkPoolWires base).toFinset := by
-    apply stackForwardT_subset.trans
-    apply StackOB5.forward_support.trans
-    intro q hq
-    obtain ⟨i,rfl,hi⟩ := (OB5.integerSites_mem q).mp hq
-    apply List.mem_toFinset.mpr
-    exact arith_mem base 0 1798 i (by omega) (by omega)
-  have clear : wires (skywalkArithmeticClear base)⊆(skywalkPoolWires base).toFinset := by
-    rw [skywalkArithmeticClear,skywalkTerminalClear_wires]
-    intro q hq
-    simp only [List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with rfl|rfl|rfl
-    all_goals
-      apply List.mem_toFinset.mpr
-      exact arith_mem base 0 1798 _ (by omega) (by omega)
-  rw [firstPhase,wires_append,wires_append]
-  exact Finset.union_subset first (Finset.union_subset stack clear)
 
 
 
 
 
-/-- The actual word may be half-centered, with no canonical-value premise on b. -/
-theorem firstPhase1026_paired
-    (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Paired a b) :
-    (run firstPhase m b).basis (base 1026)=false := by
-  have agree := pool_agreement firstPhase firstPhase_pool a b m same (base 1026)
-    (arith_mem base 0 1798 1026 (by omega) (by omega))
-  exact agree.trans (firstPhase1026_clean hn x Y hx0 hx a m input)
+
 
 
 
@@ -91649,32 +91373,6 @@ theorem pool_away (q : Wire) (hp : q∈skywalkPoolWires base) :
   have e := base_injective (ei.trans ej.symm)
   omega
 
-/-- Equal phases and equal non-numerator wires stay equal through a pool program. -/
-theorem pool_transport (P : Program) (support : wires P ⊆ (skywalkPoolWires base).toFinset)
-    (s t : State) (m : List Bool) (phase : s.phase=t.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → s.basis q=t.basis q) :
-    (run P m s).phase=(run P m t).phase ∧
-    (∀q,q∉wireBlock base 2056 256 → (run P m s).basis q=(run P m t).basis q) ∧
-    (∀q,q∈wireBlock base 2056 256 → (run P m s).basis q=s.basis q ∧
-      (run P m t).basis q=t.basis q) := by
-  have poolSame : ∀q∈skywalkPoolWires base,s.basis q=t.basis q := by
-    intro q hq
-    exact same q (pool_away q hq)
-  have inc := run_local_increment P s t m (fun q hq => poolSame q (List.mem_toFinset.mp (support hq)))
-  have basis := run_pool_basis_agreement P (skywalkPoolWires base).toFinset support s t m
-    (fun q hq => poolSame q (List.mem_toFinset.mp hq))
-  refine ⟨?_,?_,?_⟩
-  · rw [phase] at inc
-    cases t.phase <;> simpa using inc.1
-  · intro q hq
-    by_cases hp : q∈(skywalkPoolWires base).toFinset
-    · exact basis q hp
-    · have hqP : q∉wires P := fun h => hp (support h)
-      rw [run_preserves_outside P m s q hqP,run_preserves_outside P m t q hqP]
-      exact same q hq
-  · intro q hq
-    have hqP : q∉wires P := fun h => pool_away q (List.mem_toFinset.mp (support h)) hq
-    exact ⟨run_preserves_outside P m s q hqP,run_preserves_outside P m t q hqP⟩
 
 
 end ECDSAAdd.Entrant.EntryFuse
@@ -95628,70 +95326,6 @@ open SW
                                                   
                                           
 
-theorem wordTransfer (L : ControlledPointLayout) (f : Wire → Wire)
-    (domain : Finset Wire)
-    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
-    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
-    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
-    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 →
-      q∉wireBlock base 2056 256 → f q∈L.dialogPool)
-    (selectorG : f (base 2409)∈L.dialogPool)
-    (selectorS : f (base 2410)∈L.dialogPool)
-    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
-    (dySites : (wireBlock base 2056 256).toFinset⊆domain)
-    (X : Nat) (Y : Fp) (R : Nat)
-    (s : State) (m : List Bool)
-    (hX : regValue L.point.x s.basis=X) (hY : regValue L.point.y s.basis=Y.val)
-    (clean : regValue L.dialogPool s.basis=0)
-    (P : Program) (programSites : wires P⊆domain)
-    (P_spec : ∀(t : State)(records : List Bool),
-      SkywalkArithmeticInput base X Y.val t.basis →
-      t.basis (base 2409)=false → t.basis (base 2410)=false →
-      (run P records t).phase=t.phase ∧
-      regValue (skywalkArithmeticNumerator base) (run P records t).basis=R ∧
-      ∀ q,q∉skywalkArithmeticNumerator base → (run P records t).basis q=t.basis q) :
-    (run (renameProgram f P) m s).phase=s.phase ∧
-    regValue L.point.y (run (renameProgram f P) m s).basis=R ∧
-      ∀q,q∉L.point.y → (run (renameProgram f P) m s).basis q=s.basis q := by
-  let t := selInput domain f s
-  have inputBits (q : Wire) (hq : q∈domain) : t.basis q=s.basis (f q) := by
-    simp only [t,selInput,if_pos hq]
-  have zero (q : Wire) (hq : f q∈L.dialogPool) : t.basis q=false := by
-    change (if q∈domain then s.basis (f q) else false)=false
-    split
-    · exact (regValue_zero _ _).mp clean _ hq
-    · rfl
-  have input : SkywalkArithmeticInput base X Y.val t.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) t.basis=X
-      rw [selRegMap f _ t.basis s.basis
-        (fun q hq => inputBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
-      exact hX
-    · change regValue (wireBlock base 2056 256) t.basis=Y.val
-      rw [selRegMap f _ t.basis s.basis
-        (fun q hq => inputBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-      exact hY
-    · intro q hq hdx hdy
-      by_cases used : q∈domain
-      · exact zero q (sharedWork q hq used hdx hdy)
-      · simp only [t,selInput,if_neg used]
-  have strong := P_spec t m input (zero _ selectorG) (zero _ selectorS)
-  have transfer := run_rename_pool f domain injective P programSites m t s rfl inputBits
-  refine ⟨transfer.1.trans strong.1,?_,?_⟩
-  · rw [←numeratorMap]
-    exact (selRegMap f _ (run P m t).basis
-      (run (renameProgram f P) m s).basis
-      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
-  · intro q outside
-    by_cases image : q∈domain.image f
-    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp image
-      have away : a∉skywalkArithmeticNumerator base := by
-        intro mem
-        apply outside
-        rw [←numeratorMap]
-        exact List.mem_map.mpr ⟨a,mem,rfl⟩
-      exact (transfer.2 a ha).trans ((strong.2.2 a away).trans (inputBits a ha))
-    · exact run_rename_pool_outside f domain P programSites m s q image
 
 
 

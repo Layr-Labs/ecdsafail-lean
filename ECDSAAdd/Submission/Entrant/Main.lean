@@ -9563,36 +9563,26 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
   rw [mc_eq] at g q
   exact ⟨f,r,g,q⟩
 
-/-- The window 90..360 (exit 375): window counts by one Nat decide over the closed forms. -/
-theorem ship_counts :
-    toffoliCount (forwardW Shadow7.params true first rest)=110428 ∧ toffoliCount (forwardW Shadow7.params false first rest)=110428 ∧
-    toffoliCount (reverseW Shadow7.params true first rest)=110514 ∧ toffoliCount (reverseW Shadow7.params false first rest)=110514 ∧
-    measurementCount (forwardW Shadow7.params true first rest)=55350 ∧ measurementCount (forwardW Shadow7.params false first rest)=55350 ∧
-    measurementCount (reverseW Shadow7.params true first rest)=55074 ∧ measurementCount (reverseW Shadow7.params false first rest)=55074 := by
-  rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
-    (counts true first rest).2.2.1,(counts false first rest).2.2.1,(counts true first rest).2.2.2,(counts false first rest).2.2.2]
-  decide +kernel
-
 /-- The window sizes (blocks 1..19, exit 375), by kernel evaluation of the fold's piece sums
 (`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW Shadow7.params true first rest)=110428 := by
+theorem ship_toffoliF_true : toffoliCount (forwardW Shadow7.params true first rest)=110188 := by
   rw [(counts true first rest).1]; decide +kernel
 
-theorem ship_toffoliF_false : toffoliCount (forwardW Shadow7.params false first rest)=110428 := by
+theorem ship_toffoliF_false : toffoliCount (forwardW Shadow7.params false first rest)=110188 := by
   rw [(counts false first rest).1]; decide +kernel
 
-theorem ship_toffoliR_true : toffoliCount (reverseW Shadow7.params true first rest)=110514 := by
+theorem ship_toffoliR_true : toffoliCount (reverseW Shadow7.params true first rest)=110274 := by
   rw [(counts true first rest).2.1]; decide +kernel
 
-theorem ship_toffoliR_false : toffoliCount (reverseW Shadow7.params false first rest)=110514 := by
+theorem ship_toffoliR_false : toffoliCount (reverseW Shadow7.params false first rest)=110274 := by
   rw [(counts false first rest).2.1]; decide +kernel
 
-theorem ship_measureF : measurementCount (forwardW Shadow7.params true first rest)=55350 ∧
-    measurementCount (forwardW Shadow7.params false first rest)=55350 := by
+theorem ship_measureF : measurementCount (forwardW Shadow7.params true first rest)=55220 ∧
+    measurementCount (forwardW Shadow7.params false first rest)=55220 := by
   rw [(counts true first rest).2.2.1,(counts false first rest).2.2.1]; decide +kernel
 
-theorem ship_measureR : measurementCount (reverseW Shadow7.params true first rest)=55074 ∧
-    measurementCount (reverseW Shadow7.params false first rest)=55074 := by
+theorem ship_measureR : measurementCount (reverseW Shadow7.params true first rest)=54944 ∧
+    measurementCount (reverseW Shadow7.params false first rest)=54944 := by
   rw [(counts true first rest).2.2.2,(counts false first rest).2.2.2]; decide +kernel
 
 /-- `slotsV`: upper bounds of the piece slot counts. Exact closed forms where par-b's count lemmas apply (enter,
@@ -20899,8 +20889,6 @@ theorem mapped_slots_shape (bits : List MappedBit) :
         congrArg (fun n => mappedStepSlots b+n) ih
 
 
-theorem mapped_option_if (bit : Bool) (w : Wire) :
-    (if bit then some w else none).isSome=bit := by cases bit <;> rfl
 end ECDSAAdd.Entrant.RouteA
 end -- ticket 8 pasted module
 
@@ -21088,21 +21076,6 @@ theorem slot_recode (retired : Wire) (toOdd : Bool) (L : Layout) (hw : L.Widths)
     gateSlots_cons,gateSlots_nil,instructionSlots] <;> omega
 
 
-theorem slot_center (L : BalancedConvert.Layout) (hw : L.Widths) :
-    gateSlots (P1Life.centerOdd L)=1823 := by
-  have bl : (P1Life.centerOddBits L).length=(L.low.drop 3).length := by
-    simp [P1Life.centerOddBits,hw.1]
-  have cl : ((L.carry.take 254).drop 3).length+1=(P1Life.centerOddBits L).length := by
-    simp [P1Life.centerOddBits,List.length_take,hw.2]
-  have add := mapped_add_slots _ (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin bl.symm cl
-  have cost : mappedSlots (P1Life.centerOddBits L)=1053 := by
-    rw [mapped_slots_shape]
-    simp only [P1Life.centerOddBits,List.map_map,Function.comp_def,mapped_option_if]
-    decide +kernel
-  have rotation := rotate_slots L.word
-  have len : L.word.length=256 := by simp [BalancedConvert.Layout.word,hw.1]
-  simp only [P1Life.centerOdd,gateSlots_append,add,cost,rotation.1,len,
-    gateSlots_cons,gateSlots_nil,instructionSlots]
 end ECDSAAdd.Entrant.RouteA
 end -- ticket 8 pasted module
 
@@ -21617,10 +21590,6 @@ theorem CodeFrame.codec_step (wordR wordY : Fp → Nat) (E F : Program) (origin 
 
 
 
-theorem encoded_center_instance (w : Nat→Wire) (sign : Wire) (isA : Bool)
-    (origin : BasisState) (X Y : Fp) (state : State) :
-    EncodedFieldFrame5 centerWord centerWord w sign isA origin X Y state ↔
-      ECDSAAdd.Entrant.Rolling1588.EncodedFieldFrame5 w sign isA origin X Y state := Iff.rfl
 
 
 
@@ -22244,22 +22213,6 @@ theorem halfWindowWith_frame (P : Program) (divide : Bool) (wordIn wordOut : Fp 
 
 
 
-theorem halfWindowWith_frame_of_bound (P : Program) (divide : Bool) (wordIn wordOut : Fp → Nat)
-    (law : HalfLaw P divide wordIn wordOut) (support : HalfSupport P)
-    (j active hole : Nat) (hj : j<102) (activeBound : 5*j+active < 512) (hh : hole<5) (X Y : Fp)
-    (state : State) (records : List Bool) (clean : Q6EndpointCell.Clean base state.basis)
-    (enabled : state.basis (base 2400)=true) (flagIn : state.basis (base 2409)=false)
-    (rValue : regValue fieldR state.basis=wordIn X) (yValue : regValue fieldY state.basis=wordIn Y)
-    (holeIn : state.basis (s j hole)=false) :
-    (run (halfWindowWith P j active hole) records state).phase=state.phase ∧
-    PairFrame fieldR fieldY state.basis
-      (wordOut (if divide then (X+(if state.basis (g j active) then Y else -Y))/2
-        else 2*X+(if state.basis (g j active) then -Y else Y))) (wordOut Y)
-      (run (halfWindowWith P j active hole) records state).basis := by
-  rw [halfWindowWith_selected_eq_of_bound P divide wordIn wordOut law support j active hole hj activeBound hh X Y
-    state records clean rValue yValue flagIn holeIn]
-  exact selected_half_frame_of_bound P divide wordIn wordOut law support j active activeBound X Y
-    state records clean enabled flagIn rValue yValue
 
 
 theorem selected_swap_frame (word : Fp → Nat) (j active : Nat) (hj : j<102) (ha : active<5)
@@ -22852,16 +22805,6 @@ theorem groups_cut_frame (divide : Bool) (j n : Nat) (first : 1≤j) (bound : j+
 
 
 
-theorem allMultiplyGroups_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (EncodedFieldFrame5 P1Life.oddWord P1Life.oddWord base (base 2409) false origin X Y)
-      (groups false 1 101)
-      (fun state => let V := Replay5.groupsPayload false origin 1 101 (X,Y)
-        EncodedFieldFrame5 P1Life.oddWord P1Life.oddWord base (base 2409) true origin V.1 V.2 state) := by
-  intro state records input
-  have before := (cutFrame_end P1Life.oddWord P1Life.oddWord origin X Y state).mpr input
-  have result := groups_cut_frame false 1 101 (by decide) (by decide) origin ctx enabled X Y state records before
-  exact ⟨result.1,(cutFrame_one P1Life.oddWord P1Life.oddWord origin _ _ _).mp result.2⟩
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
@@ -22878,59 +22821,6 @@ open ECDSAAdd.Entrant.Rolling1588
 attribute [local irreducible] run wires
 
 
-theorem lastDivideBasePacket_frame (j : Nat) (hj : j < 102) (terminal : j=84)
-    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple
-      (CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt true (History5.historyMap base (5*j))) origin X Y)
-      (basePacket true j)
-      (fun state => let V := regularPayload true j origin (X,Y)
-        CodeFrame centerWord centerWord (codeEncodeAt false (History5.historyMap base (5*j))) origin V.1 V.2 state) := by
-  let Frame (d : Bool) (k : Nat) (V : Fp×Fp) :=
-    CodeFrame P1Life.oddWord P1Life.oddWord (stageCodeAt d k (History5.historyMap base (5*j))) origin V.1 V.2
-  have opening (d : Bool) (V : Fp×Fp) : StateTriple
-      (CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt d (History5.historyMap base (5*j))) origin V.1 V.2)
-      (onPacket j stageOpen) (Frame d 0 V) := by
-    intro state records input
-    exact regular_open_frame P1Life.oddWord P1Life.oddWord d j hj origin ctx V.1 V.2 state records input
-  have step (d : Bool) (k logical physical : Nat) (hk : k < 3)
-      (used : (logical,physical)∈activeSlots d k) (V : Fp×Fp) :
-      StateTriple (Frame d k V) (cell d j physical 2)
-        (Frame d k (regularStep d j origin logical V)) := by
-    intro state records input
-    exact regular_cell_frame d j k logical physical hj hk used origin ctx enabled
-      V.1 V.2 state records input
-  have transfer (d : Bool) (k : Nat) (hk : k < 2) (V : Fp×Fp) :
-      StateTriple (Frame d k V) (onPacket j (stageTransition d k)) (Frame d (k+1) V) := by
-    intro state records input
-    exact regular_transition_frame P1Life.oddWord P1Life.oddWord d j k hj hk origin ctx V.1 V.2 state records input
-  have closing (d : Bool) (V : Fp×Fp) : StateTriple (CodeFrame centerWord centerWord (stageCodeAt d 2 (History5.historyMap base (5*j))) origin V.1 V.2)
-      (onPacket j stageClose)
-      (CodeFrame centerWord centerWord (codeEncodeAt (!d) (History5.historyMap base (5*j))) origin V.1 V.2) := by
-    intro state records input
-    exact regular_close_frame centerWord centerWord d j hj origin ctx V.1 V.2 state records input
-  have finalStep (V : Fp×Fp) : StateTriple (Frame true 2 V)
-      (cellWith true (P1Life.dend (base 760) base (base 2409)) j 4 2)
-      (CodeFrame centerWord centerWord (stageCodeAt true 2 (History5.historyMap base (5*j))) origin
-        (regularStep true j origin 4 V).1 (regularStep true j origin 4 V).2) := by
-    intro state records input
-    exact regular_cellWith_frame _ true P1Life.oddWord centerWord dend_law dend_support
-      j 2 4 4 hj (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
-  let V1 := regularStep true j origin 0 (X,Y)
-  let V2 := regularStep true j origin 1 V1
-  let V3 := regularStep true j origin 2 V2
-  let V4 := regularStep true j origin 3 V3
-  let V5 := regularStep true j origin 4 V4
-  have result := (opening true (X,Y)).seq
-    ((step true 0 0 3 (by decide) (by decide) (X,Y)).seq
-    ((step true 0 1 4 (by decide) (by decide) V1).seq
-    ((transfer true 0 (by decide) V2).seq
-    ((step true 1 2 4 (by decide) (by decide) V2).seq
-    ((step true 1 3 3 (by decide) (by decide) V3).seq
-    ((transfer true 1 (by decide) V4).seq
-    ((finalStep V4).seq (closing true V5))))))))
-  simpa only [basePacket,stageOpen,stageClose,stageTransition,regularPayload,
-    if_true,if_false,if_pos terminal,show ¬(1:Nat)=0 from by decide,List.append_assoc] using result
 
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
@@ -22948,49 +22838,10 @@ open ECDSAAdd.Entrant.Rolling1588
 attribute [local irreducible] run wires
 
 
-theorem lastDivideBasePacket_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 84 origin X Y) (basePacket true 84)
-      (fun state => let V := directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y)
-        CutFrame centerWord centerWord 85 origin V.1 V.2 state) := by
-  intro state records input
-  apply cut_window_frame P1Life.oddWord P1Life.oddWord centerWord centerWord 84 85 84 (by decide)
-    origin X Y _ _ (basePacket true 84) (otherEncodeCut_step base 84 102)
-    (otherEncodeCut_body_disjoint 84 84 (by decide) origin ctx _
-      (basePacket_read_support true 84 (by decide))) _ state records input
-  intro current tape frame
-  have normalized : CodeFrame P1Life.oddWord P1Life.oddWord
-      (codeEncodeAt true (History5.historyMap base (5*84))) origin X Y current := by
-    simpa only [encodeGroup,show ¬(84:Nat)=0 from by decide,if_false,decide_true] using frame
-  have result := lastDivideBasePacket_frame 84 (by decide) rfl origin ctx enabled X Y current tape normalized
-  simpa only [regularPayload_eq true 84 (by decide) origin enabled,encodeGroup,
-    show ¬(84:Nat)=0 from by decide,if_false,show decide ((85:Nat) ≤ 84)=false from rfl,
-    Bool.not_true] using result
 
 
-theorem lastDividePacket_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 84 origin X Y) (packet true 84)
-      (fun state => let V := directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y)
-        CutFrame centerWord centerWord 85 origin V.1 V.2 state) := by
-  intro state records input
-  have result := lastDivideBasePacket_cut_frame origin ctx enabled X Y state records input
-  have same := Replay5.placed_eq (Placement5.pi 84) (basePacket true 84)
-    (fun q hq => Placement5.pi_outside 84 q (by decide) hq) state records
-    (cutFrame_zero_region P1Life.oddWord P1Life.oddWord _ origin ctx X Y state input)
-    (cutFrame_zero_region centerWord centerWord _ origin ctx _ _ _ result.2)
-  change run (packet true 84) records state=run (basePacket true 84) records state at same
-  rw [same]
-  exact result
 
 
-theorem route_program_snoc (P : Nat→Program) (j n : Nat) :
-    PacketSequence.program true P j (n+1)=PacketSequence.program true P j n++P (j+n) := by
-  induction n generalizing j with
-  | zero => simp only [PacketSequence.program,if_true,List.append_nil,List.nil_append,Nat.add_zero]
-  | succ n ih =>
-    rw [PacketSequence.program,if_pos rfl,ih,PacketSequence.program,if_pos rfl]
-    simp only [List.append_assoc,show j+(n+1)=(j+1)+n from by omega]
 
 
 theorem route_payload_snoc {α : Type} (step : Nat→α→α) (j n : Nat) (V : α) :
@@ -23138,8 +22989,6 @@ theorem body_sub_old (P : Program) (support : HalfSupport P) (divide : Bool) :
   support.trans ((Finset.erase_subset _ _).trans (junction_footprint_sub_standard divide base (base 2409)))
 
 
-theorem body_retired_free (P : Program) (support : HalfSupport P) : base 760∉wires P :=
-  fun used => (Finset.mem_erase.mp (support used)).1 rfl
 
 
 
@@ -23173,87 +23022,6 @@ open ECDSAAdd.Entrant.Rolling1588
 attribute [local irreducible] wires
 
 
-theorem wire_rename_free (e : Equiv.Perm Wire) (P : Program) (a b : Wire)
-    (image : e a=b) (free : a∉wires P) : b∉wires (renameProgram e P) := by
-  rw [renameProgram_support]
-  intro used
-  obtain ⟨i,hi,eq⟩ := Finset.mem_image.mp used
-  exact free (e.injective (eq.trans image.symm) ▸ hi)
-
-
-theorem wire_selected_free (source flag q : Wire) (P : Program)
-    (sourceAway : q≠source) (flagAway : q≠flag) (free : q∉wires P) :
-    q∉wires (SW.selW source flag P) := by
-  simpa [SW.selW,wires_append,wires,Instr.wires,correctionWires,sourceAway,flagAway] using free
-
-
-theorem swap_body_low_free (i : Nat) (low : i < 770) : base i∉wires FrontierSW1591.swapBody := by
-  intro used
-  have member := swapRegisters_wires (base 2409) (balancedSharedPorts base (base 2409)).r
-    (balancedSharedPorts base (base 2409)).y
-    (by simp [balancedSharedPorts_r,balancedSharedPorts_y,wireBlock]) used
-  simp only [List.mem_toFinset,List.mem_cons,List.mem_append,balancedSharedPorts_r,
-    balancedSharedPorts_y,wireBlock,List.mem_map,List.mem_range'_1,base_injective.eq_iff] at member
-  omega
-
-
-theorem halfWindowWith_719_free (P : Program) (support : HalfSupport P) (j active hole : Nat)
-    (hj : j < 102) (sourceBound : 5*j+active < 512) (hh : hole < 5) : base 719∉wires (halfWindowWith P j active hole) := by
-  let rebound := renameProgram (Equiv.swap (base 719) (s j hole)) P
-  have noHole : s j hole∉wires P := body_history_free P support _ (Or.inr ⟨by omega,by omega⟩)
-  have no719 : base 719∉wires rebound :=
-    wire_rename_free _ P (s j hole) (base 719) (Equiv.swap_apply_right _ _) noHole
-  have awayG : base 719≠g j active := HostOB5.host_ne _ _ (by omega)
-  have awayC : base 719≠packetCarry j := HostOB5.host_ne _ _ (by omega)
-  have fixed : Equiv.swap (packetCarry j) (g j active) (base 719)=base 719 :=
-    Equiv.swap_apply_of_ne_of_ne awayC awayG
-  have mid := wire_rename_free (Equiv.swap (packetCarry j) (g j active)) rebound
-    (base 719) (base 719) fixed no719
-  intro used
-  rcases Finset.mem_union.mp
-      (ControlLoan1589.loanWindow_support (g j active) (base 2409) (packetCarry j) rebound used)
-      with edge|body
-  · simp only [Finset.mem_insert,Finset.mem_singleton] at edge
-    exact edge.elim awayG (by decide)
-  · exact mid (by simpa only [renameProgram_support] using body)
-
-
-theorem halfWindowWith_760_free (P : Program) (support : HalfSupport P) (j active hole : Nat)
-    (hj : j < 102) (sourceBound : 5*j+active < 512) (hh : hole < 5) : base 760∉wires (halfWindowWith P j active hole) := by
-  let rebound := renameProgram (Equiv.swap (base 719) (s j hole)) P
-  have fixHole : Equiv.swap (base 719) (s j hole) (base 760)=base 760 :=
-    Equiv.swap_apply_of_ne_of_ne (HostOB5.host_ne _ _ (by omega)) (HostOB5.host_ne _ _ (by omega))
-  have no760 : base 760∉wires rebound :=
-    wire_rename_free _ P (base 760) (base 760) fixHole (body_retired_free P support)
-  have awayG : base 760≠g j active := HostOB5.host_ne _ _ (by omega)
-  have awayC : base 760≠packetCarry j := HostOB5.host_ne _ _ (by omega)
-  have fixed : Equiv.swap (packetCarry j) (g j active) (base 760)=base 760 :=
-    Equiv.swap_apply_of_ne_of_ne awayC awayG
-  have mid := wire_rename_free (Equiv.swap (packetCarry j) (g j active)) rebound
-    (base 760) (base 760) fixed no760
-  intro used
-  rcases Finset.mem_union.mp
-      (ControlLoan1589.loanWindow_support (g j active) (base 2409) (packetCarry j) rebound used)
-      with edge|body
-  · simp only [Finset.mem_insert,Finset.mem_singleton] at edge
-    exact edge.elim awayG (by decide)
-  · exact mid (by simpa only [renameProgram_support] using body)
-
-
-theorem cellWith_pool_free (divide : Bool) (P : Program) (support : HalfSupport P) (j active hole i : Nat)
-    (hj : j < 102) (ha : active < 5) (hh : hole < 5) (hi : i=719 ∨ i=760) :
-    base i∉wires (cellWith divide P j active hole) := by
-  have half : base i∉wires (halfWindowWith P j active hole) := by
-    rcases hi with rfl|rfl
-    · exact halfWindowWith_719_free P support j active hole hj (by omega) hh
-    · exact halfWindowWith_760_free P support j active hole hj (by omega) hh
-  have swap := wire_selected_free (s j active) (base 2409) (base i) FrontierSW1591.swapBody
-    (HostOB5.host_ne _ _ (by rcases hi with rfl|rfl <;> omega))
-    (HostOB5.host_ne _ _ (by rcases hi with rfl|rfl <;> omega))
-    (swap_body_low_free i (by rcases hi with rfl|rfl <;> omega))
-  cases divide <;> simp only [cellWith,Bool.false_eq_true,if_false,if_true,wires_append,Finset.mem_union,not_or]
-  · exact ⟨swap,half⟩
-  · exact ⟨half,swap⟩
 
 
 
@@ -23289,14 +23057,16 @@ theorem cellWith_pool_free (divide : Bool) (P : Program) (support : HalfSupport 
 
 
 
-theorem cell_pool_free (divide : Bool) (j active hole i : Nat)
-    (hj : j < 102) (ha : active < 5) (hh : hole < 5) (hi : i=719 ∨ i=760) :
-    base i∉wires (cell divide j active hole) := by
-  cases divide
-  · simpa only [cell,cellWith,halfWindow,Bool.false_eq_true,if_false] using
-      cellWith_pool_free false _ (half_support false) j active hole i hj ha hh hi
-  · simpa only [cell,cellWith,halfWindow,if_true] using
-      cellWith_pool_free true _ (half_support true) j active hole i hj ha hh hi
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
@@ -23313,75 +23083,15 @@ open ECDSAAdd.Entrant.Rolling1588
 attribute [local irreducible] wires
 
 
-theorem codec_pool_free (j i : Nat) (hj : j < 102) (hi : i=719 ∨ i=760) :
-    base i∉wires (NewHistory5.encode base (5*j)) := by
-  intro used
-  obtain ⟨port,eq⟩ := NewHistory5.history_gate_mem base (5*j) _ (Or.inl rfl) _ used
-  have bound := port.isLt
-  have same := base_injective eq
-  unfold History5.historyId at same
-  rcases hi with rfl|rfl <;> split_ifs at same <;> omega
-
-
-theorem onPacket_pool_free (j : Nat) (hj : j < 102) (i : Nat) (hi : i=719 ∨ i=760)
-    (P : Program) (support : wires P⊆Finset.range 10) : base i∉wires (onPacket j P) := by
-  intro used
-  rw [onPacket,renameProgram_support] at used
-  obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp used
-  have bound := Finset.mem_range.mp (support hq)
-  have member := NewHistory5.history_site_mem base (5*j) ⟨q,bound⟩
-  have image : MeasuredCodec5.label (History5.historyMap base (5*j)) q=
-      History5.historyMap base (5*j) ⟨q,bound⟩ := by simp only [MeasuredCodec5.label,dif_pos bound]
-  rw [image] at eq
-  exact codec_pool_free j i hj hi (eq ▸ member)
-
-
-theorem basePacket_pool_free (divide : Bool) (j i : Nat) (hj : j < 102) (hi : i=719 ∨ i=760) :
-    base i∉wires (basePacket divide j) := by
-  have opening := onPacket_pool_free j hj i hi stageOpen stageOpen_support
-  have closing := onPacket_pool_free j hj i hi stageClose stageClose_support
-  have transfer (d : Bool) (k : Nat) (hk : k<2) :=
-    onPacket_pool_free j hj i hi (stageTransition d k) (stageTransition_support d k hk)
-  have cellAt (d : Bool) (active : Nat) (ha : active<5) :=
-    cell_pool_free d j active 2 i hj ha (by decide) hi
-  have last := cellWith_pool_free true _ dend_support j 4 2 i hj (by decide) (by decide) hi
-  cases divide
-  · simp only [basePacket,Bool.false_eq_true,if_false,wires_append,Finset.mem_union,not_or]
-    exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨cellAt false 4 (by decide),transfer false 0 (by decide)⟩,
-      cellAt false 3 (by decide)⟩,cellAt false 4 (by decide)⟩,transfer false 1 (by decide)⟩,
-      cellAt false 4 (by decide)⟩,cellAt false 3 (by decide)⟩⟩,closing⟩
-  · have ending : base i∉wires (if j=84 then cellWith true (P1Life.dend (base 760) base (base 2409)) j 4 2
-        else cell true j 4 2) := by
-      by_cases terminal : j=84
-      · rw [if_pos terminal]; exact last
-      · rw [if_neg terminal]; exact cellAt true 4 (by decide)
-    simp only [basePacket,if_true,wires_append,Finset.mem_union,not_or]
-    exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨cellAt true 3 (by decide),cellAt true 4 (by decide)⟩,
-      transfer true 0 (by decide)⟩,cellAt true 4 (by decide)⟩,cellAt true 3 (by decide)⟩,
-      transfer true 1 (by decide)⟩,ending⟩⟩,closing⟩
 
 
 
-theorem packet_pool_free (divide : Bool) (j i : Nat) (hj : j < 102) (hi : i=719 ∨ i=760) :
-    base i∉wires (packet divide j) := by
-  apply wire_rename_free (shifted (Placement5.pi j)) (basePacket divide j) (base i) (base i)
-  · rw [shifted_base,Placement5.pi_outside j i hj]
-    unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion
-    rcases hi with rfl|rfl <;> omega
-  · exact basePacket_pool_free divide j i hj hi
 
 
-theorem groups_pool_free (divide : Bool) (j n i : Nat) (bound : j+n ≤ 102) (hi : i=719 ∨ i=760) :
-    base i∉wires (groups divide j n) := by
-  induction n generalizing j with
-  | zero => simp [groups,PacketSequence.program,wires]
-  | succ n ih =>
-    have head := packet_pool_free divide j i (by omega) hi
-    have rest := ih (j+1) (by omega)
-    cases divide <;> simp only [groups,PacketSequence.program,Bool.false_eq_true,if_false,
-      if_true,wires_append,Finset.mem_union,not_or] at rest ⊢
-    · exact ⟨rest,head⟩
-    · exact ⟨head,rest⟩
+
+
+
+
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
@@ -23399,40 +23109,6 @@ attribute [local irreducible] GatePhysical P1Life.half P1Life.dstart P1Life.dend
 attribute [local irreducible] JointForward1588.paddedGD JointInverse1588.paddedD
 
 
-theorem centerOdd_physical (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    GatePhysical (P1Life.centerOdd L) := by
-  have mapped := mappedAdd_physical (P1Life.centerOddBits L) (L.low.drop 3)
-    ((L.carry.take 254).drop 3) L.cin (P1Life.center_odd_high_nodup L hn) (by
-      intro b hb q hq
-      have source : q∈mappedWires (P1Life.centerOddBits L) := List.mem_flatMap.mpr ⟨b,hb,by simpa using hq⟩
-      rw [P1Life.center_odd_bits_sources L q source]
-      exact P1Life.center_odd_high_away L hn)
-  have rotation := rotate_physical L.word (P1Life.center_odd_word_nodup L hn)
-  have flagLow : HalfConvert.lowBit L≠L.flag := by
-    have a := P1Life.center_odd_word_shape L hw
-    obtain ⟨a,rest,low,word⟩ := a
-    have nd := List.nodup_iff_count.mp hn L.flag
-    intro eq
-    have mem : L.flag∈L.low := by
-      have lm : HalfConvert.lowBit L∈L.low := by
-        cases h : L.low with
-        | nil => have bad := hw.1;rw [h] at bad;simp at bad
-        | cons x xs => simp [HalfConvert.lowBit,h]
-      exact eq ▸ lm
-    have count := List.count_pos_iff.mpr mem
-    simp only [BalancedConvert.Layout.wires,List.count_append,List.count_cons,List.count_nil,beq_self_eq_true,if_true] at nd
-    first | omega | exact True.intro
-  have flagMsb : L.flag≠L.msb := by
-    have nd := List.nodup_iff_count.mp hn L.flag
-    intro eq
-    simp only [BalancedConvert.Layout.wires,List.count_append,List.count_cons,List.count_nil,beq_self_eq_true,if_true,←eq] at nd
-    first | omega | exact True.intro
-  have first : GatePhysical [.CX (HalfConvert.lowBit L) L.flag,.CX L.flag (HalfConvert.lowBit L),.X L.flag] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,flagLow,Ne.symm flagLow]
-  have last : GatePhysical [.CX L.flag L.msb,.CX L.msb L.flag] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,flagMsb,Ne.symm flagMsb]
-  simpa only [P1Life.centerOdd,gatePhysical_append] using
-    And.intro (And.intro (And.intro first rotation.1) mapped) last
 
 namespace Rolling1588
 open ECDSAAdd.Entrant.Rolling1588
@@ -24117,30 +23793,6 @@ theorem groups_slot_delta (divide : Bool) (j n : Nat) (bound : j+n≤102) :
       first | omega | exact True.intro
 
 
-theorem placedFirstPacket_slot_delta (divide : Bool) :
-    gateSlots (placedFirstPacket divide)=gateSlots (ECDSAAdd.Entrant.Rolling1588.placedFirstPacket divide)+(if divide then 3236 else 3765) := by
-  have a := cell_slot_delta divide 0 3 2
-  have b := cell_slot_delta divide 0 4 2
-  have c := cellWith_slots divide
-    (if divide then P1Life.dstart (base 760) base (base 2409) else P1Life.mend (base 760) base (base 2409)) 0 2 4
-  have d := slot_junctions (base 760) base (base 2409) Rolling1588Lifetime.half_ports_nodup route_retired_count_member
-  have e := ECDSAAdd.Entrant.Rolling1588.cell_resources divide 0 2 4
-  have hs := R2Life760.half760_slots divide
-  have old := slot_record_half divide
-  have sw : gateSlots FrontierSW1591.swapBody=768 := by
-    rw [FrontierSW1591.swapBody,swapRegisters_gateSlots,balancedSharedPorts_r,balancedSharedPorts_y,
-      wireBlock_length,wireBlock_length];decide
-  simp only [placedFirstPacket,firstPacket,ECDSAAdd.Entrant.Rolling1588.placedFirstPacket,
-    ECDSAAdd.Entrant.Rolling1588.firstPacket,rename_gateSlots,firstCore,ECDSAAdd.Entrant.Rolling1588.firstCore,
-    gateSlots_append,G0CarryLoan5.slots]
-  cases divide
-  all_goals simp only [Bool.false_eq_true,if_false,if_true,halfExtra,halfSlotSaving] at a b c e hs old ⊢
-  all_goals simp only [firstBodyShort,ECDSAAdd.Entrant.Rolling1588.firstBodyShort,firstCellsJFront,
-    firstRestZFront,firstJointBack,ECDSAAdd.Entrant.Rolling1588.firstCellsJFront,
-    ECDSAAdd.Entrant.Rolling1588.firstRestZFront,ECDSAAdd.Entrant.Rolling1588.firstJointBack,
-    Bool.false_eq_true,if_false,if_true,gateSlots_append]
-  all_goals rw [sw] at e
-  all_goals first | omega | exact True.intro
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
 
@@ -24276,43 +23928,8 @@ theorem dstartPacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
   rw [same]
   exact raw
 
-theorem slice_payload (origin : BasisState) (X Y : Fp) :
-    Replay5.groupsPayload true origin 1 84 (X,Y)=
-      directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 84))
-        (Replay5.groupsPayload true origin 2 82
-          (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) (X,Y))) := by
-  show PacketSequence.payload true _ 1 (83+1) (X,Y)=_
-  rw [PacketSequence.payload.eq_2,if_pos rfl]
-  exact route_payload_snoc _ 2 82 _
 
-theorem slice_eq : slice=(dstartPacket 1 ++ groups true 2 82) ++ packet true 84 := rfl
 
-theorem slice_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame centerWord centerWord 1 origin X Y) slice
-      (fun state => let V := Replay5.groupsPayload true origin 1 84 (X,Y)
-        CutFrame centerWord centerWord 85 origin V.1 V.2 state) := by
-  have a : StateTriple (CutFrame centerWord centerWord 1 origin X Y) (dstartPacket 1)
-      (CutFrame P1Life.oddWord P1Life.oddWord 2 origin
-        (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) (X,Y)).1
-        (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) (X,Y)).2) := by
-    intro state records input
-    exact dstartPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled X Y state records input
-  have b (V : Fp×Fp) : StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 2 origin V.1 V.2) (groups true 2 82)
-      (CutFrame P1Life.oddWord P1Life.oddWord 84 origin
-        (Replay5.groupsPayload true origin 2 82 V).1 (Replay5.groupsPayload true origin 2 82 V).2) := by
-    intro state records input
-    exact groups_cut_frame true 2 82 (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
-  have c (V : Fp×Fp) := lastDividePacket_cut_frame origin ctx enabled V.1 V.2
-  have total := (a.seq (b _)).seq (c _)
-  intro state records input
-  have r := total state records input
-  refine ⟨r.1,?_⟩
-  rw [slice_eq]
-  show CutFrame centerWord centerWord 85 origin (Replay5.groupsPayload true origin 1 84 (X,Y)).1
-    (Replay5.groupsPayload true origin 1 84 (X,Y)).2 _
-  rw [slice_payload origin X Y]
-  exact r.2
 
 theorem cutFrame_unique_route (cut : Nat) (origin : BasisState) (X Y : Fp)
     (a b : State) (ha : ECDSAAdd.Entrant.Rolling1588.CutFrame cut origin X Y a)
@@ -24326,24 +23943,8 @@ theorem cutFrame_unique_route (cut : Nat) (origin : BasisState) (X Y : Fp)
     · exact PairFrame.unique _ _ origin _ _ _ _ frameA frameB
   rw [encodedA, encodedB, rawEq]
 
-/-- On the record cut frame at cut 1, the odd slice and the record groups `1..84` end in the
-same state (independent measurement tapes). -/
-theorem slice_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
-    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 1 origin X Y s) :
-    run slice fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) old s := by
-  have odd := slice_cut_frame origin ctx enabled X Y s fresh input
-  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame true 1 84 (by decide) (by decide)
-    origin ctx enabled X Y s old input
-  exact cutFrame_unique_route 85 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
 
 
-theorem record_groups_shape : ECDSAAdd.Entrant.Rolling1588.groups true 1 84=
-    ECDSAAdd.Entrant.Rolling1588.packet true 1 ++
-      (ECDSAAdd.Entrant.Rolling1588.groups true 2 82 ++ ECDSAAdd.Entrant.Rolling1588.packet true 84) := by
-  show PacketSequence.program true (ECDSAAdd.Entrant.Rolling1588.packet true) 1 (83+1)=_
-  rw [PacketSequence.program.eq_2,if_pos rfl,show (83:Nat)=82+1 from rfl,route_program_snoc]
-  rfl
 
 theorem dstartPacket_counts :
     toffoliCount (dstartPacket 1)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet true 1)+239 ∧
@@ -24357,19 +23958,6 @@ theorem dstartPacket_counts :
     ECDSAAdd.Entrant.Rolling1588.basePacket,if_true,toffoliCount_append,measurementCount_append]
   exact ⟨by omega,by omega⟩
 
-/-- The odd slice has exactly 749 fewer Toffolis and 1,169 fewer measurements than the record
-groups `1..84`. -/
-theorem slice_counts :
-    toffoliCount slice+749=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) ∧
-    measurementCount slice+1169=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) := by
-  have p := dstartPacket_counts
-  have g := groups_count_delta true 2 82 (by decide)
-  have l := packet_count_delta true 84
-  rw [if_neg (by decide)] at g
-  rw [if_pos (by decide)] at l
-  rw [slice_eq,record_groups_shape]
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
 theorem dstartPacket_slots :
     Challenge.gateSlots (dstartPacket 1)+136=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet true 1)+3304 := by
@@ -24387,17 +23975,6 @@ theorem dstartPacket_slots :
   simp only [halfSlotSaving,if_true] at a b
   omega
 
-/-- The odd slice uses fewer gate slots than the record groups `1..84`. -/
-theorem slice_slots_le : Challenge.gateSlots slice≤Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) := by
-  have p := dstartPacket_slots
-  have g := groups_slot_delta true 2 82 (by decide)
-  have l := packet_slot_delta true 84
-  rw [if_neg (by decide)] at g
-  rw [if_pos (by decide)] at l
-  simp only [halfSlotSaving,if_true] at g l
-  rw [slice_eq,record_groups_shape]
-  simp only [Challenge.gateSlots_append]
-  omega
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -24645,8 +24222,6 @@ def slice45 : Program := dstartPacket 1 ++ groups true 2 43 ++ dendPacket 45
 /-- The division first group (deficit 0, packets 1..84) of odd45: odd 1..45, record 46..84. -/
 def dslice : Program := slice45 ++ ECDSAAdd.Entrant.Rolling1588.groups true 46 39
 
-theorem slice45_eq : slice45=(dstartPacket 1 ++ groups true 2 43) ++ dendPacket 45 := rfl
-theorem dslice_eq : dslice=slice45 ++ ECDSAAdd.Entrant.Rolling1588.groups true 46 39 := rfl
 theorem dendBasePacket_frame (j : Nat) (hj : j < 102)
     (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
     (enabled : origin (base 2400)=true) (X Y : Fp) :
@@ -24752,103 +24327,12 @@ theorem dendPacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
   rw [same]
   exact raw
 
-theorem slice45_payload (origin : BasisState) (X Y : Fp) :
-    Replay5.groupsPayload true origin 1 45 (X,Y)=
-      directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 45))
-        (Replay5.groupsPayload true origin 2 43
-          (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) (X,Y))) := by
-  show PacketSequence.payload true _ 1 (44+1) (X,Y)=_
-  rw [PacketSequence.payload.eq_2,if_pos rfl]
-  exact route_payload_snoc _ 2 43 _
 
-theorem slice45_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame centerWord centerWord 1 origin X Y) slice45
-      (fun state => let V := Replay5.groupsPayload true origin 1 45 (X,Y)
-        CutFrame centerWord centerWord 46 origin V.1 V.2 state) := by
-  have a : StateTriple (CutFrame centerWord centerWord 1 origin X Y) (dstartPacket 1)
-      (CutFrame P1Life.oddWord P1Life.oddWord 2 origin
-        (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) (X,Y)).1
-        (directionalPayload false (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) (X,Y)).2) := by
-    intro state records input
-    exact dstartPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled X Y state records input
-  have b (V : Fp×Fp) : StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 2 origin V.1 V.2) (groups true 2 43)
-      (CutFrame P1Life.oddWord P1Life.oddWord 45 origin
-        (Replay5.groupsPayload true origin 2 43 V).1 (Replay5.groupsPayload true origin 2 43 V).2) := by
-    intro state records input
-    exact groups_cut_frame true 2 43 (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
-  have c (V : Fp×Fp) := dendPacket_cut_frame 45 (by decide) (by decide) origin ctx enabled V.1 V.2
-  have total := (a.seq (b _)).seq (c _)
-  intro state records input
-  have r := total state records input
-  refine ⟨r.1,?_⟩
-  rw [slice45_eq]
-  show CutFrame centerWord centerWord 46 origin (Replay5.groupsPayload true origin 1 45 (X,Y)).1
-    (Replay5.groupsPayload true origin 1 45 (X,Y)).2 _
-  rw [slice45_payload origin X Y]
-  have r2 := r.2
-  simp only [Prod.mk.eta] at r2
-  exact r2
 
-theorem dslice_payload (origin : BasisState) (V : Fp×Fp) :
-    Replay5.groupsPayload true origin 1 84 V=
-      Replay5.groupsPayload true origin 46 39 (Replay5.groupsPayload true origin 1 45 V) :=
-  odd45_payload_true_add _ 1 45 39 V
 
-theorem dslice_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame centerWord centerWord 1 origin X Y) dslice
-      (fun state => let V := Replay5.groupsPayload true origin 1 84 (X,Y)
-        CutFrame centerWord centerWord 85 origin V.1 V.2 state) := by
-  have a : StateTriple (CutFrame centerWord centerWord 1 origin X Y) slice45
-      (CutFrame centerWord centerWord 46 origin
-        (Replay5.groupsPayload true origin 1 45 (X,Y)).1 (Replay5.groupsPayload true origin 1 45 (X,Y)).2) := by
-    intro state records input
-    exact slice45_cut_frame origin ctx enabled X Y state records input
-  have b (V : Fp×Fp) : StateTriple (CutFrame centerWord centerWord 46 origin V.1 V.2)
-      (ECDSAAdd.Entrant.Rolling1588.groups true 46 39)
-      (CutFrame centerWord centerWord 85 origin
-        (Replay5.groupsPayload true origin 46 39 (V.1,V.2)).1 (Replay5.groupsPayload true origin 46 39 (V.1,V.2)).2) := by
-    intro state records input
-    exact ECDSAAdd.Entrant.Rolling1588.groups_cut_frame true 46 39 (by decide) (by decide)
-      origin ctx enabled V.1 V.2 state records input
-  have total := a.seq (b _)
-  intro state records input
-  have r := total state records input
-  refine ⟨r.1,?_⟩
-  rw [dslice_eq]
-  show CutFrame centerWord centerWord 85 origin (Replay5.groupsPayload true origin 1 84 (X,Y)).1
-    (Replay5.groupsPayload true origin 1 84 (X,Y)).2 _
-  rw [dslice_payload origin (X,Y)]
-  have r2 := r.2
-  simp only [Prod.mk.eta] at r2
-  exact r2
 
-/-- On the record cut frame at cut 1, the odd45 division group and the record groups `1..84` end
-in the same state (independent measurement tapes). -/
-theorem dslice_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
-    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 1 origin X Y s) :
-    run dslice fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) old s := by
-  have odd := dslice_cut_frame origin ctx enabled X Y s fresh input
-  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame true 1 84 (by decide) (by decide)
-    origin ctx enabled X Y s old input
-  exact cutFrame_unique_route 85 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
 
-theorem record_groups45_shape : ECDSAAdd.Entrant.Rolling1588.groups true 1 45=
-    (ECDSAAdd.Entrant.Rolling1588.packet true 1 ++ ECDSAAdd.Entrant.Rolling1588.groups true 2 43) ++
-      ECDSAAdd.Entrant.Rolling1588.packet true 45 := by
-  have h : ECDSAAdd.Entrant.Rolling1588.groups true 1 45=
-      ECDSAAdd.Entrant.Rolling1588.packet true 1 ++
-        (ECDSAAdd.Entrant.Rolling1588.groups true 2 43 ++ ECDSAAdd.Entrant.Rolling1588.packet true 45) := by
-    show PacketSequence.program true (ECDSAAdd.Entrant.Rolling1588.packet true) 1 (44+1)=_
-    rw [PacketSequence.program.eq_2,if_pos rfl,show (44:Nat)=43+1 from rfl,route_program_snoc]
-    rfl
-  rw [h,List.append_assoc]
 
-theorem record_groups_split_true : ECDSAAdd.Entrant.Rolling1588.groups true 1 84=
-    ECDSAAdd.Entrant.Rolling1588.groups true 1 45 ++ ECDSAAdd.Entrant.Rolling1588.groups true 46 39 :=
-  odd45_program_true_add _ 45 39 1
 
 theorem dendPacket_counts (j : Nat) :
     toffoliCount (dendPacket j)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet true j)+242 ∧
@@ -24862,27 +24346,7 @@ theorem dendPacket_counts (j : Nat) :
     ECDSAAdd.Entrant.Rolling1588.basePacket,if_true,toffoliCount_append,measurementCount_append]
   exact ⟨by omega,by omega⟩
 
-/-- odd45: the division slice `1..45` has exactly 164 fewer Toffolis and 389 fewer measurements
-than the record groups `1..45`. -/
-theorem slice45_counts :
-    toffoliCount slice45+164=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups true 1 45) ∧
-    measurementCount slice45+389=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups true 1 45) := by
-  have p := dstartPacket_counts
-  have g := groups_count_delta true 2 43 (by decide)
-  have l := dendPacket_counts 45
-  rw [if_neg (by decide)] at g
-  rw [slice45_eq,record_groups45_shape]
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
-/-- odd45: the division first group saves 164 T / 389 M against the record groups `1..84`. -/
-theorem dslice_counts :
-    toffoliCount dslice+164=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) ∧
-    measurementCount dslice+389=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) := by
-  have s := slice45_counts
-  rw [dslice_eq,record_groups_split_true]
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
 theorem dendPacket_slots (j : Nat) :
     Challenge.gateSlots (dendPacket j)+170=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet true j)+3877 := by
@@ -24900,17 +24364,6 @@ theorem dendPacket_slots (j : Nat) :
   simp only [halfSlotSaving,if_true] at a b
   omega
 
-/-- odd45: the division first group still uses fewer gate slots than the record groups `1..84`
-(the slice `1..45` alone saves 435 slots). -/
-theorem dslice_slots_le : Challenge.gateSlots dslice≤Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups true 1 84) := by
-  have p := dstartPacket_slots
-  have g := groups_slot_delta true 2 43 (by decide)
-  have l := dendPacket_slots 45
-  rw [if_neg (by decide)] at g
-  simp only [halfSlotSaving,if_true] at g
-  rw [dslice_eq,slice45_eq,record_groups_split_true,record_groups45_shape]
-  simp only [Challenge.gateSlots_append]
-  omega
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -24922,17 +24375,6 @@ set_option maxHeartbeats 1200000
 namespace ECDSAAdd.Entrant.RouteA.Rolling1588
 open Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField OffsetBorrowedCanonical CompressedFieldSupport
 open ECDSAAdd.Entrant.Rolling1588
-/-- the odd division slice on packets 1..45 uses 435 gate slots fewer than the record packets. -/
-theorem slice45_slots :
-    Challenge.gateSlots slice45 + 435 = Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups true 1 45) := by
-  have p := dstartPacket_slots
-  have g := groups_slot_delta true 2 43 (by decide)
-  have l := dendPacket_slots 45
-  rw [if_neg (by decide)] at g
-  simp only [halfSlotSaving,if_true] at g
-  rw [slice45_eq,record_groups45_shape]
-  simp only [Challenge.gateSlots_append]
-  omega
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
 
@@ -24947,16 +24389,6 @@ open Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField OffsetBor
 open ECDSAAdd.Entrant.Rolling1588
 attribute [local irreducible] run wires
 
-/-- on the record cut frame at cut 1, the odd45 division slice and the record packets
-`1..45` end in the same state (independent measurement tapes). -/
-theorem slice45_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
-    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 1 origin X Y s) :
-    run slice45 fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups true 1 45) old s := by
-  have odd := slice45_cut_frame origin ctx enabled X Y s fresh input
-  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame true 1 45 (by decide) (by decide)
-    origin ctx enabled X Y s old input
-  exact cutFrame_unique_route 46 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -25000,13 +24432,6 @@ theorem c45_dendBasePacket_physical (j : Nat) (hj : j<102) : GatePhysical (dendB
   simp only [dendBasePacket,gatePhysical_append]
   exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨c3,c4⟩,t0⟩,c4⟩,c3⟩,t1⟩,e0⟩⟩,closing⟩
 
-/-- the odd45 division slice is physical. -/
-theorem c45_slice45_physical : GatePhysical slice45 := by
-  rw [slice45_eq]
-  simp only [gatePhysical_append]
-  exact ⟨⟨gatePhysical_rename _ (shifted (Placement5.pi 1)).injective _ (c45_dstartBasePacket_physical 1 (by decide)),
-    groups_physical true 2 43 (by decide)⟩,
-    gatePhysical_rename _ (shifted (Placement5.pi 45)).injective _ (c45_dendBasePacket_physical 45 (by decide))⟩
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -25076,17 +24501,6 @@ theorem c45_oddPacket_sub (j : Nat) :
   unfold RouteA.Rolling1588.packet Rolling1588.packet
   exact rename_sub _ _ _ (c45_oddBasePacket_sub j)
 
-/-- the odd45 division slice stays inside the record packets `1..45` (no new wire). -/
-theorem c45_slice45_sub : wires RouteA.Rolling1588.slice45 ⊆ wires (Rolling1588.groups true 1 45) := by
-  rw [RouteA.Rolling1588.record_groups45_shape,RouteA.Rolling1588.slice45_eq]
-  apply append_sub
-  · apply append_sub
-    · unfold RouteA.Rolling1588.dstartPacket Rolling1588.packet
-      exact rename_sub _ _ _ (c45_dstartBasePacket_sub 1)
-    · unfold RouteA.Rolling1588.groups Rolling1588.groups
-      exact sequence_sub true _ _ (fun i => c45_oddPacket_sub i) 2 43
-  · unfold RouteA.Rolling1588.dendPacket Rolling1588.packet
-    exact rename_sub _ _ _ (c45_dendBasePacket_sub 45)
 
 end ECDSAAdd.Entrant.StairLoanGroupSupport
 end
@@ -25563,7 +24977,6 @@ def mendPacket (j : Nat) : Program :=
 `mend` in packet 1 (the window runs the slice on packets 45..1, `mslice45`). -/
 def mslice : Program := mstartPacket 84 ++ groups false 2 82 ++ mendPacket 1
 
-theorem mslice_eq : mslice=(mstartPacket 84 ++ groups false 2 82) ++ mendPacket 1 := rfl
 
 theorem mstartBasePacket_frame (j : Nat) (hj : j < 102)
     (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
@@ -25778,13 +25191,6 @@ theorem mendPacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
   rw [same]
   exact raw
 
-theorem route_program_snoc_false (P : Nat→Program) (j n : Nat) :
-    PacketSequence.program false P j (n+1)=P (j+n)++PacketSequence.program false P j n := by
-  induction n generalizing j with
-  | zero => simp only [PacketSequence.program,Bool.false_eq_true,if_false,List.append_nil,List.nil_append,Nat.add_zero]
-  | succ n ih =>
-    rw [PacketSequence.program,if_neg (by decide),ih,PacketSequence.program,if_neg (by decide)]
-    simp only [List.append_assoc,show j+(n+1)=(j+1)+n from by omega]
 
 theorem route_payload_snoc_false {α : Type} (step : Nat→α→α) (j n : Nat) (V : α) :
     PacketSequence.payload false step j (n+1) V=
@@ -25795,63 +25201,9 @@ theorem route_payload_snoc_false {α : Type} (step : Nat→α→α) (j n : Nat) 
     rw [PacketSequence.payload,if_neg (by decide),ih,PacketSequence.payload,if_neg (by decide)]
     rw [show j+(n+1)=(j+1)+n from by omega]
 
-theorem mslice_payload (origin : BasisState) (X Y : Fp) :
-    Replay5.groupsPayload false origin 1 84 (X,Y)=
-      directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 1))
-        (Replay5.groupsPayload false origin 2 82
-          (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y))) := by
-  show PacketSequence.payload false _ 1 (83+1) (X,Y)=_
-  rw [PacketSequence.payload.eq_2,if_neg (by decide),route_payload_snoc_false]
-  rfl
 
-theorem mslice_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame centerWord centerWord 85 origin X Y) mslice
-      (fun state => let V := Replay5.groupsPayload false origin 1 84 (X,Y)
-        CutFrame centerWord centerWord 1 origin V.1 V.2 state) := by
-  have a : StateTriple (CutFrame centerWord centerWord 85 origin X Y) (mstartPacket 84)
-      (CutFrame P1Life.oddWord P1Life.oddWord 84 origin
-        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y)).1
-        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y)).2) := by
-    intro state records input
-    exact mstartPacket_cut_frame 84 (by decide) (by decide) origin ctx enabled X Y state records input
-  have b (V : Fp×Fp) : StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 84 origin V.1 V.2) (groups false 2 82)
-      (CutFrame P1Life.oddWord P1Life.oddWord 2 origin
-        (Replay5.groupsPayload false origin 2 82 V).1 (Replay5.groupsPayload false origin 2 82 V).2) := by
-    intro state records input
-    exact groups_cut_frame false 2 82 (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
-  have c (V : Fp×Fp) := mendPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled V.1 V.2
-  have total := (a.seq (b _)).seq (c _)
-  intro state records input
-  have r := total state records input
-  refine ⟨r.1,?_⟩
-  rw [mslice_eq]
-  show CutFrame centerWord centerWord 1 origin (Replay5.groupsPayload false origin 1 84 (X,Y)).1
-    (Replay5.groupsPayload false origin 1 84 (X,Y)).2 _
-  rw [mslice_payload origin X Y]
-  -- `r.2` carries the pair `(p.1, p.2)`; folding it with `Prod.mk.eta` keeps the kernel from
-  -- evaluating the 82-packet payload.
-  have r2 := r.2
-  simp only [Prod.mk.eta] at r2
-  exact r2
 
-/-- On the record cut frame at cut 85, the odd multiplication slice and the record groups
-`84..1` end in the same state (independent measurement tapes). -/
-theorem mslice_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
-    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 85 origin X Y s) :
-    run mslice fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) old s := by
-  have odd := mslice_cut_frame origin ctx enabled X Y s fresh input
-  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame false 1 84 (by decide) (by decide)
-    origin ctx enabled X Y s old input
-  exact cutFrame_unique_route 1 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
 
-theorem record_groups_shape_false : ECDSAAdd.Entrant.Rolling1588.groups false 1 84=
-    (ECDSAAdd.Entrant.Rolling1588.packet false 84 ++
-      ECDSAAdd.Entrant.Rolling1588.groups false 2 82) ++ ECDSAAdd.Entrant.Rolling1588.packet false 1 := by
-  show PacketSequence.program false (ECDSAAdd.Entrant.Rolling1588.packet false) 1 (83+1)=_
-  rw [PacketSequence.program.eq_2,if_neg (by decide),show (83:Nat)=82+1 from rfl,route_program_snoc_false]
-  rfl
 
 theorem mstartPacket_counts :
     toffoliCount (mstartPacket 84)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet false 84)+242 ∧
@@ -25879,18 +25231,6 @@ theorem mendPacket_counts :
     measurementCount_append]
   exact ⟨by omega,by omega⟩
 
-/-- The odd multiplication slice has exactly 749 fewer Toffolis and 1,169 fewer measurements than
-the record groups `1..84`. -/
-theorem mslice_counts :
-    toffoliCount mslice+749=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) ∧
-    measurementCount mslice+1169=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) := by
-  have p := mstartPacket_counts
-  have q := mendPacket_counts
-  have g := groups_count_delta false 2 82 (by decide)
-  rw [if_neg (by decide)] at g
-  rw [mslice_eq,record_groups_shape_false]
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
 theorem mstartPacket_slots :
     Challenge.gateSlots (mstartPacket 84)+112=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet false 84)+4543 := by
@@ -25924,16 +25264,6 @@ theorem mendPacket_slots :
   simp only [halfSlotSaving,Bool.false_eq_true,if_false] at a b
   omega
 
-/-- The odd multiplication slice uses fewer gate slots than the record groups `1..84`. -/
-theorem mslice_slots_le : Challenge.gateSlots mslice≤Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) := by
-  have p := mstartPacket_slots
-  have q := mendPacket_slots
-  have g := groups_slot_delta false 2 82 (by decide)
-  rw [if_neg (by decide)] at g
-  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at g
-  rw [mslice_eq,record_groups_shape_false]
-  simp only [Challenge.gateSlots_append]
-  omega
 
 theorem mstartBasePacket_physical (j : Nat) (hj : j<102) : GatePhysical (mstartBasePacket j) := by
   have opening := onPacket_physical j hj stageOpen stageOpen_support stage_physical.1
@@ -25961,12 +25291,6 @@ theorem mendBasePacket_physical (j : Nat) (hj : j<102) : GatePhysical (mendBaseP
   simp only [mendBasePacket,gatePhysical_append]
   exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨c4,t0⟩,c3⟩,c4⟩,t1⟩,c4⟩,m0⟩⟩,closing⟩
 
-theorem mslice_physical : GatePhysical mslice := by
-  rw [mslice_eq]
-  simp only [gatePhysical_append]
-  exact ⟨⟨gatePhysical_rename _ (shifted (Placement5.pi 84)).injective _ (mstartBasePacket_physical 84 (by decide)),
-    groups_physical false 2 82 (by decide)⟩,
-    gatePhysical_rename _ (shifted (Placement5.pi 1)).injective _ (mendBasePacket_physical 1 (by decide))⟩
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -26018,165 +25342,19 @@ def mslice45 : Program := mstartPacket 45 ++ groups false 2 43 ++ mendPacket 1
 /-- The multiplication first group (packets 84..1) of odd45: record 84..46, odd 45..1. -/
 def mdslice : Program := ECDSAAdd.Entrant.Rolling1588.groups false 46 39 ++ mslice45
 
-theorem mslice45_eq : mslice45=(mstartPacket 45 ++ groups false 2 43) ++ mendPacket 1 := rfl
 
-theorem mdslice_eq : mdslice=ECDSAAdd.Entrant.Rolling1588.groups false 46 39 ++ mslice45 := rfl
 
-theorem mslice45_payload (origin : BasisState) (X Y : Fp) :
-    Replay5.groupsPayload false origin 1 45 (X,Y)=
-      directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 1))
-        (Replay5.groupsPayload false origin 2 43
-          (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 45)) (X,Y))) := by
-  show PacketSequence.payload false _ 1 (44+1) (X,Y)=_
-  rw [PacketSequence.payload.eq_2,if_neg (by decide),route_payload_snoc_false]
-  rfl
 
-theorem mslice45_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame centerWord centerWord 46 origin X Y) mslice45
-      (fun state => let V := Replay5.groupsPayload false origin 1 45 (X,Y)
-        CutFrame centerWord centerWord 1 origin V.1 V.2 state) := by
-  have a : StateTriple (CutFrame centerWord centerWord 46 origin X Y) (mstartPacket 45)
-      (CutFrame P1Life.oddWord P1Life.oddWord 45 origin
-        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 45)) (X,Y)).1
-        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 45)) (X,Y)).2) := by
-    intro state records input
-    exact mstartPacket_cut_frame 45 (by decide) (by decide) origin ctx enabled X Y state records input
-  have b (V : Fp×Fp) : StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 45 origin V.1 V.2) (groups false 2 43)
-      (CutFrame P1Life.oddWord P1Life.oddWord 2 origin
-        (Replay5.groupsPayload false origin 2 43 V).1 (Replay5.groupsPayload false origin 2 43 V).2) := by
-    intro state records input
-    exact groups_cut_frame false 2 43 (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
-  have c (V : Fp×Fp) := mendPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled V.1 V.2
-  have total := (a.seq (b _)).seq (c _)
-  intro state records input
-  have r := total state records input
-  refine ⟨r.1,?_⟩
-  rw [mslice45_eq]
-  show CutFrame centerWord centerWord 1 origin (Replay5.groupsPayload false origin 1 45 (X,Y)).1
-    (Replay5.groupsPayload false origin 1 45 (X,Y)).2 _
-  rw [mslice45_payload origin X Y]
-  have r2 := r.2
-  simp only [Prod.mk.eta] at r2
-  exact r2
 
-theorem mdslice_payload (origin : BasisState) (V : Fp×Fp) :
-    Replay5.groupsPayload false origin 1 84 V=
-      Replay5.groupsPayload false origin 1 45 (Replay5.groupsPayload false origin 46 39 V) :=
-  odd45_payload_false_add _ 1 45 39 V
 
-theorem mdslice_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) :
-    StateTriple (CutFrame centerWord centerWord 85 origin X Y) mdslice
-      (fun state => let V := Replay5.groupsPayload false origin 1 84 (X,Y)
-        CutFrame centerWord centerWord 1 origin V.1 V.2 state) := by
-  have a : StateTriple (CutFrame centerWord centerWord 85 origin X Y)
-      (ECDSAAdd.Entrant.Rolling1588.groups false 46 39)
-      (CutFrame centerWord centerWord 46 origin
-        (Replay5.groupsPayload false origin 46 39 (X,Y)).1 (Replay5.groupsPayload false origin 46 39 (X,Y)).2) := by
-    intro state records input
-    exact ECDSAAdd.Entrant.Rolling1588.groups_cut_frame false 46 39 (by decide) (by decide)
-      origin ctx enabled X Y state records input
-  have b (V : Fp×Fp) : StateTriple (CutFrame centerWord centerWord 46 origin V.1 V.2) mslice45
-      (CutFrame centerWord centerWord 1 origin
-        (Replay5.groupsPayload false origin 1 45 (V.1,V.2)).1 (Replay5.groupsPayload false origin 1 45 (V.1,V.2)).2) := by
-    intro state records input
-    exact mslice45_cut_frame origin ctx enabled V.1 V.2 state records input
-  have total := a.seq (b _)
-  intro state records input
-  have r := total state records input
-  refine ⟨r.1,?_⟩
-  rw [mdslice_eq]
-  show CutFrame centerWord centerWord 1 origin (Replay5.groupsPayload false origin 1 84 (X,Y)).1
-    (Replay5.groupsPayload false origin 1 84 (X,Y)).2 _
-  rw [mdslice_payload origin (X,Y)]
-  have r2 := r.2
-  simp only [Prod.mk.eta] at r2
-  exact r2
 
-/-- On the record cut frame at cut 85, the odd45 multiplication group and the record groups
-`84..1` end in the same state (independent measurement tapes). -/
-theorem mdslice_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
-    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 85 origin X Y s) :
-    run mdslice fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) old s := by
-  have odd := mdslice_cut_frame origin ctx enabled X Y s fresh input
-  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame false 1 84 (by decide) (by decide)
-    origin ctx enabled X Y s old input
-  exact cutFrame_unique_route 1 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
 
-theorem record_groups45_shape_false : ECDSAAdd.Entrant.Rolling1588.groups false 1 45=
-    (ECDSAAdd.Entrant.Rolling1588.packet false 45 ++
-      ECDSAAdd.Entrant.Rolling1588.groups false 2 43) ++ ECDSAAdd.Entrant.Rolling1588.packet false 1 := by
-  show PacketSequence.program false (ECDSAAdd.Entrant.Rolling1588.packet false) 1 (44+1)=_
-  rw [PacketSequence.program.eq_2,if_neg (by decide),show (44:Nat)=43+1 from rfl,route_program_snoc_false]
-  rfl
 
-theorem record_groups_split_false : ECDSAAdd.Entrant.Rolling1588.groups false 1 84=
-    ECDSAAdd.Entrant.Rolling1588.groups false 46 39 ++ ECDSAAdd.Entrant.Rolling1588.groups false 1 45 :=
-  odd45_program_false_add _ 45 39 1
 
-theorem mstartPacket45_counts :
-    toffoliCount (mstartPacket 45)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet false 45)+242 ∧
-    measurementCount (mstartPacket 45)=measurementCount (ECDSAAdd.Entrant.Rolling1588.packet false 45)+237 := by
-  have a := cell_count_delta false 45 3 2
-  have b := cell_count_delta false 45 4 2
-  have c := cellWith_counts false (P1Life.mstart (base 760) base (base 2409)) 45 4 2
-  have d := route_mstart_counts
-  have e := cell_counts false 45 4 2
-  simp only [mstartPacket,ECDSAAdd.Entrant.Rolling1588.packet,renameProgram_counts,mstartBasePacket,
-    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,toffoliCount_append,
-    measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
-theorem mslice45_counts :
-    toffoliCount mslice45+164=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 45) ∧
-    measurementCount mslice45+389=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 45) := by
-  have p := mstartPacket45_counts
-  have q := mendPacket_counts
-  have g := groups_count_delta false 2 43 (by decide)
-  rw [if_neg (by decide)] at g
-  rw [mslice45_eq,record_groups45_shape_false]
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
-/-- odd45: the multiplication first group saves 164 T / 389 M against the record groups `84..1`. -/
-theorem mdslice_counts :
-    toffoliCount mdslice+164=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) ∧
-    measurementCount mdslice+389=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) := by
-  have s := mslice45_counts
-  rw [mdslice_eq,record_groups_split_false]
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
 
-theorem mstartPacket45_slots :
-    Challenge.gateSlots (mstartPacket 45)+112=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet false 45)+4543 := by
-  have a := cell_slot_delta false 45 3 2
-  have b := cell_slot_delta false 45 4 2
-  have c := cellWith_slots false (P1Life.mstart (base 760) base (base 2409)) 45 4 2
-  have d := slot_mstart (base 760) base (base 2409) Rolling1588Lifetime.half_ports_nodup route_retired_count_member
-  have h := slot_half (base 760) false base (base 2409)
-  have regular := cellWith_slots false (P1Life.half (base 760) false base (base 2409)) 45 4 2
-  have eq : cell false 45 4 2=cellWith false (P1Life.half (base 760) false base (base 2409)) 45 4 2 := rfl
-  rw [←eq] at regular
-  simp only [Bool.false_eq_true,if_false] at h
-  simp only [mstartPacket,ECDSAAdd.Entrant.Rolling1588.packet,Baselines.rename_gateSlots,mstartBasePacket,
-    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,Challenge.gateSlots_append]
-  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at a b
-  omega
 
-/-- odd45: the multiplication first group uses exactly 2120 gate slots more than the record
-groups `84..1` (mstart / mend cost 8140 over the record cells, 43 odd packets save 6020). -/
-theorem mdslice_slots :
-    Challenge.gateSlots mdslice=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups false 1 84)+2120 := by
-  have p := mstartPacket45_slots
-  have q := mendPacket_slots
-  have g := groups_slot_delta false 2 43 (by decide)
-  rw [if_neg (by decide)] at g
-  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at g
-  rw [mdslice_eq,mslice45_eq,record_groups_split_false,record_groups45_shape_false]
-  simp only [Challenge.gateSlots_append]
-  omega
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -26188,17 +25366,6 @@ set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.RouteA.Rolling1588
 open Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField OffsetBorrowedCanonical CompressedFieldSupport
 open ECDSAAdd.Entrant.Rolling1588
-/-- the odd multiplication slice on packets 45..1 uses 2120 gate slots more than the record packets. -/
-theorem mslice45_slots :
-    Challenge.gateSlots mslice45 = Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups false 1 45) + 2120 := by
-  have p := mstartPacket45_slots
-  have q := mendPacket_slots
-  have g := groups_slot_delta false 2 43 (by decide)
-  rw [if_neg (by decide)] at g
-  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at g
-  rw [mslice45_eq,record_groups45_shape_false]
-  simp only [Challenge.gateSlots_append]
-  omega
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
 
@@ -26213,24 +25380,7 @@ open Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField OffsetBor
 open ECDSAAdd.Entrant.Rolling1588
 attribute [local irreducible] run wires
 
-/-- on the record cut frame at cut 46, the odd45 multiplication slice and the record packets
-`45..1` end in the same state (independent measurement tapes). -/
-theorem mslice45_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
-    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 46 origin X Y s) :
-    run mslice45 fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups false 1 45) old s := by
-  have odd := mslice45_cut_frame origin ctx enabled X Y s fresh input
-  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame false 1 45 (by decide) (by decide)
-    origin ctx enabled X Y s old input
-  exact cutFrame_unique_route 1 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
 
-/-- the odd45 multiplication slice is physical. -/
-theorem c45_mslice45_physical : GatePhysical mslice45 := by
-  rw [mslice45_eq]
-  simp only [gatePhysical_append]
-  exact ⟨⟨gatePhysical_rename _ (shifted (Placement5.pi 45)).injective _ (mstartBasePacket_physical 45 (by decide)),
-    groups_physical false 2 43 (by decide)⟩,
-    gatePhysical_rename _ (shifted (Placement5.pi 1)).injective _ (mendBasePacket_physical 1 (by decide))⟩
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end
@@ -26297,17 +25447,6 @@ theorem c45_oddPacket_sub_false (j : Nat) :
   unfold RouteA.Rolling1588.packet Rolling1588.packet
   exact rename_sub _ _ _ (c45_oddBasePacket_sub_false j)
 
-/-- the odd45 multiplication slice stays inside the record packets `45..1` (no new wire). -/
-theorem c45_mslice45_sub : wires RouteA.Rolling1588.mslice45 ⊆ wires (Rolling1588.groups false 1 45) := by
-  rw [RouteA.Rolling1588.record_groups45_shape_false,RouteA.Rolling1588.mslice45_eq]
-  apply append_sub
-  · apply append_sub
-    · unfold RouteA.Rolling1588.mstartPacket Rolling1588.packet
-      exact rename_sub _ _ _ (c45_mstartBasePacket_sub 45)
-    · unfold RouteA.Rolling1588.groups Rolling1588.groups
-      exact sequence_sub false _ _ (fun i => c45_oddPacket_sub_false i) 2 43
-  · unfold RouteA.Rolling1588.mendPacket Rolling1588.packet
-    exact rename_sub _ _ _ (c45_mendBasePacket_sub 1)
 
 end ECDSAAdd.Entrant.StairLoanGroupSupport
 end
@@ -26608,29 +25747,6 @@ theorem stock_split (k : Fp) : entryR Baselines.layout k = comparePhase k ++ suf
   rw [E1Reflected.Square31.split]
   simp only [renameProgram, List.map_append]
 attribute [local irreducible] wires E1Reflected.Square31.afterCompare E1Reflected.comparePart E1Reflected.merged pmapR Baselines.layout
-theorem hosts_clear (k : Fp) : ∀ t ∈ moves, t.2 ∉ wires (suffix k) := by
-  intro t ht used
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht
-  have hi' := List.mem_range.mp hi
-  unfold suffix placed at used
-  rw [renameProgram_support] at used
-  obtain ⟨y,hy,eq⟩ := Finset.mem_image.mp used
-  have orig : y ∈ wires (E1Reflected.merged base (base 2400) k.val) := by
-    rw [E1Reflected.Square31.split, wires_append]
-    apply Finset.mem_union_right
-    exact hy
-  have hh : base (258+i) ∈ S := List.mem_toFinset.mpr
-    (E1Merge.in_mSites base (base 2400) (258+i) (by omega))
-  have same := pmap_inj Baselines.layout Baselines.layout_widths Baselines.layout_nodup
-    y (mergedR_S k.val orig) _ hh eq
-  have mem := List.mem_toFinset.mp (E1Reflected.Square31.afterCompare_support _ _ _ hy)
-  rw [same] at mem
-  simp only [E1Reflected.Square31.mS5,wireBlock,List.mem_append,List.mem_cons,List.not_mem_nil,
-    or_false,List.mem_map,List.mem_range'_1] at mem
-  rcases mem with (((h|h|h)|h)|h)|h|h|h
-  all_goals first
-    | obtain ⟨j,hj,ej⟩ := h; have := base_injective ej; omega
-    | have := base_injective h; omega
 end ECDSAAdd.Entrant.StairEntryRehost
 end
 
@@ -26993,23 +26109,6 @@ theorem fullRun (k : Fp) (s : State) (m : List Bool) (X : Nat) (hx : regValue Ba
       · rw [eq]
       · rw [stockZeros k s m X hx hX hc _ ha,stockZeros k s m X hx hX hc _ hb]
     · rw [offSites q hq]
-theorem walkPortZeros (k : Fp) (s : State) (m : List Bool) (X : Nat) (hx : regValue Baselines.layout.point.x s.basis=X)
-    (hX : X<p) (hc : regValue Baselines.layout.dialogPool s.basis=0) :
-    ∀ q ∈ ([4835,4837,4615,4616] : List Wire), (run (entryR Baselines.layout k) m s).basis q = false := by
-  have geo : [(1542,4835),(1541,4837),(500,4615),(501,4616)].all
-      (fun (i,q) => pmapR Baselines.layout (base i) == q) = true := by decide +kernel
-  intro q hq
-  have e : ∃ i ∈ exitClean, (i,q) ∈ [(1542,4835),(1541,4837),(500,4615),(501,4616)] := by
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with rfl|rfl|rfl|rfl
-    · exact ⟨1542,by decide,by decide⟩
-    · exact ⟨1541,by decide,by decide⟩
-    · exact ⟨500,by decide,by decide⟩
-    · exact ⟨501,by decide,by decide⟩
-  obtain ⟨i,hi,hm⟩ := e
-  have pm : pmapR Baselines.layout (base i)=q := eq_of_beq (List.all_eq_true.mp geo _ hm)
-  rw [←pm]
-  exact stockExit k s m X hx hX hc i hi
 end ECDSAAdd.Entrant.StairEntryRehost
 end
 
@@ -27985,12 +27084,7 @@ theorem domain_eq (q : Nat) : domain q = WindowCovered.domainW q := rfl
 
 def Covered (P : Program) : Prop := ∀ q ∈ wires P, domain q = true
 
-theorem covered_append {P Q : Program} (a : Covered P) (b : Covered Q) : Covered (P ++ Q) := by
-  intro q h
-  rw [wires_append,Finset.mem_union] at h
-  exact h.elim (a q) (b q)
 
-theorem from_check {P : Program} (h : allSites domain P = true) : Covered P := allSites_sound h
 
 private theorem interval0 : (List.range' 101 429).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
 private theorem interval1 : (List.range' 786 260).all (fun q => Stair44PhaseSites.valid (Stair44WalkMap.rest q)) = true := by decide +kernel
@@ -28589,42 +27683,42 @@ attribute [local irreducible] Shadow7.forward45plus1 Shadow7.reverse45plus1 Roll
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 29494 else 29494)=
+    toffoliCount (forward d tail)+(if d then 29734 else 29734)=
       toffoliCount (Stair44WalkRun.forward d (390+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 29402 else 29402)=
+    toffoliCount (backward d tail)+(if d then 29642 else 29642)=
       toffoliCount (Stair44WalkRun.backward d (390+tail)) ∧
-    measurementCount (forward d tail)+14763=measurementCount (Stair44WalkRun.forward d (390+tail)) ∧
-    measurementCount (backward d tail)+14759=measurementCount (Stair44WalkRun.backward d (390+tail)) := by
+    measurementCount (forward d tail)+14893=measurementCount (Stair44WalkRun.forward d (390+tail)) ∧
+    measurementCount (backward d tail)+14889=measurementCount (Stair44WalkRun.backward d (390+tail)) := by
   cases d
   · have sf := StockWindowCosts.stock405 false
-    have a : toffoliCount (Shadow7.forward45plus1 false) = 110428 := by rw [Shadow7.assembly]; exact WindowParams7.ship_toffoliF_false
-    have b : toffoliCount (Shadow7.reverse45plus1 false) = 110514 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_toffoliR_false
-    have c : measurementCount (Shadow7.forward45plus1 false) = 55350 := by rw [Shadow7.assembly]; exact WindowParams7.ship_measureF.2
-    have e : measurementCount (Shadow7.reverse45plus1 false) = 55074 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_measureR.2
-    have t := walk tc false tail 29494 29402
-      (subEq 29494 a sf.1 (by omega)) (subEq 29402 b sf.2.2.1 (by omega))
-    have m := walk mc false tail 14763 14759
-      (subEq 14763 c sf.2.1 (by omega)) (subEq 14759 e sf.2.2.2 (by omega))
+    have a : toffoliCount (Shadow7.forward45plus1 false) = 110188 := by rw [Shadow7.assembly]; exact WindowParams7.ship_toffoliF_false
+    have b : toffoliCount (Shadow7.reverse45plus1 false) = 110274 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_toffoliR_false
+    have c : measurementCount (Shadow7.forward45plus1 false) = 55220 := by rw [Shadow7.assembly]; exact WindowParams7.ship_measureF.2
+    have e : measurementCount (Shadow7.reverse45plus1 false) = 54944 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_measureR.2
+    have t := walk tc false tail 29734 29642
+      (subEq 29734 a sf.1 (by omega)) (subEq 29642 b sf.2.2.1 (by omega))
+    have m := walk mc false tail 14893 14889
+      (subEq 14893 c sf.2.1 (by omega)) (subEq 14889 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts.stock405 true
-    have a : toffoliCount (Shadow7.forward45plus1 true) = 110428 := by rw [Shadow7.assembly]; exact WindowParams7.ship_toffoliF_true
-    have b : toffoliCount (Shadow7.reverse45plus1 true) = 110514 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_toffoliR_true
-    have c : measurementCount (Shadow7.forward45plus1 true) = 55350 := by rw [Shadow7.assembly]; exact WindowParams7.ship_measureF.1
-    have e : measurementCount (Shadow7.reverse45plus1 true) = 55074 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_measureR.1
-    have t := walk tc true tail 29494 29402
-      (subEq 29494 a sf.1 (by omega)) (subEq 29402 b sf.2.2.1 (by omega))
-    have m := walk mc true tail 14763 14759
-      (subEq 14763 c sf.2.1 (by omega)) (subEq 14759 e sf.2.2.2 (by omega))
+    have a : toffoliCount (Shadow7.forward45plus1 true) = 110188 := by rw [Shadow7.assembly]; exact WindowParams7.ship_toffoliF_true
+    have b : toffoliCount (Shadow7.reverse45plus1 true) = 110274 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_toffoliR_true
+    have c : measurementCount (Shadow7.forward45plus1 true) = 55220 := by rw [Shadow7.assembly]; exact WindowParams7.ship_measureF.1
+    have e : measurementCount (Shadow7.reverse45plus1 true) = 54944 := by rw [Shadow7.unwind_assembly]; exact WindowParams7.ship_measureR.1
+    have t := walk tc true tail 29734 29642
+      (subEq 29734 a sf.1 (by omega)) (subEq 29642 b sf.2.2.1 (by omega))
+    have m := walk mc true tail 14893 14889
+      (subEq 14893 c sf.2.1 (by omega)) (subEq 14889 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
 
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 390+tail=n)
-    (hf : (if d then 29494 else 29494)=f) (hr : (if d then 29402 else 29402)=r) :
+    (hf : (if d then 29734 else 29734)=f) (hr : (if d then 29642 else 29642)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+14763=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+14759=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+14893=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+14889=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 end ECDSAAdd.Entrant.StairPacket.WindowWalkCosts
@@ -28923,40 +28017,36 @@ private theorem pair_delta2 {a b x y g h i j f1 f2 r : Nat}
     (l : a+g+h=x+f1) (rr : b+i+j=y+f2) (v : g+h+i+j=r+f1+f2) : a+b+r=x+y := by omega
 private theorem sum_delta2 {a b x y g h f1 f2 r : Nat}
     (l : a+g+h=x+f1) (rr : b+g+h=y+f2) (v : 2*(g+h)=r+f1+f2) : a+b+r=x+y := by omega
-private theorem sum_delta {a b x y g h f r : Nat}
-    (l : a+g+h=x+f) (rr : b+g+h=y+f) (v : 2*(g+h)=r+2*f) : a+b+r=x+y := by omega
-private theorem pair_delta {a b x y g h i j f r : Nat}
-    (l : a+g+h=x+f) (rr : b+i+j=y+f) (v : g+h+i+j=r+2*f) : a+b+r=x+y := by omega
 
 attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide multiply
   finite Stair44Outer.finite WindowWalkCosts.forward WindowWalkCosts.backward
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+29494+29402=tc.measure Stair44Outer.divide+3220 :=
-  kernels tc 29494 29402 3220 (WindowWalkCosts.inst true 19 409 29494 29402 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 100 490 29494 29402 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+29734+29642=tc.measure Stair44Outer.divide+3220 :=
+  kernels tc 29734 29642 3220 (WindowWalkCosts.inst true 19 409 29734 29642 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 100 490 29734 29642 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+29494+29402=tc.measure (Stair44Outer.multiply k)+3199 :=
-  kernelsM tc k 29494 29402 3199 (WindowWalkCosts.inst false 99 489 29494 29402 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 19 409 29494 29402 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+29734+29642=tc.measure (Stair44Outer.multiply k)+3199 :=
+  kernelsM tc k 29734 29642 3199 (WindowWalkCosts.inst false 99 489 29734 29642 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 19 409 29734 29642 rfl rfl rfl).2.1 fieldTcMul
 
-theorem mc_div : mc.measure divide+14763+14759=mc.measure Stair44Outer.divide+4648 :=
-  kernels mc 14763 14759 4648 (WindowWalkCosts.inst true 19 409 29494 29402 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 100 490 29494 29402 rfl rfl rfl).2.2.2 fieldMcDiv
+theorem mc_div : mc.measure divide+14893+14889=mc.measure Stair44Outer.divide+4648 :=
+  kernels mc 14893 14889 4648 (WindowWalkCosts.inst true 19 409 29734 29642 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 100 490 29734 29642 rfl rfl rfl).2.2.2 fieldMcDiv
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+14763+14759=mc.measure (Stair44Outer.multiply k)+4648 :=
-  kernelsM mc k 14763 14759 4648 (WindowWalkCosts.inst false 99 489 29494 29402 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 19 409 29494 29402 rfl rfl rfl).2.2.2 fieldMcMul
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+14893+14889=mc.measure (Stair44Outer.multiply k)+4648 :=
+  kernelsM mc k 14893 14889 4648 (WindowWalkCosts.inst false 99 489 29734 29642 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 19 409 29734 29642 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+111373=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+49748=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 111373 (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 49748 (sum_delta2 mc_div (mc_mul _) rfl)⟩
+    toffoliCount (finite C cx cy)+112333=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+50268=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 112333 (pair_delta2 tc_div (tc_mul _) rfl),
+    finite_delta mc C cx cy 50268 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2057733 ∧
-    measurementCount (program C) ≤ 1471176 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2056773 ∧
+    measurementCount (program C) ≤ 1470656 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -29769,7 +28859,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2057733,1471176,1543,59615352⟩
+def bounds : Challenge.Bounds := ⟨2056773,1470656,1543,59615352⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -29778,7 +28868,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowCallerCosts.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowCallerCosts.totals C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1471176
+    change measurementCount (normalizeProgram _) ≤ 1470656
     rw [normalize_measurements]
     exact (WindowCallerCosts.totals C).2
   qubits_le C := by
@@ -31945,21 +31035,7 @@ theorem preservePast (i n x p r:Nat) (bound:i+n≤512) (good:Bounds x p) (raw:St
   exact ⟨(link.2 _ h1).trans (b.1.trans (a.1.symm.trans (same.2 _ h1).symm)),
     (link.2 _ h2).trans (b.2.trans (a.2.symm.trans (same.2 _ h2).symm))⟩
 
-theorem endRaw_inside (i:Nat) (raw history:State) (fix:Fixed i) (q:Wire) (member:q∈sites i) :
-    (endRaw i raw history).basis q=history.basis q := by
-  change (origin i raw history).basis (OB5.sig (i+14) q)=_
-  rw [fix q member,inside _ _ _ q member]
 
-theorem endRaw_outside (i:Nat) (bound:i+14≤511) (raw history:State) (fix:Fixed i) (q:Wire) (off:q∉sites i) :
-    (endRaw i raw history).basis q=(run (span i 15) [] raw).basis q := by
-  have invol:=OB5.sig_invol (i+14) bound q
-  have out:OB5.sig (i+14) q∉sites i:=by
-    intro h
-    have eq:=fix _ h
-    rw [invol] at eq
-    exact off (eq.symm ▸ h)
-  change (origin i raw history).basis (OB5.sig (i+14) q)=_
-  rw [outside _ _ _ _ out,invol]
 
 end ECDSAAdd.Entrant.StairPacket.WideReference
 
@@ -32083,22 +31159,12 @@ def referenceLeg (d : Bool) : Leg→ Program
 def legTape (d : Bool) (m : List Bool) : Leg → List Bool
   | .native _ _ => m
   | .paired j => joinTapes (first j (!d)) (tapeA j (!d) m) (tapeB j (!d) m)
-theorem localTape (d : Bool) (m : List Bool) (s : State) (l : Leg) :
-    stock d m s l = run (referenceLeg d l) (legTape d m l) s := by
-  cases l with
-  | native j n => rfl
-  | paired j => exact (joined _ _ _ _ _).symm
 def referenceProgram (d : Bool) : List Leg → Program
   | [] => []
   | l::ls => referenceLeg d l ++ referenceProgram d ls
 def referenceTape0 (d : Bool) : List Leg → List Bool → List Bool
   | [],_ => []
   | l::ls,m => joinTapes (referenceLeg d l) (legTape d m l) (referenceTape0 d ls (nextTape d l m))
-theorem ref_run (d : Bool) (ls : List Leg) (m : List Bool) (r : State) :
-    destination d ls m r = run (referenceProgram d ls) (referenceTape0 d ls m) r := by
-  induction ls generalizing m r with
-  | nil => simp only [destination,referenceProgram,referenceTape0,run]
-  | cons l ls ih => rw [destination,referenceProgram,referenceTape0,joined,←localTape,←ih]
 /-- the reference tape of the record run, seen from the actual tape `m` of the field group. -/
 def referenceTape (d : Bool) (ls : List Leg) (m : List Bool) : List Bool :=
   referenceTape0 d ls (WindowFieldCosts.cellTape d m)
@@ -33447,8 +32513,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2057733 ∧
-    measurementCount (program C) ≤ 1471176 ∧ gateSlots (program C) ≤ 59615352 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2056773 ∧
+    measurementCount (program C) ≤ 1470656 ∧ gateSlots (program C) ≤ 59615352 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -33832,7 +32898,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2057733,1471176,1543,59615352⟩
+def bounds : Challenge.Bounds := ⟨2056773,1470656,1543,59615352⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -33841,7 +32907,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1471176
+    change measurementCount (normalizeProgram _) ≤ 1470656
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -34081,76 +33147,6 @@ def trigger : Instr → BasisState → Bool
   | .CX c _,s => s c
   | .CCX a b _,s => s a && s b
   | .measureX _ _ _,_ => false
-private theorem stepGate (g : Instr) (hg : gateFree (gateDst g) g=true)
-    (p : Program) (m : List Bool) (s : State) :
-    run (g::p) m s=run p m (flip (gateDst g) (trigger g s.basis) s) := by
-  cases g with
-  | X t =>
-    simp only [run,gateDst,trigger,flip]
-    congr 2; funext q
-    by_cases e : q=t <;> simp [writeBit,e]
-  | CX c t => simp only [run,gateDst,trigger,flip]
-  | CCX a b t => simp only [run,gateDst,trigger,flip]
-  | measureX t a b => contradiction
-private theorem freeRead (g : Instr) (q : Wire) (hg : gateFree q g=true)
-    (s : State) (v : Bool) : trigger g (flip q v s).basis=trigger g s.basis := by
-  cases g with
-  | X _ => rfl
-  | CX c _ => exact at_other s c q v (of_decide_eq_true hg)
-  | CCX a b _ =>
-    obtain ⟨ha,hb⟩ := of_decide_eq_true hg
-    simp only [trigger,at_other s a q v ha,at_other s b q v hb]
-  | measureX _ _ _ => contradiction
-private theorem equalGate (g : Instr) (hg : gateFree (gateDst g) g=true)
-    (p : Program) (m : List Bool) (s : State) : run (g::g::p) m s=run p m s := by
-  rw [stepGate g hg,stepGate g hg,freeRead g _ hg,flip_twice,Bool.xor_self,flip_zero]
-private theorem swapGate (g h : Instr) (ok : swappable g h=true)
-    (p : Program) (m : List Bool) (s : State) : run (g::h::p) m s=run (h::g::p) m s := by
-  simp only [swappable,Bool.and_eq_true,decide_eq_true_eq] at ok
-  obtain ⟨⟨⟨gg,hh⟩,gh⟩,hg⟩ := ok
-  rw [stepGate g gg,stepGate h hh,freeRead h _ gh,stepGate h hh,stepGate g gg,freeRead g _ hg]
-  by_cases ne : gateDst h≠gateDst g
-  · rw [flip_comm _ _ _ _ _ ne]
-  · have eq : gateDst h=gateDst g := Decidable.byContradiction ne
-    rw [eq,flip_twice,flip_twice,Bool.xor_comm]
-private theorem eraseMate_run (g : Instr) (p r : Program) (eq : eraseMate g p=some r)
-    (m : List Bool) (s : State) : run (g::p) m s=run r m s := by
-  induction p generalizing r m s with
-  | nil => simp [eraseMate] at eq
-  | cons h p ih =>
-    simp only [eraseMate] at eq
-    split at eq
-    · next same =>
-        obtain ⟨same,hg⟩ := same
-        subst h
-        cases eq
-        exact equalGate g hg p m s
-    · next different =>
-        split at eq
-        · next commute =>
-            cases e : eraseMate g p with
-            | none => simp [e] at eq
-            | some q =>
-                simp only [e,Option.map_some,Option.some.injEq] at eq
-                subst r
-                have hh : gateFree (gateDst h) h=true := by
-                  simp only [swappable,Bool.and_eq_true] at commute
-                  exact commute.1.1.2
-                rw [swapGate g h commute,stepGate h hh,stepGate h hh]
-                exact ih q e m _
-        · simp at eq
-theorem cancelPairs_run (p : Program) (m : List Bool) (s : State) :
-    run (cancelPairs p) m s=run p m s := by
-  induction p generalizing m s with
-  | nil => rfl
-  | cons g p ih =>
-    simp only [cancelPairs]
-    split
-    · next e =>
-        cases g <;> simp only [run] <;> rw [ih]
-    · next r e =>
-        rw [←eraseMate_run g (cancelPairs p) r e]
-        cases g <;> simp only [run] <;> rw [ih]
 
 theorem mcx_back_run (a b src last t : Wire) (xs : Hops) (m : List Bool) (s : State)
     (h : Good a b src last t xs) :
@@ -34200,18 +33196,6 @@ private theorem effect_flip (p : List Aff) (q : Wire) (hp : ∀g∈p,lawful q g)
     have ht := fun k (hk : k∈p)=>hp k (List.mem_cons_of_mem _ hk)
     change effect p (applyAff (flip q v s) g)=flip q v (effect p (applyAff s g))
     rw [commute g q hg,ih ht]
-private theorem effect_same (p : List Aff) (q : Wire) (hp : ∀g∈p,lawful q g)
-    (s : State) : (effect p s).basis q=s.basis q := by
-  induction p generalizing s with
-  | nil => rfl
-  | cons g p ih =>
-    have hg := hp g (by simp)
-    have ht := fun k (hk : k∈p)=>hp k (List.mem_cons_of_mem _ hk)
-    change (effect p (applyAff s g)).basis q=s.basis q
-    rw [ih ht]
-    cases g with
-    | x t => exact at_other s q t _ hg.symm
-    | cx c t => exact at_other s q t _ hg.2.2.symm
 
 def armValue (c : Clause) (s : State) :=
   value c.last (effect c.prep s).basis c.xs ((effect c.prep s).basis 17)
@@ -34290,31 +33274,6 @@ private theorem pair_run (m : List Bool) (s : State) :
       cases armProduct tailLeft s <;> cases armProduct tailRight s <;> cases v <;> rfl
   exact borrowed_pair_run _ f g hs h16 h17 m s
 
-private theorem predicate_value (c : Clause) (s : State) :
-    (predicate c).eval s.basis=
-      (((effect c.prep s).basis c.a && (effect c.prep s).basis c.b) &&
-        product c.last (effect c.prep s).basis c.xs) := by
-  rw [product_eval,symbol_eval,symbol_eval]
-  rfl
-private theorem commonEffect (p q : List Aff) (s : State) : effect (p++q) s=effect q (effect p s) := by
-  simp only [effect,List.foldl_append]
-private theorem tail_values (s : State) :
-    ((predicate negativePair).eval s.basis ^^ (predicate literalPair).eval s.basis)=
-      (((effect commonPrep s).basis 8 && (effect commonPrep s).basis 9) &&
-        (armProduct tailLeft (effect commonPrep s) ^^ armProduct tailRight (effect commonPrep s))) := by
-  rw [predicate_value,predicate_value]
-  change ((((effect (commonPrep++tailLeft.prep) s).basis 8 && (effect (commonPrep++tailLeft.prep) s).basis 9) &&
-    product tailLeft.last (effect (commonPrep++tailLeft.prep) s).basis tailLeft.xs) ^^
-    (((effect (commonPrep++tailRight.prep) s).basis 8 && (effect (commonPrep++tailRight.prep) s).basis 9) &&
-    product tailRight.last (effect (commonPrep++tailRight.prep) s).basis tailRight.xs))=_
-  rw [commonEffect,commonEffect,
-    effect_same _ 8 (prepOK tailLeft (Or.inl rfl) 8 (Or.inl rfl)),
-    effect_same _ 9 (prepOK tailLeft (Or.inl rfl) 9 (Or.inr (Or.inl rfl))),
-    effect_same _ 8 (prepOK tailRight (Or.inr rfl) 8 (Or.inl rfl)),
-    effect_same _ 9 (prepOK tailRight (Or.inr rfl) 9 (Or.inr (Or.inl rfl)))]
-  have distrib (a b c : Bool) : ((a && b) ^^ (a && c))=(a && (b^^c)) := by
-    cases a <;> cases b <;> cases c <;> rfl
-  exact distrib _ _ _
 
 private theorem product_away (xs : Hops) (last q : Wire) (s : State) (v : Bool)
     (h : outside q last xs) : product last (flip q v s).basis xs=product last s.basis xs := by
@@ -34324,28 +33283,7 @@ private theorem product_away (xs : Hops) (last q : Wire) (s : State) (v : Bool)
     have ht : outside q last xs := ⟨h.1,fun e he=>h.2 e (List.mem_cons_of_mem _ he)⟩
     simp only [product,at_other s x.1 q v (h.2 x (by simp)).1.symm,ih ht]
 
-private theorem jointTail_run (m : List Bool) (s : State) :
-    run jointTail m s=run (body negativePair++body literalPair) m s := by
-  have valid : ∀g∈commonPrep,lawful 16 g := by decide +kernel
-  have nl : negativePair∈clauses := by simp [clauses]
-  have nr : literalPair∈clauses := by simp [clauses]
-  simp only [jointTail,run_append,run_take,aff_run,pair_run,undo _ _ valid]
-  rw [body_run _ nl,body_run _ nr]
-  have unchanged : (predicate literalPair).eval (flip 16 ((predicate negativePair).eval s.basis) s).basis=
-      (predicate literalPair).eval s.basis := by
-    rw [predicate_value literalPair _,predicate_value literalPair s]
-    have h := (valid_clause literalPair nr).2
-    rw [effect_flip _ 16 h]
-    rw [at_other _ _ 16 _ (by decide),at_other _ _ 16 _ (by decide)]
-    rw [product_away _ _ 16 _ _ (valid_clause literalPair nr).1.target]
-  rw [unchanged,flip_twice,tail_values]
 
-theorem groupedRegion_run (m : List Bool) (s : State) :
-    run groupedRegion m s=run (clauses.flatMap body) m s := by
-  have eq : run ((body firstPair++body positivePair)++jointTail) m s=
-      run ((body firstPair++body positivePair)++(body negativePair++body literalPair)) m s := by
-    simp only [run_append,run_take,jointTail_run]
-  simpa only [groupedRegion,clauses,List.flatMap_cons,List.flatMap_nil,List.append_nil,List.append_assoc] using eq
 
 end ECDSAAdd.Entrant.StairPacket.WindowParityDirty
 
@@ -34635,44 +33573,12 @@ def column (data : Cols) : Formula→Nat
   | .one => ones
   | .xor a b => column data a ^^^ column data b
   | .and a b => column data a &&& column data b
-theorem column_sound (data : Cols) (s : State) (row : Nat) (rb : row<63145)
-    (input : ∀ i<16,s.basis i=(get data i).testBit row) (f : Formula) (valid : bounded f=true) :
-    f.eval s.basis=(column data f).testBit row := by
-  induction f with
-  | var q => exact input _ (of_decide_eq_true valid)
-  | one =>
-    change true=(2^63145-1).testBit row
-    rw [Nat.testBit_two_pow_sub_one]; exact (decide_eq_true rb).symm
-  | xor a b ha hb =>
-    simp only [bounded,Bool.and_eq_true] at valid
-    obtain ⟨left,right⟩ := valid
-    simp only [Formula.eval,column,Nat.testBit_xor,ha left,hb right]
-  | and a b ha hb =>
-    simp only [bounded,Bool.and_eq_true] at valid
-    obtain ⟨left,right⟩ := valid
-    simp only [Formula.eval,column,Nat.testBit_and,ha left,hb right]
 private theorem small : clauses.all (fun c=>bounded (predicate c))=true := by decide +kernel
 def total (cs : Cols) (items : List Clause) := (items.map (fun c=>column cs (predicate c))).foldr (· ^^^ ·) 0
 def parity (cs : Cols) := ((List.range 16).map (get cs)).foldr (· ^^^ ·) 0
 theorem matchedParity (d : Bool) :
     parity (ArchivePortAction.code d) = parity (StairArchiveNativeCut.canonical d d) := by
   cases d <;> decide +kernel
-private theorem runList (cs : Cols) (items : List Clause) (valid : ∀c∈items,c∈clauses)
-    (row : Nat) (rb : row<63145) (m : List Bool) (s : State)
-    (data : ∀i<16,s.basis i=(get cs i).testBit row) :
-    run (items.flatMap ECDSAAdd.Entrant.StairPacket.WindowParityDirty.body) m s = flip 16 ((total cs items).testBit row) s := by
-  induction items generalizing m s with
-  | nil => simp only [List.flatMap_nil,run,total,List.map_nil,List.foldr_nil,Nat.zero_testBit,flip_zero]
-  | cons c xs ih =>
-    have mem := valid c (by simp)
-    have more := fun k (hk : k∈xs)=>valid k (List.mem_cons_of_mem _ hk)
-    have val := column_sound cs s row rb data (predicate c) (List.all_eq_true.mp small _ mem)
-    have pre := ECDSAAdd.Entrant.StairPacket.WindowParityDirty.body_run c mem m s
-    rw [val] at pre
-    have dnext : ∀i<16,(flip 16 ((column cs (predicate c)).testBit row) s).basis i=(get cs i).testBit row := by
-      intro i hi; rw [at_other s i 16 _ (Nat.ne_of_lt hi)]; exact data i hi
-    rw [List.flatMap_cons,run_append,run_take,pre,ih more _ _ dnext,flip_twice]
-    rw [show total cs (c::xs)=((column cs (predicate c)) ^^^ total cs xs) by rfl,Nat.testBit_xor]
 
 theorem region_run (d : Bool) (row : Nat) (_rb : row<63145) (m : List Bool) (s : State)
     (_data : ∀i<16,s.basis i=(get (ArchivePortAction.code d) i).testBit row) :
@@ -34924,17 +33830,6 @@ theorem trail (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows 
       have event := pair_cuts d j x (rows j) good (rb _ good) origin ctx en tr (history _ good) r m start
       exact ⟨event.1,ih _ _ _ more event.2⟩
 
-/-- dadon's three windows on the record first group `group84rec` (dadon's proof). -/
-theorem three_run_rec (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows j<63145)
-    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
-    (history : ∀j∈bankIds,ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
-    (m : List Bool) (a r : State) (initial : Fits rows (initialCode d) a r)
-    (ref : StockCut (if d then 1 else 85) origin r) :
-    Fits rows (finalCode d (plan d) (initialCode d)) (run (group84rec d) m a)
-      (run (group d 1 84) (referenceTape0 d (plan d) m) r) := by
-  have route : path d (if d then 1 else 85) (plan d) := by cases d <;> simp [path,plan,prev,next,span,feasible,bankIds]
-  have all := group_run d rows rb m a r initial (trail d x rows rb origin ctx en tr history _ _ m r route ref)
-  rwa [ref_run,reference_eq] at all
 end ECDSAAdd.Entrant.StairPacket.WindowFieldView
 
 end
@@ -36464,10 +35359,6 @@ theorem split (n i : Nat) (hi : i<3*n+1) : i∈plain n ∨ i∈packed n := by
     · right; exact ⟨(i-1)/3,by omega,by omega⟩
     · right; exact ⟨(i-1)/3,by omega,by omega⟩
 
-theorem plain_packed (n i : Nat) (a : i∈plain n) : i∉packed n := by
-  simp only [plain,packed,List.mem_cons,List.mem_map,List.mem_range,List.mem_flatMap,List.not_mem_nil,
-    or_false] at a ⊢
-  rintro ⟨b,_,h|h⟩ <;> rcases a with a|⟨c,_,a⟩ <;> omega
 
 /-! Instances at dadon's +210 window (`s1 = 210`, `n = 4`, `e = 270`): the generic data are dadon's lists. -/
 example : plain 4=[0,1,4,7,10] := rfl
@@ -36971,13 +35862,6 @@ does not grow with the window. `clear` is par-c2's `cleared_holes` (still per bl
 `endRaw_inside_gen` reads the snapshot through `OB5.sig (s+14)`, which is the identity
 on these wires only while `Fixed s` holds; the statement does not assume that. -/
 
-theorem holes_inside (s:Nat) (hs:s+14≤511) (holes:List Wire)
-    (mem:∀q∈holes,q∈oldSites s) (raw history:State)
-    (clear:∀q∈holes,history.basis (OB5.sig (s+14) q)=false) :
-    ∀q∈holes,(endRaw s raw history).basis q=false := by
-  intro q hq
-  rw [endRaw_inside_gen s hs raw history q (mem q hq)]
-  exact clear q hq
 
 theorem carry (s:Nat) (hs:s+14≤511) (holes:List Wire)
     (off:∀q∈holes,q∉oldSites s) (aged:∀q∈holes,oldRange s q)
@@ -38989,8 +37873,6 @@ theorem tick_eq : phasePlace firstR=tick := by
   rw [firstR,placeMove first integerFirst (fun q => (maps q).1)]
   exact congrArg (renameProgram integerFirst) (E1QubitPlacement.tick_eq layout)
 
-theorem phaseAppend (P Q : Program) : phasePlace (P++Q)=phasePlace P++phasePlace Q := by
-  simp only [phasePlace,kernelPlace,Six505.rename_append]
 
 theorem div_split : FrontierEntry1591Callers.entry Stair44Kernel.division layout = tick ++ Stair44Outer.divide := by
   change kernelPlace ((renameProgram phaseHost (openR true 409 ++ _) ++ _) ++ renameProgram phaseHost _) = _
@@ -39261,21 +38143,7 @@ theorem exitLowSuffix_ours :
     (borrow_caller _ exitHeadSuffix_ours)) glue_own.2.2.2)
     (hostedFirstPacketV3_caller false)
 
-theorem entryFieldHosted_ours :
-    wires (WindowCallerCosts.entryFieldHosted StairConcreteAssembly.checkpointPrimitives) ⊆ callerDomain := by
-  unfold WindowCallerCosts.entryFieldHosted
-  exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
-    (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
-      (fieldRename_caller _ entryLowPrefix_ours) glue_own.2.1) glue_own.1)
-    (fieldRename_caller _ entryLowSuffixV3_caller)) glue_own.1) glue_own.2.1
 
-theorem exitFieldHosted_ours :
-    wires (WindowCallerCosts.exitFieldHosted StairConcreteAssembly.checkpointPrimitives) ⊆ callerDomain := by
-  unfold WindowCallerCosts.exitFieldHosted
-  exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
-    (wires_sub_of_parts _ _ (wires_sub_of_parts _ _ glue_own.2.1 glue_own.1)
-      (fieldRename_caller _ exitLowPrefixV3_caller)) glue_own.2.1) glue_own.1)
-    (fieldRename_caller _ exitLowSuffix_ours)
 end ECDSAAdd.Entrant.StairPacket.ExteriorCaller
 
 end
@@ -41360,13 +40228,6 @@ theorem setup_pair (rows : Nat→Nat) (dirs : Nat→Bool) (a b : State) (m : Lis
   change _=_
   simp only [delta] at *
   rw [←eq,←Bool.xor_assoc,Bool.xor_self,Bool.false_xor]
-theorem host_matched (rows : Nat→Nat) (dirs : Nat→Bool) (a b : State) (m n : List Bool)
-    (valid : ∀ j,Active j → rows j<63145)
-    (rest : ∀i,Elsewhere i→a.basis (addr i)=b.basis (addr i)) (same : a.basis host=b.basis host)
-    (actual : ∀j,Active j→Data a j (dirs j) (rows j))
-    (stock : ∀j,Active j→∀i<16,b.basis (site j i)=(get (StairArchiveNativeCut.canonical (dirs j) (dirs j)) i).testBit (rows j)) :
-    (run setup m a).basis host=(run StairSchedule.paritySetup n b).basis host := by
-  rw [setup_pair rows dirs a b m valid rest actual stock,stock_flip,at_flip,at_flip,same]
 end ECDSAAdd.Entrant.StairPacket.WindowFieldParity
 
 end

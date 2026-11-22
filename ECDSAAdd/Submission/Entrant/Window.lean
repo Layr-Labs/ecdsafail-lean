@@ -4068,13 +4068,6 @@ theorem scratch_carry (i : Fin 23) (hi : i.val≤12) (k : Fin 157) (hk : 23≤k.
   refine ⟨1556+(k.val-23),?_,?_⟩
   · simp only [IntegerPacket.ports,shape,next,smallBits,start,List.mem_range'_1]; omega
   · simp only [windowNet,net,OB5.sig,next,start,Wire]; split <;> omega
-theorem clean_of_rails (i : Fin 23) (hi : i.val≤12) (z:SkywalkRails.State) (s:State)
-    (on:onRails (next i (by omega)) 1 z s.basis) :
-    ∀k:Fin 157,23≤k.val → rawPorts i k∈watch (next i (by omega)) → s.basis (rawPorts i k)=false := by
-  intro k hk _
-  obtain ⟨c,hc,eq⟩:=List.mem_map.mp (scratch_carry i hi k hk)
-  have fresh:rawPorts i k=windowNet (next i (by omega)) c:=eq.symm
-  exact fresh ▸ (regValue_zero _ _).mp on.2.2.2.1 _ hc
 end ArchiveJ
 
 
@@ -6536,12 +6529,6 @@ theorem mem_sites {i:Nat} (bound:i+14≤511) (q:Wire) : q∈sites i ↔ OB5.sig 
     exact hc
   · intro h
     exact List.mem_map.mpr ⟨_,h,OB5.sig_invol _ bound q⟩
-/-- A physical old cell reads, in the logical end state, as the window's snapshot. -/
-theorem endRaw_cell (i:Nat) (bound:i+14≤511) (raw history:State) (c:Wire) (member:c∈sites i) :
-    (endRaw i raw history).basis (OB5.sig (i+14) c)=history.basis c := by
-  change (origin i raw history).basis (OB5.sig (i+14) (OB5.sig (i+14) c))=_
-  rw [OB5.sig_invol _ bound]
-  exact inside i raw history c member
 /-- Logical old cells come from the snapshot, read through the block's placement (no `Fixed` needed). -/
 theorem endRaw_inside_gen (i:Nat) (bound:i+14≤511) (raw history:State) (q:Wire) (member:q∈oldSites i) :
     (endRaw i raw history).basis q=history.basis (OB5.sig (i+14) q) := by
@@ -17758,14 +17745,6 @@ theorem checked_mono {F R : Program} {A B C : State → Prop} (h : Checked F R A
   obtain ⟨ph,post,undo⟩:=h s m pre
   exact ⟨ph,imp _ post,undo⟩
 
-/-- The keys at the exit are exactly the window's saved archives: blocks `j1 .. jn-1` (`FinalW.saved`). -/
-theorem saved_exit (Key : Fin 23 → State → Prop) (j : Fin 23) (js : List (Fin 23)) (jn : Fin 23)
-    (hn : exitTick j js=start jn+15) (s : State) (h : SavedAt Key j.val (exitTick j js) s) :
-    ∀ k : Fin 23, j.val≤k.val → k.val<jn.val → Key k s := by
-  intro k h1 h2
-  apply h k h1
-  rw [hn,blockOf_next]
-  omega
 
 end ECDSAAdd.Entrant.StairPacket.WindowChain
 
@@ -22468,62 +22447,10 @@ theorem firstStep (L : Leaves) (d:Bool) (x p:Nat) (good:Bounds x p) :
     unique_input input (fixed_input (start WindowParams.first) x p (by decide) good raw dom)⟩,
     fun t=>by rw [← same]; exact L.roundtrip WindowParams.first (by decide) (by decide) v _ g sg hin n t,back.2⟩
 
-/-- The exit at 270 (dadon's `step270`, without the saved keys, which `window_strong` carries). -/
-theorem exitStep (L : Leaves) (d:Bool) (x:Nat) (good:Bounds x p) :
-    Checked (exitF WindowParams.params d 270).flatten (exitR WindowParams.params d 270).flatten
-      (ReadyW d x p 270) (LastW d x p) := by
-  obtain ⟨ef,er⟩:=L.exitProg d
-  rw [ef,er]
-  intro s m h
-  obtain ⟨k,ek,raw,g,sg,pg,ps,pre⟩:=h
-  have k13:k=⟨13,by decide⟩:=Fin.ext (by have := ek; simp only [StairPacket.start] at this; show k.val=13; omega)
-  subst k13
-  obtain ⟨bl,bu,bg,bn,bf,bu',bp,r20,r21,r22⟩:=L.exitBridge
-  let z:=unsigned 270 x p
-  have short:min z.u z.v<2^121:=true_small x p 270 (lt_trans good.small good.cap) good.cap (by decide)
-  have old:=LeaveJ.Admission.actualNumbers ⟨12,by decide⟩ (by decide) (by decide) x p good
-  have eq:farAt 121 270 x p=(3*2^137≤z.u+z.v):=by
-    apply propext;unfold farAt Shadow.far Shadow.high Shadow.limb;exact Nat.le_div_iff_mul_le (by positivity)
-  have cut:=pre.cut
-  have e13:start (⟨13,by decide⟩:Fin 23)=270:=rfl
-  have sb:sbP 270=121:=by decide
-  rw [bl,bu,bg,bn,bf,bu',bp] at cut
-  simp only [e13,sb] at cut
-  have facts:=pre.facts
-  have mode:s.basis 1701=decide (Shadow.far 129 15 (unsigned 255 x p)):=by rw [←r20]; exact facts.far
-  have side:s.basis 1702=(decide (Shadow.far 129 15 (unsigned 255 x p)) &&
-      StairArchiveTrace.afterFlags (decide ((unsigned 255 x p).v<(unsigned 255 x p).u))
-        ((physicalCells ArchiveBoundary270.sourceIdx s).take 5)):=by rw [←r21]; exact facts.suffix
-  have cross:s.basis 1703=(decide (Shadow.far 129 15 (unsigned 255 x p)) &&
-      HighBankSum.cross (LeaveJ.TrueMiddle.d ⟨12,by decide⟩ (unsigned 255 x p))):=by rw [←r22]; exact facts.crossed
-  have last:=NativePack270.matched_from_domain d x good.nonzero good.small raw s m pre.domain z short g sg
-    (readInput 270 x p raw g sg pre.input) (by simpa only [eq] using cut) (unsigned 255 x p) pg ps _
-    old.odd old.small facts.records mode side cross
-  obtain ⟨r,lim,truth,frame⟩:=last.2.1
-  have pc:signedAt 255 x p pg ps=WideReference.canonical 255 x p:=pre.pastCanonical
-  have chr:Chronology 255 x p r:=by unfold Chronology;rw [←pc];exact truth
-  exact ⟨last.1,⟨r,lim,chr,frame⟩,last.2.2⟩
 
 
 
 
-/-- Block `k` saves block `i = k-1`'s key (dadon's `selected{s}` / `Saved` part of `step{s}`). -/
-theorem receiptW (L : Leaves) (d:Bool) (x p:Nat) (good:Bounds x p) (i k : Fin 23) (hk : k.val=i.val+1)
-    (h2 : 2≤k.val) (h12 : k.val≤12) :
-    ∀ s m, ReadyW d x p (start k) s → KeyW d x p i (run (nextF WindowParams.params d i k).flatten m s) := by
-  intro s m h
-  obtain ⟨k1',e0,raw,g,sg,pg,ps,pre⟩:=h
-  have same0:k1'=k:=Fin.ext (by have := e0; simp only [StairPacket.start] at this; omega)
-  rw [same0] at pre
-  have pk:=prev_of i k hk
-  rw [next_eq d i k hk,←pk]
-  simp only [run_append,run_take]
-  have curr:=readInput (start k) x p raw g sg pre.input
-  have scr:=L.scratch k h2 (by omega) d x p good raw s g sg pg ps m pre
-  have native:=NativeJ.from_domain_matched k h2 (by omega) d x p good raw s m pre.domain g sg pre.cut curr scr pg ps _ pre.facts
-  obtain ⟨row,bound,truth,kept⟩:=native.2.2.1
-  have chr:Chronology (start (NativeJ.prev k)) x p row:=by unfold Chronology;rw [←pre.pastCanonical];exact truth
-  exact ⟨row,bound,chr,ArchiveWindowPreserve.keep kept (fun q hq=>L.keepLeave k h2 h12 q hq _ _)⟩
 
 theorem keepW (L : Leaves) (d:Bool) (x p:Nat) (i k : Fin 23) (hk : k.val=i.val+1) (h12 : k.val≤12) :
     ∀ s m, ReadyW d x p (start k) s → ∀ i' : Fin 23, 3 ≤ i'.val → i'.val< i.val → KeyW d x p i' s →

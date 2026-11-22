@@ -15924,15 +15924,7 @@ theorem kbTick_wires (w : Nat → Wire) (j : Nat) :
   simp only [W.compactSkywalkTickLayout, SkywalkIntegerLayout.wires, SkywalkIntegerLayout.ah,
     SkywalkIntegerLayout.bh, kbIdsOf, wireBlock, List.map_cons, List.map_append, List.map_nil]
 
-theorem kbWidth0 : ∀ i, i < 80 → W.compactSkywalkTickPreWidth (425 + i) = 88 - i := by
-  decide +kernel
 
-theorem kbWidth (j : Nat) (h1 : j < 505) (h2 : 425 ≤ j) :
-    W.compactSkywalkTickPreWidth j = 513 - j := by
-  have h := kbWidth0 (j - 425) (by omega)
-  rw [show 425 + (j - 425) = j by omega] at h
-  rw [h]
-  omega
 
 theorem kbIdsOf_mem (lo l e j id : Nat) (hl : 425 ≤ l) (he : e ≤ 505) (hlo : lo + 1 ≤ j)
     (hlj : l ≤ j) (hje : j < e) (hid : id ∈ kbIdsOf j) :
@@ -15999,22 +15991,6 @@ theorem kbRow_parts (B : Nat) (hB : B ∈ budgets) :
   rw [Bool.and_eq_true, Bool.and_eq_true] at h
   exact h
 
-theorem kbPRowFacts : ∀ B ∈ budgets,
-    (∀ i, i < StairCodec.bitWidth B →
-      425 ≤ payloadTick (startFor B) i ∧ payloadTick (startFor B) i < 510) ∧
-    (∀ i, i < 3 * ((510 - startFor B) / 5) - StairCodec.bitWidth B →
-      425 ≤ payloadTick (startFor B) (StairCodec.bitWidth B + i) ∧
-        payloadTick (startFor B) (StairCodec.bitWidth B + i) < 510) ∧
-    (∀ i, i < 2 * ((505 - startFor B) / 5) →
-      425 ≤ holeTick (startFor B) i ∧ holeTick (startFor B) i < 510) ∧
-    (∀ i, i < 3 * ((505 - startFor B) / 5) - StairCodec.bitWidth B →
-      425 ≤ payloadTick (startFor B) (StairCodec.bitWidth B + i) ∧
-        payloadTick (startFor B) (StairCodec.bitWidth B + i) < 510) ∧
-    425 ≤ startFor B ∧ startFor B + B = 512 ∧ endFor B ≤ 505 ∧ B ≤ 87 ∧ 2 ≤ B := by
-  intro B hB
-  simp only [budgets, List.mem_cons, List.not_mem_nil, or_false] at hB
-  rcases hB with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals decide +kernel
 
 theorem kbPOneHot_sites (fresh : Nat → Wire) :
     ∀ (bits : List Wire) (q : Wire), q ∈ (StairCodec.oneHot bits fresh).sites → ∃ k, q = fresh k
@@ -23369,21 +23345,11 @@ attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
 /-! K4-D (replay budget): the bit/bound facts of `frameG` as small standalone lemmas (an `omega` inside
 `frameG` works over every hypothesis of the large context, with 2^128-sized constants). -/
 namespace K4DB
-theorem lt128 (H l : Nat) (h1 : H < 2^96) (h2 : l < 2^32) : 2^32*H + l < 2^128 := by omega
-theorem lt129 (H l K : Nat) (h0 : H < 2^96) (h1 : l < 2^32) (h2 : K ≤ 1) : 2^32*H + l + 2^128*K < 2^129 := by
-  omega
 theorem low0 (H z K : Nat) : (2^32*H + z % 2^32 + 2^128*K) % 2 = z % 2 := by omega
 theorem low1 (H z K : Nat) : (2^32*H + z % 2^32 + 2^128*K) / 2 % 2 = z / 2 % 2 := by omega
 theorem wrap (X Y : Nat) (hX : X < 2^130) (hY : Y < 2^130) : ((X + 2^130 - Y) % 2^130 + Y) % 2^130 = X := by
   omega
-theorem wlt (b : Nat) (h : b < 2^128) : 4294968272*b < 2^163 := by omega
 theorem hlt (b : Nat) (h : b < 2^128) : b / 2^32 < 2^96 := by omega
-theorem kle (b u : Nat) (hu : u < 2^32) : (b % 2^32 + u) / 2^32 ≤ 1 := by omega
-theorem kif (b u : Nat) (hu : u < 2^32) :
-    (if (b % 2^32 + u) % 2^32 < u then 1 else 0) = (b % 2^32 + u) / 2^32 := by
-  by_cases hc : (b % 2^32 + u) % 2^32 < u
-  · rw [if_pos hc]; omega
-  · rw [if_neg hc]; omega
 end K4DB
 
 
@@ -24847,14 +24813,8 @@ theorem allK_sound (c : Wire → Bool) :
     · exact instrOK_sound c i h.1 q hq
     · exact allK_sound c P h.2 q hq
 
-theorem allK_append (c : Wire → Bool) (P Q : Program) : allK c (P ++ Q) = (allK c P && allK c Q) :=
-  List.all_append
 
-theorem allK_take (c : Wire → Bool) (P : Program) (i : Nat) (h : allK c P = true) : allK c (P.take i) = true :=
-  List.all_eq_true.mpr (fun x hx => List.all_eq_true.mp h x (List.mem_of_mem_take hx))
 
-theorem allK_drop (c : Wire → Bool) (P : Program) (i : Nat) (h : allK c P = true) : allK c (P.drop i) = true :=
-  List.all_eq_true.mpr (fun x hx => List.all_eq_true.mp h x (List.mem_of_mem_drop hx))
 
 /-- Off the 39 holes (`[4840, 4875) ∪ [4876, 4880)`). -/
 def holeB (x : Nat) : Bool := Nat.blt x 4840 || Nat.ble 4880 x || Nat.beq x 4875
@@ -60744,8 +60704,6 @@ theorem mcZ1_k4a : measurementCount Z1 = 9 := by
   decide +kernel
 
 
-theorem mcQ2_k4a : measurementCount Q2 = 5 := by
-  decide +kernel
 
 theorem cZ : measurementCount Z1 = measurementCount Y := by
   rw [mcZ1_k4a, mcY_k4a]
@@ -67678,28 +67636,10 @@ theorem place_facts : fieldPlace (base 2409) = base 511 ∧
   decide +kernel
 
 
-/-- K4C (replay budget): `pullOut` read through a lemma (cheap for the kernel). -/
-theorem k4l_pullOut (u : State) (q : Wire) : (pullOut u).basis q = u.basis (fieldPlaceInv q) := by
-  unfold pullOut
-  rfl
 
-theorem k4l_pullOut_phase (u : State) : (pullOut u).phase = u.phase := by
-  unfold pullOut
-  rfl
 
-theorem k4l_pullIn_phase (u : State) : (pullIn u).phase = u.phase := by
-  unfold pullIn
-  rfl
 
-theorem k4l_sx_phase (v : Bool) (t : State) : (StairField2V3Win.sxState v t).phase = t.phase := by
-  unfold StairField2V3Win.sxState
-  rfl
 
-theorem k4l_sx_basis (v : Bool) (t : State) (Q : Wire) :
-    (StairField2V3Win.sxState v t).basis Q =
-      writeBit (writeBit t.basis FrontierEntry1591Field.host v) (base 511) true Q := by
-  unfold StairField2V3Win.sxState
-  rfl
 
 
 

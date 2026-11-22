@@ -6809,9 +6809,6 @@ theorem LB_eq : LB = LBF := by
   unfold ControlledPointLayout.dialogStreamedSquareWide ControlledPointLayout.dialogStreamedSquare LBF
   rw [e1, e2, e3, e4, ex, ey, p2, p3, p4, p5, p6, p7, p8]
 
-theorem normFlag_eq : LB.core.normFlag = 4761 := by
-  rw [LB_eq]
-  rfl
 
 
 end K4DQ
@@ -8806,36 +8803,14 @@ theorem loopA_slots(hl:List Wire):Challenge.gateSlots (loopA hl)=Challenge.gateS
 theorem loopA_physical(hl:List Wire):GatePhysical (loopA hl):=
  StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
 
-/-- Coarse support (the `aSupport` shape of `fastCore_correct`, through `KnownProgramActual.a_coarse`). -/
-theorem loopA_coarse(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset:=
- (loopA_support hl hsub).trans KnownProgramActual.a_coarse
 
 
-theorem loopA_coarse44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset:=
- (loopA_support44 hl hsub).trans KnownProgramActual.a_coarse
-
-/-- Fine support (through `KnownProgramActual.a_fine`). -/
-theorem loopA_fine(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopA hl)⊆insert ReorderedAFixed.d
-  (wires (InverseCarryDevelop.hostedADual ReorderedAFixed.L
-   (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)):=
- (loopA_support hl hsub).trans KnownProgramActual.a_fine
 
 
-theorem loopA_fine44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopA hl)⊆insert ReorderedAFixed.d
-  (wires (InverseCarryDevelop.hostedADual ReorderedAFixed.L
-   (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)):=
- (loopA_support44 hl hsub).trans KnownProgramActual.a_fine
-
-theorem loopA_eU_free(hl:List Wire)(hsub:hl.Sublist holes):ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (loopA hl):=
- fun h=>KnownProgramActual.a_body_eU_free (loopA_support hl hsub h)
 
 
-theorem loopA_eU_free44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (loopA hl):=
- fun h=>KnownProgramActual.a_body_eU_free (loopA_support44 hl hsub h)
+
+
 
 end ECDSAAdd.Entrant.StairSqLoopA
 
@@ -10591,33 +10566,8 @@ theorem loopC_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(bas
   · exact pairs_hostFree44 hl hsub
  exact ReorderedCFixed.transport _ s _ _ eq f
 
-/-- Same statement as `C105SignResearch.fold_frame`, for `loopC hl`. -/
-theorem loopC_fold_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)
- (hv:AccView L base (OwnDiagAll12Square.accCItem L))(hc:L.PairClean base)
- (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) (loopC hl)
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec else Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have f:=loopC_frame hl hsub base hc (spare_zero L hw base M pv) hd O hO s m hf
- have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
-  (C163Fold.payload_spec L base)
- exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (loopC hl) m s).basis) e) f.2⟩
 
 
-theorem loopC_fold_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)
- (hv:AccView L base (OwnDiagAll12Square.accCItem L))(hc:L.PairClean base)
- (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) (loopC hl)
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec else Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have f:=loopC_frame44 hl hsub base hc (spare_zero L hw base M pv) hd O hO s m hf
- have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
-  (C163Fold.payload_spec L base)
- exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (loopC hl) m s).basis) e) f.2⟩
 
 theorem loopC_avoids(hl:List Wire)(hsub:hl.Sublist holes):∀q∈hl,q∉wires (loopC hl):=by
  have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
@@ -10670,25 +10620,11 @@ theorem loopC_slots(hl:List Wire):Challenge.gateSlots (loopC hl)=Challenge.gateS
 theorem loopC_physical(hl:List Wire):GatePhysical (loopC hl):=
  StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
 
-/-- Coarse support (the `cSupport` shape of `fastCore_correct`, through `KnownProgramActual.c_body_coarse`). -/
-theorem loopC_coarse(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset:=
- (loopC_support hl hsub).trans KnownProgramActual.c_body_coarse
 
 
-theorem loopC_coarse44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset:=
- (loopC_support44 hl hsub).trans KnownProgramActual.c_body_coarse
-
-/-- Fine support (through `KnownProgramActual.c_body_fine`). -/
-theorem loopC_fine(hl:List Wire)(hsub:hl.Sublist holes):
- wires (loopC hl)⊆insert C163Low4Middle.d (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)):=
- (loopC_support hl hsub).trans KnownProgramActual.c_body_fine
 
 
-theorem loopC_fine44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
- wires (loopC hl)⊆insert C163Low4Middle.d (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)):=
- (loopC_support44 hl hsub).trans KnownProgramActual.c_body_fine
+
 
 end ECDSAAdd.Entrant.StairSqLoopC
 
