@@ -33272,7 +33272,7 @@ theorem part7 : toffoliCount (routed ⟨11,by decide⟩ 0 1) = 308 ∧ measureme
 theorem part8 : toffoliCount (Rolling1588.packAtTick false 230) = 9 ∧ measurementCount (Rolling1588.packAtTick false 230) = 4 := by
   decide +kernel
 
-theorem part9 : toffoliCount (archiveLoad240 false) = 77 ∧ measurementCount (archiveLoad240 false) = 136 := by
+theorem part9 : toffoliCount (archiveLoad240 false) = 73 ∧ measurementCount (archiveLoad240 false) = 136 := by
   decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
@@ -33379,7 +33379,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part15 : toffoliCount (archiveLoad255 false) = 77 ∧ measurementCount (archiveLoad255 false) = 136 := by
+theorem part15 : toffoliCount (archiveLoad255 false) = 73 ∧ measurementCount (archiveLoad255 false) = 136 := by
   decide +kernel
 
 theorem part16 : toffoliCount (routed ⟨12,by decide⟩ 1 14) = 4116 ∧ measurementCount (routed ⟨12,by decide⟩ 1 14) = 2058 := by
@@ -33424,7 +33424,7 @@ theorem part20 : toffoliCount (TickRanges.tick base 270) = 481 ∧ measurementCo
 theorem part21 : toffoliCount (Rolling1588.packAtTick false 260) = 9 ∧ measurementCount (Rolling1588.packAtTick false 260) = 4 := by
   decide +kernel
 
-theorem part22 : toffoliCount (archiveLoad270 false) = 77 ∧ measurementCount (archiveLoad270 false) = 136 := by
+theorem part22 : toffoliCount (archiveLoad270 false) = 73 ∧ measurementCount (archiveLoad270 false) = 136 := by
   decide +kernel
 
 theorem part23 : toffoliCount (Rolling1588.packAtTick true 225) = 9 ∧ measurementCount (Rolling1588.packAtTick true 225) = 4 := by
@@ -33444,19 +33444,19 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part25 : toffoliCount (archiveLoad240 true) = 77 ∧ measurementCount (archiveLoad240 true) = 136 := by
+theorem part25 : toffoliCount (archiveLoad240 true) = 74 ∧ measurementCount (archiveLoad240 true) = 136 := by
   decide +kernel
 
 theorem part26 : toffoliCount (Rolling1588.packAtTick true 245) = 9 ∧ measurementCount (Rolling1588.packAtTick true 245) = 4 := by
   decide +kernel
 
-theorem part27 : toffoliCount (archiveLoad255 true) = 77 ∧ measurementCount (archiveLoad255 true) = 136 := by
+theorem part27 : toffoliCount (archiveLoad255 true) = 74 ∧ measurementCount (archiveLoad255 true) = 136 := by
   decide +kernel
 
 theorem part28 : toffoliCount (Rolling1588.packAtTick true 260) = 9 ∧ measurementCount (Rolling1588.packAtTick true 260) = 4 := by
   decide +kernel
 
-theorem part29 : toffoliCount (archiveLoad270 true) = 77 ∧ measurementCount (archiveLoad270 true) = 136 := by
+theorem part29 : toffoliCount (archiveLoad270 true) = 74 ∧ measurementCount (archiveLoad270 true) = 136 := by
   decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
@@ -44079,8 +44079,8 @@ private theorem of_member {P:Program} {g:Instr} {q:Wire} (inP:g∈P) (hit:q∈g.
 private def marks : Bool → Bool → List Nat
   | false, false => [0, 0, 1, 2, 4, 62, 18, 21, 8, 8, 9, 10, 12, 69, 70, 71, 0, 1, 2, 5, 3, 9, 10]
   | false, true => [0, 0, 1, 2, 4, 62, 18, 21, 8, 8, 9, 10, 12, 69, 70, 71, 0, 1, 2, 5, 3, 9, 10]
-  | true, false => [3, 0, 1, 2, 8, 9, 39, 44, 40, 46, 119, 116, 117, 118, 124, 125, 155, 160, 156, 162, 277, 232, 232]
-  | true, true => [39, 44, 40, 46, 7, 8, 3, 0, 1, 2, 155, 160, 156, 162, 123, 124, 119, 116, 117, 118, 277, 232, 232]
+  | true, false => [3, 0, 1, 2, 8, 9, 39, 44, 40, 46, 119, 116, 117, 118, 124, 125, 155, 160, 156, 162, 274, 232, 232]
+  | true, true => [39, 44, 40, 46, 7, 8, 3, 0, 1, 2, 155, 160, 156, 162, 123, 124, 119, 116, 117, 118, 274, 232, 232]
 
 private theorem marked (loading select:Bool) : ∀i:Fin 23,
     ((program (op loading select))[(marks loading select).getD i 0]?).any
@@ -45219,13 +45219,13 @@ def tcV : Pieces Nat where
   enterInv _ := 18
   leave j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+193 else toffoliCount (leaveMoveP j)
   leaveInv j := if inBlocks j then 6*wpP (start j)+3*lowsP (start j)+192 else toffoliCount (leaveMoveInvP j)
-  load _ d := if d then 77 else 77
+  load _ d := if d then 74 else 73
   restore _ d := if d then 80 else 80
   portal t := if portalTick t then 5*wpP t-4 else toffoliCount (portalP t)
   portalInv t := if portalTick t then 5*wpP t-4 else toffoliCount (portalInvP t)
   park _ := 0
   parkInv _ := 0
-  exitLoad _ d := if d then 77 else 77
+  exitLoad _ d := if d then 74 else 73
   exitRestore _ d := if d then 80 else 80
   routed j a n := if a+n ≤ 15 then n*(2*(smallBits j+18)) else toffoliCount (StairPacket.routed j a n)
   unrouted j a n := if a+n ≤ 15 then n*(2*(smallBits j+18)) else toffoliCount (StairPacket.unrouted j a n)
