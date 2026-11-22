@@ -665,15 +665,15 @@ def afterPart (s : Nat) : List GateMirror.Gate :=
     Partial.leaveFix11 s b ++ Partial.leaveFix12 s b ++ Shadow7.leaveLowStore s ++
     Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
-def leave (j : Fin 23) : Program :=
+def leave (j : Fin 24) : Program :=
   let s := start j
-  if 1 ≤ j.val ∧ j.val ≤ 20 then
+  if 1 ≤ j.val ∧ j.val ≤ 21 then
     GateMirror.forward (before s) ++ barrel s false ++ GateMirror.forward (afterPart s)
   else Shadow7.leaveMoveP j
 
-def unleave (j : Fin 23) : Program :=
+def unleave (j : Fin 24) : Program :=
   let s := start j
-  if 1 ≤ j.val ∧ j.val ≤ 20 then
+  if 1 ≤ j.val ∧ j.val ≤ 21 then
     GateMirror.inverse (afterPart s) ++ barrel s true ++ GateMirror.inverse (before s)
   else Shadow7.leaveMoveInvP j
 
@@ -773,7 +773,7 @@ instance (n : Nat) : Decidable (UsedWidth n) := by
   unfold UsedWidth
   infer_instance
 
-theorem usedWidth : ∀ j : Fin 23, 1 ≤ j.val → j.val ≤ 20 → UsedWidth (Shadow7.wpP (start j)+15) := by
+theorem usedWidth : ∀ j : Fin 24, 1 ≤ j.val → j.val ≤ 21 → UsedWidth (Shadow7.wpP (start j)+15) := by
   decide +kernel
 
 theorem schedule_fields (n : Nat) (hn : UsedWidth n) :
@@ -946,7 +946,7 @@ private theorem window_price (n : Nat) (hn : UsedWidth n) (mir : Bool) :
   rw [basis_size]
   rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases mir <;> decide +kernel
 
-theorem barrel_metrics (j : Fin 23) (lo : 1 ≤ j.val) (hi : j.val ≤ 20) (mir : Bool) :
+theorem barrel_metrics (j : Fin 24) (lo : 1 ≤ j.val) (hi : j.val ≤ 21) (mir : Bool) :
     toffoliCount (barrel (start j) mir) = barrelT (start j) mir ∧
     measurementCount (barrel (start j) mir) = barrelM (start j) mir ∧
     Challenge.gateSlots (barrel (start j) mir) = barrelSlots (start j) mir := by
@@ -1196,10 +1196,10 @@ def extent (parts : List (Nat × Nat)) : Nat :=
 theorem schedule_extent (n : Nat) (hn : UsedWidth n) : extent (schedule n) = n := by
   rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
-private theorem place_nodup : ∀ j : Fin 23, 1 ≤ j.val → j.val ≤ 20 →
+private theorem place_nodup : ∀ j : Fin 24, 1 ≤ j.val → j.val ≤ 21 →
     ((List.range (Shadow7.wpP (start j)+15+26)).map (place (start j))).Nodup := by decide +kernel
 
-theorem place_inj (j : Fin 23) (lo : 1 ≤ j.val) (hi : j.val ≤ 20) : ∀ a, a < Shadow7.wpP (start j)+15+26 →
+theorem place_inj (j : Fin 24) (lo : 1 ≤ j.val) (hi : j.val ≤ 21) : ∀ a, a < Shadow7.wpP (start j)+15+26 →
     ∀ b, b < Shadow7.wpP (start j)+15+26 → place (start j) a = place (start j) b → a = b := by
   intro a ha b hb
   exact List.inj_on_of_nodup_map (place_nodup j lo hi) (List.mem_range.mpr ha) (List.mem_range.mpr hb)
@@ -1287,7 +1287,7 @@ theorem logical_fits (n : Nat) (hn : UsedWidth n) (mir : Bool) : Fits (· < n+26
   exact fits_append (fits_append basis (components_fits n mir 0 (schedule n)
     (by rw [schedule_extent n hn]; omega) (schedule_fields n hn))) (fits_reverse basis)
 
-theorem barrel_phys (j : Fin 23) (lo : 1 ≤ j.val) (hi : j.val ≤ 20) (mir : Bool) :
+theorem barrel_phys (j : Fin 24) (lo : 1 ≤ j.val) (hi : j.val ≤ 21) (mir : Bool) :
     GatePhysical (barrel (start j) mir) := by
   have logicalOK := logical_fits _ (usedWidth j lo hi) mir
   have physicalOK := fits_rename (T := fun _ => True) (place (start j)) _ logicalOK
@@ -1324,7 +1324,7 @@ theorem place_mem (s x : Nat) :
       omega
     simpa [place, h, t] using bounds (x - (Shadow7.wpP s+15) - 16)
 
-theorem barrel_wires (j : Fin 23) (_lo : 1 ≤ j.val) (_hi : j.val ≤ 20) (mir : Bool) :
+theorem barrel_wires (j : Fin 24) (_lo : 1 ≤ j.val) (_hi : j.val ≤ 21) (mir : Bool) :
     ∀ q ∈ wires (barrel (start j) mir),
       (∃ i, i < Shadow7.wpP (start j)+15 ∧ q = Shadow7.bankW (start j) i) ∨
       (1615 ≤ q ∧ q ≤ 1624) ∨ q ∈ Partial.tagsP := by
@@ -2512,7 +2512,7 @@ namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
 open Placement Matrix Partial
 
 /-- Slot zero has no tag; slot k+1 selects k. The mirror enters on the forward image. -/
-theorem barrel_result_of_matrix (j : Fin 23) (lo : 1 ≤ j.val) (hi : j.val ≤ 20) (mir : Bool)
+theorem barrel_result_of_matrix (j : Fin 24) (lo : 1 ≤ j.val) (hi : j.val ≤ 21) (mir : Bool)
     (slot : Fin 17) (v : Nat) (s : State) (tape : List Bool)
     (basisOK : CoordinatesOK (Shadow7.wpP (start j)+15))
     (action : ActionOK (Shadow7.wpP (start j)+15) slot.val mir)
@@ -3627,7 +3627,7 @@ open Partial
 
 /-- The forward barrel shifts every bank word with clear high padding, and its measured mirror
 restores every forward image. Both preserve the exterior and the incoming phase on every tape. -/
-theorem barrel_result (j : Fin 23) (lo : 1 ≤ j.val) (hi : j.val ≤ 20) (mir : Bool)
+theorem barrel_result (j : Fin 24) (lo : 1 ≤ j.val) (hi : j.val ≤ 21) (mir : Bool)
     (slot : Fin 17) (v : Nat) (s : State) (tape : List Bool)
     (small : v < 2^Shadow7.wpP (start j))
     (input : HighBankBarrel.holds (Shadow7.bankW (start j)) (Shadow7.wpP (start j)+15)
