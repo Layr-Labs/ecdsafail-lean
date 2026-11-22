@@ -1,18 +1,7 @@
-import ECDSAAdd.Framework.MeasuredLocality
-import ECDSAAdd.Framework.WireRename
-import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
-import ECDSAAdd.Baselines.SlotMapped
-import ECDSAAdd.Arithmetic.PairFrameUnique
-import ECDSAAdd.Arithmetic.KnownOutputAdderPhysical
-import ECDSAAdd.Arithmetic.NarrowSignedRecord
-import ECDSAAdd.Arithmetic.Compare
-import ECDSAAdd.Arithmetic.ExactBorrowErase
-import ECDSAAdd.Arithmetic.MeasuredCanonicalMod
-import ECDSAAdd.Arithmetic.DisjointPrograms
-import ECDSAAdd.Challenge.Contract
-import Mathlib.Tactic.FinCases
-import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.Fold98
+
+-- ==== begin KnownZeroArithmetic ====
+section
 
 -- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
 section
@@ -122,22 +111,6 @@ open A161Low4FixedFold
 
 theorem ambient_fine : (A161Low4GenericFold.ambient L g hs100).toFinset⊆insert d (wires (aBodyTriple L g)) :=
  (ambient_subset L g d (A161Facts.loans95 L)).trans A161FineSupport.ambient_fine
-
-theorem fold_fine : wires fold100⊆insert d (wires (aBodyTriple L g)) :=
- (A161Low4GenericFold.support L hw hn g hs100 checked.out cert100).trans ambient_fine
-
-theorem body_fine : wires body⊆insert d (wires (aBodyTriple L g)) := by
- intro u hu
- simp only [A161Low4FixedFold.body,wires_append,Finset.mem_union] at hu
- rcases hu with hu|(hu|hu)
- · apply Finset.mem_insert_of_mem
-   simp only [aBodyTriple,wires_append,Finset.mem_union]
-   exact Or.inl hu
- · apply Finset.mem_insert_of_mem
-   simp only [aBodyTriple,wires_append,Finset.mem_union]
-   exact Or.inr (Or.inl hu)
- · exact fold_fine hu
-
 
 end ECDSAAdd.Entrant.A161Low4Fine
 
@@ -758,8 +731,7 @@ def join0_60Opt:ExactChecked known0 join0_60 known60 8:=ExactChecked.append _ _ 
 def body:Program:=join0_60Opt.out
 -- D1 (gate margin): the compiler output is stated once, in Fold98 (`bank_match`).
 theorem literal_verified:ParkAProgramBool.programEq literal (C163Low4Middle.bankChecked.out)=true:=by
- unfold C163Low4Middle.bankChecked
- exact ECDSAAdd.Entrant.D1Opt.get_of_elim C163Low4Middle.bank_match C163Low4Middle.compiled_bank
+ exact (ParkAProgramBool.programEq_iff _ _).2 rfl
 theorem literal_eq:literal=C163Low4Middle.bankChecked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
 theorem cert:Cert known0 (C163Low4Middle.bankChecked.out) body known60 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known60 8) literal_eq) join0_60Opt.proof
@@ -2045,88 +2017,6 @@ theorem plain_split(acc Z bank:List Wire)(cin:Wire)(src:List Wire)(hsrc:src.leng
  simp [ReorderedCPlain.build,ReorderedCPre.pre,ReorderedCHead.head,Acc.op,
   Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc,MixedLiteralAdderDevelop.read_add_eq,List.append_assoc]
 
-theorem build_frame (k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
- (hacc:acc.length=163)(hsrc:src.length=130)
- (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
- (s:State)(m:List Bool)(hz:∀q∈Z,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
- (hi:s.basis cin=false)(ha:regValue acc s.basis=0)
- (hk:k≤124)(ndhs:hs.Nodup)(fresh:∀h∈hs,h∉bank)
- (off:∀h∈hs,h∉wires (ReorderedCPlain.build acc Z bank cin src))
- (zero:∀h∈hs,s.basis h=false):
- run (build k acc Z bank cin src hs) m s=
- scatterState hs (ReorderedCacheBits.values 4 k (regValue src s.basis) (976*regValue src s.basis/1024))
-  (run (ReorderedCPlain.build acc Z bank cin src) m s):=by
- let H:=regValue src s.basis
- let head:=ReorderedCHead.head acc Z bank cin src
- let t:=run head (m.take (measurementCount head)) s
- have hH:H<2^130:=by simpa only [H,hsrc] using regValue_lt src s.basis
- have hf10:=hf _ (C163NarrowAcc.terms_mem src).2.1
- have preFrame:=ReorderedCHead.head_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s
-  (m.take (measurementCount head)) ⟨ha,fun _ _=>rfl⟩
- have away(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):q∉acc:=by
-  intro bad
-  have h:=List.nodup_iff_count_le_one.mp hf10.nd q
-  have a:=List.count_pos_iff.mpr bad
-  rcases hq with hq|rfl
-  · have b:=List.count_pos_iff.mpr hq
-    simp only [List.count_cons,List.count_append,Acc.earlyTerm] at h b
-    split at h <;> omega
-  · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true,Acc.earlyTerm] at h
-    omega
- have same(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):t.basis q=s.basis q:=preFrame.2.2 q (away q hq)
- have fit:=ReorderedAcc.fits_prefix acc Z bank cin 163 140 (Acc.earlyTerm src false 10)
-  (by decide) hf10 (by simp [Acc.earlyTerm,hsrc]) (by norm_num [Acc.earlyTerm])
- have nd:(cin::(src++(acc.take 140).drop 10++bank.take 129)).Nodup:=by
-  simpa [Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc] using
-   ReorderedAcc.fits_nodup (acc.take 140) Z bank cin 140 (Acc.earlyTerm src false 10) fit
- have len:(acc.take 140).length=140:=by simp [hacc]
- have bl:(bank.take 129).length=129:=by
-  have h:=fit.bankLen
-  simp only [Acc.earlyTerm] at h
-  simp only [List.length_take]
-  omega
- have pref:=regValue_take_drop_of_lt acc 140 ((2^140-48*H)%2^140) t.basis
-  (by omega) preFrame.2.1 (Nat.mod_lt _ (by positivity))
- have sy:regValue ((acc.take 140).drop 10) t.basis=((2^140-48*H)%2^140)/1024:=by
-  rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
-  rfl
- have sh:regValue src t.basis=H:=regValue_congr _ _ _ (fun q hq=>same q (Or.inl (by simp [hq])))
- have sb:∀q∈bank.take 129,t.basis q=false:=by
-  intro q hq
-  exact (same q (Or.inl (by simp [List.mem_of_mem_take hq]))).trans (hb q (List.mem_of_mem_take hq))
- have si:t.basis cin=false:=(same cin (Or.inr rfl)).trans hi
- have vals:=ReorderedCacheBits.forward_values 4 k H (((2^140-48*H)%2^140)/1024) (976*H/1024)
-  src ((acc.take 140).drop 10) (bank.take 129) cin t
-  (by omega) (by simp only [List.length_drop,len];omega) (by rw [bl];omega)
-  nd sb si sh sy (fun j hj=>by
-   simpa only [show 130+10=140 by decide] using
-    ReorderedCacheArithmetic.high_add_low 130 (4+j+1) H (by omega) hH)
- have frame:=ReorderedGenericCache.cached_context_frame head (C163Carry.buildPost acc Z bank cin src)
-  k src ((acc.take 140).drop 10) (bank.take 129) hs cin
-  (by omega) (by simp only [List.length_drop,len];omega) (by rw [bl];omega) ndhs
-  (fun h hh bad=>fresh h hh (List.mem_of_mem_take bad))
-  (by simpa only [head,←plain_split acc Z bank cin src hsrc] using off) s m zero
- have valEq:(((bank.take 129).drop 4).take k).map
-  (run (head++carryPrefix (4+k) src ((acc.take 140).drop 10) (bank.take 129) cin)
-    (m.take (measurementCount (head++carryPrefix (4+k) src ((acc.take 140).drop 10) (bank.take 129) cin))) s).basis
-  =ReorderedCacheBits.values 4 k H (976*H/1024):=by
-  simpa only [run_append,measurementCount_append,carryPrefix_measurements,Nat.add_zero,
-   List.take_take,Nat.min_self,List.drop_take_self,t] using vals
- rw [valEq] at frame
- simpa only [build,head,←plain_split acc Z bank cin src hsrc,H] using frame
-
-theorem measurement_eq(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
- (hacc:acc.length=163)(hsrc:src.length=130)(hbank:129≤bank.length)(hk:k≤124):
- measurementCount (build k acc Z bank cin src hs)=measurementCount (ReorderedCPlain.build acc Z bank cin src):=by
- have len:(acc.take 140).length=140:=by simp [hacc]
- have bl:(bank.take 129).length=129:=by simp [Nat.min_eq_left hbank]
- have counts:=ReorderedGenericCache.count_balance k src ((acc.take 140).drop 10) (bank.take 129) hs cin
-  (by omega) (by simp only [List.length_drop,len];omega) (by rw [bl];omega)
- rw [plain_split acc Z bank cin src hsrc]
- simp only [build,measurementCount_append,counts.2.1]
-
-
-
 end ECDSAAdd.Entrant.ReorderedCBuild
 
 end
@@ -2261,90 +2151,6 @@ theorem plain_split(acc Z bank:List Wire)(cin:Wire)(src:List Wire)(hsrc:src.leng
  simp [ReorderedCPlain.unbuild,ReorderedConsumedSub.plain,after,Acc.op,
   Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc,MixedLiteralAdderDevelop.read_add_eq,subInPlace,List.append_assoc]
 
-theorem unbuild_frame(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
- (hacc:acc.length=163)(hsrc:src.length=130)
- (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
- (s:State)(m:List Bool)(hz:∀q∈Z,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
- (hi:s.basis cin=false)(ha:regValue acc s.basis=4294968272*regValue src s.basis)
- (hk:k≤124)(ndhs:hs.Nodup)(lenhs:hs.length=k)
- (fresh:∀h∈hs,h∉cin::(src++acc++Z++bank))
- (off:∀h∈hs,h∉wires (ReorderedCPlain.unbuild acc Z bank cin src))
- (saved:hs.map s.basis=ReorderedCacheBits.values 4 k (regValue src s.basis) (976*regValue src s.basis/1024)):
- run (unbuild k acc Z bank cin src hs) m s=
- scatterState hs (List.replicate hs.length false) (run (ReorderedCPlain.unbuild acc Z bank cin src) m s):=by
- let H:=regValue src s.basis
- let pre:=C163Carry.unbuildPre acc Z bank cin src
- let t:=run pre (m.take (measurementCount pre)) s
- have hH:H<2^130:=by simpa only [H,hsrc] using regValue_lt src s.basis
- have hf10:=hf _ (C163NarrowAcc.terms_mem src).2.1
- have preFrame:=C163Carry.unbuildPre_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi s
-  (m.take (measurementCount pre)) ⟨ha,fun _ _=>rfl⟩
- have away(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):q∉acc:=by
-  intro bad
-  have h:=List.nodup_iff_count_le_one.mp hf10.nd q
-  have a:=List.count_pos_iff.mpr bad
-  rcases hq with hq|rfl
-  · have b:=List.count_pos_iff.mpr hq
-    simp only [List.count_cons,List.count_append,Acc.earlyTerm] at h b
-    split at h <;> omega
-  · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true,Acc.earlyTerm] at h
-    omega
- have same(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):t.basis q=s.basis q:=preFrame.2.2 q (away q hq)
- have fit:=ReorderedAcc.fits_prefix acc Z bank cin 163 140 (Acc.earlyTerm src false 10)
-  (by decide) hf10 (by simp [Acc.earlyTerm,hsrc]) (by norm_num [Acc.earlyTerm])
- have nd:(cin::(src++(acc.take 140).drop 10++bank.take 129)).Nodup:=by
-  simpa [Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc] using
-   ReorderedAcc.fits_nodup (acc.take 140) Z bank cin 140 (Acc.earlyTerm src false 10) fit
- have alen:(acc.take 140).length=140:=by simp [hacc]
- have bl:(bank.take 129).length=129:=by
-  have h:=fit.bankLen
-  simp only [Acc.earlyTerm] at h
-  simp only [List.length_take]
-  omega
- have pref:=regValue_take_drop_of_lt acc 140 (976*H) t.basis
-  (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
- have sy:regValue ((acc.take 140).drop 10) t.basis=976*H/1024:=by
-  rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [alen];decide),pref.1]
-  rfl
- have sh:regValue src t.basis=H:=regValue_congr _ _ _ (fun q hq=>same q (Or.inl (by simp [hq])))
- have sb:∀q∈bank.take 129,t.basis q=false:=by
-  intro q hq
-  exact (same q (Or.inl (by simp [List.mem_of_mem_take hq]))).trans (hb q (List.mem_of_mem_take hq))
- have si:t.basis cin=false:=(same cin (Or.inr rfl)).trans hi
- have savedT:hs.map t.basis=ReorderedCacheBits.values 4 k H (976*H/1024):=by
-  rw [List.map_congr_left (fun h hh=>preFrame.2.2 h (by
-   intro bad
-   exact fresh h hh (by simp [bad])))]
-  exact saved
- have freshSmall:∀h∈hs,h∉cin::(src++(acc.take 140).drop 10++bank.take 129):=by
-  intro h hh bad
-  apply fresh h hh
-  simp only [List.mem_cons,List.mem_append] at bad ⊢
-  rcases bad with a|((a|a)|a)
-  · exact Or.inl a
-  · exact Or.inr (Or.inl (Or.inl (Or.inl a)))
-  · exact Or.inr (Or.inl (Or.inl (Or.inr (List.mem_of_mem_take (List.mem_of_mem_drop a)))))
-  · exact Or.inr (Or.inr (List.mem_of_mem_take a))
- have fr:=ReorderedConsumedSub.frame k src ((acc.take 140).drop 10) (bank.take 129) hs cin
-  (by omega) (by simp only [List.length_drop,alen];omega) (by rw [bl];omega)
-  (by simp [hsrc,alen]) (by simp [bl,alen]) nd ndhs lenhs freshSmall t
-  ((m.drop (measurementCount pre)).take (measurementCount
-    (ReorderedConsumedSub.plain src ((acc.take 140).drop 10) (bank.take 129) cin)))
-  sb si H (976*H/1024) sh sy savedT
- have count:=ReorderedConsumedSub.measurement_eq k src ((acc.take 140).drop 10) (bank.take 129) hs cin
-  (by omega) (by simp only [List.length_drop,alen];omega) (by rw [bl];omega)
- have offAfter:∀h∈hs,h∉wires (after acc Z bank cin src):=by
-  intro h hh bad
-  apply off h hh
-  rw [plain_split acc Z bank cin src hsrc,wires_append,wires_append]
-  exact Finset.mem_union_right _ bad
- have result:=ReorderedConsumedSub.replace_middle pre (after acc Z bank cin src)
-  (ReorderedConsumedSub.plain src ((acc.take 140).drop 10) (bank.take 129) cin)
-  (ReorderedConsumedSub.consumed k src ((acc.take 140).drop 10) (bank.take 129) hs cin)
-  hs (List.replicate hs.length false) s m count offAfter fr
- simpa only [unbuild,pre,←plain_split acc Z bank cin src hsrc] using result
-
-
 end ECDSAAdd.Entrant.ReorderedCUnbuild
 
 end
@@ -2358,47 +2164,6 @@ set_option autoImplicit false
 
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
-
-theorem loop_eq(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)(middle:Program)
- (hacc:acc.length=163)(hsrc:src.length=130)
- (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
- (s:State)(m:List Bool)(hz:∀q∈Z,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
- (hi:s.basis cin=false)(ha:regValue acc s.basis=0)
- (hk:k≤124)(nd:hs.Nodup)(len:hs.length=k)
- (fresh:∀h∈hs,h∉cin::(src++acc++Z++bank))
- (offF:∀h∈hs,h∉wires (ReorderedCPlain.build acc Z bank cin src))
- (offI:∀h∈hs,h∉wires (ReorderedCPlain.unbuild acc Z bank cin src))
- (offM:∀h∈hs,h∉wires middle)(zero:∀h∈hs,s.basis h=false)
- (good:WReady acc Z bank cin src (regValue src s.basis)
-   (middleState (ReorderedCPlain.build acc Z bank cin src) middle s m)):
- run (ReorderedCBuild.build k acc Z bank cin src hs++middle++ReorderedCUnbuild.unbuild k acc Z bank cin src hs) m s=
- run (ReorderedCPlain.build acc Z bank cin src++middle++ReorderedCPlain.unbuild acc Z bank cin src) m s:=by
- let H:=regValue src s.basis
- let vs:=ReorderedCacheBits.values 4 k H (976*H/1024)
- let u:=middleState (ReorderedCPlain.build acc Z bank cin src) middle s m
- let t:=scatterState hs vs u
- have ready:WReady acc Z bank cin src H t:=WReady_scatter acc Z bank cin src H hs vs u fresh good
- have saved:hs.map t.basis=ReorderedCacheBits.values 4 k (regValue src t.basis) (976*regValue src t.basis/1024):=by
-  rw [ready.2.1]
-  exact scatter_saved_map hs vs u nd (by simp [vs,ReorderedCacheBits.values,len])
- have av:regValue acc t.basis=4294968272*regValue src t.basis:=by
-  rw [ready.2.1]
-  exact ready.1
- have forward:=ReorderedCBuild.build_frame k acc Z bank cin src hs hacc hsrc hf s
-  (m.take (measurementCount (ReorderedCPlain.build acc Z bank cin src))) hz hb hi ha hk nd
-  (fun h hh bad=>fresh h hh (by simp [bad])) offF zero
- have inverse:=ReorderedCUnbuild.unbuild_frame k acc Z bank cin src hs hacc hsrc hf t
-  (m.drop (measurementCount (ReorderedCPlain.build acc Z bank cin src)+measurementCount middle))
-  ready.2.2.1 ready.2.2.2.1 ready.2.2.2.2 av hk nd len fresh offI saved
- have hb129:129≤bank.length:=by
-  have h:=(hf _ (C163NarrowAcc.terms_mem src).2.1).bankLen
-  norm_num [Acc.earlyTerm] at h
-  omega
- have count:=ReorderedCBuild.measurement_eq k acc Z bank cin src hs hacc hsrc hb129 hk
- exact cached_pair_many_eq (ReorderedCPlain.build acc Z bank cin src) (ReorderedCBuild.build k acc Z bank cin src hs)
-  middle (ReorderedCPlain.unbuild acc Z bank cin src) (ReorderedCUnbuild.unbuild k acc Z bank cin src hs)
-  hs vs count offF offM offI nd s m zero forward inverse
-
 
 end ECDSAAdd.Entrant.ReorderedCLoop
 
@@ -2675,76 +2440,6 @@ theorem off_middle:∀h∈hosts,h∉wires bankChecked.out:=by
 theorem transport(Q:BasisState→Prop)(s a b:State)(e:a=b)(hb:b.phase=s.phase ∧ Q b.basis):
  a.phase=s.phase ∧ Q a.basis:=e.symm ▸ hb
 
-theorem frame(base:BasisState)(hc:L.PairClean base)(hp:base p=false)(hd:base d=false)
- (O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loop
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have len:=lengths
- have fit:=fits
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hz:∀u∈pad,s.basis u=false:=fun u hu=>
-  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>
-  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue ga s.basis=0:=C163Low4Ghost.ghostAcc_zero L s.basis clean
- have qz:s.basis q=false:=(regValue_zero _ _).mp clean.work q (by decide)
- have rz:s.basis r=false:=(regValue_zero _ _).mp clean.work r (by decide)
- have pz:s.basis p=false:=(hf.2 p (by decide)).trans hp
- have dz:s.basis d=false:=(hf.2 d (by decide)).trans hd
- have zeroU:∀u∈hs,s.basis u=false:=by
-  intro u hu
-  rcases List.mem_append.mp hu with hu|hu
-  · rcases List.mem_append.mp hu with hu|hu
-    · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu)
-    · have e:u=d:=by simpa only [List.mem_singleton] using hu
-      subst u
-      exact dz
-  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_take hu)
- have zero:∀u∈hosts,s.basis u=false:=by
-  intro u hu
-  simp only [hosts,List.mem_cons] at hu
-  rcases hu with rfl|rfl|rfl|hu
-  · exact qz
-  · exact rz
-  · exact pz
-  · exact zeroU u hu
- have offHs:∀u∈hs,u∉wires (ReorderedCPlain.build ga pad bank L.core.cin src):=by
-  intro u hu
-  exact (off_plain u (by simp only [hosts,List.mem_cons];exact Or.inr (Or.inr (Or.inr hu)))).1
- have goodOld:=fun record=>good base hc O hO s record hf
- have goodSpecial:WReady ga pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) specialChecked.out s m):=by
-  rw [ReorderedRetape.c_middle_eq ga pad bank L.core.cin src specialChecked.out
-   len.1 len.2.2.2 fit s m hz hb clean.cin ha]
-  exact goodOld _
- have middleEq:=bank_cert.middle_eq hs specialChecked.out bankChecked.out
-  (ReorderedCPlain.build ga pad bank L.core.cin src) s m zeroU offHs
- have goodBank:WReady ga pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) bankChecked.out s m):=by
-  rw [middleEq]
-  exact goodSpecial
- have cacheEq:=ReorderedCLoop.loop_eq 99 ga pad bank L.core.cin src hosts bankChecked.out
-  len.1 len.2.2.2 fit s m hz hb clean.cin ha (by decide) host_geometry.1 host_geometry.2.1
-  host_geometry.2.2 (fun u hu=>(off_plain u hu).1) (fun u hu=>(off_plain u hu).2) off_middle zero goodBank
- have middleReplace:=bank_cert.surround_eq hs specialChecked.out bankChecked.out
-  (ReorderedCPlain.build ga pad bank L.core.cin src) (ReorderedCPlain.unbuild ga pad bank L.core.cin src)
-  s m zeroU offHs
- have plainEq:=ReorderedRetape.c_loop_eq ga pad bank L.core.cin src specialChecked.out
-  len.1 len.2.2.2 fit s m hz hb clean.cin ha goodOld
- let record:=ReorderedRetape.tape (measurementCount (C163NarrowAcc.build8 ga pad bank L.core.cin src))
-  (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)) m
- have oldFrame:=C163Low4Middle.frame base hc hp hd O hO s record hf
- rw [eq_plain base hc hp hd O hO s record hf] at oldFrame
- have finalEq:run loop m s=run (C163NarrowAcc.build8 ga pad bank L.core.cin src++specialChecked.out++
-  C163SourceAdd.unbuild ga pad bank L.core.cin src) record s:=cacheEq.trans (middleReplace.trans plainEq)
- exact transport (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)) s _ _ finalEq oldFrame
-
-
 end ECDSAAdd.Entrant.ReorderedCFixed
 
 end
@@ -2993,8 +2688,6 @@ set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.wires specialChecked bankChecked
-abbrev hosts:=ReorderedCFixed.hosts
-
 end ECDSAAdd.Entrant.ReorderedCPhysical
 
 end
@@ -3974,47 +3667,6 @@ set_option autoImplicit false
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
-theorem loop_eq(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)(middle:Program)
- (hacc:acc.length=161)(hsrc:src.length=128)
- (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 161 f)
- (s:State)(m:List Bool)(hz:∀q∈Z,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
- (hi:s.basis cin=false)(ha:regValue acc s.basis=0)
- (hk:k≤122)(nd:hs.Nodup)(len:hs.length=k)
- (fresh:∀h∈hs,h∉cin::(src++acc++Z++bank))
- (offF:∀h∈hs,h∉wires (ReorderedAPlain.build acc Z bank cin src))
- (offI:∀h∈hs,h∉wires (ReorderedAPlain.unbuild acc Z bank cin src))
- (offM:∀h∈hs,h∉wires middle)(zero:∀h∈hs,s.basis h=false)
- (good:WReady acc Z bank cin src (regValue src s.basis)
-   (middleState (ReorderedAPlain.build acc Z bank cin src) middle s m)):
- run (ReorderedABuild.build k acc Z bank cin src hs++middle++ReorderedAUnbuild.unbuild k acc Z bank cin src hs) m s=
- run (ReorderedAPlain.build acc Z bank cin src++middle++ReorderedAPlain.unbuild acc Z bank cin src) m s:=by
- let H:=regValue src s.basis
- let vs:=ReorderedCacheBits.values 4 k H (976*H/1024)
- let u:=middleState (ReorderedAPlain.build acc Z bank cin src) middle s m
- let t:=scatterState hs vs u
- have ready:WReady acc Z bank cin src H t:=WReady_scatter acc Z bank cin src H hs vs u fresh good
- have saved:hs.map t.basis=ReorderedCacheBits.values 4 k (regValue src t.basis) (976*regValue src t.basis/1024):=by
-  rw [ready.2.1]
-  exact scatter_saved_map hs vs u nd (by simp [vs,ReorderedCacheBits.values,len])
- have av:regValue acc t.basis=4294968272*regValue src t.basis:=by
-  rw [ready.2.1]
-  exact ready.1
- have forward:=ReorderedABuild.build_frame k acc Z bank cin src hs hacc hsrc hf s
-  (m.take (measurementCount (ReorderedAPlain.build acc Z bank cin src))) hz hb hi ha hk nd
-  (fun h hh bad=>fresh h hh (by simp [bad])) offF zero
- have inverse:=ReorderedAUnbuild.unbuild_frame k acc Z bank cin src hs hacc hsrc hf t
-  (m.drop (measurementCount (ReorderedAPlain.build acc Z bank cin src)+measurementCount middle))
-  ready.2.2.1 ready.2.2.2.1 ready.2.2.2.2 av hk nd len fresh offI saved
- have hb127:127≤bank.length:=by
-  have h:=(hf _ (A161NarrowAcc.terms_mem src).2.1).bankLen
-  norm_num [Acc.earlyTerm] at h
-  omega
- have count:=ReorderedABuild.measurement_eq k acc Z bank cin src hs hacc hsrc hb127 hk
- exact cached_pair_many_eq (ReorderedAPlain.build acc Z bank cin src) (ReorderedABuild.build k acc Z bank cin src hs)
-  middle (ReorderedAPlain.unbuild acc Z bank cin src) (ReorderedAUnbuild.unbuild k acc Z bank cin src hs)
-  hs vs count offF offM offI nd s m zero forward inverse
-
-
 end ECDSAAdd.Entrant.ReorderedALoop
 
 end
@@ -4330,56 +3982,6 @@ theorem off_middle:∀h∈hosts,h∉wires A161Low4FixedFold.checked.out:=by
  exact ⟨(fun bad=>orig q (by simp) (sub bad)),(fun bad=>orig r (by simp) (sub bad)),
   (fun bad=>orig p (by simp) (sub bad)),free⟩
 
-theorem frame(base:BasisState)(hc:L.PairClean base)(hsum:base q=false)(hV:base r=false)(hP:base p=false)
- (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loop
-  (SquareFrame L.core.out base
-   (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hzFull:∀u∈accZ L,s.basis u=false:=by
-  intro u hu
-  rcases accZ_mem L u hu with hu|hu
-  · exact (regValue_zero _ _).mp clean.pad u hu
-  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu)
- have hz:∀u∈pad,s.basis u=false:=fun u hu=>hzFull u ((FullPadDevelop.pad_sublist L).subset hu)
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue acc s.basis=0:=ghostAcc_zero L s.basis clean
- have qz:s.basis q=false:=(hf.2 q (by decide)).trans hsum
- have rz:s.basis r=false:=(hf.2 r (by decide)).trans hV
- have pz:s.basis p=false:=(hf.2 p (by decide)).trans hP
- have zeroU:∀u∈hs,s.basis u=false:=fun u hu=>
-  (hf.2 u (A161Low4FixedFold.hostClean base hc hd u hu).1).trans (A161Low4FixedFold.hostClean base hc hd u hu).2
- have zero:∀u∈hosts,s.basis u=false:=by
-  change ∀u∈q::r::p::hs,s.basis u=false
-  rw [List.forall_mem_cons,List.forall_mem_cons,List.forall_mem_cons]
-  exact ⟨qz,rz,pz,zeroU⟩
- have offHs:∀u∈hs,u∉wires (ReorderedAPlain.build acc pad bank L.core.cin src):=by
-  intro u hu
-  exact (off_plain u (by change u∈q::r::p::hs;simp only [List.mem_cons];exact Or.inr (Or.inr (Or.inr hu)))).1
- have goodOriginal:WReady acc pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedAPlain.build acc pad bank L.core.cin src) (A161Low4Fold.aMiddle L g) s m):=by
-  rw [ReorderedARetape.a_middle_eq acc pad bank L.core.cin src (A161Low4Fold.aMiddle L g)
-   lengths.1 lengths.2.2.2 fits s m hz hb clean.cin ha]
-  exact good_old base hc O hO s _ hf
- have middleEq:=A161Low4FixedFold.cert100.middle_eq hs (A161Low4Fold.aMiddle L g) A161Low4FixedFold.checked.out
-  (ReorderedAPlain.build acc pad bank L.core.cin src) s m zeroU offHs
- have good:WReady acc pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedAPlain.build acc pad bank L.core.cin src) A161Low4FixedFold.checked.out s m):=by
-  rw [middleEq]
-  exact goodOriginal
- have cached:=ReorderedALoop.loop_eq 103 acc pad bank L.core.cin src hosts A161Low4FixedFold.checked.out
-  lengths.1 lengths.2.2.2 fits s m hz hb clean.cin ha (by decide) host_geometry.1 host_geometry.2.1 host_geometry.2.2
-  (fun u hu=>(off_plain u hu).1) (fun u hu=>(off_plain u hu).2) off_middle zero good
- have middleReplace:=A161Low4FixedFold.cert100.surround_eq hs (A161Low4Fold.aMiddle L g) A161Low4FixedFold.checked.out
-  (ReorderedAPlain.build acc pad bank L.core.cin src) (ReorderedAPlain.unbuild acc pad bank L.core.cin src) s m zeroU offHs
- have eq:run loop m s=run (ReorderedAPlain.build acc pad bank L.core.cin src++A161Low4Fold.aMiddle L g++
-  ReorderedAPlain.unbuild acc pad bank L.core.cin src) m s:=cached.trans middleReplace
- exact transport _ s _ _ eq (plain_frame base hc O hO s m hf)
-
-
-
 end ECDSAAdd.Entrant.ReorderedAFixed
 
 end
@@ -4514,8 +4116,6 @@ set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.wires A161Low4FixedFold.checked
-abbrev hosts:=ReorderedAFixed.hosts
-
 end ECDSAAdd.Entrant.ReorderedAPhysical
 
 end
@@ -10091,12 +9691,6 @@ theorem load_run (xs:List Wire) (t:Wire) (s:State) (m:List Bool)
   simp [parity,writeBit,Function.update_idem,
    Bool.xor_assoc]
 
-theorem equivalent (xs:List Wire) (a b t:Wire) (s:State) (m n:List Bool)
- (off:∀q∈xs,q≠t) (h:parity xs s.basis=(s.basis a && s.basis b)):
- run (load xs t) m s=run [.CCX a b t] n s:=by
- rw [load_run xs t s m off,h]
- rfl
-
 theorem counts (xs:List Wire) (t:Wire):
  toffoliCount (load xs t)=0 ∧ measurementCount (load xs t)=0:=by
  induction xs with
@@ -12488,3 +12082,6 @@ end
 end
 end
 end
+
+end
+-- ==== end KnownZeroArithmetic ====

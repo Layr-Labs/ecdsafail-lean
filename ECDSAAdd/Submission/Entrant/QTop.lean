@@ -543,19 +543,6 @@ def correctionsFor (ws : List Wire) (p : Polynomial) : List Correction := p.filt
  | [i,j]=>some (.CZ (ws.getD i 0) (ws.getD j 0))
  | _=>none
 
-def lowWires (L : DecoderLayout) : List Wire := [L.bias]++
- (List.range 13).map L.Y++[L.sigma,L.h,L.Y 255,L.A 0,L.A 1,L.A 2]++(List.range 13).map L.R
-
-
-
-
-def lowCorrections (L : DecoderLayout) (j : Nat) : List Correction :=
- correctionsFor (lowWires L) (lowPolys.getD j [])
-
-
-
-
-
 def highWires (L : DecoderLayout) : List Wire :=
  [L.bias,L.Y 32,L.Y 33,L.Y 34,L.Y 35,L.Y 31,L.Y 30,L.Y 29,
  L.R 31,L.R 30,L.bias,L.sigma,L.h,L.bias,L.A 0]++(List.range' 32 4).map L.R
@@ -579,25 +566,6 @@ def highErase (L : DecoderLayout) : Program := eraseRange (fun i=>L.R (32+i)) (h
 def middle (L : DecoderLayout) : Program := eraseRange (fun i=>L.R (13+i))
  (fun i=>polyCorrections (L.Y (13+i-3)) (L.Y (13+i-2)) (L.Y (13+i-1))
   (L.Y (13+i)) L.sigma (L.R (13+i-1)) true) 19
-
-
-def lowErase (L : DecoderLayout) : Program := eraseRange L.R (lowCorrections L) 13
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 end ECDSAAdd.Entrant.DirectDecoder
@@ -1055,10 +1023,6 @@ namespace ECDSAAdd.Entrant.DirectDecoder
 open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
 
 def highBlock (L : DecoderLayout) : Program := andWrap (L.Y 32) L.h (L.A 0) (highErase L)
-def lowBlock (L : DecoderLayout) : Program := andWrap (L.Y 4) L.h (L.A 0)
- (andWrap (L.Y 5) (L.Y 6) (L.A 1) (andWrap (L.Y 8) L.h (L.A 2) (lowErase L)))
-
-
 theorem prepared_source (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
  (ref : BasisState) (s : State) (src : SourceData L ref s) (a b : Wire) (k : Nat) (hk : k<255) :
  SourceData L ref (prepared s a b (L.A k)) := by
@@ -3113,21 +3077,10 @@ def parityTop (L : Layout) : Wire :=
 
 def seamB (L : Layout) : Wire := sig2 L (sig1 L (tauF L (parityTop L)))
 
-def seamP (L : Layout) (J G : Wire) : Program :=
-  [Instr.X G] ++ (prepare L J G ++ (arithH L J G ++ (eraseScalarsAt L J G ++
-    renameProgram (sig2 L) (renameProgram (sig1 L)
-      ([Instr.CX (L.ylow.getD 0 0) L.parity] ++ ([Instr.X J] ++ (EntryHalf5.prepareMagnitude L ++
-        renameProgram (tauF L)
-          (fwC EntryHalf5.parityBits L.low (L.carry.take 255) L.lower))))))))
-
 def seamC (L : Layout) (J G : Wire) : Program :=
   renameProgram (sig2 L) (renameProgram (sig1 L)
     (renameProgram (tauF L) (bwC EntryHalf5.parityBits L.low (L.carry.take 255) L.lower) ++
       ((EntryHalf5.prepareMagnitude L).reverse ++ [Instr.X J]))) ++ [Instr.X G]
-
-/-- `jointF` with its last parity Toffoli replaced by the measured erasure. -/
-def jointG (L : Layout) (J G : Wire) : Program :=
-  seamP L J G ++ ([Instr.measureX L.parity [] [Correction.CZ J (seamB L)]] ++ seamC L J G)
 
 theorem parity_facts (L : Layout) (hn : L.wires.Nodup) (J : Wire) (hJ : J∉L.wires) :
     L.parity∉L.r ∧ L.parity∉L.y ∧ L.parity∉L.carry ∧ L.parity≠L.rmsb ∧ L.parity≠L.lower ∧
@@ -3313,10 +3266,6 @@ theorem replicate_wires (n : Nat) (i : Instr) : wires (List.replicate (n+1) i)=i
     simp only [wires,ih,Finset.union_self]
 
 attribute [local irreducible] wires
-
-/-- The forward joint with the measured parity clear, on the hole of `kernel`. -/
-def kernelG : Program :=
-  renameProgram (Equiv.swap (base 719) (base 1032)) (jointG portsJ (base 1028) (base 1))
 
 /-- One erasure fewer than `padding`: `kernelG` has one more record than `kernel`. -/
 def paddingG : Program := List.replicate 505 (Instr.measureX (base 512) [] [])
@@ -6554,34 +6503,6 @@ theorem fastCandidate_counts (L : ControlledPointLayout) (hw : L.Widths) :
 /-- Computable relabeled square: the emitted Step 4 program. -/
 def fastSquare (L : ControlledPointLayout) : Program :=
   renameProgram (labelFn L.core.poolWire) (fastCandidate L)
-
-noncomputable def fastSquareN (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) : Program :=
-  renameProgram (poolPermutation L.core.poolWire (layout_bounded_injective L hw hn)) (fastCandidate L)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 section StateEq
 attribute [local irreducible] run wires fastCandidate
@@ -14389,21 +14310,6 @@ theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
   exact ⟨⟨⟨⟨⟨⟨ca,hD (-cy)⟩,hS⟩,cr⟩,hP⟩,ey⟩,cn⟩
 
 
-theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (D : Fp→Program) (S P : Program) (k : Nat) (hk : 515≤k ∧ k<2613)
-    (hD : ∀c,L.core.poolWire k∉wires (D c))
-    (hS : L.core.poolWire k∉wires S) (hP : L.core.poolWire k∉wires P)
-    (cx cy : Fp) : L.core.poolWire k∉wires (generic L D S P cx cy) := by
-  have x := ExitGenericQ5.constant_ports_avoid_large L hw hn k hk L.point.x (Or.inl rfl)
-  have y := ExitGenericQ5.constant_ports_avoid_large L hw hn k hk L.point.y (Or.inr rfl)
-  have ca := (All12Generic.add_palette L hw (-cx))
-  have cr := (All12Generic.add_palette L hw (3*cx-(K : Nat)))
-  have cn := (All12Generic.neg_palette L hw cx)
-  have ey := exitY_support L hw cy
-  simp only [generic,wires_append,Finset.mem_union,not_or]
-  exact ⟨⟨⟨⟨⟨⟨fun h=>x (ca h),hD (-cy)⟩,hS⟩,fun h=>x (cr h)⟩,hP⟩,
-    fun h=>y (ey h)⟩,fun h=>x (cn h)⟩
-
 theorem gen_shape (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp) :
     gen L D S P cx cy=GenericQ5Geometry.wrapG L (generic L D S P cx cy) := by
   simp only [gen,mid,GenericQ5Geometry.wrapG]
@@ -16015,68 +15921,6 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   · exact t.2.2.2 a ar ap
 
 
-def sites (L : Layout) : Finset Wire :=
-  (L.sign::L.parity::L.one::L.lower::(L.y++L.r++L.carry.take 255)).toFinset
-
-theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆sites L := by
-  have w:=BalancedCleanup.widths L.toLayout hw
-  have pp : wires (prep L)⊆sites L := (prep_support (L:=L)).trans (by
-    intro a ha
-    simp only [sites,List.mem_toFinset,List.mem_cons,List.mem_append] at ha ⊢;tauto)
-  have cp : wires (compareLt (some L.sign) L.ylow L.low (L.carry.take 255) L.one L.parity)⊆sites L := by
-    rw [(compareLt_wires (some L.sign) L.ylow L.low (L.carry.take 255) L.one L.parity
-      (hw.2.1.trans w.1.symm) (by simp [List.length_take,hw.2.2,w.1])).1]
-    intro a ha
-    simp only [sites,BalancedCleanup.Layout.y,BalancedCleanup.Layout.r,Option.toList_some,
-      List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at ha ⊢;tauto
-  have rot : wires (rotateLeft L.r)⊆sites L := by
-    rw [(rotate_wires L.r).2]
-    split_ifs
-    · exact Finset.empty_subset _
-    · intro a ha
-      simp only [sites,List.mem_toFinset,List.mem_cons,List.mem_append] at ha ⊢;tauto
-  have sc : wires (signComplement L.ymsb L.r)⊆sites L :=
-    (signComplement_wires_subset _ _).trans (by
-      intro a ha
-      simp only [sites,BalancedCleanup.Layout.y,List.mem_toFinset,List.mem_cons,List.mem_append,List.mem_singleton] at ha ⊢;tauto)
-  have ad : wires (signedAdd L.sign L.y L.r (L.carry.take 255))⊆sites L := by
-    rw [(signedWord_wires L.sign L.y L.r (L.carry.take 255) (w.2.2.1.trans w.2.1.symm)
-      (by simp [List.length_take,hw.2.2,w.2.1])).1]
-    intro a ha
-    simp only [sites,List.mem_toFinset,List.mem_cons,List.mem_append] at ha ⊢;tauto
-  have su : wires (mappedSub (mappedConstant (some L.parity) 256 p) L.r (L.carry.take 255) L.one)⊆sites L := by
-    intro a ha
-    have h:=List.mem_toFinset.mp (mappedSub_wires_subset _ _ _ _ ha)
-    have bit : a∈mappedWires (mappedConstant (some L.parity) 256 p) → a=L.parity := by
-      intro hm
-      exact (Option.mem_some_iff.mp (mappedConstant_wires (some L.parity) 256 p a hm)).symm
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at h
-    simp only [sites,List.mem_toFinset,List.mem_cons,List.mem_append]
-    tauto
-  have ys : L.ylow.headD L.ymsb∈L.y := by
-    cases e : L.ylow with
-    | nil => simp [BalancedCleanup.Layout.y,e]
-    | cons a xs => simp [BalancedCleanup.Layout.y,e]
-  have one (a : Wire) (ha : a∈sites L) : wires [.X a]⊆sites L := by simpa [wires,Instr.wires] using ha
-  have two (a b : Wire) (ha : a∈sites L) (hb : b∈sites L) : wires [.CX a b]⊆sites L := by
-    simp only [wires,Instr.wires,Finset.union_empty,Finset.insert_subset_iff,Finset.singleton_subset_iff]
-    exact ⟨ha,hb⟩
-  have sf : L.sign∈sites L := by simp [sites]
-  have pf : L.parity∈sites L := by simp [sites]
-  have ym : L.ymsb∈sites L := by simp [sites,BalancedCleanup.Layout.y]
-  have rm : L.rmsb∈sites L := by simp [sites,BalancedCleanup.Layout.r]
-  have rr : L.r0∈sites L := by simp [sites,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low]
-  have yy : L.ylow.headD L.ymsb∈sites L := by
-    simp only [sites,List.mem_toFinset,List.mem_cons,List.mem_append]
-    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (Or.inl ys)))))
-  have last : wires [.CX L.r0 L.parity,.CX (L.ylow.headD L.ymsb) L.parity]⊆sites L := by
-    change wires ([.CX L.r0 L.parity]++[.CX (L.ylow.headD L.ymsb) L.parity])⊆_
-    rw [wires_append]
-    exact Finset.union_subset (two _ _ rr pf) (two _ _ yy pf)
-  simp only [program,decision,raw,double,correction,wires_append,wires_reverse,Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨pp,cp⟩,two _ _ sf pf⟩,pp⟩,⟨⟨⟨two _ _ ym rm,rot⟩,one _ sf⟩,ad⟩,one _ sf⟩,
-    ⟨⟨sc,su⟩,sc⟩⟩,last⟩
-
 theorem gateSlots_le (L : Layout) (hw : L.Widths) : Challenge.gateSlots (program L)≤25000 := by
   open Baselines Challenge in
   have w:=BalancedCleanup.widths L.toLayout hw
@@ -17085,14 +16929,6 @@ theorem phase_physical (P : Program) (physical : GatePhysical P) :
 
                                      
                                                                                             
-
-theorem phase_719_free (P : Program) (free : base 719∉wires P) :
-    base 719∉wires (renameProgram phaseHost P) := by
-  rw [renameProgram_support]
-  intro used
-  obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp used
-  have fix : phaseHost (base 719)=base 719 := by decide +kernel
-  exact free (phaseHost.injective (eq.trans fix.symm) ▸ hq)
 
 theorem endpoint_rebind_run (P : Program) (s : State) (m : List Bool)
     (before : ∀q∈[base 718,base 2409,base 719,base 771],s.basis q=false)
@@ -24579,26 +24415,6 @@ theorem endpoint_hosts_free (q : Nat) (hq : q=771 ∨ q=2409) :
       OwnPlusEndpoint.canonT,HalfFieldOB5.canonT,HalfField5.canonT,HalfField.canonT] using
       placed_converter_free _ q hq support.2
 
-private theorem endpoint_free (P : Program) (q pre : Wire)
-    (mapped : endpointBorrow pre=q) (free : pre∉wires P) :
-    q∉wires (renameProgram endpointBorrow P) := by
-  rw [renameProgram_support]
-  intro used
-  obtain ⟨a,ha,eq⟩ := Finset.mem_image.mp used
-  exact free (endpointBorrow.injective (eq.trans mapped.symm) ▸ ha)
-
-                                                  
-                                                                                          
-
-                                                
-                                                                                          
-
-theorem center_719_free : base 719∉wires center :=
-  endpoint_free _ _ (base 771) (by decide +kernel) (endpoint_hosts_free 771 (by simp)).1
-
-theorem canon_719_free : base 719∉wires canon :=
-  endpoint_free _ _ (base 771) (by decide +kernel) (endpoint_hosts_free 771 (by simp)).2
-
 private theorem origin_endpoint_clean (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
     (q : Nat) (hq : q=718 ∨ q=719 ∨ q=2409) : origin (base q)=false := by
   rcases hq with rfl|rfl|rfl
@@ -25859,44 +25675,6 @@ theorem rawEnd_support (divide : Bool) :
   exact Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _)
     (endHalf_wires divide)) (Finset.Subset.refl _)
 
-theorem rawEnd_719_free (divide : Bool) : base 719∉wires (rawEnd divide) := by
-  intro used
-  exact (Finset.mem_erase.mp (rawEnd_support divide used)).1 rfl
-
-theorem endPacket_719_free (divide : Bool) : base 719∉wires (endPacket divide) := by
-  rw [endPacket,renameProgram_support]
-  intro used
-  obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp used
-  have fix : shifted Placement5.pi0 (base 719)=base 719 := by decide +kernel
-  exact rawEnd_719_free divide ((shifted Placement5.pi0).injective (eq.trans fix.symm) ▸ hq)
-
-                                                                                    
-                                                                  
-                                                                              
-                                                                                                 
-                                                                      
-                                                                                                 
-                                          
-                                                           
-                                                              
-                                      
-            
-                                              
-                                                                               
-                                                                           
-
-                                          
-                                                                                                                   
-                                                                                                 
-                                                                              
-                                 
-                            
-
-
-
-
-
-
 theorem endPacket_physical (divide : Bool) : GatePhysical (endPacket divide) :=
   gatePhysical_rename _ (shifted Placement5.pi0).injective _
     (ControlLoan1589.loanWindow_physical _ _ _ _ (by decide +kernel)
@@ -26288,9 +26066,6 @@ theorem endPacket760_support (divide : Bool) :
     wires (endPacket760 divide)⊆insert (base 717) ((wires (Rolling1588Lifetime.endPacket divide)).erase (base 760)) :=
   swap_support _ _ _ (endPacket_717_free divide)
 
-theorem endPacket760_free (divide : Bool) : base 760∉wires (endPacket760 divide) :=
-  swap_free _ _ _ (endPacket_717_free divide)
-
 /-- Same hypotheses as `Rolling1588Lifetime.canon_run_eq`. -/
 theorem canon760_run_eq {isA : Bool} (origin : BasisState)
     (ctx : FrontierReplay1591.Context origin)
@@ -26348,23 +26123,6 @@ theorem canon760_support :
 theorem center760_support :
     wires center760⊆insert (base 772) ((wires Rolling1588Lifetime.center).erase (base 760)) :=
   swap_support _ _ _ center_772_free
-
-theorem canon760_free : base 760∉wires canon760 := swap_free _ _ _ canon_772_free
-theorem center760_free : base 760∉wires center760 := swap_free _ _ _ center_772_free
-
-/-- The 719/718 retirements survive (host 717/772 differ from both). -/
-theorem endPacket760_719_free (divide : Bool) : base 719∉wires (endPacket760 divide) :=
-  swap_other_free _ _ _ _ (by decide) (by decide) (Rolling1588Lifetime.endPacket_719_free divide)
-
-
-theorem canon760_719_free : base 719∉wires canon760 :=
-  swap_other_free _ _ _ _ (by decide) (by decide) Rolling1588Lifetime.canon_719_free
-theorem center760_719_free : base 719∉wires center760 :=
-  swap_other_free _ _ _ _ (by decide) (by decide) Rolling1588Lifetime.center_719_free
-
-
-
-
 
 end ECDSAAdd.Entrant.R2SqEp760
 end -- R2 endpoints
@@ -27728,18 +27486,6 @@ theorem exitFieldHosted_free (i : Nat) (hi : i∈FrontierEntry1591Callers.logica
     base i∉wires exitFieldHosted :=
   fun used => ControlLoan1589.exitFieldHosted_free i hi (exitFieldHosted_old_support used)
 
-theorem entryFieldHosted_768_free : base 768∉wires entryFieldHosted :=
-  fun used => ControlLoan1589.entryFieldHosted_768_free (entryFieldHosted_old_support used)
-
-theorem exitFieldHosted_768_free : base 768∉wires exitFieldHosted :=
-  fun used => ControlLoan1589.exitFieldHosted_768_free (exitFieldHosted_old_support used)
-
-theorem entryFieldHosted_718_free : base 718∉wires entryFieldHosted :=
-  fun used => ControlLoan1589.entryFieldHosted_718_free (entryFieldHosted_old_support used)
-
-theorem exitFieldHosted_718_free : base 718∉wires exitFieldHosted :=
-  fun used => ControlLoan1589.exitFieldHosted_718_free (exitFieldHosted_old_support used)
-
 private theorem raw_free_extra (P Q : Program) (sub : wires P⊆wires Q∪{base 2409})
     (q : Wire) (away : q≠base 2409) (off : q∉wires Q) : q∉wires P := by
   intro used
@@ -27799,482 +27545,6 @@ theorem exitFieldHosted_work_free : ∀q∈FrontierEntry1591Native.workSites,
     List.not_mem_nil,or_false] at member
   rcases member with rfl|rfl|rfl
   all_goals exact exitFieldHosted_free _ (by simp [FrontierEntry1591Callers.logicalOmissions])
-
-private theorem selected_free (source flag q : Wire) (P : Program)
-    (sourceAway : q≠source) (flagAway : q≠flag) (free : q∉wires P) :
-    q∉wires (SW.selW source flag P) := by
-  simpa [SW.selW,wires_append,wires,Instr.wires,correctionWires,
-    sourceAway,flagAway] using free
-
-private theorem swap_719_free : base 719∉wires FrontierSW1591.swapBody := by
-  intro used
-  have member := swapRegisters_wires (base 2409) (balancedSharedPorts base (base 2409)).r
-    (balancedSharedPorts base (base 2409)).y
-    (by simp [balancedSharedPorts_r,balancedSharedPorts_y,wireBlock]) used
-  simp only [List.mem_toFinset,List.mem_cons,List.mem_append,balancedSharedPorts_r,
-    balancedSharedPorts_y,wireBlock,List.mem_map,List.mem_range'_1,base_injective.eq_iff] at member
-  omega
-
-private theorem halfWindow_719_free (divide : Bool) (j active hole : Nat)
-    (hj : j<102) (ha : active<5) (hh : hole<5) : base 719∉wires (halfWindow divide j active hole) := by
-  let P := R2Life760.half760 divide
-  let rebound := renameProgram (Equiv.swap (base 719) (s j hole)) P
-  have noHole : s j hole∉wires P := half760_history_free divide _ (Or.inr ⟨by omega,by omega⟩)
-  have no719 : base 719∉wires rebound :=
-    rename_free _ (Equiv.swap (base 719) (s j hole)).injective P (s j hole) (base 719)
-      (Equiv.swap_apply_right _ _) noHole
-  have awayG : base 719≠g j active := HostOB5.host_ne _ _ (by omega)
-  have awayC : base 719≠packetCarry j := HostOB5.host_ne _ _ (by omega)
-  have fixed : Equiv.swap (packetCarry j) (g j active) (base 719)=base 719 :=
-    Equiv.swap_apply_of_ne_of_ne awayC awayG
-  have mid := rename_free _ (Equiv.swap (packetCarry j) (g j active)).injective rebound
-    (base 719) (base 719) fixed no719
-  intro used
-  rcases Finset.mem_union.mp
-      (ControlLoan1589.loanWindow_support (g j active) (base 2409) (packetCarry j) rebound used)
-      with edge|body
-  · simp only [Finset.mem_insert,Finset.mem_singleton] at edge
-    exact edge.elim awayG (by decide)
-  · exact mid (by simpa only [renameProgram_support] using body)
-
-private theorem cell_719_free (divide : Bool) (j active hole : Nat)
-    (hj : j<102) (ha : active<5) (hh : hole<5) : base 719∉wires (cell divide j active hole) := by
-  have half := halfWindow_719_free divide j active hole hj ha hh
-  have swap := selected_free (s j active) (base 2409) (base 719) FrontierSW1591.swapBody
-    (HostOB5.host_ne _ _ (by omega)) (by decide) swap_719_free
-  cases divide <;> simp only [cell,Bool.false_eq_true,if_false,if_true,wires_append,
-    Finset.mem_union,not_or]
-  · exact ⟨swap,half⟩
-  · exact ⟨half,swap⟩
-
-private theorem onPacket_719_free (j : Nat) (hj : j<102) (P : Program)
-    (support : wires P⊆Finset.range 10) : base 719∉wires (onPacket j P) :=
-  fun used => codec_not j 719 hj (by omega)
-    (onPacket_support_into j P support _ (Finset.Subset.refl _) used)
-
-private theorem basePacket_719_free (divide : Bool) (j : Nat) (hj : j<102) :
-    base 719∉wires (basePacket divide j) := by
-  have opening := onPacket_719_free j hj stageOpen stageOpen_support
-  have closing := onPacket_719_free j hj stageClose stageClose_support
-  have transfer (d : Bool) (k : Nat) (hk : k<2) :=
-    onPacket_719_free j hj (stageTransition d k) (stageTransition_support d k hk)
-  have cellAt (k : Nat) (hk : k<5) := cell_719_free divide j k 2 hj hk (by decide)
-  cases divide <;> simp only [basePacket,Bool.false_eq_true,if_false,if_true,wires_append,
-    Finset.mem_union,not_or]
-  all_goals repeat' apply And.intro
-  all_goals first
-    | exact opening
-    | exact closing
-    | exact transfer false 0 (by decide)
-    | exact transfer false 1 (by decide)
-    | exact transfer true 0 (by decide)
-    | exact transfer true 1 (by decide)
-    | exact cellAt 3 (by decide)
-    | exact cellAt 4 (by decide)
-
-private theorem packet_719_free (divide : Bool) (j : Nat) (hj : j<102) :
-    base 719∉wires (packet divide j) :=
-  rename_free _ (shifted (Placement5.pi j)).injective _ _ _
-    (by rw [shifted_base,Placement5.pi_outside j 719 hj];
-        unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion;omega)
-    (basePacket_719_free divide j hj)
-
-private theorem groups_719_free (divide : Bool) (j n : Nat) (bound : j+n≤102) :
-    base 719∉wires (groups divide j n) := by
-  induction n generalizing j with
-  | zero => simp [groups,PacketSequence.program,wires]
-  | succ n ih =>
-    have head := packet_719_free divide j (by omega)
-    have rest := ih (j+1) (by omega)
-    cases divide <;> simp only [groups,PacketSequence.program,Bool.false_eq_true,if_false,
-      if_true,wires_append,Finset.mem_union,not_or] at rest ⊢
-    · exact ⟨rest,head⟩
-    · exact ⟨head,rest⟩
-
-private theorem firstBody_719_free (divide : Bool) : base 719∉wires (firstBody divide) := by
-  have code (a b c : Nat) (ha : a<5) (hb : b<5) (hc : c<5)
-      (P : Program) (support : wires P⊆Finset.range 6) : base 719∉wires (triple a b c P) :=
-    fun used => codec_not 0 719 (by decide) (by omega)
-      (triple_support_into a b c ha hb hc P support _ (Finset.Subset.refl _) used)
-  have cells : base 719∉wires (firstCells divide) := by
-    have half (k hole : Nat) (hk : k<5) (hh : hole<5) :=
-      cell_719_free divide 0 k hole (by decide) hk hh
-    cases divide <;> simp only [firstCells,Bool.false_eq_true,if_false,if_true,wires_append,
-      Finset.mem_union,not_or]
-    all_goals repeat' apply And.intro
-    all_goals first
-      | exact code 3 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 4 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 2 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 3 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 4 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 2 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 2 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 3 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 4 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact code 2 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact code 3 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact code 4 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact half 1 4 (by decide) (by decide)
-      | exact half 2 4 (by decide) (by decide)
-      | exact half 3 2 (by decide) (by decide)
-      | exact half 4 2 (by decide) (by decide)
-  cases divide
-  · simp only [firstBody,Bool.false_eq_true,if_false]
-    intro used
-    rcases Finset.mem_union.mp (firstJoint_sub used) with h|h
-    · exact cells h
-    · exact JointInverse1588.paddedD_free 719 (Or.inr (Or.inr (Or.inl rfl))) h
-  · simp only [firstBody,if_true]
-    intro used
-    rcases Finset.mem_union.mp (firstCellsJ_sub used) with h|h
-    · exact cells h
-    · exact JointForward1588.paddedGD_free 719 (Or.inr (Or.inr (Or.inl rfl))) h
-
-private theorem placedFirstPacket_719_free (divide : Bool) :
-    base 719∉wires (placedFirstPacket divide) := by
-  have body := G0CarryLoan5.avoids_other (base 1028) (base 0) (base 768) (base 719)
-    (firstBody divide) (by decide) (by decide) (by decide) (firstBody_719_free divide)
-  have firstCodec : base 719∉wires Prefix1590.firstDecode ∧
-      base 719∉wires Prefix1590.firstEncode := by
-    have off := codec_not 0 719 (by decide) (by omega)
-    have enc := (ParityCodec5New.first_mapped_support (History5.historyMap base 0)).1
-    have dec := (ParityCodec5New.first_mapped_support (History5.historyMap base 0)).2
-    have same : wires (NewHistory5.decode base 0)=wires (NewHistory5.encode base 0) := by
-      simp only [NewHistory5.decode,NewHistory5.encode,(ParityCodec5New.supportAt_exact _).1,
-        (ParityCodec5New.supportAt_exact _).2]
-    exact ⟨fun used => off (same ▸ dec ▸ used),fun used => off (enc ▸ used)⟩
-  have raw : base 719∉wires (Prefix1590.firstDecode++
-      G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide)++
-      Prefix1590.firstEncode) := by
-    simpa only [wires_append,Finset.mem_union,not_or] using
-      And.intro (And.intro firstCodec.1 body) firstCodec.2
-  have rawNew : base 719∉wires (firstCore divide) := fun used =>
-    raw (Rolling1588First.first_wires_of_mem _ _ (Rolling1588First.firstCore_mem divide) used)
-  have placed : base 719∉wires (firstPacket divide) :=
-    rename_free _ (shifted (Placement5.pi 0)).injective _ _ _ (by decide +kernel) rawNew
-  exact rename_free _ (OB5.sig_injective 511 (by decide)) _ _ _ (by decide +kernel) placed
-
-private theorem copy_719_free : base 719∉wires HalfFieldOB5.copyN := by
-  intro used
-  have member := copyRegister_wires_subset none (balancedSharedPorts base (base 2409)).r
-    (balancedSharedPorts base (base 2409)).y used
-  simp only [Option.toList_none,List.nil_append,List.mem_toFinset,List.mem_append,
-    balancedSharedPorts_r,balancedSharedPorts_y,wireBlock,List.mem_map,List.mem_range'_1,
-    base_injective.eq_iff] at member
-  omega
-
-private theorem entryTail_719_free : base 719∉wires entryTail := by
-  have logical : base 719∉wires (groups true 1 101++R2SqEp760.endPacket760 true) := by
-    simpa only [wires_append,Finset.mem_union,not_or] using
-      And.intro (groups_719_free true 1 101 (by decide)) (R2SqEp760.endPacket760_719_free true)
-  have placed := rename_free _ (OB5.sig_injective 511 (by decide)) _ (base 719) (base 719)
-    (by decide +kernel) logical
-  simpa only [entryTail,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro placed copy_719_free) R2SqEp760.canon760_719_free
-
-private theorem exitHead_719_free : base 719∉wires exitHead := by
-  have logical : base 719∉wires (R2SqEp760.endPacket760 false++groups false 1 101) := by
-    simpa only [wires_append,Finset.mem_union,not_or] using
-      And.intro (R2SqEp760.endPacket760_719_free false) (groups_719_free false 1 101 (by decide))
-  have placed := rename_free _ (OB5.sig_injective 511 (by decide)) _ (base 719) (base 719)
-    (by decide +kernel) logical
-  simpa only [exitHead,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro R2SqEp760.center760_719_free copy_719_free) placed
-
-private theorem entryField_719_free : base 719∉wires entryField := by
-  have pre : base 719∉wires FourScratchWindow.clearProgram := by
-    rw [FourScratchWindow.supports.2.1]; decide +kernel
-  have post : base 719∉wires FourScratchWindow.unprefix := by
-    rw [FourScratchWindow.supports.2.2]; decide +kernel
-  have tail := rename_free Prefix1590.borrow Prefix1590.borrow.injective _ (base 719) (base 719)
-    (by decide +kernel) entryTail_719_free
-  simpa only [entryField,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro (And.intro (placedFirstPacket_719_free true) pre) tail) post
-
-private theorem exitField_719_free : base 719∉wires exitField := by
-  have pre : base 719∉wires FourScratchWindow.clearProgram := by
-    rw [FourScratchWindow.supports.2.1]; decide +kernel
-  have post : base 719∉wires FourScratchWindow.unprefix := by
-    rw [FourScratchWindow.supports.2.2]; decide +kernel
-  have head := rename_free Prefix1590.borrow Prefix1590.borrow.injective _ (base 719) (base 719)
-    (by decide +kernel) exitHead_719_free
-  simpa only [exitField,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro (And.intro pre head) post) (placedFirstPacket_719_free false)
-
-private theorem hosted_719_free (P : Program) (free : base 719∉wires P) :
-    base 719∉wires (FrontierEntry1591Field.hosted P) := by
-  have middle := rename_free HostOB5.hostSwap HostOB5.hostSwap_injective P (base 719) (base 719)
-    (by decide +kernel) free
-  have edge : base 719∉wires [Instr.X (base 511)] := by simp [wires,Instr.wires,base]
-  simpa only [FrontierEntry1591Field.hosted,wires_append,Finset.mem_union,not_or] using
-    And.intro edge (And.intro middle edge)
-
-private theorem parity_719_free (P : Program) (free : base 719∉wires P) :
-    base 719∉wires (ParityField1591.program FrontierEntry1591Field.controls
-      FrontierEntry1591Field.work FrontierEntry1591Field.host P) := by
-  have noControls : base 719∉FrontierEntry1591Field.controls := by
-    intro used
-    obtain ⟨i,eq,bound⟩ := FrontierEntry1591Field.controls_index _ used
-    have same := base_injective eq
-    omega
-  have fixed : Equiv.swap FrontierEntry1591Field.work FrontierEntry1591Field.host (base 719)=base 719 := by
-    decide +kernel
-  intro used
-  rcases Finset.mem_union.mp (ParityField1591.support _ _ _ P used) with edge|body
-  · rcases Finset.mem_insert.mp edge with eq|member
-    · exact (by decide : base 719≠FrontierEntry1591Field.host) eq
-    · exact noControls (List.mem_toFinset.mp member)
-  · obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp body
-    exact free ((Equiv.swap FrontierEntry1591Field.work FrontierEntry1591Field.host).injective
-      (eq.trans fixed.symm) ▸ hq)
-
-theorem entryFieldHosted_719_free : base 719∉wires entryFieldHosted :=
-  parity_719_free _ (hosted_719_free _ entryField_719_free)
-
-theorem exitFieldHosted_719_free : base 719∉wires exitFieldHosted :=
-  parity_719_free _ (hosted_719_free _ exitField_719_free)
-
-/-! ### R2: the retired pool wire `base 760` (physical poolWire 760) is absent from both fields.
-Mirror of the `719` trail above; the generic halves use `R2Life760.half760`. -/
-
-private theorem swap_760_free : base 760∉wires FrontierSW1591.swapBody := by
-  intro used
-  have member := swapRegisters_wires (base 2409) (balancedSharedPorts base (base 2409)).r
-    (balancedSharedPorts base (base 2409)).y
-    (by simp [balancedSharedPorts_r,balancedSharedPorts_y,wireBlock]) used
-  simp only [List.mem_toFinset,List.mem_cons,List.mem_append,balancedSharedPorts_r,
-    balancedSharedPorts_y,wireBlock,List.mem_map,List.mem_range'_1,base_injective.eq_iff] at member
-  omega
-
-private theorem halfWindow_760_free (divide : Bool) (j active hole : Nat)
-    (hj : j<102) (ha : active<5) (hh : hole<5) : base 760∉wires (halfWindow divide j active hole) := by
-  let P := R2Life760.half760 divide
-  let rebound := renameProgram (Equiv.swap (base 719) (s j hole)) P
-  have fixHole : Equiv.swap (base 719) (s j hole) (base 760)=base 760 :=
-    Equiv.swap_apply_of_ne_of_ne (HostOB5.host_ne _ _ (by omega)) (HostOB5.host_ne _ _ (by omega))
-  have no760 : base 760∉wires rebound :=
-    rename_free _ (Equiv.swap (base 719) (s j hole)).injective P (base 760) (base 760)
-      fixHole (R2Life760.half760_free divide)
-  have awayG : base 760≠g j active := HostOB5.host_ne _ _ (by omega)
-  have awayC : base 760≠packetCarry j := HostOB5.host_ne _ _ (by omega)
-  have fixed : Equiv.swap (packetCarry j) (g j active) (base 760)=base 760 :=
-    Equiv.swap_apply_of_ne_of_ne awayC awayG
-  have mid := rename_free _ (Equiv.swap (packetCarry j) (g j active)).injective rebound
-    (base 760) (base 760) fixed no760
-  intro used
-  rcases Finset.mem_union.mp
-      (ControlLoan1589.loanWindow_support (g j active) (base 2409) (packetCarry j) rebound used)
-      with edge|body
-  · simp only [Finset.mem_insert,Finset.mem_singleton] at edge
-    exact edge.elim awayG (by decide)
-  · exact mid (by simpa only [renameProgram_support] using body)
-
-private theorem cell_760_free (divide : Bool) (j active hole : Nat)
-    (hj : j<102) (ha : active<5) (hh : hole<5) : base 760∉wires (cell divide j active hole) := by
-  have half := halfWindow_760_free divide j active hole hj ha hh
-  have swap := selected_free (s j active) (base 2409) (base 760) FrontierSW1591.swapBody
-    (HostOB5.host_ne _ _ (by omega)) (by decide) swap_760_free
-  cases divide <;> simp only [cell,Bool.false_eq_true,if_false,if_true,wires_append,
-    Finset.mem_union,not_or]
-  · exact ⟨swap,half⟩
-  · exact ⟨half,swap⟩
-
-private theorem onPacket_760_free (j : Nat) (hj : j<102) (P : Program)
-    (support : wires P⊆Finset.range 10) : base 760∉wires (onPacket j P) :=
-  fun used => codec_not j 760 hj (by omega)
-    (onPacket_support_into j P support _ (Finset.Subset.refl _) used)
-
-private theorem basePacket_760_free (divide : Bool) (j : Nat) (hj : j<102) :
-    base 760∉wires (basePacket divide j) := by
-  have opening := onPacket_760_free j hj stageOpen stageOpen_support
-  have closing := onPacket_760_free j hj stageClose stageClose_support
-  have transfer (d : Bool) (k : Nat) (hk : k<2) :=
-    onPacket_760_free j hj (stageTransition d k) (stageTransition_support d k hk)
-  have cellAt (k : Nat) (hk : k<5) := cell_760_free divide j k 2 hj hk (by decide)
-  cases divide <;> simp only [basePacket,Bool.false_eq_true,if_false,if_true,wires_append,
-    Finset.mem_union,not_or]
-  all_goals repeat' apply And.intro
-  all_goals first
-    | exact opening
-    | exact closing
-    | exact transfer false 0 (by decide)
-    | exact transfer false 1 (by decide)
-    | exact transfer true 0 (by decide)
-    | exact transfer true 1 (by decide)
-    | exact cellAt 3 (by decide)
-    | exact cellAt 4 (by decide)
-
-private theorem packet_760_free (divide : Bool) (j : Nat) (hj : j<102) :
-    base 760∉wires (packet divide j) :=
-  rename_free _ (shifted (Placement5.pi j)).injective _ _ _
-    (by rw [shifted_base,Placement5.pi_outside j 760 hj];
-        unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion;omega)
-    (basePacket_760_free divide j hj)
-
-private theorem groups_760_free (divide : Bool) (j n : Nat) (bound : j+n≤102) :
-    base 760∉wires (groups divide j n) := by
-  induction n generalizing j with
-  | zero => simp [groups,PacketSequence.program,wires]
-  | succ n ih =>
-    have head := packet_760_free divide j (by omega)
-    have rest := ih (j+1) (by omega)
-    cases divide <;> simp only [groups,PacketSequence.program,Bool.false_eq_true,if_false,
-      if_true,wires_append,Finset.mem_union,not_or] at rest ⊢
-    · exact ⟨rest,head⟩
-    · exact ⟨head,rest⟩
-
-private theorem firstBody_760_free (divide : Bool) : base 760∉wires (firstBody divide) := by
-  have code (a b c : Nat) (ha : a<5) (hb : b<5) (hc : c<5)
-      (P : Program) (support : wires P⊆Finset.range 6) : base 760∉wires (triple a b c P) :=
-    fun used => codec_not 0 760 (by decide) (by omega)
-      (triple_support_into a b c ha hb hc P support _ (Finset.Subset.refl _) used)
-  have cells : base 760∉wires (firstCells divide) := by
-    have half (k hole : Nat) (hk : k<5) (hh : hole<5) :=
-      cell_760_free divide 0 k hole (by decide) hk hh
-    cases divide <;> simp only [firstCells,Bool.false_eq_true,if_false,if_true,wires_append,
-      Finset.mem_union,not_or]
-    all_goals repeat' apply And.intro
-    all_goals first
-      | exact code 3 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 4 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 2 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 3 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 4 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 2 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 2 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 3 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 4 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
-      | exact code 1 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact code 2 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact code 3 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact code 4 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
-      | exact half 1 4 (by decide) (by decide)
-      | exact half 2 4 (by decide) (by decide)
-      | exact half 3 2 (by decide) (by decide)
-      | exact half 4 2 (by decide) (by decide)
-  cases divide
-  · simp only [firstBody,Bool.false_eq_true,if_false]
-    intro used
-    rcases Finset.mem_union.mp (firstJoint_sub used) with h|h
-    · exact cells h
-    · exact JointInverse1588.paddedD_760_free h
-  · simp only [firstBody,if_true]
-    intro used
-    rcases Finset.mem_union.mp (firstCellsJ_sub used) with h|h
-    · exact cells h
-    · exact JointForward1588.paddedGD_760_free h
-
-private theorem placedFirstPacket_760_free (divide : Bool) :
-    base 760∉wires (placedFirstPacket divide) := by
-  have body := G0CarryLoan5.avoids_other (base 1028) (base 0) (base 768) (base 760)
-    (firstBody divide) (by decide) (by decide) (by decide) (firstBody_760_free divide)
-  have firstCodec : base 760∉wires Prefix1590.firstDecode ∧
-      base 760∉wires Prefix1590.firstEncode := by
-    have off := codec_not 0 760 (by decide) (by omega)
-    have enc := (ParityCodec5New.first_mapped_support (History5.historyMap base 0)).1
-    have dec := (ParityCodec5New.first_mapped_support (History5.historyMap base 0)).2
-    have same : wires (NewHistory5.decode base 0)=wires (NewHistory5.encode base 0) := by
-      simp only [NewHistory5.decode,NewHistory5.encode,(ParityCodec5New.supportAt_exact _).1,
-        (ParityCodec5New.supportAt_exact _).2]
-    exact ⟨fun used => off (same ▸ dec ▸ used),fun used => off (enc ▸ used)⟩
-  have raw : base 760∉wires (Prefix1590.firstDecode++
-      G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide)++
-      Prefix1590.firstEncode) := by
-    simpa only [wires_append,Finset.mem_union,not_or] using
-      And.intro (And.intro firstCodec.1 body) firstCodec.2
-  have rawNew : base 760∉wires (firstCore divide) := fun used =>
-    raw (Rolling1588First.first_wires_of_mem _ _ (Rolling1588First.firstCore_mem divide) used)
-  have placed : base 760∉wires (firstPacket divide) :=
-    rename_free _ (shifted (Placement5.pi 0)).injective _ _ _ (by decide +kernel) rawNew
-  exact rename_free _ (OB5.sig_injective 511 (by decide)) _ _ _ (by decide +kernel) placed
-
-private theorem copy_760_free : base 760∉wires HalfFieldOB5.copyN := by
-  intro used
-  have member := copyRegister_wires_subset none (balancedSharedPorts base (base 2409)).r
-    (balancedSharedPorts base (base 2409)).y used
-  simp only [Option.toList_none,List.nil_append,List.mem_toFinset,List.mem_append,
-    balancedSharedPorts_r,balancedSharedPorts_y,wireBlock,List.mem_map,List.mem_range'_1,
-    base_injective.eq_iff] at member
-  omega
-
-private theorem entryTail_760_free : base 760∉wires entryTail := by
-  have logical : base 760∉wires (groups true 1 101++R2SqEp760.endPacket760 true) := by
-    simpa only [wires_append,Finset.mem_union,not_or] using
-      And.intro (groups_760_free true 1 101 (by decide)) (R2SqEp760.endPacket760_free true)
-  have placed := rename_free _ (OB5.sig_injective 511 (by decide)) _ (base 760) (base 760)
-    (by decide +kernel) logical
-  simpa only [entryTail,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro placed copy_760_free) R2SqEp760.canon760_free
-
-private theorem exitHead_760_free : base 760∉wires exitHead := by
-  have logical : base 760∉wires (R2SqEp760.endPacket760 false++groups false 1 101) := by
-    simpa only [wires_append,Finset.mem_union,not_or] using
-      And.intro (R2SqEp760.endPacket760_free false) (groups_760_free false 1 101 (by decide))
-  have placed := rename_free _ (OB5.sig_injective 511 (by decide)) _ (base 760) (base 760)
-    (by decide +kernel) logical
-  simpa only [exitHead,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro R2SqEp760.center760_free copy_760_free) placed
-
-private theorem entryField_760_free : base 760∉wires entryField := by
-  have pre : base 760∉wires FourScratchWindow.clearProgram := by
-    rw [FourScratchWindow.supports.2.1]; decide +kernel
-  have post : base 760∉wires FourScratchWindow.unprefix := by
-    rw [FourScratchWindow.supports.2.2]; decide +kernel
-  have tail := rename_free Prefix1590.borrow Prefix1590.borrow.injective _ (base 760) (base 760)
-    (by decide +kernel) entryTail_760_free
-  simpa only [entryField,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro (And.intro (placedFirstPacket_760_free true) pre) tail) post
-
-private theorem exitField_760_free : base 760∉wires exitField := by
-  have pre : base 760∉wires FourScratchWindow.clearProgram := by
-    rw [FourScratchWindow.supports.2.1]; decide +kernel
-  have post : base 760∉wires FourScratchWindow.unprefix := by
-    rw [FourScratchWindow.supports.2.2]; decide +kernel
-  have head := rename_free Prefix1590.borrow Prefix1590.borrow.injective _ (base 760) (base 760)
-    (by decide +kernel) exitHead_760_free
-  simpa only [exitField,wires_append,Finset.mem_union,not_or] using
-    And.intro (And.intro (And.intro pre head) post) (placedFirstPacket_760_free false)
-
-private theorem hosted_760_free (P : Program) (free : base 760∉wires P) :
-    base 760∉wires (FrontierEntry1591Field.hosted P) := by
-  have middle := rename_free HostOB5.hostSwap HostOB5.hostSwap_injective P (base 760) (base 760)
-    (by decide +kernel) free
-  have edge : base 760∉wires [Instr.X (base 511)] := by simp [wires,Instr.wires,base]
-  simpa only [FrontierEntry1591Field.hosted,wires_append,Finset.mem_union,not_or] using
-    And.intro edge (And.intro middle edge)
-
-private theorem parity_760_free (P : Program) (free : base 760∉wires P) :
-    base 760∉wires (ParityField1591.program FrontierEntry1591Field.controls
-      FrontierEntry1591Field.work FrontierEntry1591Field.host P) := by
-  have noControls : base 760∉FrontierEntry1591Field.controls := by
-    intro used
-    obtain ⟨i,eq,bound⟩ := FrontierEntry1591Field.controls_index _ used
-    have same := base_injective eq
-    omega
-  have fixed : Equiv.swap FrontierEntry1591Field.work FrontierEntry1591Field.host (base 760)=base 760 := by
-    decide +kernel
-  intro used
-  rcases Finset.mem_union.mp (ParityField1591.support _ _ _ P used) with edge|body
-  · rcases Finset.mem_insert.mp edge with eq|member
-    · exact (by decide : base 760≠FrontierEntry1591Field.host) eq
-    · exact noControls (List.mem_toFinset.mp member)
-  · obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp body
-    exact free ((Equiv.swap FrontierEntry1591Field.work FrontierEntry1591Field.host).injective
-      (eq.trans fixed.symm) ▸ hq)
-
-theorem entryFieldHosted_760_free : base 760∉wires entryFieldHosted :=
-  parity_760_free _ (hosted_760_free _ entryField_760_free)
-
-theorem exitFieldHosted_760_free : base 760∉wires exitFieldHosted :=
-  parity_760_free _ (hosted_760_free _ exitField_760_free)
 
 private theorem unrename_physical (f : Wire→Wire) (P : Program)
     (physical : GatePhysical (renameProgram f P)) : GatePhysical P := by
@@ -31041,94 +30311,6 @@ theorem last_hosts_free (isA : Bool) (q : Wire) (hq : q∈phaseHosts) :
   · exact (raw_extra_free 722 (by simp)).2
   · exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
 
-theorem phase_first_719_free (isA : Bool) :
-    base 719∉wires (renameProgram phaseHost (firstPhase isA)) := by
-  apply phase_719_free
-  rw [first_support_eq]
-  exact FrontierEntry1591Kernel.first_host_free _ (by simp [FrontierEntry1591Native.hostSites])
-
-theorem phase_last_719_free (isA : Bool) :
-    base 719∉wires (renameProgram phaseHost (lastPhase isA)) := by
-  apply phase_719_free
-  apply last_free_of_old
-  exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
-
-/-! R2: the native, integer and clearing passes never touch `base 760`. -/
-private theorem native_760_free : base 760∉FrontierEntry1591Native.sites base := by
-  intro h
-  simp only [FrontierEntry1591Native.sites,Finset.mem_erase,Finset.mem_insert,
-    List.mem_toFinset,NativeFirstDirect.prefixSites,List.mem_append,wireBlock,
-    List.mem_map,List.mem_range'_1,List.mem_cons,List.not_mem_nil,or_false,
-    base_injective.eq_iff] at h
-  simp only [exists_eq_right] at h
-  omega
-
-private theorem integer_760_free : base 760∉OB5.integerSites := by
-  intro h
-  obtain ⟨j,e,hj⟩ := (OB5.integerSites_mem _).mp h
-  have eq := base_injective e
-  omega
-
-private theorem clear_760_free : base 760∉wires (skywalkArithmeticClear base) := by
-  simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-
-private theorem raw_760_free :
-    base 760∉wires FrontierEntry1591Kernel.firstPhase ∧
-    base 760∉wires FrontierEntry1591Kernel.lastPhase := by
-  have native := FrontierEntry1591Native.support base base_pool_nodup
-  have forward : base 760∉wires NewStackOB5.stackForwardT := fun h =>
-    integer_760_free (StackOB5.forward_support (NewStackOB5.stackForwardT_subset h))
-  have reverse : base 760∉wires NewStackOB5.stackReverseT := fun h =>
-    integer_760_free (StackOB5.reverse_support (NewStackOB5.stackReverseT_subset h))
-  simp only [FrontierEntry1591Kernel.firstPhase,FrontierEntry1591Kernel.lastPhase,
-    wires_append,Finset.mem_union,not_or]
-  exact ⟨⟨fun h=>native_760_free (native.1 h),forward,clear_760_free⟩,
-    clear_760_free,reverse,fun h=>native_760_free (native.2 h)⟩
-
-theorem phase_760_free (P : Program) (free : base 760∉wires P) :
-    base 760∉wires (renameProgram phaseHost P) := by
-  rw [renameProgram_support]
-  intro used
-  obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp used
-  have fix : phaseHost (base 760)=base 760 := by decide +kernel
-  exact free (phaseHost.injective (eq.trans fix.symm) ▸ hq)
-
-theorem phase_first_760_free (isA : Bool) :
-    base 760∉wires (renameProgram phaseHost (firstPhase isA)) := by
-  apply phase_760_free
-  rw [first_support_eq]
-  exact raw_760_free.1
-
-theorem phase_last_760_free (isA : Bool) :
-    base 760∉wires (renameProgram phaseHost (lastPhase isA)) := by
-  apply phase_760_free
-  apply last_free_of_old
-  exact raw_760_free.2
-
-                                                                        
-                                                                                  
-                                                                            
-                                               
-                              
-              
-                                                
-                                                               
-            
-                                                                               
-                                    
-                            
-                                                                                
-                                                                                
-                                                                                
-
-                                                                                  
-                                                         
-                                          
-
-                                                                                 
-                                                        
-                                         
-
 private theorem phase_sites_split :
     phaseSites=FrontierEntry1591Native.workSites∪phaseHosts := by
   ext q
@@ -33081,33 +32263,6 @@ theorem last_hosted_support (isA : Bool) :
   (last_hosted_support_subset_old isA).trans (Finset.union_subset
     (FrontierEntry1591Native.hosted_support_logical _ FrontierEntry1591Kernel.last_support) extra_support)
 
-private theorem extra_free (i : Nat) (hi : i∈logicalOmissions) :
-    base i∉({base 721,base 722} : Finset Wire) := by
-  simp only [logicalOmissions,List.mem_cons,List.not_mem_nil,or_false] at hi
-  rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide +kernel
-
-theorem first_hosted_free (isA : Bool) (i : Nat) (hi : i∈logicalOmissions) :
-    base i∉wires (renameProgram phaseHost (firstPhase isA)) := by
-  intro used
-  rcases Finset.mem_union.mp (first_hosted_support_subset_old isA used) with old|extra
-  · apply FrontierEntry1591Kernel.entry_free i hi
-    change base i∈wires (FrontierEntry1591Native.hosted FrontierEntry1591Kernel.firstPhase++
-      (FrontierEntry1591Field.entry++FrontierEntry1591Native.hosted FrontierEntry1591Kernel.lastPhase))
-    rw [wires_append]
-    exact Finset.mem_union_left _ old
-  · exact extra_free i hi extra
-
-theorem last_hosted_free (isA : Bool) (i : Nat) (hi : i∈logicalOmissions) :
-    base i∉wires (renameProgram phaseHost (lastPhase isA)) := by
-  intro used
-  rcases Finset.mem_union.mp (last_hosted_support_subset_old isA used) with old|extra
-  · apply FrontierEntry1591Kernel.entry_free i hi
-    change base i∈wires (FrontierEntry1591Native.hosted FrontierEntry1591Kernel.firstPhase++
-      (FrontierEntry1591Field.entry++FrontierEntry1591Native.hosted FrontierEntry1591Kernel.lastPhase))
-    rw [wires_append,wires_append]
-    exact Finset.mem_union_right _ (Finset.mem_union_right _ old)
-  · exact extra_free i hi extra
-
 end ECDSAAdd.Entrant.Rolling1588Lifetime
 end -- original module boundary
 
@@ -33204,113 +32359,6 @@ theorem exitKernel_physical : GatePhysical exitKernel := by
     And.intro (Rolling1588Lifetime.phase_physical _ (firstPhase_physical false))
       (And.intro exitFieldHosted_physical
         (Rolling1588Lifetime.phase_physical _ (lastPhase_physical true)))
-
-theorem entryKernel_free (i : Nat) (hi : i∈logicalOmissions) : base i∉wires entryKernel := by
-  simpa only [entryKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (Rolling1588Lifetime.first_hosted_free true i hi)
-      (And.intro (entryFieldHosted_free i hi) (Rolling1588Lifetime.last_hosted_free false i hi))
-
-theorem exitKernel_free (i : Nat) (hi : i∈logicalOmissions) : base i∉wires exitKernel := by
-  simpa only [exitKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (Rolling1588Lifetime.first_hosted_free false i hi)
-      (And.intro (exitFieldHosted_free i hi) (Rolling1588Lifetime.last_hosted_free true i hi))
-
-private theorem raw_768_free :
-    base 768∉wires FrontierEntry1591Kernel.firstPhase ∧
-      base 768∉wires FrontierEntry1591Kernel.lastPhase := by
-  have fixed : ControlLoan1589.phaseHost (base 768)=base 768 := by decide +kernel
-  constructor
-  · intro used
-    apply ControlLoan1589.entryKernel_768_free
-    change base 768∈wires (renameProgram ControlLoan1589.phaseHost FrontierEntry1591Kernel.firstPhase++
-      (ControlLoan1589.entryFieldHosted++
-        renameProgram ControlLoan1589.phaseHost FrontierEntry1591Kernel.lastPhase))
-    rw [wires_append]
-    apply Finset.mem_union_left
-    rw [renameProgram_support]
-    exact Finset.mem_image.mpr ⟨base 768,used,fixed⟩
-  · intro used
-    apply ControlLoan1589.entryKernel_768_free
-    change base 768∈wires (renameProgram ControlLoan1589.phaseHost FrontierEntry1591Kernel.firstPhase++
-      (ControlLoan1589.entryFieldHosted++
-        renameProgram ControlLoan1589.phaseHost FrontierEntry1591Kernel.lastPhase))
-    rw [wires_append,wires_append]
-    apply Finset.mem_union_right
-    apply Finset.mem_union_right
-    rw [renameProgram_support]
-    exact Finset.mem_image.mpr ⟨base 768,used,fixed⟩
-
-private theorem phase_free_of_raw (P : Program) (q : Wire)
-    (fixed : Rolling1588Lifetime.phaseHost q=q) (free : q∉wires P) :
-    q∉wires (renameProgram Rolling1588Lifetime.phaseHost P) := by
-  rw [renameProgram_support]
-  intro used
-  obtain ⟨a,ha,eq⟩ := Finset.mem_image.mp used
-  exact free (Rolling1588Lifetime.phaseHost.injective (eq.trans fixed.symm) ▸ ha)
-
-private theorem first_hosted_768_free (isA : Bool) :
-    base 768∉wires (renameProgram Rolling1588Lifetime.phaseHost (firstPhase isA)) := by
-  apply phase_free_of_raw _ _ (by decide +kernel)
-  rw [Rolling1588Lifetime.first_support_eq]
-  exact raw_768_free.1
-
-private theorem last_hosted_768_free (isA : Bool) :
-    base 768∉wires (renameProgram Rolling1588Lifetime.phaseHost (lastPhase isA)) := by
-  apply phase_free_of_raw _ _ (by decide +kernel)
-  apply Rolling1588Lifetime.last_free_of_old
-  exact raw_768_free.2
-
-private theorem first_hosted_718_free (isA : Bool) :
-    base 718∉wires (renameProgram Rolling1588Lifetime.phaseHost (firstPhase isA)) := by
-  apply phase_free_of_raw _ _ (by decide +kernel)
-  rw [Rolling1588Lifetime.first_support_eq]
-  exact FrontierEntry1591Kernel.first_host_free _ (by simp [FrontierEntry1591Native.hostSites])
-
-private theorem last_hosted_718_free (isA : Bool) :
-    base 718∉wires (renameProgram Rolling1588Lifetime.phaseHost (lastPhase isA)) := by
-  apply phase_free_of_raw _ _ (by decide +kernel)
-  apply Rolling1588Lifetime.last_free_of_old
-  exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
-
-theorem entryKernel_768_free : base 768∉wires entryKernel := by
-  simpa only [entryKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (first_hosted_768_free true)
-      (And.intro entryFieldHosted_768_free (last_hosted_768_free false))
-
-theorem exitKernel_768_free : base 768∉wires exitKernel := by
-  simpa only [exitKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (first_hosted_768_free false)
-      (And.intro exitFieldHosted_768_free (last_hosted_768_free true))
-
-theorem entryKernel_718_free : base 718∉wires entryKernel := by
-  simpa only [entryKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (first_hosted_718_free true)
-      (And.intro entryFieldHosted_718_free (last_hosted_718_free false))
-
-theorem exitKernel_718_free : base 718∉wires exitKernel := by
-  simpa only [exitKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (first_hosted_718_free false)
-      (And.intro exitFieldHosted_718_free (last_hosted_718_free true))
-
-theorem entryKernel_719_free : base 719∉wires entryKernel := by
-  simpa only [entryKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (Rolling1588Lifetime.phase_first_719_free true)
-      (And.intro entryFieldHosted_719_free (Rolling1588Lifetime.phase_last_719_free false))
-
-theorem exitKernel_719_free : base 719∉wires exitKernel := by
-  simpa only [exitKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (Rolling1588Lifetime.phase_first_719_free false)
-      (And.intro exitFieldHosted_719_free (Rolling1588Lifetime.phase_last_719_free true))
-
-theorem entryKernel_760_free : base 760∉wires entryKernel := by
-  simpa only [entryKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (Rolling1588Lifetime.phase_first_760_free true)
-      (And.intro entryFieldHosted_760_free (Rolling1588Lifetime.phase_last_760_free false))
-
-theorem exitKernel_760_free : base 760∉wires exitKernel := by
-  simpa only [exitKernel,wires_append,Finset.mem_union,not_or] using
-    And.intro (Rolling1588Lifetime.phase_first_760_free false)
-      (And.intro exitFieldHosted_760_free (Rolling1588Lifetime.phase_last_760_free true))
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -36301,245 +35349,6 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   BalancedField History5 EntryFuse EntryFuseFinite FiniteHostStack FiniteHostFusion
   FiniteHostFive GenericQ5Geometry ExitFusionResearch
 attribute [local irreducible] wires run toffoliCount measurementCount gateSlots
-
-theorem qubits_thirteen (P : Program)
-    (sub : ioWires ∪ wires P ⊆ (WrapperOB5.sites layout).toFinset)
-    (old : ∀ k ∈ ([1400,1800,766,765,767,1540,770,1285,1286] : List Nat),
-      layout.core.poolWire k ∉ wires P)
-    (old769 : layout.core.poolWire 769 ∉ wires P)
-    (old768 : layout.core.poolWire 768 ∉ wires P)
-    (old718 : layout.core.poolWire 718 ∉ wires P)
-    (extra719 : layout.core.poolWire 719 ∉ wires P) : qubits P ≤ 1588 := by
-  let q := layout.core.poolWire 719
-  let witness : Program := [.X q] ++ P
-  have qm : q∈(WrapperOB5.sites layout).toFinset := by
-    apply List.mem_toFinset.mpr
-    simp only [q,WrapperOB5.sites,List.mem_append,List.mem_singleton,
-      wireBlock,List.mem_map,List.mem_range'_1]
-    exact Or.inl (Or.inl (Or.inr ⟨719,by omega,rfl⟩))
-  have ww : wires witness=insert q (wires P) := by
-    unfold witness
-    rw [wires_append]
-    simp only [wires,Instr.wires,Finset.union_empty,Finset.singleton_union]
-  have ws : ioWires∪wires witness⊆(WrapperOB5.sites layout).toFinset := by
-    rw [ww]
-    intro x hx
-    rcases Finset.mem_union.mp hx with hx|hx
-    · exact sub (Finset.mem_union.mpr (Or.inl hx))
-    · rcases Finset.mem_insert.mp hx with rfl|hx
-      · exact qm
-      · exact sub (Finset.mem_union.mpr (Or.inr hx))
-  have wf : ∀k∈([1400,1800,766,765,767,1540,770,1285,1286] : List Nat),
-      layout.core.poolWire k∉wires witness := by
-    intro k hk
-    rw [ww]
-    intro used
-    rcases Finset.mem_insert.mp used with same|used
-    · have kb : k<2613 := by
-        simp only [List.mem_cons,List.not_mem_nil,or_false] at hk
-        omega
-      have kn : k≠719 := by
-        simp only [List.mem_cons,List.not_mem_nil,or_false] at hk
-        omega
-      exact kn (pool_inj layout layout_widths layout_nodup k 719 kb (by omega) same)
-    · exact old k hk used
-  have oldw (k : Nat) (hk : k<2613) (kn : k≠719)
-      (free : layout.core.poolWire k∉wires P) : layout.core.poolWire k∉wires witness := by
-    rw [ww]
-    intro used
-    rcases Finset.mem_insert.mp used with same|used
-    · exact kn (pool_inj layout layout_widths layout_nodup k 719 hk (by omega) same)
-    · exact free used
-  have bound:=ControlLoan1589Inventory.qubits_twelve witness ws wf
-    (oldw 769 (by omega) (by omega) old769) (oldw 768 (by omega) (by omega) old768)
-    (oldw 718 (by omega) (by omega) old718)
-  have fresh : q∉ioWires∪wires P := by
-    intro used
-    rcases Finset.mem_union.mp used with used|used
-    · exact FiniteHostStack.io_avoids_pool 719 (by omega) used
-    · exact extra719 used
-  have sets : ioWires∪wires witness=insert q (ioWires∪wires P) := by
-    rw [ww,Finset.union_insert]
-  change (ioWires∪wires witness).card≤1589 at bound
-  rw [sets,Finset.card_insert_of_notMem fresh] at bound
-  change (ioWires∪wires P).card≤1588
-  omega
-
-                                        
-                                                            
-                                                                             
-                                               
-                                               
-                                                                         
-                                                                  
-                                                                              
-                                                               
-                                                                           
-                                           
-                                                                                               
-                                                                                     
-              
-                                                                                      
-                     
-                                                                   
-                                                                    
-                                                                                      
-                                               
-                                                                                     
-                                      
-                                                                                    
-                                                    
-                                                                                       
-                                     
-                                                                   
-                                                                                     
-                                  
-                                                                                             
-         
-                             
-              
-                                                             
-                                                      
-                                
-                                                                              
-                                                         
-                                                                            
-                                                                    
-                                                                   
-                                                                   
-                                                                   
-                                
-                                                                    
-                                         
-                                                                   
-                                                                    
-                                                                    
-                                                                 
-                                         
-                                         
-                                           
-
-/-- R2: with the retired carry `poolWire 760` also absent, the wrapped point uses 1587 qubits.
-Same witness argument as `qubits_thirteen`. -/
-theorem qubits_fourteen (P : Program)
-    (sub : ioWires ∪ wires P ⊆ (WrapperOB5.sites layout).toFinset)
-    (old : ∀ k ∈ ([1400,1800,766,765,767,1540,770,1285,1286] : List Nat),
-      layout.core.poolWire k ∉ wires P)
-    (old769 : layout.core.poolWire 769 ∉ wires P)
-    (old768 : layout.core.poolWire 768 ∉ wires P)
-    (old718 : layout.core.poolWire 718 ∉ wires P)
-    (old719 : layout.core.poolWire 719 ∉ wires P)
-    (extra760 : layout.core.poolWire 760 ∉ wires P) : qubits P ≤ 1587 := by
-  let q := layout.core.poolWire 760
-  let witness : Program := [.X q] ++ P
-  have qm : q∈(WrapperOB5.sites layout).toFinset := by
-    apply List.mem_toFinset.mpr
-    simp only [q,WrapperOB5.sites,List.mem_append,List.mem_singleton,
-      wireBlock,List.mem_map,List.mem_range'_1]
-    exact Or.inl (Or.inl (Or.inr ⟨760,by omega,rfl⟩))
-  have ww : wires witness=insert q (wires P) := by
-    unfold witness
-    rw [wires_append]
-    simp only [wires,Instr.wires,Finset.union_empty,Finset.singleton_union]
-  have ws : ioWires∪wires witness⊆(WrapperOB5.sites layout).toFinset := by
-    rw [ww]
-    intro x hx
-    rcases Finset.mem_union.mp hx with hx|hx
-    · exact sub (Finset.mem_union.mpr (Or.inl hx))
-    · rcases Finset.mem_insert.mp hx with rfl|hx
-      · exact qm
-      · exact sub (Finset.mem_union.mpr (Or.inr hx))
-  have wf : ∀k∈([1400,1800,766,765,767,1540,770,1285,1286] : List Nat),
-      layout.core.poolWire k∉wires witness := by
-    intro k hk
-    rw [ww]
-    intro used
-    rcases Finset.mem_insert.mp used with same|used
-    · have kb : k<2613 := by
-        simp only [List.mem_cons,List.not_mem_nil,or_false] at hk
-        omega
-      have kn : k≠760 := by
-        simp only [List.mem_cons,List.not_mem_nil,or_false] at hk
-        omega
-      exact kn (pool_inj layout layout_widths layout_nodup k 760 kb (by omega) same)
-    · exact old k hk used
-  have oldw (k : Nat) (hk : k<2613) (kn : k≠760)
-      (free : layout.core.poolWire k∉wires P) : layout.core.poolWire k∉wires witness := by
-    rw [ww]
-    intro used
-    rcases Finset.mem_insert.mp used with same|used
-    · exact kn (pool_inj layout layout_widths layout_nodup k 760 hk (by omega) same)
-    · exact free used
-  have bound:=qubits_thirteen witness ws wf
-    (oldw 769 (by omega) (by omega) old769) (oldw 768 (by omega) (by omega) old768)
-    (oldw 718 (by omega) (by omega) old718) (oldw 719 (by omega) (by omega) old719)
-  have fresh : q∉ioWires∪wires P := by
-    intro used
-    rcases Finset.mem_union.mp used with used|used
-    · exact FiniteHostStack.io_avoids_pool 760 (by omega) used
-    · exact extra760 used
-  have sets : ioWires∪wires witness=insert q (ioWires∪wires P) := by
-    rw [ww,Finset.union_insert]
-  change (ioWires∪wires witness).card≤1588 at bound
-  rw [sets,Finset.card_insert_of_notMem fresh] at bound
-  change (ioWires∪wires P).card≤1587
-  omega
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 end ECDSAAdd.Entrant.Rolling1588BFInventory
 
@@ -44473,71 +43282,6 @@ def unbuild (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
     Acc.op (acc.take 139) Z bank cin 139 false (Acc.earlyTerm src true 6)++
     tail acc Z bank cin src++Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)
 
-theorem unbuild_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
-    (hacc : acc.length=163) (hsrc : src.length=128)
-    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
-    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
-    (hi : base cin=false) :
-    Triple (SquareFrame acc base (4294968272*regValue src base)) (unbuild acc Z bank cin src)
-      (SquareFrame acc base 0) := by
-  have tm := terms_mem src
-  have hf4 := hf _ tm.1
-  have hf10 := hf _ tm.2.1
-  have hf6 := hf _ tm.2.2.1
-  have hf32 := hf _ tm.2.2.2
-  let H := regValue src base
-  have hH : H<2^128 := by have h:=regValue_lt src base;rw [hsrc] at h;exact h
-  have top : Triple (SquareFrame acc base (4294968272*H))
-      (CodexKnownOnesTail.accSub 106 (acc.take 161) Z bank cin 161 (Acc.earlyTerm src false 32))
-      (SquareFrame acc base (976*H)) := by
-    have h := CodexKnownOnesTail.accSub_prefix_triple acc Z bank cin 163 161 106 (Acc.earlyTerm src false 32) hacc
-      (by norm_num [Acc.earlyTerm]) hf32 (by simp only [Acc.earlyTerm]; omega)
-      (by norm_num [Acc.earlyTerm]) base hz hb hi (4294968272*H)
-      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
-      (by simpa only [Acc.earlyTerm] using (clear_sub32_range H hH).2.2)
-    have value : Acc.step base true (4294968272*H) (Acc.earlyTerm src false 32)=976*H := by
-      have e : regValue src base*2^32=4294967296*H := by dsimp only [H]; ring
-      simp only [Acc.step,Acc.earlyTerm,if_true]
-      rw [e]
-      omega
-    rw [value] at h
-    exact h
-  have add : Triple (SquareFrame acc base (976*H))
-      (Acc.op (acc.take 139) Z bank cin 139 false (Acc.earlyTerm src true 6))
-      (SquareFrame acc base (1040*H)) := by
-    have h := Acc.op_prefix_triple acc Z bank cin 163 139 (Acc.earlyTerm src true 6) hacc
-      (by norm_num [Acc.earlyTerm]) hf6 (by simp only [Acc.earlyTerm]; omega) base hz hb hi false (976*H)
-      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm] at hH ⊢;dsimp [H] at *;omega)
-    have value : Acc.step base false (976*H) (Acc.earlyTerm src true 6)=1040*H := by
-      norm_num [Acc.step,Acc.earlyTerm]
-      dsimp [H]
-      omega
-    rw [value] at h
-    exact h
-  have sub : Triple (SquareFrame acc base (1040*H)) (tail acc Z bank cin src)
-      (SquareFrame acc base (16*H)) := tail_triple acc Z bank cin src hacc hsrc hf10 base hz hb hi
-  have seed := Acc.seed_triple acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4 base hz
-    (16*H) 0 (Or.inr (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
-  exact ((top.seq add).seq sub).seq seed
-
-
-                                                                              
-                                                   
-                                                           
-                                                                                          
-                                                                                          
-                                                                                                    
-                                                                                                     
-                                                                                   
-                                                                                                          
-                                
-                            
-          
-                     
-                                                                                            
-                                              
-
-                            
 end ECDSAAdd.Entrant.SourceTailDevelop
 
 set_option autoImplicit false

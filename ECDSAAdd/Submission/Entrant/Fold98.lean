@@ -2,6 +2,25 @@ import ECDSAAdd.Submission.Entrant.MainPart07Core
 import ECDSAAdd.Submission.Entrant.NumericCarryTrace
 import ECDSAAdd.Submission.Entrant.LowAccCarry
 import ECDSAAdd.Submission.Entrant.FullLogic
+import ECDSAAdd.Framework.MeasuredLocality
+import ECDSAAdd.Framework.WireRename
+import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
+import ECDSAAdd.Baselines.SlotMapped
+import ECDSAAdd.Arithmetic.PairFrameUnique
+import ECDSAAdd.Arithmetic.KnownOutputAdderPhysical
+import ECDSAAdd.Arithmetic.NarrowSignedRecord
+import ECDSAAdd.Arithmetic.Compare
+import ECDSAAdd.Arithmetic.ExactBorrowErase
+import ECDSAAdd.Arithmetic.MeasuredCanonicalMod
+import ECDSAAdd.Arithmetic.DisjointPrograms
+import ECDSAAdd.Challenge.Contract
+import Mathlib.Tactic.FinCases
+import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
+
+-- ==== KnownZeroArithmetic: merged by merge4.py from Fold98, KnownZeroArithmetic ====
+
+-- ==== begin Fold98 ====
+section
 
 -- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
 section
@@ -12130,12 +12149,8 @@ abbrev accReg := acc
 abbrev accZ := pad
 abbrev accBank := bank
 abbrev hiReg := src
-abbrev cFlipK := OwnDiagAll12Square.cFlipK
 abbrev wBuild := buildFull
 abbrev wUnbuild := clearFull
-def aMiddle (L:CuccaroStreamedSquareWideLayout) (g:Wire) : Program :=
- maskedConstant g (accReg L) cFlipK++(qprogTq L.measuredCore SquareReduction.p++maskedConstant g (accReg L) cFlipK)
-
 theorem acc_lengths (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) :
  (accReg L).length=163 ∧ (accZ L).length=33 ∧ (accBank L).length=160 ∧ (hiReg L).length=130 :=
  lengths L hw
@@ -12147,8 +12162,6 @@ theorem accReg_work (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈accReg 
  acc_work L q hq
 theorem accReg_in (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈accReg L) : q∈L.wires :=
  OwnDiagAll12Square.accReg_in L q hq
-abbrev flip_run := OwnDiagAll12Square.flip_run
-
 theorem accZ_mem (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈accZ L) :
  q∈L.foldPad ∨ q∈L.core.work.drop 196 :=
  Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take hq))
@@ -21237,8 +21250,15 @@ theorem bank_match : (ZeroSetDevelop.compileS? hs specialChecked.out).elim false
 theorem compiled_bank : (ZeroSetDevelop.compileS? hs specialChecked.out).isSome=true :=
  ECDSAAdd.Entrant.D1Opt.isSome_of_elim bank_match
 
+private def useCheckedOutput {Q : List Wire} {P : Program}
+    (c : ZeroSetDevelop.CheckedS Q P) (out : Program) (h : out = c.out) :
+    ZeroSetDevelop.CheckedS Q P :=
+  ⟨out, Eq.mp (congrArg (ZeroSetDevelop.SRewrites Q P) h.symm) c.proof⟩
+
 def bankChecked : ZeroSetDevelop.CheckedS hs specialChecked.out :=
- (ZeroSetDevelop.compileS? hs specialChecked.out).get compiled_bank
+  useCheckedOutput ((ZeroSetDevelop.compileS? hs specialChecked.out).get compiled_bank)
+    KnownCMidStaged.literal
+    (ParkAProgramBool.programEq_sound _ _ (D1Opt.get_of_elim bank_match compiled_bank))
 attribute [local irreducible] bankChecked
 
 theorem bank_cert : ZeroSetDevelop.SRewrites hs specialChecked.out bankChecked.out := bankChecked.proof
@@ -21838,15 +21858,23 @@ theorem fixed_middle:middle=C163Low4Fold.fullMiddle L g:=by
   C163Low4Facts.middleLow K c=C163Low4Fold.aMiddle K c:=rfl
  exact congrArg (fun P:Program=>C163Middle.topIn++(P++C163Middle.topOut)) (core L g)
 
-theorem special_middle_state(s:State)(m:List Bool)(hq:s.basis q=false)(hr:s.basis r=false):
- middleState (C163Fold.build L) specialChecked.out s m=middleState (C163Fold.build L) middle s m:=by
- rcases C163Middle.geometry with ⟨_,_,_,_,_,fq,fr,_,_,_,_⟩
- have qf:=(C163Middle.off_base q fq).1
- have rf:=(C163Middle.off_base r fr).1
- simp only [middleState,run_take]
- apply special_run
- · exact (run_preserves_outside _ _ s q qf).trans hq
- · exact (run_preserves_outside _ _ s r rf).trans hr
+private theorem both_special_wires (P : Wire → Prop) (a b : Wire) (ha : P a) (hb : P b) :
+    ∀ u ∈ [a,b], P u := by
+  intro u hu
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hu
+  rcases hu with rfl | rfl
+  · exact ha
+  · exact hb
+
+theorem special_middle_state (s : State) (m : List Bool)
+    (hq : s.basis q = false) (hr : s.basis r = false) :
+    middleState (C163Fold.build L) specialChecked.out s m =
+      middleState (C163Fold.build L) middle s m :=
+  special_cert.middle_eq [q,r] middle specialChecked.out (C163Fold.build L) s m
+    (both_special_wires (fun u => s.basis u = false) q r hq hr)
+    (both_special_wires (fun u => u ∉ wires (C163Fold.build L)) q r
+      (C163Middle.off_base q C163Middle.geometry.2.2.2.2.2.1).1
+      (C163Middle.off_base r C163Middle.geometry.2.2.2.2.2.2.1).1)
 
 theorem build_eq:C163NarrowAcc.build8 ga pad bank L.core.cin src=C163Fold.build L:=
  C163Low4Structural.build_eq L pad bank src L.core.cin
@@ -22081,36 +22109,6 @@ theorem cap(base:BasisState)(M:Nat)(pv:regValue L.core.product base=M^2):
  have z:=C163Low4Fold.payload_mod16 L base
  norm_num at h z ⊢
  omega
-
-theorem fold_frame(base:BasisState)(hv:AccView L base (accCItem L))(hc:L.PairClean base)
- (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loop
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (accCItem L).spec else Acc.accVal base 0 (accCItem L).spec)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have f:=frame base hc (spare_zero L hw base M pv) hd O hO s m hf
- have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
-  (C163Fold.payload_spec L base)
- exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run loop m s).basis) e) f.2⟩
-
-theorem body_frame(base:BasisState)(M:Nat)(pv:regValue L.core.product base=M^2)
- (clean:L.PairClean base)(disabled:base g=false→M=0)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) body
-  (SquareFrame L.core.out base (C163Low4Body.resCFK C163Low4Facts.Klow (base g) (M^2) O)):=by
- intro s m hf
- have away(q:Wire)(hq:q∈L.core.product):q∉L.core.out:=
-  fun ho=>List.disjoint_left.mp (L.product_out_disjoint hn) hq ho
- have prod:regValue L.core.product s.basis=M^2:=
-  (regValue_congr _ _ _ (fun q hq=>hf.2 q (away q hq))).trans pv
- have cs:=L.squareFrame_clean hn base s.basis O hf clean
- have gs:s.basis g=base g:=hf.2 g (by decide)
- have ds:s.basis d=false:=(hf.2 d (by decide)).trans hd
- have dm:s.basis g=false→M=0:=by rw [gs];exact disabled
- have out:=C163Low4Body.body_output L hw g (List.nodup_cons.mpr ⟨geometry.1,hn⟩)
-  d loop C163Low4Facts.Klow cap fold_frame M O hO s m prod dm cs hf.1 ds
- rw [gs] at out
- exact ⟨out.1,out.2.1,fun q hq=>(out.2.2 q hq).trans (hf.2 q hq)⟩
 
 end ECDSAAdd.Entrant.C163Low4Middle
 
@@ -23304,3 +23302,6 @@ theorem used10 : (((A161GenericFold.ambient L g hs96).drop 800).take 80).all cov
 
 end ECDSAAdd.Entrant.A161SupportCover
 end
+
+end
+-- ==== end Fold98 ====
