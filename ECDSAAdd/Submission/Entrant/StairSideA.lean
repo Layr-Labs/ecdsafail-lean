@@ -42357,16 +42357,6 @@ theorem stock405 (d : Bool) :
   exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
     h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
 
-/-- The stock walk over the ticks the 120..255 window (exit 270) replaces: [120,271). -/
-theorem stock120 (d : Bool) :
-    toffoliCount (Rolling1588TickGap.forward d 120 151)=77511 ∧
-    measurementCount (Rolling1588TickGap.forward d 120 151)=38781 ∧
-    toffoliCount (Rolling1588.reverse d 120 151)=77470 ∧
-    measurementCount (Rolling1588.reverse d 120 151)=38702 := by
-  have h := walks d 120 151 (by decide) (by decide)
-  exact ⟨h.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)),
-    h.2.2.1.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)), h.2.2.2.trans (by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel))⟩
-
 end ECDSAAdd.Entrant.StairPacket.StockWindowCosts
 
 end
@@ -45387,33 +45377,6 @@ theorem counts (d : Bool) (j : Fin 23) (js : List (Fin 23)) :
   rw [tc_eq] at f r
   rw [mc_eq] at g q
   exact ⟨f,r,g,q⟩
-
-/-- The window 90..360 (exit 375): window counts by one Nat decide over the closed forms. -/
-theorem ship_counts :
-    toffoliCount (forwardW params true first rest)=113886 ∧ toffoliCount (forwardW params false first rest)=113886 ∧
-    toffoliCount (reverseW params true first rest)=113972 ∧ toffoliCount (reverseW params false first rest)=113972 ∧
-    measurementCount (forwardW params true first rest)=57219 ∧ measurementCount (forwardW params false first rest)=57219 ∧
-    measurementCount (reverseW params true first rest)=56943 ∧ measurementCount (reverseW params false first rest)=56943 := by
-  rw [(counts true first rest).1,(counts false first rest).1,(counts true first rest).2.1,(counts false first rest).2.1,
-    (counts true first rest).2.2.1,(counts false first rest).2.2.1,(counts true first rest).2.2.2,(counts false first rest).2.2.2]
-  decide +kernel
-
-/-- The window sizes (blocks 1..19, exit 375), by kernel evaluation of the fold's piece sums
-(`counts` reduces them to `forwardL tcV d first rest` / `forwardL mcV d first rest`). -/
-theorem ship_toffoliF_true : toffoliCount (forwardW params true first rest)=113886 := by
-  rw [(counts true first rest).1]; decide +kernel
-theorem ship_toffoliF_false : toffoliCount (forwardW params false first rest)=113886 := by
-  rw [(counts false first rest).1]; decide +kernel
-theorem ship_toffoliR_true : toffoliCount (reverseW params true first rest)=113972 := by
-  rw [(counts true first rest).2.1]; decide +kernel
-theorem ship_toffoliR_false : toffoliCount (reverseW params false first rest)=113972 := by
-  rw [(counts false first rest).2.1]; decide +kernel
-theorem ship_measureF : measurementCount (forwardW params true first rest)=57219 ∧
-    measurementCount (forwardW params false first rest)=57219 := by
-  rw [(counts true first rest).2.2.1,(counts false first rest).2.2.1]; decide +kernel
-theorem ship_measureR : measurementCount (reverseW params true first rest)=56943 ∧
-    measurementCount (reverseW params false first rest)=56943 := by
-  rw [(counts true first rest).2.2.2,(counts false first rest).2.2.2]; decide +kernel
 
 /-- `slotsV`: upper bounds of the piece slot counts. Exact closed forms where par-b's count lemmas apply (enter,
 leave, portal, park, pack), the record's `WindowSlots` bounds for the archives (`part9/25/43/57`) and for the exit
