@@ -1676,13 +1676,30 @@ set_option linter.unusedSimpArgs false
 def newBuild:Program:=ReorderedABuild.build 89 acc pad bank cin src hosts
 def newInv:Program:=ReorderedAUnbuild.unbuild 89 acc pad bank cin src hosts
 
+theorem cnt_newBuild:(toffoliCount newBuild,measurementCount newBuild,Challenge.gateSlots newBuild)=(386,386,5148):=by
+ decide +kernel
+theorem cnt_newInv:(toffoliCount newInv,measurementCount newInv,Challenge.gateSlots newInv)=(143,386,4485):=by
+ decide +kernel
+theorem cnt_build:(toffoliCount SixCarryLoopAnchor.build,measurementCount SixCarryLoopAnchor.build,
+  Challenge.gateSlots SixCarryLoopAnchor.build)=(387,388,5173):=by
+ decide +kernel
+theorem cnt_unbuild:(toffoliCount LocalEightLoop.unbuild,measurementCount LocalEightLoop.unbuild,
+  Challenge.gateSlots LocalEightLoop.unbuild)=(144,388,4638):=by
+ decide +kernel
+
 theorem counts:
  toffoliCount newBuild+toffoliCount newInv+2=
   toffoliCount SixCarryLoopAnchor.build+toffoliCount LocalEightLoop.unbuild ∧
  measurementCount newBuild+measurementCount newInv+4=
   measurementCount SixCarryLoopAnchor.build+measurementCount LocalEightLoop.unbuild ∧
  Challenge.gateSlots newBuild+Challenge.gateSlots newInv+178=
-  Challenge.gateSlots SixCarryLoopAnchor.build+Challenge.gateSlots LocalEightLoop.unbuild:=by decide +kernel
+  Challenge.gateSlots SixCarryLoopAnchor.build+Challenge.gateSlots LocalEightLoop.unbuild:=by
+ have h1:=cnt_newBuild
+ have h2:=cnt_newInv
+ have h3:=cnt_build
+ have h4:=cnt_unbuild
+ simp only [Prod.mk.injEq] at h1 h2 h3 h4
+ omega
 
 end ECDSAAdd.Entrant.BArithmeticCountsResearch
 
@@ -2441,7 +2458,16 @@ def selected : Program := [
  .CX 4377 4763
 ]
 
-theorem selected_sublist : selected.Sublist LocalEightBody99.body := by decide +kernel
+theorem selected_low : (selected.take 448).Sublist ((FullBTemp.prefixP LowAccCarryDevelop.L).take 1655) := by decide +kernel
+theorem selected_high : (selected.drop 448).Sublist (EightCarryPrefix.improved.take 1477) := by decide +kernel
+
+theorem selected_sublist : selected.Sublist LocalEightBody99.body := by
+ rw [LocalEightBody99Costs.new_shape, ← List.take_append_drop 448 selected]
+ refine List.Sublist.append (selected_low.trans (List.take_sublist _ _)) ?_
+ refine List.Sublist.trans ?_ (List.sublist_append_left _ _)
+ have e : LocalEightLoop.improved = EightCarryPrefix.improved ++ LocalEightLoop.unbuild := rfl
+ rw [e]
+ exact (selected_high.trans (List.take_sublist _ _)).trans (List.sublist_append_left _ _)
 
 theorem selected_covers : domain.all (C163Touch.touched selected)=true := by decide +kernel
 
