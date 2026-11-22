@@ -20,10 +20,8 @@ import ECDSAAdd.Framework.WireRenameComposition
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Challenge.Contract
 import ECDSAAdd.Submission.Entrant.DeadCarry
-import ECDSAAdd.Submission.Entrant.NumericCarryTrace
 import ECDSAAdd.Framework.CleanWireRebind
 import ECDSAAdd.Framework.WireRenamePool
-import ECDSAAdd.Submission.Entrant.MainPart07Core
 import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Arithmetic.MappedSubtract
 import ECDSAAdd.Arithmetic.SkywalkIntegerTick
@@ -2211,8 +2209,10 @@ def packStep (L : Layout) (B j : Nat) : Program :=
     [.CX L.t L.z,
      .measureX L.t []
        [.CZ (outAt hd (k / 2 ^ lo) L.z) (outAt ld (k % 2 ^ lo) L.z)]]
+
 def packFirstStep (L : Layout) (B : Nat) : Program :=
   .CX (L.D (B - 2)) L.t :: (packStep L B (B - 2)).tail
+
 theorem packFirstStep_support (L : Layout) (B : Nat) :
     wires (packFirstStep L B) ⊆ wires (packStep L B (B - 2)) := by
   let rest := (packStep L B (B - 2)).tail
@@ -2227,6 +2227,7 @@ theorem packFirstStep_support (L : Layout) (B : Nat) :
   rcases Finset.mem_insert.mp hq with hq | hq
   · exact hq ▸ Finset.mem_insert_self _ _
   · exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem hq)
+
 theorem packFirstStep_physical (L : Layout) (B : Nat)
     (hp : GatePhysical (packStep L B (B - 2))) : GatePhysical (packFirstStep L B) := by
   have he : packStep L B (B - 2) =
@@ -2236,6 +2237,7 @@ theorem packFirstStep_physical (L : Layout) (B : Nat)
     RecordedQuantum.PhysicalInstr, ProperGate] at hp
   simpa only [packFirstStep, GatePhysical, List.mem_cons, forall_eq_or_imp,
     RecordedQuantum.PhysicalInstr, ProperGate] using And.intro hp.1.1 hp.2
+
 theorem packFirstStep_run_suffix (L : Layout) (B : Nat) (rest : Program)
     (s : State) (m : List Bool) (hz : s.basis L.z = true) :
     run (packFirstStep L B ++ rest) m s =
@@ -3884,10 +3886,6 @@ private theorem packStep_counts_normal (L : Layout) (B j : Nat) (hj : j < B - 2)
     toffoliCount (packStep L B j) = 1 ∧ measurementCount (packStep L B j) = 2 := by
   simp [packStep, hj, toffoliCount, measurementCount]
 
-private theorem packStep_counts_top (L : Layout) (B : Nat) :
-    toffoliCount (packStep L B (B - 2)) = 1 ∧
-    measurementCount (packStep L B (B - 2)) = 1 := by
-  simp [packStep, toffoliCount, measurementCount]
 private theorem packFirstStep_counts (L : Layout) (B : Nat) :
     toffoliCount (packFirstStep L B) = 0 ∧
     measurementCount (packFirstStep L B) = 1 := by
@@ -15313,20 +15311,6 @@ theorem segmentMap_letters : ∀ B ∈ budgets, ∀ t, t < 512 → startFor B �
   unfold segmentMap segMap letterSite
   rw [if_neg (by omega), if_pos (by omega)]
 
-/-- K4-B (replay budget): decided only over the row's history range `[startFor B, endFor B)`
-instead of every `t < endFor B`. -/
-theorem segmentMap_history : ∀ B ∈ budgets, ∀ t, t < endFor B → startFor B ≤ t →
-    segmentMap B (1028 + t) = sLetter t := by
-  have fast : ∀ B ∈ budgets, ∀ i, i < endFor B - startFor B →
-      segmentMap B (1028 + (startFor B + i)) = sLetter (startFor B + i) := by
-    intro B hB
-    simp only [budgets, List.mem_cons, List.not_mem_nil, or_false] at hB
-    rcases hB with rfl | rfl | rfl | rfl | rfl | rfl
-    all_goals decide +kernel
-  intro B hB t h1 h2
-  have h := fast B hB (t - startFor B) (by omega)
-  rwa [show startFor B + (t - startFor B) = t by omega] at h
-
 theorem segmentMap_previous : ∀ B ∈ budgets,
     segmentMap B (skywalkPoolPreviousId (startFor B)) = zeroWire := by
   intro B hB
@@ -15964,16 +15948,6 @@ theorem kbTick_wires (w : Nat → Wire) (j : Nat) :
   simp only [W.compactSkywalkTickLayout, SkywalkIntegerLayout.wires, SkywalkIntegerLayout.ah,
     SkywalkIntegerLayout.bh, kbIdsOf, wireBlock, List.map_cons, List.map_append, List.map_nil]
 
-theorem kbWidth0 : ∀ i, i < 80 → W.compactSkywalkTickPreWidth (425 + i) = 88 - i := by
-  decide +kernel
-
-theorem kbWidth (j : Nat) (h1 : j < 505) (h2 : 425 ≤ j) :
-    W.compactSkywalkTickPreWidth j = 513 - j := by
-  have h := kbWidth0 (j - 425) (by omega)
-  rw [show 425 + (j - 425) = j by omega] at h
-  rw [h]
-  omega
-
 theorem kbIdsOf_mem (lo l e j id : Nat) (hl : 425 ≤ l) (he : e ≤ 505) (hlo : lo + 1 ≤ j)
     (hlj : l ≤ j) (hje : j < e) (hid : id ∈ kbIdsOf j) :
     id ∈ kbTickIds lo l e ∧ j - 1 ≤ id := by
@@ -16038,95 +16012,6 @@ theorem kbRow_parts (B : Nat) (hB : B ∈ budgets) :
   have h := List.all_eq_true.mp kbRow_check B hB
   rw [Bool.and_eq_true, Bool.and_eq_true] at h
   exact h
-
-theorem kbPRowFacts : ∀ B ∈ budgets,
-    (∀ i, i < StairCodec.bitWidth B →
-      425 ≤ payloadTick (startFor B) i ∧ payloadTick (startFor B) i < 510) ∧
-    (∀ i, i < 3 * ((510 - startFor B) / 5) - StairCodec.bitWidth B →
-      425 ≤ payloadTick (startFor B) (StairCodec.bitWidth B + i) ∧
-        payloadTick (startFor B) (StairCodec.bitWidth B + i) < 510) ∧
-    (∀ i, i < 2 * ((505 - startFor B) / 5) →
-      425 ≤ holeTick (startFor B) i ∧ holeTick (startFor B) i < 510) ∧
-    (∀ i, i < 3 * ((505 - startFor B) / 5) - StairCodec.bitWidth B →
-      425 ≤ payloadTick (startFor B) (StairCodec.bitWidth B + i) ∧
-        payloadTick (startFor B) (StairCodec.bitWidth B + i) < 510) ∧
-    425 ≤ startFor B ∧ startFor B + B = 512 ∧ endFor B ≤ 505 ∧ B ≤ 87 ∧ 2 ≤ B := by
-  intro B hB
-  simp only [budgets, List.mem_cons, List.not_mem_nil, or_false] at hB
-  rcases hB with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals decide +kernel
-
-theorem kbPOneHot_sites (fresh : Nat → Wire) :
-    ∀ (bits : List Wire) (q : Wire), q ∈ (StairCodec.oneHot bits fresh).sites → ∃ k, q = fresh k
-  | [], q, h => by
-    simp only [StairCodec.oneHot, List.mem_singleton] at h
-    exact ⟨0, h⟩
-  | [_], q, h => by
-    simp only [StairCodec.oneHot, List.mem_singleton] at h
-    exact ⟨0, h⟩
-  | _ :: b' :: bs, q, h => by
-    simp only [StairCodec.oneHot, List.mem_append, List.mem_map] at h
-    rcases h with (h | ⟨i, -, rfl⟩) | ⟨i, -, rfl⟩
-    · exact kbPOneHot_sites fresh (b' :: bs) q h
-    · exact ⟨_, rfl⟩
-    · exact ⟨_, rfl⟩
-
-/-- K4-B: every row site is in the label family, structurally (no row is evaluated). -/
-theorem kbSeg_row (B : Nat) (hB : B ∈ budgets) (id : Nat)
-    (h : (startFor B - 1 ≤ id ∧ id ≤ 513) ∨ (770 ≤ id ∧ id + startFor B < 1283) ∨
-      (1028 + startFor B ≤ id ∧ id < 1028 + endFor B) ∨ (1540 ≤ id ∧ id + startFor B < 2052)) :
-    segmentMap B id ∈ rowSites B := by
-  obtain ⟨b1, b2, b3, b4⟩ := kbRow_bounds B hB
-  clear b3
-  have hl : startFor B + B = 512 ∧ B ≤ 87 := by
-    simp only [budgets, List.mem_cons, List.not_mem_nil, or_false] at hB
-    unfold startFor
-    omega
-  rcases h with h | h | h | h
-  · by_cases hz : id + 1 = startFor B
-    · show segMap (startFor B) (endFor B) id ∈ rowSites B
-      unfold segMap
-      rw [if_pos hz]
-      simp only [rowSites, List.mem_append, List.mem_cons, true_or, or_true]
-    by_cases hs : id ≤ 511
-    · have e1 : segmentMap B id = (physicalLayout B).S (id - startFor B) := by
-        show _ = segmentMap B (startFor B + (id - startFor B))
-        congr 1
-        omega
-      rw [e1]
-      exact (kbRail_rowSites B _ (by omega)).1
-    · show segMap (startFor B) (endFor B) id ∈ rowSites B
-      unfold segMap
-      rw [if_neg hz, if_pos (by omega), if_neg (by omega)]
-      have : id = 512 ∨ id = 513 := by omega
-      rcases this with rfl | rfl
-      · simp only [rowSites, List.mem_append, List.mem_cons, true_or, or_true]
-      · simp only [rowSites, List.mem_append, List.mem_cons, true_or, or_true]
-  · show segMap (startFor B) (endFor B) id ∈ rowSites B
-    unfold segMap
-    rw [if_neg (by omega), if_neg (by omega), if_pos (by omega)]
-    by_cases hk : id - 770 < B
-    · exact (kbRail_rowSites B _ hk).2
-    · rw [show id - 770 = B by omega]
-      show bSite B ∈ rowSites B
-      simp only [rowSites, List.mem_append, List.mem_cons, true_or, or_true]
-  · obtain ⟨t, rfl⟩ : ∃ t, id = 1028 + t := ⟨id - 1028, by omega⟩
-    rw [segmentMap_history B hB t (by omega) (by omega)]
-    have hm : sLetter t ∈ (List.range (endFor B - startFor B)).map
-        (fun i => sLetter (startFor B + i)) :=
-      List.mem_map.mpr ⟨t - startFor B, List.mem_range.mpr (by omega), by
-        show sLetter (startFor B + (t - startFor B)) = sLetter t
-        congr 1
-        omega⟩
-    simp only [rowSites, List.mem_append, hm, true_or, or_true]
-  · show segMap (startFor B) (endFor B) id ∈ rowSites B
-    unfold segMap
-    rw [if_neg (by omega), if_neg (by omega), if_neg (by omega), if_neg (by omega),
-      if_pos (by omega)]
-    have hm : cSite (id - 1540) ∈ (List.range B).map cSite :=
-      List.mem_map.mpr ⟨_, List.mem_range.mpr (by omega), rfl⟩
-    show cSite (id - 1540) ∈ rowSites B
-    simp only [rowSites, List.mem_append, hm, true_or, or_true]
 
 theorem kbRow_mem (B : Nat) (hB : B ∈ budgets) (id : Nat)
     (h : id ∈ kbTickIds (startFor B - 1) (startFor B) (endFor B)) :
@@ -22266,6 +22151,7 @@ theorem k5_packStep_slots (L : StairCodec.Layout) (B j : Nat) :
   simp only [StairCodec.packStep]
   split_ifs <;> simp only [gateSlots_append, k5_cxInto_slots, List.length_map] <;>
     simp [gateSlots, instructionSlots] <;> omega
+
 theorem k5_packFirstStep_slots (L : StairCodec.Layout) (B : Nat) :
     gateSlots (StairCodec.packFirstStep L B) =
       gateSlots (StairCodec.packStep L B (B - 2)) := by
@@ -23413,21 +23299,6 @@ attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
 /-! K4-D (replay budget): the bit/bound facts of `frameG` as small standalone lemmas (an `omega` inside
 `frameG` works over every hypothesis of the large context, with 2^128-sized constants). -/
 namespace K4DB
-theorem lt128 (H l : Nat) (h1 : H < 2^96) (h2 : l < 2^32) : 2^32*H + l < 2^128 := by omega
-theorem lt129 (H l K : Nat) (h0 : H < 2^96) (h1 : l < 2^32) (h2 : K ≤ 1) : 2^32*H + l + 2^128*K < 2^129 := by
-  omega
-theorem low0 (H z K : Nat) : (2^32*H + z % 2^32 + 2^128*K) % 2 = z % 2 := by omega
-theorem low1 (H z K : Nat) : (2^32*H + z % 2^32 + 2^128*K) / 2 % 2 = z / 2 % 2 := by omega
-theorem wrap (X Y : Nat) (hX : X < 2^130) (hY : Y < 2^130) : ((X + 2^130 - Y) % 2^130 + Y) % 2^130 = X := by
-  omega
-theorem wlt (b : Nat) (h : b < 2^128) : 4294968272*b < 2^163 := by omega
-theorem hlt (b : Nat) (h : b < 2^128) : b / 2^32 < 2^96 := by omega
-theorem kle (b u : Nat) (hu : u < 2^32) : (b % 2^32 + u) / 2^32 ≤ 1 := by omega
-theorem kif (b u : Nat) (hu : u < 2^32) :
-    (if (b % 2^32 + u) % 2^32 < u then 1 else 0) = (b % 2^32 + u) / 2^32 := by
-  by_cases hc : (b % 2^32 + u) % 2^32 < u
-  · rw [if_pos hc]; omega
-  · rw [if_neg hc]; omega
 end K4DB
 
 
@@ -23471,14 +23342,6 @@ namespace K4DQ
 theorem pw_lt (i : Nat) (h : i < 5699) : Baselines.layout.core.poolWire i = 4115 + i := by
   show (List.range' 4115 5699).getD i 0 = 4115 + i
   simp [List.getD_eq_getElem?_getD, h]
-
-theorem blk (a n : Nat) (h : a + n ≤ 5699) :
-    (List.range' a n).map Baselines.layout.core.poolWire = List.range' (4115 + a) n := by
-  rw [← List.map_add_range']
-  apply List.map_congr_left
-  intro x hx
-  rw [List.mem_range'_1] at hx
-  exact pw_lt x (by omega)
 
 theorem mr (a n : Nat) : (List.range n).map (· + a) = List.range' a n := by
   rw [List.range'_eq_map_range]
@@ -23816,103 +23679,6 @@ end K2SubSec
 /- K4-D (replay budget): `mid_in_layout` for every layout (no list evaluation). -/
 namespace K4DS
 open LT48B
-
-def majC : MappedBit → Nat
-  | ⟨none, false⟩ => 1 | ⟨none, true⟩ => 3 | ⟨some _, false⟩ => 6 | ⟨some _, true⟩ => 8
-def ecC : MappedBit → Nat
-  | ⟨none, false⟩ => 2 | ⟨none, true⟩ => 4 | ⟨some _, false⟩ => 4 | ⟨some _, true⟩ => 6
-def sumC : MappedBit → Nat
-  | ⟨none, false⟩ => 1 | ⟨none, true⟩ => 2 | ⟨some _, false⟩ => 2 | ⟨some _, true⟩ => 3
-def bmC : MappedBit → Nat
-  | ⟨none, false⟩ => 3 | ⟨none, true⟩ => 5 | ⟨some _, false⟩ => 8 | ⟨some _, true⟩ => 10
-def emC : MappedBit → Nat
-  | ⟨none, false⟩ => 4 | ⟨none, true⟩ => 6 | ⟨some _, false⟩ => 6 | ⟨some _, true⟩ => 8
-
-theorem majC_eq (b : MappedBit) : majS b = majC b := by rcases b with ⟨_ | a, _ | _⟩ <;> rfl
-theorem ecC_eq (b : MappedBit) : ecS b = ecC b := by rcases b with ⟨_ | a, _ | _⟩ <;> rfl
-theorem sumC_eq (b : MappedBit) : sumS b = sumC b := by rcases b with ⟨_ | a, _ | _⟩ <;> rfl
-theorem bmC_eq (b : MappedBit) : bmS b = bmC b := by rcases b with ⟨_ | a, _ | _⟩ <;> rfl
-theorem emC_eq (b : MappedBit) : emS b = emC b := by rcases b with ⟨_ | a, _ | _⟩ <;> rfl
-theorem bmaj_val : bmajS = 8 := rfl
-theorem eb_val : ebS = 6 := rfl
-
-def addC : List MappedBit → List Wire → List Wire → Nat
-  | b::b'::bits, _::y'::ys, _::cs => majC b + addC (b'::bits) (y'::ys) cs + ecC b + sumC b
-  | [b], [_], _ => sumC b
-  | _, _, _ => 0
-
-theorem addC_eq : ∀ (bs : List MappedBit) (ys cs : List Wire), addS bs ys cs = addC bs ys cs
-  | b::b'::bits, y::y'::ys, d::ds => by
-    simp only [addS, addC, addC_eq (b'::bits) (y'::ys) ds, majC_eq, ecC_eq, sumC_eq]
-  | [b], [y], cs => by simp only [addS, addC, sumC_eq]
-  | [], _, _ => rfl
-  | [_], [], _ => rfl
-  | [_], _::_::_, _ => rfl
-  | _::_::_, [], _ => rfl
-  | _::_::_, [_], _ => rfl
-  | _::_::_, _::_::_, [] => rfl
-
-def eltC : List Wire → List MappedBit → List Wire → Nat
-  | _::a'::as, b::b'::bs, _::cs => bmC b + eltC (a'::as) (b'::bs) cs + emC b
-  | [_], [b], _ => emC b
-  | _, _, _ => 0
-
-theorem eltC_eq : ∀ (as : List Wire) (bs : List MappedBit) (cs : List Wire), eltS as bs cs = eltC as bs cs
-  | a::a'::as, b::b'::bs, c::cs => by
-    simp only [eltS, eltC, eltC_eq (a'::as) (b'::bs) cs, bmC_eq, emC_eq]
-  | [a], [b], cs => by simp only [eltS, eltC, emC_eq]
-  | [], _, _ => rfl
-  | [_], [], _ => rfl
-  | [_], _::_::_, _ => rfl
-  | _::_::_, [], _ => rfl
-  | _::_::_, [_], _ => rfl
-  | _::_::_, _::_::_, [] => rfl
-
-def elC : List Wire → List Wire → List Wire → Nat
-  | _::a'::as, _::b'::bs, _::cs => 8 + elC (a'::as) (b'::bs) cs + 6
-  | [_], [_], _ => 6
-  | _, _, _ => 0
-
-theorem elC_eq : ∀ (as bs cs : List Wire), elS as bs cs = elC as bs cs
-  | a::a'::as, b::b'::bs, c::cs => by
-    simp only [elS, elC, elC_eq (a'::as) (b'::bs) cs, bmaj_val, eb_val]
-  | [a], [b], cs => by simp only [elS, elC, eb_val]
-  | [], _, _ => rfl
-  | [_], [], _ => rfl
-  | [_], _::_::_, _ => rfl
-  | _::_::_, [], _ => rfl
-  | _::_::_, [_], _ => rfl
-  | _::_::_, _::_::_, [] => rfl
-
-def skC : Nat → List MappedBit → List Wire → List Wire → Nat
-  | 0, bits, ys, cs => addC bits ys cs
-  | k+1, b::b'::bits, _::y'::ys, _::cs => skC k (b'::bits) (y'::ys) cs + ecC b + sumC b
-  | _+1, bits, ys, cs => addC bits ys cs
-
-theorem skC_eq : ∀ (k : Nat) (bits : List MappedBit) (ys cs : List Wire), skS k bits ys cs = skC k bits ys cs
-  | 0, bits, ys, cs => addC_eq bits ys cs
-  | k+1, b::b'::bits, y::y'::ys, c::cs => by
-    simp only [skS, skC, skC_eq k (b'::bits) (y'::ys) cs, ecC_eq, sumC_eq]
-  | _+1, [], ys, cs => addC_eq [] ys cs
-  | _+1, [b], ys, cs => addC_eq [b] ys cs
-  | _+1, b::b'::bits, [], cs => addC_eq (b::b'::bits) [] cs
-  | _+1, b::b'::bits, [y], cs => addC_eq (b::b'::bits) [y] cs
-  | _+1, b::b'::bits, y::y'::ys, [] => addC_eq (b::b'::bits) (y::y'::ys) []
-
-def esC : Nat → List Wire → List Wire → List Wire → Nat
-  | 0, xs, ys, cs => elC xs ys cs
-  | k+1, _::a'::as, _::b'::bs, _::cs => esC k (a'::as) (b'::bs) cs + 6
-  | _+1, xs, ys, cs => elC xs ys cs
-
-theorem esC_eq : ∀ (k : Nat) (xs ys cs : List Wire), esS k xs ys cs = esC k xs ys cs
-  | 0, xs, ys, cs => elC_eq xs ys cs
-  | k+1, a::a'::as, b::b'::bs, c::cs => by
-    simp only [esS, esC, esC_eq k (a'::as) (b'::bs) cs, eb_val]
-  | _+1, [], ys, cs => elC_eq [] ys cs
-  | _+1, [a], ys, cs => elC_eq [a] ys cs
-  | _+1, a::a'::as, [], cs => elC_eq (a::a'::as) [] cs
-  | _+1, a::a'::as, [b], cs => elC_eq (a::a'::as) [b] cs
-  | _+1, a::a'::as, b::b'::bs, [] => elC_eq (a::a'::as) (b::b'::bs) []
 
 end K4DS
 
@@ -24707,52 +24473,6 @@ theorem blk (a n : Nat) (h : a + n ≤ 5699) :
   rw [List.mem_range'_1] at hx
   exact pw_lt x (by omega)
 
-def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4
-
-theorem holes_eq : holes = holesN := by
-  have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
-    blk 725 35 (by decide)
-  have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
-    blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
-
-theorem holes_len : holes.length = 39 := by
-  rw [holes_eq]
-  decide
-
-/-- Duplicate scan: `m` holds the wires already seen (as `StairLoan.nodupMask`). -/
-def nodupMask : List Nat → Nat → Bool
-  | [], _ => true
-  | x :: xs, m => !(m.testBit x) && nodupMask xs (m ||| 2 ^ x)
-
-theorem nodupMask_sound : ∀ (l : List Nat) (m : Nat), nodupMask l m = true →
-    l.Nodup ∧ ∀ x ∈ l, m.testBit x = false
-  | [], _, _ => ⟨List.nodup_nil, fun _ h => absurd h List.not_mem_nil⟩
-  | x :: xs, m, h => by
-    simp only [nodupMask, Bool.and_eq_true, Bool.not_eq_true'] at h
-    obtain ⟨hx, hr⟩ := h
-    obtain ⟨nd, av⟩ := nodupMask_sound xs _ hr
-    have key : ∀ y ∈ xs, y ≠ x ∧ m.testBit y = false := by
-      intro y hy
-      have t := av y hy
-      rw [Nat.testBit_or, Bool.or_eq_false_iff] at t
-      refine ⟨?_, t.1⟩
-      rintro rfl
-      rw [Nat.testBit_two_pow_self] at t
-      exact absurd t.2 (by decide)
-    refine ⟨List.nodup_cons.mpr ⟨fun hmem => (key x hmem).1 rfl, nd⟩, ?_⟩
-    intro y hy
-    rcases List.mem_cons.mp hy with rfl | hy
-    · exact hx
-    · exact (key y hy).2
-
-
-
-
-
-
 end K4DA
 
 
@@ -24810,17 +24530,6 @@ theorem blk (a n : Nat) (h : a + n ≤ 5699) :
   rw [List.mem_range'_1] at hx
   exact pw_lt x (by omega)
 
-theorem mr (a n : Nat) : (List.range n).map (· + a) = List.range' a n := by
-  rw [List.range'_eq_map_range]
-  exact List.map_congr_left (fun x _ => Nat.add_comm x a)
-
-/-- `LB` with its fields as intervals. -/
-def LBF : CuccaroStreamedSquareWideLayout :=
-  ⟨⟨List.range' 258 256, List.range' 2 256, List.range' 4115 258, List.range' 4373 128, List.range' 4501 256,
-    4757, 4758, 4759, 4760, 4761, 4762, 4763⟩, List.range' 4764 126⟩
-
-
-/-! One pass over the instructions (as `StairTerminalV3.K4DT`). -/
 def corrOK (c : Wire → Bool) : List Correction → Bool
   | [] => true
   | .Z t :: cs => c t && corrOK c cs
@@ -24831,9 +24540,6 @@ def instrOK (c : Wire → Bool) : Instr → Bool
   | .CX a t => c a && c t
   | .CCX a b t => c a && c b && c t
   | .measureX t c0 c1 => c t && corrOK c c0 && corrOK c c1
-
-/-- Every wire of every instruction of `P` satisfies `c`. -/
-def allK (c : Wire → Bool) (P : Program) : Bool := P.all (instrOK c)
 
 theorem corrOK_sound (c : Wire → Bool) :
     ∀ (cs : List Correction), corrOK c cs = true → ∀ q ∈ correctionWires cs, c q = true
@@ -24880,28 +24586,6 @@ theorem instrOK_sound (c : Wire → Bool) (i : Instr) (h : instrOK c i = true) :
     · exact h.1.1
     · exact corrOK_sound c c0 h.1.2 q hq
     · exact corrOK_sound c c1 h.2 q hq
-
-theorem allK_sound (c : Wire → Bool) :
-    ∀ (P : Program), allK c P = true → ∀ q ∈ wires P, c q = true
-  | [], _, q, hq => by simp [wires] at hq
-  | i :: P, h, q, hq => by
-    simp only [allK, List.all_cons, Bool.and_eq_true] at h
-    simp only [wires, Finset.mem_union] at hq
-    rcases hq with hq | hq
-    · exact instrOK_sound c i h.1 q hq
-    · exact allK_sound c P h.2 q hq
-
-theorem allK_append (c : Wire → Bool) (P Q : Program) : allK c (P ++ Q) = (allK c P && allK c Q) :=
-  List.all_append
-
-theorem allK_take (c : Wire → Bool) (P : Program) (i : Nat) (h : allK c P = true) : allK c (P.take i) = true :=
-  List.all_eq_true.mpr (fun x hx => List.all_eq_true.mp h x (List.mem_of_mem_take hx))
-
-theorem allK_drop (c : Wire → Bool) (P : Program) (i : Nat) (h : allK c P = true) : allK c (P.drop i) = true :=
-  List.all_eq_true.mpr (fun x hx => List.all_eq_true.mp h x (List.mem_of_mem_drop hx))
-
-/-- Off the 39 holes (`[4840, 4875) ∪ [4876, 4880)`). -/
-def holeB (x : Nat) : Bool := Nat.blt x 4840 || Nat.ble 4880 x || Nat.beq x 4875
 
 end K4DE
 
@@ -25098,37 +24782,6 @@ abbrev holes:List Wire:=StairSqLoopA.holes
 /-! K4-D (replay budget): the 39 holes as explicit intervals (no `poolWire` walks), the fold-pad facts
 and host membership by symbolic lemmas, and one linear bit-mask duplicate scan for the `Nodup` part. -/
 namespace K4DB
-
-theorem pw_lt (i : Nat) (h : i < 5699) : Baselines.layout.core.poolWire i = 4115 + i := by
-  show (List.range' 4115 5699).getD i 0 = 4115 + i
-  simp [List.getD_eq_getElem?_getD, h]
-
-theorem blk (a n : Nat) (h : a + n ≤ 5699) :
-    (List.range' a n).map Baselines.layout.core.poolWire = List.range' (4115 + a) n := by
-  rw [← List.map_add_range']
-  apply List.map_congr_left
-  intro x hx
-  rw [List.mem_range'_1] at hx
-  exact pw_lt x (by omega)
-
-def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4
-
-theorem holes_eq : holes = holesN := by
-  have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
-    blk 725 35 (by decide)
-  have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
-    blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
-
-
-
-
-
-
-
-
 
 end K4DB
 
@@ -25490,64 +25143,6 @@ abbrev holes:List Wire:=StairSqLoopA.holes
 /-! K4-D (replay budget): the 39 holes as explicit intervals (no `poolWire` walks), the fold-pad facts
 and host membership by symbolic lemmas, and one linear bit-mask duplicate scan for the `Nodup` part. -/
 namespace K4DC
-
-theorem pw_lt (i : Nat) (h : i < 5699) : Baselines.layout.core.poolWire i = 4115 + i := by
-  show (List.range' 4115 5699).getD i 0 = 4115 + i
-  simp [List.getD_eq_getElem?_getD, h]
-
-theorem blk (a n : Nat) (h : a + n ≤ 5699) :
-    (List.range' a n).map Baselines.layout.core.poolWire = List.range' (4115 + a) n := by
-  rw [← List.map_add_range']
-  apply List.map_congr_left
-  intro x hx
-  rw [List.mem_range'_1] at hx
-  exact pw_lt x (by omega)
-
-def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4
-
-theorem holes_eq : holes = holesN := by
-  have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
-    blk 725 35 (by decide)
-  have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
-    blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
-
-theorem holes_len : holes.length = 39 := by
-  rw [holes_eq]
-  decide
-
-/-- Duplicate scan: `m` holds the wires already seen (as `StairLoan.nodupMask`). -/
-def nodupMask : List Nat → Nat → Bool
-  | [], _ => true
-  | x :: xs, m => !(m.testBit x) && nodupMask xs (m ||| 2 ^ x)
-
-theorem nodupMask_sound : ∀ (l : List Nat) (m : Nat), nodupMask l m = true →
-    l.Nodup ∧ ∀ x ∈ l, m.testBit x = false
-  | [], _, _ => ⟨List.nodup_nil, fun _ h => absurd h List.not_mem_nil⟩
-  | x :: xs, m, h => by
-    simp only [nodupMask, Bool.and_eq_true, Bool.not_eq_true'] at h
-    obtain ⟨hx, hr⟩ := h
-    obtain ⟨nd, av⟩ := nodupMask_sound xs _ hr
-    have key : ∀ y ∈ xs, y ≠ x ∧ m.testBit y = false := by
-      intro y hy
-      have t := av y hy
-      rw [Nat.testBit_or, Bool.or_eq_false_iff] at t
-      refine ⟨?_, t.1⟩
-      rintro rfl
-      rw [Nat.testBit_two_pow_self] at t
-      exact absurd t.2 (by decide)
-    refine ⟨List.nodup_cons.mpr ⟨fun hmem => (key x hmem).1 rfl, nd⟩, ?_⟩
-    intro y hy
-    rcases List.mem_cons.mp hy with rfl | hy
-    · exact hx
-    · exact (key y hy).2
-
-
-
-
-
 
 end K4DC
 
@@ -31907,18 +31502,6 @@ theorem K4DJ.phaseRelabel_fun :
 /-- The b-rail move of `phaseBMove` as source/target pairs (record labels). -/
 def bPairs : List (Wire × Wire) :=
   (List.range 88).map (fun k => (base (770 + k), bSite k))
-
-/-- Record labels that must be clean on the tick-424 record state: the 88 targets of
-the b-rail move, and (through `phaseRelabel`) the codec work sites of budget 87 and
-the 44 hosts (future payload letters not used by the rest word). -/
-def cleanRec : List Wire :=
-  (List.range 88).map bSite ++
-    (StairCodec.workSites (physicalLayout 87) 87 ++ hosts 87).map phaseRelabel
-
-/-- The extra admissibility fact of the selected half: the tick-424 record state
-(`pullState phaseHost t0`) is clean on `cleanRec`. -/
-def ExtraSel (_x : Nat) (t0 : State) : Prop :=
-  ∀ q ∈ cleanRec, t0.basis (Rolling1588Lifetime.phaseHost q) = false
 
 /-- Record labels off the payload that the first pack leaves at 0 although the
 tick-424 state may hold 1 there: the x I/O word (old b rail) and the two top bits
@@ -42214,23 +41797,13 @@ theorem packFinalize_correctA (L : Layout) (B u v : Nat) (sigma : Bool)
         · intro hl
           exact sep_low_high L B hn hl hq rfl
 
-def generatedPackA (L : Layout) (B : Nat) : Program :=
-  let ld := lowDecoder L B
-  let hd := highDecoder L B
-  cxInto (L.D (B - 1)) (reg L.D (B - 1)) ++
-  xOnA (reg L.S B) ++ generatedPackAdderA L B ++ xOnA (reg L.S B) ++
-  [.X (L.S 0)] ++ [.X L.z] ++
-  decoderInit ld (lowBits L B) ++ decoderInit hd (highBits L B) ++
-  packStep L B (B - 2) ++
-  ((List.range (B - 2)).reverse.flatMap (packStep L B)) ++
-  [.measureX L.z [] [.CZ (outAt hd 0 L.z) (outAt ld 0 L.z)]] ++
-  eraseDecoderA hd ++ eraseDecoderA ld
 theorem pack_eq_init_first_finalizeA (L : Layout) (B : Nat) :
     pack L B = packInitA L B ++
       (packFirstStep L B ++
         (List.range (B - 2)).reverse.flatMap (packStep L B) ++ packFinalizeA L B) := by
   simp [pack, packInitA, packArithmeticA, packFinalizeA, List.append_assoc]
   rfl
+
 theorem pack_run_core_finalizeA (L : Layout) (B u v : Nat) (sigma : Bool)
     (hd : CodecDomain B u v sigma) (hn : L.Nodup B) (s : State) (m : List Bool)
     (hc : CodecInput L B u v sigma s.basis) :
@@ -42254,8 +41827,6 @@ theorem pack_run_core_finalizeA (L : Layout) (B u v : Nat) (sigma : Bool)
       _ _ hz
 
 set_option maxHeartbeats 1200000 in
-
-
 theorem pack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     (hdomain : CodecDomain B u v sigma) (hn : L.Nodup B)
     (s : State) (m : List Bool) (hc : CodecInput L B u v sigma s.basis) :
@@ -54599,29 +54170,6 @@ def bestSlotDelta : Nat := 2 * (bestCodecSlotsPerKernel + 3 * 486 + 14 * 20620) 
 
 theorem bestSlotDelta_eq : bestSlotDelta = 640194 := by decide +kernel
 
-theorem best_program_slots (old new : Program)
-    (oldBound : gateSlots old ≤ 50515743)
-    (delta : gateSlots new ≤ gateSlots old + bestSlotDelta) :
-    gateSlots new ≤ 51155937 := by
-  rw [bestSlotDelta_eq] at delta
-  omega
-
-
-
-
-
-
-/-! First moved-segment space ledger.
-
-The exact between-group payload is 514 I/O wires, 816 record-code wires, and
-`g_510`: 1,331.  PK2 adds one conservative placement cushion before pricing.
-At `p₁ = 25`, replacing the 201-wire tail window by the first moved tick's
-385-wire adder top gives 1,515 actual / 1,516 conservative wires.
--/
-
-
-
-
 end ECDSAAdd.Entrant.StairInventory
 
 end
@@ -55956,15 +55504,6 @@ namespace ECDSAAdd.Entrant.StairCertificate
 
 open ECDSAAdd Arithmetic Challenge
 open MappedCompressed Secp256k1 BalancedField Baselines
-
-
-
-/-- CANON v3 certificate bounds with qubit bound `q`.  T and M are LOOSE
-(coordinator / RV6 G4: final program ≈ 2,169,611 T / 1,520,902 M), so late
-endpoint swaps cannot break field 10; slots = 50,515,743 + `bestSlotDelta`. -/
-def v3Bounds (q : Nat) : Challenge.Bounds := ⟨2170000, 1521500, q, 51155937⟩
-
-
 
 
 
@@ -60031,41 +59570,6 @@ namespace K4DB
 
 
 
-theorem holes_len : holes.length = 39 := by
-  rw [holes_eq]
-  decide
-
-/-- Duplicate scan: `m` holds the wires already seen (as `StairLoan.nodupMask`). -/
-def nodupMask : List Nat → Nat → Bool
-  | [], _ => true
-  | x :: xs, m => !(m.testBit x) && nodupMask xs (m ||| 2 ^ x)
-
-theorem nodupMask_sound : ∀ (l : List Nat) (m : Nat), nodupMask l m = true →
-    l.Nodup ∧ ∀ x ∈ l, m.testBit x = false
-  | [], _, _ => ⟨List.nodup_nil, fun _ h => absurd h List.not_mem_nil⟩
-  | x :: xs, m, h => by
-    simp only [nodupMask, Bool.and_eq_true, Bool.not_eq_true'] at h
-    obtain ⟨hx, hr⟩ := h
-    obtain ⟨nd, av⟩ := nodupMask_sound xs _ hr
-    have key : ∀ y ∈ xs, y ≠ x ∧ m.testBit y = false := by
-      intro y hy
-      have t := av y hy
-      rw [Nat.testBit_or, Bool.or_eq_false_iff] at t
-      refine ⟨?_, t.1⟩
-      rintro rfl
-      rw [Nat.testBit_two_pow_self] at t
-      exact absurd t.2 (by decide)
-    refine ⟨List.nodup_cons.mpr ⟨fun hmem => (key x hmem).1 rfl, nd⟩, ?_⟩
-    intro y hy
-    rcases List.mem_cons.mp hy with rfl | hy
-    · exact hx
-    · exact (key y hy).2
-
-
-
-
-
-
 end K4DB
 
 
@@ -60660,65 +60164,6 @@ def cand15Sites : List Wire :=
   (List.range' 505 10).map base ++ (List.range' 770 20).map base ++
     (List.range' 1534 5).map base
 
-/-- K4-D: `cand15Sites` = `[521, 531) ∪ [786, 806) ∪ [1550, 1555)` as an interval test. -/
-def K4DT.c15B (q : Nat) : Bool :=
-  (Nat.ble 521 q && Nat.blt q 531) || (Nat.ble 786 q && Nat.blt q 806) || (Nat.ble 1550 q && Nat.blt q 1555)
-
-theorem K4DT.c15_mem (q : Nat) (h : K4DT.c15B q = true) : q ∈ cand15Sites := by
-  simp only [K4DT.c15B, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at h
-  unfold cand15Sites
-  simp only [List.mem_append, List.mem_map, List.mem_range'_1]
-  rcases h with (⟨h1, h2⟩ | ⟨h1, h2⟩) | ⟨h1, h2⟩
-  · exact Or.inl (Or.inl ⟨q - 16, ⟨by omega, by omega⟩, by simp only [base]; omega⟩)
-  · exact Or.inl (Or.inr ⟨q - 16, ⟨by omega, by omega⟩, by simp only [base]; omega⟩)
-  · exact Or.inr ⟨q - 16, ⟨by omega, by omega⟩, by simp only [base]; omega⟩
-
-
-/-! ## Support and avoidance -/
-
-
-
-
-
-
-/-! ## LT50 (replay budget): kernel-fast form of `TermOK`
-
-`decide` on `TermOK` walked the pool for every placement and scanned the 2,318-element caller list
-and the 1,600-element arena (≈ 0.3 s per wire).  `termOKB` uses the closed-form placements of
-`StairPlaceFast`, interval tests and literal exchanges; `termOK_of_B` is its soundness. -/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/-! ## Placement of the relabelling -/
-
-
-
-
-
-/-! ## Run-level transport (the replay form for the field-2 chain) -/
-
-
-
-
-
-
 end ECDSAAdd.Entrant.StairTerminalV3
 
 end
@@ -60804,9 +60249,6 @@ counted once, and the two terminal candidates come from their recorded resources
 theorem mcZ1_k4a : measurementCount Z1 = 9 := by
   decide +kernel
 
-
-theorem mcQ2_k4a : measurementCount Q2 = 5 := by
-  decide +kernel
 
 theorem cZ : measurementCount Z1 = measurementCount Y := by
   rw [mcZ1_k4a, mcY_k4a]
@@ -62706,15 +62148,6 @@ open StairField2V3Replay StairField2V3Couple
 
 
 /-! ## The plan -/
-
-
-
-
-/-- The relation before a segment: agreement outside `Δ i`, the side condition, and the
-reference state is the genuine record state after `X`. -/
-def RowRel (Δ : Finset Wire) (C : BasisState → BasisState → Prop) (X : Program)
-    (s t : State) : Prop :=
-  Rel Δ C s t ∧ Reach X t
 
 
 
@@ -67737,32 +67170,6 @@ theorem place_facts : fieldPlace (base 2409) = base 511 ∧
     base 2409 ∈ CT ∧ base 1797 ∈ CT ∧ base 2409 ∉ futurePayload 12 ∧
     base 1797 ∉ futurePayload 12 := by
   decide +kernel
-
-
-/-- K4C (replay budget): `pullOut` read through a lemma (cheap for the kernel). -/
-theorem k4l_pullOut (u : State) (q : Wire) : (pullOut u).basis q = u.basis (fieldPlaceInv q) := by
-  unfold pullOut
-  rfl
-
-theorem k4l_pullOut_phase (u : State) : (pullOut u).phase = u.phase := by
-  unfold pullOut
-  rfl
-
-theorem k4l_pullIn_phase (u : State) : (pullIn u).phase = u.phase := by
-  unfold pullIn
-  rfl
-
-theorem k4l_sx_phase (v : Bool) (t : State) : (StairField2V3Win.sxState v t).phase = t.phase := by
-  unfold StairField2V3Win.sxState
-  rfl
-
-theorem k4l_sx_basis (v : Bool) (t : State) (Q : Wire) :
-    (StairField2V3Win.sxState v t).basis Q =
-      writeBit (writeBit t.basis FrontierEntry1591Field.host v) (base 511) true Q := by
-  unfold StairField2V3Win.sxState
-  rfl
-
-
 
 
 theorem origin_s510 (x : Nat) (origin : BasisState) (hx : TraceOK x origin) :
@@ -78058,18 +77465,6 @@ theorem finalHoles_sub : ∀ q ∈ finalHoles, q ∈ StairPhysicalInventory.phys
   apply List.mem_map_of_mem
   simp only [finalHoleIndices, List.mem_append, List.mem_range'_1] at hi ⊢
   omega
-
-theorem finalHoles_nodup : finalHoles.Nodup := by
-  -- K4-B (replay budget): pool wires in closed form, then one linear bit-mask scan
-  have e : finalHoles = finalHoleIndices.map (fun i => 4115 + i) := by
-    unfold finalHoles
-    apply List.map_congr_left
-    intro i hi
-    apply StairHoleSupport.poolWire_eq
-    simp only [finalHoleIndices, List.mem_append, List.mem_range'_1] at hi
-    omega
-  rw [e]
-  exact StairLoan.nodup_of_mask _ (by decide +kernel)
 
 /-- The entry's list lies inside `holes39` (LT35's easy field-12 pieces are stated for
 `holes39`; re-prove them if the list ever grows beyond it). -/
