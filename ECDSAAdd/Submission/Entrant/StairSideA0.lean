@@ -2211,8 +2211,10 @@ def packStep (L : Layout) (B j : Nat) : Program :=
     [.CX L.t L.z,
      .measureX L.t []
        [.CZ (outAt hd (k / 2 ^ lo) L.z) (outAt ld (k % 2 ^ lo) L.z)]]
+
 def packFirstStep (L : Layout) (B : Nat) : Program :=
   .CX (L.D (B - 2)) L.t :: (packStep L B (B - 2)).tail
+
 theorem packFirstStep_support (L : Layout) (B : Nat) :
     wires (packFirstStep L B) ⊆ wires (packStep L B (B - 2)) := by
   let rest := (packStep L B (B - 2)).tail
@@ -2227,6 +2229,7 @@ theorem packFirstStep_support (L : Layout) (B : Nat) :
   rcases Finset.mem_insert.mp hq with hq | hq
   · exact hq ▸ Finset.mem_insert_self _ _
   · exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem hq)
+
 theorem packFirstStep_physical (L : Layout) (B : Nat)
     (hp : GatePhysical (packStep L B (B - 2))) : GatePhysical (packFirstStep L B) := by
   have he : packStep L B (B - 2) =
@@ -2236,6 +2239,7 @@ theorem packFirstStep_physical (L : Layout) (B : Nat)
     RecordedQuantum.PhysicalInstr, ProperGate] at hp
   simpa only [packFirstStep, GatePhysical, List.mem_cons, forall_eq_or_imp,
     RecordedQuantum.PhysicalInstr, ProperGate] using And.intro hp.1.1 hp.2
+
 theorem packFirstStep_run_suffix (L : Layout) (B : Nat) (rest : Program)
     (s : State) (m : List Bool) (hz : s.basis L.z = true) :
     run (packFirstStep L B ++ rest) m s =
@@ -3888,6 +3892,7 @@ private theorem packStep_counts_top (L : Layout) (B : Nat) :
     toffoliCount (packStep L B (B - 2)) = 1 ∧
     measurementCount (packStep L B (B - 2)) = 1 := by
   simp [packStep, toffoliCount, measurementCount]
+
 private theorem packFirstStep_counts (L : Layout) (B : Nat) :
     toffoliCount (packFirstStep L B) = 0 ∧
     measurementCount (packFirstStep L B) = 1 := by
@@ -22266,6 +22271,7 @@ theorem k5_packStep_slots (L : StairCodec.Layout) (B j : Nat) :
   simp only [StairCodec.packStep]
   split_ifs <;> simp only [gateSlots_append, k5_cxInto_slots, List.length_map] <;>
     simp [gateSlots, instructionSlots] <;> omega
+
 theorem k5_packFirstStep_slots (L : StairCodec.Layout) (B : Nat) :
     gateSlots (StairCodec.packFirstStep L B) =
       gateSlots (StairCodec.packStep L B (B - 2)) := by
@@ -42225,12 +42231,14 @@ def generatedPackA (L : Layout) (B : Nat) : Program :=
   ((List.range (B - 2)).reverse.flatMap (packStep L B)) ++
   [.measureX L.z [] [.CZ (outAt hd 0 L.z) (outAt ld 0 L.z)]] ++
   eraseDecoderA hd ++ eraseDecoderA ld
+
 theorem pack_eq_init_first_finalizeA (L : Layout) (B : Nat) :
     pack L B = packInitA L B ++
       (packFirstStep L B ++
         (List.range (B - 2)).reverse.flatMap (packStep L B) ++ packFinalizeA L B) := by
   simp [pack, packInitA, packArithmeticA, packFinalizeA, List.append_assoc]
   rfl
+
 theorem pack_run_core_finalizeA (L : Layout) (B u v : Nat) (sigma : Bool)
     (hd : CodecDomain B u v sigma) (hn : L.Nodup B) (s : State) (m : List Bool)
     (hc : CodecInput L B u v sigma s.basis) :
@@ -42254,8 +42262,6 @@ theorem pack_run_core_finalizeA (L : Layout) (B u v : Nat) (sigma : Bool)
       _ _ hz
 
 set_option maxHeartbeats 1200000 in
-
-
 theorem pack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     (hdomain : CodecDomain B u v sigma) (hn : L.Nodup B)
     (s : State) (m : List Bool) (hc : CodecInput L B u v sigma s.basis) :

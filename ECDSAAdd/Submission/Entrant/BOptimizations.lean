@@ -141,18 +141,16 @@ theorem head_copies(s:State)(m:List Bool)
  (run head m s).basis 4505=(run head m s).basis 4243 ∧
  (run head m s).basis 4506=(run head m s).basis 4244 ∧
  (run head m s).basis 4507=((run head m s).basis 4245 ^^ (run head m s).basis 4243):=by
- let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+ have ready:WReady acc pad bank cin src (regValue src s.basis) (run (ReorderedCPlain.build acc pad bank cin src) m s):=
   Ghost3CacheC.plain_ready s m hz hb hi ha
- have cp:=low_copies _ u ready
- have low(q:Wire)(hq:q∈C105LowEraseResearch.low):u.basis q=(run head m s).basis q:=by
-  dsimp [u]
+ have cp:=low_copies _ (run (ReorderedCPlain.build acc pad bank cin src) m s) ready
+ have low(q:Wire)(hq:q∈C105LowEraseResearch.low):(run (ReorderedCPlain.build acc pad bank cin src) m s).basis q=(run head m s).basis q:=by
   rw [plain_split,run_cat]
   exact run_preserves_outside _ _ _ q (rest_off q hq)
  have frame:=ReorderedCHead.head_triple acc pad bank cin src acc_length (by have h:=source_length;omega)
   fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
  have away:∀q∈src,q∉acc:=by decide +kernel
- have source(q:Wire)(hq:q∈src):u.basis q=(run head m s).basis q:=by
+ have source(q:Wire)(hq:q∈src):(run (ReorderedCPlain.build acc pad bank cin src) m s).basis q=(run head m s).basis q:=by
   have h:= (regValue_eq_iff src _ _).mp ready.2.1 q hq
   exact h.trans (frame.2.2 q (away q hq)).symm
  rw [low 4505 (by decide),low 4506 (by decide),low 4507 (by decide),source 4243 (by decide +kernel),source 4244 (by decide +kernel),source 4245 (by decide +kernel)] at cp
@@ -202,14 +200,20 @@ theorem forward_zero(s:State)(m:List Bool)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 0 0=4757 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 1 0=4758 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 2 0=4759 from rfl] at h
+     exact h
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
@@ -1477,8 +1481,87 @@ def domainSelected396 : Program := [
  .CX 4478 4759
 ]
 
- theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by decide +kernel
- theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by decide +kernel
+private def scope396Carry : Nat → Bool → List Wire → List Wire → List Wire → Wire → Program
+  | n+1, first, a::xs, b::ys, c::cs, cin =>
+    (if first then [Instr.CX a cin, Instr.CCX b cin c] else [Instr.CCX b cin c]) ++
+      scope396Carry n false xs ys cs c
+  | _, _, _, _, _, _ => []
+
+private theorem scope396Carry_sublist (n : Nat) (first : Bool) (xs ys cs : List Wire) (cin : Wire)
+    (hx : n < xs.length) (hy : n < ys.length) (hc : n ≤ cs.length) :
+    (scope396Carry n first xs ys cs cin).Sublist (addInPlace xs ys cs cin) := by
+  induction n generalizing first xs ys cs cin with
+  | zero => exact List.nil_sublist _
+  | succ n ih =>
+    cases xs with
+    | nil => simp at hx
+    | cons a xs =>
+      cases xs with
+      | nil => simp at hx
+      | cons a' xs =>
+        cases ys with
+        | nil => simp at hy
+        | cons b ys =>
+          cases ys with
+          | nil => simp at hy
+          | cons b' ys =>
+            cases cs with
+            | nil => simp at hc
+            | cons c cs =>
+              have tail := ih false (a'::xs) (b'::ys) cs c (by simpa using hx)
+                (by simpa using hy) (by simpa using hc)
+              have headPart : (if first then [Instr.CX a cin, Instr.CCX b cin c] else [Instr.CCX b cin c] : Program).Sublist
+                  (majority a b cin c) := by
+                cases first
+                · exact .cons _ (.cons _ (.cons₂ _ (List.nil_sublist _)))
+                · exact .cons _ (.cons₂ _ (.cons₂ _ (List.nil_sublist _)))
+              change ((if first then [Instr.CX a cin, Instr.CCX b cin c] else [Instr.CCX b cin c]) ++
+                scope396Carry n false (a'::xs) (b'::ys) cs c).Sublist _
+              exact List.sublist_append_of_sublist_left
+                (List.sublist_append_of_sublist_left (headPart.append tail))
+
+theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by
+  let src := C163Low4Middle.src
+  let ga := C163Low4Middle.ga
+  let pad := C163Low4Middle.pad
+  let bank := C163Low4Middle.bank
+  let cin := C163Low4Middle.L.core.cin
+  let t := Acc.earlyTerm src true 6
+  let xs := Acc.tx pad 137 t
+  let ys := Acc.ty (ga.take 137) t
+  let cs := Acc.tc bank 137 t
+  let seed := Acc.seedOp ga pad 163 (Acc.earlyTerm src false 4)
+  let subtract := Acc.op (ga.take 137) pad bank cin 137 true t
+  let copies := ManyACarryDevelop.copyMany (((bank.take 129).drop 4).take 102) Ghost3CacheC.hosts
+  let cache := ReorderedGenericCache.cachedAdd 102 src ((ga.take 140).drop 10)
+    (bank.take 129) Ghost3CacheC.hosts cin
+  let rest := domainSelected396.drop 136
+  have firstEq : domainSelected396.take 136 = seed.take 136 := by rfl
+  have seedPart : (domainSelected396.take 136).Sublist seed := by
+    rw [firstEq]
+    exact List.take_sublist 136 seed
+  have middleEq : rest.take 130 = scope396Carry 129 true xs ys cs cin := by rfl
+  have middleAdd := scope396Carry_sublist 129 true xs ys cs cin (by decide +kernel)
+    (by decide +kernel) (by decide +kernel)
+  have addSub : (addInPlace xs ys cs cin).Sublist subtract :=
+    List.sublist_append_of_sublist_left (List.sublist_append_right _ _)
+  have middlePart : (rest.take 130).Sublist subtract := by
+    rw [middleEq]
+    exact middleAdd.trans addSub
+  have copiesEq : rest.drop 130 = copies := by rfl
+  have copyPart : (rest.drop 130).Sublist cache := by
+    rw [copiesEq]
+    exact List.sublist_append_of_sublist_left (List.sublist_append_right _ _)
+  have headPart : (domainSelected396.take 136 ++ rest.take 130).Sublist SignCHead.head :=
+    List.sublist_append_of_sublist_left (seedPart.append middlePart)
+  have join : (domainSelected396.take 136 ++ rest.take 130) ++ rest.drop 130 = domainSelected396 :=
+    (List.append_assoc _ _ _).trans
+      ((congrArg (fun t => domainSelected396.take 136 ++ t) (List.take_append_drop 130 rest)).trans
+        (List.take_append_drop 136 domainSelected396))
+  exact join ▸ (headPart.append copyPart)
+ theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by
+  simp only [ECDSAAdd.Entrant.ReplayLit.touched_mask]
+  decide +kernel
  theorem checked : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched oldPrefix q)=true := by
  apply List.all_eq_true.mpr
  intro q hq
@@ -2441,9 +2524,26 @@ def selected : Program := [
  .CX 4377 4763
 ]
 
-theorem selected_sublist : selected.Sublist LocalEightBody99.body := by decide +kernel
+open ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout in
+theorem selected_sublist : selected.Sublist LocalEightBody99.body := by
+  let layout := LowAccCarryDevelop.L
+  let loop := LocalEightLoop.improved
+  let folded := LowAccCarryDevelop.foldFor layout loop
+  have first : (selected.take 448).Sublist (measuredFoldQTq layout (negP layout)) := by
+    decide +kernel
+  have last : (selected.drop 448).Sublist loop := by decide +kernel
+  have inside : loop.Sublist folded :=
+    (List.sublist_append_left _ _).trans (List.sublist_append_right _ _)
+  have afterFirst : folded.Sublist
+      (measuredFoldQTq layout (rot128F layout) ++
+        (folded ++ (LocalEFoldOptimize.improved ++ LocalRebuild.improved))) :=
+    (List.sublist_append_left _ _).trans (List.sublist_append_right _ _)
+  rw [← List.take_append_drop 448 selected]
+  exact first.append (last.trans (inside.trans afterFirst))
 
-theorem selected_covers : domain.all (C163Touch.touched selected)=true := by decide +kernel
+theorem selected_covers : domain.all (C163Touch.touched selected)=true := by
+ simp only [ECDSAAdd.Entrant.ReplayLit.touched_eq_mask]
+ decide +kernel
 
 theorem sublist_support (A P : Program) (h : A.Sublist P) : wires A ⊆ wires P := by
  intro q hq
@@ -9639,14 +9739,20 @@ theorem forward_zeroK(s:State)(m:List Bool)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 0 0=4757 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 1 0=4758 from rfl] at h
+     exact h
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
+     have h:=LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
       (by rw [acc_length];decide) ready.1
+     rw [show acc.getD 2 0=4759 from rfl] at h
+     exact h
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
    · exact C105LowEraseResearch.zero _ _ (by decide)
