@@ -53702,6 +53702,29 @@ theorem trip_append (p q : Program) :
     trip (p ++ q) = ((trip p).1 + (trip q).1, (trip p).2.1 + (trip q).2.1, (trip p).2.2 + (trip q).2.2) := by
   simp only [trip, toffoliCount_append, measurementCount_append, Challenge.gateSlots_append]
 
+theorem seedWidth (x y : List Wire) (n : Nat) (hx : x.length=n) (hy : y.length=n) :
+    trip (copyRegister none x y) = (0,0,n) := by
+  have h := copyRegister_counts none x y (hx.trans hy.symm)
+  simp only [trip,h.1,h.2,Baselines.copyRegister_gateSlots,hx,hy,Nat.min_self]
+  rfl
+
+theorem addWidth (x y cs : List Wire) (cin : Wire) (n : Nat)
+    (hx : x.length=n+1) (hy : y.length=n+1) (hc : cs.length=n) :
+    trip (addInPlace x y cs cin) = (n,n,12*(n+1)-10) := by
+  have same := hx.trans hy.symm
+  have carry : cs.length+1=y.length := by omega
+  have counts := addInPlace_counts x y cs cin same carry
+  have slots := KnownTopAdd.addInPlace_slots_eq x y cs cin same carry
+  have slotEq : Challenge.gateSlots (addInPlace x y cs cin) = 12*(n+1)-10 := by omega
+  simp only [trip,counts.1,counts.2,slotEq,hy,Nat.add_sub_cancel]
+
+theorem subWidth (x y cs : List Wire) (cin : Wire) (n : Nat)
+    (hx : x.length=n+1) (hy : y.length=n+1) (hc : cs.length=n) :
+    trip (subInPlace x y cs cin) = (n,n,(n+1) + (12*(n+1)-10) + (n+1)) := by
+  have flip : trip (notRegister y) = (0,0,n+1) := by
+    simp only [trip,(notRegister_counts y).1,(notRegister_counts y).2,Baselines.notRegister_gateSlots,hy]
+  rw [subInPlace,trip_append,trip_append,flip,addWidth x y cs cin n hx hy hc]
+  simp
 end ECDSAAdd.Entrant.PeakFullLogic
 
 namespace ECDSAAdd.Entrant.WholePadConcrete
@@ -53715,16 +53738,32 @@ namespace ECDSAAdd.Entrant.WholePadConcrete
  def newCachedUnbuild := unbuildConsumed (accReg L) pad (accBank L) L.core.cin (hiReg L) L.core.sumCarry
 
  -- Peak memory: one kernel check per program part (each part is generated only in its own declaration).
- theorem peak_ncb1 : PeakFullLogic.trip (InverseCarryDevelop.buildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (128, 128, 1697) := by decide +kernel
+ theorem peak_ncb1 : PeakFullLogic.trip (InverseCarryDevelop.buildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (128, 128, 1697) := by
+  unfold InverseCarryDevelop.buildPre
+  rw [PeakFullLogic.trip_append]
+  simp only [Acc.seedOp,Acc.op, Bool.false_eq_true,↓reduceIte]
+  rw [PeakFullLogic.seedWidth _ _ 159 (by decide +kernel) (by decide +kernel),
+      PeakFullLogic.addWidth _ _ _ _ 128 (by decide +kernel) (by decide +kernel) (by decide +kernel)]
+  rfl
  theorem peak_ncb2 : PeakFullLogic.trip (InverseCarryDevelop.cachedSub (Acc.tx pad 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) = (131, 132, 1850) := by decide +kernel
- theorem peak_ncb3 : PeakFullLogic.trip (InverseCarryDevelop.buildPost (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (128, 128, 1538) := by decide +kernel
+ theorem peak_ncb3 : PeakFullLogic.trip (InverseCarryDevelop.buildPost (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (128, 128, 1538) := by
+  unfold InverseCarryDevelop.buildPost Acc.op
+  exact PeakFullLogic.addWidth _ _ _ _ 128 (by decide +kernel) (by decide +kernel) (by decide +kernel)
  theorem peak_ncb : PeakFullLogic.trip newCachedBuild = (387, 388, 5085) := by
   show PeakFullLogic.trip ((InverseCarryDevelop.buildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) ++ (InverseCarryDevelop.cachedSub (Acc.tx pad 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) ++ (InverseCarryDevelop.buildPost (accReg L) pad (accBank L) L.core.cin (hiReg L))) = _
   rw [PeakFullLogic.trip_append, PeakFullLogic.trip_append, peak_ncb1, peak_ncb2, peak_ncb3]
   rfl
- theorem peak_ocb1 : PeakFullLogic.trip (InverseCarryDevelop.buildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (128, 128, 1697) := by decide +kernel
+ theorem peak_ocb1 : PeakFullLogic.trip (InverseCarryDevelop.buildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (128, 128, 1697) := by
+  unfold InverseCarryDevelop.buildPre
+  rw [PeakFullLogic.trip_append]
+  simp only [Acc.seedOp,Acc.op, Bool.false_eq_true,↓reduceIte]
+  rw [PeakFullLogic.seedWidth _ _ 159 (by decide +kernel) (by decide +kernel),
+      PeakFullLogic.addWidth _ _ _ _ 128 (by decide +kernel) (by decide +kernel) (by decide +kernel)]
+  rfl
  theorem peak_ocb2 : PeakFullLogic.trip (InverseCarryDevelop.cachedSub (Acc.tx (accZ L) 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) = (131, 132, 1850) := by decide +kernel
- theorem peak_ocb3 : PeakFullLogic.trip (InverseCarryDevelop.buildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (128, 128, 1538) := by decide +kernel
+ theorem peak_ocb3 : PeakFullLogic.trip (InverseCarryDevelop.buildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (128, 128, 1538) := by
+  unfold InverseCarryDevelop.buildPost Acc.op
+  exact PeakFullLogic.addWidth _ _ _ _ 128 (by decide +kernel) (by decide +kernel) (by decide +kernel)
  theorem peak_ocb : PeakFullLogic.trip oldCachedBuild = (387, 388, 5085) := by
   show PeakFullLogic.trip ((InverseCarryDevelop.buildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) ++ (InverseCarryDevelop.cachedSub (Acc.tx (accZ L) 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) ++ (InverseCarryDevelop.buildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L))) = _
   rw [PeakFullLogic.trip_append, PeakFullLogic.trip_append, peak_ocb1, peak_ocb2, peak_ocb3]

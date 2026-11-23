@@ -1771,30 +1771,41 @@ def newBuild:Program:=ReorderedABuild.build 89 acc pad bank cin src hosts
 def newInv:Program:=ReorderedAUnbuild.unbuild 89 acc pad bank cin src hosts
 
 -- Peak memory: one kernel check per program part (each part is generated only in its own declaration).
-theorem peak_nb1 : PeakBOpt.trip (ReorderedAHead.head acc pad bank cin src) = (131, 131, 1995) := by decide +kernel
+private theorem transferCharge (x y : Program) (z : Nat × Nat × Nat)
+    (eq : x = y) (cost : PeakFullLogic.trip y = z) : PeakBOpt.trip x = z :=
+  (congrArg PeakBOpt.trip eq).trans cost
+
+theorem peak_nb1 : PeakBOpt.trip (ReorderedAHead.head acc pad bank cin src) = (131, 131, 1995) := by
+  change PeakFullLogic.trip _ = _
+  unfold ReorderedAHead.head
+  rw [PeakFullLogic.trip_append]
+  simp only [Acc.seedOp,Acc.op,↓reduceIte]
+  rw [PeakFullLogic.seedWidth _ _ 157 (by decide +kernel) (by decide +kernel),
+      PeakFullLogic.subWidth _ _ _ _ 131 (by decide +kernel) (by decide +kernel) (by decide +kernel)]
+  rfl
 theorem peak_nb2 : PeakBOpt.trip (ReorderedGenericCache.cachedAdd 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) = (127, 127, 1615) := by decide +kernel
-theorem peak_nb3 : PeakBOpt.trip (A161Carry.buildPost acc pad bank cin src) = (128, 128, 1538) := by decide +kernel
+theorem peak_nb3 : PeakBOpt.trip (A161Carry.buildPost acc pad bank cin src) = (128, 128, 1538) := transferCharge _ (InverseCarryDevelop.buildPost (accReg WholePadConcrete.L) WholePadConcrete.pad (accBank WholePadConcrete.L) WholePadConcrete.L.core.cin (hiReg WholePadConcrete.L)) _ (by rfl) WholePadConcrete.peak_ncb3
 theorem peak_nb : PeakBOpt.trip newBuild = (386, 386, 5148) := by
   show PeakBOpt.trip ((ReorderedAHead.head acc pad bank cin src) ++ (ReorderedGenericCache.cachedAdd 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) ++ (A161Carry.buildPost acc pad bank cin src)) = _
   rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_nb1, peak_nb2, peak_nb3]
   rfl
-theorem peak_ni1 : PeakBOpt.trip (A161Carry.unbuildPre acc pad bank cin src) = (105, 128, 1727) := by decide +kernel
+theorem peak_ni1 : PeakBOpt.trip (A161Carry.unbuildPre acc pad bank cin src) = (105, 128, 1727) := transferCharge _ (InverseCarryDevelop.unbuildPre (accReg WholePadConcrete.L) WholePadConcrete.pad (accBank WholePadConcrete.L) WholePadConcrete.L.core.cin (hiReg WholePadConcrete.L)) _ (by rfl) WholePadConcrete.peak_ncu1
 theorem peak_ni2 : PeakBOpt.trip (ReorderedConsumedSub.consumed 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) = (38, 127, 1426) := by decide +kernel
 theorem peak_ni3 : PeakBOpt.trip (ReorderedAUnbuild.after acc pad bank cin src) = (0, 131, 1332) := by decide +kernel
 theorem peak_ni : PeakBOpt.trip newInv = (143, 386, 4485) := by
   show PeakBOpt.trip ((A161Carry.unbuildPre acc pad bank cin src) ++ (ReorderedConsumedSub.consumed 89 src (List.drop 10 (List.take 138 acc)) (List.take 127 bank) hosts cin) ++ (ReorderedAUnbuild.after acc pad bank cin src)) = _
   rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_ni1, peak_ni2, peak_ni3]
   rfl
-theorem peak_sb1 : PeakBOpt.trip (InverseCarryDevelop.buildPre SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) = (128, 128, 1697) := by decide +kernel
+theorem peak_sb1 : PeakBOpt.trip (InverseCarryDevelop.buildPre SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) = (128, 128, 1697) := transferCharge _ (InverseCarryDevelop.buildPre (accReg WholePadConcrete.L) WholePadConcrete.pad (accBank WholePadConcrete.L) WholePadConcrete.L.core.cin (hiReg WholePadConcrete.L)) _ (by rfl) WholePadConcrete.peak_ncb1
 theorem peak_sb2 : PeakBOpt.trip (_root_.ManyACarryDevelop.cachedSubMany 86 (Acc.tx (FullBTemp.pad SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.ty (List.take 139 SixCarryLoopAnchor.ga) (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.tc (accBank SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) LowAccCarryDevelop.loans88 SixCarryLoopAnchor.L.core.cin SixCarryLoopAnchor.L.core.sumCarry (FullBTemp.hostR SixCarryLoopAnchor.L) (FullBTemp.hostP SixCarryLoopAnchor.L)) = (131, 132, 1938) := by decide +kernel
-theorem peak_sb3 : PeakBOpt.trip (InverseCarryDevelop.buildPost SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) = (128, 128, 1538) := by decide +kernel
+theorem peak_sb3 : PeakBOpt.trip (InverseCarryDevelop.buildPost SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) = (128, 128, 1538) := transferCharge _ (InverseCarryDevelop.buildPost (accReg WholePadConcrete.L) WholePadConcrete.pad (accBank WholePadConcrete.L) WholePadConcrete.L.core.cin (hiReg WholePadConcrete.L)) _ (by rfl) WholePadConcrete.peak_ncb3
 theorem peak_sb : PeakBOpt.trip SixCarryLoopAnchor.build = (387, 388, 5173) := by
   show PeakBOpt.trip ((InverseCarryDevelop.buildPre SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L)) ++ (_root_.ManyACarryDevelop.cachedSubMany 86 (Acc.tx (FullBTemp.pad SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.ty (List.take 139 SixCarryLoopAnchor.ga) (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) (Acc.tc (accBank SixCarryLoopAnchor.L) 139 (Acc.earlyTerm (hiReg SixCarryLoopAnchor.L) true 6)) LowAccCarryDevelop.loans88 SixCarryLoopAnchor.L.core.cin SixCarryLoopAnchor.L.core.sumCarry (FullBTemp.hostR SixCarryLoopAnchor.L) (FullBTemp.hostP SixCarryLoopAnchor.L)) ++ (InverseCarryDevelop.buildPost SixCarryLoopAnchor.ga (FullBTemp.pad SixCarryLoopAnchor.L) (accBank SixCarryLoopAnchor.L) SixCarryLoopAnchor.L.core.cin (hiReg SixCarryLoopAnchor.L))) = _
   rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_sb1, peak_sb2, peak_sb3]
   rfl
-theorem peak_eu1 : PeakBOpt.trip (InverseCarryDevelop.unbuildPre LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) = (105, 128, 1727) := by decide +kernel
+theorem peak_eu1 : PeakBOpt.trip (InverseCarryDevelop.unbuildPre LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) = (105, 128, 1727) := transferCharge _ (InverseCarryDevelop.unbuildPre (accReg WholePadConcrete.L) WholePadConcrete.pad (accBank WholePadConcrete.L) WholePadConcrete.L.core.cin (hiReg WholePadConcrete.L)) _ (by rfl) WholePadConcrete.peak_ncu1
 theorem peak_eu2 : PeakBOpt.trip (_root_.ManyACarryDevelop.consumedAddMany 86 (hiReg LowAccCarryDevelop.L) (FullBTemp.pad LowAccCarryDevelop.L) (List.drop 6 (List.take 139 LowAccCarryDevelop.ga)) (List.take 132 (accBank LowAccCarryDevelop.L)) LowAccCarryDevelop.loans88 LowAccCarryDevelop.L.core.cin LowAccCarryDevelop.L.core.sumCarry (FullBTemp.hostR LowAccCarryDevelop.L) (FullBTemp.hostP LowAccCarryDevelop.L)) = (39, 132, 1219) := by decide +kernel
-theorem peak_eu3 : PeakBOpt.trip (InverseCarryDevelop.unbuildPost LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) = (0, 128, 1692) := by decide +kernel
+theorem peak_eu3 : PeakBOpt.trip (InverseCarryDevelop.unbuildPost LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) = (0, 128, 1692) := transferCharge _ (InverseCarryDevelop.unbuildPost (accReg WholePadConcrete.L) WholePadConcrete.pad (accBank WholePadConcrete.L) WholePadConcrete.L.core.cin (hiReg WholePadConcrete.L)) _ (by rfl) WholePadConcrete.peak_ncu3
 theorem peak_eu : PeakBOpt.trip LocalEightLoop.unbuild = (144, 388, 4638) := by
   show PeakBOpt.trip ((InverseCarryDevelop.unbuildPre LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L)) ++ (_root_.ManyACarryDevelop.consumedAddMany 86 (hiReg LowAccCarryDevelop.L) (FullBTemp.pad LowAccCarryDevelop.L) (List.drop 6 (List.take 139 LowAccCarryDevelop.ga)) (List.take 132 (accBank LowAccCarryDevelop.L)) LowAccCarryDevelop.loans88 LowAccCarryDevelop.L.core.cin LowAccCarryDevelop.L.core.sumCarry (FullBTemp.hostR LowAccCarryDevelop.L) (FullBTemp.hostP LowAccCarryDevelop.L)) ++ (InverseCarryDevelop.unbuildPost LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L))) = _
   rw [PeakBOpt.trip_append, PeakBOpt.trip_append, peak_eu1, peak_eu2, peak_eu3]
