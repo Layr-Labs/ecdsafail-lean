@@ -2405,7 +2405,7 @@ def highProgram (L : Layout) (B : Nat) : Program :=
 
 /-- Toffoli gates saved by `highProgram` against the generated high decoder. -/
 def highSaving (B : Nat) : Nat :=
-  if B = 87 then 3 else if B = 47 then 1 else if B = 22 then 1 else if B = 12 then 1 else 0
+  if B = 87 then 5 else if B = 47 then 2 else if B = 22 then 2 else if B = 12 then 1 else 0
 
 def unpack (L : Layout) (B : Nat) : Program :=
   unpackWithHigh L B (highProgram L B)
@@ -4311,19 +4311,19 @@ theorem unpackFull_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   omega
 
 theorem high87_counts (L : Layout) :
-    toffoliCount (high87Program L) + 3 = toffoliCount (highDecoder L 87).program ∧
+    toffoliCount (high87Program L) + 5 = toffoliCount (highDecoder L 87).program ∧
     measurementCount (high87Program L) = measurementCount (highDecoder L 87).program := by
   simp only [high87Program, ← high87_full L, renameProgram_counts]
   exact ⟨Decoder87.counts.1, Decoder87.counts.2.1.trans Decoder87.counts.2.2.1.symm⟩
 
 theorem high47_counts (L : Layout) :
-    toffoliCount (high47Program L) + 1 = toffoliCount (highDecoder L 47).program ∧
+    toffoliCount (high47Program L) + 2 = toffoliCount (highDecoder L 47).program ∧
     measurementCount (high47Program L) = measurementCount (highDecoder L 47).program := by
   simp only [high47Program, ← high47_full L, renameProgram_counts]
   exact ⟨Decoder3.counts.1, Decoder3.counts.2.1.trans Decoder3.counts.2.2.1.symm⟩
 
 theorem high22_counts (L : Layout) :
-    toffoliCount (high22Program L) + 1 = toffoliCount (highDecoder L 22).program ∧
+    toffoliCount (high22Program L) + 2 = toffoliCount (highDecoder L 22).program ∧
     measurementCount (high22Program L) = measurementCount (highDecoder L 22).program := by
   simp only [high22Program, ← high22_full L, renameProgram_counts]
   exact ⟨Decoder3.counts.1, Decoder3.counts.2.1.trans Decoder3.counts.2.2.1.symm⟩
@@ -4339,15 +4339,15 @@ theorem highProgram_counts (L : Layout) (B : Nat) :
     measurementCount (highProgram L B) = measurementCount (highDecoder L B).program := by
   by_cases h87 : B = 87
   · subst h87
-    rw [highProgram_87, show highSaving 87 = 3 from rfl]
+    rw [highProgram_87, show highSaving 87 = 5 from rfl]
     exact high87_counts L
   by_cases h47 : B = 47
   · subst h47
-    rw [highProgram_47, show highSaving 47 = 1 from rfl]
+    rw [highProgram_47, show highSaving 47 = 2 from rfl]
     exact high47_counts L
   by_cases h22 : B = 22
   · subst h22
-    rw [highProgram_22, show highSaving 22 = 1 from rfl]
+    rw [highProgram_22, show highSaving 22 = 2 from rfl]
     exact high22_counts L
   by_cases h12 : B = 12
   · subst h12
