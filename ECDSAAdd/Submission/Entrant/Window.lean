@@ -89,53 +89,6 @@ theorem unchanged (M H w : Nat) (bw:w≤1) (long:Bool) :
     guardWord M H w false long=M%8 := by
   cases long <;> simp [guardWord] <;> omega
 
-/-- margin 17 (T1): the far digit of the reduced numerator is one (gap (H-1)U), not two. -/
-def guardWord17 (m h w : Nat) (far long : Bool) :=
-  let a:=h%8
-  let na:=if far then 1 else a
-  (((((m%8+w)%8) ^^^ (if long then a else 0) ^^^ (if long then na else 0))+8-w)%8)
-
-theorem limbs17 (U X M w : Nat) (positive:0<U) (bw:w≤1) (long:Bool)
-    (far:2≤X/U) (same:long=true → X/U=M/U+w) :
-    let d:=(X/U-1)*U
-    (X-d)%U=X%U ∧ (X-d)/U=1 ∧
-    (M-(if long then d else 0))%U=M%U ∧
-    ((M-(if long then d else 0))/U)%8=guardWord17 (M/U) (X/U) w true long := by
-  let H:=X/U
-  let D:=(H-1)*U
-  have hx:=Nat.mod_add_div X U
-  have xm:=Nat.mod_lt X positive
-  have splitX:U*H=D+U*1 := by
-    change U*H=(H-1)*U+U*1
-    rw [Nat.mul_comm (H-1) U,←Nat.mul_add,show H-1+1=H by change 2≤H at far;omega]
-  have rx:X-D=X%U+U*1:=by change X%U+U*H=X at hx;omega
-  dsimp only
-  change (X-D)%U=X%U ∧ (X-D)/U=1 ∧ _
-  rw [rx,Nat.add_mul_mod_self_left,Nat.mod_mod,Nat.add_mul_div_left _ _ positive,Nat.div_eq_of_lt xm,Nat.zero_add]
-  refine ⟨rfl,rfl,?_⟩
-  cases long with
-  | false =>
-    simp [guardWord17,Nat.add_mod]
-    omega
-  | true =>
-    have eq:H=M/U+w:=same rfl
-    have ym:=Nat.mod_lt M positive
-    have hy:=Nat.mod_add_div M U
-    have q:M/U=(H-1)+(1-w):=by change 2≤H at far; omega
-    have splitM:U*(M/U)=D+U*(1-w) := by rw [q,Nat.mul_add,Nat.mul_comm U (H-1)]
-    have ry:M-D=M%U+U*(1-w):=by omega
-    change (M-D)%U=M%U ∧ ((M-D)/U)%8=_
-    rw [ry,Nat.add_mul_mod_self_left,Nat.mod_mod,Nat.add_mul_div_left _ _ positive,Nat.div_eq_of_lt ym,Nat.zero_add]
-    refine ⟨rfl,?_⟩
-    have eqMod:((M/U)%8+w)%8=H%8:=by rw [eq,Nat.mod_add_mod]
-    change (1-w)%8=(((M/U%8+w)%8 ^^^ H%8 ^^^ 1)+8-w)%8
-    rw [eqMod,Nat.xor_self,Nat.zero_xor]
-    omega
-
-theorem unchanged17 (M H w : Nat) (bw:w≤1) (long:Bool) :
-    guardWord17 M H w false long=M%8 := by
-  cases long <;> simp [guardWord17] <;> omega
-
 
 
 end ECDSAAdd.Entrant.StairPacket.EnterLimb
@@ -269,7 +222,7 @@ theorem reduced_values (b k : Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u
     let h:=limb b k
     let d:=if f then gap b k z else 0
     let lu:=decide (f ∧ 2^b≤z.u)
-    T.u=z.u-(if lu then d else 0) ∧ (T.u+T.v=z.u+z.v-d) ∧ T.u+T.v<2*h ∧
+    T.u=z.u-(if lu then d else 0) ∧ (T.u+T.v=z.u+z.v-d) ∧ T.u+T.v<3*h ∧
     PortalValues.negative sg T.u=PortalValues.negative sg z.u ∧
     (T.u-(PortalValues.negative sg T.u).toNat)=
       (z.u-(PortalValues.negative sg z.u).toNat)-(if lu then d else 0) := by
@@ -283,19 +236,19 @@ theorem reduced_values (b k : Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u
     simp only [hf,true_and,ite_true] at *
     by_cases lu:2^b≤z.u
     · simp only [lu,ite_true,decide_true] at lo hi ⊢
-      change limb b k≤z.u-gap b k z+z.v at lo
+      change 2*limb b k≤z.u-gap b k z+z.v at lo
       have hv:z.v<2^b:=by omega
       have nonzero:0<z.u-gap b k z:=by omega
       have nz:0<z.u:=by omega
       simp only [nonzero,nz,PortalValues.negative,decide_true,Bool.and_true]
       exact ⟨trivial,by omega,hi,trivial,by cases sg <;> simp; omega⟩
     · simp only [lu,ite_false,decide_false] at lo hi ⊢
-      change limb b k≤z.u+(z.v-gap b k z) at lo
+      change 2*limb b k≤z.u+(z.v-gap b k z) at lo
       have nz:0<z.v-gap b k z:=by omega
       exact ⟨rfl,by omega,hi,trivial,rfl⟩
   · have dst:reduced b k z=z:=by simp [reduced,hf]
-    have low:(z.u+z.v)/limb b k<2:=Nat.lt_of_not_ge hf
-    have lt:z.u+z.v<2*limb b k:=(Nat.div_lt_iff_lt_mul hu).mp low
+    have low:(z.u+z.v)/limb b k<3:=Nat.lt_of_not_ge hf
+    have lt:z.u+z.v<3*limb b k:=(Nat.div_lt_iff_lt_mul hu).mp low
     simp [dst,hf,lt]
 
 end ECDSAAdd.Entrant.StairPacket.Shadow
@@ -749,182 +702,12 @@ open Arithmetic CodecBitSliceVerify
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
 set_option exponentiation.threshold 8192
-def input : Cols := [0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc, 0xf0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0, 0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00, 0xffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000, 0xffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000, 0xffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000, 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
-def output : Cols := [0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 0x33333333cccccccc33333333cccccccc33333333cccccccc33333333cccccccc000000000000000000000000000000000000000000000000000000000000000033333333cccccccc33333333cccccccc33333333cccccccc33333333cccccccc0000000000000000000000000000000000000000000000000000000000000000cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc, 0xf0f0a5a5f0f0f0f00f0f5a5a0f0f0f0ff0f0a5a5f0f0f0f00f0f5a5a0f0f0f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f05a5af0f0f0f00f0fa5a50f0f0f0ff0f05a5af0f0f0f00f0fa5a50f0f0f0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0, 0xff41be00ff00ff00ff05fa00ff11eeff00be41ff00ff00ff00fa05ff00ee11000000000000000000000000000000000000000000000000000000000000000000ff827d00ff00ff00ffa05f00ff8877ff007d82ff00ff00ff005fa0ff0077880000000000000000000000000000000000000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff000000000000000000000000000000000000000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff000000000000000000000000000000000000000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00, 0xffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000, 0x33333333cccccccc33333333cccccccc33333333cccccccc33333333cccccccc000000000000000000000000000000000000000000000000000000000000000033333333cccccccc33333333cccccccc33333333cccccccc33333333ccccccccffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff000000000000000000000000000000000000000000000000000000000000000000000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff000000000000000000000000000000000000000000000000000000000000000000000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000, 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0f0b4b4f0f0b4b40f0f4b4b0f0f4b4bf0f0b4b4f0f0b4b40f0f4b4b0f0f4b4bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb4b4f0f0b4b4f0f04b4b0f0f4b4b0f0fb4b4f0f0b4b4f0f04b4b0f0f4b4b0f0fffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000, 0xff40bf00ff01fe00ff04fb00ff45baff00bf40ff00fe01ff00fb04ff00ba45000000000000000000000000000000000000000000000000000000000000000045ba00ff04fb00ff01fe00ff40bf00ffba45ff00fb04ff00fe01ff00bf40ff00ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000, 0xff00be41ff00ff00ff00fa05ff00ee1100ff41be00ff00ff00ff05fa00ff11eeff00bf40ff00fe01ff00fb04ff00ba4500ff40bf00ff01fe00ff04fb00ff45ba00ff827d00ff00ff00ffa05f00ff8877ff007d82ff00ff00ff005fa0ff00778845ba00ff04fb00ff01fe00ff40bf00ffba45ff00fb04ff00fe01ff00bf40ff00ff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ffff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ffff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ffff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00000000000000000000000000000000ffffffffffffffffffffffffffffffffff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ffffffffffffffffffffffffffffffff00000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ffff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ffff00ff00ff00ff00ff00ff00ff00ff0000ff00ff00ff00ff00ff00ff00ff00ffff00ff00ff00ff00ff00ff00ff00ff00, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0xffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0xffffffffffffffff0000000000000000ffffffffffffffff0000000000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0ffffffffffffffff0000000000000000ffffffffffffffff0000000000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ffffffffffffffffffffffffffffffff00000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff00000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ffffffffffffffffffffffffffffffff00000000000000000000000000000000ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
-def mask : Nat := 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-def forward : Program := [.CX 0 4,
-.CCX 8 4 17,
-.CX 17 0,
-.CX 0 4,
-.CX 1 5,
-.CCX 8 5 1,
-.CX 1 5,
-.CX 2 6,
-.CCX 8 6 2,
-.CX 2 6,
-.CX 3 7,
-.CCX 8 7 3,
-.CX 3 7,
-.CX 9 4,
-.CX 9 5,
-.CX 9 6,
-.CX 9 7,
-.X 15,
-.CX 0 15,
-.CCX 4 15 16,
-.CCX 5 16 18,
-.CCX 6 18 19,
-.CX 19 7,
-.measureX 19 [] [.CZ 6 18],
-.CX 18 6,
-.measureX 18 [] [.CZ 5 16],
-.CX 16 5,
-.CX 1 18,
-.CCX 10 18 1,
-.CX 1 18,
-.CX 2 19,
-.CCX 10 19 2,
-.CX 2 19,
-.CX 3 20,
-.CCX 10 20 3,
-.CX 3 20,
-.CX 10 2,
-.CCX 11 18 5,
-.CX 10 19,
-.CCX 11 19 6,
-.CX 10 19,
-.CCX 11 20 7,
-.X 5,
-.X 6,
-.X 7,
-.CCX 5 16 21,
-.CCX 6 21 22,
-.CX 22 7,
-.measureX 22 [] [.CZ 6 21],
-.CX 21 6,
-.measureX 21 [] [.CZ 5 16],
-.CX 16 5,
-.X 5,
-.X 6,
-.X 7,
-.measureX 16 [] [.CZ 4 15],
-.CX 0 15,
-.X 15,
-.CX 9 4,
-.CX 9 5,
-.CX 9 6,
-.CX 9 7,
-.CX 0 4,
-.CX 17 0,
-.measureX 17 [] [.CZ 8 4],
-.CX 0 4,
-.CX 1 5,
-.CCX 8 5 1,
-.CX 1 5,
-.CX 2 6,
-.CCX 8 6 2,
-.CX 2 6,
-.CX 3 7,
-.CCX 8 7 3,
-.CX 3 7,
-.CX 3 9,
-.CX 7 9,
-.CX 18 12,
-.CX 12 18,
-.CX 18 12,
-.CX 19 13,
-.CX 13 19,
-.CX 19 13,
-.CX 20 14,
-.CX 14 20,
-.CX 20 14]
+def input : Cols := [0x9999999a9999999a9999999aa6666666ffffaaaa0000aaaaaab56d55ab6a5529ad56a, 0x2d2d2d2e2d2d2d2ee1e1e1e2b8787878ffffcccc0000cccccf39b986320c66400998c, 0x2fd02fe02fd02fefe01fe02bf807f80fffff0f00000f0f0f3dffe18cdf08001f6630, 0x2fffe0002fffefffe0002bfff8000ffffff000000ff00fffff8000000000000000, 0xccccccccccccccccccccccccccccccccaaaaffffaaaa0000fc1e37e0f1bf078d387c0, 0xf0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0ccccffffcccc0000001fc7ff01c007f03f800, 0xff00ff00ff00ff00ff00ff00ff00ff00f0f0fffff0f00000ffe007fffe3ff801c0000, 0xffff0000ffff0000ffff0000ffff0000ff00ffffff000000000007ffffc0000000000, 0xffffffff00000000ffffffff00000000ffff0000ffff0000fffff800003ffffe00000, 0xffffffffffffffff0000000000000000ffffffff00000000ffffffffffc0000000000, 0xffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000, 0xffffffffffffffffffffffffffffffff0000000000000000000000000000000000000, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
+def output : Cols := [0x9999999a9999999a9999999aa6666666ffffaaaa0000aaaaaab56d55ab6a5529ad56a, 0xddddddde000000001111111200000000ffff000000000000cf39b986320c66400998c, 0x22222221ffffffffeeeeeeedffffffffffffffff0000fffff3dffe18cdf08001f6630, 0xffffffff000000000000000000000000ffff000000000000fffff8000000000000000, 0xccccccccccccccccccccccccccccccccaaaaffffaaaa0000fc1e37e0f1bf078d387c0, 0xddddddde00000000488888880000ffff00000000001fc7ff01c007f03f800, 0xffffffff22222221ffffffffb7777777ffffffffffff0000ffe007fffe3ff801c0000, 0xffffffff00000000000000000000ffff00000000000007ffffc0000000000, 0xffffffff00000000ffffffff00000000ffff0000ffff0000fffff800003ffffe00000, 0x0, 0xffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000, 0xffffffffffffffffffffffffffffffff0000000000000000000000000000000000000, 0xf0f0f0f02d2d2d2ef0f0f0f0b8787878cccccccccccccccc000000000000000000000, 0xff00ff0002fd02feff00ff00bf807f80f0f0f0f0f0f0f0f0000000000000000000000, 0xffff00000002fffeffff0000bfff8000ff00ff00ff00ff00000000000000000000000, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
+def mask : Nat := 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+def forward : Program := [ .CX 1 5, .CCX 8 5 1, .CX 1 5, .CX 2 6, .CCX 8 6 2, .CX 2 6, .CX 3 7, .CCX 8 7 3, .CX 3 7, .CX 9 5, .CX 9 6, .CX 9 7, .CCX 11 1 21, .CX 1 18, .CCX 10 18 1, .CX 1 18, .CX 2 19, .CCX 10 19 2, .CX 2 19, .CX 10 2, .CX 3 20, .CX 20 3, .CCX 5 21 22, .measureX 7 [] [.CZ 6 10, .CZ 6 19, .CZ 11 20], .CX 22 6, .CX 21 5, .measureX 22 [] [.Z 21, .CZ 5 21], .CCX 11 19 6, .CX 11 6, .CX 21 6, .measureX 21 [] [.CZ 5 18, .CZ 6 18], .CX 9 5, .CX 9 6, .CX 9 7, .CX 1 5, .CCX 8 5 1, .CX 1 5, .CX 2 6, .CCX 8 6 2, .CX 2 6, .CX 3 7, .CCX 8 7 3, .CX 3 7, .CX 3 9, .CX 7 9, .CX 18 12, .CX 12 18, .CX 18 12, .CX 19 13, .CX 13 19, .CX 19 13, .CX 20 14, .CX 14 20, .CX 20 14, .CX 0 4, .CX 0 4, .CX 15 16, .CX 15 16, .CX 17 15, .CX 17 15]
 theorem forward_checked : eval mask forward input=(true,output) := by decide +kernel
-def backward : Program := [.CX 20 14,
-.CX 14 20,
-.CX 20 14,
-.CX 19 13,
-.CX 13 19,
-.CX 19 13,
-.CX 18 12,
-.CX 12 18,
-.CX 18 12,
-.CX 7 9,
-.CX 3 9,
-.CX 3 7,
-.CCX 8 7 3,
-.CX 3 7,
-.CX 2 6,
-.CCX 8 6 2,
-.CX 2 6,
-.CX 1 5,
-.CCX 8 5 1,
-.CX 1 5,
-.CX 0 4,
-.CCX 8 4 17,
-.CX 17 0,
-.CX 0 4,
-.CX 9 7,
-.CX 9 6,
-.CX 9 5,
-.CX 9 4,
-.X 15,
-.CX 0 15,
-.CCX 4 15 16,
-.X 7,
-.X 6,
-.X 5,
-.CX 16 5,
-.CCX 5 16 21,
-.CX 21 6,
-.CCX 6 21 22,
-.CX 22 7,
-.measureX 22 [] [.CZ 6 21],
-.measureX 21 [] [.CZ 5 16],
-.X 7,
-.X 6,
-.X 5,
-.CCX 11 20 7,
-.CX 10 19,
-.CCX 11 19 6,
-.CX 10 19,
-.CCX 11 18 5,
-.CX 10 2,
-.CX 3 20,
-.CCX 10 20 3,
-.CX 3 20,
-.CX 2 19,
-.CCX 10 19 2,
-.CX 2 19,
-.CX 1 18,
-.CCX 10 18 1,
-.CX 1 18,
-.CX 16 5,
-.CCX 5 16 18,
-.CX 18 6,
-.CCX 6 18 19,
-.CX 19 7,
-.measureX 19 [] [.CZ 6 18],
-.measureX 18 [] [.CZ 5 16],
-.measureX 16 [] [.CZ 4 15],
-.CX 0 15,
-.X 15,
-.CX 9 7,
-.CX 9 6,
-.CX 9 5,
-.CX 9 4,
-.CX 3 7,
-.CCX 8 7 3,
-.CX 3 7,
-.CX 2 6,
-.CCX 8 6 2,
-.CX 2 6,
-.CX 1 5,
-.CCX 8 5 1,
-.CX 1 5,
-.CX 0 4,
-.CX 17 0,
-.measureX 17 [] [.CZ 8 4],
-.CX 0 4]
+def backward : Program := [ .CX 20 14, .CX 14 20, .CX 20 14, .CX 19 13, .CX 13 19, .CX 19 13, .CX 18 12, .CX 12 18, .CX 18 12, .CX 7 9, .CX 3 9, .measureX 3 [] [.CZ 8 9], .measureX 7 [] [.Z 9, .CZ 8 9], .CX 2 6, .CCX 8 6 2, .CX 2 6, .CX 1 5, .CCX 8 5 1, .CX 1 5, .CX 9 6, .CX 9 5, .CCX 5 18 6, .CX 10 18, .CCX 5 18 22, .CX 10 18, .CX 10 19, .CCX 22 19 7, .CX 10 19, .CCX 11 20 7, .CCX 11 19 6, .CX 11 6, .CCX 11 18 5, .measureX 22 [] [.CZ 5 10, .CZ 5 18], .CX 20 3, .CX 3 20, .CX 10 2, .CX 2 19, .CCX 10 19 2, .CX 2 19, .CX 1 18, .CCX 10 18 1, .CX 1 18, .CX 9 7, .CX 9 6, .CX 9 5, .CX 3 7, .CCX 8 7 3, .CX 3 7, .CX 2 6, .CCX 8 6 2, .CX 2 6, .CX 1 5, .CCX 8 5 1, .CX 1 5, .CX 0 4, .CX 0 4, .CX 15 16, .CX 15 16, .CX 17 15, .CX 17 15, .CX 21 17, .CX 21 17]
 theorem backward_checked : eval mask backward output=(true,input) := by decide +kernel
 def result (r : Nat) : Nat :=
   let ra:=r%16; let rb:=r/16%16; let g:=r.testBit 8; let neg:=r.testBit 9
@@ -938,6 +721,24 @@ def result (r : Nat) : Nat :=
   l+16*b+256*g.toNat+512*(neg ^^ l.testBit 3 ^^ b.testBit 3).toNat+
     1024*f.toNat+2048*u.toNat+4096*f.toNat*h
 def width : Nat := 23
+
+/-- Rows of the enter table that the 7-bit walk reaches (`Shadow7.SmallIfFar`): decode a row into its digits. -/
+def rowA (r : Nat) : Nat := if r.testBit 8 then r/16%16 else r%16
+
+def rowM (r : Nat) : Nat := (if r.testBit 8 then r%16 else r/16%16) ^^^ (if r.testBit 9 then 15 else 0)
+
+/-- Not far: `m ≤ a ≤ 5`; far and short: `m = 0`; far and long: `m ∈ {a, a-1 mod 16}` (kaankolcu's decf4047 276-row
+restriction). -/
+def reachRow (r : Nat) : Bool :=
+  (!r.testBit 10 && !r.testBit 11 && decide (rowM r ≤ rowA r) && decide (rowA r ≤ 5)) ||
+  (r.testBit 10 && !r.testBit 11 && decide (rowM r = 0)) ||
+  (r.testBit 10 && r.testBit 11 && (decide (rowM r = rowA r) || decide (rowM r = (rowA r + 15) % 16)))
+
+def rows276 : List Nat := [0, 1, 2, 3, 4, 5, 17, 18, 19, 20, 21, 34, 35, 36, 37, 51, 52, 53, 68, 69, 85, 256, 272, 273, 288, 289, 290, 304, 305, 306, 307, 320, 321, 322, 323, 324, 336, 337, 338, 339, 340, 341, 677, 692, 693, 707, 708, 709, 722, 723, 724, 725, 737, 738, 739, 740, 741, 752, 753, 754, 755, 756, 757, 783, 798, 799, 813, 814, 815, 828, 829, 830, 831, 843, 844, 845, 846, 847, 858, 859, 860, 861, 862, 863, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1280, 1296, 1312, 1328, 1344, 1360, 1376, 1392, 1408, 1424, 1440, 1456, 1472, 1488, 1504, 1520, 1776, 1777, 1778, 1779, 1780, 1781, 1782, 1783, 1784, 1785, 1786, 1787, 1788, 1789, 1790, 1791, 1807, 1823, 1839, 1855, 1871, 1887, 1903, 1919, 1935, 1951, 1967, 1983, 1999, 2015, 2031, 2047, 3072, 3073, 3089, 3090, 3106, 3107, 3123, 3124, 3140, 3141, 3157, 3158, 3174, 3175, 3191, 3192, 3208, 3209, 3225, 3226, 3242, 3243, 3259, 3260, 3276, 3277, 3293, 3294, 3310, 3311, 3312, 3327, 3328, 3343, 3344, 3345, 3361, 3362, 3378, 3379, 3395, 3396, 3412, 3413, 3429, 3430, 3446, 3447, 3463, 3464, 3480, 3481, 3497, 3498, 3514, 3515, 3531, 3532, 3548, 3549, 3565, 3566, 3582, 3583, 3584, 3599, 3614, 3615, 3629, 3630, 3644, 3645, 3659, 3660, 3674, 3675, 3689, 3690, 3704, 3705, 3719, 3720, 3734, 3735, 3749, 3750, 3764, 3765, 3779, 3780, 3794, 3795, 3809, 3810, 3824, 3825, 3840, 3855, 3870, 3871, 3885, 3886, 3900, 3901, 3915, 3916, 3930, 3931, 3945, 3946, 3960, 3961, 3975, 3976, 3990, 3991, 4005, 4006, 4020, 4021, 4035, 4036, 4050, 4051, 4065, 4066, 4080, 4081]
+
+theorem rows276_spec : rows276 = (List.range 4096).filter reachRow := by decide +kernel
+
+theorem rows276_length : rows276.length = 276 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1030,21 +831,12 @@ namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 open Arithmetic CodecBitSliceVerify
 
 def Formula (r : Nat) : Prop :=
-  ∀ q:Fin width,(get input q).testBit r=r.testBit q ∧ (get output q).testBit r=(result r).testBit q
+  ∀ q:Fin width,(get input q).testBit r=(rows276.getD r 0).testBit q ∧ (get output q).testBit r=(result (rows276.getD r 0)).testBit q
 instance (r:Nat) : Decidable (Formula r) := inferInstanceAs (Decidable (∀_:Fin width,_))
 
 def Interval (lo n : Nat) : Prop := ∀ j : Fin n, Formula (lo+j)
 instance (lo n:Nat) : Decidable (Interval lo n) := inferInstanceAs (Decidable (∀_:Fin n,_))
 
-theorem combine (lo n : Nat) (a:Interval lo n) (b:Interval (lo+n) n) : Interval lo (n+n) := by
-  intro j
-  by_cases h:j.val<n
-  · exact a ⟨j,h⟩
-  · have hj:=j.isLt
-    have rhs:=b ⟨j.val-n,by omega⟩
-    change Formula (lo+n+(j.val-n)) at rhs
-    change Formula (lo+j.val)
-    rwa [show lo+n+(j.val-n)=lo+j.val by omega] at rhs
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1085,23 +877,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part0_16 : Interval 0 16 := by decide +kernel
-private theorem part16_16 : Interval 16 16 := by decide +kernel
-private theorem part32_16 : Interval 32 16 := by decide +kernel
-private theorem part48_16 : Interval 48 16 := by decide +kernel
-private theorem part64_16 : Interval 64 16 := by decide +kernel
-private theorem part80_16 : Interval 80 16 := by decide +kernel
-private theorem part96_16 : Interval 96 16 := by decide +kernel
-private theorem part112_16 : Interval 112 16 := by decide +kernel
-private theorem part128_16 : Interval 128 16 := by decide +kernel
-private theorem part144_16 : Interval 144 16 := by decide +kernel
-private theorem part160_16 : Interval 160 16 := by decide +kernel
-private theorem part176_16 : Interval 176 16 := by decide +kernel
-private theorem part192_16 : Interval 192 16 := by decide +kernel
-private theorem part208_16 : Interval 208 16 := by decide +kernel
-private theorem part224_16 : Interval 224 16 := by decide +kernel
-private theorem part240_16 : Interval 240 16 := by decide +kernel
-theorem part0_256 : Interval 0 256 := (combine 0 128 (combine 0 64 (combine 0 32 (combine 0 16 part0_16 part16_16) (combine 32 16 part32_16 part48_16)) (combine 64 32 (combine 64 16 part64_16 part80_16) (combine 96 16 part96_16 part112_16))) (combine 128 64 (combine 128 32 (combine 128 16 part128_16 part144_16) (combine 160 16 part160_16 part176_16)) (combine 192 32 (combine 192 16 part192_16 part208_16) (combine 224 16 part224_16 part240_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1111,23 +886,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part256_16 : Interval 256 16 := by decide +kernel
-private theorem part272_16 : Interval 272 16 := by decide +kernel
-private theorem part288_16 : Interval 288 16 := by decide +kernel
-private theorem part304_16 : Interval 304 16 := by decide +kernel
-private theorem part320_16 : Interval 320 16 := by decide +kernel
-private theorem part336_16 : Interval 336 16 := by decide +kernel
-private theorem part352_16 : Interval 352 16 := by decide +kernel
-private theorem part368_16 : Interval 368 16 := by decide +kernel
-private theorem part384_16 : Interval 384 16 := by decide +kernel
-private theorem part400_16 : Interval 400 16 := by decide +kernel
-private theorem part416_16 : Interval 416 16 := by decide +kernel
-private theorem part432_16 : Interval 432 16 := by decide +kernel
-private theorem part448_16 : Interval 448 16 := by decide +kernel
-private theorem part464_16 : Interval 464 16 := by decide +kernel
-private theorem part480_16 : Interval 480 16 := by decide +kernel
-private theorem part496_16 : Interval 496 16 := by decide +kernel
-theorem part256_256 : Interval 256 256 := (combine 256 128 (combine 256 64 (combine 256 32 (combine 256 16 part256_16 part272_16) (combine 288 16 part288_16 part304_16)) (combine 320 32 (combine 320 16 part320_16 part336_16) (combine 352 16 part352_16 part368_16))) (combine 384 64 (combine 384 32 (combine 384 16 part384_16 part400_16) (combine 416 16 part416_16 part432_16)) (combine 448 32 (combine 448 16 part448_16 part464_16) (combine 480 16 part480_16 part496_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1137,23 +895,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part2560_16 : Interval 2560 16 := by decide +kernel
-private theorem part2576_16 : Interval 2576 16 := by decide +kernel
-private theorem part2592_16 : Interval 2592 16 := by decide +kernel
-private theorem part2608_16 : Interval 2608 16 := by decide +kernel
-private theorem part2624_16 : Interval 2624 16 := by decide +kernel
-private theorem part2640_16 : Interval 2640 16 := by decide +kernel
-private theorem part2656_16 : Interval 2656 16 := by decide +kernel
-private theorem part2672_16 : Interval 2672 16 := by decide +kernel
-private theorem part2688_16 : Interval 2688 16 := by decide +kernel
-private theorem part2704_16 : Interval 2704 16 := by decide +kernel
-private theorem part2720_16 : Interval 2720 16 := by decide +kernel
-private theorem part2736_16 : Interval 2736 16 := by decide +kernel
-private theorem part2752_16 : Interval 2752 16 := by decide +kernel
-private theorem part2768_16 : Interval 2768 16 := by decide +kernel
-private theorem part2784_16 : Interval 2784 16 := by decide +kernel
-private theorem part2800_16 : Interval 2800 16 := by decide +kernel
-theorem part2560_256 : Interval 2560 256 := (combine 2560 128 (combine 2560 64 (combine 2560 32 (combine 2560 16 part2560_16 part2576_16) (combine 2592 16 part2592_16 part2608_16)) (combine 2624 32 (combine 2624 16 part2624_16 part2640_16) (combine 2656 16 part2656_16 part2672_16))) (combine 2688 64 (combine 2688 32 (combine 2688 16 part2688_16 part2704_16) (combine 2720 16 part2720_16 part2736_16)) (combine 2752 32 (combine 2752 16 part2752_16 part2768_16) (combine 2784 16 part2784_16 part2800_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1163,23 +904,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part2816_16 : Interval 2816 16 := by decide +kernel
-private theorem part2832_16 : Interval 2832 16 := by decide +kernel
-private theorem part2848_16 : Interval 2848 16 := by decide +kernel
-private theorem part2864_16 : Interval 2864 16 := by decide +kernel
-private theorem part2880_16 : Interval 2880 16 := by decide +kernel
-private theorem part2896_16 : Interval 2896 16 := by decide +kernel
-private theorem part2912_16 : Interval 2912 16 := by decide +kernel
-private theorem part2928_16 : Interval 2928 16 := by decide +kernel
-private theorem part2944_16 : Interval 2944 16 := by decide +kernel
-private theorem part2960_16 : Interval 2960 16 := by decide +kernel
-private theorem part2976_16 : Interval 2976 16 := by decide +kernel
-private theorem part2992_16 : Interval 2992 16 := by decide +kernel
-private theorem part3008_16 : Interval 3008 16 := by decide +kernel
-private theorem part3024_16 : Interval 3024 16 := by decide +kernel
-private theorem part3040_16 : Interval 3040 16 := by decide +kernel
-private theorem part3056_16 : Interval 3056 16 := by decide +kernel
-theorem part2816_256 : Interval 2816 256 := (combine 2816 128 (combine 2816 64 (combine 2816 32 (combine 2816 16 part2816_16 part2832_16) (combine 2848 16 part2848_16 part2864_16)) (combine 2880 32 (combine 2880 16 part2880_16 part2896_16) (combine 2912 16 part2912_16 part2928_16))) (combine 2944 64 (combine 2944 32 (combine 2944 16 part2944_16 part2960_16) (combine 2976 16 part2976_16 part2992_16)) (combine 3008 32 (combine 3008 16 part3008_16 part3024_16) (combine 3040 16 part3040_16 part3056_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1189,23 +913,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part3072_16 : Interval 3072 16 := by decide +kernel
-private theorem part3088_16 : Interval 3088 16 := by decide +kernel
-private theorem part3104_16 : Interval 3104 16 := by decide +kernel
-private theorem part3120_16 : Interval 3120 16 := by decide +kernel
-private theorem part3136_16 : Interval 3136 16 := by decide +kernel
-private theorem part3152_16 : Interval 3152 16 := by decide +kernel
-private theorem part3168_16 : Interval 3168 16 := by decide +kernel
-private theorem part3184_16 : Interval 3184 16 := by decide +kernel
-private theorem part3200_16 : Interval 3200 16 := by decide +kernel
-private theorem part3216_16 : Interval 3216 16 := by decide +kernel
-private theorem part3232_16 : Interval 3232 16 := by decide +kernel
-private theorem part3248_16 : Interval 3248 16 := by decide +kernel
-private theorem part3264_16 : Interval 3264 16 := by decide +kernel
-private theorem part3280_16 : Interval 3280 16 := by decide +kernel
-private theorem part3296_16 : Interval 3296 16 := by decide +kernel
-private theorem part3312_16 : Interval 3312 16 := by decide +kernel
-theorem part3072_256 : Interval 3072 256 := (combine 3072 128 (combine 3072 64 (combine 3072 32 (combine 3072 16 part3072_16 part3088_16) (combine 3104 16 part3104_16 part3120_16)) (combine 3136 32 (combine 3136 16 part3136_16 part3152_16) (combine 3168 16 part3168_16 part3184_16))) (combine 3200 64 (combine 3200 32 (combine 3200 16 part3200_16 part3216_16) (combine 3232 16 part3232_16 part3248_16)) (combine 3264 32 (combine 3264 16 part3264_16 part3280_16) (combine 3296 16 part3296_16 part3312_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1215,23 +922,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part3328_16 : Interval 3328 16 := by decide +kernel
-private theorem part3344_16 : Interval 3344 16 := by decide +kernel
-private theorem part3360_16 : Interval 3360 16 := by decide +kernel
-private theorem part3376_16 : Interval 3376 16 := by decide +kernel
-private theorem part3392_16 : Interval 3392 16 := by decide +kernel
-private theorem part3408_16 : Interval 3408 16 := by decide +kernel
-private theorem part3424_16 : Interval 3424 16 := by decide +kernel
-private theorem part3440_16 : Interval 3440 16 := by decide +kernel
-private theorem part3456_16 : Interval 3456 16 := by decide +kernel
-private theorem part3472_16 : Interval 3472 16 := by decide +kernel
-private theorem part3488_16 : Interval 3488 16 := by decide +kernel
-private theorem part3504_16 : Interval 3504 16 := by decide +kernel
-private theorem part3520_16 : Interval 3520 16 := by decide +kernel
-private theorem part3536_16 : Interval 3536 16 := by decide +kernel
-private theorem part3552_16 : Interval 3552 16 := by decide +kernel
-private theorem part3568_16 : Interval 3568 16 := by decide +kernel
-theorem part3328_256 : Interval 3328 256 := (combine 3328 128 (combine 3328 64 (combine 3328 32 (combine 3328 16 part3328_16 part3344_16) (combine 3360 16 part3360_16 part3376_16)) (combine 3392 32 (combine 3392 16 part3392_16 part3408_16) (combine 3424 16 part3424_16 part3440_16))) (combine 3456 64 (combine 3456 32 (combine 3456 16 part3456_16 part3472_16) (combine 3488 16 part3488_16 part3504_16)) (combine 3520 32 (combine 3520 16 part3520_16 part3536_16) (combine 3552 16 part3552_16 part3568_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1241,23 +931,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part3584_16 : Interval 3584 16 := by decide +kernel
-private theorem part3600_16 : Interval 3600 16 := by decide +kernel
-private theorem part3616_16 : Interval 3616 16 := by decide +kernel
-private theorem part3632_16 : Interval 3632 16 := by decide +kernel
-private theorem part3648_16 : Interval 3648 16 := by decide +kernel
-private theorem part3664_16 : Interval 3664 16 := by decide +kernel
-private theorem part3680_16 : Interval 3680 16 := by decide +kernel
-private theorem part3696_16 : Interval 3696 16 := by decide +kernel
-private theorem part3712_16 : Interval 3712 16 := by decide +kernel
-private theorem part3728_16 : Interval 3728 16 := by decide +kernel
-private theorem part3744_16 : Interval 3744 16 := by decide +kernel
-private theorem part3760_16 : Interval 3760 16 := by decide +kernel
-private theorem part3776_16 : Interval 3776 16 := by decide +kernel
-private theorem part3792_16 : Interval 3792 16 := by decide +kernel
-private theorem part3808_16 : Interval 3808 16 := by decide +kernel
-private theorem part3824_16 : Interval 3824 16 := by decide +kernel
-theorem part3584_256 : Interval 3584 256 := (combine 3584 128 (combine 3584 64 (combine 3584 32 (combine 3584 16 part3584_16 part3600_16) (combine 3616 16 part3616_16 part3632_16)) (combine 3648 32 (combine 3648 16 part3648_16 part3664_16) (combine 3680 16 part3680_16 part3696_16))) (combine 3712 64 (combine 3712 32 (combine 3712 16 part3712_16 part3728_16) (combine 3744 16 part3744_16 part3760_16)) (combine 3776 32 (combine 3776 16 part3776_16 part3792_16) (combine 3808 16 part3808_16 part3824_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1267,23 +940,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part3840_16 : Interval 3840 16 := by decide +kernel
-private theorem part3856_16 : Interval 3856 16 := by decide +kernel
-private theorem part3872_16 : Interval 3872 16 := by decide +kernel
-private theorem part3888_16 : Interval 3888 16 := by decide +kernel
-private theorem part3904_16 : Interval 3904 16 := by decide +kernel
-private theorem part3920_16 : Interval 3920 16 := by decide +kernel
-private theorem part3936_16 : Interval 3936 16 := by decide +kernel
-private theorem part3952_16 : Interval 3952 16 := by decide +kernel
-private theorem part3968_16 : Interval 3968 16 := by decide +kernel
-private theorem part3984_16 : Interval 3984 16 := by decide +kernel
-private theorem part4000_16 : Interval 4000 16 := by decide +kernel
-private theorem part4016_16 : Interval 4016 16 := by decide +kernel
-private theorem part4032_16 : Interval 4032 16 := by decide +kernel
-private theorem part4048_16 : Interval 4048 16 := by decide +kernel
-private theorem part4064_16 : Interval 4064 16 := by decide +kernel
-private theorem part4080_16 : Interval 4080 16 := by decide +kernel
-theorem part3840_256 : Interval 3840 256 := (combine 3840 128 (combine 3840 64 (combine 3840 32 (combine 3840 16 part3840_16 part3856_16) (combine 3872 16 part3872_16 part3888_16)) (combine 3904 32 (combine 3904 16 part3904_16 part3920_16) (combine 3936 16 part3936_16 part3952_16))) (combine 3968 64 (combine 3968 32 (combine 3968 16 part3968_16 part3984_16) (combine 4000 16 part4000_16 part4016_16)) (combine 4032 32 (combine 4032 16 part4032_16 part4048_16) (combine 4064 16 part4064_16 part4080_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1293,23 +949,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part512_16 : Interval 512 16 := by decide +kernel
-private theorem part528_16 : Interval 528 16 := by decide +kernel
-private theorem part544_16 : Interval 544 16 := by decide +kernel
-private theorem part560_16 : Interval 560 16 := by decide +kernel
-private theorem part576_16 : Interval 576 16 := by decide +kernel
-private theorem part592_16 : Interval 592 16 := by decide +kernel
-private theorem part608_16 : Interval 608 16 := by decide +kernel
-private theorem part624_16 : Interval 624 16 := by decide +kernel
-private theorem part640_16 : Interval 640 16 := by decide +kernel
-private theorem part656_16 : Interval 656 16 := by decide +kernel
-private theorem part672_16 : Interval 672 16 := by decide +kernel
-private theorem part688_16 : Interval 688 16 := by decide +kernel
-private theorem part704_16 : Interval 704 16 := by decide +kernel
-private theorem part720_16 : Interval 720 16 := by decide +kernel
-private theorem part736_16 : Interval 736 16 := by decide +kernel
-private theorem part752_16 : Interval 752 16 := by decide +kernel
-theorem part512_256 : Interval 512 256 := (combine 512 128 (combine 512 64 (combine 512 32 (combine 512 16 part512_16 part528_16) (combine 544 16 part544_16 part560_16)) (combine 576 32 (combine 576 16 part576_16 part592_16) (combine 608 16 part608_16 part624_16))) (combine 640 64 (combine 640 32 (combine 640 16 part640_16 part656_16) (combine 672 16 part672_16 part688_16)) (combine 704 32 (combine 704 16 part704_16 part720_16) (combine 736 16 part736_16 part752_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1319,23 +958,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part768_16 : Interval 768 16 := by decide +kernel
-private theorem part784_16 : Interval 784 16 := by decide +kernel
-private theorem part800_16 : Interval 800 16 := by decide +kernel
-private theorem part816_16 : Interval 816 16 := by decide +kernel
-private theorem part832_16 : Interval 832 16 := by decide +kernel
-private theorem part848_16 : Interval 848 16 := by decide +kernel
-private theorem part864_16 : Interval 864 16 := by decide +kernel
-private theorem part880_16 : Interval 880 16 := by decide +kernel
-private theorem part896_16 : Interval 896 16 := by decide +kernel
-private theorem part912_16 : Interval 912 16 := by decide +kernel
-private theorem part928_16 : Interval 928 16 := by decide +kernel
-private theorem part944_16 : Interval 944 16 := by decide +kernel
-private theorem part960_16 : Interval 960 16 := by decide +kernel
-private theorem part976_16 : Interval 976 16 := by decide +kernel
-private theorem part992_16 : Interval 992 16 := by decide +kernel
-private theorem part1008_16 : Interval 1008 16 := by decide +kernel
-theorem part768_256 : Interval 768 256 := (combine 768 128 (combine 768 64 (combine 768 32 (combine 768 16 part768_16 part784_16) (combine 800 16 part800_16 part816_16)) (combine 832 32 (combine 832 16 part832_16 part848_16) (combine 864 16 part864_16 part880_16))) (combine 896 64 (combine 896 32 (combine 896 16 part896_16 part912_16) (combine 928 16 part928_16 part944_16)) (combine 960 32 (combine 960 16 part960_16 part976_16) (combine 992 16 part992_16 part1008_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1345,23 +967,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part1024_16 : Interval 1024 16 := by decide +kernel
-private theorem part1040_16 : Interval 1040 16 := by decide +kernel
-private theorem part1056_16 : Interval 1056 16 := by decide +kernel
-private theorem part1072_16 : Interval 1072 16 := by decide +kernel
-private theorem part1088_16 : Interval 1088 16 := by decide +kernel
-private theorem part1104_16 : Interval 1104 16 := by decide +kernel
-private theorem part1120_16 : Interval 1120 16 := by decide +kernel
-private theorem part1136_16 : Interval 1136 16 := by decide +kernel
-private theorem part1152_16 : Interval 1152 16 := by decide +kernel
-private theorem part1168_16 : Interval 1168 16 := by decide +kernel
-private theorem part1184_16 : Interval 1184 16 := by decide +kernel
-private theorem part1200_16 : Interval 1200 16 := by decide +kernel
-private theorem part1216_16 : Interval 1216 16 := by decide +kernel
-private theorem part1232_16 : Interval 1232 16 := by decide +kernel
-private theorem part1248_16 : Interval 1248 16 := by decide +kernel
-private theorem part1264_16 : Interval 1264 16 := by decide +kernel
-theorem part1024_256 : Interval 1024 256 := (combine 1024 128 (combine 1024 64 (combine 1024 32 (combine 1024 16 part1024_16 part1040_16) (combine 1056 16 part1056_16 part1072_16)) (combine 1088 32 (combine 1088 16 part1088_16 part1104_16) (combine 1120 16 part1120_16 part1136_16))) (combine 1152 64 (combine 1152 32 (combine 1152 16 part1152_16 part1168_16) (combine 1184 16 part1184_16 part1200_16)) (combine 1216 32 (combine 1216 16 part1216_16 part1232_16) (combine 1248 16 part1248_16 part1264_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1371,23 +976,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part1280_16 : Interval 1280 16 := by decide +kernel
-private theorem part1296_16 : Interval 1296 16 := by decide +kernel
-private theorem part1312_16 : Interval 1312 16 := by decide +kernel
-private theorem part1328_16 : Interval 1328 16 := by decide +kernel
-private theorem part1344_16 : Interval 1344 16 := by decide +kernel
-private theorem part1360_16 : Interval 1360 16 := by decide +kernel
-private theorem part1376_16 : Interval 1376 16 := by decide +kernel
-private theorem part1392_16 : Interval 1392 16 := by decide +kernel
-private theorem part1408_16 : Interval 1408 16 := by decide +kernel
-private theorem part1424_16 : Interval 1424 16 := by decide +kernel
-private theorem part1440_16 : Interval 1440 16 := by decide +kernel
-private theorem part1456_16 : Interval 1456 16 := by decide +kernel
-private theorem part1472_16 : Interval 1472 16 := by decide +kernel
-private theorem part1488_16 : Interval 1488 16 := by decide +kernel
-private theorem part1504_16 : Interval 1504 16 := by decide +kernel
-private theorem part1520_16 : Interval 1520 16 := by decide +kernel
-theorem part1280_256 : Interval 1280 256 := (combine 1280 128 (combine 1280 64 (combine 1280 32 (combine 1280 16 part1280_16 part1296_16) (combine 1312 16 part1312_16 part1328_16)) (combine 1344 32 (combine 1344 16 part1344_16 part1360_16) (combine 1376 16 part1376_16 part1392_16))) (combine 1408 64 (combine 1408 32 (combine 1408 16 part1408_16 part1424_16) (combine 1440 16 part1440_16 part1456_16)) (combine 1472 32 (combine 1472 16 part1472_16 part1488_16) (combine 1504 16 part1504_16 part1520_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1397,23 +985,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part1536_16 : Interval 1536 16 := by decide +kernel
-private theorem part1552_16 : Interval 1552 16 := by decide +kernel
-private theorem part1568_16 : Interval 1568 16 := by decide +kernel
-private theorem part1584_16 : Interval 1584 16 := by decide +kernel
-private theorem part1600_16 : Interval 1600 16 := by decide +kernel
-private theorem part1616_16 : Interval 1616 16 := by decide +kernel
-private theorem part1632_16 : Interval 1632 16 := by decide +kernel
-private theorem part1648_16 : Interval 1648 16 := by decide +kernel
-private theorem part1664_16 : Interval 1664 16 := by decide +kernel
-private theorem part1680_16 : Interval 1680 16 := by decide +kernel
-private theorem part1696_16 : Interval 1696 16 := by decide +kernel
-private theorem part1712_16 : Interval 1712 16 := by decide +kernel
-private theorem part1728_16 : Interval 1728 16 := by decide +kernel
-private theorem part1744_16 : Interval 1744 16 := by decide +kernel
-private theorem part1760_16 : Interval 1760 16 := by decide +kernel
-private theorem part1776_16 : Interval 1776 16 := by decide +kernel
-theorem part1536_256 : Interval 1536 256 := (combine 1536 128 (combine 1536 64 (combine 1536 32 (combine 1536 16 part1536_16 part1552_16) (combine 1568 16 part1568_16 part1584_16)) (combine 1600 32 (combine 1600 16 part1600_16 part1616_16) (combine 1632 16 part1632_16 part1648_16))) (combine 1664 64 (combine 1664 32 (combine 1664 16 part1664_16 part1680_16) (combine 1696 16 part1696_16 part1712_16)) (combine 1728 32 (combine 1728 16 part1728_16 part1744_16) (combine 1760 16 part1760_16 part1776_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1423,23 +994,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part1792_16 : Interval 1792 16 := by decide +kernel
-private theorem part1808_16 : Interval 1808 16 := by decide +kernel
-private theorem part1824_16 : Interval 1824 16 := by decide +kernel
-private theorem part1840_16 : Interval 1840 16 := by decide +kernel
-private theorem part1856_16 : Interval 1856 16 := by decide +kernel
-private theorem part1872_16 : Interval 1872 16 := by decide +kernel
-private theorem part1888_16 : Interval 1888 16 := by decide +kernel
-private theorem part1904_16 : Interval 1904 16 := by decide +kernel
-private theorem part1920_16 : Interval 1920 16 := by decide +kernel
-private theorem part1936_16 : Interval 1936 16 := by decide +kernel
-private theorem part1952_16 : Interval 1952 16 := by decide +kernel
-private theorem part1968_16 : Interval 1968 16 := by decide +kernel
-private theorem part1984_16 : Interval 1984 16 := by decide +kernel
-private theorem part2000_16 : Interval 2000 16 := by decide +kernel
-private theorem part2016_16 : Interval 2016 16 := by decide +kernel
-private theorem part2032_16 : Interval 2032 16 := by decide +kernel
-theorem part1792_256 : Interval 1792 256 := (combine 1792 128 (combine 1792 64 (combine 1792 32 (combine 1792 16 part1792_16 part1808_16) (combine 1824 16 part1824_16 part1840_16)) (combine 1856 32 (combine 1856 16 part1856_16 part1872_16) (combine 1888 16 part1888_16 part1904_16))) (combine 1920 64 (combine 1920 32 (combine 1920 16 part1920_16 part1936_16) (combine 1952 16 part1952_16 part1968_16)) (combine 1984 32 (combine 1984 16 part1984_16 part2000_16) (combine 2016 16 part2016_16 part2032_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1449,23 +1003,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part2048_16 : Interval 2048 16 := by decide +kernel
-private theorem part2064_16 : Interval 2064 16 := by decide +kernel
-private theorem part2080_16 : Interval 2080 16 := by decide +kernel
-private theorem part2096_16 : Interval 2096 16 := by decide +kernel
-private theorem part2112_16 : Interval 2112 16 := by decide +kernel
-private theorem part2128_16 : Interval 2128 16 := by decide +kernel
-private theorem part2144_16 : Interval 2144 16 := by decide +kernel
-private theorem part2160_16 : Interval 2160 16 := by decide +kernel
-private theorem part2176_16 : Interval 2176 16 := by decide +kernel
-private theorem part2192_16 : Interval 2192 16 := by decide +kernel
-private theorem part2208_16 : Interval 2208 16 := by decide +kernel
-private theorem part2224_16 : Interval 2224 16 := by decide +kernel
-private theorem part2240_16 : Interval 2240 16 := by decide +kernel
-private theorem part2256_16 : Interval 2256 16 := by decide +kernel
-private theorem part2272_16 : Interval 2272 16 := by decide +kernel
-private theorem part2288_16 : Interval 2288 16 := by decide +kernel
-theorem part2048_256 : Interval 2048 256 := (combine 2048 128 (combine 2048 64 (combine 2048 32 (combine 2048 16 part2048_16 part2064_16) (combine 2080 16 part2080_16 part2096_16)) (combine 2112 32 (combine 2112 16 part2112_16 part2128_16) (combine 2144 16 part2144_16 part2160_16))) (combine 2176 64 (combine 2176 32 (combine 2176 16 part2176_16 part2192_16) (combine 2208 16 part2208_16 part2224_16)) (combine 2240 32 (combine 2240 16 part2240_16 part2256_16) (combine 2272 16 part2272_16 part2288_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1475,23 +1012,6 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-private theorem part2304_16 : Interval 2304 16 := by decide +kernel
-private theorem part2320_16 : Interval 2320 16 := by decide +kernel
-private theorem part2336_16 : Interval 2336 16 := by decide +kernel
-private theorem part2352_16 : Interval 2352 16 := by decide +kernel
-private theorem part2368_16 : Interval 2368 16 := by decide +kernel
-private theorem part2384_16 : Interval 2384 16 := by decide +kernel
-private theorem part2400_16 : Interval 2400 16 := by decide +kernel
-private theorem part2416_16 : Interval 2416 16 := by decide +kernel
-private theorem part2432_16 : Interval 2432 16 := by decide +kernel
-private theorem part2448_16 : Interval 2448 16 := by decide +kernel
-private theorem part2464_16 : Interval 2464 16 := by decide +kernel
-private theorem part2480_16 : Interval 2480 16 := by decide +kernel
-private theorem part2496_16 : Interval 2496 16 := by decide +kernel
-private theorem part2512_16 : Interval 2512 16 := by decide +kernel
-private theorem part2528_16 : Interval 2528 16 := by decide +kernel
-private theorem part2544_16 : Interval 2544 16 := by decide +kernel
-theorem part2304_256 : Interval 2304 256 := (combine 2304 128 (combine 2304 64 (combine 2304 32 (combine 2304 16 part2304_16 part2320_16) (combine 2336 16 part2336_16 part2352_16)) (combine 2368 32 (combine 2368 16 part2368_16 part2384_16) (combine 2400 16 part2400_16 part2416_16))) (combine 2432 64 (combine 2432 32 (combine 2432 16 part2432_16 part2448_16) (combine 2464 16 part2464_16 part2480_16)) (combine 2496 32 (combine 2496 16 part2496_16 part2512_16) (combine 2528 16 part2528_16 part2544_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1556,7 +1076,7 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
-theorem allRows : Interval 0 4096 := (combine 0 2048 (combine 0 1024 (combine 0 512 (combine 0 256 part0_256 part256_256) (combine 512 256 part512_256 part768_256)) (combine 1024 512 (combine 1024 256 part1024_256 part1280_256) (combine 1536 256 part1536_256 part1792_256))) (combine 2048 1024 (combine 2048 512 (combine 2048 256 part2048_256 part2304_256) (combine 2560 256 part2560_256 part2816_256)) (combine 3072 512 (combine 3072 256 part3072_256 part3328_256) (combine 3584 256 part3584_256 part3840_256))))
+theorem allRows : Interval 0 276 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -1579,24 +1099,24 @@ private theorem width_bound (inv:Bool) : wires (step inv) ⊆ Finset.range width
   apply bounded
   cases inv <;> decide +kernel
 
-private theorem lookup (inv : Bool) (r : Fin 4096) (q:Fin width) :
-    (get (source inv) q).testBit r=(initial inv r).testBit q ∧
-    (get (destination inv) q).testBit r=(finalValue inv r).testBit q := by
+private theorem lookup (inv : Bool) (r : Fin 276) (q:Fin width) :
+    (get (source inv) q).testBit r=(initial inv (rows276.getD r 0)).testBit q ∧
+    (get (destination inv) q).testBit r=(finalValue inv (rows276.getD r 0)).testBit q := by
   have h:=allRows r q
   simp only [Nat.zero_add] at h
   cases inv
   · exact h
   · exact ⟨h.2,h.1⟩
 
-theorem apply_guard (f:Wire→Wire) (inv:Bool) (r:Fin 4096)
+theorem apply_guard (f:Wire→Wire) (inv:Bool) (r:Fin 276)
     (inj:∀a b : Fin width, f a=f b → a=b) (m:List Bool) (s:State)
-    (entry:∀q∈wires (step inv),s.basis (f q)=(initial inv r).testBit q) :
+    (entry:∀q∈wires (step inv),s.basis (f q)=(initial inv (rows276.getD r 0)).testBit q) :
     (run (renameProgram f (step inv)) m s).phase=s.phase ∧
-    (∀q∈wires (step inv),(run (renameProgram f (step inv)) m s).basis (f q)=(finalValue inv r).testBit q) ∧
+    (∀q∈wires (step inv),(run (renameProgram f (step inv)) m s).basis (f q)=(finalValue inv (rows276.getD r 0)).testBit q) ∧
     ∀q∉wires (renameProgram f (step inv)),(run (renameProgram f (step inv)) m s).basis q=s.basis q := by
   have targetOK:∀g∈step inv,target g < (source inv).length := by cases inv <;> decide +kernel
   have active:mask.testBit r=true := by
-    change (2^4096-1:Nat).testBit r=true
+    change (2^276-1:Nat).testBit r=true
     rw [Nat.testBit_two_pow_sub_one]
     exact decide_eq_true r.isLt
   let v:=value (source inv) r
@@ -1669,8 +1189,6 @@ def rowOf (a m:Nat) (g neg f u:Bool) :=
 def borrow (a m:Nat) (u:Bool) := (u && m.testBit 0 && !a.testBit 0).toNat
 def updateA (a:Nat) (f:Bool) := 2*(if f then 2 else a/2)+a%2
 def updateM (a m:Nat) (f u:Bool) := 2*EnterLimb.guardWord (m/2) (a/2) (borrow a m u) f u+m%2
-def updateA17 (a:Nat) (f:Bool) := 2*(if f then 1 else a/2)+a%2
-def updateM17 (a m:Nat) (f u:Bool) := 2*EnterLimb.guardWord17 (m/2) (a/2) (borrow a m u) f u+m%2
 
 def expected (a m:Nat) (g neg f u:Bool) :=
   let x:=updateA a f;let y:=updateM a m f u
@@ -1929,52 +1447,6 @@ theorem near_digits (W M V:Nat) :
     have z:nibble M V<16:=Nat.mod_lt _ (by decide)
     omega
 
-theorem short_digits17 (W M V e:Nat) (pos:0<V) (ew:e≤1)
-    (rel:W/(2*V)=M/(2*V)+e) (actual:e=borrow (nibble W V) (nibble M V) true)
-    (df:2≤W/(2*V)) :
-    let d:=(W/(2*V)-1)*(2*V)
-    updateA17 (nibble W V) true=nibble (W-d) V ∧
-    updateM17 (nibble W V) (nibble M V) true true=nibble (M-d) V := by
-  have hh:=EnterLimb.limbs17 (2*V) W M e (by omega) ew true df (fun _=>rel)
-  dsimp only at hh ⊢
-  obtain ⟨wmod,wh,mm,mh⟩:=hh
-  simp only [ite_true] at mm mh
-  have p1: nibble (W-(W/(2*V)-1)*(2*V)) V%2=nibble W V%2:=by rw [frac _ _ pos,wmod,←frac _ _ pos]
-  have p2: nibble (M-(W/(2*V)-1)*(2*V)) V%2=nibble M V%2:=by rw [frac _ _ pos,mm,←frac _ _ pos]
-  constructor
-  · rw [digit_join (W-_) V,wh,p1]
-    rfl
-  · rw [digit_join (M-_) V,p2,mh]
-    unfold updateM17
-    rw [digit,digit,←actual]
-    simp [EnterLimb.guardWord17]
-
-theorem short_other17 (W M V:Nat) (pos:0<V) (df:2≤W/(2*V)) :
-    let d:=(W/(2*V)-1)*(2*V)
-    updateA17 (nibble W V) true=nibble (W-d) V ∧
-    updateM17 (nibble W V) (nibble M V) true false=nibble M V := by
-  have hh:=EnterLimb.limbs17 (2*V) W M 0 (by omega) (by decide) false df (by simp)
-  obtain ⟨wm,wh,_⟩:=hh
-  dsimp only at wm wh ⊢
-  constructor
-  · rw [digit_join (W-_) V,wh,frac (W-_) _ pos,wm,←frac];rfl
-    exact pos
-  · unfold updateM17
-    simp only [borrow,Bool.false_and,Bool.toNat_false,EnterLimb.guardWord17,Bool.false_eq_true,ite_false,
-      Nat.add_zero,Nat.sub_zero,Nat.xor_zero,Nat.add_mod_right,Nat.mod_mod]
-    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
-    omega
-
-theorem near_digits17 (W M V:Nat) :
-    updateA17 (nibble W V) false=nibble W V ∧
-    updateM17 (nibble W V) (nibble M V) false false=nibble M V := by
-  constructor
-  · simp [updateA17];omega
-  · unfold updateM17
-    rw [EnterLimb.unchanged17 _ _ _ (by simp [borrow])]
-    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
-    omega
-
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
@@ -2055,12 +1527,12 @@ theorem actual_residue (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z
     conv_rhs => rw [show N=N-V*j+V*j by omega,Nat.add_mul_mod_self_left]
   have dep:V∣gap b k z := by
     unfold gap;rw [scale]
-    exact ⟨(high b k z-1)*2,by ring⟩
+    exact ⟨(high b k z-2)*2,by ring⟩
   change (T.u+T.v)%V=(z.u+z.v)%V ∧ (T.u-e.toNat)%V=(z.u-e.toNat)%V
   have pos:0<V:=by simp [V,cutUnit]
   by_cases hf:far b k z
   · obtain ⟨_,bound,_⟩:=represented _ _ _ small hf
-    change limb b k≤T.u+T.v at bound
+    change 2*limb b k≤T.u+T.v at bound
     simp only [hf,ite_true,true_and] at tx tm tu
     have light:2^b≤limb b k:=by unfold limb;apply Nat.pow_le_pow_right (by decide);omega
     change T.u+T.v=z.u+z.v-gap b k z at tx
@@ -2082,44 +1554,6 @@ theorem actual_residue (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z
       rw [tm]
   · simp [T,reduced,hf]
 
-
-/-- margin 17 (T1): the gap (H-1)U is a multiple of the whole limb, so the residues agree modulo `limb`
-(the cut of a register that keeps only rows from b+k+1 on). -/
-theorem actual_residue_limb (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z.v<2^b) :
-    let T:=reduced b k z;let e:=PortalValues.negative sg z.u
-    (T.u+T.v)%limb b k=(z.u+z.v)%limb b k ∧ (T.u-e.toNat)%limb b k=(z.u-e.toNat)%limb b k := by
-  let T:=reduced b k z
-  let e:=PortalValues.negative sg z.u
-  obtain ⟨tu,tx,hi,sign,tm⟩:=reduced_values b k z sg small
-  rw [sign] at tm
-  have periodic (N d:Nat) (eq:N≥d) (mul:limb b k∣d):(N-d)%limb b k=N%limb b k:=by
-    obtain ⟨j,rfl⟩:=mul
-    conv_rhs => rw [show N=N-limb b k*j+limb b k*j by omega,Nat.add_mul_mod_self_left]
-  have dep:limb b k∣gap b k z := Nat.dvd_mul_left (limb b k) (high b k z-1)
-  change (T.u+T.v)%limb b k=(z.u+z.v)%limb b k ∧ (T.u-e.toNat)%limb b k=(z.u-e.toNat)%limb b k
-  by_cases hf:far b k z
-  · obtain ⟨_,bound,_⟩:=represented _ _ _ small hf
-    change limb b k≤T.u+T.v at bound
-    simp only [hf,ite_true,true_and] at tx tm tu
-    have light:2^b≤limb b k:=by unfold limb;apply Nat.pow_le_pow_right (by decide);omega
-    change T.u+T.v=z.u+z.v-gap b k z at tx
-    have enough:gap b k z≤z.u+z.v:=by omega
-    rw [tx,periodic _ _ enough dep]
-    refine ⟨rfl,?_⟩
-    by_cases hl:2^b≤z.u
-    · simp only [hl,decide_true,ite_true] at tm tu
-      have tv:T.v=z.v:=by simp [T,reduced,hf,hl]
-      have sm:z.v<2^b:=by omega
-      have boundU:0<T.u:=by omega
-      have nne:z.u≥gap b k z+1:=by change T.u=z.u-gap b k z at tu;omega
-      have eBound:e.toNat≤1:=by cases e <;> decide
-      change T.u-e.toNat=z.u-e.toNat-gap b k z at tm
-      rw [tm]
-      exact periodic _ _ (by change gap b k z≤z.u-e.toNat;omega) dep
-    · simp only [hl,decide_false] at tm
-      change T.u-e.toNat=z.u-e.toNat at tm
-      rw [tm]
-  · simp [T,reduced,hf]
 end ECDSAAdd.Entrant.StairPacket.Shadow
 
 end
@@ -3752,86 +3186,6 @@ theorem left (k B s H w E : Nat) (ready : guard k s ≤ B)
     (by simpa only [pow_zero,Nat.div_one,Bool.not_false,Bool.toNat_true,Nat.mul_one] using digit)
   exact ⟨digit,by simpa only [pow_zero,one_mul,Nat.mod_one,Nat.add_zero] using actual⟩
 
-
-/-! Margin 17: the reduced far sum lies in [U,2U), the far digit in {0,1,2}; `d+1` obeys the old law. -/
-
-def cross17 (d : Nat) := decide (d≠1)
-
-theorem decode17 (d : Nat) (n : Bool) (h : d=if d=1 then 1 else if n then 0 else 2) :
-    d+1=(cross17 d).toNat + 2*(!(cross17 d && n)).toNat := by
-  by_cases e : d=1
-  · simp [e,cross17]
-  · rw [if_neg e] at h
-    cases n <;> simp only [Bool.false_eq_true,ite_false,ite_true] at h <;> subst d <;> decide
-
-theorem value17 (F S H w E t : Nat) (c neg : Bool)
-    (gap : F=S+2^t*(2^E*(H-1))) (far : 2 ≤ H)
-    (room : H-1+S/2^E/2^t < 2^w) (legal : neg=true → c=true)
-    (digit : S/2^E/2^t+1=c.toNat+2*(!neg).toNat) :
-    F/2^E = 2^t*HighBankAdjust.adjusted H w c neg + S/2^E%2^t := by
-  have h := corrected H w _ c neg far (by omega) legal digit
-  have h' : HighBankAdjust.adjusted H w c neg = H-1+S/2^E/2^t := by omega
-  rw [h',gap,show 2^t*(2^E*(H-1))=2^E*(2^t*(H-1)) by ring,
-      Nat.add_mul_div_left _ _ (by positivity),Nat.mul_add]
-  have decomposition := Nat.mod_add_div (S/2^E) (2^t)
-  omega
-
-theorem right17 (k B s H w E : Nat) (hk : 0<k) (ready : guard k s ≤ B)
-    (odd : B%2=1) (small : s<2^E) (low : 2^k*2^E≤B+s) (high : B+s<2*(2^k*2^E))
-    (far : 2≤H) :
-    let z : SkywalkNat.State := ⟨s,B⟩
-    let S := total (step^[k] z)
-    let F := total (step^[k] ⟨s,B+2^k*(2^E*(H-1))⟩)
-    let t := wait k s
-    let d := S/2^E/2^t
-    let neg := cross17 d && negative (oddBits (letters k z))
-    H-1+d<2^w →
-      d+1=(cross17 d).toNat+2*(!neg).toNat ∧ F/2^E=2^t*HighBankAdjust.adjusted H w (cross17 d) neg+S/2^E%2^t := by
-  dsimp only
-  intro room
-  have q := corrected_digit17 k B s (2^E) hk ready odd small low high
-  dsimp only at q
-  rw [Nat.mul_comm (2^_) (2^E),←Nat.div_div_eq_div_mul] at q
-  have digit := decode17 _ _ q
-  exact ⟨digit,value17 _ _ _ _ _ _ _ _ (right_sum k B s _ ready) far room (fun hn => (Bool.and_eq_true_iff.mp hn).1) digit⟩
-
-theorem left17 (k B s H w E : Nat) (ready : guard k s ≤ B)
-    (odd : s%2=1) (small : s<2^E) (low : 2^k*2^E≤B+s) (high : B+s<2*(2^k*2^E))
-    (far : 2≤H) :
-    let S := total (step^[k] ⟨B,s⟩)
-    let F := total (step^[k] ⟨B+2^k*(2^E*(H-1)),s⟩)
-    let d := S/2^E
-    H-1+d<2^w →
-      d+1=(cross17 d).toNat+2 ∧ F/2^E=HighBankAdjust.adjusted H w (cross17 d) false := by
-  dsimp only
-  intro room
-  have h := left_digit17 k B s (2^E) ready odd small low high
-  dsimp only at h
-  have digit : total (step^[k] ⟨B,s⟩)/2^E+1=(cross17 (total (step^[k] ⟨B,s⟩)/2^E)).toNat+2 := by
-    rcases h with h|h <;> simp [total,h,cross17]
-  have gap : total (step^[k] ⟨B+2^k*(2^E*(H-1)),s⟩) =
-      total (step^[k] ⟨B,s⟩)+2^E*(H-1) := by
-    rw [long_u k B s _ ready]
-    dsimp [total]
-    omega
-  have actual := value17 _ _ H w E 0 _ false (by simpa only [pow_zero,one_mul] using gap)
-    far (by simpa only [pow_zero,Nat.div_one] using room) (by simp)
-    (by simpa only [pow_zero,Nat.div_one,Bool.not_false,Bool.toNat_true,Nat.mul_one] using digit)
-  exact ⟨digit,by simpa only [pow_zero,one_mul,Nat.mod_one,Nat.add_zero] using actual⟩
-
-/-- With carry-in 0 the adjust ignores its sign wire. -/
-theorem adjusted_idle (x w : Nat) (n : Bool) (h : x<2^w) : HighBankAdjust.adjusted x w false n=x := by
-  cases n <;> simp [HighBankAdjust.adjusted,Nat.mod_eq_of_lt h]
-
-/-- The physical crossing wire `e0+6` at margin 17: bit 0 of the far digit d ∈ {0,1,2} (this is the bit the archive stores). -/
-def crossBit (d : Nat) : Bool := !cross17 d
-
-/-- The sign wire may be read without the crossing gate: it only matters when the carry-in is set. -/
-theorem adjusted_gate (x w : Nat) (c n : Bool) (h : x<2^w) : HighBankAdjust.adjusted x w c (c && n)=HighBankAdjust.adjusted x w c n := by
-  cases c
-  · rw [Bool.false_and,adjusted_idle x w false h,adjusted_idle x w n h]
-  · rw [Bool.true_and]
-
 end ECDSAAdd.Entrant.StairPacket.HighBankSum
 
 end
@@ -3926,36 +3280,25 @@ open SkywalkNat IntegerHigh Shadow
 theorem scale (b : Nat) : limb b 15=2^15*2^(b+1) := by
   rw [limb,show b+15+1=15+(b+1) by omega,pow_add]
 
-/-- margin 17 (T1): the exact guard bound. The reduced long word only keeps U - short, and
-guard 15 s + s = 2^15 (2s+1) ≤ U holds exactly for s < 2^b. -/
-theorem guard_tight (b s : Nat) (hs : s<2^b) : guard 15 s+s≤limb b 15 := by
-  have a : 2*s+1≤2*2^b := by omega
-  have mul := Nat.mul_le_mul_left (2^15) a
-  have f := guard_formula 15 s
-  have e : limb b 15=2^15*(2*2^b) := by
-    rw [scale,pow_succ 2 b,Nat.mul_comm (2^b) 2]
-  rw [f,e]
-  exact mul
-
 theorem rail (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b) (far : Shadow.far b 15 z) :
     let r := reduced b 15 z
-    let D := 2^(b+1)*(high b 15 z-1)
+    let D := 2^(b+1)*(high b 15 z-2)
     (2^b≤z.u → r.v=z.v ∧ z.u=r.u+2^15*D ∧ guard 15 r.v≤r.u) ∧
     (z.u<2^b → r.u=z.u ∧ z.v=r.v+2^15*D ∧ guard 15 r.u≤r.v) := by
   dsimp only
   have hr := (represented b 15 z small far).2.1
-  have amount : gap b 15 z=2^15*(2^(b+1)*(high b 15 z-1)) := by rw [gap,scale];ring
+  have amount : gap b 15 z=2^15*(2^(b+1)*(high b 15 z-2)) := by rw [gap,scale];ring
   have base : 2^b≤limb b 15 := Nat.pow_le_pow_right (by decide) (by omega)
   constructor
   · intro h
     have sh : z.v<2^b := by omega
     rw [reduced,if_pos far,if_pos h] at hr ⊢
     dsimp only at hr ⊢
-    exact ⟨rfl,by omega,(by have t:=guard_tight b z.v sh; omega)⟩
+    exact ⟨rfl,by omega,(guard_small 15 z.v b sh).trans (by unfold limb at hr base;omega)⟩
   · intro h
     rw [reduced,if_pos far,if_neg (Nat.not_le.mpr h)] at hr ⊢
     dsimp only at hr ⊢
-    exact ⟨rfl,by omega,(by have t:=guard_tight b z.u h; omega)⟩
+    exact ⟨rfl,by omega,(guard_small 15 z.u b h).trans (by unfold limb at hr base;omega)⟩
 
 
 open HighBankSum
@@ -3969,17 +3312,17 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     let F:=total (step^[15] z)
     let t:=if 2^b≤z.u then 0 else wait 15 z.u
     let d:=S/2^(b+1)/2^t
-    let neg:=cross17 d && (!(decide (2^b≤z.u)) && negative (oddBits (letters 15 r)))
-    d+1=(cross17 d).toNat+2*(!neg).toNat ∧
-      F/2^(b+1)=2^t*HighBankAdjust.adjusted (high b 15 z) w (cross17 d) neg+S/2^(b+1)%2^t := by
+    let neg:=cross d && (!(decide (2^b≤z.u)) && negative (oddBits (letters 15 r)))
+    d=(cross d).toNat+2*(!neg).toNat ∧
+      F/2^(b+1)=2^t*HighBankAdjust.adjusted (high b 15 z) w (cross d) neg+S/2^(b+1)%2^t := by
   let r:=reduced b 15 z
   let H:=high b 15 z
   let V:=2^(b+1)
-  let D:=V*(H-1)
+  let D:=V*(H-2)
   have sides:=rail b z small far
   have bounds := (represented b 15 z small far).2
   rw [scale] at bounds
-  have hH : 2≤H := far
+  have hH : 2≤H := by have : 3≤H := far;omega
   have pos : 2^b<V := by dsimp [V];rw [pow_succ];have := Nat.two_pow_pos b;omega
   dsimp only
   by_cases h : 2^b≤z.u
@@ -3987,30 +3330,30 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     have shape : z=⟨r.u+2^15*D,r.v⟩:=SkywalkNat.State.ext eqU eqV.symm
     have short : r.v<V := by dsimp [r];omega
     have rodd : r.v%2=1 := eqV ▸ odd
-    have dcap := left_digit17 15 r.u r.v V guarded rodd short bounds.1 bounds.2
-    change total (step^[15] r)/V=1 ∨ total (step^[15] r)/V=2 at dcap
-    have room : H-1+total (step^[15] r)/V<2^w := by change H+1<2^w at enough;omega
-    have outcome:=HighBankSum.left17 15 r.u r.v H w (b+1) guarded rodd short bounds.1 bounds.2 hH room
+    have dcap := left_digit 15 r.u r.v V guarded rodd short bounds.1 bounds.2
+    change total (step^[15] r)/V=2 ∨ total (step^[15] r)/V=3 at dcap
+    have room : H-2+total (step^[15] r)/V<2^w := by change H+1<2^w at enough;omega
+    have outcome:=HighBankSum.left 15 r.u r.v H w (b+1) guarded rodd short bounds.1 bounds.2 hH room
     rw [←shape] at outcome
     simpa only [if_pos h,decide_eq_true h,Bool.not_true,Bool.false_and,Bool.and_false,Bool.not_false,Bool.toNat_true,Nat.mul_one,pow_zero,Nat.div_one,one_mul,Nat.mod_one,Nat.add_zero] using outcome
   · obtain ⟨eqU,eqV,guarded⟩:=sides.2 (Nat.lt_of_not_ge h)
     have shape : z=⟨r.u,r.v+2^15*D⟩:=SkywalkNat.State.ext eqU.symm eqV
     have short : r.u<V := by dsimp [r];omega
     have rodd : r.v%2=1 := by change z.v=r.v+32768*D at eqV;omega
-    have dcap := (right_digit17 15 r.v r.u V guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2)).1
-    change total (step^[15] r)/(2^(wait 15 r.u)*V)=0 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=1 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=2 at dcap
+    have dcap := (right_digit 15 r.v r.u V guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2)).1
+    change total (step^[15] r)/(2^(wait 15 r.u)*V)=1 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=2 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=3 at dcap
     rw [Nat.mul_comm (2^_) V,←Nat.div_div_eq_div_mul] at dcap
-    have room : H-1+total (step^[15] r)/V/2^(wait 15 r.u)<2^w := by change H+1<2^w at enough;omega
-    have outcome:=HighBankSum.right17 15 r.v r.u H w (b+1) (by decide) guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
+    have room : H-2+total (step^[15] r)/V/2^(wait 15 r.u)<2^w := by change H+1<2^w at enough;omega
+    have outcome:=HighBankSum.right 15 r.v r.u H w (b+1) (by decide) guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
     rw [←shape] at outcome
     have waits : wait 15 z.u=wait 15 r.u := congrArg (wait 15) eqU.symm
     simpa only [if_neg h,decide_eq_false h,Bool.not_false,Bool.true_and,waits] using outcome
 
 
 theorem near_result (b : Nat) (z : SkywalkNat.State) (close : ¬ Shadow.far b 15 z) :
-    reduced b 15 z=z ∧ total (step^[15] z)/2^(b+1)<2^17 := by
+    reduced b 15 z=z ∧ total (step^[15] z)/2^(b+1)<2^18 := by
   refine ⟨by simp [reduced,close],?_⟩
-  have lt : (z.u+z.v)/limb b 15<2 := Nat.lt_of_not_ge close
+  have lt : (z.u+z.v)/limb b 15<3 := Nat.lt_of_not_ge close
   have lim := (Nat.div_lt_iff_lt_mul (by unfold limb;positivity)).mp lt
   rw [scale] at lim
   have noninc := iter_sum_nonincrease 15 z
@@ -4098,6 +3441,43 @@ def place (b : Nat) (z : SkywalkNat.State) := if 2^b≤z.u then 0 else wait 15 z
 theorem modeKey (b : Nat) (z : SkywalkNat.State) (f : far b 15 z) :
     key (actualMode b z)=place b z ∧ right (actualMode b z)= !decide (2^b≤z.u) ∧ enabled (actualMode b z)=true := by
   by_cases h : 2^b≤z.u <;> simp [actualMode,farMode,ofFlags,key,place,right,enabled,f,h]
+
+theorem trueControls (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
+    (odd : z.v%2=1) (room : high b 15 z+1<2^w) (p : Ports) (v : BasisState)
+    (bits : ∀i<16,v (p.u+i)=((total (step^[15] (reduced b 15 z)))/2^(b+1)).testBit i)
+    (par : parityBits p v=oddBits (letters 15 (reduced b 15 z))) :
+    let k:=actualMode b z
+    let X:=total (step^[15] (reduced b 15 z))/2^(b+1)
+    let d:=X/2^(place b z)
+    (crossing p k).read v=(if far b 15 z then cross d else false) ∧
+      (far b 15 z → (signExpr p k).read v=(!(decide (2^b≤z.u)) && negative (oddBits (letters 15 (reduced b 15 z))))) := by
+  dsimp only
+  by_cases f : far b 15 z
+  · obtain ⟨idx,side,active⟩:=modeKey b z f
+    have fit : place b z<16 := by unfold place; have h:=wait_le 15 z.u; split <;> omega
+    have val:=LeaveShadowRails.far_result b w z small f odd room
+    let X:=total (step^[15] (reduced b 15 z))/2^(b+1)
+    let d:=X/2^(place b z)
+    constructor
+    · rw [crossing,active,if_pos rfl,Expr.read,idx,bits _ fit,if_pos f]
+      change X.testBit (place b z)=cross d
+      rw [Nat.testBit_eq_decide_div_mod_eq]
+      change decide (d%2=1)=cross d
+      have digit : d=(cross d).toNat+2*_ := val.1
+      cases e : cross d <;> rw [e] at digit <;> simp only [Bool.toNat_false,Bool.toNat_true] at digit <;>
+        apply Bool.eq_iff_iff.mpr <;> simp only [decide_eq_true_eq,Bool.false_eq_true,iff_false,iff_true] <;> omega
+    · intro _
+      rw [sign_value _ _ _ (by
+        intro hs
+        rw [side] at hs
+        have h : z.u<2^b := by by_contra! hh;simp [hh] at hs
+        have rails:=(LeaveShadowRails.rail b z small f).2 h
+        rw [par]
+        have eq : reduced b 15 z=⟨z.u,(reduced b 15 z).v⟩:=SkywalkNat.State.ext rails.1 rfl
+        have g:=rails.2.2
+        rw [rails.1] at g
+        rw [eq,lead_wait 15 _ _ g,idx,place,if_neg (Nat.not_le.mpr h)]) ,side,par]
+  · simp [actualMode,farMode,ofFlags,enabled,crossing,Expr.read,f]
 
 end ECDSAAdd.Entrant.StairPacket.LeaveSelector
 
@@ -4724,15 +4104,15 @@ theorem min_iter (k : Nat) (z : SkywalkNat.State) : min (step^[k] z).u (step^[k]
 
 theorem inputFit (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b) :
     let a:=step^[15] (reduced b 15 z)
-    min a.u a.v<2^b ∧ (a.u+a.v)/2^b<2^18 := by
+    min a.u a.v<2^b ∧ (a.u+a.v)/2^b<2^19 := by
   let r:=reduced b 15 z
   have rsmall : min r.u r.v<2^b := by
     unfold r reduced
     split_ifs <;> (try dsimp only) <;> omega
-  have upper : r.u+r.v<2*limb b 15 := by
+  have upper : r.u+r.v<3*limb b 15 := by
     by_cases f : far b 15 z
     · exact (represented b 15 z small f).2.2
-    · have low : (z.u+z.v)/limb b 15<2 := Nat.lt_of_not_ge f
+    · have low : (z.u+z.v)/limb b 15<3 := Nat.lt_of_not_ge f
       simpa only [r,reduced,if_neg f] using (Nat.div_lt_iff_lt_mul (by unfold limb;positivity)).mp low
   dsimp only
   refine ⟨lt_of_le_of_lt (min_iter 15 r) rsmall,?_⟩
@@ -5441,20 +4821,6 @@ theorem sameThreshold (half e : Nat) (z r : SkywalkNat.State) (rel : Rel 0 z r)
     omega
   | right => exact ⟨Iff.rfl,Iff.rfl⟩
 
-/-- margin 17 (T1): `sameThreshold` with the non-strict sum bound. After 15 ticks the reduced sum is only known
-to be ≥ 2^(b+1); the guard s+1 ≤ B then still gives half+1 ≤ B by parity (2B ≥ 2 half + 1). -/
-theorem sameThreshold17 (half e : Nat) (z r : SkywalkNat.State) (rel : Rel 0 z r)
-    (en:e≤1) (sum:2*half≤r.u+r.v) :
-    (half≤z.u-e ↔ half≤r.u-e) ∧ (0<z.u ↔ 0<r.u) := by
-  cases rel with
-  | left B s D guard =>
-    dsimp only
-    change s+1≤B at guard
-    change 2*half≤B+s at sum
-    simp only [pow_zero,one_mul]
-    omega
-  | right => exact ⟨Iff.rfl,Iff.rfl⟩
-
 theorem afterThreshold (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) (e:Nat) (en:e≤1) :
     let full:=step^[15] z
     let r:=step^[15] (reduced b 15 z)
@@ -5463,8 +4829,8 @@ theorem afterThreshold (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) 
   · have rep:=represented b 15 z small f
     have cap:=rep.2.1
     rw [scale,pow_succ 2 b] at cap
-    have low:=sumLower 15 (2^b*2) (reduced b 15 z) (by unfold total;omega)
-    apply sameThreshold17 _ _ _ _ (terminalRel _ _ _ rep.1) en
+    have low:=sumLower 15 (2*(2^b*2)) (reduced b 15 z) (by unfold total;omega)
+    apply sameThreshold _ _ _ _ (terminalRel _ _ _ rep.1) en
     unfold total at low
     have h:=Nat.two_pow_pos b
     omega
@@ -5477,7 +4843,7 @@ theorem limbGaps (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) :
     ∃a c:Nat,full.u=r.u+2^(b+1)*a ∧ full.v=r.v+2^(b+1)*c := by
   by_cases f : far b 15 z
   · let r:=reduced b 15 z
-    let H:=high b 15 z-1
+    let H:=high b 15 z-2
     let V:=2^(b+1)
     let D:=V*H
     have side:=rail b z small f
@@ -7414,6 +6780,26 @@ theorem controlsAt (j : Fin 24) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) (k : Mode
   have h := controlCert j h0 h1 k
   simp only [reads, LeaveSelector.controls, List.cons.injEq, and_true] at h
   exact ⟨h.2.1, h.2.2.2⟩
+
+/-- dadon's `Leave{s}Loaded.signed`. -/
+theorem loaded_signed (j : Fin 24) (h0 : 1 ≤ j.val) (h1 : j.val ≤ 21) (z : SkywalkNat.State) (ref : BasisState)
+    (small : min z.u z.v < 2^(sbP (start j))) (odd : z.v % 2 = 1)
+    (room : high (sbP (start j)) 15 z + 1 < 2^(wpP (start j)))
+    (bits : ∀ i < 16, ref ((ports j).u + i) = (TrueMiddle.X j z).testBit i)
+    (par : parityBits (ports j) ref = oddBits (letters 15 (reduced (sbP (start j)) 15 z))) :
+    let k := actualMode (sbP (start j)) z
+    let s := fun q => (prior j k q).read ref
+    s (e0P (start j) + 6) = (if far (sbP (start j)) 15 z then cross (TrueMiddle.d j z) else false) ∧
+      s 1597 = (s (e0P (start j) + 6) && (signExpr (ports j) k).read ref) ∧
+      (far (sbP (start j)) 15 z → s 1597 = TrueMiddle.neg j z) := by
+  have h := trueControls (sbP (start j)) (wpP (start j)) z small odd room (ports j) ref bits par
+  obtain ⟨cx, gate⟩ := controlsAt j h0 h1 (actualMode (sbP (start j)) z)
+  dsimp only
+  rw [cx, gate, read_conj]
+  refine ⟨h.1, rfl, ?_⟩
+  intro f
+  rw [h.1, h.2 f, if_pos f]
+  rfl
 
 theorem dest_forward (gs : List Gate) : (GateMirror.forward gs).map LeaveReadoutFrame.destination = gs.map target := by
   induction gs with
