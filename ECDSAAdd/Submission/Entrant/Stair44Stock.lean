@@ -72416,9 +72416,52 @@ def enterFix17p (s h : Nat) : List Gate := [
   .cx (h+804) (h+1576),
   .cx (h+1576) (h+804)]
 
+/-- The forward enter splits `enterFix17p` around its gates 16-17 (`ccx 1556 (h+802) (h+803)`, then the erase
+`pop (h+1578) (h+1575) (h+803)`): on every row the enter sees (`EnterProof17.maskF_rows`) the target already holds
+`1556 & (h+802) ^ (h+1578) & (h+1575)`, so both become one measured erase with two CZ corrections (-1 T). The inverse
+keeps `enterFix17p`. -/
+def enterFix17pA (s h : Nat) : List Gate := [
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+802) (s+h+32),
+  .cx (s+h+32) (h+802),
+  .cx (s+h+33) (h+803),
+  .ccx (s+15) (h+803) (s+h+33),
+  .cx (s+h+33) (h+803),
+  .cx (h+1579) (h+802),
+  .cx (h+1579) (h+803),
+  .make (h+1577) (s+h+32) (h+1574),
+  .cx (h+1574) (s+h+32),
+  .cx (h+1577) (s+h+32),
+  .cx (s+h+33) (h+1575),
+  .cx (h+1575) (s+h+33),
+  .x (h+1574),
+  .make (h+1578) (h+1574) 1556,
+  .x (h+1574)]
+
+def enterFix17pB (s h : Nat) : List Gate := [
+  .cx 1556 (h+802),
+  .x (h+1574),
+  .pop (h+1578) (h+1574) 1556,
+  .x (h+1574),
+  .cx (h+1579) (h+802),
+  .cx (h+1579) (h+803),
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+802) (s+h+32),
+  .cx (s+h+32) (h+802),
+  .make (s+15) (h+803) (s+h+33),
+  .cx (s+h+33) (h+803),
+  .cx (s+h+33) (h+1579),
+  .cx (h+803) (h+1579),
+  .cx (h+804) (h+1576),
+  .cx (h+1576) (h+804)]
+
+def enterErase (h : Nat) : Instr := .measureX (h+803) [] [.CZ 1556 (h+802), .CZ (h+1578) (h+1575)]
+
 def enterOps (s : Nat) : List Gate := enterFix17p s (Shadow7.sbP s)
 
-def enterP (j : Fin 26) : Program := GateMirror.forward (Shadow7.enterOps (start j))
+def enterP (j : Fin 26) : Program :=
+  GateMirror.forward (enterFix17pA (start j) (Shadow7.sbP (start j))) ++
+    enterErase (Shadow7.sbP (start j)) :: GateMirror.forward (enterFix17pB (start j) (Shadow7.sbP (start j)))
 
 def enterInvP (j : Fin 26) : Program := inverse (Shadow7.enterOps (start j))
 
@@ -73969,8 +74012,7 @@ def forward : Program := [.CX 0 2,
 .X 9,
 .CCX 7 9 12,
 .X 9,
-.CCX 12 2 3,
-.measureX 3 [] [.CZ 7 10],
+.measureX 3 [] [.CZ 12 2, .CZ 7 10],
 .CX 12 2,
 .X 9,
 .measureX 12 [] [.CZ 7 9],
@@ -76001,11 +76043,29 @@ theorem window_geom : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
 
 theorem counts_enterFix17p (s h : Nat) : Counts (enterFix17p s h) 4 3 2 33 := ⟨rfl, rfl, rfl, rfl⟩
 
+theorem counts_enterFix17pA (s h : Nat) : Counts (enterFix17pA s h) 2 2 0 16 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix17pB (s h : Nat) : Counts (enterFix17pB s h) 1 1 1 15 := ⟨rfl, rfl, rfl, rfl⟩
+
 theorem enter_counts (j : Fin 26) :
-    toffoliCount (enterP j) = 7 ∧ toffoliCount (enterInvP j) = 6 ∧
+    toffoliCount (enterP j) = 6 ∧ toffoliCount (enterInvP j) = 6 ∧
     measurementCount (enterP j) = 2 ∧ measurementCount (enterInvP j) = 3 ∧
-    gateSlots (enterP j) = 35 ∧ gateSlots (enterInvP j) = 36 :=
-  (counts_enterFix17p _ _).programs
+    gateSlots (enterP j) = 35 ∧ gateSlots (enterInvP j) = 36 := by
+  have i := (counts_enterFix17p (start j) (Shadow7.sbP (start j))).programs
+  have a := (counts_enterFix17pA (start j) (Shadow7.sbP (start j))).programs
+  have b := (counts_enterFix17pB (start j) (Shadow7.sbP (start j))).programs
+  have tc : toffoliCount (enterP j) = toffoliCount (GateMirror.forward (enterFix17pA (start j) (Shadow7.sbP (start j)))) +
+      toffoliCount (GateMirror.forward (enterFix17pB (start j) (Shadow7.sbP (start j)))) := by
+    rw [enterP, toffoliCount_append] <;> rfl
+  have mc : measurementCount (enterP j) = measurementCount (GateMirror.forward (enterFix17pA (start j) (Shadow7.sbP (start j)))) +
+      (1 + measurementCount (GateMirror.forward (enterFix17pB (start j) (Shadow7.sbP (start j))))) := by
+    rw [enterP, measurementCount_append] <;> rfl
+  have sc : gateSlots (enterP j) = gateSlots (GateMirror.forward (enterFix17pA (start j) (Shadow7.sbP (start j)))) +
+      (3 + gateSlots (GateMirror.forward (enterFix17pB (start j) (Shadow7.sbP (start j))))) := by
+    rw [enterP, gateSlots_append] <;> rfl
+  refine ⟨?_, i.2.1, ?_, i.2.2.2.1, ?_, i.2.2.2.2.2⟩
+  · have := a.1; have := b.1; rw [tc]; omega
+  · have := a.2.2.1; have := b.2.2.1; rw [mc]; omega
+  · have := a.2.2.2.2.1; have := b.2.2.2.2.1; rw [sc]; omega
 
 theorem portal_counts (t : Nat) (hw : 5 ≤ wpP t) :
     toffoliCount (portalP t) = 4*wpP t - 2 ∧ toffoliCount (portalInvP t) = 5*wpP t - 4 ∧
@@ -76144,9 +76204,31 @@ theorem enter_proper (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ ente
   simp only [List.forall_mem_cons, List.forall_mem_nil, proper, decide_eq_true_eq, and_true, ne_eq]
   and_intros <;> first | trivial | (intro x hx; cases hx) | omega | exact Nat.ne_of_gt (by omega) | exact Nat.ne_of_lt (by omega)
 
+theorem enter_properA (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ enterFix17pA s (Shadow7.sbP s), proper g = true := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  unfold enterFix17pA
+  simp only [List.forall_mem_cons, List.forall_mem_nil, proper, decide_eq_true_eq, and_true, ne_eq]
+  and_intros <;> first | trivial | (intro x hx; cases hx) | omega | exact Nat.ne_of_gt (by omega) | exact Nat.ne_of_lt (by omega)
+
+theorem enter_properB (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ enterFix17pB s (Shadow7.sbP s), proper g = true := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  unfold enterFix17pB
+  simp only [List.forall_mem_cons, List.forall_mem_nil, proper, decide_eq_true_eq, and_true, ne_eq]
+  and_intros <;> first | trivial | (intro x hx; cases hx) | omega | exact Nat.ne_of_gt (by omega) | exact Nat.ne_of_lt (by omega)
+
 theorem enterP_physical (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
-    GatePhysical (enterP j) ∧ GatePhysical (enterInvP j) :=
-  physical_of_proper _ (enter_proper (start j) (by simp [start] <;> omega) (by simp [start] <;> omega))
+    GatePhysical (enterP j) ∧ GatePhysical (enterInvP j) := by
+  have l0 : 45 ≤ start j := by simp [start] <;> omega
+  have l1 : start j ≤ 405 := by simp [start] <;> omega
+  refine ⟨?_, (physical_of_proper _ (enter_proper (start j) l0 l1)).2⟩
+  have pa := (physical_of_proper _ (enter_properA (start j) l0 l1)).1
+  have pb := (physical_of_proper _ (enter_properB (start j) l0 l1)).1
+  intro i hi
+  simp only [enterP, List.mem_append, List.mem_cons] at hi
+  rcases hi with hi | hi | hi
+  · exact pa i hi
+  · subst hi; trivial
+  · exact pb i hi
 
 theorem park_proper (e : Nat) (h0 : 45 ≤ e) (h1 : e ≤ 420) : ∀ g ∈ parkOps e, proper g = true := by
   have f1 : sbP e + 32 ≤ railP e := by unfold railP sbP; split_ifs <;> omega
@@ -77583,9 +77665,39 @@ theorem enter_foot (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : AllW (footP s) (
   simp only [List.forall_mem_cons, List.forall_mem_nil, Gate.wires, and_true, implies_true]
   and_intros <;> first | (intro x hx; cases hx) | (unfold footP; omega)
 
+theorem enter_footA (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : AllW (footP s) (enterFix17pA s (Shadow7.sbP s)) := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  unfold enterFix17pA AllW
+  simp only [List.forall_mem_cons, List.forall_mem_nil, Gate.wires, and_true, implies_true]
+  and_intros <;> first | (intro x hx; cases hx) | (unfold footP; omega)
+
+theorem enter_footB (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : AllW (footP s) (enterFix17pB s (Shadow7.sbP s)) := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  unfold enterFix17pB AllW
+  simp only [List.forall_mem_cons, List.forall_mem_nil, Gate.wires, and_true, implies_true]
+  and_intros <;> first | (intro x hx; cases hx) | (unfold footP; omega)
+
+theorem enter_footE (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) :
+    ∀ q ∈ (enterErase (Shadow7.sbP s)).wires, footP s q := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  intro q hq
+  simp [enterErase, Instr.wires, correctionWires] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl <;> (unfold footP; omega)
+
 theorem enter_wires (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
-    (∀ q ∈ wires (enterP j), footP (start j) q) ∧ (∀ q ∈ wires (enterInvP j), footP (start j) q) :=
-  allW_programs (enter_foot (start j) (by simp [start] <;> omega) (by simp [start] <;> omega))
+    (∀ q ∈ wires (enterP j), footP (start j) q) ∧ (∀ q ∈ wires (enterInvP j), footP (start j) q) := by
+  have l0 : 45 ≤ start j := by simp [start] <;> omega
+  have l1 : start j ≤ 405 := by simp [start] <;> omega
+  refine ⟨?_, (allW_programs (enter_foot (start j) l0 l1)).2⟩
+  have e : wires (enterP j) = wires (GateMirror.forward (enterFix17pA (start j) (Shadow7.sbP (start j)))) ∪
+      ((enterErase (Shadow7.sbP (start j))).wires ∪ wires (GateMirror.forward (enterFix17pB (start j) (Shadow7.sbP (start j))))) := by
+    rw [enterP, wires_append] <;> rfl
+  intro q hq
+  rw [e, Finset.mem_union, Finset.mem_union] at hq
+  rcases hq with hq | hq | hq
+  · exact (allW_programs (enter_footA (start j) l0 l1)).1 q hq
+  · exact enter_footE (start j) l0 l1 q hq
+  · exact (allW_programs (enter_footB (start j) l0 l1)).1 q hq
 
 /-- Wires of the parametric programs (portal, park), for `Covered`. -/
 theorem portal_wires (t : Nat) (h0 : 45 ≤ t) (h1 : t ≤ 420) :
