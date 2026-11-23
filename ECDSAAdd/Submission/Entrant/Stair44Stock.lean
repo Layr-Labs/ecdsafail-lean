@@ -72379,7 +72379,44 @@ def portalOps (t : Nat) : List Gate :=
 def parkOps (e : Nat) : List Gate :=
   swapsG [(Shadow7.e0P e + 6, bTopP e + 1), (Shadow7.e0P e + 7, bTopP e + 2), (Shadow7.e0P e + 8, bTopP e + 3)]
 
-def enterOps (s : Nat) : List Gate := enterFix17 s (Shadow7.sbP s)
+/-- `enterFix17` with its op 17 (`ccx (h+1578) (h+1575) (h+803)`) as a measured erasure: on every row the enter
+sees, its target already holds the AND (`EnterProof17.maskF_rows`). -/
+def enterFix17p (s h : Nat) : List Gate := [
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+802) (s+h+32),
+  .cx (s+h+32) (h+802),
+  .cx (s+h+33) (h+803),
+  .ccx (s+15) (h+803) (s+h+33),
+  .cx (s+h+33) (h+803),
+  .cx (h+1579) (h+802),
+  .cx (h+1579) (h+803),
+  .make (h+1577) (s+h+32) (h+1574),
+  .cx (h+1574) (s+h+32),
+  .cx (h+1577) (s+h+32),
+  .cx (s+h+33) (h+1575),
+  .cx (h+1575) (s+h+33),
+  .x (h+1574),
+  .make (h+1578) (h+1574) 1556,
+  .x (h+1574),
+  .ccx 1556 (h+802) (h+803),
+  .pop (h+1578) (h+1575) (h+803),
+  .cx 1556 (h+802),
+  .x (h+1574),
+  .pop (h+1578) (h+1574) 1556,
+  .x (h+1574),
+  .cx (h+1579) (h+802),
+  .cx (h+1579) (h+803),
+  .cx (s+h+32) (h+802),
+  .ccx (s+15) (h+802) (s+h+32),
+  .cx (s+h+32) (h+802),
+  .make (s+15) (h+803) (s+h+33),
+  .cx (s+h+33) (h+803),
+  .cx (s+h+33) (h+1579),
+  .cx (h+803) (h+1579),
+  .cx (h+804) (h+1576),
+  .cx (h+1576) (h+804)]
+
+def enterOps (s : Nat) : List Gate := enterFix17p s (Shadow7.sbP s)
 
 def enterP (j : Fin 26) : Program := GateMirror.forward (Shadow7.enterOps (start j))
 
@@ -73911,6 +73948,11 @@ def output : Cols := [0xa5a5ffffa5a5ffff5555aaaa5555aaaaaaaaffffaaaaffffaaaaaaaa
   0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000,
   0x0]
 def mask : Nat := 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+/-- The rows where gate 17 (`.CCX 7 10 3`) meets its AND, i.e. `updateM < 2`: the forward pops it there. Outside
+them every column is zero, so the pop's (unmasked) value check holds on all 512 bits. -/
+def maskF : Nat := 0x36c936c9c6399c6366993cc366993cc3ccccff00333300ffccccff00333300ff36c936c9c6399c6366993cc366993cc3ccccff00333300ffccccff00333300ff
+def inputF : Cols := input.map (· &&& maskF)
+def outputF : Cols := output.map (· &&& maskF)
 def forward : Program := [.CX 0 2,
 .CCX 4 2 0,
 .CX 0 2,
@@ -73928,7 +73970,7 @@ def forward : Program := [.CX 0 2,
 .CCX 7 9 12,
 .X 9,
 .CCX 12 2 3,
-.CCX 7 10 3,
+.measureX 3 [] [.CZ 7 10],
 .CX 12 2,
 .X 9,
 .measureX 12 [] [.CZ 7 9],
@@ -73944,7 +73986,7 @@ def forward : Program := [.CX 0 2,
 .CX 3 5,
 .CX 8 11,
 .CX 11 8]
-theorem forward_checked : eval mask forward input=(true,output) := by decide +kernel
+theorem forward_checked : eval maskF forward inputF=(true,outputF) := by decide +kernel
 def backward : Program := [.CX 11 8,
 .CX 8 11,
 .CX 3 5,
@@ -74065,8 +74107,9 @@ set_option maxHeartbeats 3000000
 set_option exponentiation.threshold 8192
 
 def step (inv:Bool) := if inv then backward else forward
-def source (inv:Bool) := if inv then output else input
-def destination (inv:Bool) := if inv then input else output
+def source (inv:Bool) := if inv then output else inputF
+def destination (inv:Bool) := if inv then input else outputF
+def maskOf (inv:Bool) := if inv then mask else maskF
 def initial (inv:Bool) (r:Nat) := if inv then result r else r
 def finalValue (inv:Bool) (r:Nat) := if inv then r else result r
 
@@ -74074,26 +74117,36 @@ private theorem width_bound (inv:Bool) : wires (step inv) ⊆ Finset.range width
   apply bounded
   cases inv <;> decide +kernel
 
-private theorem lookup (inv : Bool) (r : Fin 512) (q:Fin width) :
+private theorem get_masked (c:Cols) (k q:Nat) : get (c.map (· &&& k)) q=get c q &&& k := by
+  unfold CodecBitSliceVerify.get
+  rw [List.getElem?_map]
+  cases c[q]? <;> simp
+
+private theorem lookup (inv : Bool) (r : Fin 512) (q:Fin width) (live:(maskOf inv).testBit r=true) :
     (get (source inv) q).testBit r=(initial inv r).testBit q ∧
     (get (destination inv) q).testBit r=(finalValue inv r).testBit q := by
   have h:=allRows r q
   simp only [Nat.zero_add] at h
   cases inv
-  · exact h
+  · have l:maskF.testBit r=true:=live
+    show (get inputF q).testBit r=(r:Nat).testBit q ∧ (get outputF q).testBit r=(result r).testBit q
+    rw [inputF,outputF,get_masked,get_masked,Nat.testBit_and,Nat.testBit_and,l,Bool.and_true,Bool.and_true]
+    exact h
   · exact ⟨h.2,h.1⟩
+
+theorem mask_all (r:Fin 512) : mask.testBit r=true := by
+  change (2^512-1:Nat).testBit r=true
+  rw [Nat.testBit_two_pow_sub_one]
+  exact decide_eq_true r.isLt
 
 theorem apply_guard (f:Wire→Wire) (inv:Bool) (r:Fin 512)
     (inj:∀a b : Fin width, f a=f b → a=b) (m:List Bool) (s:State)
-    (entry:∀q∈wires (step inv),s.basis (f q)=(initial inv r).testBit q) :
+    (entry:∀q∈wires (step inv),s.basis (f q)=(initial inv r).testBit q) (live:(maskOf inv).testBit r=true) :
     (run (renameProgram f (step inv)) m s).phase=s.phase ∧
     (∀q∈wires (step inv),(run (renameProgram f (step inv)) m s).basis (f q)=(finalValue inv r).testBit q) ∧
     ∀q∉wires (renameProgram f (step inv)),(run (renameProgram f (step inv)) m s).basis q=s.basis q := by
   have targetOK:∀g∈step inv,target g < (source inv).length := by cases inv <;> decide +kernel
-  have active:mask.testBit r=true := by
-    change (2^512-1:Nat).testBit r=true
-    rw [Nat.testBit_two_pow_sub_one]
-    exact decide_eq_true r.isLt
+  have active:(maskOf inv).testBit r=true := live
   let v:=value (source inv) r
   have rel:Rel (source inv) v r:=value_rel _ _
   have bound:=width_bound inv
@@ -74102,16 +74155,16 @@ theorem apply_guard (f:Wire→Wire) (inv:Bool) (r:Fin 512)
     exact congrArg Fin.val (inj ⟨a,Finset.mem_range.mp ha⟩ ⟨b,Finset.mem_range.mp hb⟩ eq)
   have data:∀q∈wires (step inv),(pullState f s).basis q=v.testBit q := by
     intro q h
-    exact ((entry q h).trans (lookup inv r ⟨q,Finset.mem_range.mp (bound h)⟩).1.symm).trans (rel q).symm
-  have checked:eval mask (step inv) (source inv)=(true,destination inv) := by
+    exact ((entry q h).trans (lookup inv r ⟨q,Finset.mem_range.mp (bound h)⟩ live).1.symm).trans (rel q).symm
+  have checked:eval (maskOf inv) (step inv) (source inv)=(true,destination inv) := by
     cases inv
     · exact forward_checked
     · exact backward_checked
-  have logical:=StairArchiveRows.run_row (step inv) mask r v m (pullState f s)
+  have logical:=StairArchiveRows.run_row (step inv) (maskOf inv) r v m (pullState f s)
     (source inv) (destination inv) active targetOK rel checked data
   have phys:=run_rename_pool f _ finInj _ bound m (pullState f s) s rfl (fun _ _=>rfl)
   exact ⟨phys.1.trans logical.1,
-    fun q h=>((phys.2 q (bound h)).trans (logical.2.1 q h)).trans (lookup inv r ⟨q,Finset.mem_range.mp (bound h)⟩).2,
+    fun q h=>((phys.2 q (bound h)).trans (logical.2.1 q h)).trans (lookup inv r ⟨q,Finset.mem_range.mp (bound h)⟩ live).2,
     fun q h=>run_preserves_outside _ _ _ q h⟩
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof17
@@ -74381,6 +74434,10 @@ def rowBefore (inv:Bool) (b k:Nat) (z:SkywalkNat.State) (g s:Bool) :=
 def rowAfter (inv:Bool) (b k:Nat) (z:SkywalkNat.State) (g s:Bool) :=
   if inv then initialRow b k z g s else shadowRow b k z g s
 
+/-- Gate 17's precondition is exactly `updateM < 2` (all 512 rows). -/
+theorem maskF_rows : ∀ a m:Fin 4,∀ g n f u p:Bool,updateM a.val m.val f u<2 → maskF.testBit (rowOf a.val m.val g n f u p)=true := by
+  decide +kernel
+
 theorem actual_shadow (map:Wire→Wire) (P:Program) (inv:Bool) (b k:Nat) (z:SkywalkNat.State)
     (g s:Bool) (small : Shadow7.SmallIfFar b k z)
     (injective:∀a c:Fin width,map a=map c→a=c) (emitted:P=renameProgram map (step inv))
@@ -74394,7 +74451,16 @@ theorem actual_shadow (map:Wire→Wire) (P:Program) (inv:Bool) (b k:Nat) (z:Skyw
   have each (q:Wire) (hq:q∈wires (step inv)):origin.basis (map q)=(initial inv row).testBit q:=by
     cases inv <;> simpa [initial,row,h.2,rowBefore] using data q hq
   rw [emitted]
-  have act:=apply_guard map inv row injective tape origin each
+  have live:(maskOf inv).testBit row=true := by
+    cases inv
+    · obtain ⟨_,dM,_,m0,_,_,_,_,_⟩:=shadow_digits b k z s small
+      have hm:updateM (pair (z.u+z.v) (Shadow.limb b k)) (pair (z.u-(PortalValues.negative s z.u).toNat) (Shadow.limb b k))
+          (decide (Shadow.far b k z)) (decide (Shadow.far b k z ∧ 2^b≤z.u))<2 := by rw [dM]; exact m0
+      exact maskF_rows ⟨pair (z.u+z.v) (Shadow.limb b k),Nat.mod_lt _ (by decide)⟩
+        ⟨pair (z.u-(PortalValues.negative s z.u).toNat) (Shadow.limb b k),Nat.mod_lt _ (by decide)⟩ g (PortalValues.negative s z.u)
+        (decide (Shadow.far b k z)) (decide (Shadow.far b k z ∧ 2^b≤z.u)) (decide ((z.u+z.v)/Shadow.limb b k/4%2=1)) hm
+    · exact mask_all row
+  have act:=apply_guard map inv row injective tape origin each live
   refine ⟨act.1,?_,act.2.2⟩
   intro q hq
   have value:=act.2.1 q hq
@@ -75933,11 +75999,13 @@ theorem window_geom : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
     lowsP (start j) ≤ liveW (start j) := by
   decide
 
+theorem counts_enterFix17p (s h : Nat) : Counts (enterFix17p s h) 4 3 2 33 := ⟨rfl, rfl, rfl, rfl⟩
+
 theorem enter_counts (j : Fin 26) :
-    toffoliCount (enterP j) = 8 ∧ toffoliCount (enterInvP j) = 6 ∧
-    measurementCount (enterP j) = 1 ∧ measurementCount (enterInvP j) = 3 ∧
-    gateSlots (enterP j) = 34 ∧ gateSlots (enterInvP j) = 36 :=
-  (counts_enterFix17 _ _).programs
+    toffoliCount (enterP j) = 7 ∧ toffoliCount (enterInvP j) = 6 ∧
+    measurementCount (enterP j) = 2 ∧ measurementCount (enterInvP j) = 3 ∧
+    gateSlots (enterP j) = 35 ∧ gateSlots (enterInvP j) = 36 :=
+  (counts_enterFix17p _ _).programs
 
 theorem portal_counts (t : Nat) (hw : 5 ≤ wpP t) :
     toffoliCount (portalP t) = 4*wpP t - 2 ∧ toffoliCount (portalInvP t) = 5*wpP t - 4 ∧
@@ -76072,7 +76140,7 @@ theorem rail_facts (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) :
 
 theorem enter_proper (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ enterOps s, proper g = true := by
   obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
-  unfold enterOps enterFix17
+  unfold enterOps enterFix17p
   simp only [List.forall_mem_cons, List.forall_mem_nil, proper, decide_eq_true_eq, and_true, ne_eq]
   and_intros <;> first | trivial | (intro x hx; cases hx) | omega | exact Nat.ne_of_gt (by omega) | exact Nat.ne_of_lt (by omega)
 
@@ -77511,7 +77579,7 @@ theorem park_foot (e : Nat) (h0 : 45 ≤ e) (h1 : e ≤ 420) : AllW (parkFootP e
 
 theorem enter_foot (s : Nat) (h0 : 45 ≤ s) (h1 : s ≤ 405) : AllW (footP s) (enterOps s) := by
   obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
-  unfold enterOps enterFix17 AllW
+  unfold enterOps enterFix17p AllW
   simp only [List.forall_mem_cons, List.forall_mem_nil, Gate.wires, and_true, implies_true]
   and_intros <;> first | (intro x hx; cases hx) | (unfold footP; omega)
 
