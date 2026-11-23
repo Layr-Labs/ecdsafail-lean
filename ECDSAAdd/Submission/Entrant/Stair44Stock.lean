@@ -73900,7 +73900,7 @@ def backward : Program := [.CX 11 8,
 .CX 3 5,
 .CX 1 5,
 .CX 1 3,
-.CCX 4 3 1,
+.measureX 1 [] [.CZ 4 3],
 .CX 0 2,
 .CCX 4 2 0,
 .CX 0 2,
@@ -75743,9 +75743,9 @@ theorem window_geom : ∀ j : Fin 25, 0 ≤ j.val → j.val ≤ 23 →
   decide
 
 theorem enter_counts (j : Fin 25) :
-    toffoliCount (enterP j) = 8 ∧ toffoliCount (enterInvP j) = 7 ∧
-    measurementCount (enterP j) = 1 ∧ measurementCount (enterInvP j) = 2 ∧
-    gateSlots (enterP j) = 34 ∧ gateSlots (enterInvP j) = 35 :=
+    toffoliCount (enterP j) = 8 ∧ toffoliCount (enterInvP j) = 6 ∧
+    measurementCount (enterP j) = 1 ∧ measurementCount (enterInvP j) = 3 ∧
+    gateSlots (enterP j) = 34 ∧ gateSlots (enterInvP j) = 36 :=
   (counts_enterFix17 _ _).programs
 
 theorem portal_counts (t : Nat) (hw : 5 ≤ wpP t) :
