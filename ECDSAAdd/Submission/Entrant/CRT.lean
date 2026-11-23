@@ -1654,16 +1654,93 @@ def beforeC4 (s : Nat) : List GateMirror.Gate :=
   headA0 s ++ (.pop (s+30) (Shadow7.sbP s + 803) (s + Shadow7.sbP s + 48) ::
     (headA1 s ++ (.cx (Shadow7.sbP s + 1578) 1559 :: headC s)))
 
+/-- `headC` up to Fix5Move's row-0 swap. -/
+def headC0 (s : Nat) : List GateMirror.Gate :=
+  let b := Shadow7.sbP s
+  [.cx (b+1577) 1560, .cx 1559 1560] ++ Partial.leaveFix4 s b ++ (Partial.leaveFix5 s b).take 27
+
+/-- `headC` after Fix5Move's row-0 swap. -/
+def headC1 (s : Nat) : List GateMirror.Gate :=
+  let b := Shadow7.sbP s
+  GateMirror.rowGates (Shadow7.e0P s + 6) ((Shadow7.moveRows s).drop 1) ++ (Partial.leaveFix5 s b).drop 43 ++
+    Shadow7.leaveAdjust s
+
+/-- Row 0's swap partner `e0+6` is still zero, so the swap is a fresh Toffoli copy plus a CNOT. -/
+def beforeC5 (s : Nat) : List GateMirror.Gate :=
+  headA0 s ++ (.pop (s+30) (Shadow7.sbP s + 803) (s + Shadow7.sbP s + 48) ::
+    (headA1 s ++ (.cx (Shadow7.sbP s + 1578) 1559 :: (headC0 s ++
+      (.make (Partial.tagsP.getD 0 0) (Shadow7.a0P s + 0) (Shadow7.e0P s + 6) ::
+        .cx (Shadow7.e0P s + 6) (Shadow7.a0P s + 0) :: headC1 s)))))
+
+/-- The join's live columns 0..15 (`Shadow7.columnsP` without its top column). -/
+def colsC (s : Nat) : List HighBankJoin.Column :=
+  (List.range 16).map fun i =>
+    ⟨decide (i < Shadow7.lowsP s), if i < 16 then some (Partial.tagsP.getD i 0) else none, Shadow7.a0P s + i, Shadow7.bankW s i⟩
+
+/-- `Partial.wordGM`'s opening half: toggles and pairs, outermost column first. -/
+def wordPre (a : Wire) : List HighBankJoin.Column → List GateMirror.Gate
+  | [] => []
+  | r :: rs => Partial.toggleG a r.hot ++ (Partial.pairGM r.low a r.shadow r.tube ++ wordPre a rs)
+
+/-- `Partial.wordGM`'s closing toggles, innermost column first. -/
+def wordPost (a : Wire) : List HighBankJoin.Column → List GateMirror.Gate
+  | [] => []
+  | r :: rs => wordPost a rs ++ Partial.toggleG a r.hot
+
+/-- `tailD` up to the join's top column. -/
+def tailD0 (s : Nat) : List GateMirror.Gate :=
+  Shadow7.fix8P s (Shadow7.sbP s) ++ (Partial.keptG (Partial.tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 8 ++
+    wordPre 1614 (colsC s))
+
+/-- `tailD` after the join's top column. -/
+def tailD1 (s : Nat) : List GateMirror.Gate :=
+  let b := Shadow7.sbP s
+  wordPost 1614 (colsC s) ++ (Shadow7.fix10P s b ++ Partial.leaveFix11 s b ++ Partial.leaveFix12 s b ++
+    [.cx (Shadow7.e0P s + 3) 1560, .cx 1559 1560])
+
+/-- The join's top column reads a zero shadow cell, so its pair is the identity: drop it. -/
+def afterPartC2 (s : Nat) : List GateMirror.Gate := tailD0 s ++ (tailD1 s ++ (.cx (Shadow7.e0P s + 4) 1559 :: tailE s))
+
+/-- `leaveStoreMapped` up to its carry chain. -/
+def storeHead (s : Nat) : List GateMirror.Gate :=
+  let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
+  [.x 1558, .x top] ++ Partial.xsG ((List.range H).map (fun i => Shadow7.bankW s (L+i)))
+
+/-- `tailE` up to the store chain's level 0. -/
+def tailE0 (s : Nat) : List GateMirror.Gate := Shadow7.lowRest s ++ storeHead s
+
+/-- The store chain below its level 0. -/
+def chainMid (s : Nat) : List GateMirror.Gate :=
+  let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
+  Partial.chainG (Shadow7.storeW s) (fun i => if i = 0 then top else Shadow7.bankW s (L+i-1))
+    [.cx (Shadow7.storeW s (H+1)) 1557, .x 1557] 1 H
+
+/-- `tailE` after the store chain's level 0. -/
+def tailE1 (s : Nat) : List GateMirror.Gate :=
+  let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
+  let hi := (List.range H).map (fun i => Shadow7.bankW s (L+i))
+  let seq2 := (List.range (L+1)).map (Shadow7.b0P s - 1 + ·)
+  Partial.xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ Partial.xsG seq2 ++
+    Partial.chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+(L+1)) 1556, .x 1556] 0 (L+1) ++
+    Partial.xsG seq2.reverse ++ [.x 1558] ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
+
+/-- The store chain's carry-in `1558` is the constant 1 (the low store popped it, the store head flips it): its level-0
+make and pop are CNOTs from `top`. -/
+def afterPartC3 (s : Nat) : List GateMirror.Gate :=
+  tailD0 s ++ (tailD1 s ++ (.cx (Shadow7.e0P s + 4) 1559 :: (tailE0 s ++
+    (.cx (Shadow7.a0P s + Shadow7.lowsP s - 1) 1559 :: (chainMid s ++ (.cx (Shadow7.a0P s + Shadow7.lowsP s - 1) 1559 ::
+      tailE1 s))))))
+
 def leave (j : Fin 26) : Program :=
   let s := start j
   if j.val ≤ 24 then
-    GateMirror.forward (beforeC4 s) ++ barrel s false ++ GateMirror.forward (afterPartC s)
+    GateMirror.forward (beforeC5 s) ++ barrel s false ++ GateMirror.forward (afterPartC3 s)
   else Shadow7.leaveMoveP j
 
 def unleave (j : Fin 26) : Program :=
   let s := start j
   if j.val ≤ 24 then
-    GateMirror.inverse (afterPartC s) ++ barrel s true ++ GateMirror.inverse (beforeC4 s)
+    GateMirror.inverse (afterPartC3 s) ++ barrel s true ++ GateMirror.inverse (beforeC5 s)
   else Shadow7.leaveMoveInvP j
 
 def params : WindowFold.Pieces Program := { Shadow7.params with leave := leave, leaveInv := unleave }
@@ -8644,7 +8721,10 @@ theorem loopA_frame : A109SignResearch.DirectLoopFrame loopA := by
     · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
       exact (hf.2 _ (A161Low4FixedFold.hostClean base hc hd _ (StairSqLoopA.holes_geometry44.2.2 y hy)).1).trans
         (A161Low4FixedFold.hostClean base hc hd _ (StairSqLoopA.holes_geometry44.2.2 y hy)).2
-    · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
+    · -- light: keep `ab.1` and rewrite it to `y`, so the kernel never reduces a projection of `run loopPCA m s`
+      intro ab hab; obtain ⟨y, hy, hyab⟩ := List.mem_map.mp hab
+      have hfst : ab.1 = y := by rw [← hyab]
+      rw [hfst]
       have hg := StairSqLoopA.holes_geometry44.2.1 y hy
       exact (r.2.2 y hg.2).trans ((regValue_zero _ _).mp hc.pad y hg.1)
     · exact loopA_pairs_free
@@ -9859,7 +9939,10 @@ theorem loopC_frame : C105SignResearch.DirectLoopFrame loopC := by
       exact (hf.2 y hg.2).trans ((regValue_zero _ _).mp hc.pad y hg.1)
     · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
       exact StairSqLoopC.hs_zero base hc hd O s hf _ (StairSqLoopC.holes_geometry44.2.2 y hy)
-    · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
+    · -- light: keep `ab.1` and rewrite it to `y`, so the kernel never reduces a projection of `run loopPCC m s`
+      intro ab hab; obtain ⟨y, hy, hyab⟩ := List.mem_map.mp hab
+      have hfst : ab.1 = y := by rw [← hyab]
+      rw [hfst]
       have hg := StairSqLoopC.holes_geometry44.2.1 y hy
       exact (r.2.2 y hg.2).trans ((regValue_zero _ _).mp hc.pad y hg.1)
     · exact loopC_pairs_free
