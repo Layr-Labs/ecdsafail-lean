@@ -293,6 +293,8 @@ structure StairPrimitives where
   pack : Nat → Program
   unpack : Nat → Program
   orient : Nat → Program
+  /-- Orientation used by the reverse (multiplication) segments.  Default: `orient`. -/
+  orientR : Nat → Program := orient
   tickForward : Nat → Program
   tickReverse : Nat → Program
   /-- Placed ordinary ticks together with their due packet writes. -/
@@ -345,7 +347,7 @@ the walk is reversed, while the compact state at `start` is packed last. -/
 def reverseSegment (p : StairPrimitives) (budget nextBudget start finish : Nat) : Program :=
   p.unpack nextBudget ++
     renameProgram (OB5.sig finish) (Rolling1588.unpackAtTick true finish) ++
-    p.orient finish ++
+    p.orientR finish ++
     p.middleReverse (start + 1) (finish - start - 1) ++
     p.tickReverse start ++
     p.pack budget
@@ -1420,6 +1422,7 @@ structure WalkFacts (q : StairSchedule.StairPrimitives) (c : Costs) : Prop where
   codec : ∀ B, B ∈ v3Plan.rows.map Prod.snd →
     gateSlots (q.pack B) + gateSlots (q.unpack B) = c.codecPair B
   orient : ∀ i B, (i, B) ∈ v3Plan.rows → gateSlots (q.orient i) = c.orient B
+  orientR : ∀ i B, (i, B) ∈ v3Plan.rows → gateSlots (q.orientR i) = c.orient B
   firstPack : gateSlots q.firstPack =
     gateSlots (q.orient 425) +
       gateSlots (Rolling1588.Integer.packFirst base true 425) +
@@ -1460,7 +1463,7 @@ theorem reverseSegment_slots (q : StairSchedule.StairPrimitives) (B B' s f t k :
     (ht : s + 1 = t) (hk : f - s - 1 = k) :
     gateSlots (StairSchedule.reverseSegment q B B' s f) =
       gateSlots (q.unpack B') + gateSlots (Rolling1588.unpackAtTick true f) +
-        gateSlots (q.orient f) + gateSlots (q.middleReverse t k) +
+        gateSlots (q.orientR f) + gateSlots (q.middleReverse t k) +
         gateSlots (q.tickReverse s) + gateSlots (q.pack B) := by
   rw [StairSchedule.reverseSegment, ht, hk]
   simp only [gateSlots_append, rename_gateSlots]
@@ -1610,6 +1613,11 @@ theorem reverseWalk_slots (q : StairSchedule.StairPrimitives) (c : Costs)
   have o4 := h.orient 480 32 (by decide)
   have o5 := h.orient 490 22 (by decide)
   have o6 := h.orient 500 12 (by decide)
+  have r2 := h.orientR 450 62 (by decide)
+  have r3 := h.orientR 465 47 (by decide)
+  have r4 := h.orientR 480 32 (by decide)
+  have r5 := h.orientR 490 22 (by decide)
+  have r6 := h.orientR 500 12 (by decide)
   have fu := h.firstUnpack
   have rt := h.reverseTerminal
   have cs := v3_checkpointSlots_unfold c
@@ -6048,11 +6056,22 @@ kernel no longer runs 176 `find?` scans, nor builds the `Finset` of `phaseBMove`
 
 
 
+/-- Forward orientation: Fredkins on the low `B` bits, then the extension pair is moved by a CX
+and its AND erased by a measurement. -/
+def orientFullF (letter : Wire) (L : StairCodec.Layout) (B : Nat) (sumExt diffExt : Wire) : Program :=
+  swapRegisters letter (StairCodec.reg L.S B) (StairCodec.reg L.D B) ++
+    [.CX sumExt diffExt, .measureX sumExt [] [.CZ letter diffExt]]
+
+/-- Forward-only orientation at checkpoint letter `i` (budget `512 - i`). -/
+def orientF (i : Nat) : Program :=
+  orientFullF (letterSite (i - 1)) (physicalLayout (512 - i)) (512 - i) (base 512) (bSite (512 - i))
+
 /-- The one CANON v3 primitive provider. -/
 def primitives : StairSchedule.StairPrimitives where
   pack := StairPhysicalPrimitives.pack
   unpack := StairPhysicalPrimitives.unpack
-  orient := orient
+  orient := orientF
+  orientR := orient
   tickForward := StairPhysicalPrimitives.tickForward
   tickReverse := StairPhysicalPrimitives.tickReverse
   middleForward := StairPhysicalPrimitives.middleForward
@@ -6070,7 +6089,9 @@ theorem primitives_pack (B : Nat) :
 theorem primitives_unpack (B : Nat) :
     primitives.unpack B = StairPhysicalPrimitives.unpack B := rfl
 
-theorem primitives_orient (i : Nat) : primitives.orient i = orient i := rfl
+theorem primitives_orient (i : Nat) : primitives.orient i = orientF i := rfl
+
+theorem primitives_orientR (i : Nat) : primitives.orientR i = orient i := rfl
 
 theorem primitives_firstPack : primitives.firstPack = firstPack := rfl
 
@@ -6080,6 +6101,375 @@ end ECDSAAdd.Entrant.StairV3Primitives
 
 end
 end Merge_StairV3Primitives_at_Main
+
+/-! ### fable-ticks-math: forward orientation with a measured extension pair -/
+section Merge_StairOrientF_at_Main
+
+section
+
+set_option autoImplicit false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+
+
+namespace ECDSAAdd.Entrant.StairOrientF
+open ECDSAAdd Arithmetic RecordedQuantum Challenge
+open MappedCompressed
+open StairPhysicalLayout
+
+/-! ## Resources -/
+
+theorem orientFullF_counts (letter : Wire) (L : StairCodec.Layout) (B : Nat)
+    (sumExt diffExt : Wire) :
+    toffoliCount (StairV3Primitives.orientFullF letter L B sumExt diffExt) = B ∧
+      measurementCount (StairV3Primitives.orientFullF letter L B sumExt diffExt) = 1 := by
+  have hlen : (StairCodec.reg L.S B).length = (StairCodec.reg L.D B).length := by
+    simp [StairCodec.reg]
+  have hback := copyRegister_counts none (StairCodec.reg L.D B) (StairCodec.reg L.S B) hlen.symm
+  have hmid := copyRegister_counts (some letter) (StairCodec.reg L.S B) (StairCodec.reg L.D B) hlen
+  have hbT : toffoliCount (copyRegister none (StairCodec.reg L.D B) (StairCodec.reg L.S B)) = 0 := by
+    simpa using hback.1
+  have hmT : toffoliCount (copyRegister (some letter) (StairCodec.reg L.S B)
+      (StairCodec.reg L.D B)) = B := by
+    simpa [StairCodec.reg] using hmid.1
+  rw [StairV3Primitives.orientFullF, swapRegisters]
+  refine ⟨?_, ?_⟩ <;>
+    simp only [toffoliCount_append, measurementCount_append, hbT, hmT, hback.2, hmid.2,
+      Nat.zero_add, Nat.add_zero, toffoliCount, measurementCount]
+
+theorem orientF_counts (i : Nat) :
+    toffoliCount (StairV3Primitives.orientF i) = 512 - i ∧
+      measurementCount (StairV3Primitives.orientF i) = 1 :=
+  orientFullF_counts _ _ _ _ _
+
+theorem orientFullF_slots (letter : Wire) (L : StairCodec.Layout) (B : Nat)
+    (sumExt diffExt : Wire) :
+    gateSlots (StairV3Primitives.orientFullF letter L B sumExt diffExt) =
+      gateSlots (StairV3Primitives.orientFull letter L B sumExt diffExt) := by
+  have h1 : gateSlots ([.CX sumExt diffExt, .measureX sumExt [] [.CZ letter diffExt]] : Program) = 3 := by
+    simp [gateSlots, instructionSlots]
+  rw [StairV3Primitives.orientFullF, StairV3Primitives.orientFull, gateSlots_append, h1,
+    Baselines.swapRegisters_gateSlots, Baselines.swapRegisters_gateSlots]
+  simp [StairCodec.reg]
+  omega
+
+theorem orientF_slots (i : Nat) :
+    gateSlots (StairV3Primitives.orientF i) = gateSlots (StairV3Primitives.orient i) :=
+  orientFullF_slots _ _ _ _ _
+
+theorem orientFullF_wires (letter : Wire) (L : StairCodec.Layout) (B : Nat)
+    (sumExt diffExt : Wire) :
+    wires (StairV3Primitives.orientFullF letter L B sumExt diffExt) ⊆
+      (letter :: ((StairCodec.reg L.S B ++ [sumExt]) ++ (StairCodec.reg L.D B ++ [diffExt]))).toFinset := by
+  have hlen : (StairCodec.reg L.S B).length = (StairCodec.reg L.D B).length := by
+    simp [StairCodec.reg]
+  have hs := swapRegisters_wires letter (StairCodec.reg L.S B) (StairCodec.reg L.D B) hlen
+  intro q hq
+  rw [StairV3Primitives.orientFullF, wires_append] at hq
+  rcases Finset.mem_union.mp hq with h | h
+  · have h' := hs h
+    simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at h' ⊢
+    tauto
+  · simp [wires, Instr.wires, correctionWires] at h
+    simp only [List.mem_toFinset, List.mem_cons, List.mem_append]
+    tauto
+
+/-! ## The extension pair -/
+
+/-- On a pair `(g ∧ σ, ¬g ∧ σ)` the CX + measured AND acts exactly as the pair Fredkin. -/
+theorem pair_eq (a b g : Wire) (hab : a ≠ b) (hag : a ≠ g) (hbg : b ≠ g)
+    (s : State) (m : List Bool) (neg : Bool)
+    (ha : s.basis a = (s.basis g && neg)) (hb : s.basis b = (!s.basis g && neg)) :
+    run [.CX a b, .measureX a [] [.CZ g b]] m s = run (swapRegisters g [a] [b]) [] s := by
+  have hba := hab.symm
+  have hga := hag.symm
+  have hgb := hbg.symm
+  apply State.extensionality
+  · cases hg : s.basis g <;> cases hn : neg <;> cases hm : m.headD false <;>
+      simp_all [swapRegisters, copyRegister, copyGate, run, measureAndCorrect,
+        correct, writeBit]
+  · funext q
+    by_cases hqa : q = a
+    · subst q
+      cases hg : s.basis g <;> cases hn : neg <;> cases hm : m.headD false <;>
+        simp_all [swapRegisters, copyRegister, copyGate, run, measureAndCorrect,
+          correct, writeBit]
+    · by_cases hqb : q = b
+      · subst q
+        cases hg : s.basis g <;> cases hn : neg <;> cases hm : m.headD false <;>
+          simp_all [swapRegisters, copyRegister, copyGate, run, measureAndCorrect,
+            correct, writeBit]
+      · cases hm : m.headD false <;>
+          simp_all [swapRegisters, copyRegister, copyGate, run, measureAndCorrect,
+            correct, writeBit]
+
+/-- Whole orientation: under the forward extension pattern the new program equals the old one. -/
+theorem orientFullF_run_eq (letter : Wire) (L : StairCodec.Layout) (B : Nat)
+    (sumExt diffExt : Wire)
+    (hnd : (letter :: ((StairCodec.reg L.S B ++ [sumExt]) ++ (StairCodec.reg L.D B ++ [diffExt]))).Nodup)
+    (s : State) (m : List Bool) (neg : Bool)
+    (ha : s.basis sumExt = (s.basis letter && neg))
+    (hb : s.basis diffExt = (!s.basis letter && neg)) :
+    run (StairV3Primitives.orientFullF letter L B sumExt diffExt) m s =
+      run (StairV3Primitives.orientFull letter L B sumExt diffExt) [] s := by
+  have hlen : (StairCodec.reg L.S B).length = (StairCodec.reg L.D B).length := by
+    simp [StairCodec.reg]
+  have hnd2 : (letter :: sumExt :: diffExt ::
+      (StairCodec.reg L.S B ++ StairCodec.reg L.D B)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp hnd q
+    simp only [List.count_cons, List.count_append, List.count_nil] at h ⊢
+    omega
+  have hsw := W.swap_last_eq letter sumExt diffExt (StairCodec.reg L.S B) (StairCodec.reg L.D B)
+    hlen hnd2 s
+  have hlow : (letter :: (StairCodec.reg L.S B ++ StairCodec.reg L.D B)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp hnd2 q
+    simp only [List.count_cons, List.count_append] at h ⊢
+    by_cases e1 : sumExt = q <;> by_cases e2 : diffExt = q <;> simp_all
+  have hnd3 := List.nodup_cons.mp hnd2
+  have hnd4 := List.nodup_cons.mp hnd3.2
+  have hnd5 := List.nodup_cons.mp hnd4.2
+  have hsN : sumExt ∉ StairCodec.reg L.S B ∧ sumExt ∉ StairCodec.reg L.D B := by
+    have h := hnd4.1
+    simp only [List.mem_cons, List.mem_append, not_or] at h
+    exact ⟨h.2.1, h.2.2⟩
+  have hdN : diffExt ∉ StairCodec.reg L.S B ∧ diffExt ∉ StairCodec.reg L.D B := by
+    have h := hnd5.1
+    simp only [List.mem_append, not_or] at h
+    exact h
+  have hl1 := List.nodup_cons.mp hnd2
+  have hlS : letter ≠ sumExt := by
+    intro e; exact hl1.1 (by simp [e])
+  have hlD : letter ≠ diffExt := by
+    intro e; exact hl1.1 (by simp [e])
+  have hsd : sumExt ≠ diffExt := by
+    intro e; exact hnd4.1 (by simp [e])
+  -- the swap of the low banks leaves the pair and the letter alone
+  set t := run (swapRegisters letter (StairCodec.reg L.S B) (StairCodec.reg L.D B)) [] s with ht
+  have sw := swapRegisters_correct letter (StairCodec.reg L.S B) (StairCodec.reg L.D B) hlen hlow s []
+  have tS : t.basis sumExt = s.basis sumExt := sw.2.1 _ hsN.1 hsN.2
+  have tD : t.basis diffExt = s.basis diffExt := sw.2.1 _ hdN.1 hdN.2
+  have hlN : letter ∉ StairCodec.reg L.S B ∧ letter ∉ StairCodec.reg L.D B := by
+    have h := hl1.1
+    simp only [List.mem_cons, List.mem_append, not_or] at h
+    exact ⟨h.2.2.1, h.2.2.2⟩
+  have tL : t.basis letter = s.basis letter := sw.2.1 _ hlN.1 hlN.2
+  have hswap0 : measurementCount (swapRegisters letter (StairCodec.reg L.S B)
+      (StairCodec.reg L.D B)) = 0 :=
+    (swapRegisters_resources letter _ _ hlen hlow).2.1
+  rw [StairV3Primitives.orientFullF, StairV3Primitives.orientFull, run_append, hswap0,
+    List.take_zero, List.drop_zero, hsw]
+  rw [← ht]
+  exact pair_eq sumExt diffExt letter hsd (Ne.symm hlS) (Ne.symm hlD) t m neg
+    (by rw [tS, tL]; exact ha) (by rw [tD, tL]; exact hb)
+
+end ECDSAAdd.Entrant.StairOrientF
+
+namespace ECDSAAdd.Entrant.StairField2V3End
+open ECDSAAdd Arithmetic RecordedQuantum Challenge
+open MappedCompressed
+open StairPhysicalLayout StairField2V3Seg StairField2V3Codec StairField2V3Unpack StairField2V3Pack
+
+/-- At a forward row start the two extension bits are `(g ∧ σ, ¬g ∧ σ)`. -/
+theorem ext_pattern (B : Nat) (hB : B ∈ budgets) (x : Nat)
+    (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (y : State)
+    (hl : y.basis (letterSite (startFor B - 1)) =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).g)
+    (ha : signedRegValue (fullS B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).a)
+    (hb : signedRegValue (fullD B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).b) :
+    y.basis (base 512) = (y.basis (letterSite (startFor B - 1)) &&
+      StairBridgeDomain.realSign x ECDSAAdd.p (startFor B)) ∧
+    y.basis (bSite B) = (!y.basis (letterSite (startFor B - 1)) &&
+      StairBridgeDomain.realSign x ECDSAAdd.p (startFor B)) := by
+  obtain ⟨hp0, hodd, _⟩ := p_facts
+  have hdom := domain_row B hB x hx0 hx
+  have hrho := StairBridgeDomain.orient_realRails x ECDSAAdd.p (startFor B) hp0 hodd
+  have key : (StairBridgeDomain.orientRails (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B))).a =
+        ((StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u : Int) +
+          (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).v ∧
+      (StairBridgeDomain.orientRails (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B))).b =
+        SkywalkRails.signed (StairBridgeDomain.realSign x ECDSAAdd.p (startFor B))
+          ((StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u : Int) := by
+    rw [hrho]
+    simp [SkywalkRails.encode]
+  unfold StairBridgeDomain.orientRails at key
+  simp only [fullS] at ha
+  simp only [fullD] at hb
+  rw [hl]
+  cases hg : (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).g
+  · have k1 : (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).a =
+        (((StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u +
+          (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).v : Nat) : Int) := by
+      push_cast
+      simpa [hg] using key.1
+    have k2 : (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).b =
+        SkywalkRails.signed (StairBridgeDomain.realSign x ECDSAAdd.p (startFor B))
+          ((StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u : Int) := by
+      simpa [hg] using key.2
+    have tA := StairField2V3Boundary.unsigned_top _ _ y.basis _ (ha.trans k1)
+    have tD := StairField2V3Boundary.signed_top _ _ y.basis B _ _ _
+      (StairField2V3Boundary.reg_length _ _) hdom (hb.trans k2)
+    exact ⟨by rw [tA.1]; rfl, by rw [tD.1]; simp⟩
+  · have k1 : (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).b =
+        (((StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u +
+          (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).v : Nat) : Int) := by
+      push_cast
+      simpa [hg] using key.1
+    have k2 : (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).a =
+        SkywalkRails.signed (StairBridgeDomain.realSign x ECDSAAdd.p (startFor B))
+          ((StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u : Int) := by
+      simpa [hg] using key.2
+    have tA := StairField2V3Boundary.signed_top _ _ y.basis B _ _ _
+      (StairField2V3Boundary.reg_length _ _) hdom (ha.trans k2)
+    have tD := StairField2V3Boundary.unsigned_top _ _ y.basis _ (hb.trans k1)
+    exact ⟨by rw [tA.1]; simp, by rw [tD.1]; rfl⟩
+
+/-- The forward orientation with a measured extension pair runs as the Fredkin orientation. -/
+theorem orientF_run_eq (B : Nat) (hB : B ∈ budgets) (x : Nat)
+    (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (y : State)
+    (hl : y.basis (letterSite (startFor B - 1)) =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).g)
+    (ha : signedRegValue (fullS B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).a)
+    (hb : signedRegValue (fullD B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).b) (m : List Bool) :
+    run (StairV3Primitives.orientF (startFor B)) m y =
+      run (StairV3Primitives.orient (startFor B)) [] y := by
+  obtain ⟨h3, h87, hnd, -⟩ := endFacts B hB
+  have pat := ext_pattern B hB x hx0 hx y hl ha hb
+  have e : 512 - startFor B = B := by unfold startFor; omega
+  unfold StairV3Primitives.orientF StairV3Primitives.orient
+  rw [e]
+  exact StairOrientF.orientFullF_run_eq _ _ _ _ _ (by simpa [fullS, fullD] using hnd) y m _
+    pat.1 pat.2
+
+/-- **`codecInput_after_orient` for the forward orientation with a measured extension pair.** -/
+theorem codecInput_after_orientF (B : Nat) (hB : B ∈ budgets) (x : Nat)
+    (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (y : State)
+    (hl : y.basis (letterSite (startFor B - 1)) =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).g)
+    (ha : signedRegValue (fullS B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).a)
+    (hb : signedRegValue (fullD B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).b)
+    (hwork : ∀ q ∈ StairCodec.workSites (physicalLayout B) B, y.basis q = false)
+    (m : List Bool) :
+    (run (StairV3Primitives.orientF (startFor B)) m y).phase = y.phase ∧
+    StairCodec.CodecInput (physicalLayout B) B
+      (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).u
+      (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B)).v
+      (StairBridgeDomain.realSign x ECDSAAdd.p (startFor B))
+      (run (StairV3Primitives.orientF (startFor B)) m y).basis ∧
+    (run (StairV3Primitives.orientF (startFor B)) m y).basis (bSite B) =
+      (run (StairV3Primitives.orientF (startFor B)) m y).basis ((physicalLayout B).D (B - 1)) ∧
+    (run (StairV3Primitives.orientF (startFor B)) m y).basis (base 512) = false ∧
+    ∀ q, q ∉ fullS B → q ∉ fullD B →
+      (run (StairV3Primitives.orientF (startFor B)) m y).basis q = y.basis q := by
+  rw [orientF_run_eq B hB x hx0 hx y hl ha hb m]
+  exact codecInput_after_orient B hB x hx0 hx y hl ha hb hwork []
+
+/-- The Fredkin orientation undoes the measured forward orientation on forward row starts. -/
+theorem orientF_trip (B : Nat) (hB : B ∈ budgets) (x : Nat)
+    (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (y : State)
+    (hl : y.basis (letterSite (startFor B - 1)) =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).g)
+    (ha : signedRegValue (fullS B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).a)
+    (hb : signedRegValue (fullD B) y.basis =
+      (StairBridgeDomain.realRails x ECDSAAdd.p (startFor B)).b) (a c : List Bool)
+    (hrow : startFor B ∈ StairField2V3ExitRowTrips.rowLetters) :
+    run (StairV3Primitives.orient (startFor B)) a (run (StairV3Primitives.orientF (startFor B)) c y) = y := by
+  rw [orientF_run_eq B hB x hx0 hx y hl ha hb c]
+  exact StairField2V3ExitRowTrips.orient_trip (startFor B) hrow y a []
+
+
+/-- The orientation sites cover the measured orientation's labels. -/
+theorem orientF_sites (B : Nat) (h87 : B ≤ 87) :
+    wires (StairV3Primitives.orientF (startFor B)) ⊆
+      (StairField2V3SegFacts.orientSites B).toFinset := by
+  have e : 512 - startFor B = B := by unfold startFor; omega
+  unfold StairV3Primitives.orientF
+  rw [e]
+  have h := StairOrientF.orientFullF_wires (letterSite (startFor B - 1)) (physicalLayout B) B
+    (base 512) (bSite B)
+  simpa only [StairField2V3SegFacts.orientSites, fullS, fullD] using h
+
+/-- Every orientation site is a label of the Fredkin orientation. -/
+theorem orient_sites_sub (B : Nat) (h87 : B ≤ 87) :
+    (StairField2V3SegFacts.orientSites B).toFinset ⊆
+      wires (StairV3Primitives.orient (startFor B)) := by
+  have e : 512 - startFor B = B := by unfold startFor; omega
+  have hlen : (StairCodec.reg (physicalLayout B).S B ++ [base 512]).length =
+      (StairCodec.reg (physicalLayout B).D B ++ [bSite B]).length := by simp [StairCodec.reg]
+  unfold StairV3Primitives.orient StairV3Primitives.orientFull
+  rw [e, swapRegisters, wires_append, wires_append, copyRegister_wires _ _ _ hlen,
+    copyRegister_wires _ _ _ hlen.symm]
+  intro q hq
+  have hne : (StairCodec.reg (physicalLayout B).S B ++ [base 512]).isEmpty = false := by
+    cases StairCodec.reg (physicalLayout B).S B <;> rfl
+  rw [Finset.mem_union]
+  left
+  rw [Finset.mem_union]
+  right
+  rw [if_neg (by rw [hne]; decide)]
+  simp only [StairField2V3SegFacts.orientSites, fullS, fullD, List.mem_toFinset] at hq
+  simp only [Option.toList_some, List.cons_append, List.nil_append, List.mem_toFinset,
+    List.mem_cons, List.mem_append]
+  simp only [List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hq
+  tauto
+
+theorem orientF_wires_sub (B : Nat) (h87 : B ≤ 87) :
+    wires (StairV3Primitives.orientF (startFor B)) ⊆ wires (StairV3Primitives.orient (startFor B)) :=
+  (orientF_sites B h87).trans (orient_sites_sub B h87)
+
+theorem orientF_physical (B : Nat) (hB : B ∈ budgets) :
+    GatePhysical (StairV3Primitives.orientF (startFor B)) := by
+  obtain ⟨-, h87, hnd, -, -, h512b, -⟩ := endFacts B hB
+  have e : 512 - startFor B = B := by unfold startFor; omega
+  unfold StairV3Primitives.orientF StairV3Primitives.orientFullF
+  rw [e, gatePhysical_append]
+  constructor
+  · apply swapRegisters_physical
+    apply List.Nodup.sublist _ hnd
+    simp only [fullS, fullD]
+    exact List.Sublist.cons₂ _ (List.Sublist.append (List.sublist_append_left _ _)
+      (List.sublist_append_left _ _))
+  · intro i hi
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl
+    · exact h512b
+    · trivial
+
+theorem row_of_letter (f : Nat) (hf : f ∈ ([450, 465, 480, 490, 500] : List Nat)) :
+    512 - f ∈ budgets ∧ startFor (512 - f) = f := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
+  refine ⟨?_, ?_⟩
+  · rcases hf with rfl | rfl | rfl | rfl | rfl <;> decide
+  · unfold startFor; omega
+
+theorem orientF_wires_sub_f (f : Nat) (hf : f ∈ ([450, 465, 480, 490, 500] : List Nat)) :
+    wires (StairV3Primitives.orientF f) ⊆ wires (StairV3Primitives.orient f) := by
+  obtain ⟨hB, e⟩ := row_of_letter f hf
+  have h := orientF_wires_sub (512 - f) (endFacts _ hB).2.1
+  rwa [e] at h
+
+theorem orientF_sound_f (f : Nat) (hf : f ∈ ([450, 465, 480, 490, 500] : List Nat))
+    (h : StairPhysicalV3.Sound (StairV3Primitives.orient f)) :
+    StairPhysicalV3.Sound (StairV3Primitives.orientF f) := by
+  obtain ⟨hB, e⟩ := row_of_letter f hf
+  have hp := orientF_physical (512 - f) hB
+  rw [e] at hp
+  exact ⟨hp, fun q hq => h.good q (orientF_wires_sub_f f hf hq)⟩
+
+end ECDSAAdd.Entrant.StairField2V3End
+
+end
+end Merge_StairOrientF_at_Main
 
 /-! ### merged from `ECDSAAdd.Submission.Entrant.StairConcreteAssembly_at_Main` -/
 section Merge_StairConcreteAssembly_at_Main
@@ -6371,8 +6761,15 @@ theorem v3_codec12 :
 
 
 theorem v3_orient_counts (i : Nat) :
-    toffoliCount (checkpointPrimitives.orient i) = (512 - i) + 1 ∧
-      measurementCount (checkpointPrimitives.orient i) = 0 := by
+    toffoliCount (checkpointPrimitives.orient i) = 512 - i ∧
+      measurementCount (checkpointPrimitives.orient i) = 1 := by
+  change toffoliCount (StairV3Primitives.orientF i) = _ ∧
+    measurementCount (StairV3Primitives.orientF i) = 1
+  exact StairOrientF.orientF_counts i
+
+theorem v3_orientR_counts (i : Nat) :
+    toffoliCount (checkpointPrimitives.orientR i) = (512 - i) + 1 ∧
+      measurementCount (checkpointPrimitives.orientR i) = 0 := by
   change toffoliCount (StairV3Primitives.orient i) = _ ∧
     measurementCount (StairV3Primitives.orient i) = 0
   rw [StairV3Primitives.orient]
@@ -6477,14 +6874,14 @@ theorem v3_reverseSegment_counts (B B' s f n : Nat) (hf : f = s + n) (hn : 0 < n
     toffoliCount (StairSchedule.reverseSegment checkpointPrimitives B B' s f) +
         toffoliCount (Rolling1588.unpackAtTick true s) =
       toffoliCount (checkpointPrimitives.unpack B') +
-        toffoliCount (checkpointPrimitives.orient f) +
+        toffoliCount (checkpointPrimitives.orientR f) +
         toffoliCount (checkpointPrimitives.pack B) +
         toffoliCount (Rolling1588.reverse true s n) +
         toffoliCount (Rolling1588.unpackAtTick true f) ∧
     measurementCount (StairSchedule.reverseSegment checkpointPrimitives B B' s f) +
         measurementCount (Rolling1588.unpackAtTick true s) =
       measurementCount (checkpointPrimitives.unpack B') +
-        measurementCount (checkpointPrimitives.orient f) +
+        measurementCount (checkpointPrimitives.orientR f) +
         measurementCount (checkpointPrimitives.pack B) +
         measurementCount (Rolling1588.reverse true s n) +
         measurementCount (Rolling1588.unpackAtTick true f) := by
@@ -6506,18 +6903,18 @@ theorem v3_reverseSegment_counts (B B' s f n : Nat) (hf : f = s + n) (hn : 0 < n
 
 theorem v3_firstPack_counts :
     toffoliCount checkpointPrimitives.firstPack =
-        toffoliCount (checkpointPrimitives.orient 425) +
+        toffoliCount (checkpointPrimitives.orientR 425) +
           toffoliCount (Rolling1588.Integer.packFirst base true 425) +
           toffoliCount (checkpointPrimitives.pack 87) ∧
       measurementCount checkpointPrimitives.firstPack =
-        measurementCount (checkpointPrimitives.orient 425) +
+        measurementCount (checkpointPrimitives.orientR 425) +
           measurementCount (Rolling1588.Integer.packFirst base true 425) +
           measurementCount (checkpointPrimitives.pack 87) := by
   obtain ⟨b1, b2⟩ := StairPhysicalLayout.phaseBMove_counts
   -- LT50 (replay budget): syntactic rewrites instead of `change` (the definitional cast under `+`
   -- made the kernel evaluate both Toffoli/measurement counts of the concrete programs: 11 s)
   rw [show StairConcreteAssembly.checkpointPrimitives = StairV3Primitives.primitives from rfl,
-    StairV3Primitives.primitives_firstPack, StairV3Primitives.primitives_orient,
+    StairV3Primitives.primitives_firstPack, StairV3Primitives.primitives_orientR,
     StairV3Primitives.primitives_pack, StairV3Primitives.firstPack]
   simp only [toffoliCount_append, measurementCount_append, renameProgram_counts]
   constructor <;> omega
@@ -6526,15 +6923,15 @@ theorem v3_firstUnpack_counts :
     toffoliCount checkpointPrimitives.firstUnpack =
         toffoliCount (checkpointPrimitives.unpack 87) +
           toffoliCount (Rolling1588.unpackAtTick true 425) +
-          toffoliCount (checkpointPrimitives.orient 425) ∧
+          toffoliCount (checkpointPrimitives.orientR 425) ∧
       measurementCount checkpointPrimitives.firstUnpack =
         measurementCount (checkpointPrimitives.unpack 87) +
           measurementCount (Rolling1588.unpackAtTick true 425) +
-          measurementCount (checkpointPrimitives.orient 425) := by
+          measurementCount (checkpointPrimitives.orientR 425) := by
   obtain ⟨b1, b2⟩ := StairPhysicalPhase.phaseBReturn_counts
   -- LT50 (replay budget): syntactic rewrites instead of `change` (see `v3_firstPack_counts`)
   rw [show StairConcreteAssembly.checkpointPrimitives = StairV3Primitives.primitives from rfl,
-    StairV3Primitives.primitives_firstUnpack, StairV3Primitives.primitives_orient,
+    StairV3Primitives.primitives_firstUnpack, StairV3Primitives.primitives_orientR,
     StairV3Primitives.primitives_unpack, StairV3Primitives.firstUnpack]
   simp only [toffoliCount_append, measurementCount_append, renameProgram_counts]
   constructor <;> omega
@@ -6681,7 +7078,7 @@ theorem v3_entryWalk_counts :
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490) +
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500) +
         toffoliCount (StairSchedule.forwardLast checkpointPrimitives) =
-      toffoliCount (Six505.stackForward6 true) + 1497 ∧
+      toffoliCount (Six505.stackForward6 true) + 1492 ∧
     measurementCount (StairSchedule.stackForward6 checkpointPrimitives) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465) +
@@ -6689,7 +7086,7 @@ theorem v3_entryWalk_counts :
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500) +
         measurementCount (StairSchedule.forwardLast checkpointPrimitives) =
-      measurementCount (Six505.stackForward6 true) + 1317 := by
+      measurementCount (Six505.stackForward6 true) + 1322 := by
   obtain ⟨s1, s1'⟩ := v3_forwardSegment_counts 87 62 425 450 25 (by norm_num)
     (by norm_num) (by decide) (by norm_num)
   obtain ⟨s2, s2'⟩ := v3_forwardSegment_counts 62 47 450 465 15 (by norm_num)
@@ -6722,7 +7119,7 @@ theorem v3_entryWalk_counts :
   obtain ⟨f1, f2, f3, f4⟩ := v3_codec32
   obtain ⟨g1, g2, g3, g4⟩ := v3_codec22
   obtain ⟨h1, h2, h3, h4⟩ := v3_codec12
-  obtain ⟨o1, o1'⟩ := v3_orient_counts 425
+  obtain ⟨o1, o1'⟩ := v3_orientR_counts 425
   obtain ⟨o2, o2'⟩ := v3_orient_counts 450
   obtain ⟨o3, o3'⟩ := v3_orient_counts 465
   obtain ⟨o4, o4'⟩ := v3_orient_counts 480
@@ -6784,12 +7181,12 @@ theorem v3_exitWalk_counts :
   obtain ⟨f1, f2, f3, f4⟩ := v3_codec32
   obtain ⟨g1, g2, g3, g4⟩ := v3_codec22
   obtain ⟨h1, h2, h3, h4⟩ := v3_codec12
-  obtain ⟨o1, o1'⟩ := v3_orient_counts 425
-  obtain ⟨o2, o2'⟩ := v3_orient_counts 450
-  obtain ⟨o3, o3'⟩ := v3_orient_counts 465
-  obtain ⟨o4, o4'⟩ := v3_orient_counts 480
-  obtain ⟨o5, o5'⟩ := v3_orient_counts 490
-  obtain ⟨o6, o6'⟩ := v3_orient_counts 500
+  obtain ⟨o1, o1'⟩ := v3_orientR_counts 425
+  obtain ⟨o2, o2'⟩ := v3_orientR_counts 450
+  obtain ⟨o3, o3'⟩ := v3_orientR_counts 465
+  obtain ⟨o4, o4'⟩ := v3_orientR_counts 480
+  obtain ⟨o5, o5'⟩ := v3_orientR_counts 490
+  obtain ⟨o6, o6'⟩ := v3_orientR_counts 500
   obtain ⟨p1, p2⟩ := v3_firstUnpack_counts
   obtain ⟨rt1, rt2⟩ := StairTerminalV3.reverseTerminalV3_counts_eq
   rw [StairSchedule.stackReverse15, StairSchedule.reverseLast, v3_reverseTerminal,
@@ -6950,9 +7347,9 @@ theorem hostedEntryRest_counts_of (δT δM : Nat)
           measurementCount R2SqEp760.canon760 + δM)
     (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10730 + δT ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10725 + δT ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δM := by
+        measurementCount (ParityStageBothInverse23.restEntry L) + 10553 + δM := by
   obtain ⟨b1, b2⟩ := boundary
   obtain ⟨w1, w2⟩ := v3_entryWalk_counts
   obtain ⟨p1, p2⟩ := v3_entryTailPrefix_counts
@@ -7004,9 +7401,9 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
 
 theorem hostedEntryRest_counts (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10817 ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 10635 := by
+        measurementCount (ParityStageBothInverse23.restEntry L) + 10640 := by
   obtain ⟨h1, h2⟩ := hostedEntryRest_counts_of 87 87 v3_boundary_counts.1 L
   constructor <;> omega
 
@@ -7134,10 +7531,10 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
     + the PSQ hole-free square, +151 T): **T ≤ 2,169,074, M ≤ 1,520,242**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2168930 ∧
-      measurementCount (concreteAssembly.program C) ≤ 1520242 := by
+    toffoliCount (concreteAssembly.program C) ≤ 2168925 ∧
+      measurementCount (concreteAssembly.program C) ≤ 1520247 := by
   intro C
-  have h := count_totals_of 87 87 175 175
+  have h := count_totals_of 82 92 175 175
     (fun L => by
       obtain ⟨a, b⟩ := hostedEntryRest_counts L
       constructor <;> omega)
@@ -7841,6 +8238,17 @@ open StairPhysicalLayout StairPhysicalPrimitives
 
 
 
+private theorem measuredOrientRows (B : Nat) (hB : B ∈ budgets) (w : Wire) (hw : w ∈ rolesL) :
+    zt w true (StairV3Primitives.orientF (startFor B)) = true :=
+  zt_rowF B hB _ (fun q hq => StairSiteAvoidance.orientV3_rows B hB q
+    (StairField2V3End.orientF_wires_sub B (StairField2V3End.endFacts B hB).2.1 hq)) w hw
+
+private theorem measuredOrientAt (f : Nat) (hf : f ∈ ([450, 465, 480, 490, 500] : List Nat))
+    (w : Wire) (hw : w ∈ rolesL) : zt w true (StairV3Primitives.orientF f) = true := by
+  obtain ⟨hB, checkpoint⟩ := StairField2V3End.row_of_letter f hf
+  have clear := measuredOrientRows (512 - f) hB w hw
+  rwa [checkpoint] at clear
+
 theorem chk_keep_fseg87 : ztAll 736 45 true (rolesL)
     (StairSchedule.forwardSegment StairV3Primitives.primitives 87 62 425 450) = true := by
   apply ztAll_rolesF
@@ -7848,14 +8256,14 @@ theorem chk_keep_fseg87 : ztAll 736 45 true (rolesL)
   show zt w true (StairPhysicalPrimitives.unpack 87 ++
     StairPhysicalPrimitives.tickForward (startFor 87) ++
     StairPhysicalPrimitives.middleForward (startFor 87 + 1) (endFor 87 - startFor 87 - 1) ++
-    StairV3Primitives.orient 450 ++
+    StairV3Primitives.orientF 450 ++
     renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450) ++
     StairPhysicalPrimitives.pack 62) = true
   rw [zt_append, zt_append, zt_append, zt_append, zt_append,
     zt_rowF 87 (by decide : 87 ∈ budgets) _ (unpack_rows 87 (by decide : 87 ∈ budgets)) w hw,
     zt_rowF 87 (by decide : 87 ∈ budgets) _ (tickForward_rows 87 (by decide : 87 ∈ budgets)) w hw,
     zt_rowF 87 (by decide : 87 ∈ budgets) _ (middleForward_rows 87 (by decide : 87 ∈ budgets)) w hw,
-    zt_smallF _ chk_fsegOrient87 w hw, zt_smallF _ chk_fsegPacket87 w hw]
+    measuredOrientAt 450 (by decide) w hw, zt_smallF _ chk_fsegPacket87 w hw]
   exact zt_rowF 62 (by decide : 62 ∈ budgets) _ (pack_rows 62 (by decide : 62 ∈ budgets)) w hw
 
 
@@ -7867,14 +8275,14 @@ theorem chk_keep_fseg62 : ztAll 736 45 true (rolesL)
   show zt w true (StairPhysicalPrimitives.unpack 62 ++
     StairPhysicalPrimitives.tickForward (startFor 62) ++
     StairPhysicalPrimitives.middleForward (startFor 62 + 1) (endFor 62 - startFor 62 - 1) ++
-    StairV3Primitives.orient 465 ++
+    StairV3Primitives.orientF 465 ++
     renameProgram (OB5.sig 465) (Rolling1588.Integer.packFirst base true 465) ++
     StairPhysicalPrimitives.pack 47) = true
   rw [zt_append, zt_append, zt_append, zt_append, zt_append,
     zt_rowF 62 (by decide : 62 ∈ budgets) _ (unpack_rows 62 (by decide : 62 ∈ budgets)) w hw,
     zt_rowF 62 (by decide : 62 ∈ budgets) _ (tickForward_rows 62 (by decide : 62 ∈ budgets)) w hw,
     zt_rowF 62 (by decide : 62 ∈ budgets) _ (middleForward_rows 62 (by decide : 62 ∈ budgets)) w hw,
-    zt_smallF _ chk_fsegOrient62 w hw, zt_smallF _ chk_fsegPacket62 w hw]
+    measuredOrientAt 465 (by decide) w hw, zt_smallF _ chk_fsegPacket62 w hw]
   exact zt_rowF 47 (by decide : 47 ∈ budgets) _ (pack_rows 47 (by decide : 47 ∈ budgets)) w hw
 
 
@@ -7886,14 +8294,14 @@ theorem chk_keep_fseg47 : ztAll 736 45 true (rolesL)
   show zt w true (StairPhysicalPrimitives.unpack 47 ++
     StairPhysicalPrimitives.tickForward (startFor 47) ++
     StairPhysicalPrimitives.middleForward (startFor 47 + 1) (endFor 47 - startFor 47 - 1) ++
-    StairV3Primitives.orient 480 ++
+    StairV3Primitives.orientF 480 ++
     renameProgram (OB5.sig 480) (Rolling1588.Integer.packFirst base true 480) ++
     StairPhysicalPrimitives.pack 32) = true
   rw [zt_append, zt_append, zt_append, zt_append, zt_append,
     zt_rowF 47 (by decide : 47 ∈ budgets) _ (unpack_rows 47 (by decide : 47 ∈ budgets)) w hw,
     zt_rowF 47 (by decide : 47 ∈ budgets) _ (tickForward_rows 47 (by decide : 47 ∈ budgets)) w hw,
     zt_rowF 47 (by decide : 47 ∈ budgets) _ (middleForward_rows 47 (by decide : 47 ∈ budgets)) w hw,
-    zt_smallF _ chk_fsegOrient47 w hw, zt_smallF _ chk_fsegPacket47 w hw]
+    measuredOrientAt 480 (by decide) w hw, zt_smallF _ chk_fsegPacket47 w hw]
   exact zt_rowF 32 (by decide : 32 ∈ budgets) _ (pack_rows 32 (by decide : 32 ∈ budgets)) w hw
 
 
@@ -7905,14 +8313,14 @@ theorem chk_keep_fseg32 : ztAll 736 45 true (rolesL)
   show zt w true (StairPhysicalPrimitives.unpack 32 ++
     StairPhysicalPrimitives.tickForward (startFor 32) ++
     StairPhysicalPrimitives.middleForward (startFor 32 + 1) (endFor 32 - startFor 32 - 1) ++
-    StairV3Primitives.orient 490 ++
+    StairV3Primitives.orientF 490 ++
     renameProgram (OB5.sig 490) (Rolling1588.Integer.packFirst base true 490) ++
     StairPhysicalPrimitives.pack 22) = true
   rw [zt_append, zt_append, zt_append, zt_append, zt_append,
     zt_rowF 32 (by decide : 32 ∈ budgets) _ (unpack_rows 32 (by decide : 32 ∈ budgets)) w hw,
     zt_rowF 32 (by decide : 32 ∈ budgets) _ (tickForward_rows 32 (by decide : 32 ∈ budgets)) w hw,
     zt_rowF 32 (by decide : 32 ∈ budgets) _ (middleForward_rows 32 (by decide : 32 ∈ budgets)) w hw,
-    zt_smallF _ chk_fsegOrient32 w hw, zt_smallF _ chk_fsegPacket32 w hw]
+    measuredOrientAt 490 (by decide) w hw, zt_smallF _ chk_fsegPacket32 w hw]
   exact zt_rowF 22 (by decide : 22 ∈ budgets) _ (pack_rows 22 (by decide : 22 ∈ budgets)) w hw
 
 
@@ -7924,14 +8332,14 @@ theorem chk_keep_fseg22 : ztAll 736 45 true (rolesL)
   show zt w true (StairPhysicalPrimitives.unpack 22 ++
     StairPhysicalPrimitives.tickForward (startFor 22) ++
     StairPhysicalPrimitives.middleForward (startFor 22 + 1) (endFor 22 - startFor 22 - 1) ++
-    StairV3Primitives.orient 500 ++
+    StairV3Primitives.orientF 500 ++
     renameProgram (OB5.sig 500) (Rolling1588.Integer.packFirst base true 500) ++
     StairPhysicalPrimitives.pack 12) = true
   rw [zt_append, zt_append, zt_append, zt_append, zt_append,
     zt_rowF 22 (by decide : 22 ∈ budgets) _ (unpack_rows 22 (by decide : 22 ∈ budgets)) w hw,
     zt_rowF 22 (by decide : 22 ∈ budgets) _ (tickForward_rows 22 (by decide : 22 ∈ budgets)) w hw,
     zt_rowF 22 (by decide : 22 ∈ budgets) _ (middleForward_rows 22 (by decide : 22 ∈ budgets)) w hw,
-    zt_smallF _ chk_fsegOrient22 w hw, zt_smallF _ chk_fsegPacket22 w hw]
+    measuredOrientAt 500 (by decide) w hw, zt_smallF _ chk_fsegPacket22 w hw]
   exact zt_rowF 12 (by decide : 12 ∈ budgets) _ (pack_rows 12 (by decide : 12 ∈ budgets)) w hw
 
 end ECDSAAdd.Entrant.StairField13V3Clean
@@ -8825,7 +9233,7 @@ open StairField2V3ExitAlgebra StairField2V3ExitRowTrips StairPhysicalLayout
 def rowPieces (B B' s f : Nat) : List (Program × Program) :=
   [(P.unpack B, P.pack B), (P.tickForward s, P.tickReverse s),
     (P.middleForward (s + 1) (f - s - 1), P.middleReverse (s + 1) (f - s - 1)),
-    (P.orient f, P.orient f),
+    (P.orient f, P.orientR f),
     (renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f),
       renameProgram (OB5.sig f) (Rolling1588.unpackAtTick true f)),
     (P.pack B', P.unpack B')]
@@ -10524,7 +10932,7 @@ abbrev segP (B B' : Nat) : Program :=
 theorem segP_eq (B B' : Nat) : segP B B' =
     StairPhysicalPrimitives.unpack B ++ StairPhysicalPrimitives.tickForward (startFor B) ++
       StairPhysicalPrimitives.middleForward (startFor B + 1) (startFor B' - startFor B - 1) ++
-      StairV3Primitives.orient (startFor B') ++
+      StairV3Primitives.orientF (startFor B') ++
       renameProgram (OB5.sig (startFor B')) (Rolling1588.Integer.packFirst base true (startFor B')) ++
       StairPhysicalPrimitives.pack B' := rfl
 
@@ -10565,7 +10973,7 @@ theorem core (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin : Bas
   obtain ⟨m1, m2, m3, m4, m5, m6, e⟩ := run6 (StairPhysicalPrimitives.unpack B)
     (StairPhysicalPrimitives.tickForward (startFor B))
     (StairPhysicalPrimitives.middleForward (startFor B + 1) (startFor B' - startFor B - 1))
-    (StairV3Primitives.orient (startFor B'))
+    (StairV3Primitives.orientF (startFor B'))
     (renameProgram (OB5.sig 511) (Rolling1588.encodeGroup base true (kk B')))
     (StairPhysicalPrimitives.pack B') m u
   rw [segP_eq, closing_eq B' fE, e]
@@ -10702,8 +11110,8 @@ theorem core (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin : Bas
     · exact zcr q (Or.inl hc)
     · exact zcr q (Or.inr hr)
   obtain ⟨ph4, ci4, ext4, z512, fr4⟩ :=
-    codecInput_after_orient B' hB' x hx0 hxp u3 hl ha hb hwork m4
-  set u4 := run (StairV3Primitives.orient (startFor B')) m4 u3
+    codecInput_after_orientF B' hB' x hx0 hxp u3 hl ha hb hwork m4
+  set u4 := run (StairV3Primitives.orientF (startFor B')) m4 u3
   /- 4. the closing packet -/
   have pkRep : ∀ k ∈ kk B' :: segPk B B', ∀ r : Fin 10,
       StairField2V3Packet.packetSite k r =
@@ -10898,10 +11306,8 @@ theorem seg_low (B B' : Nat) (hpair : (B, B') ∈ rowPairs) :
   · rw [← fEnd] at hM
     have h := StairPhysicalPrimitives.middleForward_rows B hB q hM
     exact fLow q (by simp only [List.mem_append, h, true_or])
-  · rw [orient_eq B' h87'] at hO
-    unfold StairField2V3Boundary.orientFull at hO
-    have hs := swapRegisters_wires _ _ _ (by simp [StairCodec.reg]) hO
-    have h : q ∈ orientSites B' := List.mem_toFinset.mp hs
+  · have h : q ∈ orientSites B' :=
+      List.mem_toFinset.mp (StairField2V3End.orientF_sites B' h87' hO)
     exact fLow q (by simp only [List.mem_append, h, true_or, or_true])
   · have h := closing_wires (kk B') q hK
     exact fLow q (by simp only [List.mem_append, h, true_or, or_true])
@@ -11026,7 +11432,7 @@ theorem middle_link (B : Nat) (hB : B ∈ budgets) (hfix : B ≠ 12) (x : Nat) (
 and middle premises discharged from the decoded checkpoint after `unpack B`. -/
 theorem rowPieces_chain_decoded (B B' f : Nat) (hB : B ∈ budgets) (hB' : B' ∈ budgets)
     (hfix : B ≠ 12) (bound : startFor B + 1 + (f - startFor B - 1) ≤ 512)
-    (hf5 : 5 < f) (hfm : f % 5 = 0) (hf : f ≤ 511) (horient : f ∈ rowLetters)
+    (hf5 : 5 < f) (hfm : f % 5 = 0) (hf : f ≤ 511)
     (hn : (skywalkPoolWires base).Nodup)
     (specB : StairCodec.FunctionalSpec (physicalLayout B) B)
     (specB' : StairCodec.FunctionalSpec (physicalLayout B') B')
@@ -11044,13 +11450,18 @@ theorem rowPieces_chain_decoded (B B' f : Nat) (hB : B ∈ budgets) (hB' : B' �
           (run (renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f)) c5
             (run (P.orient f) c4
               (run (P.middleForward (startFor B + 1) (f - startFor B - 1)) c3
-              (run (P.tickForward (startFor B)) c2 (run (P.unpack B) c1 x0)))))).basis) :
+              (run (P.tickForward (startFor B)) c2 (run (P.unpack B) c1 x0)))))).basis)
+    (orientLink : ∀ c1 c2 c3 c a, run (P.orientR f) a (run (P.orient f) c
+        (run (P.middleForward (startFor B + 1) (f - startFor B - 1)) c3
+          (run (P.tickForward (startFor B)) c2 (run (P.unpack B) c1 x0)))) =
+      run (P.middleForward (startFor B + 1) (f - startFor B - 1)) c3
+        (run (P.tickForward (startFor B)) c2 (run (P.unpack B) c1 x0))) :
     TripChain (rowPieces B B' (startFor B) f) x0 := by
   obtain ⟨u0, v0, sg0, dom0, cc0⟩ := code0
   refine ⟨fun c a => unpack_trip B hB u0 v0 sg0 specB dom0 x0 c a cc0, fun c1 =>
     ⟨fun c a => tick_link B hB x hx0 hx hcop _ (dec c1) c a, fun c2 =>
       ⟨fun c a => middle_link B hB hfix x hx0 hx hcop _ (dec c1) c2 _ bound c a, fun c3 =>
-        ⟨fun c a => orient_trip f horient _ a c, fun c4 =>
+        ⟨fun c a => orientLink c1 c2 c3 c a, fun c4 =>
           ⟨packet_trip f hf5 hfm hf hn _ (legal c1 c2 c3 c4), fun c5 =>
             ⟨?_, fun _ => trivial⟩⟩⟩⟩⟩⟩
   intro c a
@@ -12251,7 +12662,7 @@ theorem traj (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin : Bas
     (pre1 : ∀ r ∈ futurePayload B, u.basis r = cmpBits B x r)
     (pre2 : ∀ r ∈ scratchT B B', u.basis r = false)
     (hsh : ∀ q, base 4000 ≤ q → u.basis q = false) (m1 m2 m3 m4 : List Bool) :
-    (∀ r : Fin 10, (run (StairV3Primitives.orient (startFor B')) m4
+    (∀ r : Fin 10, (run (StairV3Primitives.orientF (startFor B')) m4
       (run (StairPhysicalPrimitives.middleForward (startFor B + 1) (startFor B' - startFor B - 1)) m3
         (run (StairPhysicalPrimitives.tickForward (startFor B)) m2
           (run (StairPhysicalPrimitives.unpack B) m1 u)))).basis
@@ -12261,11 +12672,19 @@ theorem traj (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin : Bas
       (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B')).u
       (StairBridgeDomain.realNatState x ECDSAAdd.p (startFor B')).v
       (StairBridgeDomain.realSign x ECDSAAdd.p (startFor B'))
-      (run (StairV3Primitives.orient (startFor B')) m4
+      (run (StairV3Primitives.orientF (startFor B')) m4
         (run (StairPhysicalPrimitives.middleForward (startFor B + 1) (startFor B' - startFor B - 1)) m3
           (run (StairPhysicalPrimitives.tickForward (startFor B)) m2
-            (run (StairPhysicalPrimitives.unpack B) m1 u)))).basis := by
+            (run (StairPhysicalPrimitives.unpack B) m1 u)))).basis ∧
+    (∀ c a, run (StairV3Primitives.orient (startFor B')) a (run (StairV3Primitives.orientF (startFor B')) c
+        (run (StairPhysicalPrimitives.middleForward (startFor B + 1) (startFor B' - startFor B - 1)) m3
+          (run (StairPhysicalPrimitives.tickForward (startFor B)) m2
+            (run (StairPhysicalPrimitives.unpack B) m1 u)))) =
+      run (StairPhysicalPrimitives.middleForward (startFor B + 1) (startFor B' - startFor B - 1)) m3
+        (run (StairPhysicalPrimitives.tickForward (startFor B)) m2
+          (run (StairPhysicalPrimitives.unpack B) m1 u))) := by
   obtain ⟨hB, hB', -⟩ := pair_mem B B' hpair
+  obtain ⟨-, -, -, -, hrowT, -, -, -⟩ := factsTrip_ok B B' hpair
   have hx0 : 0 < x := hx.1
   have hxp : x < ECDSAAdd.p := hx.2.1
   obtain ⟨-, h500, -, -, -, -⟩ := StairFirstTickV3.budget_range B hB
@@ -12389,12 +12808,12 @@ theorem traj (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin : Bas
     · exact zcr q (Or.inl hc)
     · exact zcr q (Or.inr hr)
   obtain ⟨-, ci4, -, -, fr4⟩ :=
-    codecInput_after_orient B' hB' x hx0 hxp u3 hl ha hb hwork m4
+    codecInput_after_orientF B' hB' x hx0 hxp u3 hl ha hb hwork m4
   have pkRep : ∀ k ∈ kk B' :: segPk B B', ∀ r : Fin 10,
       StairField2V3Packet.packetSite k r =
         StairPhysicalPrimitives.midSegmentMap B (History5.historyId (5 * k) r) :=
     fun k hk r => List.map_inj_left.mp (rpk k hk) r (List.mem_finRange r)
-  refine ⟨?_, ci4⟩
+  refine ⟨?_, ci4, fun c a => orientF_trip B' hB' x hx0 hxp u3 hl ha hb a c hrowT⟩
   intro r
   have hmem : StairField2V3Packet.packetSite (kk B') r ∈ pk (kk B') :=
     List.mem_map.mpr ⟨r, List.mem_finRange r, rfl⟩
@@ -12421,7 +12840,7 @@ theorem trip_clean (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin
   obtain ⟨-, -, -, -, -, -, -, -, rkk, -, -⟩ := FactsRep_ok B B' hpair
   obtain ⟨-, fE⟩ := FactsEnd_ok B B' hpair
   have fPkP := FactsPkP_ok B B' hpair
-  obtain ⟨h12, h5', hm5, h511, hrow, -, -, hsig⟩ := factsTrip_ok B B' hpair
+  obtain ⟨h12, h5', hm5, h511, -, -, -, hsig⟩ := factsTrip_ok B B' hpair
   obtain ⟨-, hbS, hbD, hbA, hbC, -, -, -, -⟩ := zFacts B' hB'
   obtain ⟨-, h500, -, -, -, -⟩ := StairFirstTickV3.budget_range B hB
   have specB := StairCodecFunctionalV3.codecFunctionalSpec B (budget_mem_checkpoints B hB)
@@ -12455,7 +12874,7 @@ theorem trip_clean (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin
         (run (StairExitLT24.P.tickForward (startFor B)) c2
           (run (StairExitLT24.P.unpack B) c1 u))))).basis := by
     intro c1 c2 c3 c4
-    obtain ⟨inK, -⟩ := traj B B' hpair x origin hx u pre1 pre2 hsh c1 c2 c3 c4
+    obtain ⟨inK, -, -⟩ := traj B B' hpair x origin hx u pre1 pre2 hsh c1 c2 c3 c4
     apply (MeasuredCodec5.legalAt_iff _ _).mpr
     intro i
     have e1 : ∀ j : Fin 10, (pullState (OB5.sig (startFor B'))
@@ -12485,10 +12904,10 @@ theorem trip_clean (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin
               (run (StairExitLT24.P.tickForward (startFor B)) c2
                 (run (StairExitLT24.P.unpack B) c1 u)))))).basis := by
     intro c1 c2 c3 c4 c5
-    obtain ⟨-, ci4⟩ := traj B B' hpair x origin hx u pre1 pre2 hsh c1 c2 c3 c4
+    obtain ⟨-, ci4, -⟩ := traj B B' hpair x origin hx u pre1 pre2 hsh c1 c2 c3 c4
     refine ⟨_, _, _, domain_row B' hB' x hx0 hxp, ?_⟩
     rw [closing_eq B' fE]
-    set u4 := run (StairV3Primitives.orient (startFor B')) c4
+    set u4 := run (StairV3Primitives.orientF (startFor B')) c4
       (run (StairPhysicalPrimitives.middleForward (startFor B + 1)
         (startFor B' - startFor B - 1)) c3
       (run (StairPhysicalPrimitives.tickForward (startFor B)) c2
@@ -12511,8 +12930,9 @@ theorem trip_clean (B B' : Nat) (hpair : (B, B') ∈ rowPairs) (x : Nat) (origin
       (run (renameProgram (OB5.sig 511) (Rolling1588.encodeGroup base true (kk B'))) c5 u4)).basis q
     rw [out q hqb, run_preserves_outside _ _ _ q (fun h => hqK (closing_wires (kk B') q h))]
   have chain := StairFirstTickV3Exit.rowPieces_chain_decoded B B' (startFor B') hB hB' h12
-    (by omega) h5' hm5 h511 hrow base_pool_nodup specB specB' x hx0 hxp
+    (by omega) h5' hm5 h511 base_pool_nodup specB specB' x hx0 hxp
     (coprime_of_lt x hx0 hxp) u code0 dec legal code6
+    (fun c1 c2 c3 c a => (traj B B' hpair x origin hx u pre1 pre2 hsh c1 c2 c3 []).2.2 c a)
   have trip0 := StairExitLT24.tripChain_run _ _ chain c a
   rw [← StairExitLT24.forwardSegment_eq, ← StairExitLT24.reverseSegment_eq] at trip0
   exact trip0
@@ -14764,6 +15184,7 @@ structure PrimitiveSlots (p : StairSchedule.StairPrimitives) : Prop where
   pack : ∀ B ∈ ([87, 62, 47, 32, 22, 12] : List Nat), Sound (p.pack B)
   unpack : ∀ B ∈ ([87, 62, 47, 32, 22, 12] : List Nat), Sound (p.unpack B)
   orient : ∀ f ∈ ([450, 465, 480, 490, 500] : List Nat), Sound (p.orient f)
+  orientR : ∀ f ∈ ([450, 465, 480, 490, 500] : List Nat), Sound (p.orientR f)
   tickForward : ∀ s ∈ ([425, 450, 465, 480, 490, 500] : List Nat),
     Sound (p.tickForward s)
   tickReverse : ∀ s ∈ ([425, 450, 465, 480, 490, 500] : List Nat),
@@ -14815,7 +15236,7 @@ theorem sound_reverseSegment (P : PrimitiveSlots p) (B B' s f : Nat)
     Sound (StairSchedule.reverseSegment p B B' s f) := by
   unfold StairSchedule.reverseSegment
   exact sound_append (sound_append (sound_append (sound_append (sound_append
-    (P.unpack B' hB') (sound_unpackAt f h5 h512)) (P.orient f hf))
+    (P.unpack B' hB') (sound_unpackAt f h5 h512)) (P.orientR f hf))
     (P.middleReverse s f hsf)) (P.tickReverse s hs)) (P.pack B hB)
 
 theorem sound_forwardLast (P : PrimitiveSlots p) :
@@ -15135,7 +15556,11 @@ theorem cp_unpack (B : Nat) :
       StairPhysicalPrimitives.unpack B := rfl
 
 theorem cp_orient (i : Nat) :
-    StairConcreteAssembly.checkpointPrimitives.orient i = StairV3Primitives.orient i :=
+    StairConcreteAssembly.checkpointPrimitives.orient i = StairV3Primitives.orientF i :=
+  rfl
+
+theorem cp_orientR (i : Nat) :
+    StairConcreteAssembly.checkpointPrimitives.orientR i = StairV3Primitives.orient i :=
   rfl
 
 theorem cp_tickForward (i : Nat) :
@@ -15196,6 +15621,9 @@ theorem primitiveSlots_v3 (K : PrimitiveChecks) :
     exact ⟨K.unpackPhysical B hB, good_unpack_row B hB⟩
   orient f hf := by
     rw [cp_orient]
+    exact StairField2V3End.orientF_sound_f f hf (K.orient f hf)
+  orientR f hf := by
+    rw [cp_orientR]
     exact K.orient f hf
   tickForward s hs := by
     rw [cp_tickForward]
@@ -16549,7 +16977,7 @@ theorem forwardSegment_caller (p : StairSchedule.StairPrimitives) (budget nextBu
 theorem reverseSegment_caller (p : StairSchedule.StairPrimitives) (budget nextBudget start finish : Nat)
     (hfin : finish ∈ [385, 410, 425, 430, 450, 465, 480, 490, 500])
     (hu : wires (p.unpack nextBudget) ⊆ callerDomain)
-    (ho : wires (p.orient finish) ⊆ callerDomain)
+    (ho : wires (p.orientR finish) ⊆ callerDomain)
     (hm : wires (p.middleReverse (start + 1) (finish - start - 1)) ⊆ callerDomain)
     (ht : wires (p.tickReverse start) ⊆ callerDomain)
     (hp : wires (p.pack budget) ⊆ callerDomain) :
@@ -18764,7 +19192,11 @@ theorem cp_unpack (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
     wires (StairConcreteAssembly.checkpointPrimitives.unpack B) ⊆ callerDomain := unpack_own B hB
 
 theorem cp_orient (f : Nat) (hf : f ∈ [450, 465, 480, 490, 500]) :
-    wires (StairConcreteAssembly.checkpointPrimitives.orient f) ⊆ callerDomain := orientV3_own f hf
+    wires (StairConcreteAssembly.checkpointPrimitives.orient f) ⊆ callerDomain :=
+  (StairField2V3End.orientF_wires_sub_f f hf).trans (orientV3_own f hf)
+
+theorem cp_orientR (f : Nat) (hf : f ∈ [450, 465, 480, 490, 500]) :
+    wires (StairConcreteAssembly.checkpointPrimitives.orientR f) ⊆ callerDomain := orientV3_own f hf
 
 theorem cp_tickForward (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
     wires (StairConcreteAssembly.checkpointPrimitives.tickForward
@@ -18845,7 +19277,7 @@ theorem rseg_caller (B B' : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
     (hre : StairPhysicalPrimitivesFix505.reverseEnd B = StairPhysicalLayout.endFor B) :
     wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives B B'
       (StairPhysicalLayout.startFor B) (StairPhysicalLayout.endFor B)) ⊆ callerDomain :=
-  reverseSegment_caller _ B B' _ _ hfin (cp_unpack B' hB') (cp_orient _ hf)
+  reverseSegment_caller _ B B' _ _ hfin (cp_unpack B' hB') (cp_orientR _ hf)
     (cp_middleReverseFix B hB hre) (cp_tickReverse B hB) (cp_pack B hB)
 
 theorem forwardLastV3_caller :
@@ -19176,7 +19608,9 @@ theorem forwardSegment_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.
   · exact ok_rows hsub B hB _ (unpack_rows B hB)
   · exact ok_rows hsub B hB _ (tickForward_rows B hB)
   · exact ok_rows hsub B hB _ (middleForward_rows B hB)
-  · have h := orientV3_rows N hN
+  · have h : ∀ q ∈ wires (StairV3Primitives.orientF (startFor N)), q ∈ rowSitesL N :=
+      fun q hq => orientV3_rows N hN q
+        (StairField2V3End.orientF_wires_sub N (StairField2V3End.endFacts N hN).2.1 hq)
     rw [← hend] at h
     exact ok_rows hsub N hN _ h
   · exact ok_rows hsub B hB _ hpk
@@ -21186,7 +21620,15 @@ theorem v3WalkFacts : WalkFacts StairConcreteAssembly.checkpointPrimitives v3Cos
     intro i B hr
     simp only [v3Plan, List.mem_cons, Prod.mk.injEq, List.not_mem_nil,
       or_false] at hr
-    rw [StairV3Primitives.primitives_orient]
+    rw [StairV3Primitives.primitives_orient, StairOrientF.orientF_slots]
+    rcases hr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
+        ⟨rfl, rfl⟩ <;>
+      exact orient_slots _ _ (by norm_num)
+  orientR := by
+    intro i B hr
+    simp only [v3Plan, List.mem_cons, Prod.mk.injEq, List.not_mem_nil,
+      or_false] at hr
+    rw [StairV3Primitives.primitives_orientR]
     rcases hr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
         ⟨rfl, rfl⟩ <;>
       exact orient_slots _ _ (by norm_num)
@@ -21195,6 +21637,7 @@ theorem v3WalkFacts : WalkFacts StairConcreteAssembly.checkpointPrimitives v3Cos
     -- (rewriting `primitives.orient` into `checkpointPrimitives.orient …` under `+` cost 11 s)
     rw [show StairConcreteAssembly.checkpointPrimitives = StairV3Primitives.primitives from rfl,
       StairV3Primitives.primitives_firstPack, StairV3Primitives.primitives_orient,
+      StairOrientF.orientF_slots,
       StairV3Primitives.primitives_pack, StairV3Primitives.firstPack]
     have m := phaseBMove_slots
     -- LT44 (replay budget): the cost constant by an equation, not by unfolding `v3Costs`
@@ -21207,6 +21650,7 @@ theorem v3WalkFacts : WalkFacts StairConcreteAssembly.checkpointPrimitives v3Cos
     -- (rewriting `primitives.orient` into `checkpointPrimitives.orient …` under `+` cost 11 s)
     rw [show StairConcreteAssembly.checkpointPrimitives = StairV3Primitives.primitives from rfl,
       StairV3Primitives.primitives_firstUnpack, StairV3Primitives.primitives_orient,
+      StairOrientF.orientF_slots,
       StairV3Primitives.primitives_unpack, StairV3Primitives.firstUnpack]
     have m := phaseBReturn_slots
     rw [show v3Costs.firstReturn = 176 from rfl]
