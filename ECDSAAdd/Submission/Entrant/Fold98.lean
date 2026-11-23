@@ -21230,15 +21230,15 @@ theorem special_run (s:State) (m:List Bool) (hq:s.basis q=false) (hr:s.basis r=f
  · exact hq
  · exact hr
 
-theorem bank_match : (ZeroSetDevelop.compileS? hs specialChecked.out).elim false
-    (fun c => ParkAProgramBool.programEq ECDSAAdd.Entrant.KnownCMidStaged.literal c.out) = true := by
- decide +kernel
+private theorem loanMask_eq : ZeroSetDevelop.MaskedRewrite.maskOf hs = 0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001ffffffffffffffffffffffc0000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 := by decide +kernel
+private def wireLookup := ZeroSetDevelop.MaskedRewrite.fromMask hs 0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001ffffffffffffffffffffffc0000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 loanMask_eq
 
-theorem compiled_bank : (ZeroSetDevelop.compileS? hs specialChecked.out).isSome=true :=
- ECDSAAdd.Entrant.D1Opt.isSome_of_elim bank_match
+theorem literal_rewrites : ZeroSetDevelop.SRewrites hs specialChecked.out KnownCMidStaged.literal := by
+  apply ZeroSetDevelop.MaskedRewrite.sound wireLookup (specialChecked.out.length+1)
+  decide +kernel
 
 def bankChecked : ZeroSetDevelop.CheckedS hs specialChecked.out :=
- (ZeroSetDevelop.compileS? hs specialChecked.out).get compiled_bank
+ ⟨KnownCMidStaged.literal, literal_rewrites⟩
 attribute [local irreducible] bankChecked
 
 theorem bank_cert : ZeroSetDevelop.SRewrites hs specialChecked.out bankChecked.out := bankChecked.proof
@@ -22422,50 +22422,50 @@ attribute [local irreducible] run wires toffoliCount measurementCount Challenge.
   Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
   Rolling1588TickGap.forward Five506.tick506 Five506.cand
 
-theorem cv21 : cv 21 = true := by decide +kernel
-theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
-theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
-theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
-theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
-theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
-theorem cv32 : cv 32 = true := by decide +kernel
-theorem cv33 : cv 33 = true := by decide +kernel
-theorem cv34 : cv 34 = true := by decide +kernel
-theorem cv35 : cv 35 = true := by decide +kernel
-theorem cv36 : cv 36 = true := by decide +kernel
-theorem cv37 : cv 37 = true := by decide +kernel
-theorem cv38 : cv 38 = true := by decide +kernel
-theorem cv39 : cv 39 = true := by decide +kernel
-theorem cv40 : cv 40 = true := by decide +kernel
-theorem cv41 : cv 41 = true := by decide +kernel
-theorem cv42 : cv 42 = true := by decide +kernel
-theorem cv43 : cv 43 = true := by decide +kernel
-theorem cv44 : cv 44 = true := by decide +kernel
-theorem cv45 : cv 45 = true := by decide +kernel
-theorem cv46 : cv 46 = true := by decide +kernel
-theorem cv47 : cv 47 = true := by decide +kernel
-theorem cv48 : cv 48 = true := by decide +kernel
-theorem cv49 : cv 49 = true := by decide +kernel
-theorem cv50 : cv 50 = true := by decide +kernel
-theorem cv51 : cv 51 = true := by decide +kernel
-theorem cv52 : cv 52 = true := by decide +kernel
-theorem cv53 : cv 53 = true := by decide +kernel
-theorem cv54 : cv 54 = true := by decide +kernel
-theorem cv55 : cv 55 = true := by decide +kernel
-theorem cv56 : cv 56 = true := by decide +kernel
-theorem cv57 : cv 57 = true := by decide +kernel
-theorem cv58 : cv 58 = true := by decide +kernel
-theorem cv59 : cv 59 = true := by decide +kernel
-theorem cv60 : cv 60 = true := by decide +kernel
-theorem cv61 : cv 61 = true := by decide +kernel
-theorem cv62 : cv 62 = true := by decide +kernel
-theorem cv63 : cv 63 = true := by decide +kernel
-theorem cv64 : cv 64 = true := by decide +kernel
+theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
+theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
+theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
+theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
+theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
+theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
+theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
+theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
+theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
+theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
+theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
+theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
+theorem cv33 : cv 33 = true := cv_of_checked (by decide +kernel)
+theorem cv34 : cv 34 = true := cv_of_checked (by decide +kernel)
+theorem cv35 : cv 35 = true := cv_of_checked (by decide +kernel)
+theorem cv36 : cv 36 = true := cv_of_checked (by decide +kernel)
+theorem cv37 : cv 37 = true := cv_of_checked (by decide +kernel)
+theorem cv38 : cv 38 = true := cv_of_checked (by decide +kernel)
+theorem cv39 : cv 39 = true := cv_of_checked (by decide +kernel)
+theorem cv40 : cv 40 = true := cv_of_checked (by decide +kernel)
+theorem cv41 : cv 41 = true := cv_of_checked (by decide +kernel)
+theorem cv42 : cv 42 = true := cv_of_checked (by decide +kernel)
+theorem cv43 : cv 43 = true := cv_of_checked (by decide +kernel)
+theorem cv44 : cv 44 = true := cv_of_checked (by decide +kernel)
+theorem cv45 : cv 45 = true := cv_of_checked (by decide +kernel)
+theorem cv46 : cv 46 = true := cv_of_checked (by decide +kernel)
+theorem cv47 : cv 47 = true := cv_of_checked (by decide +kernel)
+theorem cv48 : cv 48 = true := cv_of_checked (by decide +kernel)
+theorem cv49 : cv 49 = true := cv_of_checked (by decide +kernel)
+theorem cv50 : cv 50 = true := cv_of_checked (by decide +kernel)
+theorem cv51 : cv 51 = true := cv_of_checked (by decide +kernel)
+theorem cv52 : cv 52 = true := cv_of_checked (by decide +kernel)
+theorem cv53 : cv 53 = true := cv_of_checked (by decide +kernel)
+theorem cv54 : cv 54 = true := cv_of_checked (by decide +kernel)
+theorem cv55 : cv 55 = true := cv_of_checked (by decide +kernel)
+theorem cv56 : cv 56 = true := cv_of_checked (by decide +kernel)
+theorem cv57 : cv 57 = true := cv_of_checked (by decide +kernel)
+theorem cv58 : cv 58 = true := cv_of_checked (by decide +kernel)
+theorem cv59 : cv 59 = true := cv_of_checked (by decide +kernel)
+theorem cv60 : cv 60 = true := cv_of_checked (by decide +kernel)
+theorem cv61 : cv 61 = true := cv_of_checked (by decide +kernel)
+theorem cv62 : cv 62 = true := cv_of_checked (by decide +kernel)
+theorem cv63 : cv 63 = true := cv_of_checked (by decide +kernel)
+theorem cv64 : cv 64 = true := cv_of_checked (by decide +kernel)
 
 theorem rows_complete : ∀ v, v < 65 → ∀ u, u < 65 → ∀ g s : Bool,
     (u+v ≤ 64 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
@@ -23290,17 +23290,51 @@ theorem witness_support : wires witnessProgram⊆wires ParkAData.p0 :=
  (append_union ((ParkAData.shared35++ParkAData.shared4)++(ParkAData.shared25++(ParkAData.shared45++ParkAData.shared38))) ((ParkAData.shared106++ParkAData.shared33)++(ParkAData.shared5++(ParkAData.shared0++ParkAData.shared22))) ParkAData.p0 (append_union (ParkAData.shared35++ParkAData.shared4) (ParkAData.shared25++(ParkAData.shared45++ParkAData.shared38)) ParkAData.p0 (append_union ParkAData.shared35 ParkAData.shared4 ParkAData.p0 shared35_support shared4_support) (append_union ParkAData.shared25 (ParkAData.shared45++ParkAData.shared38) ParkAData.p0 shared25_support (append_union ParkAData.shared45 ParkAData.shared38 ParkAData.p0 shared45_support shared38_support))) (append_union (ParkAData.shared106++ParkAData.shared33) (ParkAData.shared5++(ParkAData.shared0++ParkAData.shared22)) ParkAData.p0 (append_union ParkAData.shared106 ParkAData.shared33 ParkAData.p0 shared106_support shared33_support) (append_union ParkAData.shared5 (ParkAData.shared0++ParkAData.shared22) ParkAData.p0 shared5_support (append_union ParkAData.shared0 ParkAData.shared22 ParkAData.p0 shared0_support shared22_support))))
 
 def cover (u:Wire) : Bool := u==d || (FullPadSupport.supportDomain L).contains u || touched witnessProgram u
-theorem used0 : (((A161GenericFold.ambient L g hs96).drop 0).take 80).all cover=true := by decide +kernel
-theorem used1 : (((A161GenericFold.ambient L g hs96).drop 80).take 80).all cover=true := by decide +kernel
-theorem used2 : (((A161GenericFold.ambient L g hs96).drop 160).take 80).all cover=true := by decide +kernel
-theorem used3 : (((A161GenericFold.ambient L g hs96).drop 240).take 80).all cover=true := by decide +kernel
-theorem used4 : (((A161GenericFold.ambient L g hs96).drop 320).take 80).all cover=true := by decide +kernel
-theorem used5 : (((A161GenericFold.ambient L g hs96).drop 400).take 80).all cover=true := by decide +kernel
-theorem used6 : (((A161GenericFold.ambient L g hs96).drop 480).take 80).all cover=true := by decide +kernel
-theorem used7 : (((A161GenericFold.ambient L g hs96).drop 560).take 80).all cover=true := by decide +kernel
-theorem used8 : (((A161GenericFold.ambient L g hs96).drop 640).take 80).all cover=true := by decide +kernel
-theorem used9 : (((A161GenericFold.ambient L g hs96).drop 720).take 80).all cover=true := by decide +kernel
-theorem used10 : (((A161GenericFold.ambient L g hs96).drop 800).take 80).all cover=true := by decide +kernel
+private def wireBits : List Wire → Nat
+  | [] => 0
+  | q :: tail => 2^q ||| wireBits tail
+
+private theorem wireBits_mem (qs : List Wire) (q : Wire) : (wireBits qs).testBit q = true ↔ q ∈ qs := by
+  induction qs with
+  | nil => simp [wireBits]
+  | cons a qs ih => simp only [wireBits, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
+      decide_eq_true_eq, ih, List.mem_cons]; tauto
+
+private theorem allWireBits : (A161GenericFold.ambient L g hs96).all cover = true := by
+  let ws := A161GenericFold.ambient L g hs96
+  let other := d :: FullPadSupport.supportDomain L
+  have incl : wireBits ws &&& (wireBits other ||| WireColumns.circuit witnessProgram) = wireBits ws := by
+    decide +kernel
+  apply List.all_eq_true.mpr
+  intro q hq
+  have on : (wireBits ws).testBit q = true := (wireBits_mem ws q).mpr hq
+  have same := congrArg (fun n : Nat => n.testBit q) incl
+  simp only [Nat.testBit_and, Nat.testBit_or, on, Bool.true_and, Bool.or_eq_true] at same
+  rcases same with extra | used
+  · have mem := (wireBits_mem other q).mp extra
+    rcases List.mem_cons.mp mem with eq | h
+    · simp [cover, eq]
+    · simp [cover, h]
+  · have hit := (touched_spec witnessProgram q).mpr ((WireColumns.circuit_bit witnessProgram q).mp used)
+    simp [cover,hit]
+
+theorem coveredSlice (start : Nat) :
+    (((A161GenericFold.ambient L g hs96).drop start).take 80).all cover = true := by
+  apply List.all_eq_true.mpr
+  intro q h
+  exact List.all_eq_true.mp allWireBits q (List.mem_of_mem_drop (List.mem_of_mem_take h))
+
+theorem used0 : (((A161GenericFold.ambient L g hs96).drop 0).take 80).all cover=true := coveredSlice _
+theorem used1 : (((A161GenericFold.ambient L g hs96).drop 80).take 80).all cover=true := coveredSlice _
+theorem used2 : (((A161GenericFold.ambient L g hs96).drop 160).take 80).all cover=true := coveredSlice _
+theorem used3 : (((A161GenericFold.ambient L g hs96).drop 240).take 80).all cover=true := coveredSlice _
+theorem used4 : (((A161GenericFold.ambient L g hs96).drop 320).take 80).all cover=true := coveredSlice _
+theorem used5 : (((A161GenericFold.ambient L g hs96).drop 400).take 80).all cover=true := coveredSlice _
+theorem used6 : (((A161GenericFold.ambient L g hs96).drop 480).take 80).all cover=true := coveredSlice _
+theorem used7 : (((A161GenericFold.ambient L g hs96).drop 560).take 80).all cover=true := coveredSlice _
+theorem used8 : (((A161GenericFold.ambient L g hs96).drop 640).take 80).all cover=true := coveredSlice _
+theorem used9 : (((A161GenericFold.ambient L g hs96).drop 720).take 80).all cover=true := coveredSlice _
+theorem used10 : (((A161GenericFold.ambient L g hs96).drop 800).take 80).all cover=true := coveredSlice _
 
 end ECDSAAdd.Entrant.A161SupportCover
 end

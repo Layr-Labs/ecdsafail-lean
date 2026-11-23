@@ -12466,6 +12466,18 @@ theorem lookup_context (p pre chunk post : Program) (start off : Nat)
  simp only [Nat.add_sub_cancel_left]
  exact List.getElem?_append_left ho
 
+theorem gateFromChunk (p pre chunk post : Program) (start off : Nat) {size : Nat}
+    (shape : p = pre ++ (chunk ++ post)) (before : pre.length = start)
+    (length : chunk.length = size) (small : decide (off < size) = true)
+    (g : Instr) (cell : chunk[off]? = some g) :
+    p[start+off]'(by
+      have h := of_decide_eq_true small
+      simp only [shape, List.length_append, before, length]
+      omega) = g := by
+  have inside : off < chunk.length := by simpa only [length] using of_decide_eq_true small
+  have h := lookup_context p pre chunk post start off shape before inside
+  exact (List.getElem?_eq_some_iff.mp (h.trans cell)).2
+
 def before0 : Program := (chunks.take 0).flatten
 def after0 : Program := (chunks.drop 1).flatten
 theorem before_len0 : before0.length=0 := by
@@ -19450,11 +19462,8 @@ theorem frame_4826_0_158 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 158 basis 4826=prefixState SixCarryPrefixData.program 0 basis 4826 := by
  exact at_between SixCarryPrefixData.program 0 158 4826 (by decide +kernel) nw_4826_0_158 basis
 
-theorem gate_122 : SixCarryPrefixData.program[122]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4627 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 122 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[122]?=some (.CX 4365 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[122]?=some (.CX 4365 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_122 : SixCarryPrefixData.program[122]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4627 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 122 shape0 before_len0 len0 rfl (.CX 4365 4627) rfl
 
 theorem step_122 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 123 basis 4627=((prefixState SixCarryPrefixData.program 0 basis 4627) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -19464,11 +19473,8 @@ theorem step_122 (basis : BasisState) :
  rw [frame_4365_0_122 basis,frame_4627_0_122 basis] at h
  exact h
 
-theorem gate_123 : SixCarryPrefixData.program[123]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4628 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 123 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[123]?=some (.CX 4366 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[123]?=some (.CX 4366 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_123 : SixCarryPrefixData.program[123]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4628 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 123 shape0 before_len0 len0 rfl (.CX 4366 4628) rfl
 
 theorem step_123 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 124 basis 4628=((prefixState SixCarryPrefixData.program 0 basis 4628) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -19478,11 +19484,8 @@ theorem step_123 (basis : BasisState) :
  rw [frame_4366_0_123 basis,frame_4628_0_123 basis] at h
  exact h
 
-theorem gate_124 : SixCarryPrefixData.program[124]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4629 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 124 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[124]?=some (.CX 4367 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[124]?=some (.CX 4367 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_124 : SixCarryPrefixData.program[124]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4629 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 124 shape0 before_len0 len0 rfl (.CX 4367 4629) rfl
 
 theorem step_124 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 125 basis 4629=((prefixState SixCarryPrefixData.program 0 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -19492,11 +19495,8 @@ theorem step_124 (basis : BasisState) :
  rw [frame_4367_0_124 basis,frame_4629_0_124 basis] at h
  exact h
 
-theorem gate_125 : SixCarryPrefixData.program[125]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4630 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 125 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[125]?=some (.CX 4368 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[125]?=some (.CX 4368 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_125 : SixCarryPrefixData.program[125]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4630 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 125 shape0 before_len0 len0 rfl (.CX 4368 4630) rfl
 
 theorem step_125 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 126 basis 4630=((prefixState SixCarryPrefixData.program 0 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -19506,11 +19506,8 @@ theorem step_125 (basis : BasisState) :
  rw [frame_4368_0_125 basis,frame_4630_0_125 basis] at h
  exact h
 
-theorem gate_126 : SixCarryPrefixData.program[126]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4631 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 126 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[126]?=some (.CX 4369 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[126]?=some (.CX 4369 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_126 : SixCarryPrefixData.program[126]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4631 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 126 shape0 before_len0 len0 rfl (.CX 4369 4631) rfl
 
 theorem step_126 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 127 basis 4631=((prefixState SixCarryPrefixData.program 0 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -19520,11 +19517,8 @@ theorem step_126 (basis : BasisState) :
  rw [frame_4369_0_126 basis,frame_4631_0_126 basis] at h
  exact h
 
-theorem gate_127 : SixCarryPrefixData.program[127]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4632 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 127 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[127]?=some (.CX 4370 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[127]?=some (.CX 4370 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_127 : SixCarryPrefixData.program[127]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4632 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 127 shape0 before_len0 len0 rfl (.CX 4370 4632) rfl
 
 theorem step_127 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 128 basis 4632=((prefixState SixCarryPrefixData.program 0 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -19534,11 +19528,8 @@ theorem step_127 (basis : BasisState) :
  rw [frame_4370_0_127 basis,frame_4632_0_127 basis] at h
  exact h
 
-theorem gate_128 : SixCarryPrefixData.program[128]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4796 4633 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 0 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[0]?=some (.CX 4796 4633) := by decide +kernel
- have hh : SixCarryPrefixData.program[128]?=some (.CX 4796 4633) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_128 : SixCarryPrefixData.program[128]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4796 4633 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 0 shape1 before_len1 len1 rfl (.CX 4796 4633) rfl
 
 theorem step_128 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 129 basis 4633=((prefixState SixCarryPrefixData.program 0 basis 4633) ^^ (prefixState SixCarryPrefixData.program 0 basis 4796)) := by
@@ -19548,11 +19539,8 @@ theorem step_128 (basis : BasisState) :
  rw [frame_4633_0_128 basis,frame_4796_0_128 basis] at h
  exact h
 
-theorem gate_129 : SixCarryPrefixData.program[129]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4797 4634 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 1 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[1]?=some (.CX 4797 4634) := by decide +kernel
- have hh : SixCarryPrefixData.program[129]?=some (.CX 4797 4634) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_129 : SixCarryPrefixData.program[129]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4797 4634 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 1 shape1 before_len1 len1 rfl (.CX 4797 4634) rfl
 
 theorem step_129 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 130 basis 4634=((prefixState SixCarryPrefixData.program 0 basis 4634) ^^ (prefixState SixCarryPrefixData.program 0 basis 4797)) := by
@@ -19562,11 +19550,8 @@ theorem step_129 (basis : BasisState) :
  rw [frame_4634_0_129 basis,frame_4797_0_129 basis] at h
  exact h
 
-theorem gate_147 : SixCarryPrefixData.program[147]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4815 4652 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 19 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[19]?=some (.CX 4815 4652) := by decide +kernel
- have hh : SixCarryPrefixData.program[147]?=some (.CX 4815 4652) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_147 : SixCarryPrefixData.program[147]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4815 4652 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 19 shape1 before_len1 len1 rfl (.CX 4815 4652) rfl
 
 theorem step_147 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 148 basis 4652=((prefixState SixCarryPrefixData.program 0 basis 4652) ^^ (prefixState SixCarryPrefixData.program 0 basis 4815)) := by
@@ -19576,11 +19561,8 @@ theorem step_147 (basis : BasisState) :
  rw [frame_4652_0_147 basis,frame_4815_0_147 basis] at h
  exact h
 
-theorem gate_148 : SixCarryPrefixData.program[148]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4816 4653 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 20 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[20]?=some (.CX 4816 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[148]?=some (.CX 4816 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_148 : SixCarryPrefixData.program[148]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4816 4653 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 20 shape1 before_len1 len1 rfl (.CX 4816 4653) rfl
 
 theorem step_148 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 149 basis 4653=((prefixState SixCarryPrefixData.program 0 basis 4653) ^^ (prefixState SixCarryPrefixData.program 0 basis 4816)) := by
@@ -19590,11 +19572,8 @@ theorem step_148 (basis : BasisState) :
  rw [frame_4653_0_148 basis,frame_4816_0_148 basis] at h
  exact h
 
-theorem gate_149 : SixCarryPrefixData.program[149]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4817 4654 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 21 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[21]?=some (.CX 4817 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[149]?=some (.CX 4817 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_149 : SixCarryPrefixData.program[149]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4817 4654 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 21 shape1 before_len1 len1 rfl (.CX 4817 4654) rfl
 
 theorem step_149 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 150 basis 4654=((prefixState SixCarryPrefixData.program 0 basis 4654) ^^ (prefixState SixCarryPrefixData.program 0 basis 4817)) := by
@@ -19604,11 +19583,8 @@ theorem step_149 (basis : BasisState) :
  rw [frame_4654_0_149 basis,frame_4817_0_149 basis] at h
  exact h
 
-theorem gate_150 : SixCarryPrefixData.program[150]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4818 4655 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 22 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[22]?=some (.CX 4818 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[150]?=some (.CX 4818 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_150 : SixCarryPrefixData.program[150]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4818 4655 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 22 shape1 before_len1 len1 rfl (.CX 4818 4655) rfl
 
 theorem step_150 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 151 basis 4655=((prefixState SixCarryPrefixData.program 0 basis 4655) ^^ (prefixState SixCarryPrefixData.program 0 basis 4818)) := by
@@ -19618,11 +19594,8 @@ theorem step_150 (basis : BasisState) :
  rw [frame_4655_0_150 basis,frame_4818_0_150 basis] at h
  exact h
 
-theorem gate_151 : SixCarryPrefixData.program[151]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4819 4656 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 23 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[23]?=some (.CX 4819 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[151]?=some (.CX 4819 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_151 : SixCarryPrefixData.program[151]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4819 4656 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 23 shape1 before_len1 len1 rfl (.CX 4819 4656) rfl
 
 theorem step_151 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 152 basis 4656=((prefixState SixCarryPrefixData.program 0 basis 4656) ^^ (prefixState SixCarryPrefixData.program 0 basis 4819)) := by
@@ -19632,11 +19605,8 @@ theorem step_151 (basis : BasisState) :
  rw [frame_4656_0_151 basis,frame_4819_0_151 basis] at h
  exact h
 
-theorem gate_152 : SixCarryPrefixData.program[152]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4820 4657 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 24 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[24]?=some (.CX 4820 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[152]?=some (.CX 4820 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_152 : SixCarryPrefixData.program[152]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4820 4657 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 24 shape1 before_len1 len1 rfl (.CX 4820 4657) rfl
 
 theorem step_152 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 153 basis 4657=((prefixState SixCarryPrefixData.program 0 basis 4657) ^^ (prefixState SixCarryPrefixData.program 0 basis 4820)) := by
@@ -19646,11 +19616,8 @@ theorem step_152 (basis : BasisState) :
  rw [frame_4657_0_152 basis,frame_4820_0_152 basis] at h
  exact h
 
-theorem gate_153 : SixCarryPrefixData.program[153]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4821 4658 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 25 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[25]?=some (.CX 4821 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[153]?=some (.CX 4821 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_153 : SixCarryPrefixData.program[153]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4821 4658 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 25 shape1 before_len1 len1 rfl (.CX 4821 4658) rfl
 
 theorem step_153 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 154 basis 4658=((prefixState SixCarryPrefixData.program 0 basis 4658) ^^ (prefixState SixCarryPrefixData.program 0 basis 4821)) := by
@@ -19660,11 +19627,8 @@ theorem step_153 (basis : BasisState) :
  rw [frame_4658_0_153 basis,frame_4821_0_153 basis] at h
  exact h
 
-theorem gate_154 : SixCarryPrefixData.program[154]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4822 4659 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 26 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[26]?=some (.CX 4822 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[154]?=some (.CX 4822 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_154 : SixCarryPrefixData.program[154]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4822 4659 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 26 shape1 before_len1 len1 rfl (.CX 4822 4659) rfl
 
 theorem step_154 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 155 basis 4659=((prefixState SixCarryPrefixData.program 0 basis 4659) ^^ (prefixState SixCarryPrefixData.program 0 basis 4822)) := by
@@ -19674,11 +19638,8 @@ theorem step_154 (basis : BasisState) :
  rw [frame_4659_0_154 basis,frame_4822_0_154 basis] at h
  exact h
 
-theorem gate_155 : SixCarryPrefixData.program[155]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4823 4660 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 27 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[27]?=some (.CX 4823 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[155]?=some (.CX 4823 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_155 : SixCarryPrefixData.program[155]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4823 4660 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 27 shape1 before_len1 len1 rfl (.CX 4823 4660) rfl
 
 theorem step_155 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 156 basis 4660=((prefixState SixCarryPrefixData.program 0 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4823)) := by
@@ -19688,11 +19649,8 @@ theorem step_155 (basis : BasisState) :
  rw [frame_4660_0_155 basis,frame_4823_0_155 basis] at h
  exact h
 
-theorem gate_156 : SixCarryPrefixData.program[156]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4824 4661 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 28 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[28]?=some (.CX 4824 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[156]?=some (.CX 4824 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_156 : SixCarryPrefixData.program[156]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4824 4661 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 28 shape1 before_len1 len1 rfl (.CX 4824 4661) rfl
 
 theorem step_156 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 157 basis 4661=((prefixState SixCarryPrefixData.program 0 basis 4661) ^^ (prefixState SixCarryPrefixData.program 0 basis 4824)) := by
@@ -19702,11 +19660,8 @@ theorem step_156 (basis : BasisState) :
  rw [frame_4661_0_156 basis,frame_4824_0_156 basis] at h
  exact h
 
-theorem gate_157 : SixCarryPrefixData.program[157]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4825 4662 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 29 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[29]?=some (.CX 4825 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[157]?=some (.CX 4825 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_157 : SixCarryPrefixData.program[157]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4825 4662 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 29 shape1 before_len1 len1 rfl (.CX 4825 4662) rfl
 
 theorem step_157 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 158 basis 4662=((prefixState SixCarryPrefixData.program 0 basis 4662) ^^ (prefixState SixCarryPrefixData.program 0 basis 4825)) := by
@@ -19716,11 +19671,8 @@ theorem step_157 (basis : BasisState) :
  rw [frame_4662_0_157 basis,frame_4825_0_157 basis] at h
  exact h
 
-theorem gate_158 : SixCarryPrefixData.program[158]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4826 4663 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 30 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[30]?=some (.CX 4826 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[158]?=some (.CX 4826 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_158 : SixCarryPrefixData.program[158]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4826 4663 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 30 shape1 before_len1 len1 rfl (.CX 4826 4663) rfl
 
 theorem step_158 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 159 basis 4663=((prefixState SixCarryPrefixData.program 0 basis 4663) ^^ (prefixState SixCarryPrefixData.program 0 basis 4826)) := by
@@ -19730,11 +19682,8 @@ theorem step_158 (basis : BasisState) :
  rw [frame_4663_0_158 basis,frame_4826_0_158 basis] at h
  exact h
 
-theorem gate_160 : SixCarryPrefixData.program[160]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 32 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[32]?=some (.CX 4243 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[160]?=some (.CX 4243 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_160 : SixCarryPrefixData.program[160]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 32 shape1 before_len1 len1 rfl (.CX 4243 4760) rfl
 
 theorem step_160 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 161 basis 4760=((prefixState SixCarryPrefixData.program 0 basis 4760) ^^ (prefixState SixCarryPrefixData.program 0 basis 4243)) := by
@@ -19744,11 +19693,8 @@ theorem step_160 (basis : BasisState) :
  rw [frame_4243_0_160 basis,frame_4760_0_160 basis] at h
  exact h
 
-theorem gate_163 : SixCarryPrefixData.program[163]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 := by
- have h := lookup_context SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 35 shape1 before_len1 (by rw [len1]; decide +kernel)
- have hg : SixCarryPrefixData.chunk1[35]?=some (.CX 4243 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[163]?=some (.CX 4243 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_163 : SixCarryPrefixData.program[163]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 :=
+ gateFromChunk SixCarryPrefixData.program before1 SixCarryPrefixData.chunk1 after1 128 35 shape1 before_len1 len1 rfl (.CX 4243 4760) rfl
 
 theorem step_163 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 164 basis 4760=((prefixState SixCarryPrefixData.program 161 basis 4760) ^^ (prefixState SixCarryPrefixData.program 0 basis 4243)) := by
@@ -19758,11 +19704,8 @@ theorem step_163 (basis : BasisState) :
  rw [frame_4243_0_163 basis,frame_4760_161_163 basis] at h
  exact h
 
-theorem gate_855 : SixCarryPrefixData.program[855]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4627 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 87 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[87]?=some (.CX 4359 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[855]?=some (.CX 4359 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_855 : SixCarryPrefixData.program[855]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4627 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 87 shape6 before_len6 len6 rfl (.CX 4359 4627) rfl
 
 theorem step_855 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 856 basis 4627=((prefixState SixCarryPrefixData.program 123 basis 4627) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -19772,11 +19715,8 @@ theorem step_855 (basis : BasisState) :
  rw [frame_4359_0_855 basis,frame_4627_123_855 basis] at h
  exact h
 
-theorem gate_857 : SixCarryPrefixData.program[857]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4627 4488 4489 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 89 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[89]?=some (.CCX 4627 4488 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[857]?=some (.CCX 4627 4488 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_857 : SixCarryPrefixData.program[857]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4627 4488 4489 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 89 shape6 before_len6 len6 rfl (.CCX 4627 4488 4489) rfl
 
 theorem step_857 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 858 basis 4489=((prefixState SixCarryPrefixData.program 0 basis 4489) ^^ ((prefixState SixCarryPrefixData.program 856 basis 4627) && (prefixState SixCarryPrefixData.program 857 basis 4488))) := by
@@ -19786,11 +19726,8 @@ theorem step_857 (basis : BasisState) :
  rw [frame_4489_0_857 basis,frame_4627_856_857 basis] at h
  exact h
 
-theorem gate_858 : SixCarryPrefixData.program[858]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4489 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 90 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[90]?=some (.CX 4359 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[858]?=some (.CX 4359 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_858 : SixCarryPrefixData.program[858]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4489 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 90 shape6 before_len6 len6 rfl (.CX 4359 4489) rfl
 
 theorem step_858 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 859 basis 4489=((prefixState SixCarryPrefixData.program 858 basis 4489) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -19800,11 +19737,8 @@ theorem step_858 (basis : BasisState) :
  rw [frame_4359_0_858 basis] at h
  exact h
 
-theorem gate_859 : SixCarryPrefixData.program[859]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4488 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 91 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[91]?=some (.CX 4359 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[859]?=some (.CX 4359 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_859 : SixCarryPrefixData.program[859]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4488 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 91 shape6 before_len6 len6 rfl (.CX 4359 4488) rfl
 
 theorem step_859 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 860 basis 4488=((prefixState SixCarryPrefixData.program 857 basis 4488) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -19814,11 +19748,8 @@ theorem step_859 (basis : BasisState) :
  rw [frame_4359_0_859 basis,frame_4488_857_859 basis] at h
  exact h
 
-theorem gate_860 : SixCarryPrefixData.program[860]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4627 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 92 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[92]?=some (.CX 4359 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[860]?=some (.CX 4359 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_860 : SixCarryPrefixData.program[860]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4627 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 92 shape6 before_len6 len6 rfl (.CX 4359 4627) rfl
 
 theorem step_860 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 861 basis 4627=((prefixState SixCarryPrefixData.program 856 basis 4627) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -19828,11 +19759,8 @@ theorem step_860 (basis : BasisState) :
  rw [frame_4359_0_860 basis,frame_4627_856_860 basis] at h
  exact h
 
-theorem gate_861 : SixCarryPrefixData.program[861]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4628 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 93 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[93]?=some (.CX 4360 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[861]?=some (.CX 4360 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_861 : SixCarryPrefixData.program[861]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4628 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 93 shape6 before_len6 len6 rfl (.CX 4360 4628) rfl
 
 theorem step_861 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 862 basis 4628=((prefixState SixCarryPrefixData.program 124 basis 4628) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -19842,11 +19770,8 @@ theorem step_861 (basis : BasisState) :
  rw [frame_4360_0_861 basis,frame_4628_124_861 basis] at h
  exact h
 
-theorem gate_862 : SixCarryPrefixData.program[862]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4489 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 94 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[94]?=some (.CX 4360 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[862]?=some (.CX 4360 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_862 : SixCarryPrefixData.program[862]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4489 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 94 shape6 before_len6 len6 rfl (.CX 4360 4489) rfl
 
 theorem step_862 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 863 basis 4489=((prefixState SixCarryPrefixData.program 859 basis 4489) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -19856,11 +19781,8 @@ theorem step_862 (basis : BasisState) :
  rw [frame_4360_0_862 basis,frame_4489_859_862 basis] at h
  exact h
 
-theorem gate_863 : SixCarryPrefixData.program[863]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4628 4489 4490 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 95 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[95]?=some (.CCX 4628 4489 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[863]?=some (.CCX 4628 4489 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_863 : SixCarryPrefixData.program[863]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4628 4489 4490 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 95 shape6 before_len6 len6 rfl (.CCX 4628 4489 4490) rfl
 
 theorem step_863 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 864 basis 4490=((prefixState SixCarryPrefixData.program 0 basis 4490) ^^ ((prefixState SixCarryPrefixData.program 862 basis 4628) && (prefixState SixCarryPrefixData.program 863 basis 4489))) := by
@@ -19870,11 +19792,8 @@ theorem step_863 (basis : BasisState) :
  rw [frame_4490_0_863 basis,frame_4628_862_863 basis] at h
  exact h
 
-theorem gate_864 : SixCarryPrefixData.program[864]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4490 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 96 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[96]?=some (.CX 4360 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[864]?=some (.CX 4360 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_864 : SixCarryPrefixData.program[864]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4490 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 96 shape6 before_len6 len6 rfl (.CX 4360 4490) rfl
 
 theorem step_864 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 865 basis 4490=((prefixState SixCarryPrefixData.program 864 basis 4490) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -19884,11 +19803,8 @@ theorem step_864 (basis : BasisState) :
  rw [frame_4360_0_864 basis] at h
  exact h
 
-theorem gate_865 : SixCarryPrefixData.program[865]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4489 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 97 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[97]?=some (.CX 4360 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[865]?=some (.CX 4360 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_865 : SixCarryPrefixData.program[865]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4489 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 97 shape6 before_len6 len6 rfl (.CX 4360 4489) rfl
 
 theorem step_865 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 866 basis 4489=((prefixState SixCarryPrefixData.program 863 basis 4489) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -19898,11 +19814,8 @@ theorem step_865 (basis : BasisState) :
  rw [frame_4360_0_865 basis,frame_4489_863_865 basis] at h
  exact h
 
-theorem gate_866 : SixCarryPrefixData.program[866]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4628 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 98 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[98]?=some (.CX 4360 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[866]?=some (.CX 4360 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_866 : SixCarryPrefixData.program[866]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4628 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 98 shape6 before_len6 len6 rfl (.CX 4360 4628) rfl
 
 theorem step_866 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 867 basis 4628=((prefixState SixCarryPrefixData.program 862 basis 4628) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -19912,11 +19825,8 @@ theorem step_866 (basis : BasisState) :
  rw [frame_4360_0_866 basis,frame_4628_862_866 basis] at h
  exact h
 
-theorem gate_867 : SixCarryPrefixData.program[867]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4629 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 99 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[99]?=some (.CX 4361 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[867]?=some (.CX 4361 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_867 : SixCarryPrefixData.program[867]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4629 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 99 shape6 before_len6 len6 rfl (.CX 4361 4629) rfl
 
 theorem step_867 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 868 basis 4629=((prefixState SixCarryPrefixData.program 125 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -19926,11 +19836,8 @@ theorem step_867 (basis : BasisState) :
  rw [frame_4361_0_867 basis,frame_4629_125_867 basis] at h
  exact h
 
-theorem gate_868 : SixCarryPrefixData.program[868]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4490 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 100 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[100]?=some (.CX 4361 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[868]?=some (.CX 4361 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_868 : SixCarryPrefixData.program[868]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4490 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 100 shape6 before_len6 len6 rfl (.CX 4361 4490) rfl
 
 theorem step_868 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 869 basis 4490=((prefixState SixCarryPrefixData.program 865 basis 4490) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -19940,11 +19847,8 @@ theorem step_868 (basis : BasisState) :
  rw [frame_4361_0_868 basis,frame_4490_865_868 basis] at h
  exact h
 
-theorem gate_869 : SixCarryPrefixData.program[869]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4629 4490 4491 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 101 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[101]?=some (.CCX 4629 4490 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[869]?=some (.CCX 4629 4490 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_869 : SixCarryPrefixData.program[869]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4629 4490 4491 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 101 shape6 before_len6 len6 rfl (.CCX 4629 4490 4491) rfl
 
 theorem step_869 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 870 basis 4491=((prefixState SixCarryPrefixData.program 0 basis 4491) ^^ ((prefixState SixCarryPrefixData.program 868 basis 4629) && (prefixState SixCarryPrefixData.program 869 basis 4490))) := by
@@ -19954,11 +19858,8 @@ theorem step_869 (basis : BasisState) :
  rw [frame_4491_0_869 basis,frame_4629_868_869 basis] at h
  exact h
 
-theorem gate_870 : SixCarryPrefixData.program[870]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4491 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 102 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[102]?=some (.CX 4361 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[870]?=some (.CX 4361 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_870 : SixCarryPrefixData.program[870]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4491 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 102 shape6 before_len6 len6 rfl (.CX 4361 4491) rfl
 
 theorem step_870 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 871 basis 4491=((prefixState SixCarryPrefixData.program 870 basis 4491) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -19968,11 +19869,8 @@ theorem step_870 (basis : BasisState) :
  rw [frame_4361_0_870 basis] at h
  exact h
 
-theorem gate_871 : SixCarryPrefixData.program[871]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4490 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 103 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[103]?=some (.CX 4361 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[871]?=some (.CX 4361 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_871 : SixCarryPrefixData.program[871]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4490 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 103 shape6 before_len6 len6 rfl (.CX 4361 4490) rfl
 
 theorem step_871 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 872 basis 4490=((prefixState SixCarryPrefixData.program 869 basis 4490) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -19982,11 +19880,8 @@ theorem step_871 (basis : BasisState) :
  rw [frame_4361_0_871 basis,frame_4490_869_871 basis] at h
  exact h
 
-theorem gate_872 : SixCarryPrefixData.program[872]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4629 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 104 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[104]?=some (.CX 4361 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[872]?=some (.CX 4361 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_872 : SixCarryPrefixData.program[872]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4629 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 104 shape6 before_len6 len6 rfl (.CX 4361 4629) rfl
 
 theorem step_872 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 873 basis 4629=((prefixState SixCarryPrefixData.program 868 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -19996,11 +19891,8 @@ theorem step_872 (basis : BasisState) :
  rw [frame_4361_0_872 basis,frame_4629_868_872 basis] at h
  exact h
 
-theorem gate_873 : SixCarryPrefixData.program[873]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4630 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 105 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[105]?=some (.CX 4362 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[873]?=some (.CX 4362 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_873 : SixCarryPrefixData.program[873]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4630 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 105 shape6 before_len6 len6 rfl (.CX 4362 4630) rfl
 
 theorem step_873 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 874 basis 4630=((prefixState SixCarryPrefixData.program 126 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -20010,11 +19902,8 @@ theorem step_873 (basis : BasisState) :
  rw [frame_4362_0_873 basis,frame_4630_126_873 basis] at h
  exact h
 
-theorem gate_874 : SixCarryPrefixData.program[874]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4491 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 106 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[106]?=some (.CX 4362 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[874]?=some (.CX 4362 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_874 : SixCarryPrefixData.program[874]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4491 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 106 shape6 before_len6 len6 rfl (.CX 4362 4491) rfl
 
 theorem step_874 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 875 basis 4491=((prefixState SixCarryPrefixData.program 871 basis 4491) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -20024,11 +19913,8 @@ theorem step_874 (basis : BasisState) :
  rw [frame_4362_0_874 basis,frame_4491_871_874 basis] at h
  exact h
 
-theorem gate_875 : SixCarryPrefixData.program[875]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4491 4492 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 107 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[107]?=some (.CCX 4630 4491 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[875]?=some (.CCX 4630 4491 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_875 : SixCarryPrefixData.program[875]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4491 4492 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 107 shape6 before_len6 len6 rfl (.CCX 4630 4491 4492) rfl
 
 theorem step_875 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 876 basis 4492=((prefixState SixCarryPrefixData.program 0 basis 4492) ^^ ((prefixState SixCarryPrefixData.program 874 basis 4630) && (prefixState SixCarryPrefixData.program 875 basis 4491))) := by
@@ -20038,11 +19924,8 @@ theorem step_875 (basis : BasisState) :
  rw [frame_4492_0_875 basis,frame_4630_874_875 basis] at h
  exact h
 
-theorem gate_876 : SixCarryPrefixData.program[876]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4492 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 108 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[108]?=some (.CX 4362 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[876]?=some (.CX 4362 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_876 : SixCarryPrefixData.program[876]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4492 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 108 shape6 before_len6 len6 rfl (.CX 4362 4492) rfl
 
 theorem step_876 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 877 basis 4492=((prefixState SixCarryPrefixData.program 876 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -20052,11 +19935,8 @@ theorem step_876 (basis : BasisState) :
  rw [frame_4362_0_876 basis] at h
  exact h
 
-theorem gate_877 : SixCarryPrefixData.program[877]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4491 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 109 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[109]?=some (.CX 4362 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[877]?=some (.CX 4362 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_877 : SixCarryPrefixData.program[877]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4491 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 109 shape6 before_len6 len6 rfl (.CX 4362 4491) rfl
 
 theorem step_877 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 878 basis 4491=((prefixState SixCarryPrefixData.program 875 basis 4491) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -20066,11 +19946,8 @@ theorem step_877 (basis : BasisState) :
  rw [frame_4362_0_877 basis,frame_4491_875_877 basis] at h
  exact h
 
-theorem gate_878 : SixCarryPrefixData.program[878]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4630 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 110 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[110]?=some (.CX 4362 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[878]?=some (.CX 4362 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_878 : SixCarryPrefixData.program[878]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4630 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 110 shape6 before_len6 len6 rfl (.CX 4362 4630) rfl
 
 theorem step_878 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 879 basis 4630=((prefixState SixCarryPrefixData.program 874 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -20080,11 +19957,8 @@ theorem step_878 (basis : BasisState) :
  rw [frame_4362_0_878 basis,frame_4630_874_878 basis] at h
  exact h
 
-theorem gate_879 : SixCarryPrefixData.program[879]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4631 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 111 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[111]?=some (.CX 4363 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[879]?=some (.CX 4363 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_879 : SixCarryPrefixData.program[879]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4631 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 111 shape6 before_len6 len6 rfl (.CX 4363 4631) rfl
 
 theorem step_879 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 880 basis 4631=((prefixState SixCarryPrefixData.program 127 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20094,11 +19968,8 @@ theorem step_879 (basis : BasisState) :
  rw [frame_4363_0_879 basis,frame_4631_127_879 basis] at h
  exact h
 
-theorem gate_880 : SixCarryPrefixData.program[880]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 112 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[112]?=some (.CX 4363 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[880]?=some (.CX 4363 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_880 : SixCarryPrefixData.program[880]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 112 shape6 before_len6 len6 rfl (.CX 4363 4492) rfl
 
 theorem step_880 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 881 basis 4492=((prefixState SixCarryPrefixData.program 877 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20108,11 +19979,8 @@ theorem step_880 (basis : BasisState) :
  rw [frame_4363_0_880 basis,frame_4492_877_880 basis] at h
  exact h
 
-theorem gate_881 : SixCarryPrefixData.program[881]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4492 4493 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 113 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[113]?=some (.CCX 4631 4492 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[881]?=some (.CCX 4631 4492 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_881 : SixCarryPrefixData.program[881]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4492 4493 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 113 shape6 before_len6 len6 rfl (.CCX 4631 4492 4493) rfl
 
 theorem step_881 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 882 basis 4493=((prefixState SixCarryPrefixData.program 0 basis 4493) ^^ ((prefixState SixCarryPrefixData.program 880 basis 4631) && (prefixState SixCarryPrefixData.program 881 basis 4492))) := by
@@ -20122,11 +19990,8 @@ theorem step_881 (basis : BasisState) :
  rw [frame_4493_0_881 basis,frame_4631_880_881 basis] at h
  exact h
 
-theorem gate_882 : SixCarryPrefixData.program[882]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4493 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 114 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[114]?=some (.CX 4363 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[882]?=some (.CX 4363 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_882 : SixCarryPrefixData.program[882]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4493 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 114 shape6 before_len6 len6 rfl (.CX 4363 4493) rfl
 
 theorem step_882 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 883 basis 4493=((prefixState SixCarryPrefixData.program 882 basis 4493) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20136,11 +20001,8 @@ theorem step_882 (basis : BasisState) :
  rw [frame_4363_0_882 basis] at h
  exact h
 
-theorem gate_883 : SixCarryPrefixData.program[883]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 115 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[115]?=some (.CX 4363 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[883]?=some (.CX 4363 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_883 : SixCarryPrefixData.program[883]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 115 shape6 before_len6 len6 rfl (.CX 4363 4492) rfl
 
 theorem step_883 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 884 basis 4492=((prefixState SixCarryPrefixData.program 881 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20150,11 +20012,8 @@ theorem step_883 (basis : BasisState) :
  rw [frame_4363_0_883 basis,frame_4492_881_883 basis] at h
  exact h
 
-theorem gate_884 : SixCarryPrefixData.program[884]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4631 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 116 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[116]?=some (.CX 4363 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[884]?=some (.CX 4363 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_884 : SixCarryPrefixData.program[884]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4631 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 116 shape6 before_len6 len6 rfl (.CX 4363 4631) rfl
 
 theorem step_884 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 885 basis 4631=((prefixState SixCarryPrefixData.program 880 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20164,11 +20023,8 @@ theorem step_884 (basis : BasisState) :
  rw [frame_4363_0_884 basis,frame_4631_880_884 basis] at h
  exact h
 
-theorem gate_885 : SixCarryPrefixData.program[885]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4632 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 117 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[117]?=some (.CX 4364 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[885]?=some (.CX 4364 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_885 : SixCarryPrefixData.program[885]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4632 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 117 shape6 before_len6 len6 rfl (.CX 4364 4632) rfl
 
 theorem step_885 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 886 basis 4632=((prefixState SixCarryPrefixData.program 128 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20178,11 +20034,8 @@ theorem step_885 (basis : BasisState) :
  rw [frame_4364_0_885 basis,frame_4632_128_885 basis] at h
  exact h
 
-theorem gate_886 : SixCarryPrefixData.program[886]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 118 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[118]?=some (.CX 4364 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[886]?=some (.CX 4364 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_886 : SixCarryPrefixData.program[886]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 118 shape6 before_len6 len6 rfl (.CX 4364 4493) rfl
 
 theorem step_886 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 887 basis 4493=((prefixState SixCarryPrefixData.program 883 basis 4493) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20192,11 +20045,8 @@ theorem step_886 (basis : BasisState) :
  rw [frame_4364_0_886 basis,frame_4493_883_886 basis] at h
  exact h
 
-theorem gate_887 : SixCarryPrefixData.program[887]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4632 4493 4494 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 119 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[119]?=some (.CCX 4632 4493 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[887]?=some (.CCX 4632 4493 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_887 : SixCarryPrefixData.program[887]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4632 4493 4494 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 119 shape6 before_len6 len6 rfl (.CCX 4632 4493 4494) rfl
 
 theorem step_887 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 888 basis 4494=((prefixState SixCarryPrefixData.program 0 basis 4494) ^^ ((prefixState SixCarryPrefixData.program 886 basis 4632) && (prefixState SixCarryPrefixData.program 887 basis 4493))) := by
@@ -20206,11 +20056,8 @@ theorem step_887 (basis : BasisState) :
  rw [frame_4494_0_887 basis,frame_4632_886_887 basis] at h
  exact h
 
-theorem gate_888 : SixCarryPrefixData.program[888]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4494 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 120 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[120]?=some (.CX 4364 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[888]?=some (.CX 4364 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_888 : SixCarryPrefixData.program[888]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4494 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 120 shape6 before_len6 len6 rfl (.CX 4364 4494) rfl
 
 theorem step_888 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 889 basis 4494=((prefixState SixCarryPrefixData.program 888 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20220,11 +20067,8 @@ theorem step_888 (basis : BasisState) :
  rw [frame_4364_0_888 basis] at h
  exact h
 
-theorem gate_889 : SixCarryPrefixData.program[889]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 121 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[121]?=some (.CX 4364 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[889]?=some (.CX 4364 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_889 : SixCarryPrefixData.program[889]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 121 shape6 before_len6 len6 rfl (.CX 4364 4493) rfl
 
 theorem step_889 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 890 basis 4493=((prefixState SixCarryPrefixData.program 887 basis 4493) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20234,11 +20078,8 @@ theorem step_889 (basis : BasisState) :
  rw [frame_4364_0_889 basis,frame_4493_887_889 basis] at h
  exact h
 
-theorem gate_890 : SixCarryPrefixData.program[890]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4632 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 122 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[122]?=some (.CX 4364 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[890]?=some (.CX 4364 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_890 : SixCarryPrefixData.program[890]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4632 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 122 shape6 before_len6 len6 rfl (.CX 4364 4632) rfl
 
 theorem step_890 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 891 basis 4632=((prefixState SixCarryPrefixData.program 886 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20248,11 +20089,8 @@ theorem step_890 (basis : BasisState) :
  rw [frame_4364_0_890 basis,frame_4632_886_890 basis] at h
  exact h
 
-theorem gate_891 : SixCarryPrefixData.program[891]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4633 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 123 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[123]?=some (.CX 4365 4633) := by decide +kernel
- have hh : SixCarryPrefixData.program[891]?=some (.CX 4365 4633) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_891 : SixCarryPrefixData.program[891]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4633 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 123 shape6 before_len6 len6 rfl (.CX 4365 4633) rfl
 
 theorem step_891 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 892 basis 4633=((prefixState SixCarryPrefixData.program 129 basis 4633) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20262,11 +20100,8 @@ theorem step_891 (basis : BasisState) :
  rw [frame_4365_0_891 basis,frame_4633_129_891 basis] at h
  exact h
 
-theorem gate_892 : SixCarryPrefixData.program[892]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 124 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[124]?=some (.CX 4365 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[892]?=some (.CX 4365 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_892 : SixCarryPrefixData.program[892]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 124 shape6 before_len6 len6 rfl (.CX 4365 4494) rfl
 
 theorem step_892 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 893 basis 4494=((prefixState SixCarryPrefixData.program 889 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20276,11 +20111,8 @@ theorem step_892 (basis : BasisState) :
  rw [frame_4365_0_892 basis,frame_4494_889_892 basis] at h
  exact h
 
-theorem gate_893 : SixCarryPrefixData.program[893]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4633 4494 4495 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 125 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[125]?=some (.CCX 4633 4494 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[893]?=some (.CCX 4633 4494 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_893 : SixCarryPrefixData.program[893]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4633 4494 4495 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 125 shape6 before_len6 len6 rfl (.CCX 4633 4494 4495) rfl
 
 theorem step_893 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 894 basis 4495=((prefixState SixCarryPrefixData.program 0 basis 4495) ^^ ((prefixState SixCarryPrefixData.program 892 basis 4633) && (prefixState SixCarryPrefixData.program 893 basis 4494))) := by
@@ -20290,11 +20122,8 @@ theorem step_893 (basis : BasisState) :
  rw [frame_4495_0_893 basis,frame_4633_892_893 basis] at h
  exact h
 
-theorem gate_894 : SixCarryPrefixData.program[894]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4495 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 126 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[126]?=some (.CX 4365 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[894]?=some (.CX 4365 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_894 : SixCarryPrefixData.program[894]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4495 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 126 shape6 before_len6 len6 rfl (.CX 4365 4495) rfl
 
 theorem step_894 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 895 basis 4495=((prefixState SixCarryPrefixData.program 894 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20304,11 +20133,8 @@ theorem step_894 (basis : BasisState) :
  rw [frame_4365_0_894 basis] at h
  exact h
 
-theorem gate_897 : SixCarryPrefixData.program[897]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4634 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 1 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[1]?=some (.CX 4366 4634) := by decide +kernel
- have hh : SixCarryPrefixData.program[897]?=some (.CX 4366 4634) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_897 : SixCarryPrefixData.program[897]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4634 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 1 shape7 before_len7 len7 rfl (.CX 4366 4634) rfl
 
 theorem step_897 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 898 basis 4634=((prefixState SixCarryPrefixData.program 130 basis 4634) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20318,11 +20144,8 @@ theorem step_897 (basis : BasisState) :
  rw [frame_4366_0_897 basis,frame_4634_130_897 basis] at h
  exact h
 
-theorem gate_898 : SixCarryPrefixData.program[898]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 2 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[2]?=some (.CX 4366 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[898]?=some (.CX 4366 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_898 : SixCarryPrefixData.program[898]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 2 shape7 before_len7 len7 rfl (.CX 4366 4495) rfl
 
 theorem step_898 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 899 basis 4495=((prefixState SixCarryPrefixData.program 895 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20332,11 +20155,8 @@ theorem step_898 (basis : BasisState) :
  rw [frame_4366_0_898 basis,frame_4495_895_898 basis] at h
  exact h
 
-theorem gate_899 : SixCarryPrefixData.program[899]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4634 4495 4496 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 3 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[3]?=some (.CCX 4634 4495 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[899]?=some (.CCX 4634 4495 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_899 : SixCarryPrefixData.program[899]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4634 4495 4496 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 3 shape7 before_len7 len7 rfl (.CCX 4634 4495 4496) rfl
 
 theorem step_899 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 900 basis 4496=((prefixState SixCarryPrefixData.program 0 basis 4496) ^^ ((prefixState SixCarryPrefixData.program 898 basis 4634) && (prefixState SixCarryPrefixData.program 899 basis 4495))) := by
@@ -20346,11 +20166,8 @@ theorem step_899 (basis : BasisState) :
  rw [frame_4496_0_899 basis,frame_4634_898_899 basis] at h
  exact h
 
-theorem gate_900 : SixCarryPrefixData.program[900]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4496 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 4 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[4]?=some (.CX 4366 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[900]?=some (.CX 4366 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_900 : SixCarryPrefixData.program[900]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4496 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 4 shape7 before_len7 len7 rfl (.CX 4366 4496) rfl
 
 theorem step_900 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 901 basis 4496=((prefixState SixCarryPrefixData.program 900 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20360,11 +20177,8 @@ theorem step_900 (basis : BasisState) :
  rw [frame_4366_0_900 basis] at h
  exact h
 
-theorem gate_938 : SixCarryPrefixData.program[938]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4497 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 42 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[42]?=some (.measureX 4497 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[938]?=some (.measureX 4497 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_938 : SixCarryPrefixData.program[938]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4497 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 42 shape7 before_len7 len7 rfl (.measureX 4497 [] []) rfl
 
 theorem step_938 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 939 basis 4497=(false) := by
@@ -20373,11 +20187,8 @@ theorem step_938 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_941 : SixCarryPrefixData.program[941]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4496 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 45 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[45]?=some (.measureX 4496 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[941]?=some (.measureX 4496 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_941 : SixCarryPrefixData.program[941]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4496 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 45 shape7 before_len7 len7 rfl (.measureX 4496 [] []) rfl
 
 theorem step_941 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 942 basis 4496=(false) := by
@@ -20386,11 +20197,8 @@ theorem step_941 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_944 : SixCarryPrefixData.program[944]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4495 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 48 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[48]?=some (.measureX 4495 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[944]?=some (.measureX 4495 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_944 : SixCarryPrefixData.program[944]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4495 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 48 shape7 before_len7 len7 rfl (.measureX 4495 [] []) rfl
 
 theorem step_944 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 945 basis 4495=(false) := by
@@ -20399,11 +20207,8 @@ theorem step_944 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_947 : SixCarryPrefixData.program[947]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4494 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 51 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[51]?=some (.measureX 4494 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[947]?=some (.measureX 4494 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_947 : SixCarryPrefixData.program[947]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4494 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 51 shape7 before_len7 len7 rfl (.measureX 4494 [] []) rfl
 
 theorem step_947 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 948 basis 4494=(false) := by
@@ -20412,11 +20217,8 @@ theorem step_947 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_948 : SixCarryPrefixData.program[948]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4632 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 52 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[52]?=some (.CX 4364 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[948]?=some (.CX 4364 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_948 : SixCarryPrefixData.program[948]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4632 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 52 shape7 before_len7 len7 rfl (.CX 4364 4632) rfl
 
 theorem step_948 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 949 basis 4632=((prefixState SixCarryPrefixData.program 891 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20426,11 +20228,8 @@ theorem step_948 (basis : BasisState) :
  rw [frame_4364_0_948 basis,frame_4632_891_948 basis] at h
  exact h
 
-theorem gate_949 : SixCarryPrefixData.program[949]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4493 4632 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 53 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[53]?=some (.CX 4493 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[949]?=some (.CX 4493 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_949 : SixCarryPrefixData.program[949]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4493 4632 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 53 shape7 before_len7 len7 rfl (.CX 4493 4632) rfl
 
 theorem step_949 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 950 basis 4632=((prefixState SixCarryPrefixData.program 949 basis 4632) ^^ (prefixState SixCarryPrefixData.program 890 basis 4493)) := by
@@ -20440,11 +20239,8 @@ theorem step_949 (basis : BasisState) :
  rw [frame_4493_890_949 basis] at h
  exact h
 
-theorem gate_950 : SixCarryPrefixData.program[950]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4493 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 54 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[54]?=some (.measureX 4493 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[950]?=some (.measureX 4493 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_950 : SixCarryPrefixData.program[950]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4493 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 54 shape7 before_len7 len7 rfl (.measureX 4493 [] []) rfl
 
 theorem step_950 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 951 basis 4493=(false) := by
@@ -20453,11 +20249,8 @@ theorem step_950 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_951 : SixCarryPrefixData.program[951]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4631 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 55 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[55]?=some (.CX 4363 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[951]?=some (.CX 4363 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_951 : SixCarryPrefixData.program[951]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4631 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 55 shape7 before_len7 len7 rfl (.CX 4363 4631) rfl
 
 theorem step_951 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 952 basis 4631=((prefixState SixCarryPrefixData.program 885 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20467,11 +20260,8 @@ theorem step_951 (basis : BasisState) :
  rw [frame_4363_0_951 basis,frame_4631_885_951 basis] at h
  exact h
 
-theorem gate_952 : SixCarryPrefixData.program[952]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4492 4631 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 56 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[56]?=some (.CX 4492 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[952]?=some (.CX 4492 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_952 : SixCarryPrefixData.program[952]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4492 4631 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 56 shape7 before_len7 len7 rfl (.CX 4492 4631) rfl
 
 theorem step_952 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 953 basis 4631=((prefixState SixCarryPrefixData.program 952 basis 4631) ^^ (prefixState SixCarryPrefixData.program 884 basis 4492)) := by
@@ -20481,11 +20271,8 @@ theorem step_952 (basis : BasisState) :
  rw [frame_4492_884_952 basis] at h
  exact h
 
-theorem gate_954 : SixCarryPrefixData.program[954]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4630 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 58 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[58]?=some (.CX 4362 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[954]?=some (.CX 4362 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_954 : SixCarryPrefixData.program[954]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4630 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 58 shape7 before_len7 len7 rfl (.CX 4362 4630) rfl
 
 theorem step_954 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 955 basis 4630=((prefixState SixCarryPrefixData.program 879 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -20495,11 +20282,8 @@ theorem step_954 (basis : BasisState) :
  rw [frame_4362_0_954 basis,frame_4630_879_954 basis] at h
  exact h
 
-theorem gate_955 : SixCarryPrefixData.program[955]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4491 4630 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 59 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[59]?=some (.CX 4491 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[955]?=some (.CX 4491 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_955 : SixCarryPrefixData.program[955]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4491 4630 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 59 shape7 before_len7 len7 rfl (.CX 4491 4630) rfl
 
 theorem step_955 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 956 basis 4630=((prefixState SixCarryPrefixData.program 955 basis 4630) ^^ (prefixState SixCarryPrefixData.program 878 basis 4491)) := by
@@ -20509,11 +20293,8 @@ theorem step_955 (basis : BasisState) :
  rw [frame_4491_878_955 basis] at h
  exact h
 
-theorem gate_957 : SixCarryPrefixData.program[957]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4629 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 61 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[61]?=some (.CX 4361 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[957]?=some (.CX 4361 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_957 : SixCarryPrefixData.program[957]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4629 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 61 shape7 before_len7 len7 rfl (.CX 4361 4629) rfl
 
 theorem step_957 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 958 basis 4629=((prefixState SixCarryPrefixData.program 873 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -20523,11 +20304,8 @@ theorem step_957 (basis : BasisState) :
  rw [frame_4361_0_957 basis,frame_4629_873_957 basis] at h
  exact h
 
-theorem gate_958 : SixCarryPrefixData.program[958]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4490 4629 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 62 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[62]?=some (.CX 4490 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[958]?=some (.CX 4490 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_958 : SixCarryPrefixData.program[958]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4490 4629 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 62 shape7 before_len7 len7 rfl (.CX 4490 4629) rfl
 
 theorem step_958 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 959 basis 4629=((prefixState SixCarryPrefixData.program 958 basis 4629) ^^ (prefixState SixCarryPrefixData.program 872 basis 4490)) := by
@@ -20537,11 +20315,8 @@ theorem step_958 (basis : BasisState) :
  rw [frame_4490_872_958 basis] at h
  exact h
 
-theorem gate_960 : SixCarryPrefixData.program[960]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4628 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 64 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[64]?=some (.CX 4360 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[960]?=some (.CX 4360 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_960 : SixCarryPrefixData.program[960]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4628 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 64 shape7 before_len7 len7 rfl (.CX 4360 4628) rfl
 
 theorem step_960 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 961 basis 4628=((prefixState SixCarryPrefixData.program 867 basis 4628) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -20551,11 +20326,8 @@ theorem step_960 (basis : BasisState) :
  rw [frame_4360_0_960 basis,frame_4628_867_960 basis] at h
  exact h
 
-theorem gate_961 : SixCarryPrefixData.program[961]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4489 4628 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 65 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[65]?=some (.CX 4489 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[961]?=some (.CX 4489 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_961 : SixCarryPrefixData.program[961]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4489 4628 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 65 shape7 before_len7 len7 rfl (.CX 4489 4628) rfl
 
 theorem step_961 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 962 basis 4628=((prefixState SixCarryPrefixData.program 961 basis 4628) ^^ (prefixState SixCarryPrefixData.program 866 basis 4489)) := by
@@ -20565,11 +20337,8 @@ theorem step_961 (basis : BasisState) :
  rw [frame_4489_866_961 basis] at h
  exact h
 
-theorem gate_963 : SixCarryPrefixData.program[963]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4627 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 67 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[67]?=some (.CX 4359 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[963]?=some (.CX 4359 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_963 : SixCarryPrefixData.program[963]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4627 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 67 shape7 before_len7 len7 rfl (.CX 4359 4627) rfl
 
 theorem step_963 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 964 basis 4627=((prefixState SixCarryPrefixData.program 861 basis 4627) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -20579,11 +20348,8 @@ theorem step_963 (basis : BasisState) :
  rw [frame_4359_0_963 basis,frame_4627_861_963 basis] at h
  exact h
 
-theorem gate_964 : SixCarryPrefixData.program[964]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4488 4627 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 68 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[68]?=some (.CX 4488 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[964]?=some (.CX 4488 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_964 : SixCarryPrefixData.program[964]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4488 4627 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 68 shape7 before_len7 len7 rfl (.CX 4488 4627) rfl
 
 theorem step_964 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 965 basis 4627=((prefixState SixCarryPrefixData.program 964 basis 4627) ^^ (prefixState SixCarryPrefixData.program 860 basis 4488)) := by
@@ -20593,11 +20359,8 @@ theorem step_964 (basis : BasisState) :
  rw [frame_4488_860_964 basis] at h
  exact h
 
-theorem gate_1433 : SixCarryPrefixData.program[1433]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4627 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 25 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[25]?=some (.X 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[1433]?=some (.X 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1433 : SixCarryPrefixData.program[1433]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4627 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 25 shape11 before_len11 len11 rfl (.X 4627) rfl
 
 theorem step_1433 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1434 basis 4627=(!(prefixState SixCarryPrefixData.program 965 basis 4627)) := by
@@ -20607,11 +20370,8 @@ theorem step_1433 (basis : BasisState) :
  rw [frame_4627_965_1433 basis] at h
  exact h
 
-theorem gate_1434 : SixCarryPrefixData.program[1434]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4628 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 26 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[26]?=some (.X 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[1434]?=some (.X 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1434 : SixCarryPrefixData.program[1434]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4628 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 26 shape11 before_len11 len11 rfl (.X 4628) rfl
 
 theorem step_1434 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1435 basis 4628=(!(prefixState SixCarryPrefixData.program 962 basis 4628)) := by
@@ -20621,11 +20381,8 @@ theorem step_1434 (basis : BasisState) :
  rw [frame_4628_962_1434 basis] at h
  exact h
 
-theorem gate_1435 : SixCarryPrefixData.program[1435]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 27 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[27]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[1435]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1435 : SixCarryPrefixData.program[1435]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 27 shape11 before_len11 len11 rfl (.X 4629) rfl
 
 theorem step_1435 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1436 basis 4629=(!(prefixState SixCarryPrefixData.program 959 basis 4629)) := by
@@ -20635,11 +20392,8 @@ theorem step_1435 (basis : BasisState) :
  rw [frame_4629_959_1435 basis] at h
  exact h
 
-theorem gate_1436 : SixCarryPrefixData.program[1436]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 28 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[28]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[1436]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1436 : SixCarryPrefixData.program[1436]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 28 shape11 before_len11 len11 rfl (.X 4630) rfl
 
 theorem step_1436 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1437 basis 4630=(!(prefixState SixCarryPrefixData.program 956 basis 4630)) := by
@@ -20649,11 +20403,8 @@ theorem step_1436 (basis : BasisState) :
  rw [frame_4630_956_1436 basis] at h
  exact h
 
-theorem gate_1437 : SixCarryPrefixData.program[1437]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 29 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[29]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[1437]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1437 : SixCarryPrefixData.program[1437]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 29 shape11 before_len11 len11 rfl (.X 4631) rfl
 
 theorem step_1437 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1438 basis 4631=(!(prefixState SixCarryPrefixData.program 953 basis 4631)) := by
@@ -20663,11 +20414,8 @@ theorem step_1437 (basis : BasisState) :
  rw [frame_4631_953_1437 basis] at h
  exact h
 
-theorem gate_1438 : SixCarryPrefixData.program[1438]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 30 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[30]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[1438]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1438 : SixCarryPrefixData.program[1438]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 30 shape11 before_len11 len11 rfl (.X 4632) rfl
 
 theorem step_1438 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1439 basis 4632=(!(prefixState SixCarryPrefixData.program 950 basis 4632)) := by
@@ -20677,11 +20425,8 @@ theorem step_1438 (basis : BasisState) :
  rw [frame_4632_950_1438 basis] at h
  exact h
 
-theorem gate_1447 : SixCarryPrefixData.program[1447]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 39 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[39]?=some (.CX 4243 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[1447]?=some (.CX 4243 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1447 : SixCarryPrefixData.program[1447]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 39 shape11 before_len11 len11 rfl (.CX 4243 4760) rfl
 
 theorem step_1447 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1448 basis 4760=((prefixState SixCarryPrefixData.program 164 basis 4760) ^^ (prefixState SixCarryPrefixData.program 0 basis 4243)) := by
@@ -20691,11 +20436,8 @@ theorem step_1447 (basis : BasisState) :
  rw [frame_4243_0_1447 basis,frame_4760_164_1447 basis] at h
  exact h
 
-theorem gate_1450 : SixCarryPrefixData.program[1450]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 42 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[42]?=some (.CX 4243 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[1450]?=some (.CX 4243 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1450 : SixCarryPrefixData.program[1450]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 42 shape11 before_len11 len11 rfl (.CX 4243 4760) rfl
 
 theorem step_1450 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1451 basis 4760=((prefixState SixCarryPrefixData.program 1448 basis 4760) ^^ (prefixState SixCarryPrefixData.program 0 basis 4243)) := by
@@ -20705,11 +20447,8 @@ theorem step_1450 (basis : BasisState) :
  rw [frame_4243_0_1450 basis,frame_4760_1448_1450 basis] at h
  exact h
 
-theorem gate_2255 : SixCarryPrefixData.program[2255]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4627 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 79 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[79]?=some (.CX 4363 4627) := by decide +kernel
- have hh : SixCarryPrefixData.program[2255]?=some (.CX 4363 4627) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2255 : SixCarryPrefixData.program[2255]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4627 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 79 shape17 before_len17 len17 rfl (.CX 4363 4627) rfl
 
 theorem step_2255 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2256 basis 4627=((prefixState SixCarryPrefixData.program 1434 basis 4627) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20719,11 +20458,8 @@ theorem step_2255 (basis : BasisState) :
  rw [frame_4363_0_2255 basis,frame_4627_1434_2255 basis] at h
  exact h
 
-theorem gate_2257 : SixCarryPrefixData.program[2257]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4627 4492 4493 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 81 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[81]?=some (.CCX 4627 4492 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[2257]?=some (.CCX 4627 4492 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2257 : SixCarryPrefixData.program[2257]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4627 4492 4493 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 81 shape17 before_len17 len17 rfl (.CCX 4627 4492 4493) rfl
 
 theorem step_2257 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2258 basis 4493=((prefixState SixCarryPrefixData.program 951 basis 4493) ^^ ((prefixState SixCarryPrefixData.program 2256 basis 4627) && (prefixState SixCarryPrefixData.program 2257 basis 4492))) := by
@@ -20733,11 +20469,8 @@ theorem step_2257 (basis : BasisState) :
  rw [frame_4493_951_2257 basis,frame_4627_2256_2257 basis] at h
  exact h
 
-theorem gate_2258 : SixCarryPrefixData.program[2258]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4493 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 82 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[82]?=some (.CX 4363 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[2258]?=some (.CX 4363 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2258 : SixCarryPrefixData.program[2258]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4493 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 82 shape17 before_len17 len17 rfl (.CX 4363 4493) rfl
 
 theorem step_2258 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2259 basis 4493=((prefixState SixCarryPrefixData.program 2258 basis 4493) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -20747,11 +20480,8 @@ theorem step_2258 (basis : BasisState) :
  rw [frame_4363_0_2258 basis] at h
  exact h
 
-theorem gate_2261 : SixCarryPrefixData.program[2261]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4628 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 85 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[85]?=some (.CX 4364 4628) := by decide +kernel
- have hh : SixCarryPrefixData.program[2261]?=some (.CX 4364 4628) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2261 : SixCarryPrefixData.program[2261]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4628 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 85 shape17 before_len17 len17 rfl (.CX 4364 4628) rfl
 
 theorem step_2261 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2262 basis 4628=((prefixState SixCarryPrefixData.program 1435 basis 4628) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20761,11 +20491,8 @@ theorem step_2261 (basis : BasisState) :
  rw [frame_4364_0_2261 basis,frame_4628_1435_2261 basis] at h
  exact h
 
-theorem gate_2262 : SixCarryPrefixData.program[2262]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 86 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[86]?=some (.CX 4364 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[2262]?=some (.CX 4364 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2262 : SixCarryPrefixData.program[2262]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 86 shape17 before_len17 len17 rfl (.CX 4364 4493) rfl
 
 theorem step_2262 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2263 basis 4493=((prefixState SixCarryPrefixData.program 2259 basis 4493) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20775,11 +20502,8 @@ theorem step_2262 (basis : BasisState) :
  rw [frame_4364_0_2262 basis,frame_4493_2259_2262 basis] at h
  exact h
 
-theorem gate_2263 : SixCarryPrefixData.program[2263]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4628 4493 4494 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 87 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[87]?=some (.CCX 4628 4493 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[2263]?=some (.CCX 4628 4493 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2263 : SixCarryPrefixData.program[2263]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4628 4493 4494 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 87 shape17 before_len17 len17 rfl (.CCX 4628 4493 4494) rfl
 
 theorem step_2263 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2264 basis 4494=((prefixState SixCarryPrefixData.program 948 basis 4494) ^^ ((prefixState SixCarryPrefixData.program 2262 basis 4628) && (prefixState SixCarryPrefixData.program 2263 basis 4493))) := by
@@ -20789,11 +20513,8 @@ theorem step_2263 (basis : BasisState) :
  rw [frame_4494_948_2263 basis,frame_4628_2262_2263 basis] at h
  exact h
 
-theorem gate_2264 : SixCarryPrefixData.program[2264]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4494 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 88 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[88]?=some (.CX 4364 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[2264]?=some (.CX 4364 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2264 : SixCarryPrefixData.program[2264]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4494 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 88 shape17 before_len17 len17 rfl (.CX 4364 4494) rfl
 
 theorem step_2264 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2265 basis 4494=((prefixState SixCarryPrefixData.program 2264 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -20803,11 +20524,8 @@ theorem step_2264 (basis : BasisState) :
  rw [frame_4364_0_2264 basis] at h
  exact h
 
-theorem gate_2267 : SixCarryPrefixData.program[2267]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4629 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 91 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[91]?=some (.CX 4365 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[2267]?=some (.CX 4365 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2267 : SixCarryPrefixData.program[2267]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4629 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 91 shape17 before_len17 len17 rfl (.CX 4365 4629) rfl
 
 theorem step_2267 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2268 basis 4629=((prefixState SixCarryPrefixData.program 1436 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20817,11 +20535,8 @@ theorem step_2267 (basis : BasisState) :
  rw [frame_4365_0_2267 basis,frame_4629_1436_2267 basis] at h
  exact h
 
-theorem gate_2268 : SixCarryPrefixData.program[2268]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 92 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[92]?=some (.CX 4365 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[2268]?=some (.CX 4365 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2268 : SixCarryPrefixData.program[2268]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 92 shape17 before_len17 len17 rfl (.CX 4365 4494) rfl
 
 theorem step_2268 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2269 basis 4494=((prefixState SixCarryPrefixData.program 2265 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20831,11 +20546,8 @@ theorem step_2268 (basis : BasisState) :
  rw [frame_4365_0_2268 basis,frame_4494_2265_2268 basis] at h
  exact h
 
-theorem gate_2269 : SixCarryPrefixData.program[2269]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4629 4494 4495 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 93 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[93]?=some (.CCX 4629 4494 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[2269]?=some (.CCX 4629 4494 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2269 : SixCarryPrefixData.program[2269]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4629 4494 4495 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 93 shape17 before_len17 len17 rfl (.CCX 4629 4494 4495) rfl
 
 theorem step_2269 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2270 basis 4495=((prefixState SixCarryPrefixData.program 945 basis 4495) ^^ ((prefixState SixCarryPrefixData.program 2268 basis 4629) && (prefixState SixCarryPrefixData.program 2269 basis 4494))) := by
@@ -20845,11 +20557,8 @@ theorem step_2269 (basis : BasisState) :
  rw [frame_4495_945_2269 basis,frame_4629_2268_2269 basis] at h
  exact h
 
-theorem gate_2270 : SixCarryPrefixData.program[2270]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4495 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 94 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[94]?=some (.CX 4365 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[2270]?=some (.CX 4365 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2270 : SixCarryPrefixData.program[2270]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4495 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 94 shape17 before_len17 len17 rfl (.CX 4365 4495) rfl
 
 theorem step_2270 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2271 basis 4495=((prefixState SixCarryPrefixData.program 2270 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20859,11 +20568,8 @@ theorem step_2270 (basis : BasisState) :
  rw [frame_4365_0_2270 basis] at h
  exact h
 
-theorem gate_2271 : SixCarryPrefixData.program[2271]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 95 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[95]?=some (.CX 4365 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[2271]?=some (.CX 4365 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2271 : SixCarryPrefixData.program[2271]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 95 shape17 before_len17 len17 rfl (.CX 4365 4494) rfl
 
 theorem step_2271 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2272 basis 4494=((prefixState SixCarryPrefixData.program 2269 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20873,11 +20579,8 @@ theorem step_2271 (basis : BasisState) :
  rw [frame_4365_0_2271 basis,frame_4494_2269_2271 basis] at h
  exact h
 
-theorem gate_2272 : SixCarryPrefixData.program[2272]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4629 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 96 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[96]?=some (.CX 4365 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[2272]?=some (.CX 4365 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2272 : SixCarryPrefixData.program[2272]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4629 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 96 shape17 before_len17 len17 rfl (.CX 4365 4629) rfl
 
 theorem step_2272 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2273 basis 4629=((prefixState SixCarryPrefixData.program 2268 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -20887,11 +20590,8 @@ theorem step_2272 (basis : BasisState) :
  rw [frame_4365_0_2272 basis,frame_4629_2268_2272 basis] at h
  exact h
 
-theorem gate_2273 : SixCarryPrefixData.program[2273]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4630 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 97 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[97]?=some (.CX 4366 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[2273]?=some (.CX 4366 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2273 : SixCarryPrefixData.program[2273]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4630 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 97 shape17 before_len17 len17 rfl (.CX 4366 4630) rfl
 
 theorem step_2273 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2274 basis 4630=((prefixState SixCarryPrefixData.program 1437 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20901,11 +20601,8 @@ theorem step_2273 (basis : BasisState) :
  rw [frame_4366_0_2273 basis,frame_4630_1437_2273 basis] at h
  exact h
 
-theorem gate_2274 : SixCarryPrefixData.program[2274]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 98 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[98]?=some (.CX 4366 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[2274]?=some (.CX 4366 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2274 : SixCarryPrefixData.program[2274]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 98 shape17 before_len17 len17 rfl (.CX 4366 4495) rfl
 
 theorem step_2274 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2275 basis 4495=((prefixState SixCarryPrefixData.program 2271 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20915,11 +20612,8 @@ theorem step_2274 (basis : BasisState) :
  rw [frame_4366_0_2274 basis,frame_4495_2271_2274 basis] at h
  exact h
 
-theorem gate_2275 : SixCarryPrefixData.program[2275]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4495 4496 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 99 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[99]?=some (.CCX 4630 4495 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[2275]?=some (.CCX 4630 4495 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2275 : SixCarryPrefixData.program[2275]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4495 4496 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 99 shape17 before_len17 len17 rfl (.CCX 4630 4495 4496) rfl
 
 theorem step_2275 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2276 basis 4496=((prefixState SixCarryPrefixData.program 942 basis 4496) ^^ ((prefixState SixCarryPrefixData.program 2274 basis 4630) && (prefixState SixCarryPrefixData.program 2275 basis 4495))) := by
@@ -20929,11 +20623,8 @@ theorem step_2275 (basis : BasisState) :
  rw [frame_4496_942_2275 basis,frame_4630_2274_2275 basis] at h
  exact h
 
-theorem gate_2276 : SixCarryPrefixData.program[2276]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4496 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 100 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[100]?=some (.CX 4366 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[2276]?=some (.CX 4366 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2276 : SixCarryPrefixData.program[2276]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4496 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 100 shape17 before_len17 len17 rfl (.CX 4366 4496) rfl
 
 theorem step_2276 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2277 basis 4496=((prefixState SixCarryPrefixData.program 2276 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20943,11 +20634,8 @@ theorem step_2276 (basis : BasisState) :
  rw [frame_4366_0_2276 basis] at h
  exact h
 
-theorem gate_2277 : SixCarryPrefixData.program[2277]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 101 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[101]?=some (.CX 4366 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[2277]?=some (.CX 4366 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2277 : SixCarryPrefixData.program[2277]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 101 shape17 before_len17 len17 rfl (.CX 4366 4495) rfl
 
 theorem step_2277 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2278 basis 4495=((prefixState SixCarryPrefixData.program 2275 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20957,11 +20645,8 @@ theorem step_2277 (basis : BasisState) :
  rw [frame_4366_0_2277 basis,frame_4495_2275_2277 basis] at h
  exact h
 
-theorem gate_2278 : SixCarryPrefixData.program[2278]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4630 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 102 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[102]?=some (.CX 4366 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[2278]?=some (.CX 4366 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2278 : SixCarryPrefixData.program[2278]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4630 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 102 shape17 before_len17 len17 rfl (.CX 4366 4630) rfl
 
 theorem step_2278 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2279 basis 4630=((prefixState SixCarryPrefixData.program 2274 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -20971,11 +20656,8 @@ theorem step_2278 (basis : BasisState) :
  rw [frame_4366_0_2278 basis,frame_4630_2274_2278 basis] at h
  exact h
 
-theorem gate_2279 : SixCarryPrefixData.program[2279]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4631 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 103 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[103]?=some (.CX 4367 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[2279]?=some (.CX 4367 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2279 : SixCarryPrefixData.program[2279]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4631 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 103 shape17 before_len17 len17 rfl (.CX 4367 4631) rfl
 
 theorem step_2279 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2280 basis 4631=((prefixState SixCarryPrefixData.program 1438 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -20985,11 +20667,8 @@ theorem step_2279 (basis : BasisState) :
  rw [frame_4367_0_2279 basis,frame_4631_1438_2279 basis] at h
  exact h
 
-theorem gate_2280 : SixCarryPrefixData.program[2280]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 104 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[104]?=some (.CX 4367 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[2280]?=some (.CX 4367 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2280 : SixCarryPrefixData.program[2280]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 104 shape17 before_len17 len17 rfl (.CX 4367 4496) rfl
 
 theorem step_2280 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2281 basis 4496=((prefixState SixCarryPrefixData.program 2277 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -20999,11 +20678,8 @@ theorem step_2280 (basis : BasisState) :
  rw [frame_4367_0_2280 basis,frame_4496_2277_2280 basis] at h
  exact h
 
-theorem gate_2281 : SixCarryPrefixData.program[2281]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4496 4497 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 105 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[105]?=some (.CCX 4631 4496 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[2281]?=some (.CCX 4631 4496 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2281 : SixCarryPrefixData.program[2281]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4496 4497 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 105 shape17 before_len17 len17 rfl (.CCX 4631 4496 4497) rfl
 
 theorem step_2281 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2282 basis 4497=((prefixState SixCarryPrefixData.program 939 basis 4497) ^^ ((prefixState SixCarryPrefixData.program 2280 basis 4631) && (prefixState SixCarryPrefixData.program 2281 basis 4496))) := by
@@ -21013,11 +20689,8 @@ theorem step_2281 (basis : BasisState) :
  rw [frame_4497_939_2281 basis,frame_4631_2280_2281 basis] at h
  exact h
 
-theorem gate_2282 : SixCarryPrefixData.program[2282]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4497 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 106 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[106]?=some (.CX 4367 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[2282]?=some (.CX 4367 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2282 : SixCarryPrefixData.program[2282]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4497 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 106 shape17 before_len17 len17 rfl (.CX 4367 4497) rfl
 
 theorem step_2282 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2283 basis 4497=((prefixState SixCarryPrefixData.program 2282 basis 4497) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -21027,11 +20700,8 @@ theorem step_2282 (basis : BasisState) :
  rw [frame_4367_0_2282 basis] at h
  exact h
 
-theorem gate_2283 : SixCarryPrefixData.program[2283]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 107 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[107]?=some (.CX 4367 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[2283]?=some (.CX 4367 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2283 : SixCarryPrefixData.program[2283]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 107 shape17 before_len17 len17 rfl (.CX 4367 4496) rfl
 
 theorem step_2283 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2284 basis 4496=((prefixState SixCarryPrefixData.program 2281 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -21041,11 +20711,8 @@ theorem step_2283 (basis : BasisState) :
  rw [frame_4367_0_2283 basis,frame_4496_2281_2283 basis] at h
  exact h
 
-theorem gate_2284 : SixCarryPrefixData.program[2284]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4631 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 108 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[108]?=some (.CX 4367 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[2284]?=some (.CX 4367 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2284 : SixCarryPrefixData.program[2284]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4631 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 108 shape17 before_len17 len17 rfl (.CX 4367 4631) rfl
 
 theorem step_2284 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2285 basis 4631=((prefixState SixCarryPrefixData.program 2280 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -21055,11 +20722,8 @@ theorem step_2284 (basis : BasisState) :
  rw [frame_4367_0_2284 basis,frame_4631_2280_2284 basis] at h
  exact h
 
-theorem gate_2285 : SixCarryPrefixData.program[2285]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4632 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 109 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[109]?=some (.CX 4368 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[2285]?=some (.CX 4368 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2285 : SixCarryPrefixData.program[2285]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4632 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 109 shape17 before_len17 len17 rfl (.CX 4368 4632) rfl
 
 theorem step_2285 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2286 basis 4632=((prefixState SixCarryPrefixData.program 1439 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -21069,11 +20733,8 @@ theorem step_2285 (basis : BasisState) :
  rw [frame_4368_0_2285 basis,frame_4632_1439_2285 basis] at h
  exact h
 
-theorem gate_2286 : SixCarryPrefixData.program[2286]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 110 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[110]?=some (.CX 4368 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[2286]?=some (.CX 4368 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2286 : SixCarryPrefixData.program[2286]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 110 shape17 before_len17 len17 rfl (.CX 4368 4497) rfl
 
 theorem step_2286 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2287 basis 4497=((prefixState SixCarryPrefixData.program 2283 basis 4497) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -21083,11 +20744,8 @@ theorem step_2286 (basis : BasisState) :
  rw [frame_4368_0_2286 basis,frame_4497_2283_2286 basis] at h
  exact h
 
-theorem gate_2289 : SixCarryPrefixData.program[2289]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 113 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[113]?=some (.CX 4368 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[2289]?=some (.CX 4368 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2289 : SixCarryPrefixData.program[2289]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 113 shape17 before_len17 len17 rfl (.CX 4368 4497) rfl
 
 theorem step_2289 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2290 basis 4497=((prefixState SixCarryPrefixData.program 2287 basis 4497) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -21097,11 +20755,8 @@ theorem step_2289 (basis : BasisState) :
  rw [frame_4368_0_2289 basis,frame_4497_2287_2289 basis] at h
  exact h
 
-theorem gate_2290 : SixCarryPrefixData.program[2290]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4632 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 114 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[114]?=some (.CX 4368 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[2290]?=some (.CX 4368 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2290 : SixCarryPrefixData.program[2290]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4632 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 114 shape17 before_len17 len17 rfl (.CX 4368 4632) rfl
 
 theorem step_2290 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2291 basis 4632=((prefixState SixCarryPrefixData.program 2286 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -21111,11 +20766,8 @@ theorem step_2290 (basis : BasisState) :
  rw [frame_4368_0_2290 basis,frame_4632_2286_2290 basis] at h
  exact h
 
-theorem gate_2338 : SixCarryPrefixData.program[2338]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4500 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 34 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[34]?=some (.measureX 4500 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2338]?=some (.measureX 4500 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2338 : SixCarryPrefixData.program[2338]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4500 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 34 shape18 before_len18 len18 rfl (.measureX 4500 [] []) rfl
 
 theorem step_2338 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2339 basis 4500=(false) := by
@@ -21124,11 +20776,8 @@ theorem step_2338 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2341 : SixCarryPrefixData.program[2341]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4499 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 37 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[37]?=some (.measureX 4499 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2341]?=some (.measureX 4499 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2341 : SixCarryPrefixData.program[2341]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4499 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 37 shape18 before_len18 len18 rfl (.measureX 4499 [] []) rfl
 
 theorem step_2341 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2342 basis 4499=(false) := by
@@ -21137,11 +20786,8 @@ theorem step_2341 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2344 : SixCarryPrefixData.program[2344]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4498 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 40 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[40]?=some (.measureX 4498 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2344]?=some (.measureX 4498 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2344 : SixCarryPrefixData.program[2344]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4498 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 40 shape18 before_len18 len18 rfl (.measureX 4498 [] []) rfl
 
 theorem step_2344 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2345 basis 4498=(false) := by
@@ -21150,11 +20796,8 @@ theorem step_2344 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2345 : SixCarryPrefixData.program[2345]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4632 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 41 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[41]?=some (.CX 4368 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[2345]?=some (.CX 4368 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2345 : SixCarryPrefixData.program[2345]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4632 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 41 shape18 before_len18 len18 rfl (.CX 4368 4632) rfl
 
 theorem step_2345 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2346 basis 4632=((prefixState SixCarryPrefixData.program 2291 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -21164,11 +20807,8 @@ theorem step_2345 (basis : BasisState) :
  rw [frame_4368_0_2345 basis,frame_4632_2291_2345 basis] at h
  exact h
 
-theorem gate_2346 : SixCarryPrefixData.program[2346]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4497 4632 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 42 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[42]?=some (.CX 4497 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[2346]?=some (.CX 4497 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2346 : SixCarryPrefixData.program[2346]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4497 4632 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 42 shape18 before_len18 len18 rfl (.CX 4497 4632) rfl
 
 theorem step_2346 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2347 basis 4632=((prefixState SixCarryPrefixData.program 2346 basis 4632) ^^ (prefixState SixCarryPrefixData.program 2290 basis 4497)) := by
@@ -21178,11 +20818,8 @@ theorem step_2346 (basis : BasisState) :
  rw [frame_4497_2290_2346 basis] at h
  exact h
 
-theorem gate_2347 : SixCarryPrefixData.program[2347]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4497 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 43 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[43]?=some (.measureX 4497 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2347]?=some (.measureX 4497 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2347 : SixCarryPrefixData.program[2347]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4497 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 43 shape18 before_len18 len18 rfl (.measureX 4497 [] []) rfl
 
 theorem step_2347 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2348 basis 4497=(false) := by
@@ -21191,11 +20828,8 @@ theorem step_2347 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2348 : SixCarryPrefixData.program[2348]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4631 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 44 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[44]?=some (.CX 4367 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[2348]?=some (.CX 4367 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2348 : SixCarryPrefixData.program[2348]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4631 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 44 shape18 before_len18 len18 rfl (.CX 4367 4631) rfl
 
 theorem step_2348 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2349 basis 4631=((prefixState SixCarryPrefixData.program 2285 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -21205,11 +20839,8 @@ theorem step_2348 (basis : BasisState) :
  rw [frame_4367_0_2348 basis,frame_4631_2285_2348 basis] at h
  exact h
 
-theorem gate_2349 : SixCarryPrefixData.program[2349]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4496 4631 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 45 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[45]?=some (.CX 4496 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[2349]?=some (.CX 4496 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2349 : SixCarryPrefixData.program[2349]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4496 4631 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 45 shape18 before_len18 len18 rfl (.CX 4496 4631) rfl
 
 theorem step_2349 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2350 basis 4631=((prefixState SixCarryPrefixData.program 2349 basis 4631) ^^ (prefixState SixCarryPrefixData.program 2284 basis 4496)) := by
@@ -21219,11 +20850,8 @@ theorem step_2349 (basis : BasisState) :
  rw [frame_4496_2284_2349 basis] at h
  exact h
 
-theorem gate_2350 : SixCarryPrefixData.program[2350]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4496 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 46 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[46]?=some (.measureX 4496 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2350]?=some (.measureX 4496 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2350 : SixCarryPrefixData.program[2350]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4496 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 46 shape18 before_len18 len18 rfl (.measureX 4496 [] []) rfl
 
 theorem step_2350 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2351 basis 4496=(false) := by
@@ -21232,11 +20860,8 @@ theorem step_2350 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2351 : SixCarryPrefixData.program[2351]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4630 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 47 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[47]?=some (.CX 4366 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[2351]?=some (.CX 4366 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2351 : SixCarryPrefixData.program[2351]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4630 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 47 shape18 before_len18 len18 rfl (.CX 4366 4630) rfl
 
 theorem step_2351 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2352 basis 4630=((prefixState SixCarryPrefixData.program 2279 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -21246,11 +20871,8 @@ theorem step_2351 (basis : BasisState) :
  rw [frame_4366_0_2351 basis,frame_4630_2279_2351 basis] at h
  exact h
 
-theorem gate_2352 : SixCarryPrefixData.program[2352]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4495 4630 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 48 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[48]?=some (.CX 4495 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[2352]?=some (.CX 4495 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2352 : SixCarryPrefixData.program[2352]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4495 4630 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 48 shape18 before_len18 len18 rfl (.CX 4495 4630) rfl
 
 theorem step_2352 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2353 basis 4630=((prefixState SixCarryPrefixData.program 2352 basis 4630) ^^ (prefixState SixCarryPrefixData.program 2278 basis 4495)) := by
@@ -21260,11 +20882,8 @@ theorem step_2352 (basis : BasisState) :
  rw [frame_4495_2278_2352 basis] at h
  exact h
 
-theorem gate_2353 : SixCarryPrefixData.program[2353]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4495 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 49 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[49]?=some (.measureX 4495 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2353]?=some (.measureX 4495 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2353 : SixCarryPrefixData.program[2353]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4495 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 49 shape18 before_len18 len18 rfl (.measureX 4495 [] []) rfl
 
 theorem step_2353 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2354 basis 4495=(false) := by
@@ -21273,11 +20892,8 @@ theorem step_2353 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2354 : SixCarryPrefixData.program[2354]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4629 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 50 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[50]?=some (.CX 4365 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[2354]?=some (.CX 4365 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2354 : SixCarryPrefixData.program[2354]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4629 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 50 shape18 before_len18 len18 rfl (.CX 4365 4629) rfl
 
 theorem step_2354 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2355 basis 4629=((prefixState SixCarryPrefixData.program 2273 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -21287,11 +20903,8 @@ theorem step_2354 (basis : BasisState) :
  rw [frame_4365_0_2354 basis,frame_4629_2273_2354 basis] at h
  exact h
 
-theorem gate_2355 : SixCarryPrefixData.program[2355]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4494 4629 := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 51 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[51]?=some (.CX 4494 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[2355]?=some (.CX 4494 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2355 : SixCarryPrefixData.program[2355]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4494 4629 :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 51 shape18 before_len18 len18 rfl (.CX 4494 4629) rfl
 
 theorem step_2355 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2356 basis 4629=((prefixState SixCarryPrefixData.program 2355 basis 4629) ^^ (prefixState SixCarryPrefixData.program 2272 basis 4494)) := by
@@ -21301,11 +20914,8 @@ theorem step_2355 (basis : BasisState) :
  rw [frame_4494_2272_2355 basis] at h
  exact h
 
-theorem gate_2356 : SixCarryPrefixData.program[2356]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4494 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 52 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[52]?=some (.measureX 4494 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2356]?=some (.measureX 4494 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2356 : SixCarryPrefixData.program[2356]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4494 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 52 shape18 before_len18 len18 rfl (.measureX 4494 [] []) rfl
 
 theorem step_2356 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2357 basis 4494=(false) := by
@@ -21314,11 +20924,8 @@ theorem step_2356 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2362 : SixCarryPrefixData.program[2362]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4492 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 58 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[58]?=some (.measureX 4492 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2362]?=some (.measureX 4492 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2362 : SixCarryPrefixData.program[2362]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4492 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 58 shape18 before_len18 len18 rfl (.measureX 4492 [] []) rfl
 
 theorem step_2362 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2363 basis 4492=(false) := by
@@ -21327,11 +20934,8 @@ theorem step_2362 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2422 : SixCarryPrefixData.program[2422]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4472 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 118 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[118]?=some (.measureX 4472 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2422]?=some (.measureX 4472 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2422 : SixCarryPrefixData.program[2422]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4472 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 118 shape18 before_len18 len18 rfl (.measureX 4472 [] []) rfl
 
 theorem step_2422 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2423 basis 4472=(false) := by
@@ -21340,11 +20944,8 @@ theorem step_2422 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2425 : SixCarryPrefixData.program[2425]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4471 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 121 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[121]?=some (.measureX 4471 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2425]?=some (.measureX 4471 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2425 : SixCarryPrefixData.program[2425]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4471 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 121 shape18 before_len18 len18 rfl (.measureX 4471 [] []) rfl
 
 theorem step_2425 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2426 basis 4471=(false) := by
@@ -21353,11 +20954,8 @@ theorem step_2425 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2428 : SixCarryPrefixData.program[2428]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4470 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 124 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[124]?=some (.measureX 4470 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2428]?=some (.measureX 4470 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2428 : SixCarryPrefixData.program[2428]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4470 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 124 shape18 before_len18 len18 rfl (.measureX 4470 [] []) rfl
 
 theorem step_2428 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2429 basis 4470=(false) := by
@@ -21366,11 +20964,8 @@ theorem step_2428 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2431 : SixCarryPrefixData.program[2431]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4469 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 127 shape18 before_len18 (by rw [len18]; decide +kernel)
- have hg : SixCarryPrefixData.chunk18[127]?=some (.measureX 4469 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[2431]?=some (.measureX 4469 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2431 : SixCarryPrefixData.program[2431]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4469 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before18 SixCarryPrefixData.chunk18 after18 2304 127 shape18 before_len18 len18 rfl (.measureX 4469 [] []) rfl
 
 theorem step_2431 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2432 basis 4469=(false) := by
@@ -21379,11 +20974,8 @@ theorem step_2431 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_2844 : SixCarryPrefixData.program[2844]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 28 shape22 before_len22 (by rw [len22]; decide +kernel)
- have hg : SixCarryPrefixData.chunk22[28]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[2844]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2844 : SixCarryPrefixData.program[2844]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 28 shape22 before_len22 len22 rfl (.X 4629) rfl
 
 theorem step_2844 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2845 basis 4629=(!(prefixState SixCarryPrefixData.program 2356 basis 4629)) := by
@@ -21393,11 +20985,8 @@ theorem step_2844 (basis : BasisState) :
  rw [frame_4629_2356_2844 basis] at h
  exact h
 
-theorem gate_2845 : SixCarryPrefixData.program[2845]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 29 shape22 before_len22 (by rw [len22]; decide +kernel)
- have hg : SixCarryPrefixData.chunk22[29]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[2845]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2845 : SixCarryPrefixData.program[2845]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 29 shape22 before_len22 len22 rfl (.X 4630) rfl
 
 theorem step_2845 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2846 basis 4630=(!(prefixState SixCarryPrefixData.program 2353 basis 4630)) := by
@@ -21407,11 +20996,8 @@ theorem step_2845 (basis : BasisState) :
  rw [frame_4630_2353_2845 basis] at h
  exact h
 
-theorem gate_2846 : SixCarryPrefixData.program[2846]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 30 shape22 before_len22 (by rw [len22]; decide +kernel)
- have hg : SixCarryPrefixData.chunk22[30]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[2846]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2846 : SixCarryPrefixData.program[2846]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 30 shape22 before_len22 len22 rfl (.X 4631) rfl
 
 theorem step_2846 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2847 basis 4631=(!(prefixState SixCarryPrefixData.program 2350 basis 4631)) := by
@@ -21421,11 +21007,8 @@ theorem step_2846 (basis : BasisState) :
  rw [frame_4631_2350_2846 basis] at h
  exact h
 
-theorem gate_2847 : SixCarryPrefixData.program[2847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 31 shape22 before_len22 (by rw [len22]; decide +kernel)
- have hg : SixCarryPrefixData.chunk22[31]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[2847]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2847 : SixCarryPrefixData.program[2847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 31 shape22 before_len22 len22 rfl (.X 4632) rfl
 
 theorem step_2847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2848 basis 4632=(!(prefixState SixCarryPrefixData.program 2347 basis 4632)) := by
@@ -21435,11 +21018,8 @@ theorem step_2847 (basis : BasisState) :
  rw [frame_4632_2347_2847 basis] at h
  exact h
 
-theorem gate_2856 : SixCarryPrefixData.program[2856]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 := by
- have h := lookup_context SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 40 shape22 before_len22 (by rw [len22]; decide +kernel)
- have hg : SixCarryPrefixData.chunk22[40]?=some (.CX 4243 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[2856]?=some (.CX 4243 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2856 : SixCarryPrefixData.program[2856]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 :=
+ gateFromChunk SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 40 shape22 before_len22 len22 rfl (.CX 4243 4760) rfl
 
 theorem step_2856 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2857 basis 4760=((prefixState SixCarryPrefixData.program 1451 basis 4760) ^^ (prefixState SixCarryPrefixData.program 0 basis 4243)) := by
@@ -21449,11 +21029,8 @@ theorem step_2856 (basis : BasisState) :
  rw [frame_4243_0_2856 basis,frame_4760_1451_2856 basis] at h
  exact h
 
-theorem gate_2859 : SixCarryPrefixData.program[2859]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 := by
- have h := lookup_context SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 43 shape22 before_len22 (by rw [len22]; decide +kernel)
- have hg : SixCarryPrefixData.chunk22[43]?=some (.CX 4243 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[2859]?=some (.CX 4243 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2859 : SixCarryPrefixData.program[2859]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4243 4760 :=
+ gateFromChunk SixCarryPrefixData.program before22 SixCarryPrefixData.chunk22 after22 2816 43 shape22 before_len22 len22 rfl (.CX 4243 4760) rfl
 
 theorem step_2859 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2860 basis 4760=((prefixState SixCarryPrefixData.program 2857 basis 4760) ^^ (prefixState SixCarryPrefixData.program 0 basis 4243)) := by
@@ -21463,11 +21040,8 @@ theorem step_2859 (basis : BasisState) :
  rw [frame_4243_0_2859 basis,frame_4760_2857_2859 basis] at h
  exact h
 
-theorem gate_3431 : SixCarryPrefixData.program[3431]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 103 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[103]?=some (.CX 4339 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[3431]?=some (.CX 4339 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3431 : SixCarryPrefixData.program[3431]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 103 shape26 before_len26 len26 rfl (.CX 4339 4629) rfl
 
 theorem step_3431 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3432 basis 4629=((prefixState SixCarryPrefixData.program 2845 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -21477,11 +21051,8 @@ theorem step_3431 (basis : BasisState) :
  rw [frame_4339_0_3431 basis,frame_4629_2845_3431 basis] at h
  exact h
 
-theorem gate_3433 : SixCarryPrefixData.program[3433]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4629 4468 4469 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 105 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[105]?=some (.CCX 4629 4468 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[3433]?=some (.CCX 4629 4468 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3433 : SixCarryPrefixData.program[3433]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4629 4468 4469 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 105 shape26 before_len26 len26 rfl (.CCX 4629 4468 4469) rfl
 
 theorem step_3433 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3434 basis 4469=((prefixState SixCarryPrefixData.program 2432 basis 4469) ^^ ((prefixState SixCarryPrefixData.program 3432 basis 4629) && (prefixState SixCarryPrefixData.program 3433 basis 4468))) := by
@@ -21491,11 +21062,8 @@ theorem step_3433 (basis : BasisState) :
  rw [frame_4469_2432_3433 basis,frame_4629_3432_3433 basis] at h
  exact h
 
-theorem gate_3434 : SixCarryPrefixData.program[3434]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4469 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 106 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[106]?=some (.CX 4339 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[3434]?=some (.CX 4339 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3434 : SixCarryPrefixData.program[3434]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4469 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 106 shape26 before_len26 len26 rfl (.CX 4339 4469) rfl
 
 theorem step_3434 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3435 basis 4469=((prefixState SixCarryPrefixData.program 3434 basis 4469) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -21505,11 +21073,8 @@ theorem step_3434 (basis : BasisState) :
  rw [frame_4339_0_3434 basis] at h
  exact h
 
-theorem gate_3435 : SixCarryPrefixData.program[3435]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4468 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 107 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[107]?=some (.CX 4339 4468) := by decide +kernel
- have hh : SixCarryPrefixData.program[3435]?=some (.CX 4339 4468) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3435 : SixCarryPrefixData.program[3435]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4468 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 107 shape26 before_len26 len26 rfl (.CX 4339 4468) rfl
 
 theorem step_3435 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3436 basis 4468=((prefixState SixCarryPrefixData.program 3433 basis 4468) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -21519,11 +21084,8 @@ theorem step_3435 (basis : BasisState) :
  rw [frame_4339_0_3435 basis,frame_4468_3433_3435 basis] at h
  exact h
 
-theorem gate_3436 : SixCarryPrefixData.program[3436]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 108 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[108]?=some (.CX 4339 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[3436]?=some (.CX 4339 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3436 : SixCarryPrefixData.program[3436]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 108 shape26 before_len26 len26 rfl (.CX 4339 4629) rfl
 
 theorem step_3436 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3437 basis 4629=((prefixState SixCarryPrefixData.program 3432 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -21533,11 +21095,8 @@ theorem step_3436 (basis : BasisState) :
  rw [frame_4339_0_3436 basis,frame_4629_3432_3436 basis] at h
  exact h
 
-theorem gate_3437 : SixCarryPrefixData.program[3437]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 109 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[109]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[3437]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3437 : SixCarryPrefixData.program[3437]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 109 shape26 before_len26 len26 rfl (.CX 4340 4630) rfl
 
 theorem step_3437 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3438 basis 4630=((prefixState SixCarryPrefixData.program 2846 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -21547,11 +21106,8 @@ theorem step_3437 (basis : BasisState) :
  rw [frame_4340_0_3437 basis,frame_4630_2846_3437 basis] at h
  exact h
 
-theorem gate_3438 : SixCarryPrefixData.program[3438]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 110 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[110]?=some (.CX 4340 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[3438]?=some (.CX 4340 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3438 : SixCarryPrefixData.program[3438]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 110 shape26 before_len26 len26 rfl (.CX 4340 4469) rfl
 
 theorem step_3438 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3439 basis 4469=((prefixState SixCarryPrefixData.program 3435 basis 4469) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -21561,11 +21117,8 @@ theorem step_3438 (basis : BasisState) :
  rw [frame_4340_0_3438 basis,frame_4469_3435_3438 basis] at h
  exact h
 
-theorem gate_3439 : SixCarryPrefixData.program[3439]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4469 4470 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 111 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[111]?=some (.CCX 4630 4469 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[3439]?=some (.CCX 4630 4469 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3439 : SixCarryPrefixData.program[3439]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4469 4470 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 111 shape26 before_len26 len26 rfl (.CCX 4630 4469 4470) rfl
 
 theorem step_3439 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3440 basis 4470=((prefixState SixCarryPrefixData.program 2429 basis 4470) ^^ ((prefixState SixCarryPrefixData.program 3438 basis 4630) && (prefixState SixCarryPrefixData.program 3439 basis 4469))) := by
@@ -21575,11 +21128,8 @@ theorem step_3439 (basis : BasisState) :
  rw [frame_4470_2429_3439 basis,frame_4630_3438_3439 basis] at h
  exact h
 
-theorem gate_3440 : SixCarryPrefixData.program[3440]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4470 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 112 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[112]?=some (.CX 4340 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[3440]?=some (.CX 4340 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3440 : SixCarryPrefixData.program[3440]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4470 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 112 shape26 before_len26 len26 rfl (.CX 4340 4470) rfl
 
 theorem step_3440 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3441 basis 4470=((prefixState SixCarryPrefixData.program 3440 basis 4470) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -21589,11 +21139,8 @@ theorem step_3440 (basis : BasisState) :
  rw [frame_4340_0_3440 basis] at h
  exact h
 
-theorem gate_3441 : SixCarryPrefixData.program[3441]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 113 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[113]?=some (.CX 4340 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[3441]?=some (.CX 4340 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3441 : SixCarryPrefixData.program[3441]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 113 shape26 before_len26 len26 rfl (.CX 4340 4469) rfl
 
 theorem step_3441 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3442 basis 4469=((prefixState SixCarryPrefixData.program 3439 basis 4469) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -21603,11 +21150,8 @@ theorem step_3441 (basis : BasisState) :
  rw [frame_4340_0_3441 basis,frame_4469_3439_3441 basis] at h
  exact h
 
-theorem gate_3442 : SixCarryPrefixData.program[3442]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 114 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[114]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[3442]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3442 : SixCarryPrefixData.program[3442]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 114 shape26 before_len26 len26 rfl (.CX 4340 4630) rfl
 
 theorem step_3442 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3443 basis 4630=((prefixState SixCarryPrefixData.program 3438 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -21617,11 +21161,8 @@ theorem step_3442 (basis : BasisState) :
  rw [frame_4340_0_3442 basis,frame_4630_3438_3442 basis] at h
  exact h
 
-theorem gate_3443 : SixCarryPrefixData.program[3443]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 115 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[115]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[3443]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3443 : SixCarryPrefixData.program[3443]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 115 shape26 before_len26 len26 rfl (.CX 4341 4631) rfl
 
 theorem step_3443 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3444 basis 4631=((prefixState SixCarryPrefixData.program 2847 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -21631,11 +21172,8 @@ theorem step_3443 (basis : BasisState) :
  rw [frame_4341_0_3443 basis,frame_4631_2847_3443 basis] at h
  exact h
 
-theorem gate_3444 : SixCarryPrefixData.program[3444]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 116 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[116]?=some (.CX 4341 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[3444]?=some (.CX 4341 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3444 : SixCarryPrefixData.program[3444]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 116 shape26 before_len26 len26 rfl (.CX 4341 4470) rfl
 
 theorem step_3444 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3445 basis 4470=((prefixState SixCarryPrefixData.program 3441 basis 4470) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -21645,11 +21183,8 @@ theorem step_3444 (basis : BasisState) :
  rw [frame_4341_0_3444 basis,frame_4470_3441_3444 basis] at h
  exact h
 
-theorem gate_3445 : SixCarryPrefixData.program[3445]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4470 4471 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 117 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[117]?=some (.CCX 4631 4470 4471) := by decide +kernel
- have hh : SixCarryPrefixData.program[3445]?=some (.CCX 4631 4470 4471) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3445 : SixCarryPrefixData.program[3445]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4470 4471 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 117 shape26 before_len26 len26 rfl (.CCX 4631 4470 4471) rfl
 
 theorem step_3445 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3446 basis 4471=((prefixState SixCarryPrefixData.program 2426 basis 4471) ^^ ((prefixState SixCarryPrefixData.program 3444 basis 4631) && (prefixState SixCarryPrefixData.program 3445 basis 4470))) := by
@@ -21659,11 +21194,8 @@ theorem step_3445 (basis : BasisState) :
  rw [frame_4471_2426_3445 basis,frame_4631_3444_3445 basis] at h
  exact h
 
-theorem gate_3446 : SixCarryPrefixData.program[3446]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4471 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 118 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[118]?=some (.CX 4341 4471) := by decide +kernel
- have hh : SixCarryPrefixData.program[3446]?=some (.CX 4341 4471) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3446 : SixCarryPrefixData.program[3446]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4471 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 118 shape26 before_len26 len26 rfl (.CX 4341 4471) rfl
 
 theorem step_3446 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3447 basis 4471=((prefixState SixCarryPrefixData.program 3446 basis 4471) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -21673,11 +21205,8 @@ theorem step_3446 (basis : BasisState) :
  rw [frame_4341_0_3446 basis] at h
  exact h
 
-theorem gate_3447 : SixCarryPrefixData.program[3447]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 119 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[119]?=some (.CX 4341 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[3447]?=some (.CX 4341 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3447 : SixCarryPrefixData.program[3447]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 119 shape26 before_len26 len26 rfl (.CX 4341 4470) rfl
 
 theorem step_3447 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3448 basis 4470=((prefixState SixCarryPrefixData.program 3445 basis 4470) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -21687,11 +21216,8 @@ theorem step_3447 (basis : BasisState) :
  rw [frame_4341_0_3447 basis,frame_4470_3445_3447 basis] at h
  exact h
 
-theorem gate_3448 : SixCarryPrefixData.program[3448]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 120 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[120]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[3448]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3448 : SixCarryPrefixData.program[3448]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 120 shape26 before_len26 len26 rfl (.CX 4341 4631) rfl
 
 theorem step_3448 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3449 basis 4631=((prefixState SixCarryPrefixData.program 3444 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -21701,11 +21227,8 @@ theorem step_3448 (basis : BasisState) :
  rw [frame_4341_0_3448 basis,frame_4631_3444_3448 basis] at h
  exact h
 
-theorem gate_3449 : SixCarryPrefixData.program[3449]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 121 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[121]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[3449]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3449 : SixCarryPrefixData.program[3449]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 121 shape26 before_len26 len26 rfl (.CX 4342 4632) rfl
 
 theorem step_3449 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3450 basis 4632=((prefixState SixCarryPrefixData.program 2848 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -21715,11 +21238,8 @@ theorem step_3449 (basis : BasisState) :
  rw [frame_4342_0_3449 basis,frame_4632_2848_3449 basis] at h
  exact h
 
-theorem gate_3450 : SixCarryPrefixData.program[3450]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4471 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 122 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[122]?=some (.CX 4342 4471) := by decide +kernel
- have hh : SixCarryPrefixData.program[3450]?=some (.CX 4342 4471) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3450 : SixCarryPrefixData.program[3450]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4471 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 122 shape26 before_len26 len26 rfl (.CX 4342 4471) rfl
 
 theorem step_3450 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3451 basis 4471=((prefixState SixCarryPrefixData.program 3447 basis 4471) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -21729,11 +21249,8 @@ theorem step_3450 (basis : BasisState) :
  rw [frame_4342_0_3450 basis,frame_4471_3447_3450 basis] at h
  exact h
 
-theorem gate_3451 : SixCarryPrefixData.program[3451]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4632 4471 4472 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 123 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[123]?=some (.CCX 4632 4471 4472) := by decide +kernel
- have hh : SixCarryPrefixData.program[3451]?=some (.CCX 4632 4471 4472) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3451 : SixCarryPrefixData.program[3451]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4632 4471 4472 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 123 shape26 before_len26 len26 rfl (.CCX 4632 4471 4472) rfl
 
 theorem step_3451 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3452 basis 4472=((prefixState SixCarryPrefixData.program 2423 basis 4472) ^^ ((prefixState SixCarryPrefixData.program 3450 basis 4632) && (prefixState SixCarryPrefixData.program 3451 basis 4471))) := by
@@ -21743,11 +21260,8 @@ theorem step_3451 (basis : BasisState) :
  rw [frame_4472_2423_3451 basis,frame_4632_3450_3451 basis] at h
  exact h
 
-theorem gate_3452 : SixCarryPrefixData.program[3452]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4472 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 124 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[124]?=some (.CX 4342 4472) := by decide +kernel
- have hh : SixCarryPrefixData.program[3452]?=some (.CX 4342 4472) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3452 : SixCarryPrefixData.program[3452]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4472 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 124 shape26 before_len26 len26 rfl (.CX 4342 4472) rfl
 
 theorem step_3452 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3453 basis 4472=((prefixState SixCarryPrefixData.program 3452 basis 4472) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -21757,11 +21271,8 @@ theorem step_3452 (basis : BasisState) :
  rw [frame_4342_0_3452 basis] at h
  exact h
 
-theorem gate_3453 : SixCarryPrefixData.program[3453]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4471 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 125 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[125]?=some (.CX 4342 4471) := by decide +kernel
- have hh : SixCarryPrefixData.program[3453]?=some (.CX 4342 4471) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3453 : SixCarryPrefixData.program[3453]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4471 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 125 shape26 before_len26 len26 rfl (.CX 4342 4471) rfl
 
 theorem step_3453 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3454 basis 4471=((prefixState SixCarryPrefixData.program 3451 basis 4471) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -21771,11 +21282,8 @@ theorem step_3453 (basis : BasisState) :
  rw [frame_4342_0_3453 basis,frame_4471_3451_3453 basis] at h
  exact h
 
-theorem gate_3454 : SixCarryPrefixData.program[3454]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 126 shape26 before_len26 (by rw [len26]; decide +kernel)
- have hg : SixCarryPrefixData.chunk26[126]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[3454]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3454 : SixCarryPrefixData.program[3454]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before26 SixCarryPrefixData.chunk26 after26 3328 126 shape26 before_len26 len26 rfl (.CX 4342 4632) rfl
 
 theorem step_3454 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3455 basis 4632=((prefixState SixCarryPrefixData.program 3450 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -21785,11 +21293,8 @@ theorem step_3454 (basis : BasisState) :
  rw [frame_4342_0_3454 basis,frame_4632_3450_3454 basis] at h
  exact h
 
-theorem gate_3569 : SixCarryPrefixData.program[3569]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4652 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 113 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[113]?=some (.CX 4362 4652) := by decide +kernel
- have hh : SixCarryPrefixData.program[3569]?=some (.CX 4362 4652) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3569 : SixCarryPrefixData.program[3569]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4652 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 113 shape27 before_len27 len27 rfl (.CX 4362 4652) rfl
 
 theorem step_3569 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3570 basis 4652=((prefixState SixCarryPrefixData.program 148 basis 4652) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -21799,11 +21304,8 @@ theorem step_3569 (basis : BasisState) :
  rw [frame_4362_0_3569 basis,frame_4652_148_3569 basis] at h
  exact h
 
-theorem gate_3571 : SixCarryPrefixData.program[3571]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4652 4491 4492 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 115 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[115]?=some (.CCX 4652 4491 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[3571]?=some (.CCX 4652 4491 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3571 : SixCarryPrefixData.program[3571]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4652 4491 4492 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 115 shape27 before_len27 len27 rfl (.CCX 4652 4491 4492) rfl
 
 theorem step_3571 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3572 basis 4492=((prefixState SixCarryPrefixData.program 2363 basis 4492) ^^ ((prefixState SixCarryPrefixData.program 3570 basis 4652) && (prefixState SixCarryPrefixData.program 3571 basis 4491))) := by
@@ -21813,11 +21315,8 @@ theorem step_3571 (basis : BasisState) :
  rw [frame_4492_2363_3571 basis,frame_4652_3570_3571 basis] at h
  exact h
 
-theorem gate_3572 : SixCarryPrefixData.program[3572]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4492 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 116 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[116]?=some (.CX 4362 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[3572]?=some (.CX 4362 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3572 : SixCarryPrefixData.program[3572]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4492 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 116 shape27 before_len27 len27 rfl (.CX 4362 4492) rfl
 
 theorem step_3572 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3573 basis 4492=((prefixState SixCarryPrefixData.program 3572 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -21827,11 +21326,8 @@ theorem step_3572 (basis : BasisState) :
  rw [frame_4362_0_3572 basis] at h
  exact h
 
-theorem gate_3575 : SixCarryPrefixData.program[3575]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 119 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[119]?=some (.CX 4363 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[3575]?=some (.CX 4363 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3575 : SixCarryPrefixData.program[3575]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 119 shape27 before_len27 len27 rfl (.CX 4363 4653) rfl
 
 theorem step_3575 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3576 basis 4653=((prefixState SixCarryPrefixData.program 149 basis 4653) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -21841,11 +21337,8 @@ theorem step_3575 (basis : BasisState) :
  rw [frame_4363_0_3575 basis,frame_4653_149_3575 basis] at h
  exact h
 
-theorem gate_3576 : SixCarryPrefixData.program[3576]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 120 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[120]?=some (.CX 4363 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[3576]?=some (.CX 4363 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3576 : SixCarryPrefixData.program[3576]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 120 shape27 before_len27 len27 rfl (.CX 4363 4492) rfl
 
 theorem step_3576 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3577 basis 4492=((prefixState SixCarryPrefixData.program 3573 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -21855,11 +21348,8 @@ theorem step_3576 (basis : BasisState) :
  rw [frame_4363_0_3576 basis,frame_4492_3573_3576 basis] at h
  exact h
 
-theorem gate_3579 : SixCarryPrefixData.program[3579]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 123 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[123]?=some (.CX 4363 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[3579]?=some (.CX 4363 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3579 : SixCarryPrefixData.program[3579]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 123 shape27 before_len27 len27 rfl (.CX 4363 4492) rfl
 
 theorem step_3579 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3580 basis 4492=((prefixState SixCarryPrefixData.program 3577 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -21869,11 +21359,8 @@ theorem step_3579 (basis : BasisState) :
  rw [frame_4363_0_3579 basis,frame_4492_3577_3579 basis] at h
  exact h
 
-theorem gate_3580 : SixCarryPrefixData.program[3580]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 124 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[124]?=some (.CX 4363 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[3580]?=some (.CX 4363 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3580 : SixCarryPrefixData.program[3580]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 124 shape27 before_len27 len27 rfl (.CX 4363 4653) rfl
 
 theorem step_3580 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3581 basis 4653=((prefixState SixCarryPrefixData.program 3576 basis 4653) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -21883,11 +21370,8 @@ theorem step_3580 (basis : BasisState) :
  rw [frame_4363_0_3580 basis,frame_4653_3576_3580 basis] at h
  exact h
 
-theorem gate_3581 : SixCarryPrefixData.program[3581]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 125 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[125]?=some (.CX 4364 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[3581]?=some (.CX 4364 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3581 : SixCarryPrefixData.program[3581]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 125 shape27 before_len27 len27 rfl (.CX 4364 4654) rfl
 
 theorem step_3581 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3582 basis 4654=((prefixState SixCarryPrefixData.program 150 basis 4654) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -21897,11 +21381,8 @@ theorem step_3581 (basis : BasisState) :
  rw [frame_4364_0_3581 basis,frame_4654_150_3581 basis] at h
  exact h
 
-theorem gate_3583 : SixCarryPrefixData.program[3583]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4654 4493 4494 := by
- have h := lookup_context SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 127 shape27 before_len27 (by rw [len27]; decide +kernel)
- have hg : SixCarryPrefixData.chunk27[127]?=some (.CCX 4654 4493 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[3583]?=some (.CCX 4654 4493 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3583 : SixCarryPrefixData.program[3583]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4654 4493 4494 :=
+ gateFromChunk SixCarryPrefixData.program before27 SixCarryPrefixData.chunk27 after27 3456 127 shape27 before_len27 len27 rfl (.CCX 4654 4493 4494) rfl
 
 theorem step_3583 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3584 basis 4494=((prefixState SixCarryPrefixData.program 2357 basis 4494) ^^ ((prefixState SixCarryPrefixData.program 3582 basis 4654) && (prefixState SixCarryPrefixData.program 3583 basis 4493))) := by
@@ -21911,11 +21392,8 @@ theorem step_3583 (basis : BasisState) :
  rw [frame_4494_2357_3583 basis,frame_4654_3582_3583 basis] at h
  exact h
 
-theorem gate_3584 : SixCarryPrefixData.program[3584]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4494 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 0 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[0]?=some (.CX 4364 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[3584]?=some (.CX 4364 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3584 : SixCarryPrefixData.program[3584]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4494 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 0 shape28 before_len28 len28 rfl (.CX 4364 4494) rfl
 
 theorem step_3584 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3585 basis 4494=((prefixState SixCarryPrefixData.program 3584 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -21925,11 +21403,8 @@ theorem step_3584 (basis : BasisState) :
  rw [frame_4364_0_3584 basis] at h
  exact h
 
-theorem gate_3585 : SixCarryPrefixData.program[3585]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 1 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[1]?=some (.CX 4364 4493) := by decide +kernel
- have hh : SixCarryPrefixData.program[3585]?=some (.CX 4364 4493) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3585 : SixCarryPrefixData.program[3585]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4493 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 1 shape28 before_len28 len28 rfl (.CX 4364 4493) rfl
 
 theorem step_3585 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3586 basis 4493=((prefixState SixCarryPrefixData.program 3583 basis 4493) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -21939,11 +21414,8 @@ theorem step_3585 (basis : BasisState) :
  rw [frame_4364_0_3585 basis,frame_4493_3583_3585 basis] at h
  exact h
 
-theorem gate_3586 : SixCarryPrefixData.program[3586]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 2 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[2]?=some (.CX 4364 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[3586]?=some (.CX 4364 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3586 : SixCarryPrefixData.program[3586]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 2 shape28 before_len28 len28 rfl (.CX 4364 4654) rfl
 
 theorem step_3586 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3587 basis 4654=((prefixState SixCarryPrefixData.program 3582 basis 4654) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -21953,11 +21425,8 @@ theorem step_3586 (basis : BasisState) :
  rw [frame_4364_0_3586 basis,frame_4654_3582_3586 basis] at h
  exact h
 
-theorem gate_3587 : SixCarryPrefixData.program[3587]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 3 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[3]?=some (.CX 4365 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[3587]?=some (.CX 4365 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3587 : SixCarryPrefixData.program[3587]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 3 shape28 before_len28 len28 rfl (.CX 4365 4655) rfl
 
 theorem step_3587 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3588 basis 4655=((prefixState SixCarryPrefixData.program 151 basis 4655) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -21967,11 +21436,8 @@ theorem step_3587 (basis : BasisState) :
  rw [frame_4365_0_3587 basis,frame_4655_151_3587 basis] at h
  exact h
 
-theorem gate_3588 : SixCarryPrefixData.program[3588]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 4 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[4]?=some (.CX 4365 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[3588]?=some (.CX 4365 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3588 : SixCarryPrefixData.program[3588]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 4 shape28 before_len28 len28 rfl (.CX 4365 4494) rfl
 
 theorem step_3588 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3589 basis 4494=((prefixState SixCarryPrefixData.program 3585 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -21981,11 +21447,8 @@ theorem step_3588 (basis : BasisState) :
  rw [frame_4365_0_3588 basis,frame_4494_3585_3588 basis] at h
  exact h
 
-theorem gate_3589 : SixCarryPrefixData.program[3589]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4655 4494 4495 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 5 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[5]?=some (.CCX 4655 4494 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[3589]?=some (.CCX 4655 4494 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3589 : SixCarryPrefixData.program[3589]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4655 4494 4495 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 5 shape28 before_len28 len28 rfl (.CCX 4655 4494 4495) rfl
 
 theorem step_3589 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3590 basis 4495=((prefixState SixCarryPrefixData.program 2354 basis 4495) ^^ ((prefixState SixCarryPrefixData.program 3588 basis 4655) && (prefixState SixCarryPrefixData.program 3589 basis 4494))) := by
@@ -21995,11 +21458,8 @@ theorem step_3589 (basis : BasisState) :
  rw [frame_4495_2354_3589 basis,frame_4655_3588_3589 basis] at h
  exact h
 
-theorem gate_3590 : SixCarryPrefixData.program[3590]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4495 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 6 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[6]?=some (.CX 4365 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[3590]?=some (.CX 4365 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3590 : SixCarryPrefixData.program[3590]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4495 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 6 shape28 before_len28 len28 rfl (.CX 4365 4495) rfl
 
 theorem step_3590 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3591 basis 4495=((prefixState SixCarryPrefixData.program 3590 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -22009,11 +21469,8 @@ theorem step_3590 (basis : BasisState) :
  rw [frame_4365_0_3590 basis] at h
  exact h
 
-theorem gate_3591 : SixCarryPrefixData.program[3591]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 7 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[7]?=some (.CX 4365 4494) := by decide +kernel
- have hh : SixCarryPrefixData.program[3591]?=some (.CX 4365 4494) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3591 : SixCarryPrefixData.program[3591]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4494 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 7 shape28 before_len28 len28 rfl (.CX 4365 4494) rfl
 
 theorem step_3591 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3592 basis 4494=((prefixState SixCarryPrefixData.program 3589 basis 4494) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -22023,11 +21480,8 @@ theorem step_3591 (basis : BasisState) :
  rw [frame_4365_0_3591 basis,frame_4494_3589_3591 basis] at h
  exact h
 
-theorem gate_3592 : SixCarryPrefixData.program[3592]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 8 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[8]?=some (.CX 4365 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[3592]?=some (.CX 4365 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3592 : SixCarryPrefixData.program[3592]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 8 shape28 before_len28 len28 rfl (.CX 4365 4655) rfl
 
 theorem step_3592 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3593 basis 4655=((prefixState SixCarryPrefixData.program 3588 basis 4655) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -22037,11 +21491,8 @@ theorem step_3592 (basis : BasisState) :
  rw [frame_4365_0_3592 basis,frame_4655_3588_3592 basis] at h
  exact h
 
-theorem gate_3593 : SixCarryPrefixData.program[3593]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 9 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[9]?=some (.CX 4366 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[3593]?=some (.CX 4366 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3593 : SixCarryPrefixData.program[3593]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 9 shape28 before_len28 len28 rfl (.CX 4366 4656) rfl
 
 theorem step_3593 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3594 basis 4656=((prefixState SixCarryPrefixData.program 152 basis 4656) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -22051,11 +21502,8 @@ theorem step_3593 (basis : BasisState) :
  rw [frame_4366_0_3593 basis,frame_4656_152_3593 basis] at h
  exact h
 
-theorem gate_3594 : SixCarryPrefixData.program[3594]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 10 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[10]?=some (.CX 4366 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[3594]?=some (.CX 4366 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3594 : SixCarryPrefixData.program[3594]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 10 shape28 before_len28 len28 rfl (.CX 4366 4495) rfl
 
 theorem step_3594 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3595 basis 4495=((prefixState SixCarryPrefixData.program 3591 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -22065,11 +21513,8 @@ theorem step_3594 (basis : BasisState) :
  rw [frame_4366_0_3594 basis,frame_4495_3591_3594 basis] at h
  exact h
 
-theorem gate_3595 : SixCarryPrefixData.program[3595]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4656 4495 4496 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 11 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[11]?=some (.CCX 4656 4495 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[3595]?=some (.CCX 4656 4495 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3595 : SixCarryPrefixData.program[3595]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4656 4495 4496 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 11 shape28 before_len28 len28 rfl (.CCX 4656 4495 4496) rfl
 
 theorem step_3595 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3596 basis 4496=((prefixState SixCarryPrefixData.program 2351 basis 4496) ^^ ((prefixState SixCarryPrefixData.program 3594 basis 4656) && (prefixState SixCarryPrefixData.program 3595 basis 4495))) := by
@@ -22079,11 +21524,8 @@ theorem step_3595 (basis : BasisState) :
  rw [frame_4496_2351_3595 basis,frame_4656_3594_3595 basis] at h
  exact h
 
-theorem gate_3596 : SixCarryPrefixData.program[3596]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4496 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 12 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[12]?=some (.CX 4366 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[3596]?=some (.CX 4366 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3596 : SixCarryPrefixData.program[3596]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4496 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 12 shape28 before_len28 len28 rfl (.CX 4366 4496) rfl
 
 theorem step_3596 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3597 basis 4496=((prefixState SixCarryPrefixData.program 3596 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -22093,11 +21535,8 @@ theorem step_3596 (basis : BasisState) :
  rw [frame_4366_0_3596 basis] at h
  exact h
 
-theorem gate_3597 : SixCarryPrefixData.program[3597]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 13 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[13]?=some (.CX 4366 4495) := by decide +kernel
- have hh : SixCarryPrefixData.program[3597]?=some (.CX 4366 4495) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3597 : SixCarryPrefixData.program[3597]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4495 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 13 shape28 before_len28 len28 rfl (.CX 4366 4495) rfl
 
 theorem step_3597 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3598 basis 4495=((prefixState SixCarryPrefixData.program 3595 basis 4495) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -22107,11 +21546,8 @@ theorem step_3597 (basis : BasisState) :
  rw [frame_4366_0_3597 basis,frame_4495_3595_3597 basis] at h
  exact h
 
-theorem gate_3598 : SixCarryPrefixData.program[3598]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 14 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[14]?=some (.CX 4366 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[3598]?=some (.CX 4366 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3598 : SixCarryPrefixData.program[3598]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 14 shape28 before_len28 len28 rfl (.CX 4366 4656) rfl
 
 theorem step_3598 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3599 basis 4656=((prefixState SixCarryPrefixData.program 3594 basis 4656) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -22121,11 +21557,8 @@ theorem step_3598 (basis : BasisState) :
  rw [frame_4366_0_3598 basis,frame_4656_3594_3598 basis] at h
  exact h
 
-theorem gate_3599 : SixCarryPrefixData.program[3599]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 15 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[15]?=some (.CX 4367 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[3599]?=some (.CX 4367 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3599 : SixCarryPrefixData.program[3599]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 15 shape28 before_len28 len28 rfl (.CX 4367 4657) rfl
 
 theorem step_3599 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3600 basis 4657=((prefixState SixCarryPrefixData.program 153 basis 4657) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -22135,11 +21568,8 @@ theorem step_3599 (basis : BasisState) :
  rw [frame_4367_0_3599 basis,frame_4657_153_3599 basis] at h
  exact h
 
-theorem gate_3600 : SixCarryPrefixData.program[3600]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 16 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[16]?=some (.CX 4367 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[3600]?=some (.CX 4367 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3600 : SixCarryPrefixData.program[3600]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 16 shape28 before_len28 len28 rfl (.CX 4367 4496) rfl
 
 theorem step_3600 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3601 basis 4496=((prefixState SixCarryPrefixData.program 3597 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -22149,11 +21579,8 @@ theorem step_3600 (basis : BasisState) :
  rw [frame_4367_0_3600 basis,frame_4496_3597_3600 basis] at h
  exact h
 
-theorem gate_3601 : SixCarryPrefixData.program[3601]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4657 4496 4497 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 17 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[17]?=some (.CCX 4657 4496 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[3601]?=some (.CCX 4657 4496 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3601 : SixCarryPrefixData.program[3601]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4657 4496 4497 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 17 shape28 before_len28 len28 rfl (.CCX 4657 4496 4497) rfl
 
 theorem step_3601 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3602 basis 4497=((prefixState SixCarryPrefixData.program 2348 basis 4497) ^^ ((prefixState SixCarryPrefixData.program 3600 basis 4657) && (prefixState SixCarryPrefixData.program 3601 basis 4496))) := by
@@ -22163,11 +21590,8 @@ theorem step_3601 (basis : BasisState) :
  rw [frame_4497_2348_3601 basis,frame_4657_3600_3601 basis] at h
  exact h
 
-theorem gate_3602 : SixCarryPrefixData.program[3602]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4497 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 18 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[18]?=some (.CX 4367 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[3602]?=some (.CX 4367 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3602 : SixCarryPrefixData.program[3602]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4497 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 18 shape28 before_len28 len28 rfl (.CX 4367 4497) rfl
 
 theorem step_3602 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3603 basis 4497=((prefixState SixCarryPrefixData.program 3602 basis 4497) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -22177,11 +21601,8 @@ theorem step_3602 (basis : BasisState) :
  rw [frame_4367_0_3602 basis] at h
  exact h
 
-theorem gate_3603 : SixCarryPrefixData.program[3603]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 19 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[19]?=some (.CX 4367 4496) := by decide +kernel
- have hh : SixCarryPrefixData.program[3603]?=some (.CX 4367 4496) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3603 : SixCarryPrefixData.program[3603]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4496 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 19 shape28 before_len28 len28 rfl (.CX 4367 4496) rfl
 
 theorem step_3603 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3604 basis 4496=((prefixState SixCarryPrefixData.program 3601 basis 4496) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -22191,11 +21612,8 @@ theorem step_3603 (basis : BasisState) :
  rw [frame_4367_0_3603 basis,frame_4496_3601_3603 basis] at h
  exact h
 
-theorem gate_3604 : SixCarryPrefixData.program[3604]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 20 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[20]?=some (.CX 4367 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[3604]?=some (.CX 4367 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3604 : SixCarryPrefixData.program[3604]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 20 shape28 before_len28 len28 rfl (.CX 4367 4657) rfl
 
 theorem step_3604 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3605 basis 4657=((prefixState SixCarryPrefixData.program 3600 basis 4657) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -22205,11 +21623,8 @@ theorem step_3604 (basis : BasisState) :
  rw [frame_4367_0_3604 basis,frame_4657_3600_3604 basis] at h
  exact h
 
-theorem gate_3605 : SixCarryPrefixData.program[3605]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 21 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[21]?=some (.CX 4368 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[3605]?=some (.CX 4368 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3605 : SixCarryPrefixData.program[3605]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 21 shape28 before_len28 len28 rfl (.CX 4368 4658) rfl
 
 theorem step_3605 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3606 basis 4658=((prefixState SixCarryPrefixData.program 154 basis 4658) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -22219,11 +21634,8 @@ theorem step_3605 (basis : BasisState) :
  rw [frame_4368_0_3605 basis,frame_4658_154_3605 basis] at h
  exact h
 
-theorem gate_3606 : SixCarryPrefixData.program[3606]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 22 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[22]?=some (.CX 4368 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[3606]?=some (.CX 4368 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3606 : SixCarryPrefixData.program[3606]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 22 shape28 before_len28 len28 rfl (.CX 4368 4497) rfl
 
 theorem step_3606 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3607 basis 4497=((prefixState SixCarryPrefixData.program 3603 basis 4497) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -22233,11 +21645,8 @@ theorem step_3606 (basis : BasisState) :
  rw [frame_4368_0_3606 basis,frame_4497_3603_3606 basis] at h
  exact h
 
-theorem gate_3607 : SixCarryPrefixData.program[3607]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4658 4497 4498 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 23 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[23]?=some (.CCX 4658 4497 4498) := by decide +kernel
- have hh : SixCarryPrefixData.program[3607]?=some (.CCX 4658 4497 4498) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3607 : SixCarryPrefixData.program[3607]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4658 4497 4498 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 23 shape28 before_len28 len28 rfl (.CCX 4658 4497 4498) rfl
 
 theorem step_3607 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3608 basis 4498=((prefixState SixCarryPrefixData.program 2345 basis 4498) ^^ ((prefixState SixCarryPrefixData.program 3606 basis 4658) && (prefixState SixCarryPrefixData.program 3607 basis 4497))) := by
@@ -22247,11 +21656,8 @@ theorem step_3607 (basis : BasisState) :
  rw [frame_4498_2345_3607 basis,frame_4658_3606_3607 basis] at h
  exact h
 
-theorem gate_3608 : SixCarryPrefixData.program[3608]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4498 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 24 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[24]?=some (.CX 4368 4498) := by decide +kernel
- have hh : SixCarryPrefixData.program[3608]?=some (.CX 4368 4498) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3608 : SixCarryPrefixData.program[3608]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4498 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 24 shape28 before_len28 len28 rfl (.CX 4368 4498) rfl
 
 theorem step_3608 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3609 basis 4498=((prefixState SixCarryPrefixData.program 3608 basis 4498) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -22261,11 +21667,8 @@ theorem step_3608 (basis : BasisState) :
  rw [frame_4368_0_3608 basis] at h
  exact h
 
-theorem gate_3609 : SixCarryPrefixData.program[3609]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 25 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[25]?=some (.CX 4368 4497) := by decide +kernel
- have hh : SixCarryPrefixData.program[3609]?=some (.CX 4368 4497) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3609 : SixCarryPrefixData.program[3609]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4497 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 25 shape28 before_len28 len28 rfl (.CX 4368 4497) rfl
 
 theorem step_3609 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3610 basis 4497=((prefixState SixCarryPrefixData.program 3607 basis 4497) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -22275,11 +21678,8 @@ theorem step_3609 (basis : BasisState) :
  rw [frame_4368_0_3609 basis,frame_4497_3607_3609 basis] at h
  exact h
 
-theorem gate_3610 : SixCarryPrefixData.program[3610]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 26 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[26]?=some (.CX 4368 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[3610]?=some (.CX 4368 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3610 : SixCarryPrefixData.program[3610]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 26 shape28 before_len28 len28 rfl (.CX 4368 4658) rfl
 
 theorem step_3610 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3611 basis 4658=((prefixState SixCarryPrefixData.program 3606 basis 4658) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -22289,11 +21689,8 @@ theorem step_3610 (basis : BasisState) :
  rw [frame_4368_0_3610 basis,frame_4658_3606_3610 basis] at h
  exact h
 
-theorem gate_3611 : SixCarryPrefixData.program[3611]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 27 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[27]?=some (.CX 4369 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[3611]?=some (.CX 4369 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3611 : SixCarryPrefixData.program[3611]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 27 shape28 before_len28 len28 rfl (.CX 4369 4659) rfl
 
 theorem step_3611 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3612 basis 4659=((prefixState SixCarryPrefixData.program 155 basis 4659) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -22303,11 +21700,8 @@ theorem step_3611 (basis : BasisState) :
  rw [frame_4369_0_3611 basis,frame_4659_155_3611 basis] at h
  exact h
 
-theorem gate_3612 : SixCarryPrefixData.program[3612]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4498 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 28 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[28]?=some (.CX 4369 4498) := by decide +kernel
- have hh : SixCarryPrefixData.program[3612]?=some (.CX 4369 4498) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3612 : SixCarryPrefixData.program[3612]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4498 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 28 shape28 before_len28 len28 rfl (.CX 4369 4498) rfl
 
 theorem step_3612 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3613 basis 4498=((prefixState SixCarryPrefixData.program 3609 basis 4498) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -22317,11 +21711,8 @@ theorem step_3612 (basis : BasisState) :
  rw [frame_4369_0_3612 basis,frame_4498_3609_3612 basis] at h
  exact h
 
-theorem gate_3613 : SixCarryPrefixData.program[3613]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4659 4498 4499 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 29 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[29]?=some (.CCX 4659 4498 4499) := by decide +kernel
- have hh : SixCarryPrefixData.program[3613]?=some (.CCX 4659 4498 4499) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3613 : SixCarryPrefixData.program[3613]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4659 4498 4499 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 29 shape28 before_len28 len28 rfl (.CCX 4659 4498 4499) rfl
 
 theorem step_3613 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3614 basis 4499=((prefixState SixCarryPrefixData.program 2342 basis 4499) ^^ ((prefixState SixCarryPrefixData.program 3612 basis 4659) && (prefixState SixCarryPrefixData.program 3613 basis 4498))) := by
@@ -22331,11 +21722,8 @@ theorem step_3613 (basis : BasisState) :
  rw [frame_4499_2342_3613 basis,frame_4659_3612_3613 basis] at h
  exact h
 
-theorem gate_3614 : SixCarryPrefixData.program[3614]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4499 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 30 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[30]?=some (.CX 4369 4499) := by decide +kernel
- have hh : SixCarryPrefixData.program[3614]?=some (.CX 4369 4499) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3614 : SixCarryPrefixData.program[3614]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4499 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 30 shape28 before_len28 len28 rfl (.CX 4369 4499) rfl
 
 theorem step_3614 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3615 basis 4499=((prefixState SixCarryPrefixData.program 3614 basis 4499) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -22345,11 +21733,8 @@ theorem step_3614 (basis : BasisState) :
  rw [frame_4369_0_3614 basis] at h
  exact h
 
-theorem gate_3615 : SixCarryPrefixData.program[3615]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4498 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 31 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[31]?=some (.CX 4369 4498) := by decide +kernel
- have hh : SixCarryPrefixData.program[3615]?=some (.CX 4369 4498) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3615 : SixCarryPrefixData.program[3615]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4498 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 31 shape28 before_len28 len28 rfl (.CX 4369 4498) rfl
 
 theorem step_3615 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3616 basis 4498=((prefixState SixCarryPrefixData.program 3613 basis 4498) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -22359,11 +21744,8 @@ theorem step_3615 (basis : BasisState) :
  rw [frame_4369_0_3615 basis,frame_4498_3613_3615 basis] at h
  exact h
 
-theorem gate_3616 : SixCarryPrefixData.program[3616]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 32 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[32]?=some (.CX 4369 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[3616]?=some (.CX 4369 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3616 : SixCarryPrefixData.program[3616]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 32 shape28 before_len28 len28 rfl (.CX 4369 4659) rfl
 
 theorem step_3616 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3617 basis 4659=((prefixState SixCarryPrefixData.program 3612 basis 4659) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -22373,11 +21755,8 @@ theorem step_3616 (basis : BasisState) :
  rw [frame_4369_0_3616 basis,frame_4659_3612_3616 basis] at h
  exact h
 
-theorem gate_3617 : SixCarryPrefixData.program[3617]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 33 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[33]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[3617]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3617 : SixCarryPrefixData.program[3617]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 33 shape28 before_len28 len28 rfl (.CX 4370 4660) rfl
 
 theorem step_3617 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3618 basis 4660=((prefixState SixCarryPrefixData.program 156 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -22387,11 +21766,8 @@ theorem step_3617 (basis : BasisState) :
  rw [frame_4370_0_3617 basis,frame_4660_156_3617 basis] at h
  exact h
 
-theorem gate_3618 : SixCarryPrefixData.program[3618]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4499 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 34 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[34]?=some (.CX 4370 4499) := by decide +kernel
- have hh : SixCarryPrefixData.program[3618]?=some (.CX 4370 4499) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3618 : SixCarryPrefixData.program[3618]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4499 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 34 shape28 before_len28 len28 rfl (.CX 4370 4499) rfl
 
 theorem step_3618 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3619 basis 4499=((prefixState SixCarryPrefixData.program 3615 basis 4499) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -22401,11 +21777,8 @@ theorem step_3618 (basis : BasisState) :
  rw [frame_4370_0_3618 basis,frame_4499_3615_3618 basis] at h
  exact h
 
-theorem gate_3619 : SixCarryPrefixData.program[3619]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4660 4499 4500 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 35 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[35]?=some (.CCX 4660 4499 4500) := by decide +kernel
- have hh : SixCarryPrefixData.program[3619]?=some (.CCX 4660 4499 4500) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3619 : SixCarryPrefixData.program[3619]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4660 4499 4500 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 35 shape28 before_len28 len28 rfl (.CCX 4660 4499 4500) rfl
 
 theorem step_3619 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3620 basis 4500=((prefixState SixCarryPrefixData.program 2339 basis 4500) ^^ ((prefixState SixCarryPrefixData.program 3618 basis 4660) && (prefixState SixCarryPrefixData.program 3619 basis 4499))) := by
@@ -22415,11 +21788,8 @@ theorem step_3619 (basis : BasisState) :
  rw [frame_4500_2339_3619 basis,frame_4660_3618_3619 basis] at h
  exact h
 
-theorem gate_3620 : SixCarryPrefixData.program[3620]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4500 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 36 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[36]?=some (.CX 4370 4500) := by decide +kernel
- have hh : SixCarryPrefixData.program[3620]?=some (.CX 4370 4500) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3620 : SixCarryPrefixData.program[3620]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4500 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 36 shape28 before_len28 len28 rfl (.CX 4370 4500) rfl
 
 theorem step_3620 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3621 basis 4500=((prefixState SixCarryPrefixData.program 3620 basis 4500) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -22429,11 +21799,8 @@ theorem step_3620 (basis : BasisState) :
  rw [frame_4370_0_3620 basis] at h
  exact h
 
-theorem gate_3621 : SixCarryPrefixData.program[3621]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4499 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 37 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[37]?=some (.CX 4370 4499) := by decide +kernel
- have hh : SixCarryPrefixData.program[3621]?=some (.CX 4370 4499) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3621 : SixCarryPrefixData.program[3621]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4499 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 37 shape28 before_len28 len28 rfl (.CX 4370 4499) rfl
 
 theorem step_3621 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3622 basis 4499=((prefixState SixCarryPrefixData.program 3619 basis 4499) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -22443,11 +21810,8 @@ theorem step_3621 (basis : BasisState) :
  rw [frame_4370_0_3621 basis,frame_4499_3619_3621 basis] at h
  exact h
 
-theorem gate_3622 : SixCarryPrefixData.program[3622]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 38 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[38]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[3622]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3622 : SixCarryPrefixData.program[3622]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 38 shape28 before_len28 len28 rfl (.CX 4370 4660) rfl
 
 theorem step_3622 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3623 basis 4660=((prefixState SixCarryPrefixData.program 3618 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -22457,11 +21821,8 @@ theorem step_3622 (basis : BasisState) :
  rw [frame_4370_0_3622 basis,frame_4660_3618_3622 basis] at h
  exact h
 
-theorem gate_3623 : SixCarryPrefixData.program[3623]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4796 4661 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 39 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[39]?=some (.CX 4796 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[3623]?=some (.CX 4796 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3623 : SixCarryPrefixData.program[3623]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4796 4661 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 39 shape28 before_len28 len28 rfl (.CX 4796 4661) rfl
 
 theorem step_3623 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3624 basis 4661=((prefixState SixCarryPrefixData.program 157 basis 4661) ^^ (prefixState SixCarryPrefixData.program 0 basis 4796)) := by
@@ -22471,11 +21832,8 @@ theorem step_3623 (basis : BasisState) :
  rw [frame_4661_157_3623 basis,frame_4796_0_3623 basis] at h
  exact h
 
-theorem gate_3624 : SixCarryPrefixData.program[3624]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4500 4661 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 40 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[40]?=some (.CX 4500 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[3624]?=some (.CX 4500 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3624 : SixCarryPrefixData.program[3624]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4500 4661 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 40 shape28 before_len28 len28 rfl (.CX 4500 4661) rfl
 
 theorem step_3624 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3625 basis 4661=((prefixState SixCarryPrefixData.program 3624 basis 4661) ^^ (prefixState SixCarryPrefixData.program 3621 basis 4500)) := by
@@ -22485,11 +21843,8 @@ theorem step_3624 (basis : BasisState) :
  rw [frame_4500_3621_3624 basis] at h
  exact h
 
-theorem gate_3626 : SixCarryPrefixData.program[3626]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 42 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[42]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[3626]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3626 : SixCarryPrefixData.program[3626]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 42 shape28 before_len28 len28 rfl (.CX 4370 4660) rfl
 
 theorem step_3626 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3627 basis 4660=((prefixState SixCarryPrefixData.program 3623 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -22499,11 +21854,8 @@ theorem step_3626 (basis : BasisState) :
  rw [frame_4370_0_3626 basis,frame_4660_3623_3626 basis] at h
  exact h
 
-theorem gate_3627 : SixCarryPrefixData.program[3627]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4499 4660 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 43 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[43]?=some (.CX 4499 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[3627]?=some (.CX 4499 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3627 : SixCarryPrefixData.program[3627]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4499 4660 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 43 shape28 before_len28 len28 rfl (.CX 4499 4660) rfl
 
 theorem step_3627 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3628 basis 4660=((prefixState SixCarryPrefixData.program 3627 basis 4660) ^^ (prefixState SixCarryPrefixData.program 3622 basis 4499)) := by
@@ -22513,11 +21865,8 @@ theorem step_3627 (basis : BasisState) :
  rw [frame_4499_3622_3627 basis] at h
  exact h
 
-theorem gate_3629 : SixCarryPrefixData.program[3629]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 45 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[45]?=some (.CX 4369 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[3629]?=some (.CX 4369 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3629 : SixCarryPrefixData.program[3629]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 45 shape28 before_len28 len28 rfl (.CX 4369 4659) rfl
 
 theorem step_3629 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3630 basis 4659=((prefixState SixCarryPrefixData.program 3617 basis 4659) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -22527,11 +21876,8 @@ theorem step_3629 (basis : BasisState) :
  rw [frame_4369_0_3629 basis,frame_4659_3617_3629 basis] at h
  exact h
 
-theorem gate_3630 : SixCarryPrefixData.program[3630]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4498 4659 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 46 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[46]?=some (.CX 4498 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[3630]?=some (.CX 4498 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3630 : SixCarryPrefixData.program[3630]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4498 4659 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 46 shape28 before_len28 len28 rfl (.CX 4498 4659) rfl
 
 theorem step_3630 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3631 basis 4659=((prefixState SixCarryPrefixData.program 3630 basis 4659) ^^ (prefixState SixCarryPrefixData.program 3616 basis 4498)) := by
@@ -22541,11 +21887,8 @@ theorem step_3630 (basis : BasisState) :
  rw [frame_4498_3616_3630 basis] at h
  exact h
 
-theorem gate_3632 : SixCarryPrefixData.program[3632]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 48 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[48]?=some (.CX 4368 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[3632]?=some (.CX 4368 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3632 : SixCarryPrefixData.program[3632]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 48 shape28 before_len28 len28 rfl (.CX 4368 4658) rfl
 
 theorem step_3632 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3633 basis 4658=((prefixState SixCarryPrefixData.program 3611 basis 4658) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -22555,11 +21898,8 @@ theorem step_3632 (basis : BasisState) :
  rw [frame_4368_0_3632 basis,frame_4658_3611_3632 basis] at h
  exact h
 
-theorem gate_3633 : SixCarryPrefixData.program[3633]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4497 4658 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 49 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[49]?=some (.CX 4497 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[3633]?=some (.CX 4497 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3633 : SixCarryPrefixData.program[3633]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4497 4658 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 49 shape28 before_len28 len28 rfl (.CX 4497 4658) rfl
 
 theorem step_3633 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3634 basis 4658=((prefixState SixCarryPrefixData.program 3633 basis 4658) ^^ (prefixState SixCarryPrefixData.program 3610 basis 4497)) := by
@@ -22569,11 +21909,8 @@ theorem step_3633 (basis : BasisState) :
  rw [frame_4497_3610_3633 basis] at h
  exact h
 
-theorem gate_3635 : SixCarryPrefixData.program[3635]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 51 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[51]?=some (.CX 4367 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[3635]?=some (.CX 4367 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3635 : SixCarryPrefixData.program[3635]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 51 shape28 before_len28 len28 rfl (.CX 4367 4657) rfl
 
 theorem step_3635 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3636 basis 4657=((prefixState SixCarryPrefixData.program 3605 basis 4657) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -22583,11 +21920,8 @@ theorem step_3635 (basis : BasisState) :
  rw [frame_4367_0_3635 basis,frame_4657_3605_3635 basis] at h
  exact h
 
-theorem gate_3636 : SixCarryPrefixData.program[3636]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4496 4657 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 52 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[52]?=some (.CX 4496 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[3636]?=some (.CX 4496 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3636 : SixCarryPrefixData.program[3636]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4496 4657 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 52 shape28 before_len28 len28 rfl (.CX 4496 4657) rfl
 
 theorem step_3636 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3637 basis 4657=((prefixState SixCarryPrefixData.program 3636 basis 4657) ^^ (prefixState SixCarryPrefixData.program 3604 basis 4496)) := by
@@ -22597,11 +21931,8 @@ theorem step_3636 (basis : BasisState) :
  rw [frame_4496_3604_3636 basis] at h
  exact h
 
-theorem gate_3638 : SixCarryPrefixData.program[3638]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 54 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[54]?=some (.CX 4366 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[3638]?=some (.CX 4366 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3638 : SixCarryPrefixData.program[3638]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 54 shape28 before_len28 len28 rfl (.CX 4366 4656) rfl
 
 theorem step_3638 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3639 basis 4656=((prefixState SixCarryPrefixData.program 3599 basis 4656) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -22611,11 +21942,8 @@ theorem step_3638 (basis : BasisState) :
  rw [frame_4366_0_3638 basis,frame_4656_3599_3638 basis] at h
  exact h
 
-theorem gate_3639 : SixCarryPrefixData.program[3639]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4495 4656 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 55 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[55]?=some (.CX 4495 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[3639]?=some (.CX 4495 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3639 : SixCarryPrefixData.program[3639]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4495 4656 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 55 shape28 before_len28 len28 rfl (.CX 4495 4656) rfl
 
 theorem step_3639 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3640 basis 4656=((prefixState SixCarryPrefixData.program 3639 basis 4656) ^^ (prefixState SixCarryPrefixData.program 3598 basis 4495)) := by
@@ -22625,11 +21953,8 @@ theorem step_3639 (basis : BasisState) :
  rw [frame_4495_3598_3639 basis] at h
  exact h
 
-theorem gate_3641 : SixCarryPrefixData.program[3641]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 57 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[57]?=some (.CX 4365 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[3641]?=some (.CX 4365 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3641 : SixCarryPrefixData.program[3641]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 57 shape28 before_len28 len28 rfl (.CX 4365 4655) rfl
 
 theorem step_3641 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3642 basis 4655=((prefixState SixCarryPrefixData.program 3593 basis 4655) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -22639,11 +21964,8 @@ theorem step_3641 (basis : BasisState) :
  rw [frame_4365_0_3641 basis,frame_4655_3593_3641 basis] at h
  exact h
 
-theorem gate_3642 : SixCarryPrefixData.program[3642]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4494 4655 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 58 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[58]?=some (.CX 4494 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[3642]?=some (.CX 4494 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3642 : SixCarryPrefixData.program[3642]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4494 4655 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 58 shape28 before_len28 len28 rfl (.CX 4494 4655) rfl
 
 theorem step_3642 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3643 basis 4655=((prefixState SixCarryPrefixData.program 3642 basis 4655) ^^ (prefixState SixCarryPrefixData.program 3592 basis 4494)) := by
@@ -22653,11 +21975,8 @@ theorem step_3642 (basis : BasisState) :
  rw [frame_4494_3592_3642 basis] at h
  exact h
 
-theorem gate_3644 : SixCarryPrefixData.program[3644]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 60 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[60]?=some (.CX 4364 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[3644]?=some (.CX 4364 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3644 : SixCarryPrefixData.program[3644]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 60 shape28 before_len28 len28 rfl (.CX 4364 4654) rfl
 
 theorem step_3644 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3645 basis 4654=((prefixState SixCarryPrefixData.program 3587 basis 4654) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -22667,11 +21986,8 @@ theorem step_3644 (basis : BasisState) :
  rw [frame_4364_0_3644 basis,frame_4654_3587_3644 basis] at h
  exact h
 
-theorem gate_3645 : SixCarryPrefixData.program[3645]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4493 4654 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 61 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[61]?=some (.CX 4493 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[3645]?=some (.CX 4493 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3645 : SixCarryPrefixData.program[3645]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4493 4654 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 61 shape28 before_len28 len28 rfl (.CX 4493 4654) rfl
 
 theorem step_3645 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3646 basis 4654=((prefixState SixCarryPrefixData.program 3645 basis 4654) ^^ (prefixState SixCarryPrefixData.program 3586 basis 4493)) := by
@@ -22681,11 +21997,8 @@ theorem step_3645 (basis : BasisState) :
  rw [frame_4493_3586_3645 basis] at h
  exact h
 
-theorem gate_3647 : SixCarryPrefixData.program[3647]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 63 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[63]?=some (.CX 4363 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[3647]?=some (.CX 4363 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3647 : SixCarryPrefixData.program[3647]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 63 shape28 before_len28 len28 rfl (.CX 4363 4653) rfl
 
 theorem step_3647 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3648 basis 4653=((prefixState SixCarryPrefixData.program 3581 basis 4653) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -22695,11 +22008,8 @@ theorem step_3647 (basis : BasisState) :
  rw [frame_4363_0_3647 basis,frame_4653_3581_3647 basis] at h
  exact h
 
-theorem gate_3648 : SixCarryPrefixData.program[3648]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4492 4653 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 64 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[64]?=some (.CX 4492 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[3648]?=some (.CX 4492 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3648 : SixCarryPrefixData.program[3648]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4492 4653 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 64 shape28 before_len28 len28 rfl (.CX 4492 4653) rfl
 
 theorem step_3648 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3649 basis 4653=((prefixState SixCarryPrefixData.program 3648 basis 4653) ^^ (prefixState SixCarryPrefixData.program 3580 basis 4492)) := by
@@ -22709,11 +22019,8 @@ theorem step_3648 (basis : BasisState) :
  rw [frame_4492_3580_3648 basis] at h
  exact h
 
-theorem gate_3710 : SixCarryPrefixData.program[3710]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 126 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[126]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[3710]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3710 : SixCarryPrefixData.program[3710]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 126 shape28 before_len28 len28 rfl (.CX 4342 4632) rfl
 
 theorem step_3710 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3711 basis 4632=((prefixState SixCarryPrefixData.program 3455 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -22723,11 +22030,8 @@ theorem step_3710 (basis : BasisState) :
  rw [frame_4342_0_3710 basis,frame_4632_3455_3710 basis] at h
  exact h
 
-theorem gate_3711 : SixCarryPrefixData.program[3711]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4471 4632 := by
- have h := lookup_context SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 127 shape28 before_len28 (by rw [len28]; decide +kernel)
- have hg : SixCarryPrefixData.chunk28[127]?=some (.CX 4471 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[3711]?=some (.CX 4471 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3711 : SixCarryPrefixData.program[3711]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4471 4632 :=
+ gateFromChunk SixCarryPrefixData.program before28 SixCarryPrefixData.chunk28 after28 3584 127 shape28 before_len28 len28 rfl (.CX 4471 4632) rfl
 
 theorem step_3711 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3712 basis 4632=((prefixState SixCarryPrefixData.program 3711 basis 4632) ^^ (prefixState SixCarryPrefixData.program 3454 basis 4471)) := by
@@ -22737,11 +22041,8 @@ theorem step_3711 (basis : BasisState) :
  rw [frame_4471_3454_3711 basis] at h
  exact h
 
-theorem gate_3713 : SixCarryPrefixData.program[3713]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 1 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[1]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[3713]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3713 : SixCarryPrefixData.program[3713]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 1 shape29 before_len29 len29 rfl (.CX 4341 4631) rfl
 
 theorem step_3713 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3714 basis 4631=((prefixState SixCarryPrefixData.program 3449 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -22751,11 +22052,8 @@ theorem step_3713 (basis : BasisState) :
  rw [frame_4341_0_3713 basis,frame_4631_3449_3713 basis] at h
  exact h
 
-theorem gate_3714 : SixCarryPrefixData.program[3714]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4470 4631 := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 2 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[2]?=some (.CX 4470 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[3714]?=some (.CX 4470 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3714 : SixCarryPrefixData.program[3714]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4470 4631 :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 2 shape29 before_len29 len29 rfl (.CX 4470 4631) rfl
 
 theorem step_3714 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3715 basis 4631=((prefixState SixCarryPrefixData.program 3714 basis 4631) ^^ (prefixState SixCarryPrefixData.program 3448 basis 4470)) := by
@@ -22765,11 +22063,8 @@ theorem step_3714 (basis : BasisState) :
  rw [frame_4470_3448_3714 basis] at h
  exact h
 
-theorem gate_3716 : SixCarryPrefixData.program[3716]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 4 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[4]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[3716]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3716 : SixCarryPrefixData.program[3716]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 4 shape29 before_len29 len29 rfl (.CX 4340 4630) rfl
 
 theorem step_3716 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3717 basis 4630=((prefixState SixCarryPrefixData.program 3443 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -22779,11 +22074,8 @@ theorem step_3716 (basis : BasisState) :
  rw [frame_4340_0_3716 basis,frame_4630_3443_3716 basis] at h
  exact h
 
-theorem gate_3717 : SixCarryPrefixData.program[3717]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4469 4630 := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 5 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[5]?=some (.CX 4469 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[3717]?=some (.CX 4469 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3717 : SixCarryPrefixData.program[3717]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4469 4630 :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 5 shape29 before_len29 len29 rfl (.CX 4469 4630) rfl
 
 theorem step_3717 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3718 basis 4630=((prefixState SixCarryPrefixData.program 3717 basis 4630) ^^ (prefixState SixCarryPrefixData.program 3442 basis 4469)) := by
@@ -22793,11 +22085,8 @@ theorem step_3717 (basis : BasisState) :
  rw [frame_4469_3442_3717 basis] at h
  exact h
 
-theorem gate_3719 : SixCarryPrefixData.program[3719]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 7 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[7]?=some (.CX 4339 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[3719]?=some (.CX 4339 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3719 : SixCarryPrefixData.program[3719]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 7 shape29 before_len29 len29 rfl (.CX 4339 4629) rfl
 
 theorem step_3719 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3720 basis 4629=((prefixState SixCarryPrefixData.program 3437 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -22807,11 +22096,8 @@ theorem step_3719 (basis : BasisState) :
  rw [frame_4339_0_3719 basis,frame_4629_3437_3719 basis] at h
  exact h
 
-theorem gate_3720 : SixCarryPrefixData.program[3720]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4468 4629 := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 8 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[8]?=some (.CX 4468 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[3720]?=some (.CX 4468 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3720 : SixCarryPrefixData.program[3720]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4468 4629 :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 8 shape29 before_len29 len29 rfl (.CX 4468 4629) rfl
 
 theorem step_3720 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3721 basis 4629=((prefixState SixCarryPrefixData.program 3720 basis 4629) ^^ (prefixState SixCarryPrefixData.program 3436 basis 4468)) := by
@@ -22821,11 +22107,8 @@ theorem step_3720 (basis : BasisState) :
  rw [frame_4468_3436_3720 basis] at h
  exact h
 
-theorem gate_3817 : SixCarryPrefixData.program[3817]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4436 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 105 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[105]?=some (.measureX 4436 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3817]?=some (.measureX 4436 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3817 : SixCarryPrefixData.program[3817]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4436 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 105 shape29 before_len29 len29 rfl (.measureX 4436 [] []) rfl
 
 theorem step_3817 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3818 basis 4436=(false) := by
@@ -22834,11 +22117,8 @@ theorem step_3817 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3820 : SixCarryPrefixData.program[3820]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4435 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 108 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[108]?=some (.measureX 4435 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3820]?=some (.measureX 4435 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3820 : SixCarryPrefixData.program[3820]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4435 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 108 shape29 before_len29 len29 rfl (.measureX 4435 [] []) rfl
 
 theorem step_3820 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3821 basis 4435=(false) := by
@@ -22847,11 +22127,8 @@ theorem step_3820 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3823 : SixCarryPrefixData.program[3823]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4434 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 111 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[111]?=some (.measureX 4434 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3823]?=some (.measureX 4434 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3823 : SixCarryPrefixData.program[3823]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4434 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 111 shape29 before_len29 len29 rfl (.measureX 4434 [] []) rfl
 
 theorem step_3823 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3824 basis 4434=(false) := by
@@ -22860,11 +22137,8 @@ theorem step_3823 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3826 : SixCarryPrefixData.program[3826]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4433 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 114 shape29 before_len29 (by rw [len29]; decide +kernel)
- have hg : SixCarryPrefixData.chunk29[114]?=some (.measureX 4433 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3826]?=some (.measureX 4433 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3826 : SixCarryPrefixData.program[3826]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4433 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before29 SixCarryPrefixData.chunk29 after29 3712 114 shape29 before_len29 len29 rfl (.measureX 4433 [] []) rfl
 
 theorem step_3826 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3827 basis 4433=(false) := by
@@ -22873,11 +22147,8 @@ theorem step_3826 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3847 : SixCarryPrefixData.program[3847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4426 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 7 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[7]?=some (.measureX 4426 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3847]?=some (.measureX 4426 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3847 : SixCarryPrefixData.program[3847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4426 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 7 shape30 before_len30 len30 rfl (.measureX 4426 [] []) rfl
 
 theorem step_3847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3848 basis 4426=(false) := by
@@ -22886,11 +22157,8 @@ theorem step_3847 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3850 : SixCarryPrefixData.program[3850]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4425 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 10 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[10]?=some (.measureX 4425 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3850]?=some (.measureX 4425 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3850 : SixCarryPrefixData.program[3850]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4425 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 10 shape30 before_len30 len30 rfl (.measureX 4425 [] []) rfl
 
 theorem step_3850 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3851 basis 4425=(false) := by
@@ -22899,11 +22167,8 @@ theorem step_3850 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3853 : SixCarryPrefixData.program[3853]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4424 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 13 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[13]?=some (.measureX 4424 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3853]?=some (.measureX 4424 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3853 : SixCarryPrefixData.program[3853]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4424 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 13 shape30 before_len30 len30 rfl (.measureX 4424 [] []) rfl
 
 theorem step_3853 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3854 basis 4424=(false) := by
@@ -22912,11 +22177,8 @@ theorem step_3853 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3856 : SixCarryPrefixData.program[3856]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4423 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 16 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[16]?=some (.measureX 4423 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3856]?=some (.measureX 4423 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3856 : SixCarryPrefixData.program[3856]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4423 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 16 shape30 before_len30 len30 rfl (.measureX 4423 [] []) rfl
 
 theorem step_3856 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3857 basis 4423=(false) := by
@@ -22925,11 +22187,8 @@ theorem step_3856 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3904 : SixCarryPrefixData.program[3904]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4407 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 64 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[64]?=some (.measureX 4407 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3904]?=some (.measureX 4407 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3904 : SixCarryPrefixData.program[3904]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4407 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 64 shape30 before_len30 len30 rfl (.measureX 4407 [] []) rfl
 
 theorem step_3904 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3905 basis 4407=(false) := by
@@ -22938,11 +22197,8 @@ theorem step_3904 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3907 : SixCarryPrefixData.program[3907]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4406 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 67 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[67]?=some (.measureX 4406 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3907]?=some (.measureX 4406 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3907 : SixCarryPrefixData.program[3907]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4406 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 67 shape30 before_len30 len30 rfl (.measureX 4406 [] []) rfl
 
 theorem step_3907 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3908 basis 4406=(false) := by
@@ -22951,11 +22207,8 @@ theorem step_3907 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3910 : SixCarryPrefixData.program[3910]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4405 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 70 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[70]?=some (.measureX 4405 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3910]?=some (.measureX 4405 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3910 : SixCarryPrefixData.program[3910]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4405 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 70 shape30 before_len30 len30 rfl (.measureX 4405 [] []) rfl
 
 theorem step_3910 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3911 basis 4405=(false) := by
@@ -22964,11 +22217,8 @@ theorem step_3910 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3913 : SixCarryPrefixData.program[3913]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4404 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 73 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[73]?=some (.measureX 4404 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3913]?=some (.measureX 4404 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3913 : SixCarryPrefixData.program[3913]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4404 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 73 shape30 before_len30 len30 rfl (.measureX 4404 [] []) rfl
 
 theorem step_3913 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3914 basis 4404=(false) := by
@@ -22977,11 +22227,8 @@ theorem step_3913 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3916 : SixCarryPrefixData.program[3916]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4403 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 76 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[76]?=some (.measureX 4403 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3916]?=some (.measureX 4403 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3916 : SixCarryPrefixData.program[3916]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4403 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 76 shape30 before_len30 len30 rfl (.measureX 4403 [] []) rfl
 
 theorem step_3916 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3917 basis 4403=(false) := by
@@ -22990,11 +22237,8 @@ theorem step_3916 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3919 : SixCarryPrefixData.program[3919]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4402 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 79 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[79]?=some (.measureX 4402 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3919]?=some (.measureX 4402 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3919 : SixCarryPrefixData.program[3919]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4402 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 79 shape30 before_len30 len30 rfl (.measureX 4402 [] []) rfl
 
 theorem step_3919 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3920 basis 4402=(false) := by
@@ -23003,11 +22247,8 @@ theorem step_3919 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3922 : SixCarryPrefixData.program[3922]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4401 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 82 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[82]?=some (.measureX 4401 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3922]?=some (.measureX 4401 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3922 : SixCarryPrefixData.program[3922]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4401 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 82 shape30 before_len30 len30 rfl (.measureX 4401 [] []) rfl
 
 theorem step_3922 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3923 basis 4401=(false) := by
@@ -23016,11 +22257,8 @@ theorem step_3922 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3925 : SixCarryPrefixData.program[3925]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4400 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 85 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[85]?=some (.measureX 4400 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3925]?=some (.measureX 4400 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3925 : SixCarryPrefixData.program[3925]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4400 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 85 shape30 before_len30 len30 rfl (.measureX 4400 [] []) rfl
 
 theorem step_3925 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3926 basis 4400=(false) := by
@@ -23029,11 +22267,8 @@ theorem step_3925 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3928 : SixCarryPrefixData.program[3928]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4399 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 88 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[88]?=some (.measureX 4399 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3928]?=some (.measureX 4399 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3928 : SixCarryPrefixData.program[3928]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4399 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 88 shape30 before_len30 len30 rfl (.measureX 4399 [] []) rfl
 
 theorem step_3928 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3929 basis 4399=(false) := by
@@ -23042,11 +22277,8 @@ theorem step_3928 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3931 : SixCarryPrefixData.program[3931]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4398 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 91 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[91]?=some (.measureX 4398 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3931]?=some (.measureX 4398 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3931 : SixCarryPrefixData.program[3931]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4398 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 91 shape30 before_len30 len30 rfl (.measureX 4398 [] []) rfl
 
 theorem step_3931 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3932 basis 4398=(false) := by
@@ -23055,11 +22287,8 @@ theorem step_3931 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3934 : SixCarryPrefixData.program[3934]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4397 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 94 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[94]?=some (.measureX 4397 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3934]?=some (.measureX 4397 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3934 : SixCarryPrefixData.program[3934]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4397 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 94 shape30 before_len30 len30 rfl (.measureX 4397 [] []) rfl
 
 theorem step_3934 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3935 basis 4397=(false) := by
@@ -23068,11 +22297,8 @@ theorem step_3934 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3937 : SixCarryPrefixData.program[3937]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4396 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 97 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[97]?=some (.measureX 4396 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3937]?=some (.measureX 4396 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3937 : SixCarryPrefixData.program[3937]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4396 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 97 shape30 before_len30 len30 rfl (.measureX 4396 [] []) rfl
 
 theorem step_3937 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3938 basis 4396=(false) := by
@@ -23081,11 +22307,8 @@ theorem step_3937 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_3940 : SixCarryPrefixData.program[3940]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4395 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 100 shape30 before_len30 (by rw [len30]; decide +kernel)
- have hg : SixCarryPrefixData.chunk30[100]?=some (.measureX 4395 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[3940]?=some (.measureX 4395 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_3940 : SixCarryPrefixData.program[3940]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4395 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before30 SixCarryPrefixData.chunk30 after30 3840 100 shape30 before_len30 len30 rfl (.measureX 4395 [] []) rfl
 
 theorem step_3940 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3941 basis 4395=(false) := by
@@ -23094,11 +22317,8 @@ theorem step_3940 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4000 : SixCarryPrefixData.program[4000]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4375 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 32 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[32]?=some (.measureX 4375 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4000]?=some (.measureX 4375 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4000 : SixCarryPrefixData.program[4000]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4375 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 32 shape31 before_len31 len31 rfl (.measureX 4375 [] []) rfl
 
 theorem step_4000 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4001 basis 4375=(false) := by
@@ -23107,11 +22327,8 @@ theorem step_4000 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4003 : SixCarryPrefixData.program[4003]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4374 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 35 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[35]?=some (.measureX 4374 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4003]?=some (.measureX 4374 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4003 : SixCarryPrefixData.program[4003]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4374 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 35 shape31 before_len31 len31 rfl (.measureX 4374 [] []) rfl
 
 theorem step_4003 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4004 basis 4374=(false) := by
@@ -23120,11 +22337,8 @@ theorem step_4003 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4006 : SixCarryPrefixData.program[4006]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4373 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 38 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[38]?=some (.measureX 4373 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4006]?=some (.measureX 4373 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4006 : SixCarryPrefixData.program[4006]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4373 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 38 shape31 before_len31 len31 rfl (.measureX 4373 [] []) rfl
 
 theorem step_4006 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4007 basis 4373=(false) := by
@@ -23133,11 +22347,8 @@ theorem step_4006 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4009 : SixCarryPrefixData.program[4009]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4117 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 41 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[41]?=some (.measureX 4117 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4009]?=some (.measureX 4117 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4009 : SixCarryPrefixData.program[4009]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4117 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 41 shape31 before_len31 len31 rfl (.measureX 4117 [] []) rfl
 
 theorem step_4009 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4010 basis 4117=(false) := by
@@ -23146,11 +22357,8 @@ theorem step_4009 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4010 : SixCarryPrefixData.program[4010]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 42 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[42]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[4010]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4010 : SixCarryPrefixData.program[4010]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 42 shape31 before_len31 len31 rfl (.X 4629) rfl
 
 theorem step_4010 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4011 basis 4629=(!(prefixState SixCarryPrefixData.program 3721 basis 4629)) := by
@@ -23160,11 +22368,8 @@ theorem step_4010 (basis : BasisState) :
  rw [frame_4629_3721_4010 basis] at h
  exact h
 
-theorem gate_4011 : SixCarryPrefixData.program[4011]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4339 4629 4372 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 43 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[43]?=some (.CCX 4339 4629 4372) := by decide +kernel
- have hh : SixCarryPrefixData.program[4011]?=some (.CCX 4339 4629 4372) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4011 : SixCarryPrefixData.program[4011]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4339 4629 4372 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 43 shape31 before_len31 len31 rfl (.CCX 4339 4629 4372) rfl
 
 theorem step_4011 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4012 basis 4372=((prefixState SixCarryPrefixData.program 0 basis 4372) ^^ ((prefixState SixCarryPrefixData.program 0 basis 4339) && (prefixState SixCarryPrefixData.program 4011 basis 4629))) := by
@@ -23174,11 +22379,8 @@ theorem step_4011 (basis : BasisState) :
  rw [frame_4339_0_4011 basis,frame_4372_0_4011 basis] at h
  exact h
 
-theorem gate_4012 : SixCarryPrefixData.program[4012]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 44 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[44]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[4012]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4012 : SixCarryPrefixData.program[4012]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 44 shape31 before_len31 len31 rfl (.X 4629) rfl
 
 theorem step_4012 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4013 basis 4629=(!(prefixState SixCarryPrefixData.program 4011 basis 4629)) := by
@@ -23188,11 +22390,8 @@ theorem step_4012 (basis : BasisState) :
  rw [frame_4629_4011_4012 basis] at h
  exact h
 
-theorem gate_4013 : SixCarryPrefixData.program[4013]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4116 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 45 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[45]?=some (.measureX 4116 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4013]?=some (.measureX 4116 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4013 : SixCarryPrefixData.program[4013]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4116 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 45 shape31 before_len31 len31 rfl (.measureX 4116 [] []) rfl
 
 theorem step_4013 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4014 basis 4116=(false) := by
@@ -23201,11 +22400,8 @@ theorem step_4013 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4014 : SixCarryPrefixData.program[4014]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 46 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[46]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4014]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4014 : SixCarryPrefixData.program[4014]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 46 shape31 before_len31 len31 rfl (.X 4630) rfl
 
 theorem step_4014 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4015 basis 4630=(!(prefixState SixCarryPrefixData.program 3718 basis 4630)) := by
@@ -23215,11 +22411,8 @@ theorem step_4014 (basis : BasisState) :
  rw [frame_4630_3718_4014 basis] at h
  exact h
 
-theorem gate_4015 : SixCarryPrefixData.program[4015]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 47 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[47]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4015]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4015 : SixCarryPrefixData.program[4015]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 47 shape31 before_len31 len31 rfl (.CX 4340 4630) rfl
 
 theorem step_4015 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4016 basis 4630=((prefixState SixCarryPrefixData.program 4015 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -23229,11 +22422,8 @@ theorem step_4015 (basis : BasisState) :
  rw [frame_4340_0_4015 basis] at h
  exact h
 
-theorem gate_4016 : SixCarryPrefixData.program[4016]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4372 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 48 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[48]?=some (.CX 4340 4372) := by decide +kernel
- have hh : SixCarryPrefixData.program[4016]?=some (.CX 4340 4372) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4016 : SixCarryPrefixData.program[4016]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4372 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 48 shape31 before_len31 len31 rfl (.CX 4340 4372) rfl
 
 theorem step_4016 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4017 basis 4372=((prefixState SixCarryPrefixData.program 4012 basis 4372) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -23243,11 +22433,8 @@ theorem step_4016 (basis : BasisState) :
  rw [frame_4340_0_4016 basis,frame_4372_4012_4016 basis] at h
  exact h
 
-theorem gate_4017 : SixCarryPrefixData.program[4017]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4372 4116 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 49 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[49]?=some (.CCX 4630 4372 4116) := by decide +kernel
- have hh : SixCarryPrefixData.program[4017]?=some (.CCX 4630 4372 4116) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4017 : SixCarryPrefixData.program[4017]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4630 4372 4116 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 49 shape31 before_len31 len31 rfl (.CCX 4630 4372 4116) rfl
 
 theorem step_4017 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4018 basis 4116=((prefixState SixCarryPrefixData.program 4014 basis 4116) ^^ ((prefixState SixCarryPrefixData.program 4016 basis 4630) && (prefixState SixCarryPrefixData.program 4017 basis 4372))) := by
@@ -23257,11 +22444,8 @@ theorem step_4017 (basis : BasisState) :
  rw [frame_4116_4014_4017 basis,frame_4630_4016_4017 basis] at h
  exact h
 
-theorem gate_4018 : SixCarryPrefixData.program[4018]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4116 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 50 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[50]?=some (.CX 4340 4116) := by decide +kernel
- have hh : SixCarryPrefixData.program[4018]?=some (.CX 4340 4116) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4018 : SixCarryPrefixData.program[4018]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4116 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 50 shape31 before_len31 len31 rfl (.CX 4340 4116) rfl
 
 theorem step_4018 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4019 basis 4116=((prefixState SixCarryPrefixData.program 4018 basis 4116) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -23271,11 +22455,8 @@ theorem step_4018 (basis : BasisState) :
  rw [frame_4340_0_4018 basis] at h
  exact h
 
-theorem gate_4019 : SixCarryPrefixData.program[4019]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4372 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 51 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[51]?=some (.CX 4340 4372) := by decide +kernel
- have hh : SixCarryPrefixData.program[4019]?=some (.CX 4340 4372) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4019 : SixCarryPrefixData.program[4019]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4372 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 51 shape31 before_len31 len31 rfl (.CX 4340 4372) rfl
 
 theorem step_4019 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4020 basis 4372=((prefixState SixCarryPrefixData.program 4017 basis 4372) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -23285,11 +22466,8 @@ theorem step_4019 (basis : BasisState) :
  rw [frame_4340_0_4019 basis,frame_4372_4017_4019 basis] at h
  exact h
 
-theorem gate_4020 : SixCarryPrefixData.program[4020]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 52 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[52]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4020]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4020 : SixCarryPrefixData.program[4020]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 52 shape31 before_len31 len31 rfl (.CX 4340 4630) rfl
 
 theorem step_4020 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4021 basis 4630=((prefixState SixCarryPrefixData.program 4016 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -23299,11 +22477,8 @@ theorem step_4020 (basis : BasisState) :
  rw [frame_4340_0_4020 basis,frame_4630_4016_4020 basis] at h
  exact h
 
-theorem gate_4021 : SixCarryPrefixData.program[4021]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 53 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[53]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4021]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4021 : SixCarryPrefixData.program[4021]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 53 shape31 before_len31 len31 rfl (.X 4630) rfl
 
 theorem step_4021 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4022 basis 4630=(!(prefixState SixCarryPrefixData.program 4021 basis 4630)) := by
@@ -23312,11 +22487,8 @@ theorem step_4021 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4022 : SixCarryPrefixData.program[4022]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 54 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[54]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4022]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4022 : SixCarryPrefixData.program[4022]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 54 shape31 before_len31 len31 rfl (.X 4631) rfl
 
 theorem step_4022 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4023 basis 4631=(!(prefixState SixCarryPrefixData.program 3715 basis 4631)) := by
@@ -23326,11 +22498,8 @@ theorem step_4022 (basis : BasisState) :
  rw [frame_4631_3715_4022 basis] at h
  exact h
 
-theorem gate_4023 : SixCarryPrefixData.program[4023]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 55 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[55]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4023]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4023 : SixCarryPrefixData.program[4023]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 55 shape31 before_len31 len31 rfl (.CX 4341 4631) rfl
 
 theorem step_4023 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4024 basis 4631=((prefixState SixCarryPrefixData.program 4023 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -23340,11 +22509,8 @@ theorem step_4023 (basis : BasisState) :
  rw [frame_4341_0_4023 basis] at h
  exact h
 
-theorem gate_4024 : SixCarryPrefixData.program[4024]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4116 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 56 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[56]?=some (.CX 4341 4116) := by decide +kernel
- have hh : SixCarryPrefixData.program[4024]?=some (.CX 4341 4116) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4024 : SixCarryPrefixData.program[4024]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4116 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 56 shape31 before_len31 len31 rfl (.CX 4341 4116) rfl
 
 theorem step_4024 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4025 basis 4116=((prefixState SixCarryPrefixData.program 4019 basis 4116) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -23354,11 +22520,8 @@ theorem step_4024 (basis : BasisState) :
  rw [frame_4116_4019_4024 basis,frame_4341_0_4024 basis] at h
  exact h
 
-theorem gate_4025 : SixCarryPrefixData.program[4025]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4116 4117 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 57 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[57]?=some (.CCX 4631 4116 4117) := by decide +kernel
- have hh : SixCarryPrefixData.program[4025]?=some (.CCX 4631 4116 4117) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4025 : SixCarryPrefixData.program[4025]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4631 4116 4117 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 57 shape31 before_len31 len31 rfl (.CCX 4631 4116 4117) rfl
 
 theorem step_4025 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4026 basis 4117=((prefixState SixCarryPrefixData.program 4010 basis 4117) ^^ ((prefixState SixCarryPrefixData.program 4024 basis 4631) && (prefixState SixCarryPrefixData.program 4025 basis 4116))) := by
@@ -23368,11 +22531,8 @@ theorem step_4025 (basis : BasisState) :
  rw [frame_4117_4010_4025 basis,frame_4631_4024_4025 basis] at h
  exact h
 
-theorem gate_4026 : SixCarryPrefixData.program[4026]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4117 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 58 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[58]?=some (.CX 4341 4117) := by decide +kernel
- have hh : SixCarryPrefixData.program[4026]?=some (.CX 4341 4117) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4026 : SixCarryPrefixData.program[4026]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4117 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 58 shape31 before_len31 len31 rfl (.CX 4341 4117) rfl
 
 theorem step_4026 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4027 basis 4117=((prefixState SixCarryPrefixData.program 4026 basis 4117) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -23382,11 +22542,8 @@ theorem step_4026 (basis : BasisState) :
  rw [frame_4341_0_4026 basis] at h
  exact h
 
-theorem gate_4027 : SixCarryPrefixData.program[4027]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4116 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 59 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[59]?=some (.CX 4341 4116) := by decide +kernel
- have hh : SixCarryPrefixData.program[4027]?=some (.CX 4341 4116) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4027 : SixCarryPrefixData.program[4027]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4116 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 59 shape31 before_len31 len31 rfl (.CX 4341 4116) rfl
 
 theorem step_4027 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4028 basis 4116=((prefixState SixCarryPrefixData.program 4025 basis 4116) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -23396,11 +22553,8 @@ theorem step_4027 (basis : BasisState) :
  rw [frame_4116_4025_4027 basis,frame_4341_0_4027 basis] at h
  exact h
 
-theorem gate_4028 : SixCarryPrefixData.program[4028]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 60 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[60]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4028]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4028 : SixCarryPrefixData.program[4028]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 60 shape31 before_len31 len31 rfl (.CX 4341 4631) rfl
 
 theorem step_4028 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4029 basis 4631=((prefixState SixCarryPrefixData.program 4024 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -23410,11 +22564,8 @@ theorem step_4028 (basis : BasisState) :
  rw [frame_4341_0_4028 basis,frame_4631_4024_4028 basis] at h
  exact h
 
-theorem gate_4029 : SixCarryPrefixData.program[4029]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 61 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[61]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4029]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4029 : SixCarryPrefixData.program[4029]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 61 shape31 before_len31 len31 rfl (.X 4631) rfl
 
 theorem step_4029 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4030 basis 4631=(!(prefixState SixCarryPrefixData.program 4029 basis 4631)) := by
@@ -23423,11 +22574,8 @@ theorem step_4029 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4030 : SixCarryPrefixData.program[4030]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4115 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 62 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[62]?=some (.measureX 4115 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4030]?=some (.measureX 4115 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4030 : SixCarryPrefixData.program[4030]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4115 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 62 shape31 before_len31 len31 rfl (.measureX 4115 [] []) rfl
 
 theorem step_4030 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4031 basis 4115=(false) := by
@@ -23436,11 +22584,8 @@ theorem step_4030 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4031 : SixCarryPrefixData.program[4031]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 63 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[63]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4031]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4031 : SixCarryPrefixData.program[4031]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 63 shape31 before_len31 len31 rfl (.X 4632) rfl
 
 theorem step_4031 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4032 basis 4632=(!(prefixState SixCarryPrefixData.program 3712 basis 4632)) := by
@@ -23450,11 +22595,8 @@ theorem step_4031 (basis : BasisState) :
  rw [frame_4632_3712_4031 basis] at h
  exact h
 
-theorem gate_4032 : SixCarryPrefixData.program[4032]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 64 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[64]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4032]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4032 : SixCarryPrefixData.program[4032]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 64 shape31 before_len31 len31 rfl (.CX 4342 4632) rfl
 
 theorem step_4032 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4033 basis 4632=((prefixState SixCarryPrefixData.program 4032 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -23464,11 +22606,8 @@ theorem step_4032 (basis : BasisState) :
  rw [frame_4342_0_4032 basis] at h
  exact h
 
-theorem gate_4033 : SixCarryPrefixData.program[4033]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4117 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 65 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[65]?=some (.CX 4342 4117) := by decide +kernel
- have hh : SixCarryPrefixData.program[4033]?=some (.CX 4342 4117) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4033 : SixCarryPrefixData.program[4033]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4117 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 65 shape31 before_len31 len31 rfl (.CX 4342 4117) rfl
 
 theorem step_4033 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4034 basis 4117=((prefixState SixCarryPrefixData.program 4027 basis 4117) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -23478,11 +22617,8 @@ theorem step_4033 (basis : BasisState) :
  rw [frame_4117_4027_4033 basis,frame_4342_0_4033 basis] at h
  exact h
 
-theorem gate_4034 : SixCarryPrefixData.program[4034]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4632 4117 4115 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 66 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[66]?=some (.CCX 4632 4117 4115) := by decide +kernel
- have hh : SixCarryPrefixData.program[4034]?=some (.CCX 4632 4117 4115) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4034 : SixCarryPrefixData.program[4034]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4632 4117 4115 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 66 shape31 before_len31 len31 rfl (.CCX 4632 4117 4115) rfl
 
 theorem step_4034 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4035 basis 4115=((prefixState SixCarryPrefixData.program 4031 basis 4115) ^^ ((prefixState SixCarryPrefixData.program 4033 basis 4632) && (prefixState SixCarryPrefixData.program 4034 basis 4117))) := by
@@ -23492,11 +22628,8 @@ theorem step_4034 (basis : BasisState) :
  rw [frame_4115_4031_4034 basis,frame_4632_4033_4034 basis] at h
  exact h
 
-theorem gate_4035 : SixCarryPrefixData.program[4035]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4115 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 67 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[67]?=some (.CX 4342 4115) := by decide +kernel
- have hh : SixCarryPrefixData.program[4035]?=some (.CX 4342 4115) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4035 : SixCarryPrefixData.program[4035]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4115 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 67 shape31 before_len31 len31 rfl (.CX 4342 4115) rfl
 
 theorem step_4035 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4036 basis 4115=((prefixState SixCarryPrefixData.program 4035 basis 4115) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -23506,11 +22639,8 @@ theorem step_4035 (basis : BasisState) :
  rw [frame_4342_0_4035 basis] at h
  exact h
 
-theorem gate_4036 : SixCarryPrefixData.program[4036]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4117 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 68 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[68]?=some (.CX 4342 4117) := by decide +kernel
- have hh : SixCarryPrefixData.program[4036]?=some (.CX 4342 4117) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4036 : SixCarryPrefixData.program[4036]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4117 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 68 shape31 before_len31 len31 rfl (.CX 4342 4117) rfl
 
 theorem step_4036 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4037 basis 4117=((prefixState SixCarryPrefixData.program 4034 basis 4117) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -23520,11 +22650,8 @@ theorem step_4036 (basis : BasisState) :
  rw [frame_4117_4034_4036 basis,frame_4342_0_4036 basis] at h
  exact h
 
-theorem gate_4037 : SixCarryPrefixData.program[4037]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 69 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[69]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4037]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4037 : SixCarryPrefixData.program[4037]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 69 shape31 before_len31 len31 rfl (.CX 4342 4632) rfl
 
 theorem step_4037 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4038 basis 4632=((prefixState SixCarryPrefixData.program 4033 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -23534,11 +22661,8 @@ theorem step_4037 (basis : BasisState) :
  rw [frame_4342_0_4037 basis,frame_4632_4033_4037 basis] at h
  exact h
 
-theorem gate_4038 : SixCarryPrefixData.program[4038]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 70 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[70]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4038]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4038 : SixCarryPrefixData.program[4038]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 70 shape31 before_len31 len31 rfl (.X 4632) rfl
 
 theorem step_4038 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4039 basis 4632=(!(prefixState SixCarryPrefixData.program 4038 basis 4632)) := by
@@ -23547,11 +22671,8 @@ theorem step_4038 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4039 : SixCarryPrefixData.program[4039]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 71 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[71]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[4039]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4039 : SixCarryPrefixData.program[4039]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 71 shape31 before_len31 len31 rfl (.X 4629) rfl
 
 theorem step_4039 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4040 basis 4629=(!(prefixState SixCarryPrefixData.program 4013 basis 4629)) := by
@@ -23561,11 +22682,8 @@ theorem step_4039 (basis : BasisState) :
  rw [frame_4629_4013_4039 basis] at h
  exact h
 
-theorem gate_4040 : SixCarryPrefixData.program[4040]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 72 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[72]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4040]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4040 : SixCarryPrefixData.program[4040]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 72 shape31 before_len31 len31 rfl (.X 4630) rfl
 
 theorem step_4040 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4041 basis 4630=(!(prefixState SixCarryPrefixData.program 4022 basis 4630)) := by
@@ -23575,11 +22693,8 @@ theorem step_4040 (basis : BasisState) :
  rw [frame_4630_4022_4040 basis] at h
  exact h
 
-theorem gate_4041 : SixCarryPrefixData.program[4041]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 73 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[73]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4041]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4041 : SixCarryPrefixData.program[4041]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 73 shape31 before_len31 len31 rfl (.X 4631) rfl
 
 theorem step_4041 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4042 basis 4631=(!(prefixState SixCarryPrefixData.program 4030 basis 4631)) := by
@@ -23589,11 +22704,8 @@ theorem step_4041 (basis : BasisState) :
  rw [frame_4631_4030_4041 basis] at h
  exact h
 
-theorem gate_4042 : SixCarryPrefixData.program[4042]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 74 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[74]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4042]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4042 : SixCarryPrefixData.program[4042]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 74 shape31 before_len31 len31 rfl (.X 4632) rfl
 
 theorem step_4042 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4043 basis 4632=(!(prefixState SixCarryPrefixData.program 4039 basis 4632)) := by
@@ -23603,11 +22715,8 @@ theorem step_4042 (basis : BasisState) :
  rw [frame_4632_4039_4042 basis] at h
  exact h
 
-theorem gate_4063 : SixCarryPrefixData.program[4063]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4653 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 95 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[95]?=some (.X 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[4063]?=some (.X 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4063 : SixCarryPrefixData.program[4063]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4653 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 95 shape31 before_len31 len31 rfl (.X 4653) rfl
 
 theorem step_4063 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4064 basis 4653=(!(prefixState SixCarryPrefixData.program 3649 basis 4653)) := by
@@ -23617,11 +22726,8 @@ theorem step_4063 (basis : BasisState) :
  rw [frame_4653_3649_4063 basis] at h
  exact h
 
-theorem gate_4064 : SixCarryPrefixData.program[4064]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4654 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 96 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[96]?=some (.X 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[4064]?=some (.X 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4064 : SixCarryPrefixData.program[4064]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4654 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 96 shape31 before_len31 len31 rfl (.X 4654) rfl
 
 theorem step_4064 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4065 basis 4654=(!(prefixState SixCarryPrefixData.program 3646 basis 4654)) := by
@@ -23631,11 +22737,8 @@ theorem step_4064 (basis : BasisState) :
  rw [frame_4654_3646_4064 basis] at h
  exact h
 
-theorem gate_4065 : SixCarryPrefixData.program[4065]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4655 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 97 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[97]?=some (.X 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[4065]?=some (.X 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4065 : SixCarryPrefixData.program[4065]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4655 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 97 shape31 before_len31 len31 rfl (.X 4655) rfl
 
 theorem step_4065 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4066 basis 4655=(!(prefixState SixCarryPrefixData.program 3643 basis 4655)) := by
@@ -23645,11 +22748,8 @@ theorem step_4065 (basis : BasisState) :
  rw [frame_4655_3643_4065 basis] at h
  exact h
 
-theorem gate_4066 : SixCarryPrefixData.program[4066]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4656 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 98 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[98]?=some (.X 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[4066]?=some (.X 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4066 : SixCarryPrefixData.program[4066]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4656 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 98 shape31 before_len31 len31 rfl (.X 4656) rfl
 
 theorem step_4066 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4067 basis 4656=(!(prefixState SixCarryPrefixData.program 3640 basis 4656)) := by
@@ -23659,11 +22759,8 @@ theorem step_4066 (basis : BasisState) :
  rw [frame_4656_3640_4066 basis] at h
  exact h
 
-theorem gate_4067 : SixCarryPrefixData.program[4067]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4657 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 99 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[99]?=some (.X 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[4067]?=some (.X 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4067 : SixCarryPrefixData.program[4067]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4657 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 99 shape31 before_len31 len31 rfl (.X 4657) rfl
 
 theorem step_4067 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4068 basis 4657=(!(prefixState SixCarryPrefixData.program 3637 basis 4657)) := by
@@ -23673,11 +22770,8 @@ theorem step_4067 (basis : BasisState) :
  rw [frame_4657_3637_4067 basis] at h
  exact h
 
-theorem gate_4068 : SixCarryPrefixData.program[4068]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4658 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 100 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[100]?=some (.X 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[4068]?=some (.X 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4068 : SixCarryPrefixData.program[4068]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4658 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 100 shape31 before_len31 len31 rfl (.X 4658) rfl
 
 theorem step_4068 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4069 basis 4658=(!(prefixState SixCarryPrefixData.program 3634 basis 4658)) := by
@@ -23687,11 +22781,8 @@ theorem step_4068 (basis : BasisState) :
  rw [frame_4658_3634_4068 basis] at h
  exact h
 
-theorem gate_4069 : SixCarryPrefixData.program[4069]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4659 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 101 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[101]?=some (.X 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[4069]?=some (.X 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4069 : SixCarryPrefixData.program[4069]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4659 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 101 shape31 before_len31 len31 rfl (.X 4659) rfl
 
 theorem step_4069 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4070 basis 4659=(!(prefixState SixCarryPrefixData.program 3631 basis 4659)) := by
@@ -23701,11 +22792,8 @@ theorem step_4069 (basis : BasisState) :
  rw [frame_4659_3631_4069 basis] at h
  exact h
 
-theorem gate_4070 : SixCarryPrefixData.program[4070]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4660 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 102 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[102]?=some (.X 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4070]?=some (.X 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4070 : SixCarryPrefixData.program[4070]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4660 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 102 shape31 before_len31 len31 rfl (.X 4660) rfl
 
 theorem step_4070 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4071 basis 4660=(!(prefixState SixCarryPrefixData.program 3628 basis 4660)) := by
@@ -23715,11 +22803,8 @@ theorem step_4070 (basis : BasisState) :
  rw [frame_4660_3628_4070 basis] at h
  exact h
 
-theorem gate_4071 : SixCarryPrefixData.program[4071]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4661 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 103 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[103]?=some (.X 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4071]?=some (.X 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4071 : SixCarryPrefixData.program[4071]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4661 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 103 shape31 before_len31 len31 rfl (.X 4661) rfl
 
 theorem step_4071 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4072 basis 4661=(!(prefixState SixCarryPrefixData.program 3625 basis 4661)) := by
@@ -23729,11 +22814,8 @@ theorem step_4071 (basis : BasisState) :
  rw [frame_4661_3625_4071 basis] at h
  exact h
 
-theorem gate_4072 : SixCarryPrefixData.program[4072]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4372 4373 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 104 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[104]?=some (.CX 4372 4373) := by decide +kernel
- have hh : SixCarryPrefixData.program[4072]?=some (.CX 4372 4373) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4072 : SixCarryPrefixData.program[4072]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4372 4373 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 104 shape31 before_len31 len31 rfl (.CX 4372 4373) rfl
 
 theorem step_4072 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4073 basis 4373=((prefixState SixCarryPrefixData.program 4007 basis 4373) ^^ (prefixState SixCarryPrefixData.program 4020 basis 4372)) := by
@@ -23743,11 +22825,8 @@ theorem step_4072 (basis : BasisState) :
  rw [frame_4372_4020_4072 basis,frame_4373_4007_4072 basis] at h
  exact h
 
-theorem gate_4073 : SixCarryPrefixData.program[4073]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4116 4374 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 105 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[105]?=some (.CX 4116 4374) := by decide +kernel
- have hh : SixCarryPrefixData.program[4073]?=some (.CX 4116 4374) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4073 : SixCarryPrefixData.program[4073]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4116 4374 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 105 shape31 before_len31 len31 rfl (.CX 4116 4374) rfl
 
 theorem step_4073 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4074 basis 4374=((prefixState SixCarryPrefixData.program 4004 basis 4374) ^^ (prefixState SixCarryPrefixData.program 4028 basis 4116)) := by
@@ -23757,11 +22836,8 @@ theorem step_4073 (basis : BasisState) :
  rw [frame_4116_4028_4073 basis,frame_4374_4004_4073 basis] at h
  exact h
 
-theorem gate_4074 : SixCarryPrefixData.program[4074]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4117 4375 := by
- have h := lookup_context SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 106 shape31 before_len31 (by rw [len31]; decide +kernel)
- have hg : SixCarryPrefixData.chunk31[106]?=some (.CX 4117 4375) := by decide +kernel
- have hh : SixCarryPrefixData.program[4074]?=some (.CX 4117 4375) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4074 : SixCarryPrefixData.program[4074]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4117 4375 :=
+ gateFromChunk SixCarryPrefixData.program before31 SixCarryPrefixData.chunk31 after31 3968 106 shape31 before_len31 len31 rfl (.CX 4117 4375) rfl
 
 theorem step_4074 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4075 basis 4375=((prefixState SixCarryPrefixData.program 4001 basis 4375) ^^ (prefixState SixCarryPrefixData.program 4037 basis 4117)) := by
@@ -23771,11 +22847,8 @@ theorem step_4074 (basis : BasisState) :
  rw [frame_4117_4037_4074 basis,frame_4375_4001_4074 basis] at h
  exact h
 
-theorem gate_4145 : SixCarryPrefixData.program[4145]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4652 4395 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 49 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[49]?=some (.CX 4652 4395) := by decide +kernel
- have hh : SixCarryPrefixData.program[4145]?=some (.CX 4652 4395) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4145 : SixCarryPrefixData.program[4145]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4652 4395 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 49 shape32 before_len32 len32 rfl (.CX 4652 4395) rfl
 
 theorem step_4145 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4146 basis 4395=((prefixState SixCarryPrefixData.program 3941 basis 4395) ^^ (prefixState SixCarryPrefixData.program 4063 basis 4652)) := by
@@ -23785,11 +22858,8 @@ theorem step_4145 (basis : BasisState) :
  rw [frame_4395_3941_4145 basis,frame_4652_4063_4145 basis] at h
  exact h
 
-theorem gate_4146 : SixCarryPrefixData.program[4146]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4395 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 50 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[50]?=some (.CX 4362 4395) := by decide +kernel
- have hh : SixCarryPrefixData.program[4146]?=some (.CX 4362 4395) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4146 : SixCarryPrefixData.program[4146]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4395 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 50 shape32 before_len32 len32 rfl (.CX 4362 4395) rfl
 
 theorem step_4146 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4147 basis 4395=((prefixState SixCarryPrefixData.program 4146 basis 4395) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -23799,11 +22869,8 @@ theorem step_4146 (basis : BasisState) :
  rw [frame_4362_0_4146 basis] at h
  exact h
 
-theorem gate_4147 : SixCarryPrefixData.program[4147]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4395 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 51 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[51]?=some (.X 4395) := by decide +kernel
- have hh : SixCarryPrefixData.program[4147]?=some (.X 4395) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4147 : SixCarryPrefixData.program[4147]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4395 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 51 shape32 before_len32 len32 rfl (.X 4395) rfl
 
 theorem step_4147 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4148 basis 4395=(!(prefixState SixCarryPrefixData.program 4147 basis 4395)) := by
@@ -23812,11 +22879,8 @@ theorem step_4147 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4148 : SixCarryPrefixData.program[4148]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4653 4396 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 52 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[52]?=some (.CX 4653 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4148]?=some (.CX 4653 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4148 : SixCarryPrefixData.program[4148]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4653 4396 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 52 shape32 before_len32 len32 rfl (.CX 4653 4396) rfl
 
 theorem step_4148 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4149 basis 4396=((prefixState SixCarryPrefixData.program 3938 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4064 basis 4653)) := by
@@ -23826,11 +22890,8 @@ theorem step_4148 (basis : BasisState) :
  rw [frame_4396_3938_4148 basis,frame_4653_4064_4148 basis] at h
  exact h
 
-theorem gate_4149 : SixCarryPrefixData.program[4149]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4396 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 53 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[53]?=some (.CX 4363 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4149]?=some (.CX 4363 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4149 : SixCarryPrefixData.program[4149]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4396 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 53 shape32 before_len32 len32 rfl (.CX 4363 4396) rfl
 
 theorem step_4149 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4150 basis 4396=((prefixState SixCarryPrefixData.program 4149 basis 4396) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -23840,11 +22901,8 @@ theorem step_4149 (basis : BasisState) :
  rw [frame_4363_0_4149 basis] at h
  exact h
 
-theorem gate_4150 : SixCarryPrefixData.program[4150]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4396 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 54 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[54]?=some (.X 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4150]?=some (.X 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4150 : SixCarryPrefixData.program[4150]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4396 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 54 shape32 before_len32 len32 rfl (.X 4396) rfl
 
 theorem step_4150 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4151 basis 4396=(!(prefixState SixCarryPrefixData.program 4150 basis 4396)) := by
@@ -23853,11 +22911,8 @@ theorem step_4150 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4151 : SixCarryPrefixData.program[4151]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4654 4397 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 55 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[55]?=some (.CX 4654 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4151]?=some (.CX 4654 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4151 : SixCarryPrefixData.program[4151]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4654 4397 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 55 shape32 before_len32 len32 rfl (.CX 4654 4397) rfl
 
 theorem step_4151 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4152 basis 4397=((prefixState SixCarryPrefixData.program 3935 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4065 basis 4654)) := by
@@ -23867,11 +22922,8 @@ theorem step_4151 (basis : BasisState) :
  rw [frame_4397_3935_4151 basis,frame_4654_4065_4151 basis] at h
  exact h
 
-theorem gate_4152 : SixCarryPrefixData.program[4152]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4397 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 56 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[56]?=some (.CX 4364 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4152]?=some (.CX 4364 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4152 : SixCarryPrefixData.program[4152]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4397 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 56 shape32 before_len32 len32 rfl (.CX 4364 4397) rfl
 
 theorem step_4152 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4153 basis 4397=((prefixState SixCarryPrefixData.program 4152 basis 4397) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -23881,11 +22933,8 @@ theorem step_4152 (basis : BasisState) :
  rw [frame_4364_0_4152 basis] at h
  exact h
 
-theorem gate_4153 : SixCarryPrefixData.program[4153]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4397 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 57 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[57]?=some (.X 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4153]?=some (.X 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4153 : SixCarryPrefixData.program[4153]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4397 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 57 shape32 before_len32 len32 rfl (.X 4397) rfl
 
 theorem step_4153 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4154 basis 4397=(!(prefixState SixCarryPrefixData.program 4153 basis 4397)) := by
@@ -23894,11 +22943,8 @@ theorem step_4153 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4154 : SixCarryPrefixData.program[4154]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4655 4398 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 58 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[58]?=some (.CX 4655 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4154]?=some (.CX 4655 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4154 : SixCarryPrefixData.program[4154]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4655 4398 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 58 shape32 before_len32 len32 rfl (.CX 4655 4398) rfl
 
 theorem step_4154 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4155 basis 4398=((prefixState SixCarryPrefixData.program 3932 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4066 basis 4655)) := by
@@ -23908,11 +22954,8 @@ theorem step_4154 (basis : BasisState) :
  rw [frame_4398_3932_4154 basis,frame_4655_4066_4154 basis] at h
  exact h
 
-theorem gate_4155 : SixCarryPrefixData.program[4155]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4398 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 59 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[59]?=some (.CX 4365 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4155]?=some (.CX 4365 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4155 : SixCarryPrefixData.program[4155]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4398 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 59 shape32 before_len32 len32 rfl (.CX 4365 4398) rfl
 
 theorem step_4155 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4156 basis 4398=((prefixState SixCarryPrefixData.program 4155 basis 4398) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -23922,11 +22965,8 @@ theorem step_4155 (basis : BasisState) :
  rw [frame_4365_0_4155 basis] at h
  exact h
 
-theorem gate_4156 : SixCarryPrefixData.program[4156]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4398 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 60 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[60]?=some (.X 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4156]?=some (.X 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4156 : SixCarryPrefixData.program[4156]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4398 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 60 shape32 before_len32 len32 rfl (.X 4398) rfl
 
 theorem step_4156 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4157 basis 4398=(!(prefixState SixCarryPrefixData.program 4156 basis 4398)) := by
@@ -23935,11 +22975,8 @@ theorem step_4156 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4157 : SixCarryPrefixData.program[4157]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4656 4399 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 61 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[61]?=some (.CX 4656 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4157]?=some (.CX 4656 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4157 : SixCarryPrefixData.program[4157]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4656 4399 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 61 shape32 before_len32 len32 rfl (.CX 4656 4399) rfl
 
 theorem step_4157 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4158 basis 4399=((prefixState SixCarryPrefixData.program 3929 basis 4399) ^^ (prefixState SixCarryPrefixData.program 4067 basis 4656)) := by
@@ -23949,11 +22986,8 @@ theorem step_4157 (basis : BasisState) :
  rw [frame_4399_3929_4157 basis,frame_4656_4067_4157 basis] at h
  exact h
 
-theorem gate_4158 : SixCarryPrefixData.program[4158]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4399 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 62 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[62]?=some (.CX 4366 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4158]?=some (.CX 4366 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4158 : SixCarryPrefixData.program[4158]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4399 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 62 shape32 before_len32 len32 rfl (.CX 4366 4399) rfl
 
 theorem step_4158 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4159 basis 4399=((prefixState SixCarryPrefixData.program 4158 basis 4399) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -23963,11 +22997,8 @@ theorem step_4158 (basis : BasisState) :
  rw [frame_4366_0_4158 basis] at h
  exact h
 
-theorem gate_4159 : SixCarryPrefixData.program[4159]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4399 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 63 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[63]?=some (.X 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4159]?=some (.X 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4159 : SixCarryPrefixData.program[4159]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4399 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 63 shape32 before_len32 len32 rfl (.X 4399) rfl
 
 theorem step_4159 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4160 basis 4399=(!(prefixState SixCarryPrefixData.program 4159 basis 4399)) := by
@@ -23976,11 +23007,8 @@ theorem step_4159 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4160 : SixCarryPrefixData.program[4160]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4657 4400 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 64 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[64]?=some (.CX 4657 4400) := by decide +kernel
- have hh : SixCarryPrefixData.program[4160]?=some (.CX 4657 4400) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4160 : SixCarryPrefixData.program[4160]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4657 4400 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 64 shape32 before_len32 len32 rfl (.CX 4657 4400) rfl
 
 theorem step_4160 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4161 basis 4400=((prefixState SixCarryPrefixData.program 3926 basis 4400) ^^ (prefixState SixCarryPrefixData.program 4068 basis 4657)) := by
@@ -23990,11 +23018,8 @@ theorem step_4160 (basis : BasisState) :
  rw [frame_4400_3926_4160 basis,frame_4657_4068_4160 basis] at h
  exact h
 
-theorem gate_4161 : SixCarryPrefixData.program[4161]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4400 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 65 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[65]?=some (.CX 4367 4400) := by decide +kernel
- have hh : SixCarryPrefixData.program[4161]?=some (.CX 4367 4400) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4161 : SixCarryPrefixData.program[4161]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4400 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 65 shape32 before_len32 len32 rfl (.CX 4367 4400) rfl
 
 theorem step_4161 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4162 basis 4400=((prefixState SixCarryPrefixData.program 4161 basis 4400) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -24004,11 +23029,8 @@ theorem step_4161 (basis : BasisState) :
  rw [frame_4367_0_4161 basis] at h
  exact h
 
-theorem gate_4162 : SixCarryPrefixData.program[4162]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4400 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 66 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[66]?=some (.X 4400) := by decide +kernel
- have hh : SixCarryPrefixData.program[4162]?=some (.X 4400) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4162 : SixCarryPrefixData.program[4162]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4400 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 66 shape32 before_len32 len32 rfl (.X 4400) rfl
 
 theorem step_4162 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4163 basis 4400=(!(prefixState SixCarryPrefixData.program 4162 basis 4400)) := by
@@ -24017,11 +23039,8 @@ theorem step_4162 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4163 : SixCarryPrefixData.program[4163]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4658 4401 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 67 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[67]?=some (.CX 4658 4401) := by decide +kernel
- have hh : SixCarryPrefixData.program[4163]?=some (.CX 4658 4401) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4163 : SixCarryPrefixData.program[4163]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4658 4401 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 67 shape32 before_len32 len32 rfl (.CX 4658 4401) rfl
 
 theorem step_4163 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4164 basis 4401=((prefixState SixCarryPrefixData.program 3923 basis 4401) ^^ (prefixState SixCarryPrefixData.program 4069 basis 4658)) := by
@@ -24031,11 +23050,8 @@ theorem step_4163 (basis : BasisState) :
  rw [frame_4401_3923_4163 basis,frame_4658_4069_4163 basis] at h
  exact h
 
-theorem gate_4164 : SixCarryPrefixData.program[4164]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4401 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 68 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[68]?=some (.CX 4368 4401) := by decide +kernel
- have hh : SixCarryPrefixData.program[4164]?=some (.CX 4368 4401) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4164 : SixCarryPrefixData.program[4164]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4401 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 68 shape32 before_len32 len32 rfl (.CX 4368 4401) rfl
 
 theorem step_4164 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4165 basis 4401=((prefixState SixCarryPrefixData.program 4164 basis 4401) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -24045,11 +23061,8 @@ theorem step_4164 (basis : BasisState) :
  rw [frame_4368_0_4164 basis] at h
  exact h
 
-theorem gate_4165 : SixCarryPrefixData.program[4165]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4401 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 69 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[69]?=some (.X 4401) := by decide +kernel
- have hh : SixCarryPrefixData.program[4165]?=some (.X 4401) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4165 : SixCarryPrefixData.program[4165]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4401 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 69 shape32 before_len32 len32 rfl (.X 4401) rfl
 
 theorem step_4165 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4166 basis 4401=(!(prefixState SixCarryPrefixData.program 4165 basis 4401)) := by
@@ -24058,11 +23071,8 @@ theorem step_4165 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4166 : SixCarryPrefixData.program[4166]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4659 4402 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 70 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[70]?=some (.CX 4659 4402) := by decide +kernel
- have hh : SixCarryPrefixData.program[4166]?=some (.CX 4659 4402) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4166 : SixCarryPrefixData.program[4166]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4659 4402 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 70 shape32 before_len32 len32 rfl (.CX 4659 4402) rfl
 
 theorem step_4166 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4167 basis 4402=((prefixState SixCarryPrefixData.program 3920 basis 4402) ^^ (prefixState SixCarryPrefixData.program 4070 basis 4659)) := by
@@ -24072,11 +23082,8 @@ theorem step_4166 (basis : BasisState) :
  rw [frame_4402_3920_4166 basis,frame_4659_4070_4166 basis] at h
  exact h
 
-theorem gate_4167 : SixCarryPrefixData.program[4167]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4402 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 71 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[71]?=some (.CX 4369 4402) := by decide +kernel
- have hh : SixCarryPrefixData.program[4167]?=some (.CX 4369 4402) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4167 : SixCarryPrefixData.program[4167]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4402 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 71 shape32 before_len32 len32 rfl (.CX 4369 4402) rfl
 
 theorem step_4167 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4168 basis 4402=((prefixState SixCarryPrefixData.program 4167 basis 4402) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -24086,11 +23093,8 @@ theorem step_4167 (basis : BasisState) :
  rw [frame_4369_0_4167 basis] at h
  exact h
 
-theorem gate_4168 : SixCarryPrefixData.program[4168]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4402 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 72 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[72]?=some (.X 4402) := by decide +kernel
- have hh : SixCarryPrefixData.program[4168]?=some (.X 4402) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4168 : SixCarryPrefixData.program[4168]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4402 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 72 shape32 before_len32 len32 rfl (.X 4402) rfl
 
 theorem step_4168 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4169 basis 4402=(!(prefixState SixCarryPrefixData.program 4168 basis 4402)) := by
@@ -24099,11 +23103,8 @@ theorem step_4168 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4169 : SixCarryPrefixData.program[4169]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4660 4403 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 73 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[73]?=some (.CX 4660 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4169]?=some (.CX 4660 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4169 : SixCarryPrefixData.program[4169]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4660 4403 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 73 shape32 before_len32 len32 rfl (.CX 4660 4403) rfl
 
 theorem step_4169 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4170 basis 4403=((prefixState SixCarryPrefixData.program 3917 basis 4403) ^^ (prefixState SixCarryPrefixData.program 4071 basis 4660)) := by
@@ -24113,11 +23114,8 @@ theorem step_4169 (basis : BasisState) :
  rw [frame_4403_3917_4169 basis,frame_4660_4071_4169 basis] at h
  exact h
 
-theorem gate_4170 : SixCarryPrefixData.program[4170]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 74 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[74]?=some (.CX 4370 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4170]?=some (.CX 4370 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4170 : SixCarryPrefixData.program[4170]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 74 shape32 before_len32 len32 rfl (.CX 4370 4403) rfl
 
 theorem step_4170 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4171 basis 4403=((prefixState SixCarryPrefixData.program 4170 basis 4403) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -24127,11 +23125,8 @@ theorem step_4170 (basis : BasisState) :
  rw [frame_4370_0_4170 basis] at h
  exact h
 
-theorem gate_4171 : SixCarryPrefixData.program[4171]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4403 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 75 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[75]?=some (.X 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4171]?=some (.X 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4171 : SixCarryPrefixData.program[4171]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4403 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 75 shape32 before_len32 len32 rfl (.X 4403) rfl
 
 theorem step_4171 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4172 basis 4403=(!(prefixState SixCarryPrefixData.program 4171 basis 4403)) := by
@@ -24140,11 +23135,8 @@ theorem step_4171 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4172 : SixCarryPrefixData.program[4172]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4661 4404 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 76 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[76]?=some (.CX 4661 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4172]?=some (.CX 4661 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4172 : SixCarryPrefixData.program[4172]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4661 4404 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 76 shape32 before_len32 len32 rfl (.CX 4661 4404) rfl
 
 theorem step_4172 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4173 basis 4404=((prefixState SixCarryPrefixData.program 3914 basis 4404) ^^ (prefixState SixCarryPrefixData.program 4072 basis 4661)) := by
@@ -24154,11 +23146,8 @@ theorem step_4172 (basis : BasisState) :
  rw [frame_4404_3914_4172 basis,frame_4661_4072_4172 basis] at h
  exact h
 
-theorem gate_4173 : SixCarryPrefixData.program[4173]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 77 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[77]?=some (.CX 4433 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4173]?=some (.CX 4433 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4173 : SixCarryPrefixData.program[4173]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 77 shape32 before_len32 len32 rfl (.CX 4433 4404) rfl
 
 theorem step_4173 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4174 basis 4404=((prefixState SixCarryPrefixData.program 4173 basis 4404) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -24168,11 +23157,8 @@ theorem step_4173 (basis : BasisState) :
  rw [frame_4433_3827_4173 basis] at h
  exact h
 
-theorem gate_4174 : SixCarryPrefixData.program[4174]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4404 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 78 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[78]?=some (.X 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4174]?=some (.X 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4174 : SixCarryPrefixData.program[4174]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4404 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 78 shape32 before_len32 len32 rfl (.X 4404) rfl
 
 theorem step_4174 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4175 basis 4404=(!(prefixState SixCarryPrefixData.program 4174 basis 4404)) := by
@@ -24181,11 +23167,8 @@ theorem step_4174 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4175 : SixCarryPrefixData.program[4175]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 79 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[79]?=some (.CX 4433 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4175]?=some (.CX 4433 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4175 : SixCarryPrefixData.program[4175]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 79 shape32 before_len32 len32 rfl (.CX 4433 4661) rfl
 
 theorem step_4175 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4176 basis 4661=((prefixState SixCarryPrefixData.program 4072 basis 4661) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -24195,11 +23178,8 @@ theorem step_4175 (basis : BasisState) :
  rw [frame_4433_3827_4175 basis,frame_4661_4072_4175 basis] at h
  exact h
 
-theorem gate_4176 : SixCarryPrefixData.program[4176]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4404 4661 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 80 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[80]?=some (.CX 4404 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4176]?=some (.CX 4404 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4176 : SixCarryPrefixData.program[4176]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4404 4661 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 80 shape32 before_len32 len32 rfl (.CX 4404 4661) rfl
 
 theorem step_4176 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4177 basis 4661=((prefixState SixCarryPrefixData.program 4176 basis 4661) ^^ (prefixState SixCarryPrefixData.program 4175 basis 4404)) := by
@@ -24209,11 +23189,8 @@ theorem step_4176 (basis : BasisState) :
  rw [frame_4404_4175_4176 basis] at h
  exact h
 
-theorem gate_4177 : SixCarryPrefixData.program[4177]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4404 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 81 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[81]?=some (.measureX 4404 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4177]?=some (.measureX 4404 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4177 : SixCarryPrefixData.program[4177]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4404 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 81 shape32 before_len32 len32 rfl (.measureX 4404 [] []) rfl
 
 theorem step_4177 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4178 basis 4404=(false) := by
@@ -24222,11 +23199,8 @@ theorem step_4177 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4178 : SixCarryPrefixData.program[4178]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 82 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[82]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4178]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4178 : SixCarryPrefixData.program[4178]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 82 shape32 before_len32 len32 rfl (.CX 4370 4660) rfl
 
 theorem step_4178 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4179 basis 4660=((prefixState SixCarryPrefixData.program 4071 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -24236,11 +23210,8 @@ theorem step_4178 (basis : BasisState) :
  rw [frame_4370_0_4178 basis,frame_4660_4071_4178 basis] at h
  exact h
 
-theorem gate_4179 : SixCarryPrefixData.program[4179]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4403 4660 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 83 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[83]?=some (.CX 4403 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4179]?=some (.CX 4403 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4179 : SixCarryPrefixData.program[4179]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4403 4660 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 83 shape32 before_len32 len32 rfl (.CX 4403 4660) rfl
 
 theorem step_4179 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4180 basis 4660=((prefixState SixCarryPrefixData.program 4179 basis 4660) ^^ (prefixState SixCarryPrefixData.program 4172 basis 4403)) := by
@@ -24250,11 +23221,8 @@ theorem step_4179 (basis : BasisState) :
  rw [frame_4403_4172_4179 basis] at h
  exact h
 
-theorem gate_4180 : SixCarryPrefixData.program[4180]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4403 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 84 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[84]?=some (.measureX 4403 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4180]?=some (.measureX 4403 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4180 : SixCarryPrefixData.program[4180]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4403 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 84 shape32 before_len32 len32 rfl (.measureX 4403 [] []) rfl
 
 theorem step_4180 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4181 basis 4403=(false) := by
@@ -24263,11 +23231,8 @@ theorem step_4180 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4181 : SixCarryPrefixData.program[4181]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 85 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[85]?=some (.CX 4369 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[4181]?=some (.CX 4369 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4181 : SixCarryPrefixData.program[4181]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 85 shape32 before_len32 len32 rfl (.CX 4369 4659) rfl
 
 theorem step_4181 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4182 basis 4659=((prefixState SixCarryPrefixData.program 4070 basis 4659) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -24277,11 +23242,8 @@ theorem step_4181 (basis : BasisState) :
  rw [frame_4369_0_4181 basis,frame_4659_4070_4181 basis] at h
  exact h
 
-theorem gate_4182 : SixCarryPrefixData.program[4182]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4402 4659 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 86 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[86]?=some (.CX 4402 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[4182]?=some (.CX 4402 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4182 : SixCarryPrefixData.program[4182]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4402 4659 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 86 shape32 before_len32 len32 rfl (.CX 4402 4659) rfl
 
 theorem step_4182 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4183 basis 4659=((prefixState SixCarryPrefixData.program 4182 basis 4659) ^^ (prefixState SixCarryPrefixData.program 4169 basis 4402)) := by
@@ -24291,11 +23253,8 @@ theorem step_4182 (basis : BasisState) :
  rw [frame_4402_4169_4182 basis] at h
  exact h
 
-theorem gate_4183 : SixCarryPrefixData.program[4183]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4402 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 87 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[87]?=some (.measureX 4402 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4183]?=some (.measureX 4402 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4183 : SixCarryPrefixData.program[4183]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4402 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 87 shape32 before_len32 len32 rfl (.measureX 4402 [] []) rfl
 
 theorem step_4183 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4184 basis 4402=(false) := by
@@ -24304,11 +23263,8 @@ theorem step_4183 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4184 : SixCarryPrefixData.program[4184]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 88 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[88]?=some (.CX 4368 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[4184]?=some (.CX 4368 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4184 : SixCarryPrefixData.program[4184]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 88 shape32 before_len32 len32 rfl (.CX 4368 4658) rfl
 
 theorem step_4184 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4185 basis 4658=((prefixState SixCarryPrefixData.program 4069 basis 4658) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -24318,11 +23274,8 @@ theorem step_4184 (basis : BasisState) :
  rw [frame_4368_0_4184 basis,frame_4658_4069_4184 basis] at h
  exact h
 
-theorem gate_4185 : SixCarryPrefixData.program[4185]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4401 4658 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 89 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[89]?=some (.CX 4401 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[4185]?=some (.CX 4401 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4185 : SixCarryPrefixData.program[4185]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4401 4658 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 89 shape32 before_len32 len32 rfl (.CX 4401 4658) rfl
 
 theorem step_4185 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4186 basis 4658=((prefixState SixCarryPrefixData.program 4185 basis 4658) ^^ (prefixState SixCarryPrefixData.program 4166 basis 4401)) := by
@@ -24332,11 +23285,8 @@ theorem step_4185 (basis : BasisState) :
  rw [frame_4401_4166_4185 basis] at h
  exact h
 
-theorem gate_4186 : SixCarryPrefixData.program[4186]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4401 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 90 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[90]?=some (.measureX 4401 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4186]?=some (.measureX 4401 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4186 : SixCarryPrefixData.program[4186]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4401 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 90 shape32 before_len32 len32 rfl (.measureX 4401 [] []) rfl
 
 theorem step_4186 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4187 basis 4401=(false) := by
@@ -24345,11 +23295,8 @@ theorem step_4186 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4187 : SixCarryPrefixData.program[4187]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 91 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[91]?=some (.CX 4367 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[4187]?=some (.CX 4367 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4187 : SixCarryPrefixData.program[4187]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 91 shape32 before_len32 len32 rfl (.CX 4367 4657) rfl
 
 theorem step_4187 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4188 basis 4657=((prefixState SixCarryPrefixData.program 4068 basis 4657) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -24359,11 +23306,8 @@ theorem step_4187 (basis : BasisState) :
  rw [frame_4367_0_4187 basis,frame_4657_4068_4187 basis] at h
  exact h
 
-theorem gate_4188 : SixCarryPrefixData.program[4188]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4400 4657 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 92 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[92]?=some (.CX 4400 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[4188]?=some (.CX 4400 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4188 : SixCarryPrefixData.program[4188]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4400 4657 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 92 shape32 before_len32 len32 rfl (.CX 4400 4657) rfl
 
 theorem step_4188 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4189 basis 4657=((prefixState SixCarryPrefixData.program 4188 basis 4657) ^^ (prefixState SixCarryPrefixData.program 4163 basis 4400)) := by
@@ -24373,11 +23317,8 @@ theorem step_4188 (basis : BasisState) :
  rw [frame_4400_4163_4188 basis] at h
  exact h
 
-theorem gate_4189 : SixCarryPrefixData.program[4189]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4400 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 93 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[93]?=some (.measureX 4400 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4189]?=some (.measureX 4400 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4189 : SixCarryPrefixData.program[4189]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4400 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 93 shape32 before_len32 len32 rfl (.measureX 4400 [] []) rfl
 
 theorem step_4189 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4190 basis 4400=(false) := by
@@ -24386,11 +23327,8 @@ theorem step_4189 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4190 : SixCarryPrefixData.program[4190]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 94 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[94]?=some (.CX 4366 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[4190]?=some (.CX 4366 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4190 : SixCarryPrefixData.program[4190]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 94 shape32 before_len32 len32 rfl (.CX 4366 4656) rfl
 
 theorem step_4190 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4191 basis 4656=((prefixState SixCarryPrefixData.program 4067 basis 4656) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -24400,11 +23338,8 @@ theorem step_4190 (basis : BasisState) :
  rw [frame_4366_0_4190 basis,frame_4656_4067_4190 basis] at h
  exact h
 
-theorem gate_4191 : SixCarryPrefixData.program[4191]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4399 4656 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 95 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[95]?=some (.CX 4399 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[4191]?=some (.CX 4399 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4191 : SixCarryPrefixData.program[4191]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4399 4656 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 95 shape32 before_len32 len32 rfl (.CX 4399 4656) rfl
 
 theorem step_4191 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4192 basis 4656=((prefixState SixCarryPrefixData.program 4191 basis 4656) ^^ (prefixState SixCarryPrefixData.program 4160 basis 4399)) := by
@@ -24414,11 +23349,8 @@ theorem step_4191 (basis : BasisState) :
  rw [frame_4399_4160_4191 basis] at h
  exact h
 
-theorem gate_4192 : SixCarryPrefixData.program[4192]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4399 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 96 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[96]?=some (.measureX 4399 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4192]?=some (.measureX 4399 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4192 : SixCarryPrefixData.program[4192]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4399 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 96 shape32 before_len32 len32 rfl (.measureX 4399 [] []) rfl
 
 theorem step_4192 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4193 basis 4399=(false) := by
@@ -24427,11 +23359,8 @@ theorem step_4192 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4193 : SixCarryPrefixData.program[4193]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 97 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[97]?=some (.CX 4365 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[4193]?=some (.CX 4365 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4193 : SixCarryPrefixData.program[4193]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 97 shape32 before_len32 len32 rfl (.CX 4365 4655) rfl
 
 theorem step_4193 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4194 basis 4655=((prefixState SixCarryPrefixData.program 4066 basis 4655) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -24441,11 +23370,8 @@ theorem step_4193 (basis : BasisState) :
  rw [frame_4365_0_4193 basis,frame_4655_4066_4193 basis] at h
  exact h
 
-theorem gate_4194 : SixCarryPrefixData.program[4194]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4398 4655 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 98 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[98]?=some (.CX 4398 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[4194]?=some (.CX 4398 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4194 : SixCarryPrefixData.program[4194]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4398 4655 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 98 shape32 before_len32 len32 rfl (.CX 4398 4655) rfl
 
 theorem step_4194 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4195 basis 4655=((prefixState SixCarryPrefixData.program 4194 basis 4655) ^^ (prefixState SixCarryPrefixData.program 4157 basis 4398)) := by
@@ -24455,11 +23381,8 @@ theorem step_4194 (basis : BasisState) :
  rw [frame_4398_4157_4194 basis] at h
  exact h
 
-theorem gate_4195 : SixCarryPrefixData.program[4195]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4398 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 99 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[99]?=some (.measureX 4398 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4195]?=some (.measureX 4398 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4195 : SixCarryPrefixData.program[4195]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4398 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 99 shape32 before_len32 len32 rfl (.measureX 4398 [] []) rfl
 
 theorem step_4195 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4196 basis 4398=(false) := by
@@ -24468,11 +23391,8 @@ theorem step_4195 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4196 : SixCarryPrefixData.program[4196]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 100 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[100]?=some (.CX 4364 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[4196]?=some (.CX 4364 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4196 : SixCarryPrefixData.program[4196]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 100 shape32 before_len32 len32 rfl (.CX 4364 4654) rfl
 
 theorem step_4196 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4197 basis 4654=((prefixState SixCarryPrefixData.program 4065 basis 4654) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -24482,11 +23402,8 @@ theorem step_4196 (basis : BasisState) :
  rw [frame_4364_0_4196 basis,frame_4654_4065_4196 basis] at h
  exact h
 
-theorem gate_4197 : SixCarryPrefixData.program[4197]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4397 4654 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 101 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[101]?=some (.CX 4397 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[4197]?=some (.CX 4397 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4197 : SixCarryPrefixData.program[4197]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4397 4654 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 101 shape32 before_len32 len32 rfl (.CX 4397 4654) rfl
 
 theorem step_4197 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4198 basis 4654=((prefixState SixCarryPrefixData.program 4197 basis 4654) ^^ (prefixState SixCarryPrefixData.program 4154 basis 4397)) := by
@@ -24496,11 +23413,8 @@ theorem step_4197 (basis : BasisState) :
  rw [frame_4397_4154_4197 basis] at h
  exact h
 
-theorem gate_4198 : SixCarryPrefixData.program[4198]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4397 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 102 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[102]?=some (.measureX 4397 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4198]?=some (.measureX 4397 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4198 : SixCarryPrefixData.program[4198]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4397 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 102 shape32 before_len32 len32 rfl (.measureX 4397 [] []) rfl
 
 theorem step_4198 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4199 basis 4397=(false) := by
@@ -24509,11 +23423,8 @@ theorem step_4198 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4199 : SixCarryPrefixData.program[4199]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 103 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[103]?=some (.CX 4363 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[4199]?=some (.CX 4363 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4199 : SixCarryPrefixData.program[4199]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 103 shape32 before_len32 len32 rfl (.CX 4363 4653) rfl
 
 theorem step_4199 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4200 basis 4653=((prefixState SixCarryPrefixData.program 4064 basis 4653) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -24523,11 +23434,8 @@ theorem step_4199 (basis : BasisState) :
  rw [frame_4363_0_4199 basis,frame_4653_4064_4199 basis] at h
  exact h
 
-theorem gate_4200 : SixCarryPrefixData.program[4200]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4396 4653 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 104 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[104]?=some (.CX 4396 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[4200]?=some (.CX 4396 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4200 : SixCarryPrefixData.program[4200]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4396 4653 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 104 shape32 before_len32 len32 rfl (.CX 4396 4653) rfl
 
 theorem step_4200 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4201 basis 4653=((prefixState SixCarryPrefixData.program 4200 basis 4653) ^^ (prefixState SixCarryPrefixData.program 4151 basis 4396)) := by
@@ -24537,11 +23445,8 @@ theorem step_4200 (basis : BasisState) :
  rw [frame_4396_4151_4200 basis] at h
  exact h
 
-theorem gate_4201 : SixCarryPrefixData.program[4201]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4396 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 105 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[105]?=some (.measureX 4396 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4201]?=some (.measureX 4396 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4201 : SixCarryPrefixData.program[4201]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4396 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 105 shape32 before_len32 len32 rfl (.measureX 4396 [] []) rfl
 
 theorem step_4201 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4202 basis 4396=(false) := by
@@ -24550,11 +23455,8 @@ theorem step_4201 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4202 : SixCarryPrefixData.program[4202]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4652 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 106 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[106]?=some (.CX 4362 4652) := by decide +kernel
- have hh : SixCarryPrefixData.program[4202]?=some (.CX 4362 4652) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4202 : SixCarryPrefixData.program[4202]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4652 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 106 shape32 before_len32 len32 rfl (.CX 4362 4652) rfl
 
 theorem step_4202 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4203 basis 4652=((prefixState SixCarryPrefixData.program 4063 basis 4652) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -24564,11 +23466,8 @@ theorem step_4202 (basis : BasisState) :
  rw [frame_4362_0_4202 basis,frame_4652_4063_4202 basis] at h
  exact h
 
-theorem gate_4203 : SixCarryPrefixData.program[4203]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4395 4652 := by
- have h := lookup_context SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 107 shape32 before_len32 (by rw [len32]; decide +kernel)
- have hg : SixCarryPrefixData.chunk32[107]?=some (.CX 4395 4652) := by decide +kernel
- have hh : SixCarryPrefixData.program[4203]?=some (.CX 4395 4652) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4203 : SixCarryPrefixData.program[4203]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4395 4652 :=
+ gateFromChunk SixCarryPrefixData.program before32 SixCarryPrefixData.chunk32 after32 4096 107 shape32 before_len32 len32 rfl (.CX 4395 4652) rfl
 
 theorem step_4203 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4204 basis 4652=((prefixState SixCarryPrefixData.program 4203 basis 4652) ^^ (prefixState SixCarryPrefixData.program 4148 basis 4395)) := by
@@ -24578,11 +23477,8 @@ theorem step_4203 (basis : BasisState) :
  rw [frame_4395_4148_4203 basis] at h
  exact h
 
-theorem gate_4225 : SixCarryPrefixData.program[4225]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4388 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 1 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[1]?=some (.measureX 4388 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4225]?=some (.measureX 4388 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4225 : SixCarryPrefixData.program[4225]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4388 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 1 shape33 before_len33 len33 rfl (.measureX 4388 [] []) rfl
 
 theorem step_4225 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4226 basis 4388=(false) := by
@@ -24591,11 +23487,8 @@ theorem step_4225 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4243 : SixCarryPrefixData.program[4243]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4382 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 19 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[19]?=some (.measureX 4382 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4243]?=some (.measureX 4382 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4243 : SixCarryPrefixData.program[4243]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4382 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 19 shape33 before_len33 len33 rfl (.measureX 4382 [] []) rfl
 
 theorem step_4243 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4244 basis 4382=(false) := by
@@ -24604,11 +23497,8 @@ theorem step_4243 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4246 : SixCarryPrefixData.program[4246]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4381 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 22 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[22]?=some (.measureX 4381 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4246]?=some (.measureX 4381 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4246 : SixCarryPrefixData.program[4246]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4381 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 22 shape33 before_len33 len33 rfl (.measureX 4381 [] []) rfl
 
 theorem step_4246 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4247 basis 4381=(false) := by
@@ -24617,11 +23507,8 @@ theorem step_4246 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4262 : SixCarryPrefixData.program[4262]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 38 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[38]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4262]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4262 : SixCarryPrefixData.program[4262]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 38 shape33 before_len33 len33 rfl (.CX 4342 4632) rfl
 
 theorem step_4262 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4263 basis 4632=((prefixState SixCarryPrefixData.program 4043 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -24631,11 +23518,8 @@ theorem step_4262 (basis : BasisState) :
  rw [frame_4342_0_4262 basis,frame_4632_4043_4262 basis] at h
  exact h
 
-theorem gate_4263 : SixCarryPrefixData.program[4263]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4375 4632 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 39 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[39]?=some (.CX 4375 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4263]?=some (.CX 4375 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4263 : SixCarryPrefixData.program[4263]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4375 4632 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 39 shape33 before_len33 len33 rfl (.CX 4375 4632) rfl
 
 theorem step_4263 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4264 basis 4632=((prefixState SixCarryPrefixData.program 4263 basis 4632) ^^ (prefixState SixCarryPrefixData.program 4075 basis 4375)) := by
@@ -24645,11 +23529,8 @@ theorem step_4263 (basis : BasisState) :
  rw [frame_4375_4075_4263 basis] at h
  exact h
 
-theorem gate_4265 : SixCarryPrefixData.program[4265]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 41 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[41]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4265]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4265 : SixCarryPrefixData.program[4265]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 41 shape33 before_len33 len33 rfl (.CX 4341 4631) rfl
 
 theorem step_4265 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4266 basis 4631=((prefixState SixCarryPrefixData.program 4042 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -24659,11 +23540,8 @@ theorem step_4265 (basis : BasisState) :
  rw [frame_4341_0_4265 basis,frame_4631_4042_4265 basis] at h
  exact h
 
-theorem gate_4266 : SixCarryPrefixData.program[4266]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4374 4631 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 42 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[42]?=some (.CX 4374 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4266]?=some (.CX 4374 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4266 : SixCarryPrefixData.program[4266]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4374 4631 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 42 shape33 before_len33 len33 rfl (.CX 4374 4631) rfl
 
 theorem step_4266 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4267 basis 4631=((prefixState SixCarryPrefixData.program 4266 basis 4631) ^^ (prefixState SixCarryPrefixData.program 4074 basis 4374)) := by
@@ -24673,11 +23551,8 @@ theorem step_4266 (basis : BasisState) :
  rw [frame_4374_4074_4266 basis] at h
  exact h
 
-theorem gate_4268 : SixCarryPrefixData.program[4268]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 44 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[44]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4268]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4268 : SixCarryPrefixData.program[4268]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 44 shape33 before_len33 len33 rfl (.CX 4340 4630) rfl
 
 theorem step_4268 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4269 basis 4630=((prefixState SixCarryPrefixData.program 4041 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -24687,11 +23562,8 @@ theorem step_4268 (basis : BasisState) :
  rw [frame_4340_0_4268 basis,frame_4630_4041_4268 basis] at h
  exact h
 
-theorem gate_4269 : SixCarryPrefixData.program[4269]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4373 4630 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 45 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[45]?=some (.CX 4373 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4269]?=some (.CX 4373 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4269 : SixCarryPrefixData.program[4269]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4373 4630 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 45 shape33 before_len33 len33 rfl (.CX 4373 4630) rfl
 
 theorem step_4269 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4270 basis 4630=((prefixState SixCarryPrefixData.program 4269 basis 4630) ^^ (prefixState SixCarryPrefixData.program 4073 basis 4373)) := by
@@ -24701,11 +23573,8 @@ theorem step_4269 (basis : BasisState) :
  rw [frame_4373_4073_4269 basis] at h
  exact h
 
-theorem gate_4271 : SixCarryPrefixData.program[4271]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 47 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[47]?=some (.CX 4339 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[4271]?=some (.CX 4339 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4271 : SixCarryPrefixData.program[4271]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 47 shape33 before_len33 len33 rfl (.CX 4339 4629) rfl
 
 theorem step_4271 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4272 basis 4629=((prefixState SixCarryPrefixData.program 4040 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -24715,11 +23584,8 @@ theorem step_4271 (basis : BasisState) :
  rw [frame_4339_0_4271 basis,frame_4629_4040_4271 basis] at h
  exact h
 
-theorem gate_4272 : SixCarryPrefixData.program[4272]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4760 4629 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 48 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[48]?=some (.CX 4760 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[4272]?=some (.CX 4760 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4272 : SixCarryPrefixData.program[4272]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4760 4629 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 48 shape33 before_len33 len33 rfl (.CX 4760 4629) rfl
 
 theorem step_4272 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4273 basis 4629=((prefixState SixCarryPrefixData.program 4272 basis 4629) ^^ (prefixState SixCarryPrefixData.program 2860 basis 4760)) := by
@@ -24729,11 +23595,8 @@ theorem step_4272 (basis : BasisState) :
  rw [frame_4760_2860_4272 basis] at h
  exact h
 
-theorem gate_4273 : SixCarryPrefixData.program[4273]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 49 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[49]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[4273]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4273 : SixCarryPrefixData.program[4273]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 49 shape33 before_len33 len33 rfl (.X 4629) rfl
 
 theorem step_4273 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4274 basis 4629=(!(prefixState SixCarryPrefixData.program 4273 basis 4629)) := by
@@ -24742,11 +23605,8 @@ theorem step_4273 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4274 : SixCarryPrefixData.program[4274]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 50 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[50]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[4274]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4274 : SixCarryPrefixData.program[4274]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 50 shape33 before_len33 len33 rfl (.X 4630) rfl
 
 theorem step_4274 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4275 basis 4630=(!(prefixState SixCarryPrefixData.program 4270 basis 4630)) := by
@@ -24756,11 +23616,8 @@ theorem step_4274 (basis : BasisState) :
  rw [frame_4630_4270_4274 basis] at h
  exact h
 
-theorem gate_4275 : SixCarryPrefixData.program[4275]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 51 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[51]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[4275]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4275 : SixCarryPrefixData.program[4275]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 51 shape33 before_len33 len33 rfl (.X 4631) rfl
 
 theorem step_4275 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4276 basis 4631=(!(prefixState SixCarryPrefixData.program 4267 basis 4631)) := by
@@ -24770,11 +23627,8 @@ theorem step_4275 (basis : BasisState) :
  rw [frame_4631_4267_4275 basis] at h
  exact h
 
-theorem gate_4276 : SixCarryPrefixData.program[4276]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 52 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[52]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[4276]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4276 : SixCarryPrefixData.program[4276]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 52 shape33 before_len33 len33 rfl (.X 4632) rfl
 
 theorem step_4276 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4277 basis 4632=(!(prefixState SixCarryPrefixData.program 4264 basis 4632)) := by
@@ -24784,11 +23638,8 @@ theorem step_4276 (basis : BasisState) :
  rw [frame_4632_4264_4276 basis] at h
  exact h
 
-theorem gate_4296 : SixCarryPrefixData.program[4296]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4652 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 72 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[72]?=some (.X 4652) := by decide +kernel
- have hh : SixCarryPrefixData.program[4296]?=some (.X 4652) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4296 : SixCarryPrefixData.program[4296]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4652 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 72 shape33 before_len33 len33 rfl (.X 4652) rfl
 
 theorem step_4296 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4297 basis 4652=(!(prefixState SixCarryPrefixData.program 4204 basis 4652)) := by
@@ -24798,11 +23649,8 @@ theorem step_4296 (basis : BasisState) :
  rw [frame_4652_4204_4296 basis] at h
  exact h
 
-theorem gate_4297 : SixCarryPrefixData.program[4297]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4653 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 73 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[73]?=some (.X 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[4297]?=some (.X 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4297 : SixCarryPrefixData.program[4297]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4653 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 73 shape33 before_len33 len33 rfl (.X 4653) rfl
 
 theorem step_4297 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4298 basis 4653=(!(prefixState SixCarryPrefixData.program 4201 basis 4653)) := by
@@ -24812,11 +23660,8 @@ theorem step_4297 (basis : BasisState) :
  rw [frame_4653_4201_4297 basis] at h
  exact h
 
-theorem gate_4298 : SixCarryPrefixData.program[4298]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4654 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 74 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[74]?=some (.X 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[4298]?=some (.X 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4298 : SixCarryPrefixData.program[4298]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4654 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 74 shape33 before_len33 len33 rfl (.X 4654) rfl
 
 theorem step_4298 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4299 basis 4654=(!(prefixState SixCarryPrefixData.program 4198 basis 4654)) := by
@@ -24826,11 +23671,8 @@ theorem step_4298 (basis : BasisState) :
  rw [frame_4654_4198_4298 basis] at h
  exact h
 
-theorem gate_4299 : SixCarryPrefixData.program[4299]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4655 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 75 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[75]?=some (.X 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[4299]?=some (.X 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4299 : SixCarryPrefixData.program[4299]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4655 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 75 shape33 before_len33 len33 rfl (.X 4655) rfl
 
 theorem step_4299 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4300 basis 4655=(!(prefixState SixCarryPrefixData.program 4195 basis 4655)) := by
@@ -24840,11 +23682,8 @@ theorem step_4299 (basis : BasisState) :
  rw [frame_4655_4195_4299 basis] at h
  exact h
 
-theorem gate_4300 : SixCarryPrefixData.program[4300]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4656 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 76 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[76]?=some (.X 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[4300]?=some (.X 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4300 : SixCarryPrefixData.program[4300]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4656 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 76 shape33 before_len33 len33 rfl (.X 4656) rfl
 
 theorem step_4300 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4301 basis 4656=(!(prefixState SixCarryPrefixData.program 4192 basis 4656)) := by
@@ -24854,11 +23693,8 @@ theorem step_4300 (basis : BasisState) :
  rw [frame_4656_4192_4300 basis] at h
  exact h
 
-theorem gate_4301 : SixCarryPrefixData.program[4301]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4657 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 77 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[77]?=some (.X 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[4301]?=some (.X 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4301 : SixCarryPrefixData.program[4301]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4657 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 77 shape33 before_len33 len33 rfl (.X 4657) rfl
 
 theorem step_4301 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4302 basis 4657=(!(prefixState SixCarryPrefixData.program 4189 basis 4657)) := by
@@ -24868,11 +23704,8 @@ theorem step_4301 (basis : BasisState) :
  rw [frame_4657_4189_4301 basis] at h
  exact h
 
-theorem gate_4302 : SixCarryPrefixData.program[4302]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4658 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 78 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[78]?=some (.X 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[4302]?=some (.X 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4302 : SixCarryPrefixData.program[4302]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4658 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 78 shape33 before_len33 len33 rfl (.X 4658) rfl
 
 theorem step_4302 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4303 basis 4658=(!(prefixState SixCarryPrefixData.program 4186 basis 4658)) := by
@@ -24882,11 +23715,8 @@ theorem step_4302 (basis : BasisState) :
  rw [frame_4658_4186_4302 basis] at h
  exact h
 
-theorem gate_4303 : SixCarryPrefixData.program[4303]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4659 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 79 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[79]?=some (.X 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[4303]?=some (.X 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4303 : SixCarryPrefixData.program[4303]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4659 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 79 shape33 before_len33 len33 rfl (.X 4659) rfl
 
 theorem step_4303 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4304 basis 4659=(!(prefixState SixCarryPrefixData.program 4183 basis 4659)) := by
@@ -24896,11 +23726,8 @@ theorem step_4303 (basis : BasisState) :
  rw [frame_4659_4183_4303 basis] at h
  exact h
 
-theorem gate_4304 : SixCarryPrefixData.program[4304]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4660 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 80 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[80]?=some (.X 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4304]?=some (.X 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4304 : SixCarryPrefixData.program[4304]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4660 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 80 shape33 before_len33 len33 rfl (.X 4660) rfl
 
 theorem step_4304 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4305 basis 4660=(!(prefixState SixCarryPrefixData.program 4180 basis 4660)) := by
@@ -24910,11 +23737,8 @@ theorem step_4304 (basis : BasisState) :
  rw [frame_4660_4180_4304 basis] at h
  exact h
 
-theorem gate_4305 : SixCarryPrefixData.program[4305]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4661 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 81 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[81]?=some (.X 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4305]?=some (.X 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4305 : SixCarryPrefixData.program[4305]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4661 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 81 shape33 before_len33 len33 rfl (.X 4661) rfl
 
 theorem step_4305 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4306 basis 4661=(!(prefixState SixCarryPrefixData.program 4177 basis 4661)) := by
@@ -24924,11 +23748,8 @@ theorem step_4305 (basis : BasisState) :
  rw [frame_4661_4177_4305 basis] at h
  exact h
 
-theorem gate_4306 : SixCarryPrefixData.program[4306]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4629 4423 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 82 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[82]?=some (.CX 4629 4423) := by decide +kernel
- have hh : SixCarryPrefixData.program[4306]?=some (.CX 4629 4423) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4306 : SixCarryPrefixData.program[4306]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4629 4423 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 82 shape33 before_len33 len33 rfl (.CX 4629 4423) rfl
 
 theorem step_4306 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4307 basis 4423=((prefixState SixCarryPrefixData.program 3857 basis 4423) ^^ (prefixState SixCarryPrefixData.program 4274 basis 4629)) := by
@@ -24938,11 +23759,8 @@ theorem step_4306 (basis : BasisState) :
  rw [frame_4423_3857_4306 basis,frame_4629_4274_4306 basis] at h
  exact h
 
-theorem gate_4307 : SixCarryPrefixData.program[4307]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4630 4424 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 83 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[83]?=some (.CX 4630 4424) := by decide +kernel
- have hh : SixCarryPrefixData.program[4307]?=some (.CX 4630 4424) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4307 : SixCarryPrefixData.program[4307]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4630 4424 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 83 shape33 before_len33 len33 rfl (.CX 4630 4424) rfl
 
 theorem step_4307 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4308 basis 4424=((prefixState SixCarryPrefixData.program 3854 basis 4424) ^^ (prefixState SixCarryPrefixData.program 4275 basis 4630)) := by
@@ -24952,11 +23770,8 @@ theorem step_4307 (basis : BasisState) :
  rw [frame_4424_3854_4307 basis,frame_4630_4275_4307 basis] at h
  exact h
 
-theorem gate_4308 : SixCarryPrefixData.program[4308]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4631 4425 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 84 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[84]?=some (.CX 4631 4425) := by decide +kernel
- have hh : SixCarryPrefixData.program[4308]?=some (.CX 4631 4425) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4308 : SixCarryPrefixData.program[4308]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4631 4425 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 84 shape33 before_len33 len33 rfl (.CX 4631 4425) rfl
 
 theorem step_4308 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4309 basis 4425=((prefixState SixCarryPrefixData.program 3851 basis 4425) ^^ (prefixState SixCarryPrefixData.program 4276 basis 4631)) := by
@@ -24966,11 +23781,8 @@ theorem step_4308 (basis : BasisState) :
  rw [frame_4425_3851_4308 basis,frame_4631_4276_4308 basis] at h
  exact h
 
-theorem gate_4309 : SixCarryPrefixData.program[4309]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4632 4426 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 85 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[85]?=some (.CX 4632 4426) := by decide +kernel
- have hh : SixCarryPrefixData.program[4309]?=some (.CX 4632 4426) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4309 : SixCarryPrefixData.program[4309]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4632 4426 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 85 shape33 before_len33 len33 rfl (.CX 4632 4426) rfl
 
 theorem step_4309 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4310 basis 4426=((prefixState SixCarryPrefixData.program 3848 basis 4426) ^^ (prefixState SixCarryPrefixData.program 4277 basis 4632)) := by
@@ -24980,11 +23792,8 @@ theorem step_4309 (basis : BasisState) :
  rw [frame_4426_3848_4309 basis,frame_4632_4277_4309 basis] at h
  exact h
 
-theorem gate_4326 : SixCarryPrefixData.program[4326]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4388 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 102 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[102]?=some (.CX 4423 4388) := by decide +kernel
- have hh : SixCarryPrefixData.program[4326]?=some (.CX 4423 4388) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4326 : SixCarryPrefixData.program[4326]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4388 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 102 shape33 before_len33 len33 rfl (.CX 4423 4388) rfl
 
 theorem step_4326 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4327 basis 4388=((prefixState SixCarryPrefixData.program 4226 basis 4388) ^^ (prefixState SixCarryPrefixData.program 4307 basis 4423)) := by
@@ -24994,11 +23803,8 @@ theorem step_4326 (basis : BasisState) :
  rw [frame_4388_4226_4326 basis,frame_4423_4307_4326 basis] at h
  exact h
 
-theorem gate_4334 : SixCarryPrefixData.program[4334]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4396 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 110 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[110]?=some (.CX 4431 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4334]?=some (.CX 4431 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4334 : SixCarryPrefixData.program[4334]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4396 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 110 shape33 before_len33 len33 rfl (.CX 4431 4396) rfl
 
 theorem step_4334 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4335 basis 4396=((prefixState SixCarryPrefixData.program 4202 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25008,11 +23814,8 @@ theorem step_4334 (basis : BasisState) :
  rw [frame_4396_4202_4334 basis,frame_4431_4315_4334 basis] at h
  exact h
 
-theorem gate_4335 : SixCarryPrefixData.program[4335]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4397 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 111 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[111]?=some (.CX 4432 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4335]?=some (.CX 4432 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4335 : SixCarryPrefixData.program[4335]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4397 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 111 shape33 before_len33 len33 rfl (.CX 4432 4397) rfl
 
 theorem step_4335 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4336 basis 4397=((prefixState SixCarryPrefixData.program 4199 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25022,11 +23825,8 @@ theorem step_4335 (basis : BasisState) :
  rw [frame_4397_4199_4335 basis,frame_4432_4316_4335 basis] at h
  exact h
 
-theorem gate_4337 : SixCarryPrefixData.program[4337]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4760 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 113 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[113]?=some (.CX 4423 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[4337]?=some (.CX 4423 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4337 : SixCarryPrefixData.program[4337]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4760 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 113 shape33 before_len33 len33 rfl (.CX 4423 4760) rfl
 
 theorem step_4337 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4338 basis 4760=((prefixState SixCarryPrefixData.program 2860 basis 4760) ^^ (prefixState SixCarryPrefixData.program 4307 basis 4423)) := by
@@ -25036,11 +23836,8 @@ theorem step_4337 (basis : BasisState) :
  rw [frame_4423_4307_4337 basis,frame_4760_2860_4337 basis] at h
  exact h
 
-theorem gate_4340 : SixCarryPrefixData.program[4340]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4760 := by
- have h := lookup_context SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 116 shape33 before_len33 (by rw [len33]; decide +kernel)
- have hg : SixCarryPrefixData.chunk33[116]?=some (.CX 4423 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[4340]?=some (.CX 4423 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4340 : SixCarryPrefixData.program[4340]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4760 :=
+ gateFromChunk SixCarryPrefixData.program before33 SixCarryPrefixData.chunk33 after33 4224 116 shape33 before_len33 len33 rfl (.CX 4423 4760) rfl
 
 theorem step_4340 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4341 basis 4760=((prefixState SixCarryPrefixData.program 4338 basis 4760) ^^ (prefixState SixCarryPrefixData.program 4307 basis 4423)) := by
@@ -25050,11 +23847,8 @@ theorem step_4340 (basis : BasisState) :
  rw [frame_4423_4307_4340 basis,frame_4760_4338_4340 basis] at h
  exact h
 
-theorem gate_4378 : SixCarryPrefixData.program[4378]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 26 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[26]?=some (.CX 4430 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4378]?=some (.CX 4430 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4378 : SixCarryPrefixData.program[4378]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 26 shape34 before_len34 len34 rfl (.CX 4430 4396) rfl
 
 theorem step_4378 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4379 basis 4396=((prefixState SixCarryPrefixData.program 4335 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4314 basis 4430)) := by
@@ -25064,11 +23858,8 @@ theorem step_4378 (basis : BasisState) :
  rw [frame_4396_4335_4378 basis,frame_4430_4314_4378 basis] at h
  exact h
 
-theorem gate_4383 : SixCarryPrefixData.program[4383]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 31 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[31]?=some (.CX 4430 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4383]?=some (.CX 4430 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4383 : SixCarryPrefixData.program[4383]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 31 shape34 before_len34 len34 rfl (.CX 4430 4396) rfl
 
 theorem step_4383 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4384 basis 4396=((prefixState SixCarryPrefixData.program 4379 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4314 basis 4430)) := by
@@ -25078,11 +23869,8 @@ theorem step_4383 (basis : BasisState) :
  rw [frame_4396_4379_4383 basis,frame_4430_4314_4383 basis] at h
  exact h
 
-theorem gate_4384 : SixCarryPrefixData.program[4384]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 32 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[32]?=some (.CX 4431 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4384]?=some (.CX 4431 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4384 : SixCarryPrefixData.program[4384]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 32 shape34 before_len34 len34 rfl (.CX 4431 4397) rfl
 
 theorem step_4384 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4385 basis 4397=((prefixState SixCarryPrefixData.program 4336 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25092,11 +23880,8 @@ theorem step_4384 (basis : BasisState) :
  rw [frame_4397_4336_4384 basis,frame_4431_4315_4384 basis] at h
  exact h
 
-theorem gate_4386 : SixCarryPrefixData.program[4386]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4397 4380 4381 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 34 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[34]?=some (.CCX 4397 4380 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4386]?=some (.CCX 4397 4380 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4386 : SixCarryPrefixData.program[4386]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4397 4380 4381 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 34 shape34 before_len34 len34 rfl (.CCX 4397 4380 4381) rfl
 
 theorem step_4386 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4387 basis 4381=((prefixState SixCarryPrefixData.program 4247 basis 4381) ^^ ((prefixState SixCarryPrefixData.program 4385 basis 4397) && (prefixState SixCarryPrefixData.program 4386 basis 4380))) := by
@@ -25106,11 +23891,8 @@ theorem step_4386 (basis : BasisState) :
  rw [frame_4381_4247_4386 basis,frame_4397_4385_4386 basis] at h
  exact h
 
-theorem gate_4387 : SixCarryPrefixData.program[4387]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4381 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 35 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[35]?=some (.CX 4431 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4387]?=some (.CX 4431 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4387 : SixCarryPrefixData.program[4387]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4381 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 35 shape34 before_len34 len34 rfl (.CX 4431 4381) rfl
 
 theorem step_4387 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4388 basis 4381=((prefixState SixCarryPrefixData.program 4387 basis 4381) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25120,11 +23902,8 @@ theorem step_4387 (basis : BasisState) :
  rw [frame_4431_4315_4387 basis] at h
  exact h
 
-theorem gate_4388 : SixCarryPrefixData.program[4388]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4380 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 36 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[36]?=some (.CX 4431 4380) := by decide +kernel
- have hh : SixCarryPrefixData.program[4388]?=some (.CX 4431 4380) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4388 : SixCarryPrefixData.program[4388]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4380 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 36 shape34 before_len34 len34 rfl (.CX 4431 4380) rfl
 
 theorem step_4388 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4389 basis 4380=((prefixState SixCarryPrefixData.program 4386 basis 4380) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25134,11 +23913,8 @@ theorem step_4388 (basis : BasisState) :
  rw [frame_4380_4386_4388 basis,frame_4431_4315_4388 basis] at h
  exact h
 
-theorem gate_4389 : SixCarryPrefixData.program[4389]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 37 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[37]?=some (.CX 4431 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4389]?=some (.CX 4431 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4389 : SixCarryPrefixData.program[4389]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 37 shape34 before_len34 len34 rfl (.CX 4431 4397) rfl
 
 theorem step_4389 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4390 basis 4397=((prefixState SixCarryPrefixData.program 4385 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25148,11 +23924,8 @@ theorem step_4389 (basis : BasisState) :
  rw [frame_4397_4385_4389 basis,frame_4431_4315_4389 basis] at h
  exact h
 
-theorem gate_4390 : SixCarryPrefixData.program[4390]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 38 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[38]?=some (.CX 4432 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4390]?=some (.CX 4432 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4390 : SixCarryPrefixData.program[4390]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 38 shape34 before_len34 len34 rfl (.CX 4432 4398) rfl
 
 theorem step_4390 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4391 basis 4398=((prefixState SixCarryPrefixData.program 4196 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25162,11 +23935,8 @@ theorem step_4390 (basis : BasisState) :
  rw [frame_4398_4196_4390 basis,frame_4432_4316_4390 basis] at h
  exact h
 
-theorem gate_4391 : SixCarryPrefixData.program[4391]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4381 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 39 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[39]?=some (.CX 4432 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4391]?=some (.CX 4432 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4391 : SixCarryPrefixData.program[4391]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4381 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 39 shape34 before_len34 len34 rfl (.CX 4432 4381) rfl
 
 theorem step_4391 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4392 basis 4381=((prefixState SixCarryPrefixData.program 4388 basis 4381) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25176,11 +23946,8 @@ theorem step_4391 (basis : BasisState) :
  rw [frame_4381_4388_4391 basis,frame_4432_4316_4391 basis] at h
  exact h
 
-theorem gate_4392 : SixCarryPrefixData.program[4392]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4398 4381 4382 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 40 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[40]?=some (.CCX 4398 4381 4382) := by decide +kernel
- have hh : SixCarryPrefixData.program[4392]?=some (.CCX 4398 4381 4382) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4392 : SixCarryPrefixData.program[4392]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4398 4381 4382 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 40 shape34 before_len34 len34 rfl (.CCX 4398 4381 4382) rfl
 
 theorem step_4392 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4393 basis 4382=((prefixState SixCarryPrefixData.program 4244 basis 4382) ^^ ((prefixState SixCarryPrefixData.program 4391 basis 4398) && (prefixState SixCarryPrefixData.program 4392 basis 4381))) := by
@@ -25190,11 +23957,8 @@ theorem step_4392 (basis : BasisState) :
  rw [frame_4382_4244_4392 basis,frame_4398_4391_4392 basis] at h
  exact h
 
-theorem gate_4393 : SixCarryPrefixData.program[4393]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4382 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 41 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[41]?=some (.CX 4432 4382) := by decide +kernel
- have hh : SixCarryPrefixData.program[4393]?=some (.CX 4432 4382) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4393 : SixCarryPrefixData.program[4393]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4382 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 41 shape34 before_len34 len34 rfl (.CX 4432 4382) rfl
 
 theorem step_4393 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4394 basis 4382=((prefixState SixCarryPrefixData.program 4393 basis 4382) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25204,11 +23968,8 @@ theorem step_4393 (basis : BasisState) :
  rw [frame_4432_4316_4393 basis] at h
  exact h
 
-theorem gate_4394 : SixCarryPrefixData.program[4394]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4381 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 42 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[42]?=some (.CX 4432 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4394]?=some (.CX 4432 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4394 : SixCarryPrefixData.program[4394]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4381 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 42 shape34 before_len34 len34 rfl (.CX 4432 4381) rfl
 
 theorem step_4394 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4395 basis 4381=((prefixState SixCarryPrefixData.program 4392 basis 4381) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25218,11 +23979,8 @@ theorem step_4394 (basis : BasisState) :
  rw [frame_4381_4392_4394 basis,frame_4432_4316_4394 basis] at h
  exact h
 
-theorem gate_4395 : SixCarryPrefixData.program[4395]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 43 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[43]?=some (.CX 4432 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4395]?=some (.CX 4432 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4395 : SixCarryPrefixData.program[4395]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 43 shape34 before_len34 len34 rfl (.CX 4432 4398) rfl
 
 theorem step_4395 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4396 basis 4398=((prefixState SixCarryPrefixData.program 4391 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25232,11 +23990,8 @@ theorem step_4395 (basis : BasisState) :
  rw [frame_4398_4391_4395 basis,frame_4432_4316_4395 basis] at h
  exact h
 
-theorem gate_4396 : SixCarryPrefixData.program[4396]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4382 4399 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 44 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[44]?=some (.CX 4382 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4396]?=some (.CX 4382 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4396 : SixCarryPrefixData.program[4396]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4382 4399 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 44 shape34 before_len34 len34 rfl (.CX 4382 4399) rfl
 
 theorem step_4396 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4397 basis 4399=((prefixState SixCarryPrefixData.program 4193 basis 4399) ^^ (prefixState SixCarryPrefixData.program 4394 basis 4382)) := by
@@ -25246,11 +24001,8 @@ theorem step_4396 (basis : BasisState) :
  rw [frame_4382_4394_4396 basis,frame_4399_4193_4396 basis] at h
  exact h
 
-theorem gate_4398 : SixCarryPrefixData.program[4398]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 46 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[46]?=some (.CX 4432 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4398]?=some (.CX 4432 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4398 : SixCarryPrefixData.program[4398]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 46 shape34 before_len34 len34 rfl (.CX 4432 4398) rfl
 
 theorem step_4398 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4399 basis 4398=((prefixState SixCarryPrefixData.program 4396 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25260,11 +24012,8 @@ theorem step_4398 (basis : BasisState) :
  rw [frame_4398_4396_4398 basis,frame_4432_4316_4398 basis] at h
  exact h
 
-theorem gate_4399 : SixCarryPrefixData.program[4399]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4381 4398 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 47 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[47]?=some (.CX 4381 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4399]?=some (.CX 4381 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4399 : SixCarryPrefixData.program[4399]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4381 4398 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 47 shape34 before_len34 len34 rfl (.CX 4381 4398) rfl
 
 theorem step_4399 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4400 basis 4398=((prefixState SixCarryPrefixData.program 4399 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4395 basis 4381)) := by
@@ -25274,11 +24023,8 @@ theorem step_4399 (basis : BasisState) :
  rw [frame_4381_4395_4399 basis] at h
  exact h
 
-theorem gate_4401 : SixCarryPrefixData.program[4401]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 49 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[49]?=some (.CX 4431 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4401]?=some (.CX 4431 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4401 : SixCarryPrefixData.program[4401]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 49 shape34 before_len34 len34 rfl (.CX 4431 4397) rfl
 
 theorem step_4401 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4402 basis 4397=((prefixState SixCarryPrefixData.program 4390 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25288,11 +24034,8 @@ theorem step_4401 (basis : BasisState) :
  rw [frame_4397_4390_4401 basis,frame_4431_4315_4401 basis] at h
  exact h
 
-theorem gate_4402 : SixCarryPrefixData.program[4402]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4380 4397 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 50 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[50]?=some (.CX 4380 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4402]?=some (.CX 4380 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4402 : SixCarryPrefixData.program[4402]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4380 4397 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 50 shape34 before_len34 len34 rfl (.CX 4380 4397) rfl
 
 theorem step_4402 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4403 basis 4397=((prefixState SixCarryPrefixData.program 4402 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4389 basis 4380)) := by
@@ -25302,11 +24045,8 @@ theorem step_4402 (basis : BasisState) :
  rw [frame_4380_4389_4402 basis] at h
  exact h
 
-theorem gate_4404 : SixCarryPrefixData.program[4404]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 52 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[52]?=some (.CX 4430 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4404]?=some (.CX 4430 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4404 : SixCarryPrefixData.program[4404]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 52 shape34 before_len34 len34 rfl (.CX 4430 4396) rfl
 
 theorem step_4404 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4405 basis 4396=((prefixState SixCarryPrefixData.program 4384 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4314 basis 4430)) := by
@@ -25316,11 +24056,8 @@ theorem step_4404 (basis : BasisState) :
  rw [frame_4396_4384_4404 basis,frame_4430_4314_4404 basis] at h
  exact h
 
-theorem gate_4405 : SixCarryPrefixData.program[4405]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4379 4396 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 53 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[53]?=some (.CX 4379 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4405]?=some (.CX 4379 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4405 : SixCarryPrefixData.program[4405]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4379 4396 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 53 shape34 before_len34 len34 rfl (.CX 4379 4396) rfl
 
 theorem step_4405 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4406 basis 4396=((prefixState SixCarryPrefixData.program 4405 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4383 basis 4379)) := by
@@ -25330,11 +24067,8 @@ theorem step_4405 (basis : BasisState) :
  rw [frame_4379_4383_4405 basis] at h
  exact h
 
-theorem gate_4444 : SixCarryPrefixData.program[4444]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4388 4760 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 92 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[92]?=some (.CX 4388 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[4444]?=some (.CX 4388 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4444 : SixCarryPrefixData.program[4444]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4388 4760 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 92 shape34 before_len34 len34 rfl (.CX 4388 4760) rfl
 
 theorem step_4444 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4445 basis 4760=((prefixState SixCarryPrefixData.program 4341 basis 4760) ^^ (prefixState SixCarryPrefixData.program 4327 basis 4388)) := by
@@ -25344,11 +24078,8 @@ theorem step_4444 (basis : BasisState) :
  rw [frame_4388_4327_4444 basis,frame_4760_4341_4444 basis] at h
  exact h
 
-theorem gate_4447 : SixCarryPrefixData.program[4447]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4388 4760 := by
- have h := lookup_context SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 95 shape34 before_len34 (by rw [len34]; decide +kernel)
- have hg : SixCarryPrefixData.chunk34[95]?=some (.CX 4388 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[4447]?=some (.CX 4388 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4447 : SixCarryPrefixData.program[4447]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4388 4760 :=
+ gateFromChunk SixCarryPrefixData.program before34 SixCarryPrefixData.chunk34 after34 4352 95 shape34 before_len34 len34 rfl (.CX 4388 4760) rfl
 
 theorem step_4447 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4448 basis 4760=((prefixState SixCarryPrefixData.program 4445 basis 4760) ^^ (prefixState SixCarryPrefixData.program 4327 basis 4388)) := by
@@ -25358,11 +24089,8 @@ theorem step_4447 (basis : BasisState) :
  rw [frame_4388_4327_4447 basis,frame_4760_4445_4447 basis] at h
  exact h
 
-theorem gate_4550 : SixCarryPrefixData.program[4550]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4382 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 70 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[70]?=some (.measureX 4382 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4550]?=some (.measureX 4382 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4550 : SixCarryPrefixData.program[4550]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4382 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 70 shape35 before_len35 len35 rfl (.measureX 4382 [] []) rfl
 
 theorem step_4550 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4551 basis 4382=(false) := by
@@ -25371,11 +24099,8 @@ theorem step_4550 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4553 : SixCarryPrefixData.program[4553]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4381 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 73 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[73]?=some (.measureX 4381 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4553]?=some (.measureX 4381 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4553 : SixCarryPrefixData.program[4553]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4381 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 73 shape35 before_len35 len35 rfl (.measureX 4381 [] []) rfl
 
 theorem step_4553 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4554 basis 4381=(false) := by
@@ -25384,11 +24109,8 @@ theorem step_4553 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4556 : SixCarryPrefixData.program[4556]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4380 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 76 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[76]?=some (.measureX 4380 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4556]?=some (.measureX 4380 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4556 : SixCarryPrefixData.program[4556]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4380 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 76 shape35 before_len35 len35 rfl (.measureX 4380 [] []) rfl
 
 theorem step_4556 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4557 basis 4380=(false) := by
@@ -25397,11 +24119,8 @@ theorem step_4556 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4559 : SixCarryPrefixData.program[4559]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4379 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 79 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[79]?=some (.measureX 4379 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4559]?=some (.measureX 4379 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4559 : SixCarryPrefixData.program[4559]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4379 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 79 shape35 before_len35 len35 rfl (.measureX 4379 [] []) rfl
 
 theorem step_4559 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4560 basis 4379=(false) := by
@@ -25410,11 +24129,8 @@ theorem step_4559 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4603 : SixCarryPrefixData.program[4603]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4396 := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 123 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[123]?=some (.X 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4603]?=some (.X 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4603 : SixCarryPrefixData.program[4603]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4396 :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 123 shape35 before_len35 len35 rfl (.X 4396) rfl
 
 theorem step_4603 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4604 basis 4396=(!(prefixState SixCarryPrefixData.program 4406 basis 4396)) := by
@@ -25424,11 +24140,8 @@ theorem step_4603 (basis : BasisState) :
  rw [frame_4396_4406_4603 basis] at h
  exact h
 
-theorem gate_4604 : SixCarryPrefixData.program[4604]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4397 := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 124 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[124]?=some (.X 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4604]?=some (.X 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4604 : SixCarryPrefixData.program[4604]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4397 :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 124 shape35 before_len35 len35 rfl (.X 4397) rfl
 
 theorem step_4604 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4605 basis 4397=(!(prefixState SixCarryPrefixData.program 4403 basis 4397)) := by
@@ -25438,11 +24151,8 @@ theorem step_4604 (basis : BasisState) :
  rw [frame_4397_4403_4604 basis] at h
  exact h
 
-theorem gate_4605 : SixCarryPrefixData.program[4605]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4398 := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 125 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[125]?=some (.X 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4605]?=some (.X 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4605 : SixCarryPrefixData.program[4605]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4398 :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 125 shape35 before_len35 len35 rfl (.X 4398) rfl
 
 theorem step_4605 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4606 basis 4398=(!(prefixState SixCarryPrefixData.program 4400 basis 4398)) := by
@@ -25452,11 +24162,8 @@ theorem step_4605 (basis : BasisState) :
  rw [frame_4398_4400_4605 basis] at h
  exact h
 
-theorem gate_4606 : SixCarryPrefixData.program[4606]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4399 := by
- have h := lookup_context SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 126 shape35 before_len35 (by rw [len35]; decide +kernel)
- have hg : SixCarryPrefixData.chunk35[126]?=some (.X 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4606]?=some (.X 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4606 : SixCarryPrefixData.program[4606]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4399 :=
+ gateFromChunk SixCarryPrefixData.program before35 SixCarryPrefixData.chunk35 after35 4480 126 shape35 before_len35 len35 rfl (.X 4399) rfl
 
 theorem step_4606 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4607 basis 4399=(!(prefixState SixCarryPrefixData.program 4397 basis 4399)) := by
@@ -25466,11 +24173,8 @@ theorem step_4606 (basis : BasisState) :
  rw [frame_4399_4397_4606 basis] at h
  exact h
 
-theorem gate_4631 : SixCarryPrefixData.program[4631]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4396 4379 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 23 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[23]?=some (.CX 4396 4379) := by decide +kernel
- have hh : SixCarryPrefixData.program[4631]?=some (.CX 4396 4379) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4631 : SixCarryPrefixData.program[4631]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4396 4379 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 23 shape36 before_len36 len36 rfl (.CX 4396 4379) rfl
 
 theorem step_4631 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4632 basis 4379=((prefixState SixCarryPrefixData.program 4560 basis 4379) ^^ (prefixState SixCarryPrefixData.program 4604 basis 4396)) := by
@@ -25480,11 +24184,8 @@ theorem step_4631 (basis : BasisState) :
  rw [frame_4379_4560_4631 basis,frame_4396_4604_4631 basis] at h
  exact h
 
-theorem gate_4632 : SixCarryPrefixData.program[4632]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4379 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 24 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[24]?=some (.CX 4430 4379) := by decide +kernel
- have hh : SixCarryPrefixData.program[4632]?=some (.CX 4430 4379) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4632 : SixCarryPrefixData.program[4632]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4379 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 24 shape36 before_len36 len36 rfl (.CX 4430 4379) rfl
 
 theorem step_4632 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4633 basis 4379=((prefixState SixCarryPrefixData.program 4632 basis 4379) ^^ (prefixState SixCarryPrefixData.program 4314 basis 4430)) := by
@@ -25494,11 +24195,8 @@ theorem step_4632 (basis : BasisState) :
  rw [frame_4430_4314_4632 basis] at h
  exact h
 
-theorem gate_4633 : SixCarryPrefixData.program[4633]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4379 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 25 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[25]?=some (.CX 4431 4379) := by decide +kernel
- have hh : SixCarryPrefixData.program[4633]?=some (.CX 4431 4379) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4633 : SixCarryPrefixData.program[4633]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4379 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 25 shape36 before_len36 len36 rfl (.CX 4431 4379) rfl
 
 theorem step_4633 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4634 basis 4379=((prefixState SixCarryPrefixData.program 4633 basis 4379) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25508,11 +24206,8 @@ theorem step_4633 (basis : BasisState) :
  rw [frame_4431_4315_4633 basis] at h
  exact h
 
-theorem gate_4634 : SixCarryPrefixData.program[4634]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4379 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 26 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[26]?=some (.X 4379) := by decide +kernel
- have hh : SixCarryPrefixData.program[4634]?=some (.X 4379) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4634 : SixCarryPrefixData.program[4634]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4379 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 26 shape36 before_len36 len36 rfl (.X 4379) rfl
 
 theorem step_4634 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4635 basis 4379=(!(prefixState SixCarryPrefixData.program 4634 basis 4379)) := by
@@ -25521,11 +24216,8 @@ theorem step_4634 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4635 : SixCarryPrefixData.program[4635]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4397 4380 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 27 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[27]?=some (.CX 4397 4380) := by decide +kernel
- have hh : SixCarryPrefixData.program[4635]?=some (.CX 4397 4380) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4635 : SixCarryPrefixData.program[4635]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4397 4380 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 27 shape36 before_len36 len36 rfl (.CX 4397 4380) rfl
 
 theorem step_4635 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4636 basis 4380=((prefixState SixCarryPrefixData.program 4557 basis 4380) ^^ (prefixState SixCarryPrefixData.program 4605 basis 4397)) := by
@@ -25535,11 +24227,8 @@ theorem step_4635 (basis : BasisState) :
  rw [frame_4380_4557_4635 basis,frame_4397_4605_4635 basis] at h
  exact h
 
-theorem gate_4636 : SixCarryPrefixData.program[4636]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4380 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 28 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[28]?=some (.CX 4431 4380) := by decide +kernel
- have hh : SixCarryPrefixData.program[4636]?=some (.CX 4431 4380) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4636 : SixCarryPrefixData.program[4636]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4380 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 28 shape36 before_len36 len36 rfl (.CX 4431 4380) rfl
 
 theorem step_4636 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4637 basis 4380=((prefixState SixCarryPrefixData.program 4636 basis 4380) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25549,11 +24238,8 @@ theorem step_4636 (basis : BasisState) :
  rw [frame_4431_4315_4636 basis] at h
  exact h
 
-theorem gate_4637 : SixCarryPrefixData.program[4637]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4380 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 29 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[29]?=some (.CX 4432 4380) := by decide +kernel
- have hh : SixCarryPrefixData.program[4637]?=some (.CX 4432 4380) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4637 : SixCarryPrefixData.program[4637]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4380 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 29 shape36 before_len36 len36 rfl (.CX 4432 4380) rfl
 
 theorem step_4637 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4638 basis 4380=((prefixState SixCarryPrefixData.program 4637 basis 4380) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25563,11 +24249,8 @@ theorem step_4637 (basis : BasisState) :
  rw [frame_4432_4316_4637 basis] at h
  exact h
 
-theorem gate_4638 : SixCarryPrefixData.program[4638]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4380 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 30 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[30]?=some (.X 4380) := by decide +kernel
- have hh : SixCarryPrefixData.program[4638]?=some (.X 4380) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4638 : SixCarryPrefixData.program[4638]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4380 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 30 shape36 before_len36 len36 rfl (.X 4380) rfl
 
 theorem step_4638 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4639 basis 4380=(!(prefixState SixCarryPrefixData.program 4638 basis 4380)) := by
@@ -25576,11 +24259,8 @@ theorem step_4638 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4639 : SixCarryPrefixData.program[4639]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4398 4381 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 31 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[31]?=some (.CX 4398 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4639]?=some (.CX 4398 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4639 : SixCarryPrefixData.program[4639]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4398 4381 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 31 shape36 before_len36 len36 rfl (.CX 4398 4381) rfl
 
 theorem step_4639 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4640 basis 4381=((prefixState SixCarryPrefixData.program 4554 basis 4381) ^^ (prefixState SixCarryPrefixData.program 4606 basis 4398)) := by
@@ -25590,11 +24270,8 @@ theorem step_4639 (basis : BasisState) :
  rw [frame_4381_4554_4639 basis,frame_4398_4606_4639 basis] at h
  exact h
 
-theorem gate_4640 : SixCarryPrefixData.program[4640]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4381 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 32 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[32]?=some (.CX 4432 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4640]?=some (.CX 4432 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4640 : SixCarryPrefixData.program[4640]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4381 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 32 shape36 before_len36 len36 rfl (.CX 4432 4381) rfl
 
 theorem step_4640 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4641 basis 4381=((prefixState SixCarryPrefixData.program 4640 basis 4381) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25604,11 +24281,8 @@ theorem step_4640 (basis : BasisState) :
  rw [frame_4432_4316_4640 basis] at h
  exact h
 
-theorem gate_4641 : SixCarryPrefixData.program[4641]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4381 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 33 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[33]?=some (.X 4381) := by decide +kernel
- have hh : SixCarryPrefixData.program[4641]?=some (.X 4381) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4641 : SixCarryPrefixData.program[4641]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4381 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 33 shape36 before_len36 len36 rfl (.X 4381) rfl
 
 theorem step_4641 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4642 basis 4381=(!(prefixState SixCarryPrefixData.program 4641 basis 4381)) := by
@@ -25617,11 +24291,8 @@ theorem step_4641 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4642 : SixCarryPrefixData.program[4642]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4399 4382 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 34 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[34]?=some (.CX 4399 4382) := by decide +kernel
- have hh : SixCarryPrefixData.program[4642]?=some (.CX 4399 4382) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4642 : SixCarryPrefixData.program[4642]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4399 4382 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 34 shape36 before_len36 len36 rfl (.CX 4399 4382) rfl
 
 theorem step_4642 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4643 basis 4382=((prefixState SixCarryPrefixData.program 4551 basis 4382) ^^ (prefixState SixCarryPrefixData.program 4607 basis 4399)) := by
@@ -25631,11 +24302,8 @@ theorem step_4642 (basis : BasisState) :
  rw [frame_4382_4551_4642 basis,frame_4399_4607_4642 basis] at h
  exact h
 
-theorem gate_4643 : SixCarryPrefixData.program[4643]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4382 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 35 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[35]?=some (.X 4382) := by decide +kernel
- have hh : SixCarryPrefixData.program[4643]?=some (.X 4382) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4643 : SixCarryPrefixData.program[4643]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4382 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 35 shape36 before_len36 len36 rfl (.X 4382) rfl
 
 theorem step_4643 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4644 basis 4382=(!(prefixState SixCarryPrefixData.program 4643 basis 4382)) := by
@@ -25644,11 +24312,8 @@ theorem step_4643 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4644 : SixCarryPrefixData.program[4644]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4382 4399 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 36 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[36]?=some (.CX 4382 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4644]?=some (.CX 4382 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4644 : SixCarryPrefixData.program[4644]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4382 4399 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 36 shape36 before_len36 len36 rfl (.CX 4382 4399) rfl
 
 theorem step_4644 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4645 basis 4399=((prefixState SixCarryPrefixData.program 4607 basis 4399) ^^ (prefixState SixCarryPrefixData.program 4644 basis 4382)) := by
@@ -25658,11 +24323,8 @@ theorem step_4644 (basis : BasisState) :
  rw [frame_4399_4607_4644 basis] at h
  exact h
 
-theorem gate_4646 : SixCarryPrefixData.program[4646]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 38 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[38]?=some (.CX 4432 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4646]?=some (.CX 4432 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4646 : SixCarryPrefixData.program[4646]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4398 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 38 shape36 before_len36 len36 rfl (.CX 4432 4398) rfl
 
 theorem step_4646 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4647 basis 4398=((prefixState SixCarryPrefixData.program 4606 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25672,11 +24334,8 @@ theorem step_4646 (basis : BasisState) :
  rw [frame_4398_4606_4646 basis,frame_4432_4316_4646 basis] at h
  exact h
 
-theorem gate_4647 : SixCarryPrefixData.program[4647]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4381 4398 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 39 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[39]?=some (.CX 4381 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4647]?=some (.CX 4381 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4647 : SixCarryPrefixData.program[4647]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4381 4398 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 39 shape36 before_len36 len36 rfl (.CX 4381 4398) rfl
 
 theorem step_4647 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4648 basis 4398=((prefixState SixCarryPrefixData.program 4647 basis 4398) ^^ (prefixState SixCarryPrefixData.program 4642 basis 4381)) := by
@@ -25686,11 +24345,8 @@ theorem step_4647 (basis : BasisState) :
  rw [frame_4381_4642_4647 basis] at h
  exact h
 
-theorem gate_4649 : SixCarryPrefixData.program[4649]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 41 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[41]?=some (.CX 4431 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4649]?=some (.CX 4431 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4649 : SixCarryPrefixData.program[4649]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4397 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 41 shape36 before_len36 len36 rfl (.CX 4431 4397) rfl
 
 theorem step_4649 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4650 basis 4397=((prefixState SixCarryPrefixData.program 4605 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25700,11 +24356,8 @@ theorem step_4649 (basis : BasisState) :
  rw [frame_4397_4605_4649 basis,frame_4431_4315_4649 basis] at h
  exact h
 
-theorem gate_4650 : SixCarryPrefixData.program[4650]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4380 4397 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 42 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[42]?=some (.CX 4380 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4650]?=some (.CX 4380 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4650 : SixCarryPrefixData.program[4650]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4380 4397 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 42 shape36 before_len36 len36 rfl (.CX 4380 4397) rfl
 
 theorem step_4650 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4651 basis 4397=((prefixState SixCarryPrefixData.program 4650 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4639 basis 4380)) := by
@@ -25714,11 +24367,8 @@ theorem step_4650 (basis : BasisState) :
  rw [frame_4380_4639_4650 basis] at h
  exact h
 
-theorem gate_4652 : SixCarryPrefixData.program[4652]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 44 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[44]?=some (.CX 4430 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4652]?=some (.CX 4430 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4652 : SixCarryPrefixData.program[4652]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4430 4396 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 44 shape36 before_len36 len36 rfl (.CX 4430 4396) rfl
 
 theorem step_4652 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4653 basis 4396=((prefixState SixCarryPrefixData.program 4604 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4314 basis 4430)) := by
@@ -25728,11 +24378,8 @@ theorem step_4652 (basis : BasisState) :
  rw [frame_4396_4604_4652 basis,frame_4430_4314_4652 basis] at h
  exact h
 
-theorem gate_4653 : SixCarryPrefixData.program[4653]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4379 4396 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 45 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[45]?=some (.CX 4379 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4653]?=some (.CX 4379 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4653 : SixCarryPrefixData.program[4653]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4379 4396 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 45 shape36 before_len36 len36 rfl (.CX 4379 4396) rfl
 
 theorem step_4653 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4654 basis 4396=((prefixState SixCarryPrefixData.program 4653 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4635 basis 4379)) := by
@@ -25742,11 +24389,8 @@ theorem step_4653 (basis : BasisState) :
  rw [frame_4379_4635_4653 basis] at h
  exact h
 
-theorem gate_4666 : SixCarryPrefixData.program[4666]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4375 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 58 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[58]?=some (.measureX 4375 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4666]?=some (.measureX 4375 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4666 : SixCarryPrefixData.program[4666]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4375 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 58 shape36 before_len36 len36 rfl (.measureX 4375 [] []) rfl
 
 theorem step_4666 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4667 basis 4375=(false) := by
@@ -25755,11 +24399,8 @@ theorem step_4666 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4669 : SixCarryPrefixData.program[4669]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4374 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 61 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[61]?=some (.measureX 4374 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4669]?=some (.measureX 4374 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4669 : SixCarryPrefixData.program[4669]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4374 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 61 shape36 before_len36 len36 rfl (.measureX 4374 [] []) rfl
 
 theorem step_4669 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4670 basis 4374=(false) := by
@@ -25768,11 +24409,8 @@ theorem step_4669 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4672 : SixCarryPrefixData.program[4672]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4373 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 64 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[64]?=some (.measureX 4373 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[4672]?=some (.measureX 4373 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4672 : SixCarryPrefixData.program[4672]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4373 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 64 shape36 before_len36 len36 rfl (.measureX 4373 [] []) rfl
 
 theorem step_4672 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4673 basis 4373=(false) := by
@@ -25781,11 +24419,8 @@ theorem step_4672 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_4682 : SixCarryPrefixData.program[4682]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4396 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 74 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[74]?=some (.X 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4682]?=some (.X 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4682 : SixCarryPrefixData.program[4682]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4396 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 74 shape36 before_len36 len36 rfl (.X 4396) rfl
 
 theorem step_4682 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4683 basis 4396=(!(prefixState SixCarryPrefixData.program 4654 basis 4396)) := by
@@ -25795,11 +24430,8 @@ theorem step_4682 (basis : BasisState) :
  rw [frame_4396_4654_4682 basis] at h
  exact h
 
-theorem gate_4683 : SixCarryPrefixData.program[4683]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4397 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 75 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[75]?=some (.X 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4683]?=some (.X 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4683 : SixCarryPrefixData.program[4683]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4397 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 75 shape36 before_len36 len36 rfl (.X 4397) rfl
 
 theorem step_4683 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4684 basis 4397=(!(prefixState SixCarryPrefixData.program 4651 basis 4397)) := by
@@ -25809,11 +24441,8 @@ theorem step_4683 (basis : BasisState) :
  rw [frame_4397_4651_4683 basis] at h
  exact h
 
-theorem gate_4684 : SixCarryPrefixData.program[4684]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4398 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 76 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[76]?=some (.X 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4684]?=some (.X 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4684 : SixCarryPrefixData.program[4684]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4398 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 76 shape36 before_len36 len36 rfl (.X 4398) rfl
 
 theorem step_4684 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4685 basis 4398=(!(prefixState SixCarryPrefixData.program 4648 basis 4398)) := by
@@ -25823,11 +24452,8 @@ theorem step_4684 (basis : BasisState) :
  rw [frame_4398_4648_4684 basis] at h
  exact h
 
-theorem gate_4685 : SixCarryPrefixData.program[4685]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4399 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 77 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[77]?=some (.X 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4685]?=some (.X 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4685 : SixCarryPrefixData.program[4685]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4399 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 77 shape36 before_len36 len36 rfl (.X 4399) rfl
 
 theorem step_4685 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4686 basis 4399=(!(prefixState SixCarryPrefixData.program 4645 basis 4399)) := by
@@ -25837,11 +24463,8 @@ theorem step_4685 (basis : BasisState) :
  rw [frame_4399_4645_4685 basis] at h
  exact h
 
-theorem gate_4694 : SixCarryPrefixData.program[4694]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4396 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 86 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[86]?=some (.CX 4431 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4694]?=some (.CX 4431 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4694 : SixCarryPrefixData.program[4694]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4431 4396 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 86 shape36 before_len36 len36 rfl (.CX 4431 4396) rfl
 
 theorem step_4694 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4695 basis 4396=((prefixState SixCarryPrefixData.program 4683 basis 4396) ^^ (prefixState SixCarryPrefixData.program 4315 basis 4431)) := by
@@ -25851,11 +24474,8 @@ theorem step_4694 (basis : BasisState) :
  rw [frame_4396_4683_4694 basis,frame_4431_4315_4694 basis] at h
  exact h
 
-theorem gate_4695 : SixCarryPrefixData.program[4695]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4397 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 87 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[87]?=some (.CX 4432 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4695]?=some (.CX 4432 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4695 : SixCarryPrefixData.program[4695]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4432 4397 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 87 shape36 before_len36 len36 rfl (.CX 4432 4397) rfl
 
 theorem step_4695 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4696 basis 4397=((prefixState SixCarryPrefixData.program 4684 basis 4397) ^^ (prefixState SixCarryPrefixData.program 4316 basis 4432)) := by
@@ -25865,11 +24485,8 @@ theorem step_4695 (basis : BasisState) :
  rw [frame_4397_4684_4695 basis,frame_4432_4316_4695 basis] at h
  exact h
 
-theorem gate_4696 : SixCarryPrefixData.program[4696]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4661 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 88 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[88]?=some (.CX 4423 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4696]?=some (.CX 4423 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4696 : SixCarryPrefixData.program[4696]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4423 4661 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 88 shape36 before_len36 len36 rfl (.CX 4423 4661) rfl
 
 theorem step_4696 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4697 basis 4661=((prefixState SixCarryPrefixData.program 4306 basis 4661) ^^ (prefixState SixCarryPrefixData.program 4307 basis 4423)) := by
@@ -25879,11 +24496,8 @@ theorem step_4696 (basis : BasisState) :
  rw [frame_4423_4307_4696 basis,frame_4661_4306_4696 basis] at h
  exact h
 
-theorem gate_4697 : SixCarryPrefixData.program[4697]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4424 4662 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 89 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[89]?=some (.CX 4424 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[4697]?=some (.CX 4424 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4697 : SixCarryPrefixData.program[4697]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4424 4662 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 89 shape36 before_len36 len36 rfl (.CX 4424 4662) rfl
 
 theorem step_4697 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4698 basis 4662=((prefixState SixCarryPrefixData.program 158 basis 4662) ^^ (prefixState SixCarryPrefixData.program 4308 basis 4424)) := by
@@ -25893,11 +24507,8 @@ theorem step_4697 (basis : BasisState) :
  rw [frame_4424_4308_4697 basis,frame_4662_158_4697 basis] at h
  exact h
 
-theorem gate_4698 : SixCarryPrefixData.program[4698]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4425 4663 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 90 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[90]?=some (.CX 4425 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[4698]?=some (.CX 4425 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4698 : SixCarryPrefixData.program[4698]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4425 4663 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 90 shape36 before_len36 len36 rfl (.CX 4425 4663) rfl
 
 theorem step_4698 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4699 basis 4663=((prefixState SixCarryPrefixData.program 159 basis 4663) ^^ (prefixState SixCarryPrefixData.program 4309 basis 4425)) := by
@@ -25907,11 +24518,8 @@ theorem step_4698 (basis : BasisState) :
  rw [frame_4425_4309_4698 basis,frame_4663_159_4698 basis] at h
  exact h
 
-theorem gate_4699 : SixCarryPrefixData.program[4699]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4426 4664 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 91 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[91]?=some (.CX 4426 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[4699]?=some (.CX 4426 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4699 : SixCarryPrefixData.program[4699]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4426 4664 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 91 shape36 before_len36 len36 rfl (.CX 4426 4664) rfl
 
 theorem step_4699 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4700 basis 4664=((prefixState SixCarryPrefixData.program 0 basis 4664) ^^ (prefixState SixCarryPrefixData.program 4310 basis 4426)) := by
@@ -25921,11 +24529,8 @@ theorem step_4699 (basis : BasisState) :
  rw [frame_4426_4310_4699 basis,frame_4664_0_4699 basis] at h
  exact h
 
-theorem gate_4721 : SixCarryPrefixData.program[4721]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4372 4373 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 113 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[113]?=some (.CX 4372 4373) := by decide +kernel
- have hh : SixCarryPrefixData.program[4721]?=some (.CX 4372 4373) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4721 : SixCarryPrefixData.program[4721]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4372 4373 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 113 shape36 before_len36 len36 rfl (.CX 4372 4373) rfl
 
 theorem step_4721 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4722 basis 4373=((prefixState SixCarryPrefixData.program 4673 basis 4373) ^^ (prefixState SixCarryPrefixData.program 4020 basis 4372)) := by
@@ -25935,11 +24540,8 @@ theorem step_4721 (basis : BasisState) :
  rw [frame_4372_4020_4721 basis,frame_4373_4673_4721 basis] at h
  exact h
 
-theorem gate_4722 : SixCarryPrefixData.program[4722]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4116 4374 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 114 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[114]?=some (.CX 4116 4374) := by decide +kernel
- have hh : SixCarryPrefixData.program[4722]?=some (.CX 4116 4374) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4722 : SixCarryPrefixData.program[4722]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4116 4374 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 114 shape36 before_len36 len36 rfl (.CX 4116 4374) rfl
 
 theorem step_4722 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4723 basis 4374=((prefixState SixCarryPrefixData.program 4670 basis 4374) ^^ (prefixState SixCarryPrefixData.program 4028 basis 4116)) := by
@@ -25949,11 +24551,8 @@ theorem step_4722 (basis : BasisState) :
  rw [frame_4116_4028_4722 basis,frame_4374_4670_4722 basis] at h
  exact h
 
-theorem gate_4723 : SixCarryPrefixData.program[4723]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4117 4375 := by
- have h := lookup_context SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 115 shape36 before_len36 (by rw [len36]; decide +kernel)
- have hg : SixCarryPrefixData.chunk36[115]?=some (.CX 4117 4375) := by decide +kernel
- have hh : SixCarryPrefixData.program[4723]?=some (.CX 4117 4375) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4723 : SixCarryPrefixData.program[4723]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4117 4375 :=
+ gateFromChunk SixCarryPrefixData.program before36 SixCarryPrefixData.chunk36 after36 4608 115 shape36 before_len36 len36 rfl (.CX 4117 4375) rfl
 
 theorem step_4723 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4724 basis 4375=((prefixState SixCarryPrefixData.program 4667 basis 4375) ^^ (prefixState SixCarryPrefixData.program 4037 basis 4117)) := by
@@ -25963,11 +24562,8 @@ theorem step_4723 (basis : BasisState) :
  rw [frame_4117_4037_4723 basis,frame_4375_4667_4723 basis] at h
  exact h
 
-theorem gate_4839 : SixCarryPrefixData.program[4839]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4652 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 103 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[103]?=some (.CX 4362 4652) := by decide +kernel
- have hh : SixCarryPrefixData.program[4839]?=some (.CX 4362 4652) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4839 : SixCarryPrefixData.program[4839]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4652 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 103 shape37 before_len37 len37 rfl (.CX 4362 4652) rfl
 
 theorem step_4839 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4840 basis 4652=((prefixState SixCarryPrefixData.program 4297 basis 4652) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -25977,11 +24573,8 @@ theorem step_4839 (basis : BasisState) :
  rw [frame_4362_0_4839 basis,frame_4652_4297_4839 basis] at h
  exact h
 
-theorem gate_4841 : SixCarryPrefixData.program[4841]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4652 4395 4396 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 105 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[105]?=some (.CCX 4652 4395 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4841]?=some (.CCX 4652 4395 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4841 : SixCarryPrefixData.program[4841]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4652 4395 4396 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 105 shape37 before_len37 len37 rfl (.CCX 4652 4395 4396) rfl
 
 theorem step_4841 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4842 basis 4396=((prefixState SixCarryPrefixData.program 4695 basis 4396) ^^ ((prefixState SixCarryPrefixData.program 4840 basis 4652) && (prefixState SixCarryPrefixData.program 4841 basis 4395))) := by
@@ -25991,11 +24584,8 @@ theorem step_4841 (basis : BasisState) :
  rw [frame_4396_4695_4841 basis,frame_4652_4840_4841 basis] at h
  exact h
 
-theorem gate_4842 : SixCarryPrefixData.program[4842]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4396 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 106 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[106]?=some (.CX 4362 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4842]?=some (.CX 4362 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4842 : SixCarryPrefixData.program[4842]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4396 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 106 shape37 before_len37 len37 rfl (.CX 4362 4396) rfl
 
 theorem step_4842 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4843 basis 4396=((prefixState SixCarryPrefixData.program 4842 basis 4396) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -26005,11 +24595,8 @@ theorem step_4842 (basis : BasisState) :
  rw [frame_4362_0_4842 basis] at h
  exact h
 
-theorem gate_4845 : SixCarryPrefixData.program[4845]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 109 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[109]?=some (.CX 4363 4653) := by decide +kernel
- have hh : SixCarryPrefixData.program[4845]?=some (.CX 4363 4653) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4845 : SixCarryPrefixData.program[4845]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4653 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 109 shape37 before_len37 len37 rfl (.CX 4363 4653) rfl
 
 theorem step_4845 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4846 basis 4653=((prefixState SixCarryPrefixData.program 4298 basis 4653) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -26019,11 +24606,8 @@ theorem step_4845 (basis : BasisState) :
  rw [frame_4363_0_4845 basis,frame_4653_4298_4845 basis] at h
  exact h
 
-theorem gate_4846 : SixCarryPrefixData.program[4846]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4396 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 110 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[110]?=some (.CX 4363 4396) := by decide +kernel
- have hh : SixCarryPrefixData.program[4846]?=some (.CX 4363 4396) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4846 : SixCarryPrefixData.program[4846]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4396 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 110 shape37 before_len37 len37 rfl (.CX 4363 4396) rfl
 
 theorem step_4846 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4847 basis 4396=((prefixState SixCarryPrefixData.program 4843 basis 4396) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -26033,11 +24617,8 @@ theorem step_4846 (basis : BasisState) :
  rw [frame_4363_0_4846 basis,frame_4396_4843_4846 basis] at h
  exact h
 
-theorem gate_4847 : SixCarryPrefixData.program[4847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4653 4396 4397 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 111 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[111]?=some (.CCX 4653 4396 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4847]?=some (.CCX 4653 4396 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4847 : SixCarryPrefixData.program[4847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4653 4396 4397 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 111 shape37 before_len37 len37 rfl (.CCX 4653 4396 4397) rfl
 
 theorem step_4847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4848 basis 4397=((prefixState SixCarryPrefixData.program 4696 basis 4397) ^^ ((prefixState SixCarryPrefixData.program 4846 basis 4653) && (prefixState SixCarryPrefixData.program 4847 basis 4396))) := by
@@ -26047,11 +24628,8 @@ theorem step_4847 (basis : BasisState) :
  rw [frame_4397_4696_4847 basis,frame_4653_4846_4847 basis] at h
  exact h
 
-theorem gate_4848 : SixCarryPrefixData.program[4848]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4397 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 112 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[112]?=some (.CX 4363 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4848]?=some (.CX 4363 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4848 : SixCarryPrefixData.program[4848]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4397 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 112 shape37 before_len37 len37 rfl (.CX 4363 4397) rfl
 
 theorem step_4848 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4849 basis 4397=((prefixState SixCarryPrefixData.program 4848 basis 4397) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -26061,11 +24639,8 @@ theorem step_4848 (basis : BasisState) :
  rw [frame_4363_0_4848 basis] at h
  exact h
 
-theorem gate_4851 : SixCarryPrefixData.program[4851]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 115 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[115]?=some (.CX 4364 4654) := by decide +kernel
- have hh : SixCarryPrefixData.program[4851]?=some (.CX 4364 4654) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4851 : SixCarryPrefixData.program[4851]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4654 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 115 shape37 before_len37 len37 rfl (.CX 4364 4654) rfl
 
 theorem step_4851 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4852 basis 4654=((prefixState SixCarryPrefixData.program 4299 basis 4654) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -26075,11 +24650,8 @@ theorem step_4851 (basis : BasisState) :
  rw [frame_4364_0_4851 basis,frame_4654_4299_4851 basis] at h
  exact h
 
-theorem gate_4852 : SixCarryPrefixData.program[4852]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4397 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 116 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[116]?=some (.CX 4364 4397) := by decide +kernel
- have hh : SixCarryPrefixData.program[4852]?=some (.CX 4364 4397) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4852 : SixCarryPrefixData.program[4852]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4397 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 116 shape37 before_len37 len37 rfl (.CX 4364 4397) rfl
 
 theorem step_4852 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4853 basis 4397=((prefixState SixCarryPrefixData.program 4849 basis 4397) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -26089,11 +24661,8 @@ theorem step_4852 (basis : BasisState) :
  rw [frame_4364_0_4852 basis,frame_4397_4849_4852 basis] at h
  exact h
 
-theorem gate_4853 : SixCarryPrefixData.program[4853]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4654 4397 4398 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 117 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[117]?=some (.CCX 4654 4397 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4853]?=some (.CCX 4654 4397 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4853 : SixCarryPrefixData.program[4853]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4654 4397 4398 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 117 shape37 before_len37 len37 rfl (.CCX 4654 4397 4398) rfl
 
 theorem step_4853 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4854 basis 4398=((prefixState SixCarryPrefixData.program 4685 basis 4398) ^^ ((prefixState SixCarryPrefixData.program 4852 basis 4654) && (prefixState SixCarryPrefixData.program 4853 basis 4397))) := by
@@ -26103,11 +24672,8 @@ theorem step_4853 (basis : BasisState) :
  rw [frame_4398_4685_4853 basis,frame_4654_4852_4853 basis] at h
  exact h
 
-theorem gate_4854 : SixCarryPrefixData.program[4854]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4398 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 118 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[118]?=some (.CX 4364 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4854]?=some (.CX 4364 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4854 : SixCarryPrefixData.program[4854]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4398 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 118 shape37 before_len37 len37 rfl (.CX 4364 4398) rfl
 
 theorem step_4854 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4855 basis 4398=((prefixState SixCarryPrefixData.program 4854 basis 4398) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -26117,11 +24683,8 @@ theorem step_4854 (basis : BasisState) :
  rw [frame_4364_0_4854 basis] at h
  exact h
 
-theorem gate_4857 : SixCarryPrefixData.program[4857]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 121 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[121]?=some (.CX 4365 4655) := by decide +kernel
- have hh : SixCarryPrefixData.program[4857]?=some (.CX 4365 4655) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4857 : SixCarryPrefixData.program[4857]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4655 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 121 shape37 before_len37 len37 rfl (.CX 4365 4655) rfl
 
 theorem step_4857 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4858 basis 4655=((prefixState SixCarryPrefixData.program 4300 basis 4655) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -26131,11 +24694,8 @@ theorem step_4857 (basis : BasisState) :
  rw [frame_4365_0_4857 basis,frame_4655_4300_4857 basis] at h
  exact h
 
-theorem gate_4858 : SixCarryPrefixData.program[4858]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4398 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 122 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[122]?=some (.CX 4365 4398) := by decide +kernel
- have hh : SixCarryPrefixData.program[4858]?=some (.CX 4365 4398) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4858 : SixCarryPrefixData.program[4858]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4398 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 122 shape37 before_len37 len37 rfl (.CX 4365 4398) rfl
 
 theorem step_4858 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4859 basis 4398=((prefixState SixCarryPrefixData.program 4855 basis 4398) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -26145,11 +24705,8 @@ theorem step_4858 (basis : BasisState) :
  rw [frame_4365_0_4858 basis,frame_4398_4855_4858 basis] at h
  exact h
 
-theorem gate_4859 : SixCarryPrefixData.program[4859]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4655 4398 4399 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 123 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[123]?=some (.CCX 4655 4398 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4859]?=some (.CCX 4655 4398 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4859 : SixCarryPrefixData.program[4859]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4655 4398 4399 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 123 shape37 before_len37 len37 rfl (.CCX 4655 4398 4399) rfl
 
 theorem step_4859 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4860 basis 4399=((prefixState SixCarryPrefixData.program 4686 basis 4399) ^^ ((prefixState SixCarryPrefixData.program 4858 basis 4655) && (prefixState SixCarryPrefixData.program 4859 basis 4398))) := by
@@ -26159,11 +24716,8 @@ theorem step_4859 (basis : BasisState) :
  rw [frame_4399_4686_4859 basis,frame_4655_4858_4859 basis] at h
  exact h
 
-theorem gate_4860 : SixCarryPrefixData.program[4860]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4399 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 124 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[124]?=some (.CX 4365 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4860]?=some (.CX 4365 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4860 : SixCarryPrefixData.program[4860]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4365 4399 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 124 shape37 before_len37 len37 rfl (.CX 4365 4399) rfl
 
 theorem step_4860 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4861 basis 4399=((prefixState SixCarryPrefixData.program 4860 basis 4399) ^^ (prefixState SixCarryPrefixData.program 0 basis 4365)) := by
@@ -26173,11 +24727,8 @@ theorem step_4860 (basis : BasisState) :
  rw [frame_4365_0_4860 basis] at h
  exact h
 
-theorem gate_4863 : SixCarryPrefixData.program[4863]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 := by
- have h := lookup_context SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 127 shape37 before_len37 (by rw [len37]; decide +kernel)
- have hg : SixCarryPrefixData.chunk37[127]?=some (.CX 4366 4656) := by decide +kernel
- have hh : SixCarryPrefixData.program[4863]?=some (.CX 4366 4656) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4863 : SixCarryPrefixData.program[4863]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4656 :=
+ gateFromChunk SixCarryPrefixData.program before37 SixCarryPrefixData.chunk37 after37 4736 127 shape37 before_len37 len37 rfl (.CX 4366 4656) rfl
 
 theorem step_4863 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4864 basis 4656=((prefixState SixCarryPrefixData.program 4301 basis 4656) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -26187,11 +24738,8 @@ theorem step_4863 (basis : BasisState) :
  rw [frame_4366_0_4863 basis,frame_4656_4301_4863 basis] at h
  exact h
 
-theorem gate_4864 : SixCarryPrefixData.program[4864]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4399 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 0 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[0]?=some (.CX 4366 4399) := by decide +kernel
- have hh : SixCarryPrefixData.program[4864]?=some (.CX 4366 4399) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4864 : SixCarryPrefixData.program[4864]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4399 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 0 shape38 before_len38 len38 rfl (.CX 4366 4399) rfl
 
 theorem step_4864 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4865 basis 4399=((prefixState SixCarryPrefixData.program 4861 basis 4399) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -26201,11 +24749,8 @@ theorem step_4864 (basis : BasisState) :
  rw [frame_4366_0_4864 basis,frame_4399_4861_4864 basis] at h
  exact h
 
-theorem gate_4865 : SixCarryPrefixData.program[4865]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4656 4399 4400 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 1 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[1]?=some (.CCX 4656 4399 4400) := by decide +kernel
- have hh : SixCarryPrefixData.program[4865]?=some (.CCX 4656 4399 4400) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4865 : SixCarryPrefixData.program[4865]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4656 4399 4400 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 1 shape38 before_len38 len38 rfl (.CCX 4656 4399 4400) rfl
 
 theorem step_4865 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4866 basis 4400=((prefixState SixCarryPrefixData.program 4190 basis 4400) ^^ ((prefixState SixCarryPrefixData.program 4864 basis 4656) && (prefixState SixCarryPrefixData.program 4865 basis 4399))) := by
@@ -26215,11 +24760,8 @@ theorem step_4865 (basis : BasisState) :
  rw [frame_4400_4190_4865 basis,frame_4656_4864_4865 basis] at h
  exact h
 
-theorem gate_4866 : SixCarryPrefixData.program[4866]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4400 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 2 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[2]?=some (.CX 4366 4400) := by decide +kernel
- have hh : SixCarryPrefixData.program[4866]?=some (.CX 4366 4400) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4866 : SixCarryPrefixData.program[4866]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4366 4400 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 2 shape38 before_len38 len38 rfl (.CX 4366 4400) rfl
 
 theorem step_4866 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4867 basis 4400=((prefixState SixCarryPrefixData.program 4866 basis 4400) ^^ (prefixState SixCarryPrefixData.program 0 basis 4366)) := by
@@ -26229,11 +24771,8 @@ theorem step_4866 (basis : BasisState) :
  rw [frame_4366_0_4866 basis] at h
  exact h
 
-theorem gate_4869 : SixCarryPrefixData.program[4869]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 5 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[5]?=some (.CX 4367 4657) := by decide +kernel
- have hh : SixCarryPrefixData.program[4869]?=some (.CX 4367 4657) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4869 : SixCarryPrefixData.program[4869]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4657 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 5 shape38 before_len38 len38 rfl (.CX 4367 4657) rfl
 
 theorem step_4869 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4870 basis 4657=((prefixState SixCarryPrefixData.program 4302 basis 4657) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -26243,11 +24782,8 @@ theorem step_4869 (basis : BasisState) :
  rw [frame_4367_0_4869 basis,frame_4657_4302_4869 basis] at h
  exact h
 
-theorem gate_4870 : SixCarryPrefixData.program[4870]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4400 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 6 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[6]?=some (.CX 4367 4400) := by decide +kernel
- have hh : SixCarryPrefixData.program[4870]?=some (.CX 4367 4400) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4870 : SixCarryPrefixData.program[4870]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4400 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 6 shape38 before_len38 len38 rfl (.CX 4367 4400) rfl
 
 theorem step_4870 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4871 basis 4400=((prefixState SixCarryPrefixData.program 4867 basis 4400) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -26257,11 +24793,8 @@ theorem step_4870 (basis : BasisState) :
  rw [frame_4367_0_4870 basis,frame_4400_4867_4870 basis] at h
  exact h
 
-theorem gate_4871 : SixCarryPrefixData.program[4871]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4657 4400 4401 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 7 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[7]?=some (.CCX 4657 4400 4401) := by decide +kernel
- have hh : SixCarryPrefixData.program[4871]?=some (.CCX 4657 4400 4401) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4871 : SixCarryPrefixData.program[4871]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4657 4400 4401 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 7 shape38 before_len38 len38 rfl (.CCX 4657 4400 4401) rfl
 
 theorem step_4871 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4872 basis 4401=((prefixState SixCarryPrefixData.program 4187 basis 4401) ^^ ((prefixState SixCarryPrefixData.program 4870 basis 4657) && (prefixState SixCarryPrefixData.program 4871 basis 4400))) := by
@@ -26271,11 +24804,8 @@ theorem step_4871 (basis : BasisState) :
  rw [frame_4401_4187_4871 basis,frame_4657_4870_4871 basis] at h
  exact h
 
-theorem gate_4872 : SixCarryPrefixData.program[4872]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4401 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 8 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[8]?=some (.CX 4367 4401) := by decide +kernel
- have hh : SixCarryPrefixData.program[4872]?=some (.CX 4367 4401) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4872 : SixCarryPrefixData.program[4872]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4367 4401 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 8 shape38 before_len38 len38 rfl (.CX 4367 4401) rfl
 
 theorem step_4872 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4873 basis 4401=((prefixState SixCarryPrefixData.program 4872 basis 4401) ^^ (prefixState SixCarryPrefixData.program 0 basis 4367)) := by
@@ -26285,11 +24815,8 @@ theorem step_4872 (basis : BasisState) :
  rw [frame_4367_0_4872 basis] at h
  exact h
 
-theorem gate_4875 : SixCarryPrefixData.program[4875]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 11 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[11]?=some (.CX 4368 4658) := by decide +kernel
- have hh : SixCarryPrefixData.program[4875]?=some (.CX 4368 4658) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4875 : SixCarryPrefixData.program[4875]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4658 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 11 shape38 before_len38 len38 rfl (.CX 4368 4658) rfl
 
 theorem step_4875 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4876 basis 4658=((prefixState SixCarryPrefixData.program 4303 basis 4658) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -26299,11 +24826,8 @@ theorem step_4875 (basis : BasisState) :
  rw [frame_4368_0_4875 basis,frame_4658_4303_4875 basis] at h
  exact h
 
-theorem gate_4876 : SixCarryPrefixData.program[4876]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4401 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 12 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[12]?=some (.CX 4368 4401) := by decide +kernel
- have hh : SixCarryPrefixData.program[4876]?=some (.CX 4368 4401) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4876 : SixCarryPrefixData.program[4876]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4401 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 12 shape38 before_len38 len38 rfl (.CX 4368 4401) rfl
 
 theorem step_4876 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4877 basis 4401=((prefixState SixCarryPrefixData.program 4873 basis 4401) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -26313,11 +24837,8 @@ theorem step_4876 (basis : BasisState) :
  rw [frame_4368_0_4876 basis,frame_4401_4873_4876 basis] at h
  exact h
 
-theorem gate_4877 : SixCarryPrefixData.program[4877]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4658 4401 4402 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 13 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[13]?=some (.CCX 4658 4401 4402) := by decide +kernel
- have hh : SixCarryPrefixData.program[4877]?=some (.CCX 4658 4401 4402) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4877 : SixCarryPrefixData.program[4877]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4658 4401 4402 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 13 shape38 before_len38 len38 rfl (.CCX 4658 4401 4402) rfl
 
 theorem step_4877 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4878 basis 4402=((prefixState SixCarryPrefixData.program 4184 basis 4402) ^^ ((prefixState SixCarryPrefixData.program 4876 basis 4658) && (prefixState SixCarryPrefixData.program 4877 basis 4401))) := by
@@ -26327,11 +24848,8 @@ theorem step_4877 (basis : BasisState) :
  rw [frame_4402_4184_4877 basis,frame_4658_4876_4877 basis] at h
  exact h
 
-theorem gate_4878 : SixCarryPrefixData.program[4878]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4402 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 14 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[14]?=some (.CX 4368 4402) := by decide +kernel
- have hh : SixCarryPrefixData.program[4878]?=some (.CX 4368 4402) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4878 : SixCarryPrefixData.program[4878]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4368 4402 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 14 shape38 before_len38 len38 rfl (.CX 4368 4402) rfl
 
 theorem step_4878 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4879 basis 4402=((prefixState SixCarryPrefixData.program 4878 basis 4402) ^^ (prefixState SixCarryPrefixData.program 0 basis 4368)) := by
@@ -26341,11 +24859,8 @@ theorem step_4878 (basis : BasisState) :
  rw [frame_4368_0_4878 basis] at h
  exact h
 
-theorem gate_4881 : SixCarryPrefixData.program[4881]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 17 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[17]?=some (.CX 4369 4659) := by decide +kernel
- have hh : SixCarryPrefixData.program[4881]?=some (.CX 4369 4659) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4881 : SixCarryPrefixData.program[4881]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4659 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 17 shape38 before_len38 len38 rfl (.CX 4369 4659) rfl
 
 theorem step_4881 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4882 basis 4659=((prefixState SixCarryPrefixData.program 4304 basis 4659) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -26355,11 +24870,8 @@ theorem step_4881 (basis : BasisState) :
  rw [frame_4369_0_4881 basis,frame_4659_4304_4881 basis] at h
  exact h
 
-theorem gate_4882 : SixCarryPrefixData.program[4882]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4402 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 18 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[18]?=some (.CX 4369 4402) := by decide +kernel
- have hh : SixCarryPrefixData.program[4882]?=some (.CX 4369 4402) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4882 : SixCarryPrefixData.program[4882]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4402 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 18 shape38 before_len38 len38 rfl (.CX 4369 4402) rfl
 
 theorem step_4882 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4883 basis 4402=((prefixState SixCarryPrefixData.program 4879 basis 4402) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -26369,11 +24881,8 @@ theorem step_4882 (basis : BasisState) :
  rw [frame_4369_0_4882 basis,frame_4402_4879_4882 basis] at h
  exact h
 
-theorem gate_4883 : SixCarryPrefixData.program[4883]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4659 4402 4403 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 19 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[19]?=some (.CCX 4659 4402 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4883]?=some (.CCX 4659 4402 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4883 : SixCarryPrefixData.program[4883]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4659 4402 4403 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 19 shape38 before_len38 len38 rfl (.CCX 4659 4402 4403) rfl
 
 theorem step_4883 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4884 basis 4403=((prefixState SixCarryPrefixData.program 4181 basis 4403) ^^ ((prefixState SixCarryPrefixData.program 4882 basis 4659) && (prefixState SixCarryPrefixData.program 4883 basis 4402))) := by
@@ -26383,11 +24892,8 @@ theorem step_4883 (basis : BasisState) :
  rw [frame_4403_4181_4883 basis,frame_4659_4882_4883 basis] at h
  exact h
 
-theorem gate_4884 : SixCarryPrefixData.program[4884]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4403 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 20 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[20]?=some (.CX 4369 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4884]?=some (.CX 4369 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4884 : SixCarryPrefixData.program[4884]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4369 4403 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 20 shape38 before_len38 len38 rfl (.CX 4369 4403) rfl
 
 theorem step_4884 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4885 basis 4403=((prefixState SixCarryPrefixData.program 4884 basis 4403) ^^ (prefixState SixCarryPrefixData.program 0 basis 4369)) := by
@@ -26397,11 +24903,8 @@ theorem step_4884 (basis : BasisState) :
  rw [frame_4369_0_4884 basis] at h
  exact h
 
-theorem gate_4887 : SixCarryPrefixData.program[4887]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 23 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[23]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4887]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4887 : SixCarryPrefixData.program[4887]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 23 shape38 before_len38 len38 rfl (.CX 4370 4660) rfl
 
 theorem step_4887 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4888 basis 4660=((prefixState SixCarryPrefixData.program 4305 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -26411,11 +24914,8 @@ theorem step_4887 (basis : BasisState) :
  rw [frame_4370_0_4887 basis,frame_4660_4305_4887 basis] at h
  exact h
 
-theorem gate_4888 : SixCarryPrefixData.program[4888]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 24 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[24]?=some (.CX 4370 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4888]?=some (.CX 4370 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4888 : SixCarryPrefixData.program[4888]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 24 shape38 before_len38 len38 rfl (.CX 4370 4403) rfl
 
 theorem step_4888 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4889 basis 4403=((prefixState SixCarryPrefixData.program 4885 basis 4403) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -26425,11 +24925,8 @@ theorem step_4888 (basis : BasisState) :
  rw [frame_4370_0_4888 basis,frame_4403_4885_4888 basis] at h
  exact h
 
-theorem gate_4889 : SixCarryPrefixData.program[4889]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4660 4403 4404 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 25 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[25]?=some (.CCX 4660 4403 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4889]?=some (.CCX 4660 4403 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4889 : SixCarryPrefixData.program[4889]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4660 4403 4404 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 25 shape38 before_len38 len38 rfl (.CCX 4660 4403 4404) rfl
 
 theorem step_4889 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4890 basis 4404=((prefixState SixCarryPrefixData.program 4178 basis 4404) ^^ ((prefixState SixCarryPrefixData.program 4888 basis 4660) && (prefixState SixCarryPrefixData.program 4889 basis 4403))) := by
@@ -26439,11 +24936,8 @@ theorem step_4889 (basis : BasisState) :
  rw [frame_4404_4178_4889 basis,frame_4660_4888_4889 basis] at h
  exact h
 
-theorem gate_4890 : SixCarryPrefixData.program[4890]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4404 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 26 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[26]?=some (.CX 4370 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4890]?=some (.CX 4370 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4890 : SixCarryPrefixData.program[4890]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4404 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 26 shape38 before_len38 len38 rfl (.CX 4370 4404) rfl
 
 theorem step_4890 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4891 basis 4404=((prefixState SixCarryPrefixData.program 4890 basis 4404) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -26453,11 +24947,8 @@ theorem step_4890 (basis : BasisState) :
  rw [frame_4370_0_4890 basis] at h
  exact h
 
-theorem gate_4891 : SixCarryPrefixData.program[4891]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 27 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[27]?=some (.CX 4370 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[4891]?=some (.CX 4370 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4891 : SixCarryPrefixData.program[4891]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 27 shape38 before_len38 len38 rfl (.CX 4370 4403) rfl
 
 theorem step_4891 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4892 basis 4403=((prefixState SixCarryPrefixData.program 4889 basis 4403) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -26467,11 +24958,8 @@ theorem step_4891 (basis : BasisState) :
  rw [frame_4370_0_4891 basis,frame_4403_4889_4891 basis] at h
  exact h
 
-theorem gate_4892 : SixCarryPrefixData.program[4892]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 28 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[28]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4892]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4892 : SixCarryPrefixData.program[4892]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 28 shape38 before_len38 len38 rfl (.CX 4370 4660) rfl
 
 theorem step_4892 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4893 basis 4660=((prefixState SixCarryPrefixData.program 4888 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -26481,11 +24969,8 @@ theorem step_4892 (basis : BasisState) :
  rw [frame_4370_0_4892 basis,frame_4660_4888_4892 basis] at h
  exact h
 
-theorem gate_4893 : SixCarryPrefixData.program[4893]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 29 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[29]?=some (.CX 4433 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4893]?=some (.CX 4433 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4893 : SixCarryPrefixData.program[4893]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 29 shape38 before_len38 len38 rfl (.CX 4433 4661) rfl
 
 theorem step_4893 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4894 basis 4661=((prefixState SixCarryPrefixData.program 4697 basis 4661) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -26495,11 +24980,8 @@ theorem step_4893 (basis : BasisState) :
  rw [frame_4433_3827_4893 basis,frame_4661_4697_4893 basis] at h
  exact h
 
-theorem gate_4894 : SixCarryPrefixData.program[4894]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 30 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[30]?=some (.CX 4433 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4894]?=some (.CX 4433 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4894 : SixCarryPrefixData.program[4894]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 30 shape38 before_len38 len38 rfl (.CX 4433 4404) rfl
 
 theorem step_4894 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4895 basis 4404=((prefixState SixCarryPrefixData.program 4891 basis 4404) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -26509,11 +24991,8 @@ theorem step_4894 (basis : BasisState) :
  rw [frame_4404_4891_4894 basis,frame_4433_3827_4894 basis] at h
  exact h
 
-theorem gate_4895 : SixCarryPrefixData.program[4895]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4661 4404 4405 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 31 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[31]?=some (.CCX 4661 4404 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[4895]?=some (.CCX 4661 4404 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4895 : SixCarryPrefixData.program[4895]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4661 4404 4405 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 31 shape38 before_len38 len38 rfl (.CCX 4661 4404 4405) rfl
 
 theorem step_4895 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4896 basis 4405=((prefixState SixCarryPrefixData.program 3911 basis 4405) ^^ ((prefixState SixCarryPrefixData.program 4894 basis 4661) && (prefixState SixCarryPrefixData.program 4895 basis 4404))) := by
@@ -26523,11 +25002,8 @@ theorem step_4895 (basis : BasisState) :
  rw [frame_4405_3911_4895 basis,frame_4661_4894_4895 basis] at h
  exact h
 
-theorem gate_4896 : SixCarryPrefixData.program[4896]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4405 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 32 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[32]?=some (.CX 4433 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[4896]?=some (.CX 4433 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4896 : SixCarryPrefixData.program[4896]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4405 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 32 shape38 before_len38 len38 rfl (.CX 4433 4405) rfl
 
 theorem step_4896 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4897 basis 4405=((prefixState SixCarryPrefixData.program 4896 basis 4405) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -26537,11 +25013,8 @@ theorem step_4896 (basis : BasisState) :
  rw [frame_4433_3827_4896 basis] at h
  exact h
 
-theorem gate_4897 : SixCarryPrefixData.program[4897]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 33 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[33]?=some (.CX 4433 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[4897]?=some (.CX 4433 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4897 : SixCarryPrefixData.program[4897]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 33 shape38 before_len38 len38 rfl (.CX 4433 4404) rfl
 
 theorem step_4897 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4898 basis 4404=((prefixState SixCarryPrefixData.program 4895 basis 4404) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -26551,11 +25024,8 @@ theorem step_4897 (basis : BasisState) :
  rw [frame_4404_4895_4897 basis,frame_4433_3827_4897 basis] at h
  exact h
 
-theorem gate_4898 : SixCarryPrefixData.program[4898]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 34 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[34]?=some (.CX 4433 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4898]?=some (.CX 4433 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4898 : SixCarryPrefixData.program[4898]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 34 shape38 before_len38 len38 rfl (.CX 4433 4661) rfl
 
 theorem step_4898 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4899 basis 4661=((prefixState SixCarryPrefixData.program 4894 basis 4661) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -26565,11 +25035,8 @@ theorem step_4898 (basis : BasisState) :
  rw [frame_4433_3827_4898 basis,frame_4661_4894_4898 basis] at h
  exact h
 
-theorem gate_4899 : SixCarryPrefixData.program[4899]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 35 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[35]?=some (.CX 4434 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[4899]?=some (.CX 4434 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4899 : SixCarryPrefixData.program[4899]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 35 shape38 before_len38 len38 rfl (.CX 4434 4662) rfl
 
 theorem step_4899 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4900 basis 4662=((prefixState SixCarryPrefixData.program 4698 basis 4662) ^^ (prefixState SixCarryPrefixData.program 3824 basis 4434)) := by
@@ -26579,11 +25046,8 @@ theorem step_4899 (basis : BasisState) :
  rw [frame_4434_3824_4899 basis,frame_4662_4698_4899 basis] at h
  exact h
 
-theorem gate_4900 : SixCarryPrefixData.program[4900]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4405 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 36 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[36]?=some (.CX 4434 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[4900]?=some (.CX 4434 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4900 : SixCarryPrefixData.program[4900]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4405 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 36 shape38 before_len38 len38 rfl (.CX 4434 4405) rfl
 
 theorem step_4900 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4901 basis 4405=((prefixState SixCarryPrefixData.program 4897 basis 4405) ^^ (prefixState SixCarryPrefixData.program 3824 basis 4434)) := by
@@ -26593,11 +25057,8 @@ theorem step_4900 (basis : BasisState) :
  rw [frame_4405_4897_4900 basis,frame_4434_3824_4900 basis] at h
  exact h
 
-theorem gate_4901 : SixCarryPrefixData.program[4901]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4662 4405 4406 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 37 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[37]?=some (.CCX 4662 4405 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[4901]?=some (.CCX 4662 4405 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4901 : SixCarryPrefixData.program[4901]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4662 4405 4406 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 37 shape38 before_len38 len38 rfl (.CCX 4662 4405 4406) rfl
 
 theorem step_4901 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4902 basis 4406=((prefixState SixCarryPrefixData.program 3908 basis 4406) ^^ ((prefixState SixCarryPrefixData.program 4900 basis 4662) && (prefixState SixCarryPrefixData.program 4901 basis 4405))) := by
@@ -26607,11 +25068,8 @@ theorem step_4901 (basis : BasisState) :
  rw [frame_4406_3908_4901 basis,frame_4662_4900_4901 basis] at h
  exact h
 
-theorem gate_4902 : SixCarryPrefixData.program[4902]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4406 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 38 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[38]?=some (.CX 4434 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[4902]?=some (.CX 4434 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4902 : SixCarryPrefixData.program[4902]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4406 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 38 shape38 before_len38 len38 rfl (.CX 4434 4406) rfl
 
 theorem step_4902 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4903 basis 4406=((prefixState SixCarryPrefixData.program 4902 basis 4406) ^^ (prefixState SixCarryPrefixData.program 3824 basis 4434)) := by
@@ -26621,11 +25079,8 @@ theorem step_4902 (basis : BasisState) :
  rw [frame_4434_3824_4902 basis] at h
  exact h
 
-theorem gate_4903 : SixCarryPrefixData.program[4903]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4405 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 39 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[39]?=some (.CX 4434 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[4903]?=some (.CX 4434 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4903 : SixCarryPrefixData.program[4903]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4405 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 39 shape38 before_len38 len38 rfl (.CX 4434 4405) rfl
 
 theorem step_4903 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4904 basis 4405=((prefixState SixCarryPrefixData.program 4901 basis 4405) ^^ (prefixState SixCarryPrefixData.program 3824 basis 4434)) := by
@@ -26635,11 +25090,8 @@ theorem step_4903 (basis : BasisState) :
  rw [frame_4405_4901_4903 basis,frame_4434_3824_4903 basis] at h
  exact h
 
-theorem gate_4904 : SixCarryPrefixData.program[4904]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 40 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[40]?=some (.CX 4434 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[4904]?=some (.CX 4434 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4904 : SixCarryPrefixData.program[4904]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 40 shape38 before_len38 len38 rfl (.CX 4434 4662) rfl
 
 theorem step_4904 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4905 basis 4662=((prefixState SixCarryPrefixData.program 4900 basis 4662) ^^ (prefixState SixCarryPrefixData.program 3824 basis 4434)) := by
@@ -26649,11 +25101,8 @@ theorem step_4904 (basis : BasisState) :
  rw [frame_4434_3824_4904 basis,frame_4662_4900_4904 basis] at h
  exact h
 
-theorem gate_4905 : SixCarryPrefixData.program[4905]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 41 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[41]?=some (.CX 4435 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[4905]?=some (.CX 4435 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4905 : SixCarryPrefixData.program[4905]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 41 shape38 before_len38 len38 rfl (.CX 4435 4663) rfl
 
 theorem step_4905 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4906 basis 4663=((prefixState SixCarryPrefixData.program 4699 basis 4663) ^^ (prefixState SixCarryPrefixData.program 3821 basis 4435)) := by
@@ -26663,11 +25112,8 @@ theorem step_4905 (basis : BasisState) :
  rw [frame_4435_3821_4905 basis,frame_4663_4699_4905 basis] at h
  exact h
 
-theorem gate_4906 : SixCarryPrefixData.program[4906]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4406 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 42 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[42]?=some (.CX 4435 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[4906]?=some (.CX 4435 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4906 : SixCarryPrefixData.program[4906]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4406 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 42 shape38 before_len38 len38 rfl (.CX 4435 4406) rfl
 
 theorem step_4906 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4907 basis 4406=((prefixState SixCarryPrefixData.program 4903 basis 4406) ^^ (prefixState SixCarryPrefixData.program 3821 basis 4435)) := by
@@ -26677,11 +25123,8 @@ theorem step_4906 (basis : BasisState) :
  rw [frame_4406_4903_4906 basis,frame_4435_3821_4906 basis] at h
  exact h
 
-theorem gate_4907 : SixCarryPrefixData.program[4907]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4663 4406 4407 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 43 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[43]?=some (.CCX 4663 4406 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[4907]?=some (.CCX 4663 4406 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4907 : SixCarryPrefixData.program[4907]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4663 4406 4407 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 43 shape38 before_len38 len38 rfl (.CCX 4663 4406 4407) rfl
 
 theorem step_4907 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4908 basis 4407=((prefixState SixCarryPrefixData.program 3905 basis 4407) ^^ ((prefixState SixCarryPrefixData.program 4906 basis 4663) && (prefixState SixCarryPrefixData.program 4907 basis 4406))) := by
@@ -26691,11 +25134,8 @@ theorem step_4907 (basis : BasisState) :
  rw [frame_4407_3905_4907 basis,frame_4663_4906_4907 basis] at h
  exact h
 
-theorem gate_4908 : SixCarryPrefixData.program[4908]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4407 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 44 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[44]?=some (.CX 4435 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[4908]?=some (.CX 4435 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4908 : SixCarryPrefixData.program[4908]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4407 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 44 shape38 before_len38 len38 rfl (.CX 4435 4407) rfl
 
 theorem step_4908 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4909 basis 4407=((prefixState SixCarryPrefixData.program 4908 basis 4407) ^^ (prefixState SixCarryPrefixData.program 3821 basis 4435)) := by
@@ -26705,11 +25145,8 @@ theorem step_4908 (basis : BasisState) :
  rw [frame_4435_3821_4908 basis] at h
  exact h
 
-theorem gate_4909 : SixCarryPrefixData.program[4909]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4406 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 45 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[45]?=some (.CX 4435 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[4909]?=some (.CX 4435 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4909 : SixCarryPrefixData.program[4909]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4406 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 45 shape38 before_len38 len38 rfl (.CX 4435 4406) rfl
 
 theorem step_4909 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4910 basis 4406=((prefixState SixCarryPrefixData.program 4907 basis 4406) ^^ (prefixState SixCarryPrefixData.program 3821 basis 4435)) := by
@@ -26719,11 +25156,8 @@ theorem step_4909 (basis : BasisState) :
  rw [frame_4406_4907_4909 basis,frame_4435_3821_4909 basis] at h
  exact h
 
-theorem gate_4910 : SixCarryPrefixData.program[4910]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 46 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[46]?=some (.CX 4435 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[4910]?=some (.CX 4435 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4910 : SixCarryPrefixData.program[4910]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 46 shape38 before_len38 len38 rfl (.CX 4435 4663) rfl
 
 theorem step_4910 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4911 basis 4663=((prefixState SixCarryPrefixData.program 4906 basis 4663) ^^ (prefixState SixCarryPrefixData.program 3821 basis 4435)) := by
@@ -26733,11 +25167,8 @@ theorem step_4910 (basis : BasisState) :
  rw [frame_4435_3821_4910 basis,frame_4663_4906_4910 basis] at h
  exact h
 
-theorem gate_4911 : SixCarryPrefixData.program[4911]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 47 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[47]?=some (.CX 4436 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[4911]?=some (.CX 4436 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4911 : SixCarryPrefixData.program[4911]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 47 shape38 before_len38 len38 rfl (.CX 4436 4664) rfl
 
 theorem step_4911 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4912 basis 4664=((prefixState SixCarryPrefixData.program 4700 basis 4664) ^^ (prefixState SixCarryPrefixData.program 3818 basis 4436)) := by
@@ -26747,11 +25178,8 @@ theorem step_4911 (basis : BasisState) :
  rw [frame_4436_3818_4911 basis,frame_4664_4700_4911 basis] at h
  exact h
 
-theorem gate_4912 : SixCarryPrefixData.program[4912]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4407 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 48 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[48]?=some (.CX 4436 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[4912]?=some (.CX 4436 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4912 : SixCarryPrefixData.program[4912]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4407 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 48 shape38 before_len38 len38 rfl (.CX 4436 4407) rfl
 
 theorem step_4912 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4913 basis 4407=((prefixState SixCarryPrefixData.program 4909 basis 4407) ^^ (prefixState SixCarryPrefixData.program 3818 basis 4436)) := by
@@ -26761,11 +25189,8 @@ theorem step_4912 (basis : BasisState) :
  rw [frame_4407_4909_4912 basis,frame_4436_3818_4912 basis] at h
  exact h
 
-theorem gate_4915 : SixCarryPrefixData.program[4915]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4407 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 51 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[51]?=some (.CX 4436 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[4915]?=some (.CX 4436 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4915 : SixCarryPrefixData.program[4915]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4407 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 51 shape38 before_len38 len38 rfl (.CX 4436 4407) rfl
 
 theorem step_4915 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4916 basis 4407=((prefixState SixCarryPrefixData.program 4913 basis 4407) ^^ (prefixState SixCarryPrefixData.program 3818 basis 4436)) := by
@@ -26775,11 +25200,8 @@ theorem step_4915 (basis : BasisState) :
  rw [frame_4407_4913_4915 basis,frame_4436_3818_4915 basis] at h
  exact h
 
-theorem gate_4916 : SixCarryPrefixData.program[4916]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 52 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[52]?=some (.CX 4436 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[4916]?=some (.CX 4436 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4916 : SixCarryPrefixData.program[4916]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 52 shape38 before_len38 len38 rfl (.CX 4436 4664) rfl
 
 theorem step_4916 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4917 basis 4664=((prefixState SixCarryPrefixData.program 4912 basis 4664) ^^ (prefixState SixCarryPrefixData.program 3818 basis 4436)) := by
@@ -26789,11 +25211,8 @@ theorem step_4916 (basis : BasisState) :
  rw [frame_4436_3818_4916 basis,frame_4664_4912_4916 basis] at h
  exact h
 
-theorem gate_4974 : SixCarryPrefixData.program[4974]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 110 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[110]?=some (.CX 4436 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[4974]?=some (.CX 4436 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4974 : SixCarryPrefixData.program[4974]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 110 shape38 before_len38 len38 rfl (.CX 4436 4664) rfl
 
 theorem step_4974 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4975 basis 4664=((prefixState SixCarryPrefixData.program 4917 basis 4664) ^^ (prefixState SixCarryPrefixData.program 3818 basis 4436)) := by
@@ -26803,11 +25222,8 @@ theorem step_4974 (basis : BasisState) :
  rw [frame_4436_3818_4974 basis,frame_4664_4917_4974 basis] at h
  exact h
 
-theorem gate_4975 : SixCarryPrefixData.program[4975]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4407 4664 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 111 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[111]?=some (.CX 4407 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[4975]?=some (.CX 4407 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4975 : SixCarryPrefixData.program[4975]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4407 4664 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 111 shape38 before_len38 len38 rfl (.CX 4407 4664) rfl
 
 theorem step_4975 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4976 basis 4664=((prefixState SixCarryPrefixData.program 4975 basis 4664) ^^ (prefixState SixCarryPrefixData.program 4916 basis 4407)) := by
@@ -26817,11 +25233,8 @@ theorem step_4975 (basis : BasisState) :
  rw [frame_4407_4916_4975 basis] at h
  exact h
 
-theorem gate_4977 : SixCarryPrefixData.program[4977]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 113 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[113]?=some (.CX 4435 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[4977]?=some (.CX 4435 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4977 : SixCarryPrefixData.program[4977]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 113 shape38 before_len38 len38 rfl (.CX 4435 4663) rfl
 
 theorem step_4977 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4978 basis 4663=((prefixState SixCarryPrefixData.program 4911 basis 4663) ^^ (prefixState SixCarryPrefixData.program 3821 basis 4435)) := by
@@ -26831,11 +25244,8 @@ theorem step_4977 (basis : BasisState) :
  rw [frame_4435_3821_4977 basis,frame_4663_4911_4977 basis] at h
  exact h
 
-theorem gate_4978 : SixCarryPrefixData.program[4978]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4406 4663 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 114 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[114]?=some (.CX 4406 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[4978]?=some (.CX 4406 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4978 : SixCarryPrefixData.program[4978]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4406 4663 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 114 shape38 before_len38 len38 rfl (.CX 4406 4663) rfl
 
 theorem step_4978 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4979 basis 4663=((prefixState SixCarryPrefixData.program 4978 basis 4663) ^^ (prefixState SixCarryPrefixData.program 4910 basis 4406)) := by
@@ -26845,11 +25255,8 @@ theorem step_4978 (basis : BasisState) :
  rw [frame_4406_4910_4978 basis] at h
  exact h
 
-theorem gate_4980 : SixCarryPrefixData.program[4980]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 116 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[116]?=some (.CX 4434 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[4980]?=some (.CX 4434 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4980 : SixCarryPrefixData.program[4980]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 116 shape38 before_len38 len38 rfl (.CX 4434 4662) rfl
 
 theorem step_4980 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4981 basis 4662=((prefixState SixCarryPrefixData.program 4905 basis 4662) ^^ (prefixState SixCarryPrefixData.program 3824 basis 4434)) := by
@@ -26859,11 +25266,8 @@ theorem step_4980 (basis : BasisState) :
  rw [frame_4434_3824_4980 basis,frame_4662_4905_4980 basis] at h
  exact h
 
-theorem gate_4981 : SixCarryPrefixData.program[4981]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4405 4662 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 117 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[117]?=some (.CX 4405 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[4981]?=some (.CX 4405 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4981 : SixCarryPrefixData.program[4981]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4405 4662 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 117 shape38 before_len38 len38 rfl (.CX 4405 4662) rfl
 
 theorem step_4981 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4982 basis 4662=((prefixState SixCarryPrefixData.program 4981 basis 4662) ^^ (prefixState SixCarryPrefixData.program 4904 basis 4405)) := by
@@ -26873,11 +25277,8 @@ theorem step_4981 (basis : BasisState) :
  rw [frame_4405_4904_4981 basis] at h
  exact h
 
-theorem gate_4983 : SixCarryPrefixData.program[4983]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 119 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[119]?=some (.CX 4433 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4983]?=some (.CX 4433 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4983 : SixCarryPrefixData.program[4983]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 119 shape38 before_len38 len38 rfl (.CX 4433 4661) rfl
 
 theorem step_4983 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4984 basis 4661=((prefixState SixCarryPrefixData.program 4899 basis 4661) ^^ (prefixState SixCarryPrefixData.program 3827 basis 4433)) := by
@@ -26887,11 +25288,8 @@ theorem step_4983 (basis : BasisState) :
  rw [frame_4433_3827_4983 basis,frame_4661_4899_4983 basis] at h
  exact h
 
-theorem gate_4984 : SixCarryPrefixData.program[4984]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4404 4661 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 120 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[120]?=some (.CX 4404 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[4984]?=some (.CX 4404 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4984 : SixCarryPrefixData.program[4984]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4404 4661 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 120 shape38 before_len38 len38 rfl (.CX 4404 4661) rfl
 
 theorem step_4984 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4985 basis 4661=((prefixState SixCarryPrefixData.program 4984 basis 4661) ^^ (prefixState SixCarryPrefixData.program 4898 basis 4404)) := by
@@ -26901,11 +25299,8 @@ theorem step_4984 (basis : BasisState) :
  rw [frame_4404_4898_4984 basis] at h
  exact h
 
-theorem gate_4986 : SixCarryPrefixData.program[4986]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 122 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[122]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4986]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4986 : SixCarryPrefixData.program[4986]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 122 shape38 before_len38 len38 rfl (.CX 4370 4660) rfl
 
 theorem step_4986 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4987 basis 4660=((prefixState SixCarryPrefixData.program 4893 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -26915,11 +25310,8 @@ theorem step_4986 (basis : BasisState) :
  rw [frame_4370_0_4986 basis,frame_4660_4893_4986 basis] at h
  exact h
 
-theorem gate_4987 : SixCarryPrefixData.program[4987]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4403 4660 := by
- have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 123 shape38 before_len38 (by rw [len38]; decide +kernel)
- have hg : SixCarryPrefixData.chunk38[123]?=some (.CX 4403 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[4987]?=some (.CX 4403 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_4987 : SixCarryPrefixData.program[4987]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4403 4660 :=
+ gateFromChunk SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 123 shape38 before_len38 len38 rfl (.CX 4403 4660) rfl
 
 theorem step_4987 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4988 basis 4660=((prefixState SixCarryPrefixData.program 4987 basis 4660) ^^ (prefixState SixCarryPrefixData.program 4892 basis 4403)) := by
@@ -26929,11 +25321,8 @@ theorem step_4987 (basis : BasisState) :
  rw [frame_4403_4892_4987 basis] at h
  exact h
 
-theorem gate_5070 : SixCarryPrefixData.program[5070]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 78 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[78]?=some (.CX 4342 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[5070]?=some (.CX 4342 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5070 : SixCarryPrefixData.program[5070]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4342 4632 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 78 shape39 before_len39 len39 rfl (.CX 4342 4632) rfl
 
 theorem step_5070 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5071 basis 4632=((prefixState SixCarryPrefixData.program 4277 basis 4632) ^^ (prefixState SixCarryPrefixData.program 0 basis 4342)) := by
@@ -26943,11 +25332,8 @@ theorem step_5070 (basis : BasisState) :
  rw [frame_4342_0_5070 basis,frame_4632_4277_5070 basis] at h
  exact h
 
-theorem gate_5071 : SixCarryPrefixData.program[5071]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4375 4632 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 79 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[79]?=some (.CX 4375 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[5071]?=some (.CX 4375 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5071 : SixCarryPrefixData.program[5071]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4375 4632 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 79 shape39 before_len39 len39 rfl (.CX 4375 4632) rfl
 
 theorem step_5071 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5072 basis 4632=((prefixState SixCarryPrefixData.program 5071 basis 4632) ^^ (prefixState SixCarryPrefixData.program 4724 basis 4375)) := by
@@ -26957,11 +25343,8 @@ theorem step_5071 (basis : BasisState) :
  rw [frame_4375_4724_5071 basis] at h
  exact h
 
-theorem gate_5073 : SixCarryPrefixData.program[5073]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 81 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[81]?=some (.CX 4341 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[5073]?=some (.CX 4341 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5073 : SixCarryPrefixData.program[5073]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4631 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 81 shape39 before_len39 len39 rfl (.CX 4341 4631) rfl
 
 theorem step_5073 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5074 basis 4631=((prefixState SixCarryPrefixData.program 4276 basis 4631) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -26971,11 +25354,8 @@ theorem step_5073 (basis : BasisState) :
  rw [frame_4341_0_5073 basis,frame_4631_4276_5073 basis] at h
  exact h
 
-theorem gate_5074 : SixCarryPrefixData.program[5074]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4374 4631 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 82 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[82]?=some (.CX 4374 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[5074]?=some (.CX 4374 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5074 : SixCarryPrefixData.program[5074]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4374 4631 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 82 shape39 before_len39 len39 rfl (.CX 4374 4631) rfl
 
 theorem step_5074 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5075 basis 4631=((prefixState SixCarryPrefixData.program 5074 basis 4631) ^^ (prefixState SixCarryPrefixData.program 4723 basis 4374)) := by
@@ -26985,11 +25365,8 @@ theorem step_5074 (basis : BasisState) :
  rw [frame_4374_4723_5074 basis] at h
  exact h
 
-theorem gate_5076 : SixCarryPrefixData.program[5076]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 84 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[84]?=some (.CX 4340 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[5076]?=some (.CX 4340 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5076 : SixCarryPrefixData.program[5076]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4630 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 84 shape39 before_len39 len39 rfl (.CX 4340 4630) rfl
 
 theorem step_5076 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5077 basis 4630=((prefixState SixCarryPrefixData.program 4275 basis 4630) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -26999,11 +25376,8 @@ theorem step_5076 (basis : BasisState) :
  rw [frame_4340_0_5076 basis,frame_4630_4275_5076 basis] at h
  exact h
 
-theorem gate_5077 : SixCarryPrefixData.program[5077]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4373 4630 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 85 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[85]?=some (.CX 4373 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[5077]?=some (.CX 4373 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5077 : SixCarryPrefixData.program[5077]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4373 4630 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 85 shape39 before_len39 len39 rfl (.CX 4373 4630) rfl
 
 theorem step_5077 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5078 basis 4630=((prefixState SixCarryPrefixData.program 5077 basis 4630) ^^ (prefixState SixCarryPrefixData.program 4722 basis 4373)) := by
@@ -27013,11 +25387,8 @@ theorem step_5077 (basis : BasisState) :
  rw [frame_4373_4722_5077 basis] at h
  exact h
 
-theorem gate_5079 : SixCarryPrefixData.program[5079]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 87 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[87]?=some (.CX 4339 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[5079]?=some (.CX 4339 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5079 : SixCarryPrefixData.program[5079]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4629 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 87 shape39 before_len39 len39 rfl (.CX 4339 4629) rfl
 
 theorem step_5079 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5080 basis 4629=((prefixState SixCarryPrefixData.program 4274 basis 4629) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -27027,11 +25398,8 @@ theorem step_5079 (basis : BasisState) :
  rw [frame_4339_0_5079 basis,frame_4629_4274_5079 basis] at h
  exact h
 
-theorem gate_5080 : SixCarryPrefixData.program[5080]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4760 4629 := by
- have h := lookup_context SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 88 shape39 before_len39 (by rw [len39]; decide +kernel)
- have hg : SixCarryPrefixData.chunk39[88]?=some (.CX 4760 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[5080]?=some (.CX 4760 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5080 : SixCarryPrefixData.program[5080]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4760 4629 :=
+ gateFromChunk SixCarryPrefixData.program before39 SixCarryPrefixData.chunk39 after39 4992 88 shape39 before_len39 len39 rfl (.CX 4760 4629) rfl
 
 theorem step_5080 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5081 basis 4629=((prefixState SixCarryPrefixData.program 5080 basis 4629) ^^ (prefixState SixCarryPrefixData.program 4448 basis 4760)) := by
@@ -27041,11 +25409,8 @@ theorem step_5080 (basis : BasisState) :
  rw [frame_4760_4448_5080 basis] at h
  exact h
 
-theorem gate_5344 : SixCarryPrefixData.program[5344]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4629 4760 := by
- have h := lookup_context SixCarryPrefixData.program before41 SixCarryPrefixData.chunk41 after41 5248 96 shape41 before_len41 (by rw [len41]; decide +kernel)
- have hg : SixCarryPrefixData.chunk41[96]?=some (.CX 4629 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[5344]?=some (.CX 4629 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5344 : SixCarryPrefixData.program[5344]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4629 4760 :=
+ gateFromChunk SixCarryPrefixData.program before41 SixCarryPrefixData.chunk41 after41 5248 96 shape41 before_len41 len41 rfl (.CX 4629 4760) rfl
 
 theorem step_5344 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5345 basis 4760=((prefixState SixCarryPrefixData.program 4448 basis 4760) ^^ (prefixState SixCarryPrefixData.program 5081 basis 4629)) := by
@@ -27055,11 +25420,8 @@ theorem step_5344 (basis : BasisState) :
  rw [frame_4629_5081_5344 basis,frame_4760_4448_5344 basis] at h
  exact h
 
-theorem gate_5347 : SixCarryPrefixData.program[5347]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4629 4760 := by
- have h := lookup_context SixCarryPrefixData.program before41 SixCarryPrefixData.chunk41 after41 5248 99 shape41 before_len41 (by rw [len41]; decide +kernel)
- have hg : SixCarryPrefixData.chunk41[99]?=some (.CX 4629 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[5347]?=some (.CX 4629 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_5347 : SixCarryPrefixData.program[5347]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4629 4760 :=
+ gateFromChunk SixCarryPrefixData.program before41 SixCarryPrefixData.chunk41 after41 5248 99 shape41 before_len41 len41 rfl (.CX 4629 4760) rfl
 
 theorem step_5347 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5348 basis 4760=((prefixState SixCarryPrefixData.program 5345 basis 4760) ^^ (prefixState SixCarryPrefixData.program 5081 basis 4629)) := by
@@ -27069,11 +25431,8 @@ theorem step_5347 (basis : BasisState) :
  rw [frame_4629_5081_5347 basis,frame_4760_5345_5347 basis] at h
  exact h
 
-theorem gate_7123 : SixCarryPrefixData.program[7123]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4762 4760 := by
- have h := lookup_context SixCarryPrefixData.program before55 SixCarryPrefixData.chunk55 after55 7040 83 shape55 before_len55 (by rw [len55]; decide +kernel)
- have hg : SixCarryPrefixData.chunk55[83]?=some (.CX 4762 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[7123]?=some (.CX 4762 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_7123 : SixCarryPrefixData.program[7123]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4762 4760 :=
+ gateFromChunk SixCarryPrefixData.program before55 SixCarryPrefixData.chunk55 after55 7040 83 shape55 before_len55 len55 rfl (.CX 4762 4760) rfl
 
 theorem step_7123 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 7124 basis 4760=((prefixState SixCarryPrefixData.program 5348 basis 4760) ^^ (prefixState SixCarryPrefixData.program 7122 basis 4762)) := by
@@ -27083,11 +25442,8 @@ theorem step_7123 (basis : BasisState) :
  rw [frame_4760_5348_7123 basis,frame_4762_7122_7123 basis] at h
  exact h
 
-theorem gate_7126 : SixCarryPrefixData.program[7126]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4762 4760 := by
- have h := lookup_context SixCarryPrefixData.program before55 SixCarryPrefixData.chunk55 after55 7040 86 shape55 before_len55 (by rw [len55]; decide +kernel)
- have hg : SixCarryPrefixData.chunk55[86]?=some (.CX 4762 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[7126]?=some (.CX 4762 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_7126 : SixCarryPrefixData.program[7126]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4762 4760 :=
+ gateFromChunk SixCarryPrefixData.program before55 SixCarryPrefixData.chunk55 after55 7040 86 shape55 before_len55 len55 rfl (.CX 4762 4760) rfl
 
 theorem step_7126 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 7127 basis 4760=((prefixState SixCarryPrefixData.program 7124 basis 4760) ^^ (prefixState SixCarryPrefixData.program 7122 basis 4762)) := by
@@ -27097,11 +25453,8 @@ theorem step_7126 (basis : BasisState) :
  rw [frame_4760_7124_7126 basis,frame_4762_7122_7126 basis] at h
  exact h
 
-theorem gate_9387 : SixCarryPrefixData.program[9387]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4629 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 43 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[43]?=some (.CX 2 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[9387]?=some (.CX 2 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9387 : SixCarryPrefixData.program[9387]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4629 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 43 shape73 before_len73 len73 rfl (.CX 2 4629) rfl
 
 theorem step_9387 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9388 basis 4629=((prefixState SixCarryPrefixData.program 5081 basis 4629) ^^ (prefixState SixCarryPrefixData.program 9387 basis 2)) := by
@@ -27111,11 +25464,8 @@ theorem step_9387 (basis : BasisState) :
  rw [frame_4629_5081_9387 basis] at h
  exact h
 
-theorem gate_9388 : SixCarryPrefixData.program[9388]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4760 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 44 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[44]?=some (.CX 2 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[9388]?=some (.CX 2 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9388 : SixCarryPrefixData.program[9388]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4760 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 44 shape73 before_len73 len73 rfl (.CX 2 4760) rfl
 
 theorem step_9388 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9389 basis 4760=((prefixState SixCarryPrefixData.program 7127 basis 4760) ^^ (prefixState SixCarryPrefixData.program 9387 basis 2)) := by
@@ -27125,11 +25475,8 @@ theorem step_9388 (basis : BasisState) :
  rw [frame_2_9387_9388 basis,frame_4760_7127_9388 basis] at h
  exact h
 
-theorem gate_9391 : SixCarryPrefixData.program[9391]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4760 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 47 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[47]?=some (.CX 2 4760) := by decide +kernel
- have hh : SixCarryPrefixData.program[9391]?=some (.CX 2 4760) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9391 : SixCarryPrefixData.program[9391]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4760 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 47 shape73 before_len73 len73 rfl (.CX 2 4760) rfl
 
 theorem step_9391 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9392 basis 4760=((prefixState SixCarryPrefixData.program 9389 basis 4760) ^^ (prefixState SixCarryPrefixData.program 9387 basis 2)) := by
@@ -27139,11 +25486,8 @@ theorem step_9391 (basis : BasisState) :
  rw [frame_2_9387_9391 basis,frame_4760_9389_9391 basis] at h
  exact h
 
-theorem gate_9392 : SixCarryPrefixData.program[9392]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4629 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 48 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[48]?=some (.CX 2 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[9392]?=some (.CX 2 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9392 : SixCarryPrefixData.program[9392]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 2 4629 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 48 shape73 before_len73 len73 rfl (.CX 2 4629) rfl
 
 theorem step_9392 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9393 basis 4629=((prefixState SixCarryPrefixData.program 9388 basis 4629) ^^ (prefixState SixCarryPrefixData.program 9387 basis 2)) := by
@@ -27153,11 +25497,8 @@ theorem step_9392 (basis : BasisState) :
  rw [frame_2_9387_9392 basis,frame_4629_9388_9392 basis] at h
  exact h
 
-theorem gate_9395 : SixCarryPrefixData.program[9395]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 3 4630 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 51 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[51]?=some (.CX 3 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[9395]?=some (.CX 3 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9395 : SixCarryPrefixData.program[9395]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 3 4630 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 51 shape73 before_len73 len73 rfl (.CX 3 4630) rfl
 
 theorem step_9395 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9396 basis 4630=((prefixState SixCarryPrefixData.program 5078 basis 4630) ^^ (prefixState SixCarryPrefixData.program 9395 basis 3)) := by
@@ -27167,11 +25508,8 @@ theorem step_9395 (basis : BasisState) :
  rw [frame_4630_5078_9395 basis] at h
  exact h
 
-theorem gate_9400 : SixCarryPrefixData.program[9400]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 3 4630 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 56 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[56]?=some (.CX 3 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[9400]?=some (.CX 3 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9400 : SixCarryPrefixData.program[9400]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 3 4630 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 56 shape73 before_len73 len73 rfl (.CX 3 4630) rfl
 
 theorem step_9400 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9401 basis 4630=((prefixState SixCarryPrefixData.program 9396 basis 4630) ^^ (prefixState SixCarryPrefixData.program 9395 basis 3)) := by
@@ -27181,11 +25519,8 @@ theorem step_9400 (basis : BasisState) :
  rw [frame_3_9395_9400 basis,frame_4630_9396_9400 basis] at h
  exact h
 
-theorem gate_9403 : SixCarryPrefixData.program[9403]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4 4631 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 59 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[59]?=some (.CX 4 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[9403]?=some (.CX 4 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9403 : SixCarryPrefixData.program[9403]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4 4631 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 59 shape73 before_len73 len73 rfl (.CX 4 4631) rfl
 
 theorem step_9403 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9404 basis 4631=((prefixState SixCarryPrefixData.program 5075 basis 4631) ^^ (prefixState SixCarryPrefixData.program 9403 basis 4)) := by
@@ -27195,11 +25530,8 @@ theorem step_9403 (basis : BasisState) :
  rw [frame_4631_5075_9403 basis] at h
  exact h
 
-theorem gate_9408 : SixCarryPrefixData.program[9408]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4 4631 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 64 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[64]?=some (.CX 4 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[9408]?=some (.CX 4 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9408 : SixCarryPrefixData.program[9408]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4 4631 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 64 shape73 before_len73 len73 rfl (.CX 4 4631) rfl
 
 theorem step_9408 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9409 basis 4631=((prefixState SixCarryPrefixData.program 9404 basis 4631) ^^ (prefixState SixCarryPrefixData.program 9403 basis 4)) := by
@@ -27209,11 +25541,8 @@ theorem step_9408 (basis : BasisState) :
  rw [frame_4_9403_9408 basis,frame_4631_9404_9408 basis] at h
  exact h
 
-theorem gate_9411 : SixCarryPrefixData.program[9411]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 5 4632 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 67 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[67]?=some (.CX 5 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[9411]?=some (.CX 5 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9411 : SixCarryPrefixData.program[9411]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 5 4632 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 67 shape73 before_len73 len73 rfl (.CX 5 4632) rfl
 
 theorem step_9411 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9412 basis 4632=((prefixState SixCarryPrefixData.program 5072 basis 4632) ^^ (prefixState SixCarryPrefixData.program 9411 basis 5)) := by
@@ -27223,11 +25552,8 @@ theorem step_9411 (basis : BasisState) :
  rw [frame_4632_5072_9411 basis] at h
  exact h
 
-theorem gate_9416 : SixCarryPrefixData.program[9416]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 5 4632 := by
- have h := lookup_context SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 72 shape73 before_len73 (by rw [len73]; decide +kernel)
- have hg : SixCarryPrefixData.chunk73[72]?=some (.CX 5 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[9416]?=some (.CX 5 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9416 : SixCarryPrefixData.program[9416]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 5 4632 :=
+ gateFromChunk SixCarryPrefixData.program before73 SixCarryPrefixData.chunk73 after73 9344 72 shape73 before_len73 len73 rfl (.CX 5 4632) rfl
 
 theorem step_9416 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9417 basis 4632=((prefixState SixCarryPrefixData.program 9412 basis 4632) ^^ (prefixState SixCarryPrefixData.program 9411 basis 5)) := by
@@ -27237,11 +25563,8 @@ theorem step_9416 (basis : BasisState) :
  rw [frame_5_9411_9416 basis,frame_4632_9412_9416 basis] at h
  exact h
 
-theorem gate_9635 : SixCarryPrefixData.program[9635]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 33 4660 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 35 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[35]?=some (.CX 33 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[9635]?=some (.CX 33 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9635 : SixCarryPrefixData.program[9635]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 33 4660 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 35 shape75 before_len75 len75 rfl (.CX 33 4660) rfl
 
 theorem step_9635 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9636 basis 4660=((prefixState SixCarryPrefixData.program 4988 basis 4660) ^^ (prefixState SixCarryPrefixData.program 9635 basis 33)) := by
@@ -27251,11 +25574,8 @@ theorem step_9635 (basis : BasisState) :
  rw [frame_4660_4988_9635 basis] at h
  exact h
 
-theorem gate_9640 : SixCarryPrefixData.program[9640]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 33 4660 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 40 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[40]?=some (.CX 33 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[9640]?=some (.CX 33 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9640 : SixCarryPrefixData.program[9640]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 33 4660 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 40 shape75 before_len75 len75 rfl (.CX 33 4660) rfl
 
 theorem step_9640 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9641 basis 4660=((prefixState SixCarryPrefixData.program 9636 basis 4660) ^^ (prefixState SixCarryPrefixData.program 9635 basis 33)) := by
@@ -27265,11 +25585,8 @@ theorem step_9640 (basis : BasisState) :
  rw [frame_33_9635_9640 basis,frame_4660_9636_9640 basis] at h
  exact h
 
-theorem gate_9643 : SixCarryPrefixData.program[9643]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 34 4661 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 43 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[43]?=some (.CX 34 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[9643]?=some (.CX 34 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9643 : SixCarryPrefixData.program[9643]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 34 4661 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 43 shape75 before_len75 len75 rfl (.CX 34 4661) rfl
 
 theorem step_9643 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9644 basis 4661=((prefixState SixCarryPrefixData.program 4985 basis 4661) ^^ (prefixState SixCarryPrefixData.program 9643 basis 34)) := by
@@ -27279,11 +25596,8 @@ theorem step_9643 (basis : BasisState) :
  rw [frame_4661_4985_9643 basis] at h
  exact h
 
-theorem gate_9648 : SixCarryPrefixData.program[9648]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 34 4661 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 48 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[48]?=some (.CX 34 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[9648]?=some (.CX 34 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9648 : SixCarryPrefixData.program[9648]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 34 4661 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 48 shape75 before_len75 len75 rfl (.CX 34 4661) rfl
 
 theorem step_9648 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9649 basis 4661=((prefixState SixCarryPrefixData.program 9644 basis 4661) ^^ (prefixState SixCarryPrefixData.program 9643 basis 34)) := by
@@ -27293,11 +25607,8 @@ theorem step_9648 (basis : BasisState) :
  rw [frame_34_9643_9648 basis,frame_4661_9644_9648 basis] at h
  exact h
 
-theorem gate_9651 : SixCarryPrefixData.program[9651]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 35 4662 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 51 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[51]?=some (.CX 35 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[9651]?=some (.CX 35 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9651 : SixCarryPrefixData.program[9651]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 35 4662 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 51 shape75 before_len75 len75 rfl (.CX 35 4662) rfl
 
 theorem step_9651 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9652 basis 4662=((prefixState SixCarryPrefixData.program 4982 basis 4662) ^^ (prefixState SixCarryPrefixData.program 9651 basis 35)) := by
@@ -27307,11 +25618,8 @@ theorem step_9651 (basis : BasisState) :
  rw [frame_4662_4982_9651 basis] at h
  exact h
 
-theorem gate_9656 : SixCarryPrefixData.program[9656]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 35 4662 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 56 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[56]?=some (.CX 35 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[9656]?=some (.CX 35 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9656 : SixCarryPrefixData.program[9656]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 35 4662 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 56 shape75 before_len75 len75 rfl (.CX 35 4662) rfl
 
 theorem step_9656 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9657 basis 4662=((prefixState SixCarryPrefixData.program 9652 basis 4662) ^^ (prefixState SixCarryPrefixData.program 9651 basis 35)) := by
@@ -27321,11 +25629,8 @@ theorem step_9656 (basis : BasisState) :
  rw [frame_35_9651_9656 basis,frame_4662_9652_9656 basis] at h
  exact h
 
-theorem gate_9659 : SixCarryPrefixData.program[9659]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 36 4663 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 59 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[59]?=some (.CX 36 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[9659]?=some (.CX 36 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9659 : SixCarryPrefixData.program[9659]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 36 4663 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 59 shape75 before_len75 len75 rfl (.CX 36 4663) rfl
 
 theorem step_9659 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9660 basis 4663=((prefixState SixCarryPrefixData.program 4979 basis 4663) ^^ (prefixState SixCarryPrefixData.program 9659 basis 36)) := by
@@ -27335,11 +25640,8 @@ theorem step_9659 (basis : BasisState) :
  rw [frame_4663_4979_9659 basis] at h
  exact h
 
-theorem gate_9664 : SixCarryPrefixData.program[9664]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 36 4663 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 64 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[64]?=some (.CX 36 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[9664]?=some (.CX 36 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9664 : SixCarryPrefixData.program[9664]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 36 4663 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 64 shape75 before_len75 len75 rfl (.CX 36 4663) rfl
 
 theorem step_9664 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9665 basis 4663=((prefixState SixCarryPrefixData.program 9660 basis 4663) ^^ (prefixState SixCarryPrefixData.program 9659 basis 36)) := by
@@ -27349,11 +25651,8 @@ theorem step_9664 (basis : BasisState) :
  rw [frame_36_9659_9664 basis,frame_4663_9660_9664 basis] at h
  exact h
 
-theorem gate_9667 : SixCarryPrefixData.program[9667]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 37 4664 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 67 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[67]?=some (.CX 37 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[9667]?=some (.CX 37 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9667 : SixCarryPrefixData.program[9667]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 37 4664 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 67 shape75 before_len75 len75 rfl (.CX 37 4664) rfl
 
 theorem step_9667 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9668 basis 4664=((prefixState SixCarryPrefixData.program 4976 basis 4664) ^^ (prefixState SixCarryPrefixData.program 9667 basis 37)) := by
@@ -27363,11 +25662,8 @@ theorem step_9667 (basis : BasisState) :
  rw [frame_4664_4976_9667 basis] at h
  exact h
 
-theorem gate_9672 : SixCarryPrefixData.program[9672]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 37 4664 := by
- have h := lookup_context SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 72 shape75 before_len75 (by rw [len75]; decide +kernel)
- have hg : SixCarryPrefixData.chunk75[72]?=some (.CX 37 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[9672]?=some (.CX 37 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_9672 : SixCarryPrefixData.program[9672]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 37 4664 :=
+ gateFromChunk SixCarryPrefixData.program before75 SixCarryPrefixData.chunk75 after75 9600 72 shape75 before_len75 len75 rfl (.CX 37 4664) rfl
 
 theorem step_9672 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9673 basis 4664=((prefixState SixCarryPrefixData.program 9668 basis 4664) ^^ (prefixState SixCarryPrefixData.program 9667 basis 37)) := by
@@ -27377,11 +25673,8 @@ theorem step_9672 (basis : BasisState) :
  rw [frame_37_9667_9672 basis,frame_4664_9668_9672 basis] at h
  exact h
 
-theorem gate_11563 : SixCarryPrefixData.program[11563]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4436 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 43 shape90 before_len90 (by rw [len90]; decide +kernel)
- have hg : SixCarryPrefixData.chunk90[43]?=some (.measureX 4436 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11563]?=some (.measureX 4436 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11563 : SixCarryPrefixData.program[11563]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4436 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 43 shape90 before_len90 len90 rfl (.measureX 4436 [] []) rfl
 
 theorem step_11563 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11564 basis 4436=(false) := by
@@ -27390,11 +25683,8 @@ theorem step_11563 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11566 : SixCarryPrefixData.program[11566]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4435 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 46 shape90 before_len90 (by rw [len90]; decide +kernel)
- have hg : SixCarryPrefixData.chunk90[46]?=some (.measureX 4435 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11566]?=some (.measureX 4435 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11566 : SixCarryPrefixData.program[11566]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4435 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 46 shape90 before_len90 len90 rfl (.measureX 4435 [] []) rfl
 
 theorem step_11566 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11567 basis 4435=(false) := by
@@ -27403,11 +25693,8 @@ theorem step_11566 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11569 : SixCarryPrefixData.program[11569]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4434 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 49 shape90 before_len90 (by rw [len90]; decide +kernel)
- have hg : SixCarryPrefixData.chunk90[49]?=some (.measureX 4434 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11569]?=some (.measureX 4434 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11569 : SixCarryPrefixData.program[11569]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4434 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 49 shape90 before_len90 len90 rfl (.measureX 4434 [] []) rfl
 
 theorem step_11569 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11570 basis 4434=(false) := by
@@ -27416,11 +25703,8 @@ theorem step_11569 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11572 : SixCarryPrefixData.program[11572]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4433 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 52 shape90 before_len90 (by rw [len90]; decide +kernel)
- have hg : SixCarryPrefixData.chunk90[52]?=some (.measureX 4433 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11572]?=some (.measureX 4433 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11572 : SixCarryPrefixData.program[11572]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4433 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before90 SixCarryPrefixData.chunk90 after90 11520 52 shape90 before_len90 len90 rfl (.measureX 4433 [] []) rfl
 
 theorem step_11572 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11573 basis 4433=(false) := by
@@ -27429,11 +25713,8 @@ theorem step_11572 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11650 : SixCarryPrefixData.program[11650]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4407 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 2 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[2]?=some (.measureX 4407 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11650]?=some (.measureX 4407 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11650 : SixCarryPrefixData.program[11650]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4407 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 2 shape91 before_len91 len91 rfl (.measureX 4407 [] []) rfl
 
 theorem step_11650 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11651 basis 4407=(false) := by
@@ -27442,11 +25723,8 @@ theorem step_11650 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11653 : SixCarryPrefixData.program[11653]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4406 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 5 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[5]?=some (.measureX 4406 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11653]?=some (.measureX 4406 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11653 : SixCarryPrefixData.program[11653]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4406 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 5 shape91 before_len91 len91 rfl (.measureX 4406 [] []) rfl
 
 theorem step_11653 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11654 basis 4406=(false) := by
@@ -27455,11 +25733,8 @@ theorem step_11653 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11656 : SixCarryPrefixData.program[11656]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4405 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 8 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[8]?=some (.measureX 4405 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11656]?=some (.measureX 4405 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11656 : SixCarryPrefixData.program[11656]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4405 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 8 shape91 before_len91 len91 rfl (.measureX 4405 [] []) rfl
 
 theorem step_11656 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11657 basis 4405=(false) := by
@@ -27468,11 +25743,8 @@ theorem step_11656 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11659 : SixCarryPrefixData.program[11659]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4404 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 11 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[11]?=some (.measureX 4404 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11659]?=some (.measureX 4404 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11659 : SixCarryPrefixData.program[11659]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4404 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 11 shape91 before_len91 len91 rfl (.measureX 4404 [] []) rfl
 
 theorem step_11659 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11660 basis 4404=(false) := by
@@ -27481,11 +25753,8 @@ theorem step_11659 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11662 : SixCarryPrefixData.program[11662]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4403 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 14 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[14]?=some (.measureX 4403 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[11662]?=some (.measureX 4403 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11662 : SixCarryPrefixData.program[11662]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4403 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 14 shape91 before_len91 len91 rfl (.measureX 4403 [] []) rfl
 
 theorem step_11662 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11663 basis 4403=(false) := by
@@ -27494,11 +25763,8 @@ theorem step_11662 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11760 : SixCarryPrefixData.program[11760]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 112 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[112]?=some (.X 4629) := by decide +kernel
- have hh : SixCarryPrefixData.program[11760]?=some (.X 4629) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11760 : SixCarryPrefixData.program[11760]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4629 :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 112 shape91 before_len91 len91 rfl (.X 4629) rfl
 
 theorem step_11760 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11761 basis 4629=(!(prefixState SixCarryPrefixData.program 9393 basis 4629)) := by
@@ -27508,11 +25774,8 @@ theorem step_11760 (basis : BasisState) :
  rw [frame_4629_9393_11760 basis] at h
  exact h
 
-theorem gate_11761 : SixCarryPrefixData.program[11761]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 113 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[113]?=some (.X 4630) := by decide +kernel
- have hh : SixCarryPrefixData.program[11761]?=some (.X 4630) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11761 : SixCarryPrefixData.program[11761]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4630 :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 113 shape91 before_len91 len91 rfl (.X 4630) rfl
 
 theorem step_11761 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11762 basis 4630=(!(prefixState SixCarryPrefixData.program 9401 basis 4630)) := by
@@ -27522,11 +25785,8 @@ theorem step_11761 (basis : BasisState) :
  rw [frame_4630_9401_11761 basis] at h
  exact h
 
-theorem gate_11762 : SixCarryPrefixData.program[11762]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 114 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[114]?=some (.X 4631) := by decide +kernel
- have hh : SixCarryPrefixData.program[11762]?=some (.X 4631) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11762 : SixCarryPrefixData.program[11762]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4631 :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 114 shape91 before_len91 len91 rfl (.X 4631) rfl
 
 theorem step_11762 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11763 basis 4631=(!(prefixState SixCarryPrefixData.program 9409 basis 4631)) := by
@@ -27536,11 +25796,8 @@ theorem step_11762 (basis : BasisState) :
  rw [frame_4631_9409_11762 basis] at h
  exact h
 
-theorem gate_11763 : SixCarryPrefixData.program[11763]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 := by
- have h := lookup_context SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 115 shape91 before_len91 (by rw [len91]; decide +kernel)
- have hg : SixCarryPrefixData.chunk91[115]?=some (.X 4632) := by decide +kernel
- have hh : SixCarryPrefixData.program[11763]?=some (.X 4632) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11763 : SixCarryPrefixData.program[11763]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4632 :=
+ gateFromChunk SixCarryPrefixData.program before91 SixCarryPrefixData.chunk91 after91 11648 115 shape91 before_len91 len91 rfl (.X 4632) rfl
 
 theorem step_11763 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11764 basis 4632=(!(prefixState SixCarryPrefixData.program 9417 basis 4632)) := by
@@ -27550,11 +25807,8 @@ theorem step_11763 (basis : BasisState) :
  rw [frame_4632_9417_11763 basis] at h
  exact h
 
-theorem gate_11791 : SixCarryPrefixData.program[11791]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4660 := by
- have h := lookup_context SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 15 shape92 before_len92 (by rw [len92]; decide +kernel)
- have hg : SixCarryPrefixData.chunk92[15]?=some (.X 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[11791]?=some (.X 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11791 : SixCarryPrefixData.program[11791]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4660 :=
+ gateFromChunk SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 15 shape92 before_len92 len92 rfl (.X 4660) rfl
 
 theorem step_11791 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11792 basis 4660=(!(prefixState SixCarryPrefixData.program 9641 basis 4660)) := by
@@ -27564,11 +25818,8 @@ theorem step_11791 (basis : BasisState) :
  rw [frame_4660_9641_11791 basis] at h
  exact h
 
-theorem gate_11792 : SixCarryPrefixData.program[11792]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4661 := by
- have h := lookup_context SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 16 shape92 before_len92 (by rw [len92]; decide +kernel)
- have hg : SixCarryPrefixData.chunk92[16]?=some (.X 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[11792]?=some (.X 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11792 : SixCarryPrefixData.program[11792]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4661 :=
+ gateFromChunk SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 16 shape92 before_len92 len92 rfl (.X 4661) rfl
 
 theorem step_11792 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11793 basis 4661=(!(prefixState SixCarryPrefixData.program 9649 basis 4661)) := by
@@ -27578,11 +25829,8 @@ theorem step_11792 (basis : BasisState) :
  rw [frame_4661_9649_11792 basis] at h
  exact h
 
-theorem gate_11793 : SixCarryPrefixData.program[11793]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4662 := by
- have h := lookup_context SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 17 shape92 before_len92 (by rw [len92]; decide +kernel)
- have hg : SixCarryPrefixData.chunk92[17]?=some (.X 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[11793]?=some (.X 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11793 : SixCarryPrefixData.program[11793]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4662 :=
+ gateFromChunk SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 17 shape92 before_len92 len92 rfl (.X 4662) rfl
 
 theorem step_11793 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11794 basis 4662=(!(prefixState SixCarryPrefixData.program 9657 basis 4662)) := by
@@ -27592,11 +25840,8 @@ theorem step_11793 (basis : BasisState) :
  rw [frame_4662_9657_11793 basis] at h
  exact h
 
-theorem gate_11794 : SixCarryPrefixData.program[11794]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4663 := by
- have h := lookup_context SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 18 shape92 before_len92 (by rw [len92]; decide +kernel)
- have hg : SixCarryPrefixData.chunk92[18]?=some (.X 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[11794]?=some (.X 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11794 : SixCarryPrefixData.program[11794]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4663 :=
+ gateFromChunk SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 18 shape92 before_len92 len92 rfl (.X 4663) rfl
 
 theorem step_11794 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11795 basis 4663=(!(prefixState SixCarryPrefixData.program 9665 basis 4663)) := by
@@ -27606,11 +25851,8 @@ theorem step_11794 (basis : BasisState) :
  rw [frame_4663_9665_11794 basis] at h
  exact h
 
-theorem gate_11795 : SixCarryPrefixData.program[11795]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4664 := by
- have h := lookup_context SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 19 shape92 before_len92 (by rw [len92]; decide +kernel)
- have hg : SixCarryPrefixData.chunk92[19]?=some (.X 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[11795]?=some (.X 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11795 : SixCarryPrefixData.program[11795]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4664 :=
+ gateFromChunk SixCarryPrefixData.program before92 SixCarryPrefixData.chunk92 after92 11776 19 shape92 before_len92 len92 rfl (.X 4664) rfl
 
 theorem step_11795 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11796 basis 4664=(!(prefixState SixCarryPrefixData.program 9673 basis 4664)) := by
@@ -27620,11 +25862,8 @@ theorem step_11795 (basis : BasisState) :
  rw [frame_4664_9673_11795 basis] at h
  exact h
 
-theorem gate_11930 : SixCarryPrefixData.program[11930]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4660 4403 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 26 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[26]?=some (.CX 4660 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[11930]?=some (.CX 4660 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11930 : SixCarryPrefixData.program[11930]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4660 4403 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 26 shape93 before_len93 len93 rfl (.CX 4660 4403) rfl
 
 theorem step_11930 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11931 basis 4403=((prefixState SixCarryPrefixData.program 11663 basis 4403) ^^ (prefixState SixCarryPrefixData.program 11792 basis 4660)) := by
@@ -27634,11 +25873,8 @@ theorem step_11930 (basis : BasisState) :
  rw [frame_4403_11663_11930 basis,frame_4660_11792_11930 basis] at h
  exact h
 
-theorem gate_11931 : SixCarryPrefixData.program[11931]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 27 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[27]?=some (.CX 4370 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[11931]?=some (.CX 4370 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11931 : SixCarryPrefixData.program[11931]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 27 shape93 before_len93 len93 rfl (.CX 4370 4403) rfl
 
 theorem step_11931 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11932 basis 4403=((prefixState SixCarryPrefixData.program 11931 basis 4403) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -27648,11 +25884,8 @@ theorem step_11931 (basis : BasisState) :
  rw [frame_4370_0_11931 basis] at h
  exact h
 
-theorem gate_11932 : SixCarryPrefixData.program[11932]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4403 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 28 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[28]?=some (.X 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[11932]?=some (.X 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11932 : SixCarryPrefixData.program[11932]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4403 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 28 shape93 before_len93 len93 rfl (.X 4403) rfl
 
 theorem step_11932 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11933 basis 4403=(!(prefixState SixCarryPrefixData.program 11932 basis 4403)) := by
@@ -27661,11 +25894,8 @@ theorem step_11932 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_11933 : SixCarryPrefixData.program[11933]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 29 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[29]?=some (.CX 4370 4660) := by decide +kernel
- have hh : SixCarryPrefixData.program[11933]?=some (.CX 4370 4660) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11933 : SixCarryPrefixData.program[11933]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4660 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 29 shape93 before_len93 len93 rfl (.CX 4370 4660) rfl
 
 theorem step_11933 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11934 basis 4660=((prefixState SixCarryPrefixData.program 11792 basis 4660) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -27675,11 +25905,8 @@ theorem step_11933 (basis : BasisState) :
  rw [frame_4370_0_11933 basis,frame_4660_11792_11933 basis] at h
  exact h
 
-theorem gate_11934 : SixCarryPrefixData.program[11934]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 30 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[30]?=some (.CX 4370 4403) := by decide +kernel
- have hh : SixCarryPrefixData.program[11934]?=some (.CX 4370 4403) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11934 : SixCarryPrefixData.program[11934]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4403 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 30 shape93 before_len93 len93 rfl (.CX 4370 4403) rfl
 
 theorem step_11934 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11935 basis 4403=((prefixState SixCarryPrefixData.program 11933 basis 4403) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -27689,11 +25916,8 @@ theorem step_11934 (basis : BasisState) :
  rw [frame_4370_0_11934 basis,frame_4403_11933_11934 basis] at h
  exact h
 
-theorem gate_11935 : SixCarryPrefixData.program[11935]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4660 4403 4404 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 31 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[31]?=some (.CCX 4660 4403 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[11935]?=some (.CCX 4660 4403 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11935 : SixCarryPrefixData.program[11935]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4660 4403 4404 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 31 shape93 before_len93 len93 rfl (.CCX 4660 4403 4404) rfl
 
 theorem step_11935 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11936 basis 4404=((prefixState SixCarryPrefixData.program 11660 basis 4404) ^^ ((prefixState SixCarryPrefixData.program 11934 basis 4660) && (prefixState SixCarryPrefixData.program 11935 basis 4403))) := by
@@ -27703,11 +25927,8 @@ theorem step_11935 (basis : BasisState) :
  rw [frame_4404_11660_11935 basis,frame_4660_11934_11935 basis] at h
  exact h
 
-theorem gate_11936 : SixCarryPrefixData.program[11936]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4404 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 32 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[32]?=some (.CX 4370 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[11936]?=some (.CX 4370 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11936 : SixCarryPrefixData.program[11936]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4370 4404 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 32 shape93 before_len93 len93 rfl (.CX 4370 4404) rfl
 
 theorem step_11936 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11937 basis 4404=((prefixState SixCarryPrefixData.program 11936 basis 4404) ^^ (prefixState SixCarryPrefixData.program 0 basis 4370)) := by
@@ -27717,11 +25938,8 @@ theorem step_11936 (basis : BasisState) :
  rw [frame_4370_0_11936 basis] at h
  exact h
 
-theorem gate_11939 : SixCarryPrefixData.program[11939]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 35 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[35]?=some (.CX 4433 4661) := by decide +kernel
- have hh : SixCarryPrefixData.program[11939]?=some (.CX 4433 4661) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11939 : SixCarryPrefixData.program[11939]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4661 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 35 shape93 before_len93 len93 rfl (.CX 4433 4661) rfl
 
 theorem step_11939 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11940 basis 4661=((prefixState SixCarryPrefixData.program 11793 basis 4661) ^^ (prefixState SixCarryPrefixData.program 11573 basis 4433)) := by
@@ -27731,11 +25949,8 @@ theorem step_11939 (basis : BasisState) :
  rw [frame_4433_11573_11939 basis,frame_4661_11793_11939 basis] at h
  exact h
 
-theorem gate_11940 : SixCarryPrefixData.program[11940]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 36 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[36]?=some (.CX 4433 4404) := by decide +kernel
- have hh : SixCarryPrefixData.program[11940]?=some (.CX 4433 4404) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11940 : SixCarryPrefixData.program[11940]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4404 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 36 shape93 before_len93 len93 rfl (.CX 4433 4404) rfl
 
 theorem step_11940 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11941 basis 4404=((prefixState SixCarryPrefixData.program 11937 basis 4404) ^^ (prefixState SixCarryPrefixData.program 11573 basis 4433)) := by
@@ -27745,11 +25960,8 @@ theorem step_11940 (basis : BasisState) :
  rw [frame_4404_11937_11940 basis,frame_4433_11573_11940 basis] at h
  exact h
 
-theorem gate_11941 : SixCarryPrefixData.program[11941]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4661 4404 4405 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 37 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[37]?=some (.CCX 4661 4404 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[11941]?=some (.CCX 4661 4404 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11941 : SixCarryPrefixData.program[11941]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4661 4404 4405 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 37 shape93 before_len93 len93 rfl (.CCX 4661 4404 4405) rfl
 
 theorem step_11941 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11942 basis 4405=((prefixState SixCarryPrefixData.program 11657 basis 4405) ^^ ((prefixState SixCarryPrefixData.program 11940 basis 4661) && (prefixState SixCarryPrefixData.program 11941 basis 4404))) := by
@@ -27759,11 +25971,8 @@ theorem step_11941 (basis : BasisState) :
  rw [frame_4405_11657_11941 basis,frame_4661_11940_11941 basis] at h
  exact h
 
-theorem gate_11942 : SixCarryPrefixData.program[11942]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4405 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 38 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[38]?=some (.CX 4433 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[11942]?=some (.CX 4433 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11942 : SixCarryPrefixData.program[11942]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4433 4405 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 38 shape93 before_len93 len93 rfl (.CX 4433 4405) rfl
 
 theorem step_11942 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11943 basis 4405=((prefixState SixCarryPrefixData.program 11942 basis 4405) ^^ (prefixState SixCarryPrefixData.program 11573 basis 4433)) := by
@@ -27773,11 +25982,8 @@ theorem step_11942 (basis : BasisState) :
  rw [frame_4433_11573_11942 basis] at h
  exact h
 
-theorem gate_11945 : SixCarryPrefixData.program[11945]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 41 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[41]?=some (.CX 4434 4662) := by decide +kernel
- have hh : SixCarryPrefixData.program[11945]?=some (.CX 4434 4662) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11945 : SixCarryPrefixData.program[11945]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4662 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 41 shape93 before_len93 len93 rfl (.CX 4434 4662) rfl
 
 theorem step_11945 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11946 basis 4662=((prefixState SixCarryPrefixData.program 11794 basis 4662) ^^ (prefixState SixCarryPrefixData.program 11570 basis 4434)) := by
@@ -27787,11 +25993,8 @@ theorem step_11945 (basis : BasisState) :
  rw [frame_4434_11570_11945 basis,frame_4662_11794_11945 basis] at h
  exact h
 
-theorem gate_11946 : SixCarryPrefixData.program[11946]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4405 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 42 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[42]?=some (.CX 4434 4405) := by decide +kernel
- have hh : SixCarryPrefixData.program[11946]?=some (.CX 4434 4405) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11946 : SixCarryPrefixData.program[11946]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4405 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 42 shape93 before_len93 len93 rfl (.CX 4434 4405) rfl
 
 theorem step_11946 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11947 basis 4405=((prefixState SixCarryPrefixData.program 11943 basis 4405) ^^ (prefixState SixCarryPrefixData.program 11570 basis 4434)) := by
@@ -27801,11 +26004,8 @@ theorem step_11946 (basis : BasisState) :
  rw [frame_4405_11943_11946 basis,frame_4434_11570_11946 basis] at h
  exact h
 
-theorem gate_11947 : SixCarryPrefixData.program[11947]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4662 4405 4406 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 43 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[43]?=some (.CCX 4662 4405 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[11947]?=some (.CCX 4662 4405 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11947 : SixCarryPrefixData.program[11947]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4662 4405 4406 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 43 shape93 before_len93 len93 rfl (.CCX 4662 4405 4406) rfl
 
 theorem step_11947 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11948 basis 4406=((prefixState SixCarryPrefixData.program 11654 basis 4406) ^^ ((prefixState SixCarryPrefixData.program 11946 basis 4662) && (prefixState SixCarryPrefixData.program 11947 basis 4405))) := by
@@ -27815,11 +26015,8 @@ theorem step_11947 (basis : BasisState) :
  rw [frame_4406_11654_11947 basis,frame_4662_11946_11947 basis] at h
  exact h
 
-theorem gate_11948 : SixCarryPrefixData.program[11948]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4406 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 44 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[44]?=some (.CX 4434 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[11948]?=some (.CX 4434 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11948 : SixCarryPrefixData.program[11948]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4434 4406 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 44 shape93 before_len93 len93 rfl (.CX 4434 4406) rfl
 
 theorem step_11948 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11949 basis 4406=((prefixState SixCarryPrefixData.program 11948 basis 4406) ^^ (prefixState SixCarryPrefixData.program 11570 basis 4434)) := by
@@ -27829,11 +26026,8 @@ theorem step_11948 (basis : BasisState) :
  rw [frame_4434_11570_11948 basis] at h
  exact h
 
-theorem gate_11951 : SixCarryPrefixData.program[11951]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 47 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[47]?=some (.CX 4435 4663) := by decide +kernel
- have hh : SixCarryPrefixData.program[11951]?=some (.CX 4435 4663) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11951 : SixCarryPrefixData.program[11951]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4663 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 47 shape93 before_len93 len93 rfl (.CX 4435 4663) rfl
 
 theorem step_11951 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11952 basis 4663=((prefixState SixCarryPrefixData.program 11795 basis 4663) ^^ (prefixState SixCarryPrefixData.program 11567 basis 4435)) := by
@@ -27843,11 +26037,8 @@ theorem step_11951 (basis : BasisState) :
  rw [frame_4435_11567_11951 basis,frame_4663_11795_11951 basis] at h
  exact h
 
-theorem gate_11952 : SixCarryPrefixData.program[11952]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4406 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 48 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[48]?=some (.CX 4435 4406) := by decide +kernel
- have hh : SixCarryPrefixData.program[11952]?=some (.CX 4435 4406) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11952 : SixCarryPrefixData.program[11952]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4406 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 48 shape93 before_len93 len93 rfl (.CX 4435 4406) rfl
 
 theorem step_11952 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11953 basis 4406=((prefixState SixCarryPrefixData.program 11949 basis 4406) ^^ (prefixState SixCarryPrefixData.program 11567 basis 4435)) := by
@@ -27857,11 +26048,8 @@ theorem step_11952 (basis : BasisState) :
  rw [frame_4406_11949_11952 basis,frame_4435_11567_11952 basis] at h
  exact h
 
-theorem gate_11953 : SixCarryPrefixData.program[11953]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4663 4406 4407 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 49 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[49]?=some (.CCX 4663 4406 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[11953]?=some (.CCX 4663 4406 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11953 : SixCarryPrefixData.program[11953]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4663 4406 4407 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 49 shape93 before_len93 len93 rfl (.CCX 4663 4406 4407) rfl
 
 theorem step_11953 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11954 basis 4407=((prefixState SixCarryPrefixData.program 11651 basis 4407) ^^ ((prefixState SixCarryPrefixData.program 11952 basis 4663) && (prefixState SixCarryPrefixData.program 11953 basis 4406))) := by
@@ -27871,11 +26059,8 @@ theorem step_11953 (basis : BasisState) :
  rw [frame_4407_11651_11953 basis,frame_4663_11952_11953 basis] at h
  exact h
 
-theorem gate_11954 : SixCarryPrefixData.program[11954]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4407 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 50 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[50]?=some (.CX 4435 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[11954]?=some (.CX 4435 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11954 : SixCarryPrefixData.program[11954]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4435 4407 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 50 shape93 before_len93 len93 rfl (.CX 4435 4407) rfl
 
 theorem step_11954 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11955 basis 4407=((prefixState SixCarryPrefixData.program 11954 basis 4407) ^^ (prefixState SixCarryPrefixData.program 11567 basis 4435)) := by
@@ -27885,11 +26070,8 @@ theorem step_11954 (basis : BasisState) :
  rw [frame_4435_11567_11954 basis] at h
  exact h
 
-theorem gate_11957 : SixCarryPrefixData.program[11957]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 53 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[53]?=some (.CX 4436 4664) := by decide +kernel
- have hh : SixCarryPrefixData.program[11957]?=some (.CX 4436 4664) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11957 : SixCarryPrefixData.program[11957]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4664 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 53 shape93 before_len93 len93 rfl (.CX 4436 4664) rfl
 
 theorem step_11957 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11958 basis 4664=((prefixState SixCarryPrefixData.program 11796 basis 4664) ^^ (prefixState SixCarryPrefixData.program 11564 basis 4436)) := by
@@ -27899,11 +26081,8 @@ theorem step_11957 (basis : BasisState) :
  rw [frame_4436_11564_11957 basis,frame_4664_11796_11957 basis] at h
  exact h
 
-theorem gate_11958 : SixCarryPrefixData.program[11958]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4407 := by
- have h := lookup_context SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 54 shape93 before_len93 (by rw [len93]; decide +kernel)
- have hg : SixCarryPrefixData.chunk93[54]?=some (.CX 4436 4407) := by decide +kernel
- have hh : SixCarryPrefixData.program[11958]?=some (.CX 4436 4407) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_11958 : SixCarryPrefixData.program[11958]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4436 4407 :=
+ gateFromChunk SixCarryPrefixData.program before93 SixCarryPrefixData.chunk93 after93 11904 54 shape93 before_len93 len93 rfl (.CX 4436 4407) rfl
 
 theorem step_11958 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11959 basis 4407=((prefixState SixCarryPrefixData.program 11955 basis 4407) ^^ (prefixState SixCarryPrefixData.program 11564 basis 4436)) := by
@@ -30750,11 +28929,8 @@ theorem frame_4626_2250_2251 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2251 basis 4626=prefixState SixCarryPrefixData.program 2250 basis 4626 := by
  exact at_between SixCarryPrefixData.program 2250 2251 4626 (by decide +kernel) nw_4626_2250_2251 basis
 
-theorem gate_102 : SixCarryPrefixData.program[102]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4607 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 102 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[102]?=some (.CX 4345 4607) := by decide +kernel
- have hh : SixCarryPrefixData.program[102]?=some (.CX 4345 4607) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_102 : SixCarryPrefixData.program[102]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4607 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 102 shape0 before_len0 len0 rfl (.CX 4345 4607) rfl
 
 theorem step_102 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 103 basis 4607=((prefixState SixCarryPrefixData.program 0 basis 4607) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -30764,11 +28940,8 @@ theorem step_102 (basis : BasisState) :
  rw [frame_4345_0_102 basis,frame_4607_0_102 basis] at h
  exact h
 
-theorem gate_103 : SixCarryPrefixData.program[103]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4608 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 103 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[103]?=some (.CX 4346 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[103]?=some (.CX 4346 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_103 : SixCarryPrefixData.program[103]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4608 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 103 shape0 before_len0 len0 rfl (.CX 4346 4608) rfl
 
 theorem step_103 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 104 basis 4608=((prefixState SixCarryPrefixData.program 0 basis 4608) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -30778,11 +28951,8 @@ theorem step_103 (basis : BasisState) :
  rw [frame_4346_0_103 basis,frame_4608_0_103 basis] at h
  exact h
 
-theorem gate_104 : SixCarryPrefixData.program[104]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4609 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 104 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[104]?=some (.CX 4347 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[104]?=some (.CX 4347 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_104 : SixCarryPrefixData.program[104]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4609 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 104 shape0 before_len0 len0 rfl (.CX 4347 4609) rfl
 
 theorem step_104 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 105 basis 4609=((prefixState SixCarryPrefixData.program 0 basis 4609) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -30792,11 +28962,8 @@ theorem step_104 (basis : BasisState) :
  rw [frame_4347_0_104 basis,frame_4609_0_104 basis] at h
  exact h
 
-theorem gate_108 : SixCarryPrefixData.program[108]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4613 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 108 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[108]?=some (.CX 4351 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[108]?=some (.CX 4351 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_108 : SixCarryPrefixData.program[108]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4613 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 108 shape0 before_len0 len0 rfl (.CX 4351 4613) rfl
 
 theorem step_108 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 109 basis 4613=((prefixState SixCarryPrefixData.program 0 basis 4613) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -30806,11 +28973,8 @@ theorem step_108 (basis : BasisState) :
  rw [frame_4351_0_108 basis,frame_4613_0_108 basis] at h
  exact h
 
-theorem gate_109 : SixCarryPrefixData.program[109]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4614 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 109 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[109]?=some (.CX 4352 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[109]?=some (.CX 4352 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_109 : SixCarryPrefixData.program[109]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4614 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 109 shape0 before_len0 len0 rfl (.CX 4352 4614) rfl
 
 theorem step_109 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 110 basis 4614=((prefixState SixCarryPrefixData.program 0 basis 4614) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -30820,11 +28984,8 @@ theorem step_109 (basis : BasisState) :
  rw [frame_4352_0_109 basis,frame_4614_0_109 basis] at h
  exact h
 
-theorem gate_110 : SixCarryPrefixData.program[110]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4615 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 110 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[110]?=some (.CX 4353 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[110]?=some (.CX 4353 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_110 : SixCarryPrefixData.program[110]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4615 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 110 shape0 before_len0 len0 rfl (.CX 4353 4615) rfl
 
 theorem step_110 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 111 basis 4615=((prefixState SixCarryPrefixData.program 0 basis 4615) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -30834,11 +28995,8 @@ theorem step_110 (basis : BasisState) :
  rw [frame_4353_0_110 basis,frame_4615_0_110 basis] at h
  exact h
 
-theorem gate_111 : SixCarryPrefixData.program[111]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4616 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 111 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[111]?=some (.CX 4354 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[111]?=some (.CX 4354 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_111 : SixCarryPrefixData.program[111]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4616 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 111 shape0 before_len0 len0 rfl (.CX 4354 4616) rfl
 
 theorem step_111 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 112 basis 4616=((prefixState SixCarryPrefixData.program 0 basis 4616) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -30848,11 +29006,8 @@ theorem step_111 (basis : BasisState) :
  rw [frame_4354_0_111 basis,frame_4616_0_111 basis] at h
  exact h
 
-theorem gate_112 : SixCarryPrefixData.program[112]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4617 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 112 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[112]?=some (.CX 4355 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[112]?=some (.CX 4355 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_112 : SixCarryPrefixData.program[112]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4617 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 112 shape0 before_len0 len0 rfl (.CX 4355 4617) rfl
 
 theorem step_112 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 113 basis 4617=((prefixState SixCarryPrefixData.program 0 basis 4617) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -30862,11 +29017,8 @@ theorem step_112 (basis : BasisState) :
  rw [frame_4355_0_112 basis,frame_4617_0_112 basis] at h
  exact h
 
-theorem gate_113 : SixCarryPrefixData.program[113]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4618 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 113 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[113]?=some (.CX 4356 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[113]?=some (.CX 4356 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_113 : SixCarryPrefixData.program[113]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4618 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 113 shape0 before_len0 len0 rfl (.CX 4356 4618) rfl
 
 theorem step_113 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 114 basis 4618=((prefixState SixCarryPrefixData.program 0 basis 4618) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -30876,11 +29028,8 @@ theorem step_113 (basis : BasisState) :
  rw [frame_4356_0_113 basis,frame_4618_0_113 basis] at h
  exact h
 
-theorem gate_114 : SixCarryPrefixData.program[114]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4619 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 114 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[114]?=some (.CX 4357 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[114]?=some (.CX 4357 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_114 : SixCarryPrefixData.program[114]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4619 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 114 shape0 before_len0 len0 rfl (.CX 4357 4619) rfl
 
 theorem step_114 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 115 basis 4619=((prefixState SixCarryPrefixData.program 0 basis 4619) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -30890,11 +29039,8 @@ theorem step_114 (basis : BasisState) :
  rw [frame_4357_0_114 basis,frame_4619_0_114 basis] at h
  exact h
 
-theorem gate_115 : SixCarryPrefixData.program[115]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4620 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 115 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[115]?=some (.CX 4358 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[115]?=some (.CX 4358 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_115 : SixCarryPrefixData.program[115]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4620 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 115 shape0 before_len0 len0 rfl (.CX 4358 4620) rfl
 
 theorem step_115 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 116 basis 4620=((prefixState SixCarryPrefixData.program 0 basis 4620) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -30904,11 +29050,8 @@ theorem step_115 (basis : BasisState) :
  rw [frame_4358_0_115 basis,frame_4620_0_115 basis] at h
  exact h
 
-theorem gate_116 : SixCarryPrefixData.program[116]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4621 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 116 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[116]?=some (.CX 4359 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[116]?=some (.CX 4359 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_116 : SixCarryPrefixData.program[116]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4621 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 116 shape0 before_len0 len0 rfl (.CX 4359 4621) rfl
 
 theorem step_116 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 117 basis 4621=((prefixState SixCarryPrefixData.program 0 basis 4621) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -30918,11 +29061,8 @@ theorem step_116 (basis : BasisState) :
  rw [frame_4359_0_116 basis,frame_4621_0_116 basis] at h
  exact h
 
-theorem gate_117 : SixCarryPrefixData.program[117]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4622 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 117 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[117]?=some (.CX 4360 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[117]?=some (.CX 4360 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_117 : SixCarryPrefixData.program[117]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4622 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 117 shape0 before_len0 len0 rfl (.CX 4360 4622) rfl
 
 theorem step_117 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 118 basis 4622=((prefixState SixCarryPrefixData.program 0 basis 4622) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -30932,11 +29072,8 @@ theorem step_117 (basis : BasisState) :
  rw [frame_4360_0_117 basis,frame_4622_0_117 basis] at h
  exact h
 
-theorem gate_118 : SixCarryPrefixData.program[118]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4623 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 118 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[118]?=some (.CX 4361 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[118]?=some (.CX 4361 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_118 : SixCarryPrefixData.program[118]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4623 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 118 shape0 before_len0 len0 rfl (.CX 4361 4623) rfl
 
 theorem step_118 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 119 basis 4623=((prefixState SixCarryPrefixData.program 0 basis 4623) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -30946,11 +29083,8 @@ theorem step_118 (basis : BasisState) :
  rw [frame_4361_0_118 basis,frame_4623_0_118 basis] at h
  exact h
 
-theorem gate_119 : SixCarryPrefixData.program[119]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4624 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 119 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[119]?=some (.CX 4362 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[119]?=some (.CX 4362 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_119 : SixCarryPrefixData.program[119]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4624 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 119 shape0 before_len0 len0 rfl (.CX 4362 4624) rfl
 
 theorem step_119 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 120 basis 4624=((prefixState SixCarryPrefixData.program 0 basis 4624) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -30960,11 +29094,8 @@ theorem step_119 (basis : BasisState) :
  rw [frame_4362_0_119 basis,frame_4624_0_119 basis] at h
  exact h
 
-theorem gate_120 : SixCarryPrefixData.program[120]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4625 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 120 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[120]?=some (.CX 4363 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[120]?=some (.CX 4363 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_120 : SixCarryPrefixData.program[120]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4625 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 120 shape0 before_len0 len0 rfl (.CX 4363 4625) rfl
 
 theorem step_120 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 121 basis 4625=((prefixState SixCarryPrefixData.program 0 basis 4625) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by
@@ -30974,11 +29105,8 @@ theorem step_120 (basis : BasisState) :
  rw [frame_4363_0_120 basis,frame_4625_0_120 basis] at h
  exact h
 
-theorem gate_121 : SixCarryPrefixData.program[121]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4626 := by
- have h := lookup_context SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 121 shape0 before_len0 (by rw [len0]; decide +kernel)
- have hg : SixCarryPrefixData.chunk0[121]?=some (.CX 4364 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[121]?=some (.CX 4364 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_121 : SixCarryPrefixData.program[121]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4364 4626 :=
+ gateFromChunk SixCarryPrefixData.program before0 SixCarryPrefixData.chunk0 after0 0 121 shape0 before_len0 len0 rfl (.CX 4364 4626) rfl
 
 theorem step_121 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 122 basis 4626=((prefixState SixCarryPrefixData.program 0 basis 4626) ^^ (prefixState SixCarryPrefixData.program 0 basis 4364)) := by
@@ -30988,11 +29116,8 @@ theorem step_121 (basis : BasisState) :
  rw [frame_4364_0_121 basis,frame_4626_0_121 basis] at h
  exact h
 
-theorem gate_735 : SixCarryPrefixData.program[735]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4607 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 95 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[95]?=some (.CX 4339 4607) := by decide +kernel
- have hh : SixCarryPrefixData.program[735]?=some (.CX 4339 4607) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_735 : SixCarryPrefixData.program[735]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4607 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 95 shape5 before_len5 len5 rfl (.CX 4339 4607) rfl
 
 theorem step_735 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 736 basis 4607=((prefixState SixCarryPrefixData.program 103 basis 4607) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -31002,11 +29127,8 @@ theorem step_735 (basis : BasisState) :
  rw [frame_4339_0_735 basis,frame_4607_103_735 basis] at h
  exact h
 
-theorem gate_737 : SixCarryPrefixData.program[737]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4607 4468 4469 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 97 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[97]?=some (.CCX 4607 4468 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[737]?=some (.CCX 4607 4468 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_737 : SixCarryPrefixData.program[737]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4607 4468 4469 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 97 shape5 before_len5 len5 rfl (.CCX 4607 4468 4469) rfl
 
 theorem step_737 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 738 basis 4469=((prefixState SixCarryPrefixData.program 0 basis 4469) ^^ ((prefixState SixCarryPrefixData.program 736 basis 4607) && (prefixState SixCarryPrefixData.program 737 basis 4468))) := by
@@ -31016,11 +29138,8 @@ theorem step_737 (basis : BasisState) :
  rw [frame_4469_0_737 basis,frame_4607_736_737 basis] at h
  exact h
 
-theorem gate_738 : SixCarryPrefixData.program[738]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4469 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 98 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[98]?=some (.CX 4339 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[738]?=some (.CX 4339 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_738 : SixCarryPrefixData.program[738]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4339 4469 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 98 shape5 before_len5 len5 rfl (.CX 4339 4469) rfl
 
 theorem step_738 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 739 basis 4469=((prefixState SixCarryPrefixData.program 738 basis 4469) ^^ (prefixState SixCarryPrefixData.program 0 basis 4339)) := by
@@ -31030,11 +29149,8 @@ theorem step_738 (basis : BasisState) :
  rw [frame_4339_0_738 basis] at h
  exact h
 
-theorem gate_741 : SixCarryPrefixData.program[741]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4608 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 101 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[101]?=some (.CX 4340 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[741]?=some (.CX 4340 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_741 : SixCarryPrefixData.program[741]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4608 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 101 shape5 before_len5 len5 rfl (.CX 4340 4608) rfl
 
 theorem step_741 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 742 basis 4608=((prefixState SixCarryPrefixData.program 104 basis 4608) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -31044,11 +29160,8 @@ theorem step_741 (basis : BasisState) :
  rw [frame_4340_0_741 basis,frame_4608_104_741 basis] at h
  exact h
 
-theorem gate_742 : SixCarryPrefixData.program[742]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 102 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[102]?=some (.CX 4340 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[742]?=some (.CX 4340 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_742 : SixCarryPrefixData.program[742]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 102 shape5 before_len5 len5 rfl (.CX 4340 4469) rfl
 
 theorem step_742 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 743 basis 4469=((prefixState SixCarryPrefixData.program 739 basis 4469) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -31058,11 +29171,8 @@ theorem step_742 (basis : BasisState) :
  rw [frame_4340_0_742 basis,frame_4469_739_742 basis] at h
  exact h
 
-theorem gate_743 : SixCarryPrefixData.program[743]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4608 4469 4470 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 103 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[103]?=some (.CCX 4608 4469 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[743]?=some (.CCX 4608 4469 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_743 : SixCarryPrefixData.program[743]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4608 4469 4470 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 103 shape5 before_len5 len5 rfl (.CCX 4608 4469 4470) rfl
 
 theorem step_743 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 744 basis 4470=((prefixState SixCarryPrefixData.program 0 basis 4470) ^^ ((prefixState SixCarryPrefixData.program 742 basis 4608) && (prefixState SixCarryPrefixData.program 743 basis 4469))) := by
@@ -31072,11 +29182,8 @@ theorem step_743 (basis : BasisState) :
  rw [frame_4470_0_743 basis,frame_4608_742_743 basis] at h
  exact h
 
-theorem gate_744 : SixCarryPrefixData.program[744]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4470 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 104 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[104]?=some (.CX 4340 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[744]?=some (.CX 4340 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_744 : SixCarryPrefixData.program[744]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4470 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 104 shape5 before_len5 len5 rfl (.CX 4340 4470) rfl
 
 theorem step_744 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 745 basis 4470=((prefixState SixCarryPrefixData.program 744 basis 4470) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -31086,11 +29193,8 @@ theorem step_744 (basis : BasisState) :
  rw [frame_4340_0_744 basis] at h
  exact h
 
-theorem gate_745 : SixCarryPrefixData.program[745]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 105 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[105]?=some (.CX 4340 4469) := by decide +kernel
- have hh : SixCarryPrefixData.program[745]?=some (.CX 4340 4469) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_745 : SixCarryPrefixData.program[745]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4469 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 105 shape5 before_len5 len5 rfl (.CX 4340 4469) rfl
 
 theorem step_745 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 746 basis 4469=((prefixState SixCarryPrefixData.program 743 basis 4469) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -31100,11 +29204,8 @@ theorem step_745 (basis : BasisState) :
  rw [frame_4340_0_745 basis,frame_4469_743_745 basis] at h
  exact h
 
-theorem gate_746 : SixCarryPrefixData.program[746]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4608 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 106 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[106]?=some (.CX 4340 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[746]?=some (.CX 4340 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_746 : SixCarryPrefixData.program[746]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4608 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 106 shape5 before_len5 len5 rfl (.CX 4340 4608) rfl
 
 theorem step_746 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 747 basis 4608=((prefixState SixCarryPrefixData.program 742 basis 4608) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -31114,11 +29215,8 @@ theorem step_746 (basis : BasisState) :
  rw [frame_4340_0_746 basis,frame_4608_742_746 basis] at h
  exact h
 
-theorem gate_747 : SixCarryPrefixData.program[747]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4609 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 107 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[107]?=some (.CX 4341 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[747]?=some (.CX 4341 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_747 : SixCarryPrefixData.program[747]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4609 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 107 shape5 before_len5 len5 rfl (.CX 4341 4609) rfl
 
 theorem step_747 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 748 basis 4609=((prefixState SixCarryPrefixData.program 105 basis 4609) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -31128,11 +29226,8 @@ theorem step_747 (basis : BasisState) :
  rw [frame_4341_0_747 basis,frame_4609_105_747 basis] at h
  exact h
 
-theorem gate_748 : SixCarryPrefixData.program[748]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 108 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[108]?=some (.CX 4341 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[748]?=some (.CX 4341 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_748 : SixCarryPrefixData.program[748]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 108 shape5 before_len5 len5 rfl (.CX 4341 4470) rfl
 
 theorem step_748 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 749 basis 4470=((prefixState SixCarryPrefixData.program 745 basis 4470) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -31142,11 +29237,8 @@ theorem step_748 (basis : BasisState) :
  rw [frame_4341_0_748 basis,frame_4470_745_748 basis] at h
  exact h
 
-theorem gate_751 : SixCarryPrefixData.program[751]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 111 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[111]?=some (.CX 4341 4470) := by decide +kernel
- have hh : SixCarryPrefixData.program[751]?=some (.CX 4341 4470) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_751 : SixCarryPrefixData.program[751]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4470 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 111 shape5 before_len5 len5 rfl (.CX 4341 4470) rfl
 
 theorem step_751 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 752 basis 4470=((prefixState SixCarryPrefixData.program 749 basis 4470) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -31156,11 +29248,8 @@ theorem step_751 (basis : BasisState) :
  rw [frame_4341_0_751 basis,frame_4470_749_751 basis] at h
  exact h
 
-theorem gate_752 : SixCarryPrefixData.program[752]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4609 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 112 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[112]?=some (.CX 4341 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[752]?=some (.CX 4341 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_752 : SixCarryPrefixData.program[752]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4609 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 112 shape5 before_len5 len5 rfl (.CX 4341 4609) rfl
 
 theorem step_752 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 753 basis 4609=((prefixState SixCarryPrefixData.program 748 basis 4609) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -31170,11 +29259,8 @@ theorem step_752 (basis : BasisState) :
  rw [frame_4341_0_752 basis,frame_4609_748_752 basis] at h
  exact h
 
-theorem gate_767 : SixCarryPrefixData.program[767]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4612 4473 4474 := by
- have h := lookup_context SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 127 shape5 before_len5 (by rw [len5]; decide +kernel)
- have hg : SixCarryPrefixData.chunk5[127]?=some (.CCX 4612 4473 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[767]?=some (.CCX 4612 4473 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_767 : SixCarryPrefixData.program[767]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4612 4473 4474 :=
+ gateFromChunk SixCarryPrefixData.program before5 SixCarryPrefixData.chunk5 after5 640 127 shape5 before_len5 len5 rfl (.CCX 4612 4473 4474) rfl
 
 theorem step_767 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 768 basis 4474=((prefixState SixCarryPrefixData.program 0 basis 4474) ^^ ((prefixState SixCarryPrefixData.program 766 basis 4612) && (prefixState SixCarryPrefixData.program 767 basis 4473))) := by
@@ -31184,11 +29270,8 @@ theorem step_767 (basis : BasisState) :
  rw [frame_4474_0_767 basis,frame_4612_766_767 basis] at h
  exact h
 
-theorem gate_768 : SixCarryPrefixData.program[768]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4474 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 0 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[0]?=some (.CX 4344 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[768]?=some (.CX 4344 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_768 : SixCarryPrefixData.program[768]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4474 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 0 shape6 before_len6 len6 rfl (.CX 4344 4474) rfl
 
 theorem step_768 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 769 basis 4474=((prefixState SixCarryPrefixData.program 768 basis 4474) ^^ (prefixState SixCarryPrefixData.program 0 basis 4344)) := by
@@ -31198,11 +29281,8 @@ theorem step_768 (basis : BasisState) :
  rw [frame_4344_0_768 basis] at h
  exact h
 
-theorem gate_769 : SixCarryPrefixData.program[769]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4473 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 1 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[1]?=some (.CX 4344 4473) := by decide +kernel
- have hh : SixCarryPrefixData.program[769]?=some (.CX 4344 4473) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_769 : SixCarryPrefixData.program[769]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4473 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 1 shape6 before_len6 len6 rfl (.CX 4344 4473) rfl
 
 theorem step_769 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 770 basis 4473=((prefixState SixCarryPrefixData.program 767 basis 4473) ^^ (prefixState SixCarryPrefixData.program 0 basis 4344)) := by
@@ -31212,11 +29292,8 @@ theorem step_769 (basis : BasisState) :
  rw [frame_4344_0_769 basis,frame_4473_767_769 basis] at h
  exact h
 
-theorem gate_770 : SixCarryPrefixData.program[770]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4612 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 2 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[2]?=some (.CX 4344 4612) := by decide +kernel
- have hh : SixCarryPrefixData.program[770]?=some (.CX 4344 4612) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_770 : SixCarryPrefixData.program[770]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4612 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 2 shape6 before_len6 len6 rfl (.CX 4344 4612) rfl
 
 theorem step_770 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 771 basis 4612=((prefixState SixCarryPrefixData.program 766 basis 4612) ^^ (prefixState SixCarryPrefixData.program 0 basis 4344)) := by
@@ -31226,11 +29303,8 @@ theorem step_770 (basis : BasisState) :
  rw [frame_4344_0_770 basis,frame_4612_766_770 basis] at h
  exact h
 
-theorem gate_771 : SixCarryPrefixData.program[771]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4613 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 3 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[3]?=some (.CX 4345 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[771]?=some (.CX 4345 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_771 : SixCarryPrefixData.program[771]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4613 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 3 shape6 before_len6 len6 rfl (.CX 4345 4613) rfl
 
 theorem step_771 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 772 basis 4613=((prefixState SixCarryPrefixData.program 109 basis 4613) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -31240,11 +29314,8 @@ theorem step_771 (basis : BasisState) :
  rw [frame_4345_0_771 basis,frame_4613_109_771 basis] at h
  exact h
 
-theorem gate_772 : SixCarryPrefixData.program[772]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4474 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 4 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[4]?=some (.CX 4345 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[772]?=some (.CX 4345 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_772 : SixCarryPrefixData.program[772]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4474 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 4 shape6 before_len6 len6 rfl (.CX 4345 4474) rfl
 
 theorem step_772 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 773 basis 4474=((prefixState SixCarryPrefixData.program 769 basis 4474) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -31254,11 +29325,8 @@ theorem step_772 (basis : BasisState) :
  rw [frame_4345_0_772 basis,frame_4474_769_772 basis] at h
  exact h
 
-theorem gate_773 : SixCarryPrefixData.program[773]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4613 4474 4475 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 5 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[5]?=some (.CCX 4613 4474 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[773]?=some (.CCX 4613 4474 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_773 : SixCarryPrefixData.program[773]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4613 4474 4475 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 5 shape6 before_len6 len6 rfl (.CCX 4613 4474 4475) rfl
 
 theorem step_773 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 774 basis 4475=((prefixState SixCarryPrefixData.program 0 basis 4475) ^^ ((prefixState SixCarryPrefixData.program 772 basis 4613) && (prefixState SixCarryPrefixData.program 773 basis 4474))) := by
@@ -31268,11 +29336,8 @@ theorem step_773 (basis : BasisState) :
  rw [frame_4475_0_773 basis,frame_4613_772_773 basis] at h
  exact h
 
-theorem gate_774 : SixCarryPrefixData.program[774]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4475 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 6 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[6]?=some (.CX 4345 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[774]?=some (.CX 4345 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_774 : SixCarryPrefixData.program[774]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4475 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 6 shape6 before_len6 len6 rfl (.CX 4345 4475) rfl
 
 theorem step_774 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 775 basis 4475=((prefixState SixCarryPrefixData.program 774 basis 4475) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -31282,11 +29347,8 @@ theorem step_774 (basis : BasisState) :
  rw [frame_4345_0_774 basis] at h
  exact h
 
-theorem gate_775 : SixCarryPrefixData.program[775]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4474 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 7 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[7]?=some (.CX 4345 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[775]?=some (.CX 4345 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_775 : SixCarryPrefixData.program[775]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4474 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 7 shape6 before_len6 len6 rfl (.CX 4345 4474) rfl
 
 theorem step_775 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 776 basis 4474=((prefixState SixCarryPrefixData.program 773 basis 4474) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -31296,11 +29358,8 @@ theorem step_775 (basis : BasisState) :
  rw [frame_4345_0_775 basis,frame_4474_773_775 basis] at h
  exact h
 
-theorem gate_776 : SixCarryPrefixData.program[776]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4613 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 8 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[8]?=some (.CX 4345 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[776]?=some (.CX 4345 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_776 : SixCarryPrefixData.program[776]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4613 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 8 shape6 before_len6 len6 rfl (.CX 4345 4613) rfl
 
 theorem step_776 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 777 basis 4613=((prefixState SixCarryPrefixData.program 772 basis 4613) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -31310,11 +29369,8 @@ theorem step_776 (basis : BasisState) :
  rw [frame_4345_0_776 basis,frame_4613_772_776 basis] at h
  exact h
 
-theorem gate_777 : SixCarryPrefixData.program[777]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4614 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 9 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[9]?=some (.CX 4346 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[777]?=some (.CX 4346 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_777 : SixCarryPrefixData.program[777]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4614 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 9 shape6 before_len6 len6 rfl (.CX 4346 4614) rfl
 
 theorem step_777 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 778 basis 4614=((prefixState SixCarryPrefixData.program 110 basis 4614) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -31324,11 +29380,8 @@ theorem step_777 (basis : BasisState) :
  rw [frame_4346_0_777 basis,frame_4614_110_777 basis] at h
  exact h
 
-theorem gate_778 : SixCarryPrefixData.program[778]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4475 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 10 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[10]?=some (.CX 4346 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[778]?=some (.CX 4346 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_778 : SixCarryPrefixData.program[778]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4475 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 10 shape6 before_len6 len6 rfl (.CX 4346 4475) rfl
 
 theorem step_778 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 779 basis 4475=((prefixState SixCarryPrefixData.program 775 basis 4475) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -31338,11 +29391,8 @@ theorem step_778 (basis : BasisState) :
  rw [frame_4346_0_778 basis,frame_4475_775_778 basis] at h
  exact h
 
-theorem gate_779 : SixCarryPrefixData.program[779]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4614 4475 4476 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 11 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[11]?=some (.CCX 4614 4475 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[779]?=some (.CCX 4614 4475 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_779 : SixCarryPrefixData.program[779]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4614 4475 4476 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 11 shape6 before_len6 len6 rfl (.CCX 4614 4475 4476) rfl
 
 theorem step_779 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 780 basis 4476=((prefixState SixCarryPrefixData.program 0 basis 4476) ^^ ((prefixState SixCarryPrefixData.program 778 basis 4614) && (prefixState SixCarryPrefixData.program 779 basis 4475))) := by
@@ -31352,11 +29402,8 @@ theorem step_779 (basis : BasisState) :
  rw [frame_4476_0_779 basis,frame_4614_778_779 basis] at h
  exact h
 
-theorem gate_780 : SixCarryPrefixData.program[780]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4476 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 12 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[12]?=some (.CX 4346 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[780]?=some (.CX 4346 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_780 : SixCarryPrefixData.program[780]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4476 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 12 shape6 before_len6 len6 rfl (.CX 4346 4476) rfl
 
 theorem step_780 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 781 basis 4476=((prefixState SixCarryPrefixData.program 780 basis 4476) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -31366,11 +29413,8 @@ theorem step_780 (basis : BasisState) :
  rw [frame_4346_0_780 basis] at h
  exact h
 
-theorem gate_781 : SixCarryPrefixData.program[781]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4475 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 13 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[13]?=some (.CX 4346 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[781]?=some (.CX 4346 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_781 : SixCarryPrefixData.program[781]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4475 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 13 shape6 before_len6 len6 rfl (.CX 4346 4475) rfl
 
 theorem step_781 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 782 basis 4475=((prefixState SixCarryPrefixData.program 779 basis 4475) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -31380,11 +29424,8 @@ theorem step_781 (basis : BasisState) :
  rw [frame_4346_0_781 basis,frame_4475_779_781 basis] at h
  exact h
 
-theorem gate_782 : SixCarryPrefixData.program[782]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4614 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 14 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[14]?=some (.CX 4346 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[782]?=some (.CX 4346 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_782 : SixCarryPrefixData.program[782]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4614 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 14 shape6 before_len6 len6 rfl (.CX 4346 4614) rfl
 
 theorem step_782 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 783 basis 4614=((prefixState SixCarryPrefixData.program 778 basis 4614) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -31394,11 +29435,8 @@ theorem step_782 (basis : BasisState) :
  rw [frame_4346_0_782 basis,frame_4614_778_782 basis] at h
  exact h
 
-theorem gate_783 : SixCarryPrefixData.program[783]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4615 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 15 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[15]?=some (.CX 4347 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[783]?=some (.CX 4347 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_783 : SixCarryPrefixData.program[783]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4615 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 15 shape6 before_len6 len6 rfl (.CX 4347 4615) rfl
 
 theorem step_783 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 784 basis 4615=((prefixState SixCarryPrefixData.program 111 basis 4615) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -31408,11 +29446,8 @@ theorem step_783 (basis : BasisState) :
  rw [frame_4347_0_783 basis,frame_4615_111_783 basis] at h
  exact h
 
-theorem gate_784 : SixCarryPrefixData.program[784]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4476 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 16 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[16]?=some (.CX 4347 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[784]?=some (.CX 4347 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_784 : SixCarryPrefixData.program[784]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4476 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 16 shape6 before_len6 len6 rfl (.CX 4347 4476) rfl
 
 theorem step_784 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 785 basis 4476=((prefixState SixCarryPrefixData.program 781 basis 4476) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -31422,11 +29457,8 @@ theorem step_784 (basis : BasisState) :
  rw [frame_4347_0_784 basis,frame_4476_781_784 basis] at h
  exact h
 
-theorem gate_785 : SixCarryPrefixData.program[785]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4615 4476 4477 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 17 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[17]?=some (.CCX 4615 4476 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[785]?=some (.CCX 4615 4476 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_785 : SixCarryPrefixData.program[785]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4615 4476 4477 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 17 shape6 before_len6 len6 rfl (.CCX 4615 4476 4477) rfl
 
 theorem step_785 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 786 basis 4477=((prefixState SixCarryPrefixData.program 0 basis 4477) ^^ ((prefixState SixCarryPrefixData.program 784 basis 4615) && (prefixState SixCarryPrefixData.program 785 basis 4476))) := by
@@ -31436,11 +29468,8 @@ theorem step_785 (basis : BasisState) :
  rw [frame_4477_0_785 basis,frame_4615_784_785 basis] at h
  exact h
 
-theorem gate_786 : SixCarryPrefixData.program[786]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4477 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 18 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[18]?=some (.CX 4347 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[786]?=some (.CX 4347 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_786 : SixCarryPrefixData.program[786]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4477 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 18 shape6 before_len6 len6 rfl (.CX 4347 4477) rfl
 
 theorem step_786 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 787 basis 4477=((prefixState SixCarryPrefixData.program 786 basis 4477) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -31450,11 +29479,8 @@ theorem step_786 (basis : BasisState) :
  rw [frame_4347_0_786 basis] at h
  exact h
 
-theorem gate_787 : SixCarryPrefixData.program[787]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4476 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 19 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[19]?=some (.CX 4347 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[787]?=some (.CX 4347 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_787 : SixCarryPrefixData.program[787]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4476 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 19 shape6 before_len6 len6 rfl (.CX 4347 4476) rfl
 
 theorem step_787 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 788 basis 4476=((prefixState SixCarryPrefixData.program 785 basis 4476) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -31464,11 +29490,8 @@ theorem step_787 (basis : BasisState) :
  rw [frame_4347_0_787 basis,frame_4476_785_787 basis] at h
  exact h
 
-theorem gate_788 : SixCarryPrefixData.program[788]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4615 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 20 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[20]?=some (.CX 4347 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[788]?=some (.CX 4347 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_788 : SixCarryPrefixData.program[788]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4615 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 20 shape6 before_len6 len6 rfl (.CX 4347 4615) rfl
 
 theorem step_788 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 789 basis 4615=((prefixState SixCarryPrefixData.program 784 basis 4615) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -31478,11 +29501,8 @@ theorem step_788 (basis : BasisState) :
  rw [frame_4347_0_788 basis,frame_4615_784_788 basis] at h
  exact h
 
-theorem gate_789 : SixCarryPrefixData.program[789]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4616 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 21 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[21]?=some (.CX 4348 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[789]?=some (.CX 4348 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_789 : SixCarryPrefixData.program[789]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4616 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 21 shape6 before_len6 len6 rfl (.CX 4348 4616) rfl
 
 theorem step_789 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 790 basis 4616=((prefixState SixCarryPrefixData.program 112 basis 4616) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -31492,11 +29512,8 @@ theorem step_789 (basis : BasisState) :
  rw [frame_4348_0_789 basis,frame_4616_112_789 basis] at h
  exact h
 
-theorem gate_790 : SixCarryPrefixData.program[790]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4477 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 22 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[22]?=some (.CX 4348 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[790]?=some (.CX 4348 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_790 : SixCarryPrefixData.program[790]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4477 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 22 shape6 before_len6 len6 rfl (.CX 4348 4477) rfl
 
 theorem step_790 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 791 basis 4477=((prefixState SixCarryPrefixData.program 787 basis 4477) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -31506,11 +29523,8 @@ theorem step_790 (basis : BasisState) :
  rw [frame_4348_0_790 basis,frame_4477_787_790 basis] at h
  exact h
 
-theorem gate_791 : SixCarryPrefixData.program[791]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4616 4477 4478 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 23 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[23]?=some (.CCX 4616 4477 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[791]?=some (.CCX 4616 4477 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_791 : SixCarryPrefixData.program[791]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4616 4477 4478 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 23 shape6 before_len6 len6 rfl (.CCX 4616 4477 4478) rfl
 
 theorem step_791 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 792 basis 4478=((prefixState SixCarryPrefixData.program 0 basis 4478) ^^ ((prefixState SixCarryPrefixData.program 790 basis 4616) && (prefixState SixCarryPrefixData.program 791 basis 4477))) := by
@@ -31520,11 +29534,8 @@ theorem step_791 (basis : BasisState) :
  rw [frame_4478_0_791 basis,frame_4616_790_791 basis] at h
  exact h
 
-theorem gate_792 : SixCarryPrefixData.program[792]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4478 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 24 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[24]?=some (.CX 4348 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[792]?=some (.CX 4348 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_792 : SixCarryPrefixData.program[792]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4478 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 24 shape6 before_len6 len6 rfl (.CX 4348 4478) rfl
 
 theorem step_792 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 793 basis 4478=((prefixState SixCarryPrefixData.program 792 basis 4478) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -31534,11 +29545,8 @@ theorem step_792 (basis : BasisState) :
  rw [frame_4348_0_792 basis] at h
  exact h
 
-theorem gate_793 : SixCarryPrefixData.program[793]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4477 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 25 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[25]?=some (.CX 4348 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[793]?=some (.CX 4348 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_793 : SixCarryPrefixData.program[793]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4477 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 25 shape6 before_len6 len6 rfl (.CX 4348 4477) rfl
 
 theorem step_793 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 794 basis 4477=((prefixState SixCarryPrefixData.program 791 basis 4477) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -31548,11 +29556,8 @@ theorem step_793 (basis : BasisState) :
  rw [frame_4348_0_793 basis,frame_4477_791_793 basis] at h
  exact h
 
-theorem gate_794 : SixCarryPrefixData.program[794]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4616 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 26 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[26]?=some (.CX 4348 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[794]?=some (.CX 4348 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_794 : SixCarryPrefixData.program[794]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4616 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 26 shape6 before_len6 len6 rfl (.CX 4348 4616) rfl
 
 theorem step_794 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 795 basis 4616=((prefixState SixCarryPrefixData.program 790 basis 4616) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -31562,11 +29567,8 @@ theorem step_794 (basis : BasisState) :
  rw [frame_4348_0_794 basis,frame_4616_790_794 basis] at h
  exact h
 
-theorem gate_795 : SixCarryPrefixData.program[795]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4617 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 27 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[27]?=some (.CX 4349 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[795]?=some (.CX 4349 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_795 : SixCarryPrefixData.program[795]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4617 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 27 shape6 before_len6 len6 rfl (.CX 4349 4617) rfl
 
 theorem step_795 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 796 basis 4617=((prefixState SixCarryPrefixData.program 113 basis 4617) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -31576,11 +29578,8 @@ theorem step_795 (basis : BasisState) :
  rw [frame_4349_0_795 basis,frame_4617_113_795 basis] at h
  exact h
 
-theorem gate_796 : SixCarryPrefixData.program[796]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4478 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 28 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[28]?=some (.CX 4349 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[796]?=some (.CX 4349 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_796 : SixCarryPrefixData.program[796]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4478 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 28 shape6 before_len6 len6 rfl (.CX 4349 4478) rfl
 
 theorem step_796 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 797 basis 4478=((prefixState SixCarryPrefixData.program 793 basis 4478) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -31590,11 +29589,8 @@ theorem step_796 (basis : BasisState) :
  rw [frame_4349_0_796 basis,frame_4478_793_796 basis] at h
  exact h
 
-theorem gate_797 : SixCarryPrefixData.program[797]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4617 4478 4479 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 29 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[29]?=some (.CCX 4617 4478 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[797]?=some (.CCX 4617 4478 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_797 : SixCarryPrefixData.program[797]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4617 4478 4479 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 29 shape6 before_len6 len6 rfl (.CCX 4617 4478 4479) rfl
 
 theorem step_797 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 798 basis 4479=((prefixState SixCarryPrefixData.program 0 basis 4479) ^^ ((prefixState SixCarryPrefixData.program 796 basis 4617) && (prefixState SixCarryPrefixData.program 797 basis 4478))) := by
@@ -31604,11 +29600,8 @@ theorem step_797 (basis : BasisState) :
  rw [frame_4479_0_797 basis,frame_4617_796_797 basis] at h
  exact h
 
-theorem gate_798 : SixCarryPrefixData.program[798]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4479 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 30 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[30]?=some (.CX 4349 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[798]?=some (.CX 4349 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_798 : SixCarryPrefixData.program[798]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4479 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 30 shape6 before_len6 len6 rfl (.CX 4349 4479) rfl
 
 theorem step_798 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 799 basis 4479=((prefixState SixCarryPrefixData.program 798 basis 4479) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -31618,11 +29611,8 @@ theorem step_798 (basis : BasisState) :
  rw [frame_4349_0_798 basis] at h
  exact h
 
-theorem gate_799 : SixCarryPrefixData.program[799]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4478 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 31 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[31]?=some (.CX 4349 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[799]?=some (.CX 4349 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_799 : SixCarryPrefixData.program[799]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4478 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 31 shape6 before_len6 len6 rfl (.CX 4349 4478) rfl
 
 theorem step_799 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 800 basis 4478=((prefixState SixCarryPrefixData.program 797 basis 4478) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -31632,11 +29622,8 @@ theorem step_799 (basis : BasisState) :
  rw [frame_4349_0_799 basis,frame_4478_797_799 basis] at h
  exact h
 
-theorem gate_800 : SixCarryPrefixData.program[800]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4617 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 32 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[32]?=some (.CX 4349 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[800]?=some (.CX 4349 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_800 : SixCarryPrefixData.program[800]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4617 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 32 shape6 before_len6 len6 rfl (.CX 4349 4617) rfl
 
 theorem step_800 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 801 basis 4617=((prefixState SixCarryPrefixData.program 796 basis 4617) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -31646,11 +29633,8 @@ theorem step_800 (basis : BasisState) :
  rw [frame_4349_0_800 basis,frame_4617_796_800 basis] at h
  exact h
 
-theorem gate_801 : SixCarryPrefixData.program[801]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4618 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 33 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[33]?=some (.CX 4350 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[801]?=some (.CX 4350 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_801 : SixCarryPrefixData.program[801]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4618 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 33 shape6 before_len6 len6 rfl (.CX 4350 4618) rfl
 
 theorem step_801 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 802 basis 4618=((prefixState SixCarryPrefixData.program 114 basis 4618) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -31660,11 +29644,8 @@ theorem step_801 (basis : BasisState) :
  rw [frame_4350_0_801 basis,frame_4618_114_801 basis] at h
  exact h
 
-theorem gate_802 : SixCarryPrefixData.program[802]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4479 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 34 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[34]?=some (.CX 4350 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[802]?=some (.CX 4350 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_802 : SixCarryPrefixData.program[802]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4479 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 34 shape6 before_len6 len6 rfl (.CX 4350 4479) rfl
 
 theorem step_802 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 803 basis 4479=((prefixState SixCarryPrefixData.program 799 basis 4479) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -31674,11 +29655,8 @@ theorem step_802 (basis : BasisState) :
  rw [frame_4350_0_802 basis,frame_4479_799_802 basis] at h
  exact h
 
-theorem gate_803 : SixCarryPrefixData.program[803]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4618 4479 4480 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 35 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[35]?=some (.CCX 4618 4479 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[803]?=some (.CCX 4618 4479 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_803 : SixCarryPrefixData.program[803]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4618 4479 4480 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 35 shape6 before_len6 len6 rfl (.CCX 4618 4479 4480) rfl
 
 theorem step_803 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 804 basis 4480=((prefixState SixCarryPrefixData.program 0 basis 4480) ^^ ((prefixState SixCarryPrefixData.program 802 basis 4618) && (prefixState SixCarryPrefixData.program 803 basis 4479))) := by
@@ -31688,11 +29666,8 @@ theorem step_803 (basis : BasisState) :
  rw [frame_4480_0_803 basis,frame_4618_802_803 basis] at h
  exact h
 
-theorem gate_804 : SixCarryPrefixData.program[804]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4480 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 36 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[36]?=some (.CX 4350 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[804]?=some (.CX 4350 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_804 : SixCarryPrefixData.program[804]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4480 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 36 shape6 before_len6 len6 rfl (.CX 4350 4480) rfl
 
 theorem step_804 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 805 basis 4480=((prefixState SixCarryPrefixData.program 804 basis 4480) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -31702,11 +29677,8 @@ theorem step_804 (basis : BasisState) :
  rw [frame_4350_0_804 basis] at h
  exact h
 
-theorem gate_805 : SixCarryPrefixData.program[805]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4479 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 37 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[37]?=some (.CX 4350 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[805]?=some (.CX 4350 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_805 : SixCarryPrefixData.program[805]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4479 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 37 shape6 before_len6 len6 rfl (.CX 4350 4479) rfl
 
 theorem step_805 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 806 basis 4479=((prefixState SixCarryPrefixData.program 803 basis 4479) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -31716,11 +29688,8 @@ theorem step_805 (basis : BasisState) :
  rw [frame_4350_0_805 basis,frame_4479_803_805 basis] at h
  exact h
 
-theorem gate_806 : SixCarryPrefixData.program[806]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4618 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 38 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[38]?=some (.CX 4350 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[806]?=some (.CX 4350 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_806 : SixCarryPrefixData.program[806]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4618 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 38 shape6 before_len6 len6 rfl (.CX 4350 4618) rfl
 
 theorem step_806 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 807 basis 4618=((prefixState SixCarryPrefixData.program 802 basis 4618) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -31730,11 +29699,8 @@ theorem step_806 (basis : BasisState) :
  rw [frame_4350_0_806 basis,frame_4618_802_806 basis] at h
  exact h
 
-theorem gate_807 : SixCarryPrefixData.program[807]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4619 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 39 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[39]?=some (.CX 4351 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[807]?=some (.CX 4351 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_807 : SixCarryPrefixData.program[807]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4619 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 39 shape6 before_len6 len6 rfl (.CX 4351 4619) rfl
 
 theorem step_807 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 808 basis 4619=((prefixState SixCarryPrefixData.program 115 basis 4619) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -31744,11 +29710,8 @@ theorem step_807 (basis : BasisState) :
  rw [frame_4351_0_807 basis,frame_4619_115_807 basis] at h
  exact h
 
-theorem gate_808 : SixCarryPrefixData.program[808]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4480 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 40 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[40]?=some (.CX 4351 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[808]?=some (.CX 4351 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_808 : SixCarryPrefixData.program[808]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4480 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 40 shape6 before_len6 len6 rfl (.CX 4351 4480) rfl
 
 theorem step_808 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 809 basis 4480=((prefixState SixCarryPrefixData.program 805 basis 4480) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -31758,11 +29721,8 @@ theorem step_808 (basis : BasisState) :
  rw [frame_4351_0_808 basis,frame_4480_805_808 basis] at h
  exact h
 
-theorem gate_809 : SixCarryPrefixData.program[809]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4619 4480 4481 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 41 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[41]?=some (.CCX 4619 4480 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[809]?=some (.CCX 4619 4480 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_809 : SixCarryPrefixData.program[809]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4619 4480 4481 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 41 shape6 before_len6 len6 rfl (.CCX 4619 4480 4481) rfl
 
 theorem step_809 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 810 basis 4481=((prefixState SixCarryPrefixData.program 0 basis 4481) ^^ ((prefixState SixCarryPrefixData.program 808 basis 4619) && (prefixState SixCarryPrefixData.program 809 basis 4480))) := by
@@ -31772,11 +29732,8 @@ theorem step_809 (basis : BasisState) :
  rw [frame_4481_0_809 basis,frame_4619_808_809 basis] at h
  exact h
 
-theorem gate_810 : SixCarryPrefixData.program[810]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4481 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 42 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[42]?=some (.CX 4351 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[810]?=some (.CX 4351 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_810 : SixCarryPrefixData.program[810]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4481 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 42 shape6 before_len6 len6 rfl (.CX 4351 4481) rfl
 
 theorem step_810 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 811 basis 4481=((prefixState SixCarryPrefixData.program 810 basis 4481) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -31786,11 +29743,8 @@ theorem step_810 (basis : BasisState) :
  rw [frame_4351_0_810 basis] at h
  exact h
 
-theorem gate_811 : SixCarryPrefixData.program[811]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4480 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 43 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[43]?=some (.CX 4351 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[811]?=some (.CX 4351 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_811 : SixCarryPrefixData.program[811]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4480 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 43 shape6 before_len6 len6 rfl (.CX 4351 4480) rfl
 
 theorem step_811 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 812 basis 4480=((prefixState SixCarryPrefixData.program 809 basis 4480) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -31800,11 +29754,8 @@ theorem step_811 (basis : BasisState) :
  rw [frame_4351_0_811 basis,frame_4480_809_811 basis] at h
  exact h
 
-theorem gate_812 : SixCarryPrefixData.program[812]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4619 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 44 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[44]?=some (.CX 4351 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[812]?=some (.CX 4351 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_812 : SixCarryPrefixData.program[812]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4619 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 44 shape6 before_len6 len6 rfl (.CX 4351 4619) rfl
 
 theorem step_812 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 813 basis 4619=((prefixState SixCarryPrefixData.program 808 basis 4619) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -31814,11 +29765,8 @@ theorem step_812 (basis : BasisState) :
  rw [frame_4351_0_812 basis,frame_4619_808_812 basis] at h
  exact h
 
-theorem gate_813 : SixCarryPrefixData.program[813]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4620 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 45 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[45]?=some (.CX 4352 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[813]?=some (.CX 4352 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_813 : SixCarryPrefixData.program[813]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4620 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 45 shape6 before_len6 len6 rfl (.CX 4352 4620) rfl
 
 theorem step_813 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 814 basis 4620=((prefixState SixCarryPrefixData.program 116 basis 4620) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -31828,11 +29776,8 @@ theorem step_813 (basis : BasisState) :
  rw [frame_4352_0_813 basis,frame_4620_116_813 basis] at h
  exact h
 
-theorem gate_814 : SixCarryPrefixData.program[814]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4481 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 46 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[46]?=some (.CX 4352 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[814]?=some (.CX 4352 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_814 : SixCarryPrefixData.program[814]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4481 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 46 shape6 before_len6 len6 rfl (.CX 4352 4481) rfl
 
 theorem step_814 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 815 basis 4481=((prefixState SixCarryPrefixData.program 811 basis 4481) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -31842,11 +29787,8 @@ theorem step_814 (basis : BasisState) :
  rw [frame_4352_0_814 basis,frame_4481_811_814 basis] at h
  exact h
 
-theorem gate_815 : SixCarryPrefixData.program[815]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4620 4481 4482 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 47 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[47]?=some (.CCX 4620 4481 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[815]?=some (.CCX 4620 4481 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_815 : SixCarryPrefixData.program[815]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4620 4481 4482 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 47 shape6 before_len6 len6 rfl (.CCX 4620 4481 4482) rfl
 
 theorem step_815 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 816 basis 4482=((prefixState SixCarryPrefixData.program 0 basis 4482) ^^ ((prefixState SixCarryPrefixData.program 814 basis 4620) && (prefixState SixCarryPrefixData.program 815 basis 4481))) := by
@@ -31856,11 +29798,8 @@ theorem step_815 (basis : BasisState) :
  rw [frame_4482_0_815 basis,frame_4620_814_815 basis] at h
  exact h
 
-theorem gate_816 : SixCarryPrefixData.program[816]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4482 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 48 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[48]?=some (.CX 4352 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[816]?=some (.CX 4352 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_816 : SixCarryPrefixData.program[816]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4482 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 48 shape6 before_len6 len6 rfl (.CX 4352 4482) rfl
 
 theorem step_816 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 817 basis 4482=((prefixState SixCarryPrefixData.program 816 basis 4482) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -31870,11 +29809,8 @@ theorem step_816 (basis : BasisState) :
  rw [frame_4352_0_816 basis] at h
  exact h
 
-theorem gate_817 : SixCarryPrefixData.program[817]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4481 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 49 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[49]?=some (.CX 4352 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[817]?=some (.CX 4352 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_817 : SixCarryPrefixData.program[817]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4481 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 49 shape6 before_len6 len6 rfl (.CX 4352 4481) rfl
 
 theorem step_817 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 818 basis 4481=((prefixState SixCarryPrefixData.program 815 basis 4481) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -31884,11 +29820,8 @@ theorem step_817 (basis : BasisState) :
  rw [frame_4352_0_817 basis,frame_4481_815_817 basis] at h
  exact h
 
-theorem gate_818 : SixCarryPrefixData.program[818]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4620 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 50 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[50]?=some (.CX 4352 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[818]?=some (.CX 4352 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_818 : SixCarryPrefixData.program[818]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4620 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 50 shape6 before_len6 len6 rfl (.CX 4352 4620) rfl
 
 theorem step_818 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 819 basis 4620=((prefixState SixCarryPrefixData.program 814 basis 4620) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -31898,11 +29831,8 @@ theorem step_818 (basis : BasisState) :
  rw [frame_4352_0_818 basis,frame_4620_814_818 basis] at h
  exact h
 
-theorem gate_819 : SixCarryPrefixData.program[819]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4621 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 51 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[51]?=some (.CX 4353 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[819]?=some (.CX 4353 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_819 : SixCarryPrefixData.program[819]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4621 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 51 shape6 before_len6 len6 rfl (.CX 4353 4621) rfl
 
 theorem step_819 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 820 basis 4621=((prefixState SixCarryPrefixData.program 117 basis 4621) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -31912,11 +29842,8 @@ theorem step_819 (basis : BasisState) :
  rw [frame_4353_0_819 basis,frame_4621_117_819 basis] at h
  exact h
 
-theorem gate_820 : SixCarryPrefixData.program[820]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4482 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 52 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[52]?=some (.CX 4353 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[820]?=some (.CX 4353 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_820 : SixCarryPrefixData.program[820]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4482 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 52 shape6 before_len6 len6 rfl (.CX 4353 4482) rfl
 
 theorem step_820 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 821 basis 4482=((prefixState SixCarryPrefixData.program 817 basis 4482) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -31926,11 +29853,8 @@ theorem step_820 (basis : BasisState) :
  rw [frame_4353_0_820 basis,frame_4482_817_820 basis] at h
  exact h
 
-theorem gate_821 : SixCarryPrefixData.program[821]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4621 4482 4483 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 53 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[53]?=some (.CCX 4621 4482 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[821]?=some (.CCX 4621 4482 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_821 : SixCarryPrefixData.program[821]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4621 4482 4483 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 53 shape6 before_len6 len6 rfl (.CCX 4621 4482 4483) rfl
 
 theorem step_821 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 822 basis 4483=((prefixState SixCarryPrefixData.program 0 basis 4483) ^^ ((prefixState SixCarryPrefixData.program 820 basis 4621) && (prefixState SixCarryPrefixData.program 821 basis 4482))) := by
@@ -31940,11 +29864,8 @@ theorem step_821 (basis : BasisState) :
  rw [frame_4483_0_821 basis,frame_4621_820_821 basis] at h
  exact h
 
-theorem gate_822 : SixCarryPrefixData.program[822]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4483 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 54 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[54]?=some (.CX 4353 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[822]?=some (.CX 4353 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_822 : SixCarryPrefixData.program[822]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4483 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 54 shape6 before_len6 len6 rfl (.CX 4353 4483) rfl
 
 theorem step_822 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 823 basis 4483=((prefixState SixCarryPrefixData.program 822 basis 4483) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -31954,11 +29875,8 @@ theorem step_822 (basis : BasisState) :
  rw [frame_4353_0_822 basis] at h
  exact h
 
-theorem gate_823 : SixCarryPrefixData.program[823]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4482 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 55 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[55]?=some (.CX 4353 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[823]?=some (.CX 4353 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_823 : SixCarryPrefixData.program[823]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4482 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 55 shape6 before_len6 len6 rfl (.CX 4353 4482) rfl
 
 theorem step_823 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 824 basis 4482=((prefixState SixCarryPrefixData.program 821 basis 4482) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -31968,11 +29886,8 @@ theorem step_823 (basis : BasisState) :
  rw [frame_4353_0_823 basis,frame_4482_821_823 basis] at h
  exact h
 
-theorem gate_824 : SixCarryPrefixData.program[824]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4621 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 56 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[56]?=some (.CX 4353 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[824]?=some (.CX 4353 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_824 : SixCarryPrefixData.program[824]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4621 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 56 shape6 before_len6 len6 rfl (.CX 4353 4621) rfl
 
 theorem step_824 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 825 basis 4621=((prefixState SixCarryPrefixData.program 820 basis 4621) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -31982,11 +29897,8 @@ theorem step_824 (basis : BasisState) :
  rw [frame_4353_0_824 basis,frame_4621_820_824 basis] at h
  exact h
 
-theorem gate_825 : SixCarryPrefixData.program[825]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4622 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 57 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[57]?=some (.CX 4354 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[825]?=some (.CX 4354 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_825 : SixCarryPrefixData.program[825]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4622 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 57 shape6 before_len6 len6 rfl (.CX 4354 4622) rfl
 
 theorem step_825 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 826 basis 4622=((prefixState SixCarryPrefixData.program 118 basis 4622) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -31996,11 +29908,8 @@ theorem step_825 (basis : BasisState) :
  rw [frame_4354_0_825 basis,frame_4622_118_825 basis] at h
  exact h
 
-theorem gate_826 : SixCarryPrefixData.program[826]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4483 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 58 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[58]?=some (.CX 4354 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[826]?=some (.CX 4354 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_826 : SixCarryPrefixData.program[826]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4483 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 58 shape6 before_len6 len6 rfl (.CX 4354 4483) rfl
 
 theorem step_826 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 827 basis 4483=((prefixState SixCarryPrefixData.program 823 basis 4483) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -32010,11 +29919,8 @@ theorem step_826 (basis : BasisState) :
  rw [frame_4354_0_826 basis,frame_4483_823_826 basis] at h
  exact h
 
-theorem gate_827 : SixCarryPrefixData.program[827]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4622 4483 4484 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 59 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[59]?=some (.CCX 4622 4483 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[827]?=some (.CCX 4622 4483 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_827 : SixCarryPrefixData.program[827]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4622 4483 4484 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 59 shape6 before_len6 len6 rfl (.CCX 4622 4483 4484) rfl
 
 theorem step_827 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 828 basis 4484=((prefixState SixCarryPrefixData.program 0 basis 4484) ^^ ((prefixState SixCarryPrefixData.program 826 basis 4622) && (prefixState SixCarryPrefixData.program 827 basis 4483))) := by
@@ -32024,11 +29930,8 @@ theorem step_827 (basis : BasisState) :
  rw [frame_4484_0_827 basis,frame_4622_826_827 basis] at h
  exact h
 
-theorem gate_828 : SixCarryPrefixData.program[828]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4484 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 60 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[60]?=some (.CX 4354 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[828]?=some (.CX 4354 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_828 : SixCarryPrefixData.program[828]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4484 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 60 shape6 before_len6 len6 rfl (.CX 4354 4484) rfl
 
 theorem step_828 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 829 basis 4484=((prefixState SixCarryPrefixData.program 828 basis 4484) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -32038,11 +29941,8 @@ theorem step_828 (basis : BasisState) :
  rw [frame_4354_0_828 basis] at h
  exact h
 
-theorem gate_829 : SixCarryPrefixData.program[829]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4483 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 61 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[61]?=some (.CX 4354 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[829]?=some (.CX 4354 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_829 : SixCarryPrefixData.program[829]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4483 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 61 shape6 before_len6 len6 rfl (.CX 4354 4483) rfl
 
 theorem step_829 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 830 basis 4483=((prefixState SixCarryPrefixData.program 827 basis 4483) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -32052,11 +29952,8 @@ theorem step_829 (basis : BasisState) :
  rw [frame_4354_0_829 basis,frame_4483_827_829 basis] at h
  exact h
 
-theorem gate_830 : SixCarryPrefixData.program[830]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4622 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 62 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[62]?=some (.CX 4354 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[830]?=some (.CX 4354 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_830 : SixCarryPrefixData.program[830]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4622 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 62 shape6 before_len6 len6 rfl (.CX 4354 4622) rfl
 
 theorem step_830 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 831 basis 4622=((prefixState SixCarryPrefixData.program 826 basis 4622) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -32066,11 +29963,8 @@ theorem step_830 (basis : BasisState) :
  rw [frame_4354_0_830 basis,frame_4622_826_830 basis] at h
  exact h
 
-theorem gate_831 : SixCarryPrefixData.program[831]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4623 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 63 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[63]?=some (.CX 4355 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[831]?=some (.CX 4355 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_831 : SixCarryPrefixData.program[831]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4623 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 63 shape6 before_len6 len6 rfl (.CX 4355 4623) rfl
 
 theorem step_831 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 832 basis 4623=((prefixState SixCarryPrefixData.program 119 basis 4623) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -32080,11 +29974,8 @@ theorem step_831 (basis : BasisState) :
  rw [frame_4355_0_831 basis,frame_4623_119_831 basis] at h
  exact h
 
-theorem gate_832 : SixCarryPrefixData.program[832]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4484 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 64 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[64]?=some (.CX 4355 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[832]?=some (.CX 4355 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_832 : SixCarryPrefixData.program[832]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4484 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 64 shape6 before_len6 len6 rfl (.CX 4355 4484) rfl
 
 theorem step_832 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 833 basis 4484=((prefixState SixCarryPrefixData.program 829 basis 4484) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -32094,11 +29985,8 @@ theorem step_832 (basis : BasisState) :
  rw [frame_4355_0_832 basis,frame_4484_829_832 basis] at h
  exact h
 
-theorem gate_833 : SixCarryPrefixData.program[833]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4623 4484 4485 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 65 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[65]?=some (.CCX 4623 4484 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[833]?=some (.CCX 4623 4484 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_833 : SixCarryPrefixData.program[833]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4623 4484 4485 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 65 shape6 before_len6 len6 rfl (.CCX 4623 4484 4485) rfl
 
 theorem step_833 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 834 basis 4485=((prefixState SixCarryPrefixData.program 0 basis 4485) ^^ ((prefixState SixCarryPrefixData.program 832 basis 4623) && (prefixState SixCarryPrefixData.program 833 basis 4484))) := by
@@ -32108,11 +29996,8 @@ theorem step_833 (basis : BasisState) :
  rw [frame_4485_0_833 basis,frame_4623_832_833 basis] at h
  exact h
 
-theorem gate_834 : SixCarryPrefixData.program[834]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4485 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 66 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[66]?=some (.CX 4355 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[834]?=some (.CX 4355 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_834 : SixCarryPrefixData.program[834]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4485 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 66 shape6 before_len6 len6 rfl (.CX 4355 4485) rfl
 
 theorem step_834 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 835 basis 4485=((prefixState SixCarryPrefixData.program 834 basis 4485) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -32122,11 +30007,8 @@ theorem step_834 (basis : BasisState) :
  rw [frame_4355_0_834 basis] at h
  exact h
 
-theorem gate_835 : SixCarryPrefixData.program[835]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4484 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 67 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[67]?=some (.CX 4355 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[835]?=some (.CX 4355 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_835 : SixCarryPrefixData.program[835]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4484 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 67 shape6 before_len6 len6 rfl (.CX 4355 4484) rfl
 
 theorem step_835 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 836 basis 4484=((prefixState SixCarryPrefixData.program 833 basis 4484) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -32136,11 +30018,8 @@ theorem step_835 (basis : BasisState) :
  rw [frame_4355_0_835 basis,frame_4484_833_835 basis] at h
  exact h
 
-theorem gate_836 : SixCarryPrefixData.program[836]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4623 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 68 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[68]?=some (.CX 4355 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[836]?=some (.CX 4355 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_836 : SixCarryPrefixData.program[836]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4623 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 68 shape6 before_len6 len6 rfl (.CX 4355 4623) rfl
 
 theorem step_836 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 837 basis 4623=((prefixState SixCarryPrefixData.program 832 basis 4623) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -32150,11 +30029,8 @@ theorem step_836 (basis : BasisState) :
  rw [frame_4355_0_836 basis,frame_4623_832_836 basis] at h
  exact h
 
-theorem gate_837 : SixCarryPrefixData.program[837]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4624 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 69 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[69]?=some (.CX 4356 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[837]?=some (.CX 4356 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_837 : SixCarryPrefixData.program[837]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4624 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 69 shape6 before_len6 len6 rfl (.CX 4356 4624) rfl
 
 theorem step_837 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 838 basis 4624=((prefixState SixCarryPrefixData.program 120 basis 4624) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -32164,11 +30040,8 @@ theorem step_837 (basis : BasisState) :
  rw [frame_4356_0_837 basis,frame_4624_120_837 basis] at h
  exact h
 
-theorem gate_838 : SixCarryPrefixData.program[838]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4485 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 70 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[70]?=some (.CX 4356 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[838]?=some (.CX 4356 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_838 : SixCarryPrefixData.program[838]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4485 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 70 shape6 before_len6 len6 rfl (.CX 4356 4485) rfl
 
 theorem step_838 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 839 basis 4485=((prefixState SixCarryPrefixData.program 835 basis 4485) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -32178,11 +30051,8 @@ theorem step_838 (basis : BasisState) :
  rw [frame_4356_0_838 basis,frame_4485_835_838 basis] at h
  exact h
 
-theorem gate_839 : SixCarryPrefixData.program[839]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4624 4485 4486 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 71 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[71]?=some (.CCX 4624 4485 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[839]?=some (.CCX 4624 4485 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_839 : SixCarryPrefixData.program[839]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4624 4485 4486 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 71 shape6 before_len6 len6 rfl (.CCX 4624 4485 4486) rfl
 
 theorem step_839 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 840 basis 4486=((prefixState SixCarryPrefixData.program 0 basis 4486) ^^ ((prefixState SixCarryPrefixData.program 838 basis 4624) && (prefixState SixCarryPrefixData.program 839 basis 4485))) := by
@@ -32192,11 +30062,8 @@ theorem step_839 (basis : BasisState) :
  rw [frame_4486_0_839 basis,frame_4624_838_839 basis] at h
  exact h
 
-theorem gate_840 : SixCarryPrefixData.program[840]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4486 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 72 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[72]?=some (.CX 4356 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[840]?=some (.CX 4356 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_840 : SixCarryPrefixData.program[840]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4486 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 72 shape6 before_len6 len6 rfl (.CX 4356 4486) rfl
 
 theorem step_840 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 841 basis 4486=((prefixState SixCarryPrefixData.program 840 basis 4486) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -32206,11 +30073,8 @@ theorem step_840 (basis : BasisState) :
  rw [frame_4356_0_840 basis] at h
  exact h
 
-theorem gate_841 : SixCarryPrefixData.program[841]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4485 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 73 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[73]?=some (.CX 4356 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[841]?=some (.CX 4356 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_841 : SixCarryPrefixData.program[841]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4485 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 73 shape6 before_len6 len6 rfl (.CX 4356 4485) rfl
 
 theorem step_841 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 842 basis 4485=((prefixState SixCarryPrefixData.program 839 basis 4485) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -32220,11 +30084,8 @@ theorem step_841 (basis : BasisState) :
  rw [frame_4356_0_841 basis,frame_4485_839_841 basis] at h
  exact h
 
-theorem gate_842 : SixCarryPrefixData.program[842]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4624 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 74 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[74]?=some (.CX 4356 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[842]?=some (.CX 4356 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_842 : SixCarryPrefixData.program[842]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4624 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 74 shape6 before_len6 len6 rfl (.CX 4356 4624) rfl
 
 theorem step_842 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 843 basis 4624=((prefixState SixCarryPrefixData.program 838 basis 4624) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -32234,11 +30095,8 @@ theorem step_842 (basis : BasisState) :
  rw [frame_4356_0_842 basis,frame_4624_838_842 basis] at h
  exact h
 
-theorem gate_843 : SixCarryPrefixData.program[843]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4625 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 75 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[75]?=some (.CX 4357 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[843]?=some (.CX 4357 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_843 : SixCarryPrefixData.program[843]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4625 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 75 shape6 before_len6 len6 rfl (.CX 4357 4625) rfl
 
 theorem step_843 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 844 basis 4625=((prefixState SixCarryPrefixData.program 121 basis 4625) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -32248,11 +30106,8 @@ theorem step_843 (basis : BasisState) :
  rw [frame_4357_0_843 basis,frame_4625_121_843 basis] at h
  exact h
 
-theorem gate_844 : SixCarryPrefixData.program[844]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4486 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 76 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[76]?=some (.CX 4357 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[844]?=some (.CX 4357 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_844 : SixCarryPrefixData.program[844]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4486 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 76 shape6 before_len6 len6 rfl (.CX 4357 4486) rfl
 
 theorem step_844 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 845 basis 4486=((prefixState SixCarryPrefixData.program 841 basis 4486) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -32262,11 +30117,8 @@ theorem step_844 (basis : BasisState) :
  rw [frame_4357_0_844 basis,frame_4486_841_844 basis] at h
  exact h
 
-theorem gate_845 : SixCarryPrefixData.program[845]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4625 4486 4487 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 77 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[77]?=some (.CCX 4625 4486 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[845]?=some (.CCX 4625 4486 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_845 : SixCarryPrefixData.program[845]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4625 4486 4487 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 77 shape6 before_len6 len6 rfl (.CCX 4625 4486 4487) rfl
 
 theorem step_845 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 846 basis 4487=((prefixState SixCarryPrefixData.program 0 basis 4487) ^^ ((prefixState SixCarryPrefixData.program 844 basis 4625) && (prefixState SixCarryPrefixData.program 845 basis 4486))) := by
@@ -32276,11 +30128,8 @@ theorem step_845 (basis : BasisState) :
  rw [frame_4487_0_845 basis,frame_4625_844_845 basis] at h
  exact h
 
-theorem gate_846 : SixCarryPrefixData.program[846]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4487 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 78 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[78]?=some (.CX 4357 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[846]?=some (.CX 4357 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_846 : SixCarryPrefixData.program[846]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4487 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 78 shape6 before_len6 len6 rfl (.CX 4357 4487) rfl
 
 theorem step_846 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 847 basis 4487=((prefixState SixCarryPrefixData.program 846 basis 4487) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -32290,11 +30139,8 @@ theorem step_846 (basis : BasisState) :
  rw [frame_4357_0_846 basis] at h
  exact h
 
-theorem gate_847 : SixCarryPrefixData.program[847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4486 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 79 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[79]?=some (.CX 4357 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[847]?=some (.CX 4357 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_847 : SixCarryPrefixData.program[847]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4486 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 79 shape6 before_len6 len6 rfl (.CX 4357 4486) rfl
 
 theorem step_847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 848 basis 4486=((prefixState SixCarryPrefixData.program 845 basis 4486) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -32304,11 +30150,8 @@ theorem step_847 (basis : BasisState) :
  rw [frame_4357_0_847 basis,frame_4486_845_847 basis] at h
  exact h
 
-theorem gate_848 : SixCarryPrefixData.program[848]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4625 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 80 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[80]?=some (.CX 4357 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[848]?=some (.CX 4357 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_848 : SixCarryPrefixData.program[848]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4625 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 80 shape6 before_len6 len6 rfl (.CX 4357 4625) rfl
 
 theorem step_848 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 849 basis 4625=((prefixState SixCarryPrefixData.program 844 basis 4625) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -32318,11 +30161,8 @@ theorem step_848 (basis : BasisState) :
  rw [frame_4357_0_848 basis,frame_4625_844_848 basis] at h
  exact h
 
-theorem gate_849 : SixCarryPrefixData.program[849]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4626 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 81 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[81]?=some (.CX 4358 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[849]?=some (.CX 4358 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_849 : SixCarryPrefixData.program[849]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4626 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 81 shape6 before_len6 len6 rfl (.CX 4358 4626) rfl
 
 theorem step_849 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 850 basis 4626=((prefixState SixCarryPrefixData.program 122 basis 4626) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -32332,11 +30172,8 @@ theorem step_849 (basis : BasisState) :
  rw [frame_4358_0_849 basis,frame_4626_122_849 basis] at h
  exact h
 
-theorem gate_850 : SixCarryPrefixData.program[850]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4487 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 82 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[82]?=some (.CX 4358 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[850]?=some (.CX 4358 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_850 : SixCarryPrefixData.program[850]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4487 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 82 shape6 before_len6 len6 rfl (.CX 4358 4487) rfl
 
 theorem step_850 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 851 basis 4487=((prefixState SixCarryPrefixData.program 847 basis 4487) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -32346,11 +30183,8 @@ theorem step_850 (basis : BasisState) :
  rw [frame_4358_0_850 basis,frame_4487_847_850 basis] at h
  exact h
 
-theorem gate_851 : SixCarryPrefixData.program[851]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4626 4487 4488 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 83 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[83]?=some (.CCX 4626 4487 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[851]?=some (.CCX 4626 4487 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_851 : SixCarryPrefixData.program[851]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4626 4487 4488 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 83 shape6 before_len6 len6 rfl (.CCX 4626 4487 4488) rfl
 
 theorem step_851 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 852 basis 4488=((prefixState SixCarryPrefixData.program 0 basis 4488) ^^ ((prefixState SixCarryPrefixData.program 850 basis 4626) && (prefixState SixCarryPrefixData.program 851 basis 4487))) := by
@@ -32360,11 +30194,8 @@ theorem step_851 (basis : BasisState) :
  rw [frame_4488_0_851 basis,frame_4626_850_851 basis] at h
  exact h
 
-theorem gate_852 : SixCarryPrefixData.program[852]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4488 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 84 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[84]?=some (.CX 4358 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[852]?=some (.CX 4358 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_852 : SixCarryPrefixData.program[852]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4488 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 84 shape6 before_len6 len6 rfl (.CX 4358 4488) rfl
 
 theorem step_852 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 853 basis 4488=((prefixState SixCarryPrefixData.program 852 basis 4488) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -32374,11 +30205,8 @@ theorem step_852 (basis : BasisState) :
  rw [frame_4358_0_852 basis] at h
  exact h
 
-theorem gate_853 : SixCarryPrefixData.program[853]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4487 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 85 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[85]?=some (.CX 4358 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[853]?=some (.CX 4358 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_853 : SixCarryPrefixData.program[853]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4487 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 85 shape6 before_len6 len6 rfl (.CX 4358 4487) rfl
 
 theorem step_853 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 854 basis 4487=((prefixState SixCarryPrefixData.program 851 basis 4487) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -32388,11 +30216,8 @@ theorem step_853 (basis : BasisState) :
  rw [frame_4358_0_853 basis,frame_4487_851_853 basis] at h
  exact h
 
-theorem gate_854 : SixCarryPrefixData.program[854]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4626 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 86 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[86]?=some (.CX 4358 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[854]?=some (.CX 4358 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_854 : SixCarryPrefixData.program[854]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4626 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 86 shape6 before_len6 len6 rfl (.CX 4358 4626) rfl
 
 theorem step_854 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 855 basis 4626=((prefixState SixCarryPrefixData.program 850 basis 4626) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -32402,11 +30227,8 @@ theorem step_854 (basis : BasisState) :
  rw [frame_4358_0_854 basis,frame_4626_850_854 basis] at h
  exact h
 
-theorem gate_856 : SixCarryPrefixData.program[856]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4488 := by
- have h := lookup_context SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 88 shape6 before_len6 (by rw [len6]; decide +kernel)
- have hg : SixCarryPrefixData.chunk6[88]?=some (.CX 4359 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[856]?=some (.CX 4359 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_856 : SixCarryPrefixData.program[856]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4488 :=
+ gateFromChunk SixCarryPrefixData.program before6 SixCarryPrefixData.chunk6 after6 768 88 shape6 before_len6 len6 rfl (.CX 4359 4488) rfl
 
 theorem step_856 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 857 basis 4488=((prefixState SixCarryPrefixData.program 853 basis 4488) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -32416,11 +30238,8 @@ theorem step_856 (basis : BasisState) :
  rw [frame_4359_0_856 basis,frame_4488_853_856 basis] at h
  exact h
 
-theorem gate_953 : SixCarryPrefixData.program[953]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4492 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 57 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[57]?=some (.measureX 4492 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[953]?=some (.measureX 4492 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_953 : SixCarryPrefixData.program[953]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4492 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 57 shape7 before_len7 len7 rfl (.measureX 4492 [] []) rfl
 
 theorem step_953 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 954 basis 4492=(false) := by
@@ -32429,11 +30248,8 @@ theorem step_953 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_956 : SixCarryPrefixData.program[956]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4491 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 60 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[60]?=some (.measureX 4491 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[956]?=some (.measureX 4491 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_956 : SixCarryPrefixData.program[956]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4491 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 60 shape7 before_len7 len7 rfl (.measureX 4491 [] []) rfl
 
 theorem step_956 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 957 basis 4491=(false) := by
@@ -32442,11 +30258,8 @@ theorem step_956 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_959 : SixCarryPrefixData.program[959]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4490 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 63 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[63]?=some (.measureX 4490 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[959]?=some (.measureX 4490 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_959 : SixCarryPrefixData.program[959]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4490 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 63 shape7 before_len7 len7 rfl (.measureX 4490 [] []) rfl
 
 theorem step_959 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 960 basis 4490=(false) := by
@@ -32455,11 +30268,8 @@ theorem step_959 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_962 : SixCarryPrefixData.program[962]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4489 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 66 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[66]?=some (.measureX 4489 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[962]?=some (.measureX 4489 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_962 : SixCarryPrefixData.program[962]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4489 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 66 shape7 before_len7 len7 rfl (.measureX 4489 [] []) rfl
 
 theorem step_962 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 963 basis 4489=(false) := by
@@ -32468,11 +30278,8 @@ theorem step_962 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_965 : SixCarryPrefixData.program[965]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4488 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 69 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[69]?=some (.measureX 4488 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[965]?=some (.measureX 4488 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_965 : SixCarryPrefixData.program[965]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4488 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 69 shape7 before_len7 len7 rfl (.measureX 4488 [] []) rfl
 
 theorem step_965 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 966 basis 4488=(false) := by
@@ -32481,11 +30288,8 @@ theorem step_965 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_966 : SixCarryPrefixData.program[966]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4626 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 70 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[70]?=some (.CX 4358 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[966]?=some (.CX 4358 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_966 : SixCarryPrefixData.program[966]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4626 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 70 shape7 before_len7 len7 rfl (.CX 4358 4626) rfl
 
 theorem step_966 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 967 basis 4626=((prefixState SixCarryPrefixData.program 855 basis 4626) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -32495,11 +30299,8 @@ theorem step_966 (basis : BasisState) :
  rw [frame_4358_0_966 basis,frame_4626_855_966 basis] at h
  exact h
 
-theorem gate_967 : SixCarryPrefixData.program[967]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4487 4626 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 71 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[71]?=some (.CX 4487 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[967]?=some (.CX 4487 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_967 : SixCarryPrefixData.program[967]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4487 4626 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 71 shape7 before_len7 len7 rfl (.CX 4487 4626) rfl
 
 theorem step_967 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 968 basis 4626=((prefixState SixCarryPrefixData.program 967 basis 4626) ^^ (prefixState SixCarryPrefixData.program 854 basis 4487)) := by
@@ -32509,11 +30310,8 @@ theorem step_967 (basis : BasisState) :
  rw [frame_4487_854_967 basis] at h
  exact h
 
-theorem gate_968 : SixCarryPrefixData.program[968]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4487 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 72 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[72]?=some (.measureX 4487 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[968]?=some (.measureX 4487 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_968 : SixCarryPrefixData.program[968]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4487 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 72 shape7 before_len7 len7 rfl (.measureX 4487 [] []) rfl
 
 theorem step_968 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 969 basis 4487=(false) := by
@@ -32522,11 +30320,8 @@ theorem step_968 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_969 : SixCarryPrefixData.program[969]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4625 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 73 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[73]?=some (.CX 4357 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[969]?=some (.CX 4357 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_969 : SixCarryPrefixData.program[969]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4625 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 73 shape7 before_len7 len7 rfl (.CX 4357 4625) rfl
 
 theorem step_969 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 970 basis 4625=((prefixState SixCarryPrefixData.program 849 basis 4625) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -32536,11 +30331,8 @@ theorem step_969 (basis : BasisState) :
  rw [frame_4357_0_969 basis,frame_4625_849_969 basis] at h
  exact h
 
-theorem gate_970 : SixCarryPrefixData.program[970]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4486 4625 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 74 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[74]?=some (.CX 4486 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[970]?=some (.CX 4486 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_970 : SixCarryPrefixData.program[970]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4486 4625 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 74 shape7 before_len7 len7 rfl (.CX 4486 4625) rfl
 
 theorem step_970 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 971 basis 4625=((prefixState SixCarryPrefixData.program 970 basis 4625) ^^ (prefixState SixCarryPrefixData.program 848 basis 4486)) := by
@@ -32550,11 +30342,8 @@ theorem step_970 (basis : BasisState) :
  rw [frame_4486_848_970 basis] at h
  exact h
 
-theorem gate_971 : SixCarryPrefixData.program[971]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4486 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 75 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[75]?=some (.measureX 4486 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[971]?=some (.measureX 4486 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_971 : SixCarryPrefixData.program[971]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4486 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 75 shape7 before_len7 len7 rfl (.measureX 4486 [] []) rfl
 
 theorem step_971 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 972 basis 4486=(false) := by
@@ -32563,11 +30352,8 @@ theorem step_971 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_972 : SixCarryPrefixData.program[972]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4624 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 76 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[76]?=some (.CX 4356 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[972]?=some (.CX 4356 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_972 : SixCarryPrefixData.program[972]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4624 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 76 shape7 before_len7 len7 rfl (.CX 4356 4624) rfl
 
 theorem step_972 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 973 basis 4624=((prefixState SixCarryPrefixData.program 843 basis 4624) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -32577,11 +30363,8 @@ theorem step_972 (basis : BasisState) :
  rw [frame_4356_0_972 basis,frame_4624_843_972 basis] at h
  exact h
 
-theorem gate_973 : SixCarryPrefixData.program[973]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4485 4624 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 77 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[77]?=some (.CX 4485 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[973]?=some (.CX 4485 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_973 : SixCarryPrefixData.program[973]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4485 4624 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 77 shape7 before_len7 len7 rfl (.CX 4485 4624) rfl
 
 theorem step_973 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 974 basis 4624=((prefixState SixCarryPrefixData.program 973 basis 4624) ^^ (prefixState SixCarryPrefixData.program 842 basis 4485)) := by
@@ -32591,11 +30374,8 @@ theorem step_973 (basis : BasisState) :
  rw [frame_4485_842_973 basis] at h
  exact h
 
-theorem gate_974 : SixCarryPrefixData.program[974]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4485 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 78 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[78]?=some (.measureX 4485 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[974]?=some (.measureX 4485 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_974 : SixCarryPrefixData.program[974]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4485 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 78 shape7 before_len7 len7 rfl (.measureX 4485 [] []) rfl
 
 theorem step_974 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 975 basis 4485=(false) := by
@@ -32604,11 +30384,8 @@ theorem step_974 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_975 : SixCarryPrefixData.program[975]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4623 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 79 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[79]?=some (.CX 4355 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[975]?=some (.CX 4355 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_975 : SixCarryPrefixData.program[975]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4623 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 79 shape7 before_len7 len7 rfl (.CX 4355 4623) rfl
 
 theorem step_975 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 976 basis 4623=((prefixState SixCarryPrefixData.program 837 basis 4623) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -32618,11 +30395,8 @@ theorem step_975 (basis : BasisState) :
  rw [frame_4355_0_975 basis,frame_4623_837_975 basis] at h
  exact h
 
-theorem gate_976 : SixCarryPrefixData.program[976]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4484 4623 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 80 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[80]?=some (.CX 4484 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[976]?=some (.CX 4484 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_976 : SixCarryPrefixData.program[976]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4484 4623 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 80 shape7 before_len7 len7 rfl (.CX 4484 4623) rfl
 
 theorem step_976 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 977 basis 4623=((prefixState SixCarryPrefixData.program 976 basis 4623) ^^ (prefixState SixCarryPrefixData.program 836 basis 4484)) := by
@@ -32632,11 +30406,8 @@ theorem step_976 (basis : BasisState) :
  rw [frame_4484_836_976 basis] at h
  exact h
 
-theorem gate_977 : SixCarryPrefixData.program[977]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4484 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 81 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[81]?=some (.measureX 4484 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[977]?=some (.measureX 4484 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_977 : SixCarryPrefixData.program[977]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4484 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 81 shape7 before_len7 len7 rfl (.measureX 4484 [] []) rfl
 
 theorem step_977 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 978 basis 4484=(false) := by
@@ -32645,11 +30416,8 @@ theorem step_977 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_978 : SixCarryPrefixData.program[978]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4622 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 82 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[82]?=some (.CX 4354 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[978]?=some (.CX 4354 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_978 : SixCarryPrefixData.program[978]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4622 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 82 shape7 before_len7 len7 rfl (.CX 4354 4622) rfl
 
 theorem step_978 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 979 basis 4622=((prefixState SixCarryPrefixData.program 831 basis 4622) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -32659,11 +30427,8 @@ theorem step_978 (basis : BasisState) :
  rw [frame_4354_0_978 basis,frame_4622_831_978 basis] at h
  exact h
 
-theorem gate_979 : SixCarryPrefixData.program[979]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4483 4622 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 83 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[83]?=some (.CX 4483 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[979]?=some (.CX 4483 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_979 : SixCarryPrefixData.program[979]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4483 4622 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 83 shape7 before_len7 len7 rfl (.CX 4483 4622) rfl
 
 theorem step_979 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 980 basis 4622=((prefixState SixCarryPrefixData.program 979 basis 4622) ^^ (prefixState SixCarryPrefixData.program 830 basis 4483)) := by
@@ -32673,11 +30438,8 @@ theorem step_979 (basis : BasisState) :
  rw [frame_4483_830_979 basis] at h
  exact h
 
-theorem gate_980 : SixCarryPrefixData.program[980]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4483 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 84 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[84]?=some (.measureX 4483 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[980]?=some (.measureX 4483 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_980 : SixCarryPrefixData.program[980]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4483 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 84 shape7 before_len7 len7 rfl (.measureX 4483 [] []) rfl
 
 theorem step_980 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 981 basis 4483=(false) := by
@@ -32686,11 +30448,8 @@ theorem step_980 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_981 : SixCarryPrefixData.program[981]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4621 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 85 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[85]?=some (.CX 4353 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[981]?=some (.CX 4353 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_981 : SixCarryPrefixData.program[981]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4621 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 85 shape7 before_len7 len7 rfl (.CX 4353 4621) rfl
 
 theorem step_981 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 982 basis 4621=((prefixState SixCarryPrefixData.program 825 basis 4621) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -32700,11 +30459,8 @@ theorem step_981 (basis : BasisState) :
  rw [frame_4353_0_981 basis,frame_4621_825_981 basis] at h
  exact h
 
-theorem gate_982 : SixCarryPrefixData.program[982]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4482 4621 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 86 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[86]?=some (.CX 4482 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[982]?=some (.CX 4482 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_982 : SixCarryPrefixData.program[982]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4482 4621 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 86 shape7 before_len7 len7 rfl (.CX 4482 4621) rfl
 
 theorem step_982 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 983 basis 4621=((prefixState SixCarryPrefixData.program 982 basis 4621) ^^ (prefixState SixCarryPrefixData.program 824 basis 4482)) := by
@@ -32714,11 +30470,8 @@ theorem step_982 (basis : BasisState) :
  rw [frame_4482_824_982 basis] at h
  exact h
 
-theorem gate_983 : SixCarryPrefixData.program[983]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4482 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 87 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[87]?=some (.measureX 4482 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[983]?=some (.measureX 4482 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_983 : SixCarryPrefixData.program[983]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4482 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 87 shape7 before_len7 len7 rfl (.measureX 4482 [] []) rfl
 
 theorem step_983 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 984 basis 4482=(false) := by
@@ -32727,11 +30480,8 @@ theorem step_983 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_984 : SixCarryPrefixData.program[984]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4620 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 88 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[88]?=some (.CX 4352 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[984]?=some (.CX 4352 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_984 : SixCarryPrefixData.program[984]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4620 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 88 shape7 before_len7 len7 rfl (.CX 4352 4620) rfl
 
 theorem step_984 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 985 basis 4620=((prefixState SixCarryPrefixData.program 819 basis 4620) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -32741,11 +30491,8 @@ theorem step_984 (basis : BasisState) :
  rw [frame_4352_0_984 basis,frame_4620_819_984 basis] at h
  exact h
 
-theorem gate_985 : SixCarryPrefixData.program[985]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4481 4620 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 89 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[89]?=some (.CX 4481 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[985]?=some (.CX 4481 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_985 : SixCarryPrefixData.program[985]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4481 4620 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 89 shape7 before_len7 len7 rfl (.CX 4481 4620) rfl
 
 theorem step_985 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 986 basis 4620=((prefixState SixCarryPrefixData.program 985 basis 4620) ^^ (prefixState SixCarryPrefixData.program 818 basis 4481)) := by
@@ -32755,11 +30502,8 @@ theorem step_985 (basis : BasisState) :
  rw [frame_4481_818_985 basis] at h
  exact h
 
-theorem gate_986 : SixCarryPrefixData.program[986]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4481 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 90 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[90]?=some (.measureX 4481 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[986]?=some (.measureX 4481 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_986 : SixCarryPrefixData.program[986]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4481 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 90 shape7 before_len7 len7 rfl (.measureX 4481 [] []) rfl
 
 theorem step_986 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 987 basis 4481=(false) := by
@@ -32768,11 +30512,8 @@ theorem step_986 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_987 : SixCarryPrefixData.program[987]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4619 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 91 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[91]?=some (.CX 4351 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[987]?=some (.CX 4351 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_987 : SixCarryPrefixData.program[987]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4619 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 91 shape7 before_len7 len7 rfl (.CX 4351 4619) rfl
 
 theorem step_987 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 988 basis 4619=((prefixState SixCarryPrefixData.program 813 basis 4619) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -32782,11 +30523,8 @@ theorem step_987 (basis : BasisState) :
  rw [frame_4351_0_987 basis,frame_4619_813_987 basis] at h
  exact h
 
-theorem gate_988 : SixCarryPrefixData.program[988]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4480 4619 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 92 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[92]?=some (.CX 4480 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[988]?=some (.CX 4480 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_988 : SixCarryPrefixData.program[988]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4480 4619 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 92 shape7 before_len7 len7 rfl (.CX 4480 4619) rfl
 
 theorem step_988 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 989 basis 4619=((prefixState SixCarryPrefixData.program 988 basis 4619) ^^ (prefixState SixCarryPrefixData.program 812 basis 4480)) := by
@@ -32796,11 +30534,8 @@ theorem step_988 (basis : BasisState) :
  rw [frame_4480_812_988 basis] at h
  exact h
 
-theorem gate_989 : SixCarryPrefixData.program[989]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4480 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 93 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[93]?=some (.measureX 4480 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[989]?=some (.measureX 4480 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_989 : SixCarryPrefixData.program[989]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4480 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 93 shape7 before_len7 len7 rfl (.measureX 4480 [] []) rfl
 
 theorem step_989 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 990 basis 4480=(false) := by
@@ -32809,11 +30544,8 @@ theorem step_989 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_990 : SixCarryPrefixData.program[990]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4618 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 94 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[94]?=some (.CX 4350 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[990]?=some (.CX 4350 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_990 : SixCarryPrefixData.program[990]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4618 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 94 shape7 before_len7 len7 rfl (.CX 4350 4618) rfl
 
 theorem step_990 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 991 basis 4618=((prefixState SixCarryPrefixData.program 807 basis 4618) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -32823,11 +30555,8 @@ theorem step_990 (basis : BasisState) :
  rw [frame_4350_0_990 basis,frame_4618_807_990 basis] at h
  exact h
 
-theorem gate_991 : SixCarryPrefixData.program[991]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4479 4618 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 95 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[95]?=some (.CX 4479 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[991]?=some (.CX 4479 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_991 : SixCarryPrefixData.program[991]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4479 4618 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 95 shape7 before_len7 len7 rfl (.CX 4479 4618) rfl
 
 theorem step_991 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 992 basis 4618=((prefixState SixCarryPrefixData.program 991 basis 4618) ^^ (prefixState SixCarryPrefixData.program 806 basis 4479)) := by
@@ -32837,11 +30566,8 @@ theorem step_991 (basis : BasisState) :
  rw [frame_4479_806_991 basis] at h
  exact h
 
-theorem gate_992 : SixCarryPrefixData.program[992]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4479 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 96 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[96]?=some (.measureX 4479 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[992]?=some (.measureX 4479 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_992 : SixCarryPrefixData.program[992]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4479 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 96 shape7 before_len7 len7 rfl (.measureX 4479 [] []) rfl
 
 theorem step_992 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 993 basis 4479=(false) := by
@@ -32850,11 +30576,8 @@ theorem step_992 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_993 : SixCarryPrefixData.program[993]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4617 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 97 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[97]?=some (.CX 4349 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[993]?=some (.CX 4349 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_993 : SixCarryPrefixData.program[993]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4617 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 97 shape7 before_len7 len7 rfl (.CX 4349 4617) rfl
 
 theorem step_993 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 994 basis 4617=((prefixState SixCarryPrefixData.program 801 basis 4617) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -32864,11 +30587,8 @@ theorem step_993 (basis : BasisState) :
  rw [frame_4349_0_993 basis,frame_4617_801_993 basis] at h
  exact h
 
-theorem gate_994 : SixCarryPrefixData.program[994]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4478 4617 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 98 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[98]?=some (.CX 4478 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[994]?=some (.CX 4478 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_994 : SixCarryPrefixData.program[994]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4478 4617 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 98 shape7 before_len7 len7 rfl (.CX 4478 4617) rfl
 
 theorem step_994 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 995 basis 4617=((prefixState SixCarryPrefixData.program 994 basis 4617) ^^ (prefixState SixCarryPrefixData.program 800 basis 4478)) := by
@@ -32878,11 +30598,8 @@ theorem step_994 (basis : BasisState) :
  rw [frame_4478_800_994 basis] at h
  exact h
 
-theorem gate_995 : SixCarryPrefixData.program[995]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4478 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 99 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[99]?=some (.measureX 4478 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[995]?=some (.measureX 4478 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_995 : SixCarryPrefixData.program[995]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4478 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 99 shape7 before_len7 len7 rfl (.measureX 4478 [] []) rfl
 
 theorem step_995 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 996 basis 4478=(false) := by
@@ -32891,11 +30608,8 @@ theorem step_995 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_996 : SixCarryPrefixData.program[996]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4616 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 100 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[100]?=some (.CX 4348 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[996]?=some (.CX 4348 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_996 : SixCarryPrefixData.program[996]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4616 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 100 shape7 before_len7 len7 rfl (.CX 4348 4616) rfl
 
 theorem step_996 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 997 basis 4616=((prefixState SixCarryPrefixData.program 795 basis 4616) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -32905,11 +30619,8 @@ theorem step_996 (basis : BasisState) :
  rw [frame_4348_0_996 basis,frame_4616_795_996 basis] at h
  exact h
 
-theorem gate_997 : SixCarryPrefixData.program[997]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4477 4616 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 101 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[101]?=some (.CX 4477 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[997]?=some (.CX 4477 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_997 : SixCarryPrefixData.program[997]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4477 4616 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 101 shape7 before_len7 len7 rfl (.CX 4477 4616) rfl
 
 theorem step_997 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 998 basis 4616=((prefixState SixCarryPrefixData.program 997 basis 4616) ^^ (prefixState SixCarryPrefixData.program 794 basis 4477)) := by
@@ -32919,11 +30630,8 @@ theorem step_997 (basis : BasisState) :
  rw [frame_4477_794_997 basis] at h
  exact h
 
-theorem gate_998 : SixCarryPrefixData.program[998]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4477 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 102 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[102]?=some (.measureX 4477 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[998]?=some (.measureX 4477 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_998 : SixCarryPrefixData.program[998]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4477 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 102 shape7 before_len7 len7 rfl (.measureX 4477 [] []) rfl
 
 theorem step_998 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 999 basis 4477=(false) := by
@@ -32932,11 +30640,8 @@ theorem step_998 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_999 : SixCarryPrefixData.program[999]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4615 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 103 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[103]?=some (.CX 4347 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[999]?=some (.CX 4347 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_999 : SixCarryPrefixData.program[999]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4615 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 103 shape7 before_len7 len7 rfl (.CX 4347 4615) rfl
 
 theorem step_999 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1000 basis 4615=((prefixState SixCarryPrefixData.program 789 basis 4615) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -32946,11 +30651,8 @@ theorem step_999 (basis : BasisState) :
  rw [frame_4347_0_999 basis,frame_4615_789_999 basis] at h
  exact h
 
-theorem gate_1000 : SixCarryPrefixData.program[1000]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4476 4615 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 104 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[104]?=some (.CX 4476 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[1000]?=some (.CX 4476 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1000 : SixCarryPrefixData.program[1000]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4476 4615 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 104 shape7 before_len7 len7 rfl (.CX 4476 4615) rfl
 
 theorem step_1000 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1001 basis 4615=((prefixState SixCarryPrefixData.program 1000 basis 4615) ^^ (prefixState SixCarryPrefixData.program 788 basis 4476)) := by
@@ -32960,11 +30662,8 @@ theorem step_1000 (basis : BasisState) :
  rw [frame_4476_788_1000 basis] at h
  exact h
 
-theorem gate_1001 : SixCarryPrefixData.program[1001]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4476 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 105 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[105]?=some (.measureX 4476 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[1001]?=some (.measureX 4476 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1001 : SixCarryPrefixData.program[1001]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4476 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 105 shape7 before_len7 len7 rfl (.measureX 4476 [] []) rfl
 
 theorem step_1001 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1002 basis 4476=(false) := by
@@ -32973,11 +30672,8 @@ theorem step_1001 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_1002 : SixCarryPrefixData.program[1002]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4614 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 106 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[106]?=some (.CX 4346 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[1002]?=some (.CX 4346 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1002 : SixCarryPrefixData.program[1002]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4614 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 106 shape7 before_len7 len7 rfl (.CX 4346 4614) rfl
 
 theorem step_1002 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1003 basis 4614=((prefixState SixCarryPrefixData.program 783 basis 4614) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -32987,11 +30683,8 @@ theorem step_1002 (basis : BasisState) :
  rw [frame_4346_0_1002 basis,frame_4614_783_1002 basis] at h
  exact h
 
-theorem gate_1003 : SixCarryPrefixData.program[1003]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4475 4614 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 107 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[107]?=some (.CX 4475 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[1003]?=some (.CX 4475 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1003 : SixCarryPrefixData.program[1003]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4475 4614 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 107 shape7 before_len7 len7 rfl (.CX 4475 4614) rfl
 
 theorem step_1003 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1004 basis 4614=((prefixState SixCarryPrefixData.program 1003 basis 4614) ^^ (prefixState SixCarryPrefixData.program 782 basis 4475)) := by
@@ -33001,11 +30694,8 @@ theorem step_1003 (basis : BasisState) :
  rw [frame_4475_782_1003 basis] at h
  exact h
 
-theorem gate_1004 : SixCarryPrefixData.program[1004]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4475 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 108 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[108]?=some (.measureX 4475 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[1004]?=some (.measureX 4475 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1004 : SixCarryPrefixData.program[1004]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4475 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 108 shape7 before_len7 len7 rfl (.measureX 4475 [] []) rfl
 
 theorem step_1004 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1005 basis 4475=(false) := by
@@ -33014,11 +30704,8 @@ theorem step_1004 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_1005 : SixCarryPrefixData.program[1005]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4613 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 109 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[109]?=some (.CX 4345 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[1005]?=some (.CX 4345 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1005 : SixCarryPrefixData.program[1005]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4613 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 109 shape7 before_len7 len7 rfl (.CX 4345 4613) rfl
 
 theorem step_1005 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1006 basis 4613=((prefixState SixCarryPrefixData.program 777 basis 4613) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -33028,11 +30715,8 @@ theorem step_1005 (basis : BasisState) :
  rw [frame_4345_0_1005 basis,frame_4613_777_1005 basis] at h
  exact h
 
-theorem gate_1006 : SixCarryPrefixData.program[1006]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4474 4613 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 110 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[110]?=some (.CX 4474 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[1006]?=some (.CX 4474 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1006 : SixCarryPrefixData.program[1006]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4474 4613 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 110 shape7 before_len7 len7 rfl (.CX 4474 4613) rfl
 
 theorem step_1006 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1007 basis 4613=((prefixState SixCarryPrefixData.program 1006 basis 4613) ^^ (prefixState SixCarryPrefixData.program 776 basis 4474)) := by
@@ -33042,11 +30726,8 @@ theorem step_1006 (basis : BasisState) :
  rw [frame_4474_776_1006 basis] at h
  exact h
 
-theorem gate_1007 : SixCarryPrefixData.program[1007]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4474 [] [] := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 111 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[111]?=some (.measureX 4474 [] []) := by decide +kernel
- have hh : SixCarryPrefixData.program[1007]?=some (.measureX 4474 [] []) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1007 : SixCarryPrefixData.program[1007]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.measureX 4474 [] [] :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 111 shape7 before_len7 len7 rfl (.measureX 4474 [] []) rfl
 
 theorem step_1007 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1008 basis 4474=(false) := by
@@ -33055,11 +30736,8 @@ theorem step_1007 (basis : BasisState) :
  simp only [basisStep,writeBit,Function.update_self] at h
  exact h
 
-theorem gate_1008 : SixCarryPrefixData.program[1008]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4612 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 112 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[112]?=some (.CX 4344 4612) := by decide +kernel
- have hh : SixCarryPrefixData.program[1008]?=some (.CX 4344 4612) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1008 : SixCarryPrefixData.program[1008]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4612 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 112 shape7 before_len7 len7 rfl (.CX 4344 4612) rfl
 
 theorem step_1008 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1009 basis 4612=((prefixState SixCarryPrefixData.program 771 basis 4612) ^^ (prefixState SixCarryPrefixData.program 0 basis 4344)) := by
@@ -33069,11 +30747,8 @@ theorem step_1008 (basis : BasisState) :
  rw [frame_4344_0_1008 basis,frame_4612_771_1008 basis] at h
  exact h
 
-theorem gate_1009 : SixCarryPrefixData.program[1009]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4473 4612 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 113 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[113]?=some (.CX 4473 4612) := by decide +kernel
- have hh : SixCarryPrefixData.program[1009]?=some (.CX 4473 4612) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1009 : SixCarryPrefixData.program[1009]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4473 4612 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 113 shape7 before_len7 len7 rfl (.CX 4473 4612) rfl
 
 theorem step_1009 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1010 basis 4612=((prefixState SixCarryPrefixData.program 1009 basis 4612) ^^ (prefixState SixCarryPrefixData.program 770 basis 4473)) := by
@@ -33083,11 +30758,8 @@ theorem step_1009 (basis : BasisState) :
  rw [frame_4473_770_1009 basis] at h
  exact h
 
-theorem gate_1017 : SixCarryPrefixData.program[1017]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4609 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 121 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[121]?=some (.CX 4341 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[1017]?=some (.CX 4341 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1017 : SixCarryPrefixData.program[1017]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4341 4609 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 121 shape7 before_len7 len7 rfl (.CX 4341 4609) rfl
 
 theorem step_1017 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1018 basis 4609=((prefixState SixCarryPrefixData.program 753 basis 4609) ^^ (prefixState SixCarryPrefixData.program 0 basis 4341)) := by
@@ -33097,11 +30769,8 @@ theorem step_1017 (basis : BasisState) :
  rw [frame_4341_0_1017 basis,frame_4609_753_1017 basis] at h
  exact h
 
-theorem gate_1018 : SixCarryPrefixData.program[1018]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4470 4609 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 122 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[122]?=some (.CX 4470 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[1018]?=some (.CX 4470 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1018 : SixCarryPrefixData.program[1018]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4470 4609 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 122 shape7 before_len7 len7 rfl (.CX 4470 4609) rfl
 
 theorem step_1018 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1019 basis 4609=((prefixState SixCarryPrefixData.program 1018 basis 4609) ^^ (prefixState SixCarryPrefixData.program 752 basis 4470)) := by
@@ -33111,11 +30780,8 @@ theorem step_1018 (basis : BasisState) :
  rw [frame_4470_752_1018 basis] at h
  exact h
 
-theorem gate_1020 : SixCarryPrefixData.program[1020]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4608 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 124 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[124]?=some (.CX 4340 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[1020]?=some (.CX 4340 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1020 : SixCarryPrefixData.program[1020]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4340 4608 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 124 shape7 before_len7 len7 rfl (.CX 4340 4608) rfl
 
 theorem step_1020 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1021 basis 4608=((prefixState SixCarryPrefixData.program 747 basis 4608) ^^ (prefixState SixCarryPrefixData.program 0 basis 4340)) := by
@@ -33125,11 +30791,8 @@ theorem step_1020 (basis : BasisState) :
  rw [frame_4340_0_1020 basis,frame_4608_747_1020 basis] at h
  exact h
 
-theorem gate_1021 : SixCarryPrefixData.program[1021]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4469 4608 := by
- have h := lookup_context SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 125 shape7 before_len7 (by rw [len7]; decide +kernel)
- have hg : SixCarryPrefixData.chunk7[125]?=some (.CX 4469 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[1021]?=some (.CX 4469 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1021 : SixCarryPrefixData.program[1021]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4469 4608 :=
+ gateFromChunk SixCarryPrefixData.program before7 SixCarryPrefixData.chunk7 after7 896 125 shape7 before_len7 len7 rfl (.CX 4469 4608) rfl
 
 theorem step_1021 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1022 basis 4608=((prefixState SixCarryPrefixData.program 1021 basis 4608) ^^ (prefixState SixCarryPrefixData.program 746 basis 4469)) := by
@@ -33139,11 +30802,8 @@ theorem step_1021 (basis : BasisState) :
  rw [frame_4469_746_1021 basis] at h
  exact h
 
-theorem gate_1414 : SixCarryPrefixData.program[1414]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4608 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 6 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[6]?=some (.X 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[1414]?=some (.X 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1414 : SixCarryPrefixData.program[1414]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4608 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 6 shape11 before_len11 len11 rfl (.X 4608) rfl
 
 theorem step_1414 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1415 basis 4608=(!(prefixState SixCarryPrefixData.program 1022 basis 4608)) := by
@@ -33153,11 +30813,8 @@ theorem step_1414 (basis : BasisState) :
  rw [frame_4608_1022_1414 basis] at h
  exact h
 
-theorem gate_1415 : SixCarryPrefixData.program[1415]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4609 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 7 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[7]?=some (.X 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[1415]?=some (.X 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1415 : SixCarryPrefixData.program[1415]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4609 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 7 shape11 before_len11 len11 rfl (.X 4609) rfl
 
 theorem step_1415 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1416 basis 4609=(!(prefixState SixCarryPrefixData.program 1019 basis 4609)) := by
@@ -33167,11 +30824,8 @@ theorem step_1415 (basis : BasisState) :
  rw [frame_4609_1019_1415 basis] at h
  exact h
 
-theorem gate_1418 : SixCarryPrefixData.program[1418]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4612 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 10 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[10]?=some (.X 4612) := by decide +kernel
- have hh : SixCarryPrefixData.program[1418]?=some (.X 4612) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1418 : SixCarryPrefixData.program[1418]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4612 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 10 shape11 before_len11 len11 rfl (.X 4612) rfl
 
 theorem step_1418 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1419 basis 4612=(!(prefixState SixCarryPrefixData.program 1010 basis 4612)) := by
@@ -33181,11 +30835,8 @@ theorem step_1418 (basis : BasisState) :
  rw [frame_4612_1010_1418 basis] at h
  exact h
 
-theorem gate_1419 : SixCarryPrefixData.program[1419]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4613 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 11 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[11]?=some (.X 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[1419]?=some (.X 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1419 : SixCarryPrefixData.program[1419]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4613 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 11 shape11 before_len11 len11 rfl (.X 4613) rfl
 
 theorem step_1419 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1420 basis 4613=(!(prefixState SixCarryPrefixData.program 1007 basis 4613)) := by
@@ -33195,11 +30846,8 @@ theorem step_1419 (basis : BasisState) :
  rw [frame_4613_1007_1419 basis] at h
  exact h
 
-theorem gate_1420 : SixCarryPrefixData.program[1420]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4614 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 12 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[12]?=some (.X 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[1420]?=some (.X 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1420 : SixCarryPrefixData.program[1420]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4614 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 12 shape11 before_len11 len11 rfl (.X 4614) rfl
 
 theorem step_1420 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1421 basis 4614=(!(prefixState SixCarryPrefixData.program 1004 basis 4614)) := by
@@ -33209,11 +30857,8 @@ theorem step_1420 (basis : BasisState) :
  rw [frame_4614_1004_1420 basis] at h
  exact h
 
-theorem gate_1421 : SixCarryPrefixData.program[1421]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4615 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 13 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[13]?=some (.X 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[1421]?=some (.X 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1421 : SixCarryPrefixData.program[1421]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4615 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 13 shape11 before_len11 len11 rfl (.X 4615) rfl
 
 theorem step_1421 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1422 basis 4615=(!(prefixState SixCarryPrefixData.program 1001 basis 4615)) := by
@@ -33223,11 +30868,8 @@ theorem step_1421 (basis : BasisState) :
  rw [frame_4615_1001_1421 basis] at h
  exact h
 
-theorem gate_1422 : SixCarryPrefixData.program[1422]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4616 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 14 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[14]?=some (.X 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[1422]?=some (.X 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1422 : SixCarryPrefixData.program[1422]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4616 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 14 shape11 before_len11 len11 rfl (.X 4616) rfl
 
 theorem step_1422 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1423 basis 4616=(!(prefixState SixCarryPrefixData.program 998 basis 4616)) := by
@@ -33237,11 +30879,8 @@ theorem step_1422 (basis : BasisState) :
  rw [frame_4616_998_1422 basis] at h
  exact h
 
-theorem gate_1423 : SixCarryPrefixData.program[1423]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4617 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 15 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[15]?=some (.X 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[1423]?=some (.X 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1423 : SixCarryPrefixData.program[1423]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4617 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 15 shape11 before_len11 len11 rfl (.X 4617) rfl
 
 theorem step_1423 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1424 basis 4617=(!(prefixState SixCarryPrefixData.program 995 basis 4617)) := by
@@ -33251,11 +30890,8 @@ theorem step_1423 (basis : BasisState) :
  rw [frame_4617_995_1423 basis] at h
  exact h
 
-theorem gate_1424 : SixCarryPrefixData.program[1424]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4618 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 16 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[16]?=some (.X 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[1424]?=some (.X 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1424 : SixCarryPrefixData.program[1424]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4618 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 16 shape11 before_len11 len11 rfl (.X 4618) rfl
 
 theorem step_1424 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1425 basis 4618=(!(prefixState SixCarryPrefixData.program 992 basis 4618)) := by
@@ -33265,11 +30901,8 @@ theorem step_1424 (basis : BasisState) :
  rw [frame_4618_992_1424 basis] at h
  exact h
 
-theorem gate_1425 : SixCarryPrefixData.program[1425]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4619 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 17 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[17]?=some (.X 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[1425]?=some (.X 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1425 : SixCarryPrefixData.program[1425]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4619 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 17 shape11 before_len11 len11 rfl (.X 4619) rfl
 
 theorem step_1425 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1426 basis 4619=(!(prefixState SixCarryPrefixData.program 989 basis 4619)) := by
@@ -33279,11 +30912,8 @@ theorem step_1425 (basis : BasisState) :
  rw [frame_4619_989_1425 basis] at h
  exact h
 
-theorem gate_1426 : SixCarryPrefixData.program[1426]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4620 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 18 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[18]?=some (.X 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[1426]?=some (.X 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1426 : SixCarryPrefixData.program[1426]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4620 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 18 shape11 before_len11 len11 rfl (.X 4620) rfl
 
 theorem step_1426 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1427 basis 4620=(!(prefixState SixCarryPrefixData.program 986 basis 4620)) := by
@@ -33293,11 +30923,8 @@ theorem step_1426 (basis : BasisState) :
  rw [frame_4620_986_1426 basis] at h
  exact h
 
-theorem gate_1427 : SixCarryPrefixData.program[1427]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4621 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 19 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[19]?=some (.X 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[1427]?=some (.X 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1427 : SixCarryPrefixData.program[1427]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4621 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 19 shape11 before_len11 len11 rfl (.X 4621) rfl
 
 theorem step_1427 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1428 basis 4621=(!(prefixState SixCarryPrefixData.program 983 basis 4621)) := by
@@ -33307,11 +30934,8 @@ theorem step_1427 (basis : BasisState) :
  rw [frame_4621_983_1427 basis] at h
  exact h
 
-theorem gate_1428 : SixCarryPrefixData.program[1428]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4622 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 20 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[20]?=some (.X 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[1428]?=some (.X 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1428 : SixCarryPrefixData.program[1428]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4622 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 20 shape11 before_len11 len11 rfl (.X 4622) rfl
 
 theorem step_1428 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1429 basis 4622=(!(prefixState SixCarryPrefixData.program 980 basis 4622)) := by
@@ -33321,11 +30945,8 @@ theorem step_1428 (basis : BasisState) :
  rw [frame_4622_980_1428 basis] at h
  exact h
 
-theorem gate_1429 : SixCarryPrefixData.program[1429]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4623 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 21 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[21]?=some (.X 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[1429]?=some (.X 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1429 : SixCarryPrefixData.program[1429]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4623 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 21 shape11 before_len11 len11 rfl (.X 4623) rfl
 
 theorem step_1429 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1430 basis 4623=(!(prefixState SixCarryPrefixData.program 977 basis 4623)) := by
@@ -33335,11 +30956,8 @@ theorem step_1429 (basis : BasisState) :
  rw [frame_4623_977_1429 basis] at h
  exact h
 
-theorem gate_1430 : SixCarryPrefixData.program[1430]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4624 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 22 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[22]?=some (.X 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[1430]?=some (.X 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1430 : SixCarryPrefixData.program[1430]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4624 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 22 shape11 before_len11 len11 rfl (.X 4624) rfl
 
 theorem step_1430 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1431 basis 4624=(!(prefixState SixCarryPrefixData.program 974 basis 4624)) := by
@@ -33349,11 +30967,8 @@ theorem step_1430 (basis : BasisState) :
  rw [frame_4624_974_1430 basis] at h
  exact h
 
-theorem gate_1431 : SixCarryPrefixData.program[1431]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4625 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 23 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[23]?=some (.X 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[1431]?=some (.X 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1431 : SixCarryPrefixData.program[1431]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4625 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 23 shape11 before_len11 len11 rfl (.X 4625) rfl
 
 theorem step_1431 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1432 basis 4625=(!(prefixState SixCarryPrefixData.program 971 basis 4625)) := by
@@ -33363,11 +30978,8 @@ theorem step_1431 (basis : BasisState) :
  rw [frame_4625_971_1431 basis] at h
  exact h
 
-theorem gate_1432 : SixCarryPrefixData.program[1432]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4626 := by
- have h := lookup_context SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 24 shape11 before_len11 (by rw [len11]; decide +kernel)
- have hg : SixCarryPrefixData.chunk11[24]?=some (.X 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[1432]?=some (.X 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_1432 : SixCarryPrefixData.program[1432]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.X 4626 :=
+ gateFromChunk SixCarryPrefixData.program before11 SixCarryPrefixData.chunk11 after11 1408 24 shape11 before_len11 len11 rfl (.X 4626) rfl
 
 theorem step_1432 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1433 basis 4626=(!(prefixState SixCarryPrefixData.program 968 basis 4626)) := by
@@ -33377,11 +30989,8 @@ theorem step_1432 (basis : BasisState) :
  rw [frame_4626_968_1432 basis] at h
  exact h
 
-theorem gate_2141 : SixCarryPrefixData.program[2141]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4608 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 93 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[93]?=some (.CX 4344 4608) := by decide +kernel
- have hh : SixCarryPrefixData.program[2141]?=some (.CX 4344 4608) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2141 : SixCarryPrefixData.program[2141]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4608 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 93 shape16 before_len16 len16 rfl (.CX 4344 4608) rfl
 
 theorem step_2141 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2142 basis 4608=((prefixState SixCarryPrefixData.program 1415 basis 4608) ^^ (prefixState SixCarryPrefixData.program 0 basis 4344)) := by
@@ -33391,11 +31000,8 @@ theorem step_2141 (basis : BasisState) :
  rw [frame_4344_0_2141 basis,frame_4608_1415_2141 basis] at h
  exact h
 
-theorem gate_2143 : SixCarryPrefixData.program[2143]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4608 4473 4474 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 95 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[95]?=some (.CCX 4608 4473 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[2143]?=some (.CCX 4608 4473 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2143 : SixCarryPrefixData.program[2143]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4608 4473 4474 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 95 shape16 before_len16 len16 rfl (.CCX 4608 4473 4474) rfl
 
 theorem step_2143 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2144 basis 4474=((prefixState SixCarryPrefixData.program 1008 basis 4474) ^^ ((prefixState SixCarryPrefixData.program 2142 basis 4608) && (prefixState SixCarryPrefixData.program 2143 basis 4473))) := by
@@ -33405,11 +31011,8 @@ theorem step_2143 (basis : BasisState) :
  rw [frame_4474_1008_2143 basis,frame_4608_2142_2143 basis] at h
  exact h
 
-theorem gate_2144 : SixCarryPrefixData.program[2144]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4474 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 96 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[96]?=some (.CX 4344 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[2144]?=some (.CX 4344 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2144 : SixCarryPrefixData.program[2144]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4344 4474 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 96 shape16 before_len16 len16 rfl (.CX 4344 4474) rfl
 
 theorem step_2144 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2145 basis 4474=((prefixState SixCarryPrefixData.program 2144 basis 4474) ^^ (prefixState SixCarryPrefixData.program 0 basis 4344)) := by
@@ -33419,11 +31022,8 @@ theorem step_2144 (basis : BasisState) :
  rw [frame_4344_0_2144 basis] at h
  exact h
 
-theorem gate_2147 : SixCarryPrefixData.program[2147]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4609 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 99 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[99]?=some (.CX 4345 4609) := by decide +kernel
- have hh : SixCarryPrefixData.program[2147]?=some (.CX 4345 4609) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2147 : SixCarryPrefixData.program[2147]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4609 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 99 shape16 before_len16 len16 rfl (.CX 4345 4609) rfl
 
 theorem step_2147 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2148 basis 4609=((prefixState SixCarryPrefixData.program 1416 basis 4609) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -33433,11 +31033,8 @@ theorem step_2147 (basis : BasisState) :
  rw [frame_4345_0_2147 basis,frame_4609_1416_2147 basis] at h
  exact h
 
-theorem gate_2148 : SixCarryPrefixData.program[2148]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4474 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 100 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[100]?=some (.CX 4345 4474) := by decide +kernel
- have hh : SixCarryPrefixData.program[2148]?=some (.CX 4345 4474) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2148 : SixCarryPrefixData.program[2148]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4474 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 100 shape16 before_len16 len16 rfl (.CX 4345 4474) rfl
 
 theorem step_2148 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2149 basis 4474=((prefixState SixCarryPrefixData.program 2145 basis 4474) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -33447,11 +31044,8 @@ theorem step_2148 (basis : BasisState) :
  rw [frame_4345_0_2148 basis,frame_4474_2145_2148 basis] at h
  exact h
 
-theorem gate_2149 : SixCarryPrefixData.program[2149]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4609 4474 4475 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 101 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[101]?=some (.CCX 4609 4474 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[2149]?=some (.CCX 4609 4474 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2149 : SixCarryPrefixData.program[2149]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4609 4474 4475 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 101 shape16 before_len16 len16 rfl (.CCX 4609 4474 4475) rfl
 
 theorem step_2149 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2150 basis 4475=((prefixState SixCarryPrefixData.program 1005 basis 4475) ^^ ((prefixState SixCarryPrefixData.program 2148 basis 4609) && (prefixState SixCarryPrefixData.program 2149 basis 4474))) := by
@@ -33461,11 +31055,8 @@ theorem step_2149 (basis : BasisState) :
  rw [frame_4475_1005_2149 basis,frame_4609_2148_2149 basis] at h
  exact h
 
-theorem gate_2150 : SixCarryPrefixData.program[2150]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4475 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 102 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[102]?=some (.CX 4345 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[2150]?=some (.CX 4345 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2150 : SixCarryPrefixData.program[2150]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4345 4475 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 102 shape16 before_len16 len16 rfl (.CX 4345 4475) rfl
 
 theorem step_2150 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2151 basis 4475=((prefixState SixCarryPrefixData.program 2150 basis 4475) ^^ (prefixState SixCarryPrefixData.program 0 basis 4345)) := by
@@ -33475,11 +31066,8 @@ theorem step_2150 (basis : BasisState) :
  rw [frame_4345_0_2150 basis] at h
  exact h
 
-theorem gate_2154 : SixCarryPrefixData.program[2154]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4475 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 106 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[106]?=some (.CX 4346 4475) := by decide +kernel
- have hh : SixCarryPrefixData.program[2154]?=some (.CX 4346 4475) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2154 : SixCarryPrefixData.program[2154]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4475 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 106 shape16 before_len16 len16 rfl (.CX 4346 4475) rfl
 
 theorem step_2154 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2155 basis 4475=((prefixState SixCarryPrefixData.program 2151 basis 4475) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -33489,11 +31077,8 @@ theorem step_2154 (basis : BasisState) :
  rw [frame_4346_0_2154 basis,frame_4475_2151_2154 basis] at h
  exact h
 
-theorem gate_2155 : SixCarryPrefixData.program[2155]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4610 4475 4476 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 107 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[107]?=some (.CCX 4610 4475 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[2155]?=some (.CCX 4610 4475 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2155 : SixCarryPrefixData.program[2155]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4610 4475 4476 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 107 shape16 before_len16 len16 rfl (.CCX 4610 4475 4476) rfl
 
 theorem step_2155 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2156 basis 4476=((prefixState SixCarryPrefixData.program 1002 basis 4476) ^^ ((prefixState SixCarryPrefixData.program 2154 basis 4610) && (prefixState SixCarryPrefixData.program 2155 basis 4475))) := by
@@ -33503,11 +31088,8 @@ theorem step_2155 (basis : BasisState) :
  rw [frame_4476_1002_2155 basis,frame_4610_2154_2155 basis] at h
  exact h
 
-theorem gate_2156 : SixCarryPrefixData.program[2156]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4476 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 108 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[108]?=some (.CX 4346 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[2156]?=some (.CX 4346 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2156 : SixCarryPrefixData.program[2156]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4346 4476 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 108 shape16 before_len16 len16 rfl (.CX 4346 4476) rfl
 
 theorem step_2156 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2157 basis 4476=((prefixState SixCarryPrefixData.program 2156 basis 4476) ^^ (prefixState SixCarryPrefixData.program 0 basis 4346)) := by
@@ -33517,11 +31099,8 @@ theorem step_2156 (basis : BasisState) :
  rw [frame_4346_0_2156 basis] at h
  exact h
 
-theorem gate_2160 : SixCarryPrefixData.program[2160]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4476 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 112 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[112]?=some (.CX 4347 4476) := by decide +kernel
- have hh : SixCarryPrefixData.program[2160]?=some (.CX 4347 4476) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2160 : SixCarryPrefixData.program[2160]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4476 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 112 shape16 before_len16 len16 rfl (.CX 4347 4476) rfl
 
 theorem step_2160 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2161 basis 4476=((prefixState SixCarryPrefixData.program 2157 basis 4476) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -33531,11 +31110,8 @@ theorem step_2160 (basis : BasisState) :
  rw [frame_4347_0_2160 basis,frame_4476_2157_2160 basis] at h
  exact h
 
-theorem gate_2161 : SixCarryPrefixData.program[2161]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4611 4476 4477 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 113 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[113]?=some (.CCX 4611 4476 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[2161]?=some (.CCX 4611 4476 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2161 : SixCarryPrefixData.program[2161]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4611 4476 4477 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 113 shape16 before_len16 len16 rfl (.CCX 4611 4476 4477) rfl
 
 theorem step_2161 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2162 basis 4477=((prefixState SixCarryPrefixData.program 999 basis 4477) ^^ ((prefixState SixCarryPrefixData.program 2160 basis 4611) && (prefixState SixCarryPrefixData.program 2161 basis 4476))) := by
@@ -33545,11 +31121,8 @@ theorem step_2161 (basis : BasisState) :
  rw [frame_4477_999_2161 basis,frame_4611_2160_2161 basis] at h
  exact h
 
-theorem gate_2162 : SixCarryPrefixData.program[2162]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4477 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 114 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[114]?=some (.CX 4347 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[2162]?=some (.CX 4347 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2162 : SixCarryPrefixData.program[2162]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4347 4477 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 114 shape16 before_len16 len16 rfl (.CX 4347 4477) rfl
 
 theorem step_2162 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2163 basis 4477=((prefixState SixCarryPrefixData.program 2162 basis 4477) ^^ (prefixState SixCarryPrefixData.program 0 basis 4347)) := by
@@ -33559,11 +31132,8 @@ theorem step_2162 (basis : BasisState) :
  rw [frame_4347_0_2162 basis] at h
  exact h
 
-theorem gate_2165 : SixCarryPrefixData.program[2165]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4612 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 117 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[117]?=some (.CX 4348 4612) := by decide +kernel
- have hh : SixCarryPrefixData.program[2165]?=some (.CX 4348 4612) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2165 : SixCarryPrefixData.program[2165]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4612 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 117 shape16 before_len16 len16 rfl (.CX 4348 4612) rfl
 
 theorem step_2165 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2166 basis 4612=((prefixState SixCarryPrefixData.program 1419 basis 4612) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -33573,11 +31143,8 @@ theorem step_2165 (basis : BasisState) :
  rw [frame_4348_0_2165 basis,frame_4612_1419_2165 basis] at h
  exact h
 
-theorem gate_2166 : SixCarryPrefixData.program[2166]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4477 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 118 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[118]?=some (.CX 4348 4477) := by decide +kernel
- have hh : SixCarryPrefixData.program[2166]?=some (.CX 4348 4477) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2166 : SixCarryPrefixData.program[2166]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4477 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 118 shape16 before_len16 len16 rfl (.CX 4348 4477) rfl
 
 theorem step_2166 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2167 basis 4477=((prefixState SixCarryPrefixData.program 2163 basis 4477) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -33587,11 +31154,8 @@ theorem step_2166 (basis : BasisState) :
  rw [frame_4348_0_2166 basis,frame_4477_2163_2166 basis] at h
  exact h
 
-theorem gate_2167 : SixCarryPrefixData.program[2167]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4612 4477 4478 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 119 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[119]?=some (.CCX 4612 4477 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[2167]?=some (.CCX 4612 4477 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2167 : SixCarryPrefixData.program[2167]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4612 4477 4478 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 119 shape16 before_len16 len16 rfl (.CCX 4612 4477 4478) rfl
 
 theorem step_2167 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2168 basis 4478=((prefixState SixCarryPrefixData.program 996 basis 4478) ^^ ((prefixState SixCarryPrefixData.program 2166 basis 4612) && (prefixState SixCarryPrefixData.program 2167 basis 4477))) := by
@@ -33601,11 +31165,8 @@ theorem step_2167 (basis : BasisState) :
  rw [frame_4478_996_2167 basis,frame_4612_2166_2167 basis] at h
  exact h
 
-theorem gate_2168 : SixCarryPrefixData.program[2168]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4478 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 120 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[120]?=some (.CX 4348 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[2168]?=some (.CX 4348 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2168 : SixCarryPrefixData.program[2168]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4348 4478 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 120 shape16 before_len16 len16 rfl (.CX 4348 4478) rfl
 
 theorem step_2168 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2169 basis 4478=((prefixState SixCarryPrefixData.program 2168 basis 4478) ^^ (prefixState SixCarryPrefixData.program 0 basis 4348)) := by
@@ -33615,11 +31176,8 @@ theorem step_2168 (basis : BasisState) :
  rw [frame_4348_0_2168 basis] at h
  exact h
 
-theorem gate_2171 : SixCarryPrefixData.program[2171]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4613 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 123 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[123]?=some (.CX 4349 4613) := by decide +kernel
- have hh : SixCarryPrefixData.program[2171]?=some (.CX 4349 4613) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2171 : SixCarryPrefixData.program[2171]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4613 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 123 shape16 before_len16 len16 rfl (.CX 4349 4613) rfl
 
 theorem step_2171 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2172 basis 4613=((prefixState SixCarryPrefixData.program 1420 basis 4613) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -33629,11 +31187,8 @@ theorem step_2171 (basis : BasisState) :
  rw [frame_4349_0_2171 basis,frame_4613_1420_2171 basis] at h
  exact h
 
-theorem gate_2172 : SixCarryPrefixData.program[2172]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4478 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 124 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[124]?=some (.CX 4349 4478) := by decide +kernel
- have hh : SixCarryPrefixData.program[2172]?=some (.CX 4349 4478) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2172 : SixCarryPrefixData.program[2172]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4478 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 124 shape16 before_len16 len16 rfl (.CX 4349 4478) rfl
 
 theorem step_2172 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2173 basis 4478=((prefixState SixCarryPrefixData.program 2169 basis 4478) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -33643,11 +31198,8 @@ theorem step_2172 (basis : BasisState) :
  rw [frame_4349_0_2172 basis,frame_4478_2169_2172 basis] at h
  exact h
 
-theorem gate_2173 : SixCarryPrefixData.program[2173]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4613 4478 4479 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 125 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[125]?=some (.CCX 4613 4478 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[2173]?=some (.CCX 4613 4478 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2173 : SixCarryPrefixData.program[2173]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4613 4478 4479 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 125 shape16 before_len16 len16 rfl (.CCX 4613 4478 4479) rfl
 
 theorem step_2173 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2174 basis 4479=((prefixState SixCarryPrefixData.program 993 basis 4479) ^^ ((prefixState SixCarryPrefixData.program 2172 basis 4613) && (prefixState SixCarryPrefixData.program 2173 basis 4478))) := by
@@ -33657,11 +31209,8 @@ theorem step_2173 (basis : BasisState) :
  rw [frame_4479_993_2173 basis,frame_4613_2172_2173 basis] at h
  exact h
 
-theorem gate_2174 : SixCarryPrefixData.program[2174]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4479 := by
- have h := lookup_context SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 126 shape16 before_len16 (by rw [len16]; decide +kernel)
- have hg : SixCarryPrefixData.chunk16[126]?=some (.CX 4349 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[2174]?=some (.CX 4349 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2174 : SixCarryPrefixData.program[2174]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4349 4479 :=
+ gateFromChunk SixCarryPrefixData.program before16 SixCarryPrefixData.chunk16 after16 2048 126 shape16 before_len16 len16 rfl (.CX 4349 4479) rfl
 
 theorem step_2174 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2175 basis 4479=((prefixState SixCarryPrefixData.program 2174 basis 4479) ^^ (prefixState SixCarryPrefixData.program 0 basis 4349)) := by
@@ -33671,11 +31220,8 @@ theorem step_2174 (basis : BasisState) :
  rw [frame_4349_0_2174 basis] at h
  exact h
 
-theorem gate_2177 : SixCarryPrefixData.program[2177]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4614 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 1 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[1]?=some (.CX 4350 4614) := by decide +kernel
- have hh : SixCarryPrefixData.program[2177]?=some (.CX 4350 4614) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2177 : SixCarryPrefixData.program[2177]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4614 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 1 shape17 before_len17 len17 rfl (.CX 4350 4614) rfl
 
 theorem step_2177 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2178 basis 4614=((prefixState SixCarryPrefixData.program 1421 basis 4614) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -33685,11 +31231,8 @@ theorem step_2177 (basis : BasisState) :
  rw [frame_4350_0_2177 basis,frame_4614_1421_2177 basis] at h
  exact h
 
-theorem gate_2178 : SixCarryPrefixData.program[2178]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4479 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 2 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[2]?=some (.CX 4350 4479) := by decide +kernel
- have hh : SixCarryPrefixData.program[2178]?=some (.CX 4350 4479) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2178 : SixCarryPrefixData.program[2178]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4479 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 2 shape17 before_len17 len17 rfl (.CX 4350 4479) rfl
 
 theorem step_2178 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2179 basis 4479=((prefixState SixCarryPrefixData.program 2175 basis 4479) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -33699,11 +31242,8 @@ theorem step_2178 (basis : BasisState) :
  rw [frame_4350_0_2178 basis,frame_4479_2175_2178 basis] at h
  exact h
 
-theorem gate_2179 : SixCarryPrefixData.program[2179]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4614 4479 4480 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 3 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[3]?=some (.CCX 4614 4479 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[2179]?=some (.CCX 4614 4479 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2179 : SixCarryPrefixData.program[2179]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4614 4479 4480 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 3 shape17 before_len17 len17 rfl (.CCX 4614 4479 4480) rfl
 
 theorem step_2179 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2180 basis 4480=((prefixState SixCarryPrefixData.program 990 basis 4480) ^^ ((prefixState SixCarryPrefixData.program 2178 basis 4614) && (prefixState SixCarryPrefixData.program 2179 basis 4479))) := by
@@ -33713,11 +31253,8 @@ theorem step_2179 (basis : BasisState) :
  rw [frame_4480_990_2179 basis,frame_4614_2178_2179 basis] at h
  exact h
 
-theorem gate_2180 : SixCarryPrefixData.program[2180]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4480 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 4 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[4]?=some (.CX 4350 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[2180]?=some (.CX 4350 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2180 : SixCarryPrefixData.program[2180]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4350 4480 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 4 shape17 before_len17 len17 rfl (.CX 4350 4480) rfl
 
 theorem step_2180 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2181 basis 4480=((prefixState SixCarryPrefixData.program 2180 basis 4480) ^^ (prefixState SixCarryPrefixData.program 0 basis 4350)) := by
@@ -33727,11 +31264,8 @@ theorem step_2180 (basis : BasisState) :
  rw [frame_4350_0_2180 basis] at h
  exact h
 
-theorem gate_2183 : SixCarryPrefixData.program[2183]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4615 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 7 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[7]?=some (.CX 4351 4615) := by decide +kernel
- have hh : SixCarryPrefixData.program[2183]?=some (.CX 4351 4615) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2183 : SixCarryPrefixData.program[2183]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4615 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 7 shape17 before_len17 len17 rfl (.CX 4351 4615) rfl
 
 theorem step_2183 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2184 basis 4615=((prefixState SixCarryPrefixData.program 1422 basis 4615) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -33741,11 +31275,8 @@ theorem step_2183 (basis : BasisState) :
  rw [frame_4351_0_2183 basis,frame_4615_1422_2183 basis] at h
  exact h
 
-theorem gate_2184 : SixCarryPrefixData.program[2184]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4480 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 8 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[8]?=some (.CX 4351 4480) := by decide +kernel
- have hh : SixCarryPrefixData.program[2184]?=some (.CX 4351 4480) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2184 : SixCarryPrefixData.program[2184]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4480 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 8 shape17 before_len17 len17 rfl (.CX 4351 4480) rfl
 
 theorem step_2184 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2185 basis 4480=((prefixState SixCarryPrefixData.program 2181 basis 4480) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -33755,11 +31286,8 @@ theorem step_2184 (basis : BasisState) :
  rw [frame_4351_0_2184 basis,frame_4480_2181_2184 basis] at h
  exact h
 
-theorem gate_2185 : SixCarryPrefixData.program[2185]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4615 4480 4481 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 9 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[9]?=some (.CCX 4615 4480 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[2185]?=some (.CCX 4615 4480 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2185 : SixCarryPrefixData.program[2185]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4615 4480 4481 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 9 shape17 before_len17 len17 rfl (.CCX 4615 4480 4481) rfl
 
 theorem step_2185 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2186 basis 4481=((prefixState SixCarryPrefixData.program 987 basis 4481) ^^ ((prefixState SixCarryPrefixData.program 2184 basis 4615) && (prefixState SixCarryPrefixData.program 2185 basis 4480))) := by
@@ -33769,11 +31297,8 @@ theorem step_2185 (basis : BasisState) :
  rw [frame_4481_987_2185 basis,frame_4615_2184_2185 basis] at h
  exact h
 
-theorem gate_2186 : SixCarryPrefixData.program[2186]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4481 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 10 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[10]?=some (.CX 4351 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[2186]?=some (.CX 4351 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2186 : SixCarryPrefixData.program[2186]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4351 4481 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 10 shape17 before_len17 len17 rfl (.CX 4351 4481) rfl
 
 theorem step_2186 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2187 basis 4481=((prefixState SixCarryPrefixData.program 2186 basis 4481) ^^ (prefixState SixCarryPrefixData.program 0 basis 4351)) := by
@@ -33783,11 +31308,8 @@ theorem step_2186 (basis : BasisState) :
  rw [frame_4351_0_2186 basis] at h
  exact h
 
-theorem gate_2189 : SixCarryPrefixData.program[2189]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4616 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 13 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[13]?=some (.CX 4352 4616) := by decide +kernel
- have hh : SixCarryPrefixData.program[2189]?=some (.CX 4352 4616) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2189 : SixCarryPrefixData.program[2189]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4616 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 13 shape17 before_len17 len17 rfl (.CX 4352 4616) rfl
 
 theorem step_2189 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2190 basis 4616=((prefixState SixCarryPrefixData.program 1423 basis 4616) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -33797,11 +31319,8 @@ theorem step_2189 (basis : BasisState) :
  rw [frame_4352_0_2189 basis,frame_4616_1423_2189 basis] at h
  exact h
 
-theorem gate_2190 : SixCarryPrefixData.program[2190]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4481 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 14 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[14]?=some (.CX 4352 4481) := by decide +kernel
- have hh : SixCarryPrefixData.program[2190]?=some (.CX 4352 4481) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2190 : SixCarryPrefixData.program[2190]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4481 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 14 shape17 before_len17 len17 rfl (.CX 4352 4481) rfl
 
 theorem step_2190 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2191 basis 4481=((prefixState SixCarryPrefixData.program 2187 basis 4481) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -33811,11 +31330,8 @@ theorem step_2190 (basis : BasisState) :
  rw [frame_4352_0_2190 basis,frame_4481_2187_2190 basis] at h
  exact h
 
-theorem gate_2191 : SixCarryPrefixData.program[2191]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4616 4481 4482 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 15 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[15]?=some (.CCX 4616 4481 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[2191]?=some (.CCX 4616 4481 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2191 : SixCarryPrefixData.program[2191]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4616 4481 4482 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 15 shape17 before_len17 len17 rfl (.CCX 4616 4481 4482) rfl
 
 theorem step_2191 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2192 basis 4482=((prefixState SixCarryPrefixData.program 984 basis 4482) ^^ ((prefixState SixCarryPrefixData.program 2190 basis 4616) && (prefixState SixCarryPrefixData.program 2191 basis 4481))) := by
@@ -33825,11 +31341,8 @@ theorem step_2191 (basis : BasisState) :
  rw [frame_4482_984_2191 basis,frame_4616_2190_2191 basis] at h
  exact h
 
-theorem gate_2192 : SixCarryPrefixData.program[2192]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4482 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 16 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[16]?=some (.CX 4352 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[2192]?=some (.CX 4352 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2192 : SixCarryPrefixData.program[2192]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4352 4482 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 16 shape17 before_len17 len17 rfl (.CX 4352 4482) rfl
 
 theorem step_2192 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2193 basis 4482=((prefixState SixCarryPrefixData.program 2192 basis 4482) ^^ (prefixState SixCarryPrefixData.program 0 basis 4352)) := by
@@ -33839,11 +31352,8 @@ theorem step_2192 (basis : BasisState) :
  rw [frame_4352_0_2192 basis] at h
  exact h
 
-theorem gate_2195 : SixCarryPrefixData.program[2195]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4617 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 19 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[19]?=some (.CX 4353 4617) := by decide +kernel
- have hh : SixCarryPrefixData.program[2195]?=some (.CX 4353 4617) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2195 : SixCarryPrefixData.program[2195]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4617 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 19 shape17 before_len17 len17 rfl (.CX 4353 4617) rfl
 
 theorem step_2195 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2196 basis 4617=((prefixState SixCarryPrefixData.program 1424 basis 4617) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -33853,11 +31363,8 @@ theorem step_2195 (basis : BasisState) :
  rw [frame_4353_0_2195 basis,frame_4617_1424_2195 basis] at h
  exact h
 
-theorem gate_2196 : SixCarryPrefixData.program[2196]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4482 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 20 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[20]?=some (.CX 4353 4482) := by decide +kernel
- have hh : SixCarryPrefixData.program[2196]?=some (.CX 4353 4482) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2196 : SixCarryPrefixData.program[2196]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4482 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 20 shape17 before_len17 len17 rfl (.CX 4353 4482) rfl
 
 theorem step_2196 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2197 basis 4482=((prefixState SixCarryPrefixData.program 2193 basis 4482) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -33867,11 +31374,8 @@ theorem step_2196 (basis : BasisState) :
  rw [frame_4353_0_2196 basis,frame_4482_2193_2196 basis] at h
  exact h
 
-theorem gate_2197 : SixCarryPrefixData.program[2197]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4617 4482 4483 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 21 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[21]?=some (.CCX 4617 4482 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[2197]?=some (.CCX 4617 4482 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2197 : SixCarryPrefixData.program[2197]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4617 4482 4483 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 21 shape17 before_len17 len17 rfl (.CCX 4617 4482 4483) rfl
 
 theorem step_2197 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2198 basis 4483=((prefixState SixCarryPrefixData.program 981 basis 4483) ^^ ((prefixState SixCarryPrefixData.program 2196 basis 4617) && (prefixState SixCarryPrefixData.program 2197 basis 4482))) := by
@@ -33881,11 +31385,8 @@ theorem step_2197 (basis : BasisState) :
  rw [frame_4483_981_2197 basis,frame_4617_2196_2197 basis] at h
  exact h
 
-theorem gate_2198 : SixCarryPrefixData.program[2198]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4483 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 22 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[22]?=some (.CX 4353 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[2198]?=some (.CX 4353 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2198 : SixCarryPrefixData.program[2198]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4353 4483 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 22 shape17 before_len17 len17 rfl (.CX 4353 4483) rfl
 
 theorem step_2198 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2199 basis 4483=((prefixState SixCarryPrefixData.program 2198 basis 4483) ^^ (prefixState SixCarryPrefixData.program 0 basis 4353)) := by
@@ -33895,11 +31396,8 @@ theorem step_2198 (basis : BasisState) :
  rw [frame_4353_0_2198 basis] at h
  exact h
 
-theorem gate_2201 : SixCarryPrefixData.program[2201]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4618 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 25 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[25]?=some (.CX 4354 4618) := by decide +kernel
- have hh : SixCarryPrefixData.program[2201]?=some (.CX 4354 4618) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2201 : SixCarryPrefixData.program[2201]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4618 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 25 shape17 before_len17 len17 rfl (.CX 4354 4618) rfl
 
 theorem step_2201 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2202 basis 4618=((prefixState SixCarryPrefixData.program 1425 basis 4618) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -33909,11 +31407,8 @@ theorem step_2201 (basis : BasisState) :
  rw [frame_4354_0_2201 basis,frame_4618_1425_2201 basis] at h
  exact h
 
-theorem gate_2202 : SixCarryPrefixData.program[2202]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4483 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 26 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[26]?=some (.CX 4354 4483) := by decide +kernel
- have hh : SixCarryPrefixData.program[2202]?=some (.CX 4354 4483) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2202 : SixCarryPrefixData.program[2202]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4483 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 26 shape17 before_len17 len17 rfl (.CX 4354 4483) rfl
 
 theorem step_2202 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2203 basis 4483=((prefixState SixCarryPrefixData.program 2199 basis 4483) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -33923,11 +31418,8 @@ theorem step_2202 (basis : BasisState) :
  rw [frame_4354_0_2202 basis,frame_4483_2199_2202 basis] at h
  exact h
 
-theorem gate_2203 : SixCarryPrefixData.program[2203]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4618 4483 4484 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 27 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[27]?=some (.CCX 4618 4483 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[2203]?=some (.CCX 4618 4483 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2203 : SixCarryPrefixData.program[2203]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4618 4483 4484 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 27 shape17 before_len17 len17 rfl (.CCX 4618 4483 4484) rfl
 
 theorem step_2203 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2204 basis 4484=((prefixState SixCarryPrefixData.program 978 basis 4484) ^^ ((prefixState SixCarryPrefixData.program 2202 basis 4618) && (prefixState SixCarryPrefixData.program 2203 basis 4483))) := by
@@ -33937,11 +31429,8 @@ theorem step_2203 (basis : BasisState) :
  rw [frame_4484_978_2203 basis,frame_4618_2202_2203 basis] at h
  exact h
 
-theorem gate_2204 : SixCarryPrefixData.program[2204]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4484 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 28 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[28]?=some (.CX 4354 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[2204]?=some (.CX 4354 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2204 : SixCarryPrefixData.program[2204]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4354 4484 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 28 shape17 before_len17 len17 rfl (.CX 4354 4484) rfl
 
 theorem step_2204 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2205 basis 4484=((prefixState SixCarryPrefixData.program 2204 basis 4484) ^^ (prefixState SixCarryPrefixData.program 0 basis 4354)) := by
@@ -33951,11 +31440,8 @@ theorem step_2204 (basis : BasisState) :
  rw [frame_4354_0_2204 basis] at h
  exact h
 
-theorem gate_2207 : SixCarryPrefixData.program[2207]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4619 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 31 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[31]?=some (.CX 4355 4619) := by decide +kernel
- have hh : SixCarryPrefixData.program[2207]?=some (.CX 4355 4619) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2207 : SixCarryPrefixData.program[2207]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4619 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 31 shape17 before_len17 len17 rfl (.CX 4355 4619) rfl
 
 theorem step_2207 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2208 basis 4619=((prefixState SixCarryPrefixData.program 1426 basis 4619) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -33965,11 +31451,8 @@ theorem step_2207 (basis : BasisState) :
  rw [frame_4355_0_2207 basis,frame_4619_1426_2207 basis] at h
  exact h
 
-theorem gate_2208 : SixCarryPrefixData.program[2208]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4484 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 32 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[32]?=some (.CX 4355 4484) := by decide +kernel
- have hh : SixCarryPrefixData.program[2208]?=some (.CX 4355 4484) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2208 : SixCarryPrefixData.program[2208]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4484 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 32 shape17 before_len17 len17 rfl (.CX 4355 4484) rfl
 
 theorem step_2208 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2209 basis 4484=((prefixState SixCarryPrefixData.program 2205 basis 4484) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -33979,11 +31462,8 @@ theorem step_2208 (basis : BasisState) :
  rw [frame_4355_0_2208 basis,frame_4484_2205_2208 basis] at h
  exact h
 
-theorem gate_2209 : SixCarryPrefixData.program[2209]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4619 4484 4485 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 33 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[33]?=some (.CCX 4619 4484 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[2209]?=some (.CCX 4619 4484 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2209 : SixCarryPrefixData.program[2209]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4619 4484 4485 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 33 shape17 before_len17 len17 rfl (.CCX 4619 4484 4485) rfl
 
 theorem step_2209 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2210 basis 4485=((prefixState SixCarryPrefixData.program 975 basis 4485) ^^ ((prefixState SixCarryPrefixData.program 2208 basis 4619) && (prefixState SixCarryPrefixData.program 2209 basis 4484))) := by
@@ -33993,11 +31473,8 @@ theorem step_2209 (basis : BasisState) :
  rw [frame_4485_975_2209 basis,frame_4619_2208_2209 basis] at h
  exact h
 
-theorem gate_2210 : SixCarryPrefixData.program[2210]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4485 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 34 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[34]?=some (.CX 4355 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[2210]?=some (.CX 4355 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2210 : SixCarryPrefixData.program[2210]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4355 4485 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 34 shape17 before_len17 len17 rfl (.CX 4355 4485) rfl
 
 theorem step_2210 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2211 basis 4485=((prefixState SixCarryPrefixData.program 2210 basis 4485) ^^ (prefixState SixCarryPrefixData.program 0 basis 4355)) := by
@@ -34007,11 +31484,8 @@ theorem step_2210 (basis : BasisState) :
  rw [frame_4355_0_2210 basis] at h
  exact h
 
-theorem gate_2213 : SixCarryPrefixData.program[2213]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4620 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 37 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[37]?=some (.CX 4356 4620) := by decide +kernel
- have hh : SixCarryPrefixData.program[2213]?=some (.CX 4356 4620) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2213 : SixCarryPrefixData.program[2213]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4620 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 37 shape17 before_len17 len17 rfl (.CX 4356 4620) rfl
 
 theorem step_2213 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2214 basis 4620=((prefixState SixCarryPrefixData.program 1427 basis 4620) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -34021,11 +31495,8 @@ theorem step_2213 (basis : BasisState) :
  rw [frame_4356_0_2213 basis,frame_4620_1427_2213 basis] at h
  exact h
 
-theorem gate_2214 : SixCarryPrefixData.program[2214]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4485 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 38 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[38]?=some (.CX 4356 4485) := by decide +kernel
- have hh : SixCarryPrefixData.program[2214]?=some (.CX 4356 4485) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2214 : SixCarryPrefixData.program[2214]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4485 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 38 shape17 before_len17 len17 rfl (.CX 4356 4485) rfl
 
 theorem step_2214 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2215 basis 4485=((prefixState SixCarryPrefixData.program 2211 basis 4485) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -34035,11 +31506,8 @@ theorem step_2214 (basis : BasisState) :
  rw [frame_4356_0_2214 basis,frame_4485_2211_2214 basis] at h
  exact h
 
-theorem gate_2215 : SixCarryPrefixData.program[2215]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4620 4485 4486 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 39 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[39]?=some (.CCX 4620 4485 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[2215]?=some (.CCX 4620 4485 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2215 : SixCarryPrefixData.program[2215]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4620 4485 4486 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 39 shape17 before_len17 len17 rfl (.CCX 4620 4485 4486) rfl
 
 theorem step_2215 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2216 basis 4486=((prefixState SixCarryPrefixData.program 972 basis 4486) ^^ ((prefixState SixCarryPrefixData.program 2214 basis 4620) && (prefixState SixCarryPrefixData.program 2215 basis 4485))) := by
@@ -34049,11 +31517,8 @@ theorem step_2215 (basis : BasisState) :
  rw [frame_4486_972_2215 basis,frame_4620_2214_2215 basis] at h
  exact h
 
-theorem gate_2216 : SixCarryPrefixData.program[2216]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4486 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 40 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[40]?=some (.CX 4356 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[2216]?=some (.CX 4356 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2216 : SixCarryPrefixData.program[2216]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4356 4486 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 40 shape17 before_len17 len17 rfl (.CX 4356 4486) rfl
 
 theorem step_2216 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2217 basis 4486=((prefixState SixCarryPrefixData.program 2216 basis 4486) ^^ (prefixState SixCarryPrefixData.program 0 basis 4356)) := by
@@ -34063,11 +31528,8 @@ theorem step_2216 (basis : BasisState) :
  rw [frame_4356_0_2216 basis] at h
  exact h
 
-theorem gate_2219 : SixCarryPrefixData.program[2219]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4621 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 43 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[43]?=some (.CX 4357 4621) := by decide +kernel
- have hh : SixCarryPrefixData.program[2219]?=some (.CX 4357 4621) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2219 : SixCarryPrefixData.program[2219]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4621 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 43 shape17 before_len17 len17 rfl (.CX 4357 4621) rfl
 
 theorem step_2219 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2220 basis 4621=((prefixState SixCarryPrefixData.program 1428 basis 4621) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -34077,11 +31539,8 @@ theorem step_2219 (basis : BasisState) :
  rw [frame_4357_0_2219 basis,frame_4621_1428_2219 basis] at h
  exact h
 
-theorem gate_2220 : SixCarryPrefixData.program[2220]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4486 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 44 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[44]?=some (.CX 4357 4486) := by decide +kernel
- have hh : SixCarryPrefixData.program[2220]?=some (.CX 4357 4486) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2220 : SixCarryPrefixData.program[2220]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4486 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 44 shape17 before_len17 len17 rfl (.CX 4357 4486) rfl
 
 theorem step_2220 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2221 basis 4486=((prefixState SixCarryPrefixData.program 2217 basis 4486) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -34091,11 +31550,8 @@ theorem step_2220 (basis : BasisState) :
  rw [frame_4357_0_2220 basis,frame_4486_2217_2220 basis] at h
  exact h
 
-theorem gate_2221 : SixCarryPrefixData.program[2221]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4621 4486 4487 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 45 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[45]?=some (.CCX 4621 4486 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[2221]?=some (.CCX 4621 4486 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2221 : SixCarryPrefixData.program[2221]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4621 4486 4487 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 45 shape17 before_len17 len17 rfl (.CCX 4621 4486 4487) rfl
 
 theorem step_2221 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2222 basis 4487=((prefixState SixCarryPrefixData.program 969 basis 4487) ^^ ((prefixState SixCarryPrefixData.program 2220 basis 4621) && (prefixState SixCarryPrefixData.program 2221 basis 4486))) := by
@@ -34105,11 +31561,8 @@ theorem step_2221 (basis : BasisState) :
  rw [frame_4487_969_2221 basis,frame_4621_2220_2221 basis] at h
  exact h
 
-theorem gate_2222 : SixCarryPrefixData.program[2222]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4487 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 46 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[46]?=some (.CX 4357 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[2222]?=some (.CX 4357 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2222 : SixCarryPrefixData.program[2222]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4357 4487 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 46 shape17 before_len17 len17 rfl (.CX 4357 4487) rfl
 
 theorem step_2222 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2223 basis 4487=((prefixState SixCarryPrefixData.program 2222 basis 4487) ^^ (prefixState SixCarryPrefixData.program 0 basis 4357)) := by
@@ -34119,11 +31572,8 @@ theorem step_2222 (basis : BasisState) :
  rw [frame_4357_0_2222 basis] at h
  exact h
 
-theorem gate_2225 : SixCarryPrefixData.program[2225]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4622 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 49 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[49]?=some (.CX 4358 4622) := by decide +kernel
- have hh : SixCarryPrefixData.program[2225]?=some (.CX 4358 4622) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2225 : SixCarryPrefixData.program[2225]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4622 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 49 shape17 before_len17 len17 rfl (.CX 4358 4622) rfl
 
 theorem step_2225 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2226 basis 4622=((prefixState SixCarryPrefixData.program 1429 basis 4622) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -34133,11 +31583,8 @@ theorem step_2225 (basis : BasisState) :
  rw [frame_4358_0_2225 basis,frame_4622_1429_2225 basis] at h
  exact h
 
-theorem gate_2226 : SixCarryPrefixData.program[2226]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4487 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 50 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[50]?=some (.CX 4358 4487) := by decide +kernel
- have hh : SixCarryPrefixData.program[2226]?=some (.CX 4358 4487) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2226 : SixCarryPrefixData.program[2226]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4487 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 50 shape17 before_len17 len17 rfl (.CX 4358 4487) rfl
 
 theorem step_2226 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2227 basis 4487=((prefixState SixCarryPrefixData.program 2223 basis 4487) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -34147,11 +31594,8 @@ theorem step_2226 (basis : BasisState) :
  rw [frame_4358_0_2226 basis,frame_4487_2223_2226 basis] at h
  exact h
 
-theorem gate_2227 : SixCarryPrefixData.program[2227]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4622 4487 4488 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 51 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[51]?=some (.CCX 4622 4487 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[2227]?=some (.CCX 4622 4487 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2227 : SixCarryPrefixData.program[2227]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4622 4487 4488 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 51 shape17 before_len17 len17 rfl (.CCX 4622 4487 4488) rfl
 
 theorem step_2227 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2228 basis 4488=((prefixState SixCarryPrefixData.program 966 basis 4488) ^^ ((prefixState SixCarryPrefixData.program 2226 basis 4622) && (prefixState SixCarryPrefixData.program 2227 basis 4487))) := by
@@ -34161,11 +31605,8 @@ theorem step_2227 (basis : BasisState) :
  rw [frame_4488_966_2227 basis,frame_4622_2226_2227 basis] at h
  exact h
 
-theorem gate_2228 : SixCarryPrefixData.program[2228]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4488 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 52 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[52]?=some (.CX 4358 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[2228]?=some (.CX 4358 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2228 : SixCarryPrefixData.program[2228]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4358 4488 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 52 shape17 before_len17 len17 rfl (.CX 4358 4488) rfl
 
 theorem step_2228 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2229 basis 4488=((prefixState SixCarryPrefixData.program 2228 basis 4488) ^^ (prefixState SixCarryPrefixData.program 0 basis 4358)) := by
@@ -34175,11 +31616,8 @@ theorem step_2228 (basis : BasisState) :
  rw [frame_4358_0_2228 basis] at h
  exact h
 
-theorem gate_2231 : SixCarryPrefixData.program[2231]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4623 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 55 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[55]?=some (.CX 4359 4623) := by decide +kernel
- have hh : SixCarryPrefixData.program[2231]?=some (.CX 4359 4623) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2231 : SixCarryPrefixData.program[2231]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4623 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 55 shape17 before_len17 len17 rfl (.CX 4359 4623) rfl
 
 theorem step_2231 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2232 basis 4623=((prefixState SixCarryPrefixData.program 1430 basis 4623) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -34189,11 +31627,8 @@ theorem step_2231 (basis : BasisState) :
  rw [frame_4359_0_2231 basis,frame_4623_1430_2231 basis] at h
  exact h
 
-theorem gate_2232 : SixCarryPrefixData.program[2232]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4488 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 56 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[56]?=some (.CX 4359 4488) := by decide +kernel
- have hh : SixCarryPrefixData.program[2232]?=some (.CX 4359 4488) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2232 : SixCarryPrefixData.program[2232]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4488 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 56 shape17 before_len17 len17 rfl (.CX 4359 4488) rfl
 
 theorem step_2232 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2233 basis 4488=((prefixState SixCarryPrefixData.program 2229 basis 4488) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -34203,11 +31638,8 @@ theorem step_2232 (basis : BasisState) :
  rw [frame_4359_0_2232 basis,frame_4488_2229_2232 basis] at h
  exact h
 
-theorem gate_2233 : SixCarryPrefixData.program[2233]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4623 4488 4489 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 57 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[57]?=some (.CCX 4623 4488 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[2233]?=some (.CCX 4623 4488 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2233 : SixCarryPrefixData.program[2233]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4623 4488 4489 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 57 shape17 before_len17 len17 rfl (.CCX 4623 4488 4489) rfl
 
 theorem step_2233 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2234 basis 4489=((prefixState SixCarryPrefixData.program 963 basis 4489) ^^ ((prefixState SixCarryPrefixData.program 2232 basis 4623) && (prefixState SixCarryPrefixData.program 2233 basis 4488))) := by
@@ -34217,11 +31649,8 @@ theorem step_2233 (basis : BasisState) :
  rw [frame_4489_963_2233 basis,frame_4623_2232_2233 basis] at h
  exact h
 
-theorem gate_2234 : SixCarryPrefixData.program[2234]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4489 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 58 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[58]?=some (.CX 4359 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[2234]?=some (.CX 4359 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2234 : SixCarryPrefixData.program[2234]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4359 4489 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 58 shape17 before_len17 len17 rfl (.CX 4359 4489) rfl
 
 theorem step_2234 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2235 basis 4489=((prefixState SixCarryPrefixData.program 2234 basis 4489) ^^ (prefixState SixCarryPrefixData.program 0 basis 4359)) := by
@@ -34231,11 +31660,8 @@ theorem step_2234 (basis : BasisState) :
  rw [frame_4359_0_2234 basis] at h
  exact h
 
-theorem gate_2237 : SixCarryPrefixData.program[2237]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4624 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 61 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[61]?=some (.CX 4360 4624) := by decide +kernel
- have hh : SixCarryPrefixData.program[2237]?=some (.CX 4360 4624) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2237 : SixCarryPrefixData.program[2237]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4624 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 61 shape17 before_len17 len17 rfl (.CX 4360 4624) rfl
 
 theorem step_2237 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2238 basis 4624=((prefixState SixCarryPrefixData.program 1431 basis 4624) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -34245,11 +31671,8 @@ theorem step_2237 (basis : BasisState) :
  rw [frame_4360_0_2237 basis,frame_4624_1431_2237 basis] at h
  exact h
 
-theorem gate_2238 : SixCarryPrefixData.program[2238]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4489 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 62 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[62]?=some (.CX 4360 4489) := by decide +kernel
- have hh : SixCarryPrefixData.program[2238]?=some (.CX 4360 4489) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2238 : SixCarryPrefixData.program[2238]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4489 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 62 shape17 before_len17 len17 rfl (.CX 4360 4489) rfl
 
 theorem step_2238 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2239 basis 4489=((prefixState SixCarryPrefixData.program 2235 basis 4489) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -34259,11 +31682,8 @@ theorem step_2238 (basis : BasisState) :
  rw [frame_4360_0_2238 basis,frame_4489_2235_2238 basis] at h
  exact h
 
-theorem gate_2239 : SixCarryPrefixData.program[2239]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4624 4489 4490 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 63 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[63]?=some (.CCX 4624 4489 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[2239]?=some (.CCX 4624 4489 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2239 : SixCarryPrefixData.program[2239]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4624 4489 4490 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 63 shape17 before_len17 len17 rfl (.CCX 4624 4489 4490) rfl
 
 theorem step_2239 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2240 basis 4490=((prefixState SixCarryPrefixData.program 960 basis 4490) ^^ ((prefixState SixCarryPrefixData.program 2238 basis 4624) && (prefixState SixCarryPrefixData.program 2239 basis 4489))) := by
@@ -34273,11 +31693,8 @@ theorem step_2239 (basis : BasisState) :
  rw [frame_4490_960_2239 basis,frame_4624_2238_2239 basis] at h
  exact h
 
-theorem gate_2240 : SixCarryPrefixData.program[2240]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4490 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 64 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[64]?=some (.CX 4360 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[2240]?=some (.CX 4360 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2240 : SixCarryPrefixData.program[2240]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4360 4490 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 64 shape17 before_len17 len17 rfl (.CX 4360 4490) rfl
 
 theorem step_2240 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2241 basis 4490=((prefixState SixCarryPrefixData.program 2240 basis 4490) ^^ (prefixState SixCarryPrefixData.program 0 basis 4360)) := by
@@ -34287,11 +31704,8 @@ theorem step_2240 (basis : BasisState) :
  rw [frame_4360_0_2240 basis] at h
  exact h
 
-theorem gate_2243 : SixCarryPrefixData.program[2243]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4625 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 67 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[67]?=some (.CX 4361 4625) := by decide +kernel
- have hh : SixCarryPrefixData.program[2243]?=some (.CX 4361 4625) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2243 : SixCarryPrefixData.program[2243]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4625 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 67 shape17 before_len17 len17 rfl (.CX 4361 4625) rfl
 
 theorem step_2243 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2244 basis 4625=((prefixState SixCarryPrefixData.program 1432 basis 4625) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -34301,11 +31715,8 @@ theorem step_2243 (basis : BasisState) :
  rw [frame_4361_0_2243 basis,frame_4625_1432_2243 basis] at h
  exact h
 
-theorem gate_2244 : SixCarryPrefixData.program[2244]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4490 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 68 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[68]?=some (.CX 4361 4490) := by decide +kernel
- have hh : SixCarryPrefixData.program[2244]?=some (.CX 4361 4490) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2244 : SixCarryPrefixData.program[2244]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4490 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 68 shape17 before_len17 len17 rfl (.CX 4361 4490) rfl
 
 theorem step_2244 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2245 basis 4490=((prefixState SixCarryPrefixData.program 2241 basis 4490) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -34315,11 +31726,8 @@ theorem step_2244 (basis : BasisState) :
  rw [frame_4361_0_2244 basis,frame_4490_2241_2244 basis] at h
  exact h
 
-theorem gate_2245 : SixCarryPrefixData.program[2245]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4625 4490 4491 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 69 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[69]?=some (.CCX 4625 4490 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[2245]?=some (.CCX 4625 4490 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2245 : SixCarryPrefixData.program[2245]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4625 4490 4491 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 69 shape17 before_len17 len17 rfl (.CCX 4625 4490 4491) rfl
 
 theorem step_2245 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2246 basis 4491=((prefixState SixCarryPrefixData.program 957 basis 4491) ^^ ((prefixState SixCarryPrefixData.program 2244 basis 4625) && (prefixState SixCarryPrefixData.program 2245 basis 4490))) := by
@@ -34329,11 +31737,8 @@ theorem step_2245 (basis : BasisState) :
  rw [frame_4491_957_2245 basis,frame_4625_2244_2245 basis] at h
  exact h
 
-theorem gate_2246 : SixCarryPrefixData.program[2246]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4491 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 70 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[70]?=some (.CX 4361 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[2246]?=some (.CX 4361 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2246 : SixCarryPrefixData.program[2246]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4361 4491 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 70 shape17 before_len17 len17 rfl (.CX 4361 4491) rfl
 
 theorem step_2246 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2247 basis 4491=((prefixState SixCarryPrefixData.program 2246 basis 4491) ^^ (prefixState SixCarryPrefixData.program 0 basis 4361)) := by
@@ -34343,11 +31748,8 @@ theorem step_2246 (basis : BasisState) :
  rw [frame_4361_0_2246 basis] at h
  exact h
 
-theorem gate_2249 : SixCarryPrefixData.program[2249]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4626 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 73 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[73]?=some (.CX 4362 4626) := by decide +kernel
- have hh : SixCarryPrefixData.program[2249]?=some (.CX 4362 4626) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2249 : SixCarryPrefixData.program[2249]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4626 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 73 shape17 before_len17 len17 rfl (.CX 4362 4626) rfl
 
 theorem step_2249 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2250 basis 4626=((prefixState SixCarryPrefixData.program 1433 basis 4626) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -34357,11 +31759,8 @@ theorem step_2249 (basis : BasisState) :
  rw [frame_4362_0_2249 basis,frame_4626_1433_2249 basis] at h
  exact h
 
-theorem gate_2250 : SixCarryPrefixData.program[2250]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4491 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 74 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[74]?=some (.CX 4362 4491) := by decide +kernel
- have hh : SixCarryPrefixData.program[2250]?=some (.CX 4362 4491) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2250 : SixCarryPrefixData.program[2250]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4491 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 74 shape17 before_len17 len17 rfl (.CX 4362 4491) rfl
 
 theorem step_2250 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2251 basis 4491=((prefixState SixCarryPrefixData.program 2247 basis 4491) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -34371,11 +31770,8 @@ theorem step_2250 (basis : BasisState) :
  rw [frame_4362_0_2250 basis,frame_4491_2247_2250 basis] at h
  exact h
 
-theorem gate_2251 : SixCarryPrefixData.program[2251]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4626 4491 4492 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 75 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[75]?=some (.CCX 4626 4491 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[2251]?=some (.CCX 4626 4491 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2251 : SixCarryPrefixData.program[2251]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CCX 4626 4491 4492 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 75 shape17 before_len17 len17 rfl (.CCX 4626 4491 4492) rfl
 
 theorem step_2251 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2252 basis 4492=((prefixState SixCarryPrefixData.program 954 basis 4492) ^^ ((prefixState SixCarryPrefixData.program 2250 basis 4626) && (prefixState SixCarryPrefixData.program 2251 basis 4491))) := by
@@ -34385,11 +31781,8 @@ theorem step_2251 (basis : BasisState) :
  rw [frame_4492_954_2251 basis,frame_4626_2250_2251 basis] at h
  exact h
 
-theorem gate_2252 : SixCarryPrefixData.program[2252]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4492 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 76 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[76]?=some (.CX 4362 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[2252]?=some (.CX 4362 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2252 : SixCarryPrefixData.program[2252]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4362 4492 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 76 shape17 before_len17 len17 rfl (.CX 4362 4492) rfl
 
 theorem step_2252 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2253 basis 4492=((prefixState SixCarryPrefixData.program 2252 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4362)) := by
@@ -34399,11 +31792,8 @@ theorem step_2252 (basis : BasisState) :
  rw [frame_4362_0_2252 basis] at h
  exact h
 
-theorem gate_2256 : SixCarryPrefixData.program[2256]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 := by
- have h := lookup_context SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 80 shape17 before_len17 (by rw [len17]; decide +kernel)
- have hg : SixCarryPrefixData.chunk17[80]?=some (.CX 4363 4492) := by decide +kernel
- have hh : SixCarryPrefixData.program[2256]?=some (.CX 4363 4492) := h.trans hg
- exact (List.getElem?_eq_some_iff.mp hh).2
+theorem gate_2256 : SixCarryPrefixData.program[2256]'(by rw [SixCarryPrefixData.program_length]; decide +kernel)=.CX 4363 4492 :=
+ gateFromChunk SixCarryPrefixData.program before17 SixCarryPrefixData.chunk17 after17 2176 80 shape17 before_len17 len17 rfl (.CX 4363 4492) rfl
 
 theorem step_2256 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2257 basis 4492=((prefixState SixCarryPrefixData.program 2253 basis 4492) ^^ (prefixState SixCarryPrefixData.program 0 basis 4363)) := by

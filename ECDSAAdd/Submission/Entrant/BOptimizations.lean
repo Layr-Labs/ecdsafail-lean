@@ -963,35 +963,48 @@ set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
 
-theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignCResearch.loop ∧
- measurementCount loop=measurementCount HighSignCResearch.loop:=by
- have aa:C163Low4Middle.ga=acc:=by decide +kernel
- have ap:C163Low4Middle.pad=pad:=by decide +kernel
- have ab:C163Low4Middle.bank=bank:=by decide +kernel
- have ax:C163Low4Middle.src=src:=by decide +kernel
- have ai:C163Low4Middle.L.core.cin=L.core.cin:=by decide +kernel
- have nc:=ReorderedGenericCache.count_balance 105 xs ys cs C105Research.hosts cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
- have oc:=ReorderedGenericCache.count_balance 102 xs ys cs Ghost3CacheC.hosts cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
- have ni:=HighConsumedC105Research.sub_toffoli
- have nm:=HighConsumedC105Research.sub_measurements
- have oi:=HighUnbuildCResearch.toffoli acc rfl
- have om:=HighUnbuildCResearch.measurements acc rfl
- have mt:=CKAliasesResearch.counts.1
- have mm:=CKAliasesResearch.counts.2.1
- have ot:=GhostRelocatedKnown.C.counts.1
- have omid:=GhostRelocatedKnown.C.counts.2
- have nt:=notRegister_counts ys
- simp only [ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at ni nm oi om
- simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at oi om
- simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
-  toffoliCount_append,measurementCount_append,C105LowEraseResearch.counts.1,C105LowEraseResearch.counts.2.1]
- simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
-  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
-  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
-  GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
- exact ⟨by omega,by omega⟩
+private theorem new_loop_shape :
+    loop = SignCHead.head ++
+      (C105LowEraseResearch.clear ++ ReorderedGenericCache.cachedAdd 105 xs ys cs C105Research.hosts cin ++
+       top ++ CKAliasesResearch.program ++ (preInv ++ HighConsumedC105Research.sub) ++
+       C105LowEraseResearch.clear ++ tail) := rfl
+
+private theorem old_loop_shape :
+    HighSignCResearch.loop = SignCHead.head ++
+      (ReorderedGenericCache.cachedAdd 102 xs ys cs Ghost3CacheC.hosts cin ++
+       top ++ GhostRelocatedKnown.C.program ++ (preInv ++ HighConsumedCResearch.sub ++ tail)) := rfl
+
+private theorem new_consumed_shape :
+    ReorderedConsumedSub.consumed 105 HighConsumedC105Research.xs HighConsumedC105Research.ys
+      HighConsumedC105Research.cs HighConsumedC105Research.hs HighConsumedC105Research.cin =
+    notRegister ys ++ ReorderedGenericCache.consumedAdd 105 xs ys cs C105Research.hosts cin ++
+      notRegister ys := rfl
+
+private theorem old_consumed_shape :
+    ReorderedConsumedSub.consumed 102 HighConsumedCResearch.xs HighConsumedCResearch.ys
+      HighConsumedCResearch.cs HighConsumedCResearch.hs HighConsumedCResearch.cin =
+    notRegister ys ++ ReorderedGenericCache.consumedAdd 102 xs ys cs Ghost3CacheC.hosts cin ++
+      notRegister ys := rfl
+
+theorem loop_counts : toffoliCount loop+3=toffoliCount HighSignCResearch.loop ∧
+    measurementCount loop=measurementCount HighSignCResearch.loop := by
+  have n := ReorderedGenericCache.count_balance 105 xs ys cs C105Research.hosts cin
+    (by rw [raw_lengths.1]; decide) (by rw [raw_lengths.2.1]; decide) (by rw [raw_lengths.2.2]; decide)
+  have o := ReorderedGenericCache.count_balance 102 xs ys cs Ghost3CacheC.hosts cin
+    (by rw [raw_lengths.1]; decide) (by rw [raw_lengths.2.1]; decide) (by rw [raw_lengths.2.2]; decide)
+  have nt := HighConsumedC105Research.sub_toffoli
+  have nm := HighConsumedC105Research.sub_measurements
+  have ot := HighConsumedCResearch.sub_toffoli
+  have om := HighConsumedCResearch.sub_measurements
+  rw [new_consumed_shape] at nt nm
+  rw [old_consumed_shape] at ot om
+  simp only [toffoliCount_append, measurementCount_append] at nt nm ot om
+  have mt := CKAliasesResearch.counts.1.trans GhostRelocatedKnown.C.counts.1.symm
+  have mm := CKAliasesResearch.counts.2.1.trans GhostRelocatedKnown.C.counts.2.symm
+  rw [new_loop_shape,old_loop_shape]
+  simp only [toffoliCount_append,measurementCount_append,C105LowEraseResearch.counts.1,
+    C105LowEraseResearch.counts.2.1]
+  exact ⟨by omega,by omega⟩
 
  theorem body_counts:toffoliCount body+3=toffoliCount HighSignCResearch.body ∧
  measurementCount body=measurementCount HighSignCResearch.body:=by
@@ -1016,56 +1029,23 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] Challenge.gateSlots
- theorem loop_slots:gateSlots loop+12=gateSlots HighSignCResearch.loop:=by
- have aa:C163Low4Middle.ga=acc:=by decide +kernel
- have ap:C163Low4Middle.pad=pad:=by decide +kernel
- have ab:C163Low4Middle.bank=bank:=by decide +kernel
- have ax:C163Low4Middle.src=src:=by decide +kernel
- have ai:C163Low4Middle.L.core.cin=L.core.cin:=by decide +kernel
- have nc:=ReorderedSlots.cache 105 xs ys cs C105Research.hosts cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide) geometry.2.1
- have oc:=ReorderedSlots.cache 102 xs ys cs Ghost3CacheC.hosts cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide) Ghost3CacheC.geometry.2.1
- have ni:=HighConsumedC105Research.sub_slots
- have oi:=HighUnbuildCResearch.slots acc rfl
- have mid:=CKAliasesResearch.counts.2.2
- have oldmid:=RelocateResources.slots GhostRelocatedKnown.ports KnownCMidStaged.body
- simp only [ReorderedConsumedSub.consumed,gateSlots_append] at ni
- simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,gateSlots_append] at oi
- simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
-  gateSlots_append,C105LowEraseResearch.counts.2.2]
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedC105Research.xs] at *
- try rw [HighConsumedC105Research.ys] at *
- try rw [HighConsumedC105Research.cs] at *
- try rw [HighConsumedC105Research.cin] at *
- try rw [HighConsumedC105Research.hs] at *
- try rw [C105PrefixResearch.cin] at *
- try rw [CKAliasesResearch.original] at *
- try rw [Ghost3CacheC.middle] at *
- try rw [GhostRelocatedKnown.C.program] at *
- try rw [GhostRelocatedKnown.C.original] at *
- try rw [HighSignCResearch.hosts] at *
- try rw [C105SignResearch.hosts] at *
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedC105Research.xs] at *
- try rw [HighConsumedC105Research.ys] at *
- try rw [HighConsumedC105Research.cs] at *
- try rw [HighConsumedC105Research.cin] at *
- try rw [HighConsumedC105Research.hs] at *
- try rw [C105PrefixResearch.cin] at *
- try rw [CKAliasesResearch.original] at *
- try rw [Ghost3CacheC.middle] at *
- try rw [GhostRelocatedKnown.C.program] at *
- try rw [GhostRelocatedKnown.C.original] at *
- try rw [HighSignCResearch.hosts] at *
- try rw [C105SignResearch.hosts] at *
- simp only [aa,ap,ab,ax,ai] at *
- omega
+theorem loop_slots : gateSlots loop+12 = gateSlots HighSignCResearch.loop := by
+  have n := ReorderedSlots.cache 105 xs ys cs C105Research.hosts cin
+    (by rw [raw_lengths.1]; decide) (by rw [raw_lengths.2.1]; decide) (by rw [raw_lengths.2.2]; decide) geometry.2.1
+  have o := ReorderedSlots.cache 102 xs ys cs Ghost3CacheC.hosts cin
+    (by rw [raw_lengths.1]; decide) (by rw [raw_lengths.2.1]; decide) (by rw [raw_lengths.2.2]; decide) Ghost3CacheC.geometry.2.1
+  have nt := HighConsumedC105Research.sub_slots
+  have ot := HighConsumedCResearch.sub_slots
+  rw [new_consumed_shape] at nt
+  rw [old_consumed_shape] at ot
+  simp only [gateSlots_append] at nt ot
+  have mid : gateSlots CKAliasesResearch.program + 3 = gateSlots KnownCMidStaged.body := CKAliasesResearch.counts.2.2
+  have old : gateSlots GhostRelocatedKnown.C.program = gateSlots KnownCMidStaged.body + 8 :=
+    RelocateResources.slots GhostRelocatedKnown.ports KnownCMidStaged.body
+  rw [new_loop_shape,old_loop_shape]
+  simp only [gateSlots_append,C105LowEraseResearch.counts.2.2]
+  omega
+
  theorem body_slots:gateSlots body+12=gateSlots HighSignCResearch.body:=by
  have h:=loop_slots
  simp only [body,rawBody,HighSignCResearch.body,HighSignCResearch.rawBody,C163Low4Body.bodyProgram,gateSlots_append]
@@ -1478,7 +1458,11 @@ def domainSelected396 : Program := [
 ]
 
  theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by decide +kernel
- theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by decide +kernel
+ theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by
+  apply List.all_eq_true.mpr
+  intro q hq
+  simpa only [List.mem_singleton,Bool.or_eq_true,decide_eq_true_eq] using
+    C163Touch.covered_mask (domain++hosts++ports) [4762] domainSelected396 (by decide +kernel) q hq
  theorem checked : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched oldPrefix q)=true := by
  apply List.all_eq_true.mpr
  intro q hq
@@ -2469,7 +2453,10 @@ theorem selected_sublist : selected.Sublist LocalEightBody99.body := by
  rw [e]
  exact (selected_high.trans (List.take_sublist _ _)).trans (List.sublist_append_left _ _)
 
-theorem selected_covers : domain.all (C163Touch.touched selected)=true := by decide +kernel
+theorem selected_covers : domain.all (C163Touch.touched selected)=true := by
+  apply List.all_eq_true.mpr
+  intro q hq
+  exact (C163Touch.covered_mask domain [] selected (by decide +kernel) q hq).resolve_left (List.not_mem_nil)
 
 theorem sublist_support (A P : Program) (h : A.Sublist P) : wires A ⊆ wires P := by
  intro q hq
