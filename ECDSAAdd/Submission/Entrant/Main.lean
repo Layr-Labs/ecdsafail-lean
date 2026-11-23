@@ -27784,9 +27784,9 @@ theorem finite_eq (c : Cost) (C : Point) (cx cy : Fp)
     hostedGeneric,hostedSecondStage,Stair44PointMap.encode,Stair44PointMap.encodeY,Stair44PointMap.switchX,
     c.append,c.rename,divide_eq,multiply_eq,sq,Nat.add_assoc]
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2169074 ∧ measurementCount (program C) ≤ 1520242 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2168938 ∧ measurementCount (program C) ≤ 1520242 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2169074 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
+  change toffoliCount (concreteProgram C) ≤ 2168938 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
   cases C with
   | zero => exact h
   | @some cx cy hc =>
@@ -27806,7 +27806,7 @@ theorem totals (C : Point) : toffoliCount (program C) ≤ 2169074 ∧ measuremen
     exact ⟨ft.le.trans h.1,fm.le.trans h.2⟩
 open StairSlotsPlan
 
-theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860482 := by
+theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860518 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -27838,9 +27838,9 @@ theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860482 := by
         ControlPointEncodingDevelop.borrowGeneric,ControlPointEncodingDevelop.genericBlock,
         gateSlots_append,rename_gateSlots] at ⊢
       omega
-    have sum : dE + dX = 335192 := v3_slotDelta_1806
+    have sum : dE + dX = 335228 := v3_slotDelta_1806
     have old := AboveFieldPointDevelop.program_slots_Q C
-    change gateSlots (program C) ≤ 50860482
+    change gateSlots (program C) ≤ 50860518
     omega
 end ECDSAAdd.Entrant.Stair44Resources
 
@@ -28950,7 +28950,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
   ⟨finite_delta tc C cx cy 145641 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 48896 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2023433 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2023297 ∧
     measurementCount (program C) ≤ 1471590 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -29054,7 +29054,7 @@ private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (Stair44Outer.finite C cx cy)+11364120 :=
   finite_upper slots C cx cy 11364120 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 62224602 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 62224638 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -33211,8 +33211,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2023433 ∧
-    measurementCount (program C) ≤ 1471590 ∧ gateSlots (program C) ≤ 62224602 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2023297 ∧
+    measurementCount (program C) ≤ 1471590 ∧ gateSlots (program C) ≤ 62224638 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -33410,7 +33410,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2023433,1471590,1543,62224602⟩
+def bounds : Challenge.Bounds := ⟨2023297,1471590,1543,62224638⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -33427,7 +33427,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 62224602
+    change gateSlots (normalizeProgram _) ≤ 62224638
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
