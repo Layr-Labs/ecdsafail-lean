@@ -14130,7 +14130,47 @@ def postDense (g s : Bool) (uv : Nat×Nat) : Nat := bitRun forwardDense (preDens
 def checkInput (uv : Nat×Nat) : Bool :=
   [false,true].all fun g=>[false,true].all fun s=>decide (postDense g s uv∈rowInputs)
 
-theorem inputTable : TerminalFiveDomain.pairs.all checkInput=true := by decide +kernel
+section
+open CodecBitSliceVerify
+private def initialColumns : Cols := [397858589127829313724305798517456672080364920637878173952371181514527597610026700426444, 380306004313366255765825006974663458885700681034939865265471302756765152317833126661315, 154808789543902456701778350748341043871959588188648593157678609499097527099310185429168, 138898706368078103941149405263051657305470239418254213368601298593483297370286259223424, 138836071120165973958542576547850903918753960203995575252492246950265844999032932108416, 138836070164398771157893275059517052964483366104972284511098439634434192614520378656896, 358487166245387871220338037205833355572412142033088146321667783343874477662088936851584, 265239059418552875816203865678304448053576613758585449301580787676351731740017800284288, 0, 0, 117017232096420386389557241172157381214755469762407852174992674136394344694700248871740, 61923515817560982679569772532881824848292861510334052724697269190354384850713586098912, 58036347590857809163085944398183352286375641892780348050791288202827239898065691405856, 58021044481322488157744346595549014935140988994535246085637776971004536684958580613664, 58021044247808441640432505409577538122799845924932869721178304545819526531336221368864, 439302192161978200570587652529691742088736266537657150405743179589178916623288996340256, 66309764854638218954050966419576112013394153439646362325395196919087932935004450071072, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+private def finalColumns : Cols := [397858589127829313724305798517456672080364920637878173952371181514527597610026700426444, 29254308024105096597467985904655355324440399338230514478166464596270742153655956275215, 1935109869298780708671315172538272082535317521215429968494480509585752866888451420415, 7588434569934338551601417763106674634997760526986094874863836565954168127619076095, 115792089210356248756420345235948791723818631960482241809990487184577513127935, 25380260785616428785455141708600598732300052718150654916979805126655, 497323236409786642130001987361204411315001009088747118708163924175008842095553570406400, 0, 0, 0, 25380260785616428785455141708600598732300052718150654916979805126655, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 334511179307167060498348290471013714971590560, 5613622435415353886880815828200389943195749255742720, 6170647974737765047714591261790336194408219451150122070279802880, 18497802855953582397393443575426878007432515831840693519795119718400, 331548824273191094752808096280291537207386767528024334948419863066237903305118570250240, 0, 0, 0, 0, 0]
+
+private def columnWord (cols : Cols) (r : Fin 288) : Nat :=
+  packBits (cols.map (fun x => x.testBit r.val))
+
+private theorem columnWord_rel (cols : Cols) (r : Fin 288) : Rel cols (columnWord cols r) r.val := by
+  intro q
+  rw [columnWord, pack_testBit, List.getElem?_map]
+  unfold CodecBitSliceVerify.get
+  cases h : cols[q]? <;> simp
+
+private theorem initial_eq : (TerminalFiveDomain.pairs.flatMap fun uv =>
+    [preDense false false uv, preDense false true uv, preDense true false uv, preDense true true uv]) =
+    (List.finRange 288).map (columnWord initialColumns) := by decide +kernel
+
+private theorem final_mem : ∀ r : Fin 288, columnWord finalColumns r ∈ rowInputs := by decide +kernel
+
+private theorem dense_checked : CodecBitSliceVerify.eval (2^288-1) forwardDense initialColumns =
+    (true, finalColumns) := by decide +kernel
+
+private theorem dense_targets : ∀ i ∈ forwardDense, target i < initialColumns.length := by decide +kernel
+theorem inputTable : TerminalFiveDomain.pairs.all checkInput = true := by
+
+  simp only [List.all_eq_true, checkInput, decide_eq_true_eq]
+  intro uv member g _ s _
+  have covered : preDense g s uv ∈ (List.finRange 288).map (columnWord initialColumns) := by
+    rw [←initial_eq]
+    apply List.mem_flatMap.mpr
+    exact ⟨uv, member, by cases g <;> cases s <;> simp⟩
+  obtain ⟨r, _, eq⟩ := List.mem_map.mp covered
+  have step := CodecBitSliceVerify.eval_sound (2^288-1) r.val
+    (by rw [Nat.testBit_two_pow_sub_one]; exact decide_eq_true r.isLt)
+    forwardDense initialColumns _ dense_targets
+    (columnWord_rel _ r) (congrArg Prod.fst dense_checked)
+  have output := LegalColumnProof.row_equal step.2 (columnWord_rel finalColumns r)
+    (congrArg Prod.snd dense_checked)
+  simpa only [postDense, ←eq, output] using (final_mem r)
+end
 
 end ECDSAAdd.Entrant.TerminalFiveBridge
 
@@ -24665,13 +24705,107 @@ def oout (xS : Bool) (v : Nat) : Nat :=
   ofBits [v.testBit 0, v.testBit 1, v.testBit 2, v.testBit 3, v.testBit 4, !xS,
     false, false, false, false, false, false, false]
 
+theorem ofBits_testBit : ∀ (bs : List Bool) (q : Nat), (ofBits bs).testBit q = bs.getD q false
+  | [], q => by simp [ofBits]
+  | b :: bs, q => by
+    have hb : b.toNat ≤ 1 := by cases b <;> simp
+    cases q with
+    | zero =>
+      rw [Nat.testBit_zero]
+      cases b <;> simp [ofBits, Nat.add_mul_mod_self_left]
+    | succ q =>
+      rw [Nat.testBit_succ, show ofBits (b :: bs) / 2 = ofBits bs by simp only [ofBits]; omega]
+      simpa using ofBits_testBit bs q
+
+open CodecBitSliceVerify (Cols Rel target)
+
+private def side (x : Nat) (b : Bool) : Nat :=
+  if b then x else CertificateBits.mask 5 ^^^ x
+
+private theorem side_bit (x : Nat) (b : Bool) (v : Fin 32) :
+    (side x b).testBit v.val = (x.testBit v.val == b) := by
+  cases b <;> simp [side, Nat.testBit_xor, CertificateBits.mask_bit 5 _ v.isLt]
+
+private theorem opposite_side (a b : Bool) : (a == !b) = (a != b) := by
+  cases a <;> cases b <;> rfl
+
+private def patterns (role a s b : Bool) : Nat × Nat × Nat :=
+  let h := CertificateBits.input 5 0
+  let x := CertificateBits.input 5 1
+  let y := CertificateBits.input 5 2
+  (h &&& side x (if role then a else !a) &&& side y s,
+   h &&& side x a &&& side y (if role then !s else !b),
+   h &&& side x (if role then !a else a) &&& side y b)
+
+private def sourceColumns (role a s b yc y2c e : Bool) : Cols :=
+  let (pS,pA,pB) := patterns role a s b
+  let y := CertificateBits.input 5 3
+  let c := CertificateBits.input 5 4
+  [CertificateBits.input 5 0, CertificateBits.input 5 1, CertificateBits.input 5 2, y,c,0,
+   c &&& pS, c &&& pA &&& side y yc, c &&& pB &&& side y y2c,
+   if e then c &&& pA &&& side y (!yc) else 0, 0,0,0]
+
+private def resultColumns (role a s b : Bool) : Cols :=
+  [CertificateBits.input 5 0, CertificateBits.input 5 1, CertificateBits.input 5 2,
+   CertificateBits.input 5 3, CertificateBits.input 5 4,
+   CertificateBits.mask 5 ^^^ (patterns role a s b).1, 0,0,0,0,0,0,0]
+
+private def rowWord (cols : Cols) (v : Fin 32) : Nat :=
+  ofBits (cols.map (fun x => x.testBit v.val))
+
+private theorem rowWord_rel (cols : Cols) (v : Fin 32) : Rel cols (rowWord cols v) v.val := by
+  intro q
+  rw [rowWord, ofBits_testBit]
+  change (((cols.map (fun x => x.testBit v.val))[q]?).getD false) = ((cols[q]?).getD 0).testBit v.val
+  rw [List.getElem?_map]
+  cases h : cols[q]? <;> simp
+
+private def tailProgram (role a s b yc y2c e : Bool) : Program :=
+  if role then otail1 a s b yc y2c e else otail2 a s b yc y2c e
+
+private theorem tailColumns_checked : ∀ role a s b yc y2c e : Bool,
+    let p := tailProgram role a s b yc y2c e
+    let cols := sourceColumns role a s b yc y2c e
+    p.all (fun i => decide (target i < cols.length)) = true ∧
+      CodecBitSliceVerify.eval (CertificateBits.mask 5) p cols = (true, resultColumns role a s b) := by
+  decide +kernel
+
+private theorem scalar_tail (role a s b yc y2c e : Bool) (v : Fin 32) :
+    let p := tailProgram role a s b yc y2c e
+    let src := rowWord (sourceColumns role a s b yc y2c e) v
+    safe p src = true ∧ bitRun p src = rowWord (resultColumns role a s b) v := by
+  obtain ⟨bound, done⟩ := tailColumns_checked role a s b yc y2c e
+  let cols := sourceColumns role a s b yc y2c e
+  let p := tailProgram role a s b yc y2c e
+  have check := CodecBitSliceVerify.eval_sound (CertificateBits.mask 5) v.val
+    (CertificateBits.mask_bit 5 _ v.isLt) p cols _ (fun i hi =>
+      of_decide_eq_true (List.all_eq_true.mp bound i hi)) (rowWord_rel cols v)
+    (congrArg Prod.fst done)
+  exact ⟨check.1, LegalColumnProof.row_equal check.2 (rowWord_rel _ v) (congrArg Prod.snd done)⟩
+
+private theorem rowPair (role a s b yc y2c e : Bool) (v : Fin 32) :
+    let h := v.val.testBit 0
+    let x := v.val.testBit 1
+    let y := v.val.testBit 2
+    let pS := if role then oxS1 a s h x y else oxS2 a s h x y
+    let pA := if role then oxA1 a s h x y else oxA2 a b h x y
+    let pB := if role then oxB1 a b h x y else oxB2 a b h x y
+    rowWord (sourceColumns role a s b yc y2c e) v = oin pS pA pB yc y2c e v.val ∧
+      rowWord (resultColumns role a s b) v = oout pS v.val := by
+  cases role <;> cases e <;>
+    simp [sourceColumns, resultColumns, patterns, rowWord, oin, oout, oxS1, oxS2, oxA1, oxA2,
+      oxB1, oxB2, side_bit, opposite_side, Nat.testBit_and, Nat.testBit_xor,
+      CertificateBits.input_bit 5 _ _ v.isLt, CertificateBits.mask_bit 5 _ v.isLt]
+
 theorem otail1_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xS := oxS1 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xA := oxA1 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xB := oxB1 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     safe (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = true ∧
       bitRun (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val := by
-  decide +kernel
+  intro a s b y z e v
+  obtain ⟨src, dst⟩ := rowPair true a s b y z e v
+  simpa only [tailProgram, if_true, src, dst] using scalar_tail true a s b y z e v
 
 theorem otail2_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xS := oxS2 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
@@ -24679,7 +24813,9 @@ theorem otail2_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xB := oxB2 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     safe (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = true ∧
       bitRun (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val := by
-  decide +kernel
+  intro a s b y z e v
+  obtain ⟨src, dst⟩ := rowPair false a s b y z e v
+  simpa only [tailProgram, Bool.false_eq_true, if_false, src, dst, oxA1, oxA2] using scalar_tail false a s b y z e v
 
 theorem predec_counts (b1 s2 yc : Bool) :
     toffoliCount (predec1 b1 s2 yc) = 3 ∧ measurementCount (predec1 b1 s2 yc) = 0 ∧
@@ -24975,18 +25111,6 @@ section OutTail
 open Challenge
 
 /-! ### Bits of a little-endian word -/
-
-theorem ofBits_testBit : ∀ (bs : List Bool) (q : Nat), (ofBits bs).testBit q = bs.getD q false
-  | [], q => by simp [ofBits]
-  | b :: bs, q => by
-    have hb : b.toNat ≤ 1 := by cases b <;> simp
-    cases q with
-    | zero =>
-      rw [Nat.testBit_zero]
-      cases b <;> simp [ofBits, Nat.add_mul_mod_self_left]
-    | succ q =>
-      rw [Nat.testBit_succ, show ofBits (b :: bs) / 2 = ofBits bs by simp only [ofBits]; omega]
-      simpa using ofBits_testBit bs q
 
 /-! ### The output tail's match bits and its two roles -/
 

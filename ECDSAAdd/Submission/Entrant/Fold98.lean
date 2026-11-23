@@ -31998,50 +31998,50 @@ attribute [local irreducible] run wires toffoliCount measurementCount Challenge.
   Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
   Rolling1588TickGap.forward Five506.tick506 Five506.cand
 
-theorem cv21 : cv 21 = true := by decide +kernel
-theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
-theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
-theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
-theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
-theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
-theorem cv32 : cv 32 = true := by decide +kernel
-theorem cv33 : cv 33 = true := by decide +kernel
-theorem cv34 : cv 34 = true := by decide +kernel
-theorem cv35 : cv 35 = true := by decide +kernel
-theorem cv36 : cv 36 = true := by decide +kernel
-theorem cv37 : cv 37 = true := by decide +kernel
-theorem cv38 : cv 38 = true := by decide +kernel
-theorem cv39 : cv 39 = true := by decide +kernel
-theorem cv40 : cv 40 = true := by decide +kernel
-theorem cv41 : cv 41 = true := by decide +kernel
-theorem cv42 : cv 42 = true := by decide +kernel
-theorem cv43 : cv 43 = true := by decide +kernel
-theorem cv44 : cv 44 = true := by decide +kernel
-theorem cv45 : cv 45 = true := by decide +kernel
-theorem cv46 : cv 46 = true := by decide +kernel
-theorem cv47 : cv 47 = true := by decide +kernel
-theorem cv48 : cv 48 = true := by decide +kernel
-theorem cv49 : cv 49 = true := by decide +kernel
-theorem cv50 : cv 50 = true := by decide +kernel
-theorem cv51 : cv 51 = true := by decide +kernel
-theorem cv52 : cv 52 = true := by decide +kernel
-theorem cv53 : cv 53 = true := by decide +kernel
-theorem cv54 : cv 54 = true := by decide +kernel
-theorem cv55 : cv 55 = true := by decide +kernel
-theorem cv56 : cv 56 = true := by decide +kernel
-theorem cv57 : cv 57 = true := by decide +kernel
-theorem cv58 : cv 58 = true := by decide +kernel
-theorem cv59 : cv 59 = true := by decide +kernel
-theorem cv60 : cv 60 = true := by decide +kernel
-theorem cv61 : cv 61 = true := by decide +kernel
-theorem cv62 : cv 62 = true := by decide +kernel
-theorem cv63 : cv 63 = true := by decide +kernel
-theorem cv64 : cv 64 = true := by decide +kernel
+theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
+theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
+theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
+theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
+theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
+theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
+theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
+theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
+theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
+theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
+theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
+theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
+theorem cv33 : cv 33 = true := cv_of_checked (by decide +kernel)
+theorem cv34 : cv 34 = true := cv_of_checked (by decide +kernel)
+theorem cv35 : cv 35 = true := cv_of_checked (by decide +kernel)
+theorem cv36 : cv 36 = true := cv_of_checked (by decide +kernel)
+theorem cv37 : cv 37 = true := cv_of_checked (by decide +kernel)
+theorem cv38 : cv 38 = true := cv_of_checked (by decide +kernel)
+theorem cv39 : cv 39 = true := cv_of_checked (by decide +kernel)
+theorem cv40 : cv 40 = true := cv_of_checked (by decide +kernel)
+theorem cv41 : cv 41 = true := cv_of_checked (by decide +kernel)
+theorem cv42 : cv 42 = true := cv_of_checked (by decide +kernel)
+theorem cv43 : cv 43 = true := cv_of_checked (by decide +kernel)
+theorem cv44 : cv 44 = true := cv_of_checked (by decide +kernel)
+theorem cv45 : cv 45 = true := cv_of_checked (by decide +kernel)
+theorem cv46 : cv 46 = true := cv_of_checked (by decide +kernel)
+theorem cv47 : cv 47 = true := cv_of_checked (by decide +kernel)
+theorem cv48 : cv 48 = true := cv_of_checked (by decide +kernel)
+theorem cv49 : cv 49 = true := cv_of_checked (by decide +kernel)
+theorem cv50 : cv 50 = true := cv_of_checked (by decide +kernel)
+theorem cv51 : cv 51 = true := cv_of_checked (by decide +kernel)
+theorem cv52 : cv 52 = true := cv_of_checked (by decide +kernel)
+theorem cv53 : cv 53 = true := cv_of_checked (by decide +kernel)
+theorem cv54 : cv 54 = true := cv_of_checked (by decide +kernel)
+theorem cv55 : cv 55 = true := cv_of_checked (by decide +kernel)
+theorem cv56 : cv 56 = true := cv_of_checked (by decide +kernel)
+theorem cv57 : cv 57 = true := cv_of_checked (by decide +kernel)
+theorem cv58 : cv 58 = true := cv_of_checked (by decide +kernel)
+theorem cv59 : cv 59 = true := cv_of_checked (by decide +kernel)
+theorem cv60 : cv 60 = true := cv_of_checked (by decide +kernel)
+theorem cv61 : cv 61 = true := cv_of_checked (by decide +kernel)
+theorem cv62 : cv 62 = true := cv_of_checked (by decide +kernel)
+theorem cv63 : cv 63 = true := cv_of_checked (by decide +kernel)
+theorem cv64 : cv 64 = true := cv_of_checked (by decide +kernel)
 
 theorem rows_complete : ∀ v, v < 65 → ∀ u, u < 65 → ∀ g s : Bool,
     (u+v ≤ 64 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
