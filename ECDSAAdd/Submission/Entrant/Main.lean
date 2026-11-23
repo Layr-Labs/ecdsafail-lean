@@ -10226,14 +10226,14 @@ def tcV : Pieces Nat where
   enterInv _ := 7
   leave j := if inBlocks j then 6*Shadow7.wpP (start j)+3*Shadow7.lowsP (start j)+153 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv j := if inBlocks j then 6*Shadow7.wpP (start j)+2*Shadow7.lowsP (start j)+186 else toffoliCount (Shadow7.leaveMoveInvP j)
-  load _ d := if d then 49 else 48
-  restore _ d := if d then 60 else 55
+  load _ d := if d then 48 else 48
+  restore _ d := if d then 55 else 55
   portal t := if portalTick t then 4*Shadow7.wpP t-2 else toffoliCount (Shadow7.portalP t)
   portalInv t := if portalTick t then 5*Shadow7.wpP t-4 else toffoliCount (Shadow7.portalInvP t)
   park _ := 0
   parkInv _ := 0
-  exitLoad _ d := if d then 49 else 48
-  exitRestore _ d := if d then 60 else 55
+  exitLoad _ d := if d then 48 else 48
+  exitRestore _ d := if d then 55 else 55
   routed j a n := if a+n ≤ 15 then n*(2*(Shadow7.smallBits j+17)) else toffoliCount (Shadow7.routed j a n)
   unrouted j a n := if a+n ≤ 15 then n*(2*(Shadow7.smallBits j+17)-1) else toffoliCount (Shadow7.unrouted j a n)
   pack d s t := if dueTick t then 9 else toffoliCount (renameProgram (OB5.sig s) (Rolling1588.packAtTick d t))
@@ -10915,9 +10915,9 @@ theorem counts (d : Bool) (j : Fin 24) (js : List (Fin 24)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=107678 ∧
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=107656 ∧
     toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=107656 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=108131 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=108021 ∧
     toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=108021 ∧
     measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=58568 ∧
     measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=58568 ∧
@@ -11014,13 +11014,13 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 107678 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 107656 :=
   ship_counts.1
 
 theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 107656 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 108131 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 108021 :=
   ship_counts.2.2.1
 
 theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 108021 :=
@@ -27625,7 +27625,7 @@ private theorem opartition (c : Cost) (d : Bool) :
 
 
 theorem ooverhead (j : Nat) (d : Bool) :
-    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 118 else 116) ∧
+    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 114 else 114) ∧
     measurementCount (oten j (!d)) = measurementCount (ogroup d j 2)+277 := by
   cases d <;>
     simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
@@ -27723,9 +27723,9 @@ private theorem osolve (c : Cost) (d : Bool) (delta : Nat)
 
 /-- the field group (odd cell on packets 1..84, ten-blocks included) against the record packets 1..84. -/
 theorem group_cost (d : Bool) :
-    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 1847 else 1803) ∧
+    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 1759 else 1759) ∧
     measurementCount (group84 d)+0=measurementCount (group d 1 84)+4925 := by
-  have t := osolve tc d (if d then 118 else 116) (fun j => (ooverhead j d).1)
+  have t := osolve tc d (if d then 114 else 114) (fun j => (ooverhead j d).1)
   have m := osolve mc d 277 (fun j => (ooverhead j d).2)
   have f := ofield_counts d
   rw [show tc.measure = toffoliCount from rfl] at t
@@ -27735,21 +27735,21 @@ theorem group_cost (d : Bool) :
 /-- Static syntax counts include both correction lists of every measurement. -/
 theorem group_slots (d : Bool) :
     slots.measure (group84 d)+(if d then 7065 else 3340)=
-      slots.measure (group d 1 84)+22*(if d then 18057 else 17927)+(if d then 0 else 0) := by
+      slots.measure (group d 1 84)+22*(if d then 15152 else 16451)+(if d then 0 else 0) := by
   have hc := ofield_slots d
   have h (j : Nat) : slots.measure (oten j (!d)) =
-      slots.measure (ogroup d j 2)+(if d then 18057 else 17927) := by
+      slots.measure (ogroup d j 2)+(if d then 15152 else 16451) := by
     rw [show slots.measure=Challenge.gateSlots from rfl]
     cases d <;>
       simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
         enter,shift,leave,fieldHook,program,if_true,if_false,Bool.false_eq_true,List.nil_append,
         List.append_nil,Challenge.gateSlots_append,Baselines.rename_gateSlots,ReducedWindowArchives.enter0_counts.2.2.2,
         ReducedWindowArchives.switch0_counts.2.2.2,ReducedWindowArchives.leave0_counts.2.2.2,ReducedWindowArchives.enter1_counts.2.2.2,ReducedWindowArchives.switch1_counts.2.2.2,ReducedWindowArchives.leave1_counts.2.2.2] <;> omega
-  have w := osolve slots d (if d then 18057 else 17927) h
+  have w := osolve slots d (if d then 15152 else 16451) h
   cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at hc w ⊢ <;> omega
 
 theorem group_cost_div :
-    toffoliCount (group84 true) = toffoliCount (group true 1 84)+1847 ∧
+    toffoliCount (group84 true) = toffoliCount (group true 1 84)+1759 ∧
     measurementCount (group84 true) = measurementCount (group true 1 84)+4925 := by
   have t := (group_cost true).1
   have m := (group_cost true).2
@@ -27757,7 +27757,7 @@ theorem group_cost_div :
   exact ⟨by omega,by omega⟩
 
 theorem group_cost_mul :
-    toffoliCount (group84 false) = toffoliCount (group false 1 84)+1803 ∧
+    toffoliCount (group84 false) = toffoliCount (group false 1 84)+1759 ∧
     measurementCount (group84 false) = measurementCount (group false 1 84)+4925 := by
   have t := (group_cost false).1
   have m := (group_cost false).2
@@ -27885,9 +27885,9 @@ attribute [local irreducible] CRTWindow.forward45plus1 CRTWindow.reverse45plus1 
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 35211 else 35233)=
+    toffoliCount (forward d tail)+(if d then 35233 else 35233)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 34758 else 34868)=
+    toffoliCount (backward d tail)+(if d then 34868 else 34868)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
     measurementCount (forward d tail)+13042=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
     measurementCount (backward d tail)+13547=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
@@ -27903,12 +27903,12 @@ theorem exactWalks (d : Bool) (tail : Nat) :
       (subEq 13042 c sf.2.1 (by omega)) (subEq 13547 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts420.stock420 true
-    have a : toffoliCount (CRTWindow.forward45plus1 true) = 107678 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_true
-    have b : toffoliCount (CRTWindow.reverse45plus1 true) = 108131 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_true
+    have a : toffoliCount (CRTWindow.forward45plus1 true) = 107656 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_true
+    have b : toffoliCount (CRTWindow.reverse45plus1 true) = 108021 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_true
     have c : measurementCount (CRTWindow.forward45plus1 true) = 58568 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.1
     have e : measurementCount (CRTWindow.reverse45plus1 true) = 57762 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.1
-    have t := walk tc true tail 35211 34758
-      (subEq 35211 a sf.1 (by omega)) (subEq 34758 b sf.2.2.1 (by omega))
+    have t := walk tc true tail 35233 34868
+      (subEq 35233 a sf.1 (by omega)) (subEq 34868 b sf.2.2.1 (by omega))
     have m := walk mc true tail 13042 13547
       (subEq 13042 c sf.2.1 (by omega)) (subEq 13547 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
@@ -27916,7 +27916,7 @@ theorem exactWalks (d : Bool) (tail : Nat) :
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 35211 else 35233)=f) (hr : (if d then 34758 else 34868)=r) :
+    (hf : (if d then 35233 else 35233)=f) (hr : (if d then 34868 else 34868)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+13042=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -28199,7 +28199,7 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 
 private theorem fieldTcDiv :
-    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+1847 := by
+    tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+1759 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_div.1
 private theorem fieldMcDiv :
@@ -28207,7 +28207,7 @@ private theorem fieldMcDiv :
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_div.2
 private theorem fieldTcMul :
-    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+1803 := by
+    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+1759 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_mul.1
 private theorem fieldMcMul :
@@ -28224,29 +28224,29 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+35211+34868=tc.measure Stair44Outer.divide+1847 :=
-  kernels tc 35211 34868 1847 (WindowWalkCosts.inst true 4 409 35211 34758 rfl rfl rfl).1
+theorem tc_div : tc.measure divide+35233+34868=tc.measure Stair44Outer.divide+1759 :=
+  kernels tc 35233 34868 1759 (WindowWalkCosts.inst true 4 409 35233 34868 rfl rfl rfl).1
     (WindowWalkCosts.inst false 85 490 35233 34868 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+35233+34758=tc.measure (Stair44Outer.multiply k)+1803 :=
-  kernelsM tc k 35233 34758 1803 (WindowWalkCosts.inst false 84 489 35233 34868 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 35211 34758 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+35233+34868=tc.measure (Stair44Outer.multiply k)+1759 :=
+  kernelsM tc k 35233 34868 1759 (WindowWalkCosts.inst false 84 489 35233 34868 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 35233 34868 rfl rfl rfl).2.1 fieldTcMul
 
 theorem mc_div : mc.measure divide+13042+13547=mc.measure Stair44Outer.divide+4925 :=
-  kernels mc 13042 13547 4925 (WindowWalkCosts.inst true 4 409 35211 34758 rfl rfl rfl).2.2.1
+  kernels mc 13042 13547 4925 (WindowWalkCosts.inst true 4 409 35233 34868 rfl rfl rfl).2.2.1
     (WindowWalkCosts.inst false 85 490 35233 34868 rfl rfl rfl).2.2.2 fieldMcDiv
 
 theorem mc_mul (k : Nat) : mc.measure (multiply k)+13042+13547=mc.measure (Stair44Outer.multiply k)+4925 :=
   kernelsM mc k 13042 13547 4925 (WindowWalkCosts.inst false 84 489 35233 34868 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 4 409 35211 34758 rfl rfl rfl).2.2.2 fieldMcMul
+    (WindowWalkCosts.inst true 4 409 35233 34868 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+136420=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+136684=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+43328=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 136420 (pair_delta2 tc_div (tc_mul _) rfl),
+  ⟨finite_delta tc C cx cy 136684 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 43328 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2032674 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2032410 ∧
     measurementCount (program C) ≤ 1477158 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -28324,26 +28324,26 @@ private theorem finite_upper (c : Cost) (C : Point) (cx cy : Fp) (gain : Nat)
 
 private theorem casts {P : Program} {n : Nat} (h : gateSlots P ≤ n) : slots.measure P ≤ n := h
 private theorem groupCap (d : Bool) (n : Nat)
-    (hn : 22*(if d then 18057 else 17927)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
+    (hn : 22*(if d then 15152 else 16451)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
     slots.measure (WindowFieldCosts.group84 d)=slots.measure (WindowFieldCosts.group d 1 84)+n := by
   have h := WindowFieldCosts.group_slots d
   omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+2600000+2520000+390189 :=
-  kernels slots 2600000 2520000 390189
+    slots.measure Stair44Outer.divide+2600000+2520000+326279 :=
+  kernels slots 2600000 2520000 326279
     (walk slots true 4 2600000 2520000 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).1
     (walk slots false 85 2600000 2520000 490 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).2
-    (groupCap true 390189 rfl)
+    (groupCap true 326279 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+2600000+2520000+391054 :=
-  kernelsM slots k 2600000 2520000 391054
+    slots.measure (Stair44Outer.multiply k)+2600000+2520000+358582 :=
+  kernelsM slots k 2600000 2520000 358582
     (walk slots false 84 2600000 2520000 489 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).1
     (walk slots true 4 2600000 2520000 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).2
-    (groupCap false 391054 rfl)
+    (groupCap false 358582 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2600000+2520000+390189)
-    (hm : b ≤ y+2600000+2520000+391054) : a+b ≤ x+y+11021243 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2600000+2520000+326279)
+    (hm : b ≤ y+2600000+2520000+358582) : a+b ≤ x+y+11021243 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
@@ -32336,7 +32336,7 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2032674 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2032410 ∧
     measurementCount (program C) ≤ 1477158 ∧ gateSlots (program C) ≤ 61881725 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -32535,7 +32535,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2032674,1477158,1543,61881725⟩
+def bounds : Challenge.Bounds := ⟨2032410,1477158,1543,61881725⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
