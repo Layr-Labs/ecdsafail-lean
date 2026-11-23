@@ -34668,7 +34668,7 @@ def enterFix17 (s h : Nat) : List Gate := [
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
   .cx (s+h+32) (h+802),
-  .ccx (s+15) (h+803) (s+h+33),
+  .make (s+15) (h+803) (s+h+33),
   .cx (s+h+33) (h+803),
   .cx (s+h+33) (h+1579),
   .cx (h+803) (h+1579),
@@ -35149,7 +35149,7 @@ theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rf
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 20 37 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
-theorem counts_enterFix17 (s h : Nat) : Counts (enterFix17 s h) 6 2 1 33 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix17 (s h : Nat) : Counts (enterFix17 s h) 5 3 1 33 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
 theorem counts_leaveAdjust (s : Nat) (hw : 1 ≤ wpP s) :
