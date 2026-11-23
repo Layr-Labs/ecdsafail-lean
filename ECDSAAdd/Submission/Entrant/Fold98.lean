@@ -23290,17 +23290,51 @@ theorem witness_support : wires witnessProgram⊆wires ParkAData.p0 :=
  (append_union ((ParkAData.shared35++ParkAData.shared4)++(ParkAData.shared25++(ParkAData.shared45++ParkAData.shared38))) ((ParkAData.shared106++ParkAData.shared33)++(ParkAData.shared5++(ParkAData.shared0++ParkAData.shared22))) ParkAData.p0 (append_union (ParkAData.shared35++ParkAData.shared4) (ParkAData.shared25++(ParkAData.shared45++ParkAData.shared38)) ParkAData.p0 (append_union ParkAData.shared35 ParkAData.shared4 ParkAData.p0 shared35_support shared4_support) (append_union ParkAData.shared25 (ParkAData.shared45++ParkAData.shared38) ParkAData.p0 shared25_support (append_union ParkAData.shared45 ParkAData.shared38 ParkAData.p0 shared45_support shared38_support))) (append_union (ParkAData.shared106++ParkAData.shared33) (ParkAData.shared5++(ParkAData.shared0++ParkAData.shared22)) ParkAData.p0 (append_union ParkAData.shared106 ParkAData.shared33 ParkAData.p0 shared106_support shared33_support) (append_union ParkAData.shared5 (ParkAData.shared0++ParkAData.shared22) ParkAData.p0 shared5_support (append_union ParkAData.shared0 ParkAData.shared22 ParkAData.p0 shared0_support shared22_support))))
 
 def cover (u:Wire) : Bool := u==d || (FullPadSupport.supportDomain L).contains u || touched witnessProgram u
-theorem used0 : (((A161GenericFold.ambient L g hs96).drop 0).take 80).all cover=true := by decide +kernel
-theorem used1 : (((A161GenericFold.ambient L g hs96).drop 80).take 80).all cover=true := by decide +kernel
-theorem used2 : (((A161GenericFold.ambient L g hs96).drop 160).take 80).all cover=true := by decide +kernel
-theorem used3 : (((A161GenericFold.ambient L g hs96).drop 240).take 80).all cover=true := by decide +kernel
-theorem used4 : (((A161GenericFold.ambient L g hs96).drop 320).take 80).all cover=true := by decide +kernel
-theorem used5 : (((A161GenericFold.ambient L g hs96).drop 400).take 80).all cover=true := by decide +kernel
-theorem used6 : (((A161GenericFold.ambient L g hs96).drop 480).take 80).all cover=true := by decide +kernel
-theorem used7 : (((A161GenericFold.ambient L g hs96).drop 560).take 80).all cover=true := by decide +kernel
-theorem used8 : (((A161GenericFold.ambient L g hs96).drop 640).take 80).all cover=true := by decide +kernel
-theorem used9 : (((A161GenericFold.ambient L g hs96).drop 720).take 80).all cover=true := by decide +kernel
-theorem used10 : (((A161GenericFold.ambient L g hs96).drop 800).take 80).all cover=true := by decide +kernel
+private def wireBits : List Wire → Nat
+  | [] => 0
+  | q :: tail => 2^q ||| wireBits tail
+
+private theorem wireBits_mem (qs : List Wire) (q : Wire) : (wireBits qs).testBit q = true ↔ q ∈ qs := by
+  induction qs with
+  | nil => simp [wireBits]
+  | cons a qs ih => simp only [wireBits, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
+      decide_eq_true_eq, ih, List.mem_cons]; tauto
+
+private theorem allWireBits : (A161GenericFold.ambient L g hs96).all cover = true := by
+  let ws := A161GenericFold.ambient L g hs96
+  let other := d :: FullPadSupport.supportDomain L
+  have incl : wireBits ws &&& (wireBits other ||| WireColumns.circuit witnessProgram) = wireBits ws := by
+    decide +kernel
+  apply List.all_eq_true.mpr
+  intro q hq
+  have on : (wireBits ws).testBit q = true := (wireBits_mem ws q).mpr hq
+  have same := congrArg (fun n : Nat => n.testBit q) incl
+  simp only [Nat.testBit_and, Nat.testBit_or, on, Bool.true_and, Bool.or_eq_true] at same
+  rcases same with extra | used
+  · have mem := (wireBits_mem other q).mp extra
+    rcases List.mem_cons.mp mem with eq | h
+    · simp [cover, eq]
+    · simp [cover, h]
+  · have hit := (touched_spec witnessProgram q).mpr ((WireColumns.circuit_bit witnessProgram q).mp used)
+    simp [cover,hit]
+
+theorem coveredSlice (start : Nat) :
+    (((A161GenericFold.ambient L g hs96).drop start).take 80).all cover = true := by
+  apply List.all_eq_true.mpr
+  intro q h
+  exact List.all_eq_true.mp allWireBits q (List.mem_of_mem_drop (List.mem_of_mem_take h))
+
+theorem used0 : (((A161GenericFold.ambient L g hs96).drop 0).take 80).all cover=true := coveredSlice _
+theorem used1 : (((A161GenericFold.ambient L g hs96).drop 80).take 80).all cover=true := coveredSlice _
+theorem used2 : (((A161GenericFold.ambient L g hs96).drop 160).take 80).all cover=true := coveredSlice _
+theorem used3 : (((A161GenericFold.ambient L g hs96).drop 240).take 80).all cover=true := coveredSlice _
+theorem used4 : (((A161GenericFold.ambient L g hs96).drop 320).take 80).all cover=true := coveredSlice _
+theorem used5 : (((A161GenericFold.ambient L g hs96).drop 400).take 80).all cover=true := coveredSlice _
+theorem used6 : (((A161GenericFold.ambient L g hs96).drop 480).take 80).all cover=true := coveredSlice _
+theorem used7 : (((A161GenericFold.ambient L g hs96).drop 560).take 80).all cover=true := coveredSlice _
+theorem used8 : (((A161GenericFold.ambient L g hs96).drop 640).take 80).all cover=true := coveredSlice _
+theorem used9 : (((A161GenericFold.ambient L g hs96).drop 720).take 80).all cover=true := coveredSlice _
+theorem used10 : (((A161GenericFold.ambient L g hs96).drop 800).take 80).all cover=true := coveredSlice _
 
 end ECDSAAdd.Entrant.A161SupportCover
 end

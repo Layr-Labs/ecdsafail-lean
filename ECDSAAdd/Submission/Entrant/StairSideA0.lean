@@ -1,5 +1,5 @@
-import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Decoder87
+import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Math.SkywalkTerminationBudget
@@ -38,6 +38,8 @@ import ECDSAAdd.Arithmetic.Registers
 import ECDSAAdd.Arithmetic.Rotate
 import ECDSAAdd.Arithmetic.Shift
 import ECDSAAdd.Framework.GateInverse
+import ECDSAAdd.Framework.FiniteUnitary
+
 
 -- StairSideA = StairSideA ++ PrizeStairArchiveEnter09fd522f ++ PrizeStair44PointMap486a9e3 ++ PrizeHighBankJoin5ab3264 ++ PrizeHighBankFirstHit91f0292
 -- ==== begin StairSideA ====
@@ -2407,8 +2409,135 @@ def highProgram (L : Layout) (B : Nat) : Program :=
 def highSaving (B : Nat) : Nat :=
   if B = 87 then 5 else if B = 47 then 2 else if B = 22 then 2 else if B = 12 then 1 else 0
 
+def useHighMark (B k s : Nat) : Prop :=
+  0 < k / s ∧ (k + 1 = B ∨ k % s + 1 = s)
+
+def useLowMark (B k s : Nat) : Prop :=
+  0 < k % s ∧ B ≤ k + s
+
+instance (B k s : Nat) : Decidable (useHighMark B k s) :=
+  inferInstanceAs (Decidable (_ ∧ (_ ∨ _)))
+
+instance (B k s : Nat) : Decidable (useLowMark B k s) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+def shortMark (B k s : Nat) (h l t : Wire) : Instr :=
+  if useHighMark B k s then .CX h t
+  else if useLowMark B k s then .CX l t
+  else .CCX h l t
+
+def markSaving (B j : Nat) : Nat :=
+  let s := 2 ^ (bitWidth B / 2)
+  if useHighMark B (j+1) s ∨ useLowMark B (j+1) s then 1 else 0
+
+def sweepSaving (B : Nat) : Nat :=
+  ((List.range (B-2)).map (markSaving B)).sum + markSaving B (B-2)
+
+def shortStep (L : Layout) (B j : Nat) : Program :=
+  let s := 2 ^ (bitWidth B / 2)
+  shortMark B (j+1) s
+    (outAt (highDecoder L B) ((j+1) / s) L.z)
+    (outAt (lowDecoder L B) ((j+1) % s) L.z) L.t :: (unpackStep L B j).tail
+
+def shortWithHigh (L : Layout) (B : Nat) (high : Program) : Program :=
+  let ld := lowDecoder L B
+  let hd := highDecoder L B
+  ld.program ++ high ++ [.CCX (outAt hd 0 L.z) (outAt ld 0 L.z) L.z] ++
+  (List.range (B-2)).flatMap (shortStep L B) ++ shortStep L B (B-2) ++
+  [.X L.z] ++ decoderInit ld (lowBits L B) ++ decoderInit hd (highBits L B) ++
+  [.X (L.S 0)] ++ unpackAdder L B ++ cxInto (L.D (B-1)) (reg L.D (B-1))
+
+theorem rawStep_head (L : Layout) (B j : Nat) :
+    unpackStep L B j = .CCX
+      (outAt (highDecoder L B) ((j+1) / 2^(bitWidth B/2)) L.z)
+      (outAt (lowDecoder L B) ((j+1) % 2^(bitWidth B/2)) L.z) L.t ::
+      (unpackStep L B j).tail := rfl
+
+structure MarkRefines (p q : Program) (saved : Nat) : Prop where
+  support : wires p ⊆ wires q
+  physical : GatePhysical q → GatePhysical p
+  counts : toffoliCount p + saved = toffoliCount q
+  measurements : measurementCount p = measurementCount q
+  slots : Challenge.gateSlots p = Challenge.gateSlots q
+
+theorem MarkRefines.same (p : Program) : MarkRefines p p 0 :=
+  ⟨fun _ h => h, id, Nat.add_zero _, rfl, rfl⟩
+
+theorem MarkRefines.append {p q p' q' : Program} {a b : Nat}
+    (h : MarkRefines p q a) (g : MarkRefines p' q' b) :
+    MarkRefines (p++p') (q++q') (a+b) := by
+  constructor
+  · rw [wires_append, wires_append]
+    exact Finset.union_subset_union h.support g.support
+  · simp only [gatePhysical_append]
+    exact fun ⟨hp,hp'⟩ => ⟨h.physical hp, g.physical hp'⟩
+  · simp only [toffoliCount_append]
+    have h1 := h.counts
+    have h2 := g.counts
+    omega
+  · simp only [measurementCount_append, h.measurements, g.measurements]
+  · simp only [Challenge.gateSlots_append, h.slots, g.slots]
+
+theorem shortMark_one (B k s : Nat) (h l t : Wire) :
+    MarkRefines [shortMark B k s h l t] [.CCX h l t]
+      (if useHighMark B k s ∨ useLowMark B k s then 1 else 0) := by
+  by_cases hh : useHighMark B k s
+  · simp only [shortMark, hh, true_or, if_true]
+    constructor
+    · intro q hq
+      simp [wires, Instr.wires] at hq ⊢
+      tauto
+    · intro hp i hi
+      simp only [List.mem_singleton] at hi
+      subst i
+      exact (hp (.CCX h l t) (by simp)).1
+    · rfl
+    · rfl
+    · rfl
+  · by_cases hl : useLowMark B k s
+    · simp only [shortMark, hh, hl, false_or, if_false, if_true]
+      constructor
+      · intro q hq
+        simp [wires, Instr.wires] at hq ⊢
+        tauto
+      · intro hp i hi
+        simp only [List.mem_singleton] at hi
+        subst i
+        exact (hp (.CCX h l t) (by simp)).2
+      · rfl
+      · rfl
+      · rfl
+    · simpa [shortMark, hh, hl] using MarkRefines.same [.CCX h l t]
+
+theorem shortStep_refines (L : Layout) (B j : Nat) :
+    MarkRefines (shortStep L B j) (unpackStep L B j) (markSaving B j) := by
+  conv => arg 2; rw [rawStep_head L B j]
+  exact (shortMark_one B (j+1) _ _ _ _).append (MarkRefines.same _)
+
+theorem shortSteps_refine (L : Layout) (B : Nat) (js : List Nat) :
+    MarkRefines (js.flatMap (shortStep L B)) (js.flatMap (unpackStep L B))
+      ((js.map (markSaving B)).sum) := by
+  induction js with
+  | nil => exact MarkRefines.same []
+  | cons j js ih => exact (shortStep_refines L B j).append ih
+
+theorem shortWithHigh_refines (L : Layout) (B : Nat) (H : Program) :
+    MarkRefines (shortWithHigh L B H) (unpackWithHigh L B H) (sweepSaving B) := by
+  let head := (lowDecoder L B).program ++ H ++
+    [.CCX (outAt (highDecoder L B) 0 L.z) (outAt (lowDecoder L B) 0 L.z) L.z]
+  let mid := (shortSteps_refine L B (List.range (B-2))).append (shortStep_refines L B (B-2))
+  let tail := [.X L.z] ++ decoderInit (lowDecoder L B) (lowBits L B) ++
+    decoderInit (highDecoder L B) (highBits L B) ++ [.X (L.S 0)] ++ unpackAdder L B ++
+    cxInto (L.D (B-1)) (reg L.D (B-1))
+  simpa only [shortWithHigh, unpackWithHigh, head, tail, sweepSaving, List.append_assoc,
+    Nat.zero_add, Nat.add_zero] using ((MarkRefines.same head).append mid).append (MarkRefines.same tail)
+
+theorem shortWithHigh_slots (L : Layout) (B : Nat) (H : Program) :
+    Challenge.gateSlots (shortWithHigh L B H) = Challenge.gateSlots (unpackWithHigh L B H) :=
+  (shortWithHigh_refines L B H).slots
+
 def unpack (L : Layout) (B : Nat) : Program :=
-  unpackWithHigh L B (highProgram L B)
+  shortWithHigh L B (highProgram L B)
 
 theorem highProgram_87 (L : Layout) : highProgram L 87 = high87Program L := by
   simp [highProgram]
@@ -3836,8 +3965,9 @@ theorem unpackFull_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
 
 theorem unpack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
     wires (unpack L B) ⊆ (declaredSites L B).toFinset :=
-  (unpackWithHigh_wires L B (highProgram L B) (highDecoder L B).program
-    (highProgram_wires L B)).trans (unpackFull_support L B hB)
+  (shortWithHigh_refines L B (highProgram L B)).support.trans
+    ((unpackWithHigh_wires L B (highProgram L B) (highDecoder L B).program
+    (highProgram_wires L B)).trans (unpackFull_support L B hB))
 
 /-- Every ordinary gate in packing has a target distinct from its controls. -/
 theorem pack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
@@ -4049,8 +4179,9 @@ theorem highProgram_physical (L : Layout) (B : Nat) (hn : L.Nodup B) :
 
 theorem unpack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
     GatePhysical (unpack L B) :=
-  unpackWithHigh_physical L B (highProgram L B) (highDecoder L B).program
-    (highProgram_physical L B hn) (unpackFull_physical L B hB hn)
+  (shortWithHigh_refines L B (highProgram L B)).physical
+    (unpackWithHigh_physical L B (highProgram L B) (highDecoder L B).program
+    (highProgram_physical L B hn) (unpackFull_physical L B hB hn))
 
 def natBitLength (x : Nat) : Nat := if x = 0 then 0 else x.log2 + 1
 
@@ -4357,14 +4488,25 @@ theorem highProgram_counts (L : Layout) (B : Nat) :
   rw [highProgram_other L B h87 h47 h22 h12, hs]
   exact ⟨rfl, rfl⟩
 
-theorem unpack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
-    toffoliCount (unpack L B) =
+theorem unpackRaw_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    toffoliCount (unpackWithHigh L B (highProgram L B)) =
       3 * B - 3 + decoderCost (bitWidth B) - highSaving B ∧
-    measurementCount (unpack L B) = 2 * B - 3 := by
+    measurementCount (unpackWithHigh L B (highProgram L B)) = 2 * B - 3 := by
   have h := unpackFull_counts L B hB
   have hh := highProgram_counts L B
-  simp only [unpack, unpackFull, unpackWithHigh,
+  simp only [unpackFull, unpackWithHigh,
     toffoliCount_append, measurementCount_append] at h ⊢
+  omega
+
+theorem unpack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    toffoliCount (unpack L B) =
+      3 * B - 3 + decoderCost (bitWidth B) - highSaving B - sweepSaving B ∧
+    measurementCount (unpack L B) = 2 * B - 3 := by
+  have h := unpackRaw_counts L B hB
+  have g := shortWithHigh_refines L B (highProgram L B)
+  have ht := g.counts
+  have hm := g.measurements
+  unfold unpack
   omega
 
 
@@ -22688,9 +22830,9 @@ theorem k5_dh (L : StairCodec.Layout) (B x : Nat) :
 
 theorem codecPair87 :
     gateSlots (StairPhysicalPrimitives.pack 87) +
-      gateSlots (StairPhysicalPrimitives.unpack 87) = 5756 := by
+      gateSlots (StairPhysicalPrimitives.unpack 87) = 5740 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_87, StairCodec.high87Program,
+    StairCodec.unpack, StairCodec.shortWithHigh_slots, StairCodec.unpackWithHigh, StairCodec.highProgram_87, StairCodec.high87Program,
     Baselines.rename_gateSlots, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
@@ -22699,16 +22841,16 @@ theorem codecPair62 :
     gateSlots (StairPhysicalPrimitives.pack 62) +
       gateSlots (StairPhysicalPrimitives.unpack 62) = 3902 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_62,
+    StairCodec.unpack, StairCodec.shortWithHigh_slots, StairCodec.unpackWithHigh, StairCodec.highProgram_62,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
 theorem codecPair47 :
     gateSlots (StairPhysicalPrimitives.pack 47) +
-      gateSlots (StairPhysicalPrimitives.unpack 47) = 2911 := by
+      gateSlots (StairPhysicalPrimitives.unpack 47) = 2904 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_47, StairCodec.high47Program,
+    StairCodec.unpack, StairCodec.shortWithHigh_slots, StairCodec.unpackWithHigh, StairCodec.highProgram_47, StairCodec.high47Program,
     Baselines.rename_gateSlots,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
@@ -22718,16 +22860,16 @@ theorem codecPair32 :
     gateSlots (StairPhysicalPrimitives.pack 32) +
       gateSlots (StairPhysicalPrimitives.unpack 32) = 1883 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_32,
+    StairCodec.unpack, StairCodec.shortWithHigh_slots, StairCodec.unpackWithHigh, StairCodec.highProgram_32,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
 theorem codecPair22 :
     gateSlots (StairPhysicalPrimitives.pack 22) +
-      gateSlots (StairPhysicalPrimitives.unpack 22) = 1259 := by
+      gateSlots (StairPhysicalPrimitives.unpack 22) = 1252 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_22, StairCodec.high22Program,
+    StairCodec.unpack, StairCodec.shortWithHigh_slots, StairCodec.unpackWithHigh, StairCodec.highProgram_22, StairCodec.high22Program,
     Baselines.rename_gateSlots,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
@@ -40842,10 +40984,188 @@ theorem high87_run (L : Layout) (hn : L.Nodup 87) (k : Nat) (hk : k < 11)
       simpa only [high87Map, if_neg hs, Decoder87.input,
         show q - 26 = 3 + (q - 29) by omega] using hbits (q - 29) hi
 
+theorem useHighMark_eq (B k s a : Nat) (hs : 0 < s) (hab : a < B)
+    (ha : a = 0 ∨ k ≤ a) (hc : useHighMark B k s) :
+    k / s = a / s ↔ k = a := by
+  refine ⟨fun he => ?_, fun he => he ▸ rfl⟩
+  rcases hc with ⟨hpos, ht | ht⟩
+  · rcases ha with rfl | hka
+    · rw [Nat.zero_div] at he
+      omega
+    · omega
+  · rcases ha with rfl | hka
+    · rw [Nat.zero_div] at he
+      omega
+    · have h1 := Nat.div_add_mod k s
+      have h2 := Nat.div_add_mod a s
+      rw [← he] at h2
+      have hm := Nat.mod_lt a hs
+      omega
+
+theorem useLowMark_eq (B k s a : Nat) (hab : a < B)
+    (ha : a = 0 ∨ k ≤ a) (hc : useLowMark B k s) :
+    k % s = a % s ↔ k = a := by
+  refine ⟨fun he => ?_, fun he => he ▸ rfl⟩
+  rcases hc with ⟨hpos, hlast⟩
+  rcases ha with rfl | hka
+  · simp at he
+    omega
+  · have h1 := Nat.div_add_mod k s
+    have h2 := Nat.div_add_mod a s
+    rw [← he] at h2
+    have hd := Nat.div_le_div_right (c := s) hka
+    by_cases same : k / s = a / s
+    · rw [← same] at h2
+      omega
+    · have hnext : k / s + 1 ≤ a / s := by omega
+      have hmul := Nat.mul_le_mul_left s hnext
+      rw [Nat.mul_succ] at hmul
+      omega
+
+theorem shortMark_run (B k d a : Nat) (hd : 0 < d) (hab : a < B)
+    (ha : a = 0 ∨ k ≤ a) (h l t : Wire) (m : List Bool) (s : State)
+    (rest : Program) (hh : s.basis h = decide (k / d = a / d))
+    (hl : s.basis l = decide (k % d = a % d))
+    (hsel : (s.basis h && s.basis l) = decide (k = a)) :
+    run (shortMark B k d h l t :: rest) m s = run (.CCX h l t :: rest) m s := by
+  unfold shortMark
+  split
+  · rename_i hc
+    have he : s.basis h = decide (k = a) := by
+      by_cases eq : k = a
+      · simp [hh, eq]
+      · simp [hh, mt (useHighMark_eq B k d a hd hab ha hc).1 eq, eq]
+    simp only [run]
+    rw [hsel, he]
+  · split
+    · rename_i hc
+      have he : s.basis l = decide (k = a) := by
+        by_cases eq : k = a
+        · simp [hl, eq]
+        · simp [hl, mt (useLowMark_eq B k d a hab ha hc).1 eq, eq]
+      simp only [run]
+      rw [hsel, he]
+    · rfl
+
+theorem shortStep_run (L : Layout) (B u v j : Nat) (sigma : Bool)
+    (hd : CodecDomain B u v sigma) (hn : L.Nodup B) (hj : j < B-1)
+    (st : SweepState) (s : State) (m : List Bool)
+    (hi : UnpackSweepInvariant B u v sigma j st)
+    (hr : RealizesUnpackSweep L B st s.basis) :
+    run (shortStep L B j) m s = run (unpackStep L B j) m s := by
+  rcases hr with ⟨ha, _, _, _, _, hlow, hhigh⟩
+  let k := j+1
+  have hkB : k < B := by dsimp [k]; omega
+  have hk := lt_of_lt_of_le hkB (bitWidth_bound B (by omega))
+  have haWide : st.a < 2 ^ bitWidth B := by
+    rw [← ha]
+    simpa [reg] using regValue_lt (reg L.A (bitWidth B)) s.basis
+  have hlen := domain_w_bitLength_le B u v sigma hd
+  have hab : st.a < B := by
+    rw [hi.2.2.1]
+    split <;> omega
+  have har : st.a = 0 ∨ k ≤ st.a := by
+    rw [hi.2.2.1]
+    dsimp [k]
+    split <;> omega
+  have hot := pairDecoderOneHot_of_sites L B st.a hn s.basis ha haWide hlow hhigh
+  have ps : 0 < 2 ^ (bitWidth B / 2) := by positivity
+  have hlo : k % 2 ^ (bitWidth B / 2) < (lowDecoder L B).outputs.length := by
+    rw [lowDecoder, oneHot_outputs_length]
+    simpa [lowBits, reg, Nat.min_eq_left (Nat.div_le_self (bitWidth B) 2)] using
+      Nat.mod_lt k ps
+  have hhi : k / 2 ^ (bitWidth B / 2) < (highDecoder L B).outputs.length := by
+    rw [highDecoder, oneHot_outputs_length]
+    simp only [highBits, reg, List.length_drop, List.length_map, List.length_range]
+    rw [Nat.div_lt_iff_lt_mul ps, ← pow_add]
+    simpa only [Nat.sub_add_cancel (Nat.div_le_self (bitWidth B) 2), Nat.mul_comm] using hk
+  conv_rhs => rw [rawStep_head L B j]
+  apply shortMark_run B k _ st.a ps hab har
+  · change s.basis (outAt (highDecoder L B) (k / 2^(bitWidth B/2)) L.z) = _
+    simpa [decoderValue, hhi, outAt, List.getD_eq_getElem] using hot.2 (k / 2^(bitWidth B/2))
+  · change s.basis (outAt (lowDecoder L B) (k % 2^(bitWidth B/2)) L.z) = _
+    simpa [decoderValue, hlo, outAt, List.getD_eq_getElem] using hot.1 (k % 2^(bitWidth B/2))
+  · exact pairDecoder_selected_of_sites L B st.a k hn s.basis ha haWide hk hlow hhigh
+
+def shortSweep (L : Layout) (B : Nat) : Nat → Nat → Program
+  | _, 0 => []
+  | j, n+1 => shortStep L B j ++ shortSweep L B (j+1) n
+
+theorem shortSweep_run (L : Layout) (B u v : Nat) (sigma : Bool)
+    (hd : CodecDomain B u v sigma) (hn : L.Nodup B) (j n : Nat)
+    (hjn : j+n ≤ B-1) (st : SweepState) (s : State) (m : List Bool)
+    (hi : UnpackSweepInvariant B u v sigma j st) (hr : RealizesUnpackSweep L B st s.basis) :
+    run (shortSweep L B j n) m s = run (unpackSweepProgram L B j n) m s := by
+  induction n generalizing j st s m with
+  | zero => rfl
+  | succ n ih =>
+    have hj : j < B-1 := by omega
+    let raw := unpackStep L B j
+    let first := run raw (m.take (measurementCount raw)) s
+    have hs := shortStep_run L B u v j sigma hd hn hj st s (m.take (measurementCount raw)) hi hr
+    have hnext := unpackStep_correct L B u v j sigma hd hn hj st s (m.take (measurementCount raw)) hi hr
+    have hi' := unpackSweepStep_invariant B u v sigma j hd hj st hi
+    simp only [shortSweep, unpackSweepProgram, run_append, (shortStep_refines L B j).measurements]
+    rw [hs]
+    exact ih (j+1) (by omega) (unpackSweepStep B j st) first (m.drop (measurementCount raw)) hi' hnext.2
+
+theorem shortSweep_range (L : Layout) (B j n : Nat) :
+    shortSweep L B j n = (List.range' j n).flatMap (shortStep L B) := by
+  induction n generalizing j with
+  | zero => rfl
+  | succ n ih => simp [shortSweep, List.range'_succ, ih]
+
+theorem shortSweep_zero (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    shortSweep L B 0 (B-1) =
+      (List.range (B-2)).flatMap (shortStep L B) ++ shortStep L B (B-2) := by
+  rw [shortSweep_range]
+  have h : B-1 = B-2+1 := by omega
+  rw [h, List.range'_concat, List.flatMap_append, ← List.range_eq_range']
+  simp
+
+theorem shortFull_run (L : Layout) (B u v : Nat) (sigma : Bool)
+    (hd : CodecDomain B u v sigma) (hn : L.Nodup B) (s : State) (m : List Bool)
+    (hc : CompactCode L B u v sigma s.basis) :
+    run (shortWithHigh L B (highDecoder L B).program) m s = run (unpackFull L B) m s := by
+  let ld := lowDecoder L B
+  let hg := highDecoder L B
+  let flag : Program := [.CCX (outAt hg 0 L.z) (outAt ld 0 L.z) L.z]
+  let init := ld.program ++ hg.program ++ flag
+  let tail := [.X L.z] ++ decoderInit ld (lowBits L B) ++ decoderInit hg (highBits L B) ++
+    [.X (L.S 0)] ++ unpackAdder L B ++ cxInto (L.D (B-1)) (reg L.D (B-1))
+  let new := shortSweep L B 0 (B-1)
+  let raw := unpackSweepProgram L B 0 (B-1)
+  have h1 : shortWithHigh L B hg.program = init ++ (new ++ tail) := by
+    simp only [shortWithHigh, init, new, tail, ld, hg, flag, shortSweep_zero L B hd.1, List.append_assoc]
+  have h2 : unpackFull L B = init ++ (raw ++ tail) := by
+    simp only [unpackFull, unpackWithHigh, init, raw, tail, ld, hg, flag,
+      unpackSweepProgram_zero_eq L B hd.1, List.append_assoc]
+  have hm : measurementCount new = measurementCount raw := by
+    dsimp only [new, raw]
+    rw [shortSweep_zero L B hd.1, unpackSweepProgram_zero_eq L B hd.1]
+    exact ((shortSteps_refine L B _).append (shortStep_refines L B _)).measurements
+  have hm1 : measurementCount ld.program = 0 := oneHot_program_measurements _ _
+  have hm2 : measurementCount hg.program = 0 := oneHot_program_measurements _ _
+  have hzm : measurementCount init = 0 := by
+    simp [init, flag, measurementCount, hm1, hm2]
+  have hinit : run init m s = run flag m (run hg.program m (run ld.program m s)) := by
+    dsimp only [init]
+    rw [List.append_assoc, run_append_zero_left_spec ld.program _ hm1,
+      run_append_zero_left_spec hg.program _ hm2]
+  have hi := compact_initial_realizes L B u v sigma hd hn s m hc
+  have hr : RealizesUnpackSweep L B (initialUnpackSweepState B (u-sigma.toNat) v)
+      (run init m s).basis := by rw [hinit]; exact hi.2
+  have he := shortSweep_run L B u v sigma hd hn 0 (B-1) (by omega) _
+    (run init m s) (m.take (measurementCount raw)) (initialUnpackSweepState_invariant B u v sigma hd) hr
+  change run new (m.take (measurementCount raw)) (run init m s) =
+    run raw (m.take (measurementCount raw)) (run init m s) at he
+  rw [h1, h2, run_append_zero_left_spec init _ hzm, run_append_zero_left_spec init _ hzm,
+    run_append new tail, run_append raw tail, hm, he]
+
 theorem unpack87_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     (hd : CodecDomain 87 u v sigma) (hn : L.Nodup 87) (s : State) (m : List Bool)
     (hc : CompactCode L 87 u v sigma s.basis) :
-    run (unpack L 87) m s = run (unpackFull L 87) m s := by
+    run (unpack L 87) m s = run (shortWithHigh L 87 (highDecoder L 87).program) m s := by
   rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
   have hlen := domain_w_bitLength_le 87 u v sigma hd
   change natBitLength (u - sigma.toNat) ≤ 86 at hlen
@@ -40878,7 +41198,7 @@ theorem unpack87_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     oneHot_program_measurements _ _
   have hpm : measurementCount (high87Program L) = 0 := (high87_counts L).2.trans hhm
   rw [unpack, highProgram_87]
-  simp only [unpackFull, unpackWithHigh, run_append,
+  simp only [shortWithHigh, run_append,
     measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
     List.take_zero, List.drop_zero, hhi]
 
@@ -40939,7 +41259,7 @@ theorem high12_run (L : Layout) (hn : L.Nodup 12) (k : Nat) (hk : k < 3)
 theorem unpack47_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     (hd : CodecDomain 47 u v sigma) (hn : L.Nodup 47) (s : State) (m : List Bool)
     (hc : CompactCode L 47 u v sigma s.basis) :
-    run (unpack L 47) m s = run (unpackFull L 47) m s := by
+    run (unpack L 47) m s = run (shortWithHigh L 47 (highDecoder L 47).program) m s := by
   rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
   have hlen := domain_w_bitLength_le 47 u v sigma hd
   change natBitLength (u - sigma.toNat) ≤ 46 at hlen
@@ -40972,14 +41292,14 @@ theorem unpack47_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     oneHot_program_measurements _ _
   have hpm : measurementCount (high47Program L) = 0 := (high47_counts L).2.trans hhm
   rw [unpack, highProgram_47]
-  simp only [unpackFull, unpackWithHigh, run_append,
+  simp only [shortWithHigh, run_append,
     measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
     List.take_zero, List.drop_zero, hhi]
 
 theorem unpack22_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     (hd : CodecDomain 22 u v sigma) (hn : L.Nodup 22) (s : State) (m : List Bool)
     (hc : CompactCode L 22 u v sigma s.basis) :
-    run (unpack L 22) m s = run (unpackFull L 22) m s := by
+    run (unpack L 22) m s = run (shortWithHigh L 22 (highDecoder L 22).program) m s := by
   rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
   have hlen := domain_w_bitLength_le 22 u v sigma hd
   change natBitLength (u - sigma.toNat) ≤ 21 at hlen
@@ -41012,14 +41332,14 @@ theorem unpack22_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     oneHot_program_measurements _ _
   have hpm : measurementCount (high22Program L) = 0 := (high22_counts L).2.trans hhm
   rw [unpack, highProgram_22]
-  simp only [unpackFull, unpackWithHigh, run_append,
+  simp only [shortWithHigh, run_append,
     measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
     List.take_zero, List.drop_zero, hhi]
 
 theorem unpack12_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     (hd : CodecDomain 12 u v sigma) (hn : L.Nodup 12) (s : State) (m : List Bool)
     (hc : CompactCode L 12 u v sigma s.basis) :
-    run (unpack L 12) m s = run (unpackFull L 12) m s := by
+    run (unpack L 12) m s = run (shortWithHigh L 12 (highDecoder L 12).program) m s := by
   rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
   have hlen := domain_w_bitLength_le 12 u v sigma hd
   change natBitLength (u - sigma.toNat) ≤ 11 at hlen
@@ -41052,7 +41372,7 @@ theorem unpack12_run_full (L : Layout) (u v : Nat) (sigma : Bool)
     oneHot_program_measurements _ _
   have hpm : measurementCount (high12Program L) = 0 := (high12_counts L).2.trans hhm
   rw [unpack, highProgram_12]
-  simp only [unpackFull, unpackWithHigh, run_append,
+  simp only [shortWithHigh, run_append,
     measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
     List.take_zero, List.drop_zero, hhi]
 
@@ -41069,7 +41389,7 @@ theorem unpack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     (hc : CompactCode L B u v sigma s.basis) :
     (run (unpack L B) m s).phase = s.phase ∧
     CodecInput L B u v sigma (run (unpack L B) m s).basis := by
-  have he : run (unpack L B) m s = run (unpackFull L B) m s := by
+  have he : run (unpack L B) m s = run (shortWithHigh L B (highDecoder L B).program) m s := by
     by_cases h87 : B = 87
     · subst h87
       exact unpack87_run_full L u v sigma hd hn s m hc
@@ -41082,8 +41402,8 @@ theorem unpack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     by_cases h12 : B = 12
     · subst h12
       exact unpack12_run_full L u v sigma hd hn s m hc
-    rw [unpack, highProgram_other L B h87 h47 h22 h12, unpackFull]
-  rw [he]
+    rw [unpack, highProgram_other L B h87 h47 h22 h12]
+  rw [he, shortFull_run L B u v sigma hd hn s m hc]
   let P := unpackSweepPrefix L B
   let C := unpackCleanup L B
   let A := unpackAdder L B
@@ -60138,8 +60458,8 @@ theorem v3Plan_loanUnits : v3Plan.loanUnits = 461 := by decide
 pack+unpack totals (`5410, 3656, 2725, 1757, 1173, 582`) plus two sign
 extensions and `4 * (B - 1)` relocation CX gates (proved in `StairSlotsV3`). -/
 def v3CodecPair (B : Nat) : Nat :=
-  if B = 87 then 5756 else if B = 62 then 3902 else if B = 47 then 2911
-  else if B = 32 then 1883 else if B = 22 then 1259 else if B = 12 then 628
+  if B = 87 then 5740 else if B = 62 then 3902 else if B = 47 then 2904
+  else if B = 32 then 1883 else if B = 22 then 1252 else if B = 12 then 625
   else 0
 
 /-- CANON v3 costs: repaired `B + 1`-bit orientation (`3 (B + 1)` slots),
@@ -60172,7 +60492,7 @@ def v3Boundary1806 : Boundary where
   multEnd := 30000
   center := 430
 
-theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335192 := by
+theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335126 := by
   decide
 
 /-! ### Cross-check: the superseded eight-row plan reproduces 639,954 -/
@@ -60330,7 +60650,7 @@ from one lazily evaluated table per decoder (`k5_dl`, `k5_dh`), so each of the a
 
 theorem codecPair12 :
     gateSlots (StairPhysicalPrimitives.pack 12) +
-      gateSlots (StairPhysicalPrimitives.unpack 12) = 628 := by
+      gateSlots (StairPhysicalPrimitives.unpack 12) = 625 := by
   decide +kernel
 
 /-- The loaned division endpoint costs at most 10,000 slots more than the

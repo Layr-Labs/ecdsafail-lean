@@ -1,5 +1,6 @@
 import ECDSAAdd.Submission.Entrant.StairSideA0
 import ECDSAAdd.Submission.Entrant.LowAccCarry
+import ECDSAAdd.Submission.Entrant.ArchiveRows
 import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Arithmetic.SkywalkIntegerTick

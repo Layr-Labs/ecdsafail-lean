@@ -24,12 +24,12 @@ set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires
-theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := by decide +kernel
-theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := by decide +kernel
-theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := by decide +kernel
-theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := by decide +kernel
-theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := by decide +kernel
-theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := by decide +kernel
+theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := coveredSlice _
+theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := coveredSlice _
+theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := coveredSlice _
+theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := coveredSlice _
+theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := coveredSlice _
+theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := coveredSlice _
 theorem partition : A161GenericFold.ambient L g hs96 = (((A161GenericFold.ambient L g hs96).drop 0).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 80).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 160).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 240).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 320).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 400).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 480).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 560).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 640).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 720).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 800).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 880).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 960).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1040).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1120).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1200).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1280).take 80) := by decide +kernel
 theorem all_cover : (A161GenericFold.ambient L g hs96).all cover=true := by
  rw [partition]
