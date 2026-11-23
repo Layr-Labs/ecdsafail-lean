@@ -17223,6 +17223,8 @@ theorem chunk_step {l c : Program} {m m' : Nat} (h : (l.drop m).take 400 = c) (h
   rw [← h, ← hm, ← List.drop_drop]
   exact (List.take_append_drop 400 (l.drop m)).symm
 
+theorem replay_p0_eq : p0 = LowAccMiddleLiteral.output := LowAccMiddleLiteral.compiler_output_eq
+
 theorem output_chunks :
   output.take 400 = outC0 ∧
   (output.drop 400).take 400 = outC1 ∧
@@ -17245,7 +17247,11 @@ theorem output_chunks :
   (output.drop 7200).take 400 = outC18 ∧
   (output.drop 7600).take 400 = outC19 ∧
   (output.drop 8000).take 400 = outC20 ∧
-  output.drop 8400 = outC21 := by decide +kernel
+  output.drop 8400 = outC21 := by
+  have e : output = SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (LowAccMiddleLiteral.output) 7950 SixCarryGateRepairs.repair11959) 7944 SixCarryGateRepairs.repair11953) 7938 SixCarryGateRepairs.repair11947) 7932 SixCarryGateRepairs.repair11941) 7926 SixCarryGateRepairs.repair11935) 904 SixCarryGateRepairs.repair4913) 898 ExtraCarryGateRepairs.repair4907) 892 EightCarryPrefix.repair :=
+    congrArg (fun x : Program => SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (x) 7950 SixCarryGateRepairs.repair11959) 7944 SixCarryGateRepairs.repair11953) 7938 SixCarryGateRepairs.repair11947) 7932 SixCarryGateRepairs.repair11941) 7926 SixCarryGateRepairs.repair11935) 904 SixCarryGateRepairs.repair4913) 898 ExtraCarryGateRepairs.repair4907) 892 EightCarryPrefix.repair) replay_p0_eq
+  rw [e]
+  decide +kernel
 
 theorem chunk_first {l c : Program} (h : l.take 400 = c) : l = c ++ l.drop 400 := by
   rw [← h]
