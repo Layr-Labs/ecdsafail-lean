@@ -13,7 +13,6 @@ import ECDSAAdd.Challenge.Contract
 import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.Fold98
-import ECDSAAdd.Submission.Entrant.A161Low4
 
 -- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
 section

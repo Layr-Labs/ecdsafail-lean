@@ -1,4 +1,3 @@
-import Mathlib.Data.Nat.Pairing
 import ECDSAAdd.Submission.Entrant.DeadCarry
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MappedSignedSquare
@@ -11105,37 +11104,6 @@ end ECDSAAdd.Entrant.CompactCertificates
 -- Verified CompactForward11
 set_option maxRecDepth 30000
 set_option maxHeartbeats 0
-namespace ECDSAAdd.Entrant.CompactProgramRows
-open CodecBitSliceVerify MeasuredCodec5
-
-def word {n : Nat} (cols : Cols) (r : Fin n) : Nat :=
-  packBits (cols.map (fun x => x.testBit r.val))
-
-private theorem rel {n : Nat} (cols : Cols) (r : Fin n) : Rel cols (word cols r) r.val := by
-  intro q
-  rw [word, pack_testBit, List.getElem?_map]
-  unfold CodecBitSliceVerify.get
-  cases h : cols[q]? <;> simp
-
-theorem sound {n : Nat} (p q : Program) (cols : Cols) (rows : List Nat)
-    (cover : rows = (List.finRange n).map (word cols))
-    (left : ∀ i ∈ p, target i < cols.length) (right : ∀ i ∈ q, target i < cols.length)
-    (tested : (CodecBitSliceVerify.eval (2^n-1) p cols).1 = true ∧
-      (CodecBitSliceVerify.eval (2^n-1) q cols).1 = true ∧
-      (CodecBitSliceVerify.eval (2^n-1) p cols).2 = (CodecBitSliceVerify.eval (2^n-1) q cols).2)
-    (v : Nat) (member : v ∈ rows) (m t : List Bool) :
-    run p m ⟨false,bitsOf v⟩ = run q t ⟨false,bitsOf v⟩ := by
-  rw [cover] at member
-  obtain ⟨r, _, rfl⟩ := List.mem_map.mp member
-  have enabled : (2^n-1).testBit r.val=true := by
-    rw [Nat.testBit_two_pow_sub_one]; exact decide_eq_true r.isLt
-  have hp := eval_sound _ _ enabled p cols _ left (rel cols r) tested.1
-  have hq := eval_sound _ _ enabled q cols _ right (rel cols r) tested.2.1
-  have same := LegalColumnProof.row_equal hp.2 hq.2 tested.2.2
-  rw [run_sim p, run_sim q, sim_safe p _ hp.1, sim_safe q _ hq.1, same]
-
-end ECDSAAdd.Entrant.CompactProgramRows
-
 namespace ECDSAAdd.Entrant.CompactForward11
 open Arithmetic MappedCompressed Secp256k1 History5 CompactCertificates
 def perm : Equiv.Perm Wire := Equiv.swap (0:Wire) 522 * Equiv.swap (1:Wire) 523 * Equiv.swap (2:Wire) 524 * Equiv.swap (3:Wire) 525 * Equiv.swap (4:Wire) 526 * Equiv.swap (5:Wire) 527 * Equiv.swap (6:Wire) 528 * Equiv.swap (7:Wire) 529 * Equiv.swap (8:Wire) 786 * Equiv.swap (9:Wire) 787 * Equiv.swap (10:Wire) 788 * Equiv.swap (11:Wire) 789 * Equiv.swap (12:Wire) 790 * Equiv.swap (13:Wire) 791 * Equiv.swap (14:Wire) 1551 * Equiv.swap (15:Wire) 1552 * Equiv.swap (16:Wire) 1553 * Equiv.swap (17:Wire) 1554 * Equiv.swap (18:Wire) 1556 * Equiv.swap (19:Wire) 1557 * Equiv.swap (20:Wire) 1558 * Equiv.swap (21:Wire) 1559
@@ -12278,6 +12246,838 @@ theorem placement : renameProgram perm candidate=Forward11Width.candidate := by
  simp only [blocks,List.map_cons,List.map_nil,List.flatten_cons,List.flatten_nil,placement0,placement1,placement2,placement3,placement4,placement5,placement6,placement7,placement8,placement9,placement10,placement11,placement12,placement13,placement14,placement15,placement16,placement17,placement18,placement19,placement20,placement21,placement22,placement23,placement24,placement25,placement26,placement27,placement28,placement29,placement30,placement31,placement32,List.append_nil,Forward11Width.candidate,List.append_assoc]
 def reference : Program := renameProgram perm.symm MorningFour.forward13
 theorem reference_placement : renameProgram perm reference=MorningFour.forward13 := rename_inverse _ _
+def trace0 : List Nat := [2, 1, 3, 3, 13, 3, 12, 3, 3, 3, 3, 12, 3, 3, 3, 131075, 49155, 1095, 262231, 278659, 266275, 262156, 266275, 786435, 786435, 1835011, 1835011, 1053195, 1053195, 1773251, 1644029, 3985, 30, 286]
+theorem checked0 : checkTrace blocks trace0=true := by decide +kernel
+theorem old0 : phaseClean508 reference 2=some 286 := by decide +kernel
+theorem row0 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2⟩=run reference n ⟨false,tbN_t8 2⟩ := by
+ have h:=trace_sound blocks 2 [1, 3, 3, 13, 3, 12, 3, 3, 3, 3, 12, 3, 3, 3, 131075, 49155, 1095, 262231, 278659, 266275, 262156, 266275, 786435, 786435, 1835011, 1835011, 1053195, 1053195, 1773251, 1644029, 3985, 30, 286] checked0 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old0 n]
+ rfl
+def trace1 : List Nat := [2, 1, 3, 3, 13, 3, 12, 3, 3, 3, 3, 12, 3, 3, 3, 131075, 49155, 1095, 262231, 278659, 266275, 262156, 266275, 786435, 786435, 1835011, 1835011, 1053195, 1053195, 1773251, 1644029, 3985, 30, 286]
+theorem checked1 : checkTrace blocks trace1=true := by decide +kernel
+theorem old1 : phaseClean508 reference 2=some 286 := by decide +kernel
+theorem row1 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2⟩=run reference n ⟨false,tbN_t8 2⟩ := by
+ have h:=trace_sound blocks 2 [1, 3, 3, 13, 3, 12, 3, 3, 3, 3, 12, 3, 3, 3, 131075, 49155, 1095, 262231, 278659, 266275, 262156, 266275, 786435, 786435, 1835011, 1835011, 1053195, 1053195, 1773251, 1644029, 3985, 30, 286] checked1 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old1 n]
+ rfl
+def trace2 : List Nat := [257, 8, 32, 32, 64, 32, 512, 32, 512, 32, 32, 512, 32, 32, 532, 131104, 49184, 1124, 262696, 278688, 266240, 262656, 266240, 786464, 786977, 1835585, 1835040, 1053224, 1053224, 1773280, 1646079, 3603, 31, 287]
+theorem checked2 : checkTrace blocks trace2=true := by decide +kernel
+theorem old2 : phaseClean508 reference 257=some 287 := by decide +kernel
+theorem row2 (m n : List Bool) : run candidate m ⟨false,tbN_t8 257⟩=run reference n ⟨false,tbN_t8 257⟩ := by
+ have h:=trace_sound blocks 257 [8, 32, 32, 64, 32, 512, 32, 512, 32, 32, 512, 32, 32, 532, 131104, 49184, 1124, 262696, 278688, 266240, 262656, 266240, 786464, 786977, 1835585, 1835040, 1053224, 1053224, 1773280, 1646079, 3603, 31, 287] checked2 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old2 n]
+ rfl
+def trace3 : List Nat := [257, 8, 32, 32, 64, 32, 512, 32, 512, 32, 32, 512, 32, 32, 532, 131104, 49184, 1124, 262696, 278688, 266240, 262656, 266240, 786464, 786977, 1835585, 1835040, 1053224, 1053224, 1773280, 1646079, 3603, 31, 287]
+theorem checked3 : checkTrace blocks trace3=true := by decide +kernel
+theorem old3 : phaseClean508 reference 257=some 287 := by decide +kernel
+theorem row3 (m n : List Bool) : run candidate m ⟨false,tbN_t8 257⟩=run reference n ⟨false,tbN_t8 257⟩ := by
+ have h:=trace_sound blocks 257 [8, 32, 32, 64, 32, 512, 32, 512, 32, 32, 512, 32, 32, 532, 131104, 49184, 1124, 262696, 278688, 266240, 262656, 266240, 786464, 786977, 1835585, 1835040, 1053224, 1053224, 1773280, 1646079, 3603, 31, 287] checked3 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old3 n]
+ rfl
+def trace4 : List Nat := [260, 15990, 30, 30, 318, 8206, 122, 8334, 114, 2586, 16414, 16507, 81950, 350, 90, 1118, 180510, 164414, 426034, 426270, 426014, 426104, 426014, 672030, 671774, 671774, 671774, 2041110, 11216, 393688, 1642768, 1642780, 28, 284]
+theorem checked4 : checkTrace blocks trace4=true := by decide +kernel
+theorem old4 : phaseClean508 reference 260=some 284 := by decide +kernel
+theorem row4 (m n : List Bool) : run candidate m ⟨false,tbN_t8 260⟩=run reference n ⟨false,tbN_t8 260⟩ := by
+ have h:=trace_sound blocks 260 [15990, 30, 30, 318, 8206, 122, 8334, 114, 2586, 16414, 16507, 81950, 350, 90, 1118, 180510, 164414, 426034, 426270, 426014, 426104, 426014, 672030, 671774, 671774, 671774, 2041110, 11216, 393688, 1642768, 1642780, 28, 284] checked4 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old4 n]
+ rfl
+def trace5 : List Nat := [16132, 1588, 12382, 13398, 12574, 7302, 24799, 30726, 8698, 11154, 59540, 57562, 60564, 47446, 41466, 42454, 30998, 42450, 303506, 325782, 302006, 827867, 834486, 571670, 582102, 582070, 583958, 1461534, 1527128, 682384, 680368, 680380, 16412, 16668]
+theorem checked5 : checkTrace blocks trace5=true := by decide +kernel
+theorem old5 : phaseClean508 reference 16132=some 16668 := by decide +kernel
+theorem row5 (m n : List Bool) : run candidate m ⟨false,tbN_t8 16132⟩=run reference n ⟨false,tbN_t8 16132⟩ := by
+ have h:=trace_sound blocks 16132 [1588, 12382, 13398, 12574, 7302, 24799, 30726, 8698, 11154, 59540, 57562, 60564, 47446, 41466, 42454, 30998, 42450, 303506, 325782, 302006, 827867, 834486, 571670, 582102, 582070, 583958, 1461534, 1527128, 682384, 680368, 680380, 16412, 16668] checked5 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old5 n]
+ rfl
+def trace6 : List Nat := [515, 15, 61, 61, 371, 8237, 630, 8365, 625, 2617, 16445, 17015, 81981, 381, 589, 1149, 180541, 164381, 426573, 426301, 426045, 426612, 426045, 672061, 672316, 672348, 671805, 2041141, 11251, 393723, 1644818, 1642654, 29, 285]
+theorem checked6 : checkTrace blocks trace6=true := by decide +kernel
+theorem old6 : phaseClean508 reference 515=some 285 := by decide +kernel
+theorem row6 (m n : List Bool) : run candidate m ⟨false,tbN_t8 515⟩=run reference n ⟨false,tbN_t8 515⟩ := by
+ have h:=trace_sound blocks 515 [15, 61, 61, 371, 8237, 630, 8365, 625, 2617, 16445, 17015, 81981, 381, 589, 1149, 180541, 164381, 426573, 426301, 426045, 426612, 426045, 672061, 672316, 672348, 671805, 2041141, 11251, 393723, 1644818, 1642654, 29, 285] checked6 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old6 n]
+ rfl
+def trace7 : List Nat := [639, 14413, 12413, 13429, 12627, 7333, 25299, 30757, 9209, 11185, 59575, 58070, 60599, 47477, 41965, 42485, 31029, 42481, 304109, 325813, 301973, 828375, 834453, 571701, 582644, 582644, 583989, 1461565, 1527163, 682419, 682418, 679998, 16413, 16669]
+theorem checked7 : checkTrace blocks trace7=true := by decide +kernel
+theorem old7 : phaseClean508 reference 639=some 16669 := by decide +kernel
+theorem row7 (m n : List Bool) : run candidate m ⟨false,tbN_t8 639⟩=run reference n ⟨false,tbN_t8 639⟩ := by
+ have h:=trace_sound blocks 639 [14413, 12413, 13429, 12627, 7333, 25299, 30757, 9209, 11185, 59575, 58070, 60599, 47477, 41965, 42485, 31029, 42481, 304109, 325813, 301973, 828375, 834453, 571701, 582644, 582644, 583989, 1461565, 1527163, 682419, 682418, 679998, 16413, 16669] checked7 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old7 n]
+ rfl
+def trace8 : List Nat := [518, 15989, 23, 23, 25, 23, 92, 23, 95, 32791, 8213, 95, 68629, 65559, 65647, 65559, 196631, 196631, 458823, 458775, 458775, 458846, 458775, 737303, 720983, 720951, 725271, 2073631, 572127, 363551, 1676351, 34709, 26, 282]
+theorem checked8 : checkTrace blocks trace8=true := by decide +kernel
+theorem old8 : phaseClean508 reference 518=some 282 := by decide +kernel
+theorem row8 (m n : List Bool) : run candidate m ⟨false,tbN_t8 518⟩=run reference n ⟨false,tbN_t8 518⟩ := by
+ have h:=trace_sound blocks 518 [15989, 23, 23, 25, 23, 92, 23, 95, 32791, 8213, 95, 68629, 65559, 65647, 65559, 196631, 196631, 458823, 458775, 458775, 458846, 458775, 737303, 720983, 720951, 725271, 2073631, 572127, 363551, 1676351, 34709, 26, 282] checked8 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old8 n]
+ rfl
+def trace9 : List Nat := [15878, 1589, 12377, 13393, 12547, 7297, 8385, 14337, 8677, 12165, 18577, 24775, 90257, 14673, 8701, 9681, 194833, 172977, 434621, 440593, 436625, 958919, 952721, 669969, 680401, 680369, 682257, 1510681, 525279, 613855, 673591, 673493, 32794, 33050]
+theorem checked9 : checkTrace blocks trace9=true := by decide +kernel
+theorem old9 : phaseClean508 reference 15878=some 33050 := by decide +kernel
+theorem row9 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15878⟩=run reference n ⟨false,tbN_t8 15878⟩ := by
+ have h:=trace_sound blocks 15878 [1589, 12377, 13393, 12547, 7297, 8385, 14337, 8677, 12165, 18577, 24775, 90257, 14673, 8701, 9681, 194833, 172977, 434621, 440593, 436625, 958919, 952721, 669969, 680401, 680369, 682257, 1510681, 525279, 613855, 673591, 673493, 32794, 33050] checked9 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old9 n]
+ rfl
+def trace10 : List Nat := [773, 15996, 52, 52, 84, 52, 592, 52, 604, 32820, 8246, 595, 68662, 65588, 66168, 65588, 196660, 196660, 459320, 458804, 458804, 459346, 458804, 737332, 721525, 721525, 725300, 2073660, 572156, 363580, 1678397, 34327, 27, 283]
+theorem checked10 : checkTrace blocks trace10=true := by decide +kernel
+theorem old10 : phaseClean508 reference 773=some 283 := by decide +kernel
+theorem row10 (m n : List Bool) : run candidate m ⟨false,tbN_t8 773⟩=run reference n ⟨false,tbN_t8 773⟩ := by
+ have h:=trace_sound blocks 773 [15996, 52, 52, 84, 52, 592, 52, 604, 32820, 8246, 595, 68662, 65588, 66168, 65588, 196660, 196660, 459320, 458804, 458804, 459346, 458804, 737332, 721525, 721525, 725300, 2073660, 572156, 363580, 1678397, 34327, 27, 283] checked10 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old10 n]
+ rfl
+def trace11 : List Nat := [893, 14412, 12410, 13426, 12622, 7330, 8909, 14370, 9190, 12198, 18610, 25291, 90290, 14706, 9194, 9714, 194866, 172946, 435138, 440626, 436658, 959435, 952754, 670002, 680947, 680947, 682290, 1510714, 525308, 613884, 675637, 673623, 32795, 33051]
+theorem checked11 : checkTrace blocks trace11=true := by decide +kernel
+theorem old11 : phaseClean508 reference 893=some 33051 := by decide +kernel
+theorem row11 (m n : List Bool) : run candidate m ⟨false,tbN_t8 893⟩=run reference n ⟨false,tbN_t8 893⟩ := by
+ have h:=trace_sound blocks 893 [14412, 12410, 13426, 12622, 7330, 8909, 14370, 9190, 12198, 18610, 25291, 90290, 14706, 9194, 9714, 194866, 172946, 435138, 440626, 436658, 959435, 952754, 670002, 680947, 680947, 682290, 1510714, 525308, 613884, 675637, 673623, 32795, 33051] checked11 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old11 n]
+ rfl
+def trace12 : List Nat := [776, 18, 15884, 15884, 15922, 15052, 15538, 7884, 15756, 47564, 11982, 15537, 13518, 77516, 81316, 212364, 81484, 80328, 343512, 343628, 339916, 343472, 331724, 867916, 867757, 1916365, 1916492, 1092676, 2071044, 1425924, 1364434, 1366040, 24, 280]
+theorem checked12 : checkTrace blocks trace12=true := by decide +kernel
+theorem old12 : phaseClean508 reference 776=some 280 := by decide +kernel
+theorem row12 (m n : List Bool) : run candidate m ⟨false,tbN_t8 776⟩=run reference n ⟨false,tbN_t8 776⟩ := by
+ have h:=trace_sound blocks 776 [18, 15884, 15884, 15922, 15052, 15538, 7884, 15756, 47564, 11982, 15537, 13518, 77516, 81316, 212364, 81484, 80328, 343512, 343628, 339916, 343472, 331724, 867916, 867757, 1916365, 1916492, 1092676, 2071044, 1425924, 1364434, 1366040, 24, 280] checked12 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old12 n]
+ rfl
+def trace13 : List Nat := [15624, 14416, 3660, 2628, 3602, 1604, 23575, 17988, 7172, 6212, 42566, 39953, 37958, 38596, 39940, 171012, 34372, 7716, 269432, 280516, 275556, 793619, 799844, 820804, 826405, 1875013, 1869380, 1590348, 1663564, 2044556, 1979226, 469208, 32792, 33048]
+theorem checked13 : checkTrace blocks trace13=true := by decide +kernel
+theorem old13 : phaseClean508 reference 15624=some 33048 := by decide +kernel
+theorem row13 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15624⟩=run reference n ⟨false,tbN_t8 15624⟩ := by
+ have h:=trace_sound blocks 15624 [14416, 3660, 2628, 3602, 1604, 23575, 17988, 7172, 6212, 42566, 39953, 37958, 38596, 39940, 171012, 34372, 7716, 269432, 280516, 275556, 793619, 799844, 820804, 826405, 1875013, 1869380, 1590348, 1663564, 2044556, 1979226, 469208, 32792, 33048] checked13 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old13 n]
+ rfl
+def trace14 : List Nat := [1031, 15931, 47, 175, 255, 303, 830, 303, 16911, 49199, 8493, 829, 3373, 81967, 82483, 213039, 65711, 83051, 344615, 327855, 352815, 344636, 352815, 852143, 852559, 852527, 852143, 1748071, 1219111, 1622567, 1694160, 1694106, 25, 281]
+theorem checked14 : checkTrace blocks trace14=true := by decide +kernel
+theorem old14 : phaseClean508 reference 1031=some 281 := by decide +kernel
+theorem row14 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1031⟩=run reference n ⟨false,tbN_t8 1031⟩ := by
+ have h:=trace_sound blocks 1031 [15931, 47, 175, 255, 303, 830, 303, 16911, 49199, 8493, 829, 3373, 81967, 82483, 213039, 65711, 83051, 344615, 327855, 352815, 344636, 352815, 852143, 852559, 852527, 852143, 1748071, 1219111, 1622567, 1694160, 1694106, 25, 281] checked14 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old14 n]
+ rfl
+def trace15 : List Nat := [1147, 1657, 12399, 13543, 12511, 15783, 25499, 22951, 25479, 24999, 43429, 41885, 44453, 63527, 58259, 188839, 47271, 25479, 287623, 293159, 293255, 811935, 809351, 833703, 828359, 828327, 833703, 1197167, 1335919, 1192623, 1260376, 665946, 32793, 33049]
+theorem checked15 : checkTrace blocks trace15=true := by decide +kernel
+theorem old15 : phaseClean508 reference 1147=some 33049 := by decide +kernel
+theorem row15 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1147⟩=run reference n ⟨false,tbN_t8 1147⟩ := by
+ have h:=trace_sound blocks 1147 [1657, 12399, 13543, 12511, 15783, 25499, 22951, 25479, 24999, 43429, 41885, 44453, 63527, 58259, 188839, 47271, 25479, 287623, 293159, 293255, 811935, 809351, 833703, 828359, 828327, 833703, 1197167, 1335919, 1192623, 1260376, 665946, 32793, 33049] checked15 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old15 n]
+ rfl
+def trace16 : List Nat := [1034, 81, 15879, 15879, 15901, 15047, 15518, 7879, 15751, 14791, 3783, 15516, 14535, 15943, 15791, 16327, 15943, 14787, 15827, 15943, 12231, 15774, 4039, 15943, 15782, 15814, 15943, 15943, 15943, 1070727, 870225, 870169, 22, 278]
+theorem checked16 : checkTrace blocks trace16=true := by decide +kernel
+theorem old16 : phaseClean508 reference 1034=some 278 := by decide +kernel
+theorem row16 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1034⟩=run reference n ⟨false,tbN_t8 1034⟩ := by
+ have h:=trace_sound blocks 1034 [81, 15879, 15879, 15901, 15047, 15518, 7879, 15751, 14791, 3783, 15516, 14535, 15943, 15791, 16327, 15943, 14787, 15827, 15943, 12231, 15774, 4039, 15943, 15782, 15814, 15943, 15943, 15943, 1070727, 870225, 870169, 22, 278] checked16 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old16 n]
+ rfl
+def trace17 : List Nat := [15370, 14417, 3663, 2759, 3743, 1863, 23835, 18247, 23559, 22599, 42821, 40221, 38213, 50759, 56367, 56903, 18119, 24103, 23675, 1991, 17991, 23582, 17991, 50887, 39943, 1088519, 1087431, 686087, 810503, 1730055, 484817, 484761, 65558, 65814]
+theorem checked17 : checkTrace blocks trace17=true := by decide +kernel
+theorem old17 : phaseClean508 reference 15370=some 65814 := by decide +kernel
+theorem row17 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15370⟩=run reference n ⟨false,tbN_t8 15370⟩ := by
+ have h:=trace_sound blocks 15370 [14417, 3663, 2759, 3743, 1863, 23835, 18247, 23559, 22599, 42821, 40221, 38213, 50759, 56367, 56903, 18119, 24103, 23675, 1991, 17991, 23582, 17991, 50887, 39943, 1088519, 1087431, 686087, 810503, 1730055, 484817, 484761, 65558, 65814] checked17 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old17 n]
+ rfl
+def trace18 : List Nat := [1289, 88, 15908, 15908, 15952, 15076, 16018, 7908, 16260, 14820, 3812, 16016, 14564, 15972, 16312, 16356, 15972, 14816, 16300, 15972, 12260, 16274, 4068, 15972, 16260, 16260, 15972, 15972, 15972, 1070756, 872275, 870043, 23, 279]
+theorem checked18 : checkTrace blocks trace18=true := by decide +kernel
+theorem old18 : phaseClean508 reference 1289=some 279 := by decide +kernel
+theorem row18 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1289⟩=run reference n ⟨false,tbN_t8 1289⟩ := by
+ have h:=trace_sound blocks 1289 [88, 15908, 15908, 15952, 15076, 16018, 7908, 16260, 14820, 3812, 16016, 14564, 15972, 16312, 16356, 15972, 14816, 16300, 15972, 12260, 16274, 4068, 15972, 16260, 16260, 15972, 15972, 15972, 1070756, 872275, 870043, 23, 279] checked18 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old18 n]
+ rfl
+def trace19 : List Nat := [1401, 1656, 12396, 13412, 12370, 15524, 25239, 22692, 9092, 8612, 43174, 41617, 44198, 43172, 41912, 41956, 30756, 9092, 9092, 14628, 2980, 9106, 11172, 63524, 41957, 41957, 43300, 30756, 89636, 1533476, 683475, 680987, 65559, 65815]
+theorem checked19 : checkTrace blocks trace19=true := by decide +kernel
+theorem old19 : phaseClean508 reference 1401=some 65815 := by decide +kernel
+theorem row19 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1401⟩=run reference n ⟨false,tbN_t8 1401⟩ := by
+ have h:=trace_sound blocks 1401 [1656, 12396, 13412, 12370, 15524, 25239, 22692, 9092, 8612, 43174, 41617, 44198, 43172, 41912, 41956, 30756, 9092, 9092, 14628, 2980, 9106, 11172, 63524, 41957, 41957, 43300, 30756, 89636, 1533476, 683475, 680987, 65559, 65815] checked19 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old19 n]
+ rfl
+def trace20 : List Nat := [1292, 15910, 15898, 15898, 16174, 6858, 15592, 15946, 15862, 13278, 20186, 31979, 96474, 16154, 15862, 146330, 147290, 180154, 179638, 196570, 180218, 179690, 172026, 425818, 425403, 1474011, 1474138, 985434, 1050524, 874908, 869308, 1333652, 20, 276]
+theorem checked20 : checkTrace blocks trace20=true := by decide +kernel
+theorem old20 : phaseClean508 reference 1292=some 276 := by decide +kernel
+theorem row20 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1292⟩=run reference n ⟨false,tbN_t8 1292⟩ := by
+ have h:=trace_sound blocks 1292 [15910, 15898, 15898, 16174, 6858, 15592, 15946, 15862, 13278, 20186, 31979, 96474, 16154, 15862, 146330, 147290, 180154, 179638, 196570, 180218, 179690, 172026, 425818, 425403, 1474011, 1474138, 985434, 1050524, 874908, 869308, 1333652, 20, 276] checked20 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old20 n]
+ rfl
+def trace21 : List Nat := [15116, 1636, 3674, 2642, 3854, 9794, 7245, 9922, 7270, 5702, 18002, 23627, 88146, 1810, 7254, 137746, 132946, 171570, 171070, 182226, 169586, 171082, 169586, 411474, 416819, 1465427, 1459794, 995666, 1064852, 67924, 1970620, 461716, 65556, 65812]
+theorem checked21 : checkTrace blocks trace21=true := by decide +kernel
+theorem old21 : phaseClean508 reference 15116=some 65812 := by decide +kernel
+theorem row21 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15116⟩=run reference n ⟨false,tbN_t8 15116⟩ := by
+ have h:=trace_sound blocks 15116 [1636, 3674, 2642, 3854, 9794, 7245, 9922, 7270, 5702, 18002, 23627, 88146, 1810, 7254, 137746, 132946, 171570, 171070, 182226, 169586, 171082, 169586, 411474, 416819, 1465427, 1459794, 995666, 1064852, 67924, 1970620, 461716, 65556, 65812] checked21 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old21 n]
+ rfl
+def trace22 : List Nat := [1547, 95, 15929, 15929, 16227, 6889, 16100, 15977, 16373, 13309, 20217, 32487, 96505, 16185, 16353, 146361, 147321, 180121, 180169, 196601, 180185, 180198, 171993, 425849, 425881, 1474457, 1474169, 985465, 1050559, 874943, 871358, 1333270, 21, 277]
+theorem checked22 : checkTrace blocks trace22=true := by decide +kernel
+theorem old22 : phaseClean508 reference 1547=some 277 := by decide +kernel
+theorem row22 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1547⟩=run reference n ⟨false,tbN_t8 1547⟩ := by
+ have h:=trace_sound blocks 1547 [95, 15929, 15929, 16227, 6889, 16100, 15977, 16373, 13309, 20217, 32487, 96505, 16185, 16353, 146361, 147321, 180121, 180169, 196601, 180185, 180198, 171993, 425849, 425881, 1474457, 1474169, 985465, 1050559, 874943, 871358, 1333270, 21, 277] checked22 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old22 n]
+ rfl
+def trace23 : List Nat := [1655, 14365, 3705, 2673, 3907, 9825, 7745, 9953, 7781, 5733, 18033, 24135, 88177, 1841, 7745, 137777, 132977, 171537, 171585, 182257, 169553, 171590, 169553, 411505, 417297, 1465873, 1459825, 995697, 1064887, 67959, 1972670, 461334, 65557, 65813]
+theorem checked23 : checkTrace blocks trace23=true := by decide +kernel
+theorem old23 : phaseClean508 reference 1655=some 65813 := by decide +kernel
+theorem row23 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1655⟩=run reference n ⟨false,tbN_t8 1655⟩ := by
+ have h:=trace_sound blocks 1655 [14365, 3705, 2673, 3907, 9825, 7745, 9953, 7781, 5733, 18033, 24135, 88177, 1841, 7745, 137777, 132977, 171537, 171585, 182257, 169553, 171590, 169553, 411505, 417297, 1465873, 1459825, 995697, 1064887, 67959, 1972670, 461334, 65557, 65813] checked23 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old23 n]
+ rfl
+def trace24 : List Nat := [1550, 15909, 15891, 15891, 15881, 15059, 15566, 7891, 15835, 14803, 3795, 15566, 14547, 15955, 15811, 147411, 65107, 15763, 15811, 32467, 16371, 15820, 8179, 278099, 277938, 277970, 278099, 276115, 1578643, 939099, 870035, 872221, 18, 274]
+theorem checked24 : checkTrace blocks trace24=true := by decide +kernel
+theorem old24 : phaseClean508 reference 1550=some 274 := by decide +kernel
+theorem row24 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1550⟩=run reference n ⟨false,tbN_t8 1550⟩ := by
+ have h:=trace_sound blocks 1550 [15909, 15891, 15891, 15881, 15059, 15566, 7891, 15835, 14803, 3795, 15566, 14547, 15955, 15811, 147411, 65107, 15763, 15811, 32467, 16371, 15820, 8179, 278099, 277938, 277970, 278099, 276115, 1578643, 939099, 870035, 872221, 18, 274] checked24 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old24 n]
+ rfl
+def trace25 : List Nat := [14862, 1637, 3677, 2645, 3859, 9797, 23635, 26309, 7289, 4689, 58967, 56406, 54359, 34581, 40017, 170517, 34645, 38993, 39953, 34389, 42069, 40022, 42069, 313173, 318516, 318548, 312917, 282517, 1994707, 271835, 468243, 470173, 65554, 65810]
+theorem checked25 : checkTrace blocks trace25=true := by decide +kernel
+theorem old25 : phaseClean508 reference 14862=some 65810 := by decide +kernel
+theorem row25 (m n : List Bool) : run candidate m ⟨false,tbN_t8 14862⟩=run reference n ⟨false,tbN_t8 14862⟩ := by
+ have h:=trace_sound blocks 14862 [1637, 3677, 2645, 3859, 9797, 23635, 26309, 7289, 4689, 58967, 56406, 54359, 34581, 40017, 170517, 34645, 38993, 39953, 34389, 42069, 40022, 42069, 313173, 318516, 318548, 312917, 282517, 1994707, 271835, 468243, 470173, 65554, 65810] checked25 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old25 n]
+ rfl
+def trace26 : List Nat := [1805, 15916, 15920, 15920, 15940, 15088, 16066, 7920, 16344, 14832, 3824, 16066, 14576, 15984, 16340, 147440, 65136, 15792, 16316, 32496, 16336, 16320, 8144, 278128, 278416, 278416, 278128, 276144, 1578672, 939128, 872081, 872095, 19, 275]
+theorem checked26 : checkTrace blocks trace26=true := by decide +kernel
+theorem old26 : phaseClean508 reference 1805=some 275 := by decide +kernel
+theorem row26 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1805⟩=run reference n ⟨false,tbN_t8 1805⟩ := by
+ have h:=trace_sound blocks 1805 [15916, 15920, 15920, 15940, 15088, 16066, 7920, 16344, 14832, 3824, 16066, 14576, 15984, 16340, 147440, 65136, 15792, 16316, 32496, 16336, 16320, 8144, 278128, 278416, 278416, 278128, 276144, 1578672, 939128, 872081, 872095, 19, 275] checked26 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old26 n]
+ rfl
+def trace27 : List Nat := [1909, 14364, 3710, 2678, 3934, 9830, 24159, 26342, 7802, 4722, 58996, 56922, 54388, 34614, 40518, 170550, 34678, 39026, 40558, 34422, 42102, 40538, 42102, 313206, 318998, 318998, 312950, 282550, 1994736, 271864, 470289, 470303, 65555, 65811]
+theorem checked27 : checkTrace blocks trace27=true := by decide +kernel
+theorem old27 : phaseClean508 reference 1909=some 65811 := by decide +kernel
+theorem row27 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1909⟩=run reference n ⟨false,tbN_t8 1909⟩ := by
+ have h:=trace_sound blocks 1909 [14364, 3710, 2678, 3934, 9830, 24159, 26342, 7802, 4722, 58996, 56922, 54388, 34614, 40518, 170550, 34678, 39026, 40558, 34422, 42102, 40538, 42102, 313206, 318998, 318998, 312950, 282550, 1994736, 271864, 470289, 470303, 65555, 65811] checked27 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old27 n]
+ rfl
+def trace28 : List Nat := [1808, 98, 576, 72, 546, 72, 1056, 72, 1032, 72, 72, 1056, 72, 72, 1076, 131144, 49224, 76, 1116, 16584, 4200, 1058, 4200, 262216, 263209, 1311817, 1310792, 931400, 603720, 1579584, 394110, 2035856, 16, 272]
+theorem checked28 : checkTrace blocks trace28=true := by decide +kernel
+theorem old28 : phaseClean508 reference 1808=some 272 := by decide +kernel
+theorem row28 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1808⟩=run reference n ⟨false,tbN_t8 1808⟩ := by
+ have h:=trace_sound blocks 1808 [98, 576, 72, 546, 72, 1056, 72, 1032, 72, 72, 1056, 72, 72, 1076, 131144, 49224, 76, 1116, 16584, 4200, 1058, 4200, 262216, 263209, 1311817, 1310792, 931400, 603720, 1579584, 394110, 2035856, 16, 272] checked28 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old28 n]
+ rfl
+def trace29 : List Nat := [14608, 14368, 12800, 13312, 12802, 15552, 9349, 6336, 9624, 9680, 2240, 9344, 8384, 14400, 9620, 139712, 63552, 8644, 9684, 30912, 14816, 9602, 6624, 276544, 271777, 1320385, 1325120, 921152, 593472, 1329800, 1397118, 803472, 65552, 65808]
+theorem checked29 : checkTrace blocks trace29=true := by decide +kernel
+theorem old29 : phaseClean508 reference 14608=some 65808 := by decide +kernel
+theorem row29 (m n : List Bool) : run candidate m ⟨false,tbN_t8 14608⟩=run reference n ⟨false,tbN_t8 14608⟩ := by
+ have h:=trace_sound blocks 14608 [14368, 12800, 13312, 12802, 15552, 9349, 6336, 9624, 9680, 2240, 9344, 8384, 14400, 9620, 139712, 63552, 8644, 9684, 30912, 14816, 9602, 6624, 276544, 271777, 1320385, 1325120, 921152, 593472, 1329800, 1397118, 803472, 65552, 65808] checked29 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old29 n]
+ rfl
+def trace30 : List Nat := [2063, 13931, 15971, 14955, 11887, 4843, 7852, 5867, 8075, 6635, 1771, 7852, 6379, 13931, 8119, 7595, 13931, 6639, 8099, 13931, 2027, 8109, 2027, 13931, 8106, 8138, 13931, 13931, 13931, 1120867, 985980, 1446162, 17, 273]
+theorem checked30 : checkTrace blocks trace30=true := by decide +kernel
+theorem old30 : phaseClean508 reference 2063=some 273 := by decide +kernel
+theorem row30 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2063⟩=run reference n ⟨false,tbN_t8 2063⟩ := by
+ have h:=trace_sound blocks 2063 [13931, 15971, 14955, 11887, 4843, 7852, 5867, 8075, 6635, 1771, 7852, 6379, 13931, 8119, 7595, 13931, 6639, 8099, 13931, 2027, 8109, 2027, 13931, 8106, 8138, 13931, 13931, 13931, 1120867, 985980, 1446162, 17, 273] checked30 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old30 n]
+ rfl
+def trace31 : List Nat := [2163, 3625, 3619, 3619, 7759, 11875, 15881, 3683, 15899, 15475, 3683, 15884, 14435, 3683, 15895, 15395, 3683, 14439, 15915, 3683, 11875, 15885, 3683, 3683, 15906, 15938, 3683, 3683, 3683, 1919659, 1857916, 344850, 65553, 65809]
+theorem checked31 : checkTrace blocks trace31=true := by decide +kernel
+theorem old31 : phaseClean508 reference 2163=some 65809 := by decide +kernel
+theorem row31 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2163⟩=run reference n ⟨false,tbN_t8 2163⟩ := by
+ have h:=trace_sound blocks 2163 [3625, 3619, 3619, 7759, 11875, 15881, 3683, 15899, 15475, 3683, 15884, 14435, 3683, 15895, 15395, 3683, 14439, 15915, 3683, 11875, 15885, 3683, 3683, 15906, 15938, 3683, 3683, 3683, 1919659, 1857916, 344850, 65553, 65809] checked31 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old31 n]
+ rfl
+def trace32 : List Nat := [2066, 2081, 515, 1027, 4621, 10307, 9228, 2115, 9219, 8259, 2115, 9228, 8259, 2115, 9279, 8707, 2115, 9219, 9219, 2115, 10307, 9230, 2115, 2115, 9219, 1057795, 1050691, 669315, 1119875, 480331, 280195, 282369, 14, 46]
+theorem checked32 : checkTrace blocks trace32=true := by decide +kernel
+theorem old32 : phaseClean508 reference 2066=some 46 := by decide +kernel
+theorem row32 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2066⟩=run reference n ⟨false,tbN_t8 2066⟩ := by
+ have h:=trace_sound blocks 2066 [2081, 515, 1027, 4621, 10307, 9228, 2115, 9219, 8259, 2115, 9228, 8259, 2115, 9279, 8707, 2115, 9219, 9219, 2115, 10307, 9230, 2115, 2115, 9219, 1057795, 1050691, 669315, 1119875, 480331, 280195, 282369, 14, 46] checked32 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old32 n]
+ rfl
+def trace33 : List Nat := [14354, 14369, 12803, 13315, 12815, 15555, 9353, 6339, 9627, 9683, 2243, 9356, 8387, 14403, 9623, 8643, 14403, 9603, 9603, 14403, 10691, 9614, 2499, 14403, 9634, 9666, 14403, 14403, 14403, 807043, 803459, 805633, 1038, 131118]
+theorem checked33 : checkTrace blocks trace33=true := by decide +kernel
+theorem old33 : phaseClean508 reference 14354=some 131118 := by decide +kernel
+theorem row33 (m n : List Bool) : run candidate m ⟨false,tbN_t8 14354⟩=run reference n ⟨false,tbN_t8 14354⟩ := by
+ have h:=trace_sound blocks 14354 [14369, 12803, 13315, 12815, 15555, 9353, 6339, 9627, 9683, 2243, 9356, 8387, 14403, 9623, 8643, 14403, 9603, 9603, 14403, 10691, 9614, 2499, 14403, 9634, 9666, 14403, 14403, 14403, 807043, 803459, 805633, 1038, 131118] checked33 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old33 n]
+ rfl
+def trace34 : List Nat := [2321, 2088, 544, 1056, 4672, 10336, 9728, 2144, 9728, 8288, 2144, 9728, 8288, 2144, 9768, 8736, 2144, 9248, 9852, 2144, 10336, 9730, 2144, 2144, 9761, 1058369, 1050720, 669344, 1119904, 480360, 282241, 282243, 15, 47]
+theorem checked34 : checkTrace blocks trace34=true := by decide +kernel
+theorem old34 : phaseClean508 reference 2321=some 47 := by decide +kernel
+theorem row34 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2321⟩=run reference n ⟨false,tbN_t8 2321⟩ := by
+ have h:=trace_sound blocks 2321 [2088, 544, 1056, 4672, 10336, 9728, 2144, 9728, 8288, 2144, 9728, 8288, 2144, 9768, 8736, 2144, 9248, 9852, 2144, 10336, 9730, 2144, 2144, 9761, 1058369, 1050720, 669344, 1119904, 480360, 282241, 282243, 15, 47] checked34 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old34 n]
+ rfl
+def trace35 : List Nat := [2417, 3624, 3616, 3616, 7746, 11872, 15877, 3680, 15896, 15472, 3680, 15872, 14432, 3680, 15892, 146464, 52832, 15392, 15996, 20192, 15936, 15873, 7744, 265824, 278049, 1326657, 1314400, 931936, 604256, 348320, 346753, 346755, 1039, 131119]
+theorem checked35 : checkTrace blocks trace35=true := by decide +kernel
+theorem old35 : phaseClean508 reference 2417=some 131119 := by decide +kernel
+theorem row35 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2417⟩=run reference n ⟨false,tbN_t8 2417⟩ := by
+ have h:=trace_sound blocks 2417 [3624, 3616, 3616, 7746, 11872, 15877, 3680, 15896, 15472, 3680, 15872, 14432, 3680, 15892, 146464, 52832, 15392, 15996, 20192, 15936, 15873, 7744, 265824, 278049, 1326657, 1314400, 931936, 604256, 348320, 346753, 346755, 1039, 131119] checked35 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old35 n]
+ rfl
+def trace36 : List Nat := [2324, 13910, 542, 1054, 4926, 2126, 9338, 10446, 9330, 10842, 18526, 25723, 90206, 2334, 9318, 140894, 133470, 172666, 173158, 182750, 178302, 173178, 170110, 411998, 418846, 418846, 411742, 328094, 77656, 1727312, 279150, 1921420, 12, 44]
+theorem checked36 : checkTrace blocks trace36=true := by decide +kernel
+theorem old36 : phaseClean508 reference 2324=some 44 := by decide +kernel
+theorem row36 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2324⟩=run reference n ⟨false,tbN_t8 2324⟩ := by
+ have h:=trace_sound blocks 2324 [13910, 542, 1054, 4926, 2126, 9338, 10446, 9330, 10842, 18526, 25723, 90206, 2334, 9318, 140894, 133470, 172666, 173158, 182750, 178302, 173178, 170110, 411998, 418846, 418846, 411742, 328094, 77656, 1727312, 279150, 1921420, 12, 44] checked36 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old36 n]
+ rfl
+def trace37 : List Nat := [14100, 3604, 12894, 12374, 8990, 13510, 17631, 28742, 1530, 3026, 57556, 50394, 52436, 45334, 34246, 165846, 45398, 34198, 34246, 45142, 41942, 34265, 41942, 323926, 312726, 312726, 323670, 293270, 1989072, 1392592, 1521390, 926988, 1036, 131116]
+theorem checked37 : checkTrace blocks trace37=true := by decide +kernel
+theorem old37 : phaseClean508 reference 14100=some 131116 := by decide +kernel
+theorem row37 (m n : List Bool) : run candidate m ⟨false,tbN_t8 14100⟩=run reference n ⟨false,tbN_t8 14100⟩ := by
+ have h:=trace_sound blocks 14100 [3604, 12894, 12374, 8990, 13510, 17631, 28742, 1530, 3026, 57556, 50394, 52436, 45334, 34246, 165846, 45398, 34198, 34246, 45142, 41942, 34265, 41942, 323926, 312726, 312726, 323670, 293270, 1989072, 1392592, 1521390, 926988, 1036, 131116] checked37 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old37 n]
+ rfl
+def trace38 : List Nat := [2579, 2095, 573, 1085, 4979, 2157, 9846, 10477, 9841, 10873, 18557, 26231, 90237, 2365, 9841, 140925, 133501, 172633, 173593, 182781, 178269, 173686, 170077, 412029, 419388, 419420, 411773, 328125, 77691, 1727347, 281196, 1921038, 13, 45]
+theorem checked38 : checkTrace blocks trace38=true := by decide +kernel
+theorem old38 : phaseClean508 reference 2579=some 45 := by decide +kernel
+theorem row38 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2579⟩=run reference n ⟨false,tbN_t8 2579⟩ := by
+ have h:=trace_sound blocks 2579 [2095, 573, 1085, 4979, 2157, 9846, 10477, 9841, 10873, 18557, 26231, 90237, 2365, 9841, 140925, 133501, 172633, 173593, 182781, 178269, 173686, 170077, 412029, 419388, 419420, 411773, 328125, 77691, 1727347, 281196, 1921038, 13, 45] checked38 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old38 n]
+ rfl
+def trace39 : List Nat := [2671, 12397, 12925, 12405, 9043, 13541, 18131, 28773, 2041, 3057, 57591, 50902, 52471, 45365, 34769, 165877, 45429, 34229, 34745, 45173, 41973, 34773, 41973, 323957, 313268, 313300, 323701, 293301, 1989107, 1392627, 1523436, 926862, 1037, 131117]
+theorem checked39 : checkTrace blocks trace39=true := by decide +kernel
+theorem old39 : phaseClean508 reference 2671=some 131117 := by decide +kernel
+theorem row39 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2671⟩=run reference n ⟨false,tbN_t8 2671⟩ := by
+ have h:=trace_sound blocks 2671 [12397, 12925, 12405, 9043, 13541, 18131, 28773, 2041, 3057, 57591, 50902, 52471, 45365, 34769, 165877, 45429, 34229, 34745, 45173, 41973, 34773, 41973, 323957, 313268, 313300, 323701, 293301, 1989107, 1392627, 1523436, 926862, 1037, 131117] checked39 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old39 n]
+ rfl
+def trace40 : List Nat := [2582, 13909, 535, 1047, 4633, 10327, 9308, 2135, 9311, 41047, 10325, 9311, 76885, 67671, 74835, 205335, 247895, 204883, 205843, 215255, 211063, 205916, 202871, 477271, 468055, 468023, 465239, 360599, 638551, 1693335, 313153, 313093, 10, 42]
+theorem checked40 : checkTrace blocks trace40=true := by decide +kernel
+theorem old40 : phaseClean508 reference 2582=some 42 := by decide +kernel
+theorem row40 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2582⟩=run reference n ⟨false,tbN_t8 2582⟩ := by
+ have h:=trace_sound blocks 2582 [13909, 535, 1047, 4633, 10327, 9308, 2135, 9311, 41047, 10325, 9311, 76885, 67671, 74835, 205335, 247895, 204883, 205843, 215255, 211063, 205916, 202871, 477271, 468055, 468023, 465239, 360599, 638551, 1693335, 313153, 313093, 10, 42] checked40 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old40 n]
+ rfl
+def trace41 : List Nat := [13846, 3605, 12889, 12369, 8963, 13505, 1217, 12353, 1509, 4037, 16593, 17607, 82129, 12561, 1473, 133073, 143697, 164853, 165353, 192977, 168433, 165317, 168433, 422225, 411025, 1459601, 1470545, 984913, 1051031, 1053535, 918081, 918021, 1034, 131114]
+theorem checked41 : checkTrace blocks trace41=true := by decide +kernel
+theorem old41 : phaseClean508 reference 13846=some 131114 := by decide +kernel
+theorem row41 (m n : List Bool) : run candidate m ⟨false,tbN_t8 13846⟩=run reference n ⟨false,tbN_t8 13846⟩ := by
+ have h:=trace_sound blocks 13846 [3605, 12889, 12369, 8963, 13505, 1217, 12353, 1509, 4037, 16593, 17607, 82129, 12561, 1473, 133073, 143697, 164853, 165353, 192977, 168433, 165317, 168433, 422225, 411025, 1459601, 1470545, 984913, 1051031, 1053535, 918081, 918021, 1034, 131114] checked41 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old41 n]
+ rfl
+def trace42 : List Nat := [2837, 13916, 564, 1076, 4692, 10356, 9808, 2164, 9820, 41076, 10358, 9811, 76918, 67700, 75332, 205364, 247924, 204912, 206444, 215284, 211028, 206416, 202836, 477300, 468597, 468597, 465268, 360628, 638580, 1693364, 315203, 312967, 11, 43]
+theorem checked42 : checkTrace blocks trace42=true := by decide +kernel
+theorem old42 : phaseClean508 reference 2837=some 43 := by decide +kernel
+theorem row42 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2837⟩=run reference n ⟨false,tbN_t8 2837⟩ := by
+ have h:=trace_sound blocks 2837 [13916, 564, 1076, 4692, 10356, 9808, 2164, 9820, 41076, 10358, 9811, 76918, 67700, 75332, 205364, 247924, 204912, 206444, 215284, 211028, 206416, 202836, 477300, 468597, 468597, 465268, 360628, 638580, 1693364, 315203, 312967, 11, 43] checked42 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old42 n]
+ rfl
+def trace43 : List Nat := [2925, 12396, 12922, 12402, 9038, 13538, 1741, 12386, 2022, 4070, 16626, 18123, 82162, 12594, 2006, 133106, 143730, 164822, 165782, 193010, 168402, 165833, 168402, 422258, 411571, 1460179, 1470578, 984946, 1051060, 1053564, 920131, 918407, 1035, 131115]
+theorem checked43 : checkTrace blocks trace43=true := by decide +kernel
+theorem old43 : phaseClean508 reference 2925=some 131115 := by decide +kernel
+theorem row43 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2925⟩=run reference n ⟨false,tbN_t8 2925⟩ := by
+ have h:=trace_sound blocks 2925 [12396, 12922, 12402, 9038, 13538, 1741, 12386, 2022, 4070, 16626, 18123, 82162, 12594, 2006, 133106, 143730, 164822, 165782, 193010, 168402, 165833, 168402, 422258, 411571, 1460179, 1470578, 984946, 1051060, 1053564, 920131, 918407, 1035, 131115] checked43 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old43 n]
+ rfl
+def trace44 : List Nat := [2840, 2098, 15372, 14860, 11314, 4748, 6322, 5772, 6540, 39308, 9870, 6321, 5262, 75404, 72088, 73612, 128524, 72076, 72076, 95884, 71596, 72114, 71596, 79372, 72109, 1120717, 1127948, 690380, 2006668, 628876, 623276, 1087624, 8, 40]
+theorem checked44 : checkTrace blocks trace44=true := by decide +kernel
+theorem old44 : phaseClean508 reference 2840=some 40 := by decide +kernel
+theorem row44 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2840⟩=run reference n ⟨false,tbN_t8 2840⟩ := by
+ have h:=trace_sound blocks 2840 [2098, 15372, 14860, 11314, 4748, 6322, 5772, 6540, 39308, 9870, 6321, 5262, 75404, 72088, 73612, 128524, 72076, 72076, 95884, 71596, 72114, 71596, 79372, 72109, 1120717, 1127948, 690380, 2006668, 628876, 623276, 1087624, 8, 40] checked44 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old44 n]
+ rfl
+def trace45 : List Nat := [13592, 12400, 3148, 3652, 7186, 11780, 30743, 19972, 14340, 14340, 44550, 47121, 46086, 40580, 47160, 48644, 19972, 15968, 14380, 3844, 3076, 14353, 11268, 52740, 47205, 47205, 40708, 19972, 92164, 424972, 1734188, 224264, 1032, 131112]
+theorem checked45 : checkTrace blocks trace45=true := by decide +kernel
+theorem old45 : phaseClean508 reference 13592=some 131112 := by decide +kernel
+theorem row45 (m n : List Bool) : run candidate m ⟨false,tbN_t8 13592⟩=run reference n ⟨false,tbN_t8 13592⟩ := by
+ have h:=trace_sound blocks 13592 [12400, 3148, 3652, 7186, 11780, 30743, 19972, 14340, 14340, 44550, 47121, 46086, 40580, 47160, 48644, 19972, 15968, 14380, 3844, 3076, 14353, 11268, 52740, 47205, 47205, 40708, 19972, 92164, 424972, 1734188, 224264, 1032, 131112] checked45 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old45 n]
+ rfl
+def trace46 : List Nat := [3095, 13851, 559, 1199, 4863, 10607, 10046, 2415, 26127, 57455, 10605, 10045, 11629, 84079, 91663, 90671, 116975, 91183, 91763, 84079, 88655, 91710, 96847, 67823, 75343, 75311, 67823, 35055, 1285807, 301231, 297646, 1939722, 9, 41]
+theorem checked46 : checkTrace blocks trace46=true := by decide +kernel
+theorem old46 : phaseClean508 reference 3095=some 41 := by decide +kernel
+theorem row46 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3095⟩=run reference n ⟨false,tbN_t8 3095⟩ := by
+ have h:=trace_sound blocks 3095 [13851, 559, 1199, 4863, 10607, 10046, 2415, 26127, 57455, 10605, 10045, 11629, 84079, 91663, 90671, 116975, 91183, 91763, 84079, 88655, 91710, 96847, 67823, 75343, 75311, 67823, 35055, 1285807, 301231, 297646, 1939722, 9, 41] checked46 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old46 n]
+ rfl
+def trace47 : List Nat := [3179, 3673, 12911, 12519, 8927, 5607, 18331, 20967, 18311, 16871, 41445, 34717, 36325, 61543, 51119, 50087, 28903, 17347, 18387, 12775, 16871, 18333, 16871, 61671, 34695, 1083271, 1090023, 675367, 813095, 752687, 1539630, 945546, 1033, 131113]
+theorem checked47 : checkTrace blocks trace47=true := by decide +kernel
+theorem old47 : phaseClean508 reference 3179=some 131113 := by decide +kernel
+theorem row47 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3179⟩=run reference n ⟨false,tbN_t8 3179⟩ := by
+ have h:=trace_sound blocks 3179 [3673, 12911, 12519, 8927, 5607, 18331, 20967, 18311, 16871, 41445, 34717, 36325, 61543, 51119, 50087, 28903, 17347, 18387, 12775, 16871, 18333, 16871, 61671, 34695, 1083271, 1090023, 675367, 813095, 752687, 1539630, 945546, 1033, 131113] checked47 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old47 n]
+ rfl
+def trace48 : List Nat := [3098, 2161, 15367, 14855, 11293, 4743, 6302, 5767, 6535, 6535, 1671, 6300, 6279, 13831, 6547, 138695, 62983, 6535, 268679, 292487, 268199, 268700, 268199, 800263, 792998, 793030, 800263, 1710799, 80591, 789519, 1053743, 591753, 6, 38]
+theorem checked48 : checkTrace blocks trace48=true := by decide +kernel
+theorem old48 : phaseClean508 reference 3098=some 38 := by decide +kernel
+theorem row48 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3098⟩=run reference n ⟨false,tbN_t8 3098⟩ := by
+ have h:=trace_sound blocks 3098 [2161, 15367, 14855, 11293, 4743, 6302, 5767, 6535, 6535, 1671, 6300, 6279, 13831, 6547, 138695, 62983, 6535, 268679, 292487, 268199, 268700, 268199, 800263, 792998, 793030, 800263, 1710799, 80591, 789519, 1053743, 591753, 6, 38] checked48 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old48 n]
+ rfl
+def trace49 : List Nat := [13338, 12401, 3151, 3783, 7327, 12039, 31003, 20231, 30727, 30727, 44805, 47389, 46341, 52743, 63507, 195655, 36487, 32355, 30767, 20231, 32295, 30748, 24103, 315015, 309255, 1357831, 1351559, 948359, 1343111, 337991, 1716399, 205577, 1030, 131110]
+theorem checked49 : checkTrace blocks trace49=true := by decide +kernel
+theorem old49 : phaseClean508 reference 13338=some 131110 := by decide +kernel
+theorem row49 (m n : List Bool) : run candidate m ⟨false,tbN_t8 13338⟩=run reference n ⟨false,tbN_t8 13338⟩ := by
+ have h:=trace_sound blocks 13338 [12401, 3151, 3783, 7327, 12039, 31003, 20231, 30727, 30727, 44805, 47389, 46341, 52743, 63507, 195655, 36487, 32355, 30767, 20231, 32295, 30748, 24103, 315015, 309255, 1357831, 1351559, 948359, 1343111, 337991, 1716399, 205577, 1030, 131110] checked49 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old49 n]
+ rfl
+def trace50 : List Nat := [3353, 2168, 15396, 14884, 11344, 4772, 6802, 5796, 7044, 6564, 1700, 6800, 6308, 13860, 7044, 138724, 63012, 6564, 269304, 292516, 268164, 269200, 268164, 800292, 793476, 793476, 800292, 1710828, 80620, 789548, 1055789, 591371, 7, 39]
+theorem checked50 : checkTrace blocks trace50=true := by decide +kernel
+theorem old50 : phaseClean508 reference 3353=some 39 := by decide +kernel
+theorem row50 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3353⟩=run reference n ⟨false,tbN_t8 3353⟩ := by
+ have h:=trace_sound blocks 3353 [2168, 15396, 14884, 11344, 4772, 6802, 5796, 7044, 6564, 1700, 6800, 6308, 13860, 7044, 138724, 63012, 6564, 269304, 292516, 268164, 269200, 268164, 800292, 793476, 793476, 800292, 1710828, 80620, 789548, 1055789, 591371, 7, 39] checked50 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old50 n]
+ rfl
+def trace51 : List Nat := [3433, 3672, 12908, 12388, 8786, 5348, 18071, 20708, 1924, 484, 41190, 34449, 36070, 41188, 34692, 164324, 45156, 960, 2000, 29156, 13252, 1936, 13252, 323684, 296933, 296933, 303460, 293028, 1670820, 534628, 1521837, 926347, 1031, 131111]
+theorem checked51 : checkTrace blocks trace51=true := by decide +kernel
+theorem old51 : phaseClean508 reference 3433=some 131111 := by decide +kernel
+theorem row51 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3433⟩=run reference n ⟨false,tbN_t8 3433⟩ := by
+ have h:=trace_sound blocks 3433 [3672, 12908, 12388, 8786, 5348, 18071, 20708, 1924, 484, 41190, 34449, 36070, 41188, 34692, 164324, 45156, 960, 2000, 29156, 13252, 1936, 13252, 323684, 296933, 296933, 303460, 293028, 1670820, 534628, 1521837, 926347, 1031, 131111] checked51 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old51 n]
+ rfl
+def trace52 : List Nat := [3356, 13830, 15386, 14874, 11566, 12938, 6376, 13834, 6646, 5022, 18074, 22763, 88218, 14170, 6602, 6554, 194330, 172030, 432610, 440090, 427930, 432616, 427930, 685850, 678331, 1726939, 1734170, 1387986, 1114900, 1114900, 1052866, 1054980, 4, 36]
+theorem checked52 : checkTrace blocks trace52=true := by decide +kernel
+theorem old52 : phaseClean508 reference 3356=some 36 := by decide +kernel
+theorem row52 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3356⟩=run reference n ⟨false,tbN_t8 3356⟩ := by
+ have h:=trace_sound blocks 3356 [13830, 15386, 14874, 11566, 12938, 6376, 13834, 6646, 5022, 18074, 22763, 88218, 14170, 6602, 6554, 194330, 172030, 432610, 440090, 427930, 432616, 427930, 685850, 678331, 1726939, 1734170, 1387986, 1114900, 1114900, 1052866, 1054980, 4, 36] checked52 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old52 n]
+ rfl
+def trace53 : List Nat := [13084, 3652, 3162, 3666, 7438, 3586, 14413, 11906, 14438, 13830, 19986, 30795, 96274, 3922, 14442, 14354, 184082, 179830, 178282, 167698, 175634, 178248, 167442, 151314, 161843, 1210451, 1199634, 733650, 532244, 1984276, 214210, 216324, 1028, 131108]
+theorem checked53 : checkTrace blocks trace53=true := by decide +kernel
+theorem old53 : phaseClean508 reference 13084=some 131108 := by decide +kernel
+theorem row53 (m n : List Bool) : run candidate m ⟨false,tbN_t8 13084⟩=run reference n ⟨false,tbN_t8 13084⟩ := by
+ have h:=trace_sound blocks 13084 [3652, 3162, 3666, 7438, 3586, 14413, 11906, 14438, 13830, 19986, 30795, 96274, 3922, 14442, 14354, 184082, 179830, 178282, 167698, 175634, 178248, 167442, 151314, 161843, 1210451, 1199634, 733650, 532244, 1984276, 214210, 216324, 1028, 131108] checked53 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old53 n]
+ rfl
+def trace54 : List Nat := [3611, 2175, 15417, 14905, 11619, 12969, 6884, 13865, 7157, 5053, 18105, 23271, 88249, 14201, 7133, 6585, 194361, 171997, 433053, 440121, 427961, 433124, 427961, 685881, 678809, 1727385, 1734201, 1388017, 1114935, 1114935, 1054912, 1054854, 5, 37]
+theorem checked54 : checkTrace blocks trace54=true := by decide +kernel
+theorem old54 : phaseClean508 reference 3611=some 37 := by decide +kernel
+theorem row54 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3611⟩=run reference n ⟨false,tbN_t8 3611⟩ := by
+ have h:=trace_sound blocks 3611 [2175, 15417, 14905, 11619, 12969, 6884, 13865, 7157, 5053, 18105, 23271, 88249, 14201, 7133, 6585, 194361, 171997, 433053, 440121, 427961, 433124, 427961, 685881, 678809, 1727385, 1734201, 1388017, 1114935, 1114935, 1054912, 1054854, 5, 37] checked54 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old54 n]
+ rfl
+def trace55 : List Nat := [3687, 12349, 3193, 3697, 7491, 3617, 14913, 11937, 14949, 13861, 20017, 31303, 96305, 3953, 14973, 14385, 184113, 179797, 178709, 167729, 175665, 178756, 167473, 151345, 162321, 1210897, 1199665, 733681, 532279, 1984311, 216256, 216198, 1029, 131109]
+theorem checked55 : checkTrace blocks trace55=true := by decide +kernel
+theorem old55 : phaseClean508 reference 3687=some 131109 := by decide +kernel
+theorem row55 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3687⟩=run reference n ⟨false,tbN_t8 3687⟩ := by
+ have h:=trace_sound blocks 3687 [12349, 3193, 3697, 7491, 3617, 14913, 11937, 14949, 13861, 20017, 31303, 96305, 3953, 14973, 14385, 184113, 179797, 178709, 167729, 175665, 178756, 167473, 151345, 162321, 1210897, 1199665, 733681, 532279, 1984311, 216256, 216198, 1029, 131109] checked55 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old55 n]
+ rfl
+def trace56 : List Nat := [3614, 13829, 15379, 14867, 11273, 4755, 6350, 5779, 6619, 6547, 1683, 6350, 6291, 13843, 6655, 7635, 13843, 7639, 268695, 275987, 264083, 268750, 264083, 538131, 530866, 530898, 538131, 1970715, 1643035, 1183443, 1054189, 593805, 2, 34]
+theorem checked56 : checkTrace blocks trace56=true := by decide +kernel
+theorem old56 : phaseClean508 reference 3614=some 34 := by decide +kernel
+theorem row56 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3614⟩=run reference n ⟨false,tbN_t8 3614⟩ := by
+ have h:=trace_sound blocks 3614 [13829, 15379, 14867, 11273, 4755, 6350, 5779, 6619, 6547, 1683, 6350, 6291, 13843, 6655, 7635, 13843, 7639, 268695, 275987, 264083, 268750, 264083, 538131, 530866, 530898, 538131, 1970715, 1643035, 1183443, 1054189, 593805, 2, 34] checked56 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old56 n]
+ rfl
+def trace57 : List Nat := [12830, 3653, 3165, 3669, 7443, 3589, 30803, 28293, 14457, 12817, 60951, 63574, 62487, 36693, 47213, 47125, 20245, 47125, 47173, 52885, 39989, 47188, 48181, 53013, 63540, 63572, 52757, 20245, 413523, 1797019, 1732717, 223757, 1026, 131106]
+theorem checked57 : checkTrace blocks trace57=true := by decide +kernel
+theorem old57 : phaseClean508 reference 12830=some 131106 := by decide +kernel
+theorem row57 (m n : List Bool) : run candidate m ⟨false,tbN_t8 12830⟩=run reference n ⟨false,tbN_t8 12830⟩ := by
+ have h:=trace_sound blocks 12830 [3653, 3165, 3669, 7443, 3589, 30803, 28293, 14457, 12817, 60951, 63574, 62487, 36693, 47213, 47125, 20245, 47125, 47173, 52885, 39989, 47188, 48181, 53013, 63540, 63572, 52757, 20245, 413523, 1797019, 1732717, 223757, 1026, 131106] checked57 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old57 n]
+ rfl
+def trace58 : List Nat := [3869, 13836, 15408, 14896, 11332, 4784, 6850, 5808, 7128, 6576, 1712, 6850, 6320, 13872, 7144, 7664, 13872, 7668, 269288, 276016, 264112, 269250, 264112, 538160, 531344, 531344, 538160, 1970744, 1643064, 1183472, 1056239, 593423, 3, 35]
+theorem checked58 : checkTrace blocks trace58=true := by decide +kernel
+theorem old58 : phaseClean508 reference 3869=some 35 := by decide +kernel
+theorem row58 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3869⟩=run reference n ⟨false,tbN_t8 3869⟩ := by
+ have h:=trace_sound blocks 3869 [13836, 15408, 14896, 11332, 4784, 6850, 5808, 7128, 6576, 1712, 6850, 6320, 13872, 7144, 7664, 13872, 7668, 269288, 276016, 264112, 269250, 264112, 538160, 531344, 531344, 538160, 1970744, 1643064, 1183472, 1056239, 593423, 3, 35] checked58 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old58 n]
+ rfl
+def trace59 : List Nat := [3941, 12348, 3198, 3702, 7518, 3622, 31327, 28326, 14970, 12850, 60980, 64090, 62516, 36726, 47738, 47158, 20278, 47158, 47674, 52918, 39958, 47704, 48150, 53046, 64022, 64022, 52790, 20278, 413552, 1797048, 1734767, 224143, 1027, 131107]
+theorem checked59 : checkTrace blocks trace59=true := by decide +kernel
+theorem old59 : phaseClean508 reference 3941=some 131107 := by decide +kernel
+theorem row59 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3941⟩=run reference n ⟨false,tbN_t8 3941⟩ := by
+ have h:=trace_sound blocks 3941 [12348, 3198, 3702, 7518, 3622, 31327, 28326, 14970, 12850, 60980, 64090, 62516, 36726, 47738, 47158, 20278, 47158, 47674, 52918, 39958, 47704, 48150, 53046, 64022, 64022, 52790, 20278, 413552, 1797048, 1734767, 224143, 1027, 131107] checked59 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old59 n]
+ rfl
+def trace60 : List Nat := [3872, 2560, 1096, 1600, 5120, 10752, 10240, 2560, 10240, 10240, 2560, 10242, 8704, 2560, 10260, 142400, 51712, 10240, 10240, 19072, 14880, 534531, 530976, 281088, 272384, 272384, 269056, 791232, 1061568, 1851592, 217088, 217088, 0, 32]
+theorem checked60 : checkTrace blocks trace60=true := by decide +kernel
+theorem old60 : phaseClean508 reference 3872=some 32 := by decide +kernel
+theorem row60 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3872⟩=run reference n ⟨false,tbN_t8 3872⟩ := by
+ have h:=trace_sound blocks 3872 [2560, 1096, 1600, 5120, 10752, 10240, 2560, 10240, 10240, 2560, 10242, 8704, 2560, 10260, 142400, 51712, 10240, 10240, 19072, 14880, 534531, 530976, 281088, 272384, 272384, 269056, 791232, 1061568, 1851592, 217088, 217088, 0, 32] checked60 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old60 n]
+ rfl
+def trace61 : List Nat := [12576, 12866, 13320, 12808, 9248, 5768, 2213, 4744, 2448, 3480, 648, 2210, 648, 12808, 2484, 134600, 61960, 2440, 264584, 291464, 267176, 788899, 791464, 815624, 788872, 788872, 795400, 1183424, 601792, 1246408, 1049600, 1049600, 1024, 131104]
+theorem checked61 : checkTrace blocks trace61=true := by decide +kernel
+theorem old61 : phaseClean508 reference 12576=some 131104 := by decide +kernel
+theorem row61 (m n : List Bool) : run candidate m ⟨false,tbN_t8 12576⟩=run reference n ⟨false,tbN_t8 12576⟩ := by
+ have h:=trace_sound blocks 12576 [12866, 13320, 12808, 9248, 5768, 2213, 4744, 2448, 3480, 648, 2210, 648, 12808, 2484, 134600, 61960, 2440, 264584, 291464, 267176, 788899, 791464, 815624, 788872, 788872, 795400, 1183424, 601792, 1246408, 1049600, 1049600, 1024, 131104] checked61 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old61 n]
+ rfl
+def trace62 : List Nat := [4127, 11851, 11363, 11883, 15469, 11947, 15017, 3755, 15123, 15675, 6699, 14894, 12843, 11819, 15139, 146795, 60971, 14635, 277367, 290475, 278283, 801583, 794379, 814635, 801578, 801610, 802603, 1184483, 602851, 344299, 1726466, 1724802, 1, 33]
+theorem checked62 : checkTrace blocks trace62=true := by decide +kernel
+theorem old62 : phaseClean508 reference 4127=some 33 := by decide +kernel
+theorem row62 (m n : List Bool) : run candidate m ⟨false,tbN_t8 4127⟩=run reference n ⟨false,tbN_t8 4127⟩ := by
+ have h:=trace_sound blocks 4127 [11851, 11363, 11883, 15469, 11947, 15017, 3755, 15123, 15675, 6699, 14894, 12843, 11819, 15139, 146795, 60971, 14635, 277367, 290475, 278283, 801583, 794379, 814635, 801578, 801610, 802603, 1184483, 602851, 344299, 1726466, 1724802, 1, 33] checked62 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old62 n]
+ rfl
+def trace63 : List Nat := [4195, 5641, 7203, 6691, 3149, 4643, 6668, 5667, 6787, 6307, 4771, 6798, 4771, 5667, 6787, 138467, 54819, 6307, 6911, 22179, 5763, 531087, 530051, 284195, 268962, 268994, 263971, 790243, 1060579, 656619, 592898, 591234, 1025, 131105]
+theorem checked63 : checkTrace blocks trace63=true := by decide +kernel
+theorem old63 : phaseClean508 reference 4195=some 131105 := by decide +kernel
+theorem row63 (m n : List Bool) : run candidate m ⟨false,tbN_t8 4195⟩=run reference n ⟨false,tbN_t8 4195⟩ := by
+ have h:=trace_sound blocks 4195 [5641, 7203, 6691, 3149, 4643, 6668, 5667, 6787, 6307, 4771, 6798, 4771, 5667, 6787, 138467, 54819, 6307, 6911, 22179, 5763, 531087, 530051, 284195, 268962, 268994, 263971, 790243, 1060579, 656619, 592898, 591234, 1025, 131105] checked63 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old63 n]
+ rfl
+def trace64 : List Nat := [264, 16, 15878, 15878, 15896, 15046, 15514, 7878, 15750, 14790, 3782, 15513, 14534, 15942, 15790, 16326, 15942, 14786, 277970, 278086, 274374, 277912, 266182, 540230, 540071, 1588679, 1588806, 1320078, 525454, 1399438, 1332088, 868728, 49176, 49432]
+theorem checked64 : checkTrace blocks trace64=true := by decide +kernel
+theorem old64 : phaseClean508 reference 264=some 49432 := by decide +kernel
+theorem row64 (m n : List Bool) : run candidate m ⟨false,tbN_t8 264⟩=run reference n ⟨false,tbN_t8 264⟩ := by
+ have h:=trace_sound blocks 264 [16, 15878, 15878, 15896, 15046, 15514, 7878, 15750, 14790, 3782, 15513, 14534, 15942, 15790, 16326, 15942, 14786, 277970, 278086, 274374, 277912, 266182, 540230, 540071, 1588679, 1588806, 1320078, 525454, 1399438, 1332088, 868728, 49176, 49432] checked64 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old64 n]
+ rfl
+def trace65 : List Nat := [16136, 14418, 3654, 2638, 3640, 1614, 23615, 17998, 7182, 38990, 34382, 39993, 38990, 99918, 105486, 106062, 99918, 73262, 334962, 346062, 341102, 859195, 865390, 624206, 629807, 1678415, 1672782, 1887366, 982214, 2075142, 2011632, 2011576, 16408, 16664]
+theorem checked65 : checkTrace blocks trace65=true := by decide +kernel
+theorem old65 : phaseClean508 reference 16136=some 16664 := by decide +kernel
+theorem row65 (m n : List Bool) : run candidate m ⟨false,tbN_t8 16136⟩=run reference n ⟨false,tbN_t8 16136⟩ := by
+ have h:=trace_sound blocks 16136 [14418, 3654, 2638, 3640, 1614, 23615, 17998, 7182, 38990, 34382, 39993, 38990, 99918, 105486, 106062, 99918, 73262, 334962, 346062, 341102, 859195, 865390, 624206, 629807, 1678415, 1672782, 1887366, 982214, 2075142, 2011632, 2011576, 16408, 16664] checked65 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old65 n]
+ rfl
+def trace66 : List Nat := [1027, 73, 37, 165, 213, 293, 790, 293, 16901, 16421, 293, 789, 293, 20645, 16953, 16997, 165, 17505, 279085, 262309, 287269, 279060, 287269, 524453, 524869, 524837, 524453, 1975469, 328877, 1596077, 1661818, 16634, 49177, 49433]
+theorem checked66 : checkTrace blocks trace66=true := by decide +kernel
+theorem old66 : phaseClean508 reference 1027=some 49433 := by decide +kernel
+theorem row66 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1027⟩=run reference n ⟨false,tbN_t8 1027⟩ := by
+ have h:=trace_sound blocks 1027 [73, 37, 165, 213, 293, 790, 293, 16901, 16421, 293, 789, 293, 20645, 16953, 16997, 165, 17505, 279085, 262309, 287269, 279060, 287269, 524453, 524869, 524837, 524453, 1975469, 328877, 1596077, 1661818, 16634, 49177, 49433] checked66 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old66 n]
+ rfl
+def trace67 : List Nat := [1151, 14347, 12389, 13549, 12533, 15789, 25523, 22957, 25485, 57773, 35245, 41909, 41389, 125101, 123801, 123885, 112813, 91021, 353165, 358701, 358797, 877495, 874893, 637101, 631757, 631725, 637101, 1494181, 261349, 1223205, 1292786, 1290298, 16409, 16665]
+theorem checked67 : checkTrace blocks trace67=true := by decide +kernel
+theorem old67 : phaseClean508 reference 1151=some 16665 := by decide +kernel
+theorem row67 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1151⟩=run reference n ⟨false,tbN_t8 1151⟩ := by
+ have h:=trace_sound blocks 1151 [14347, 12389, 13549, 12533, 15789, 25523, 22957, 25485, 57773, 35245, 41909, 41389, 125101, 123801, 123885, 112813, 91021, 353165, 358701, 358797, 877495, 874893, 637101, 631757, 631725, 637101, 1494181, 261349, 1223205, 1292786, 1290298, 16409, 16665] checked67 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old67 n]
+ rfl
+def trace68 : List Nat := [522, 23, 15903, 16031, 16315, 7119, 15870, 16207, 32243, 29659, 20447, 32254, 31199, 32543, 32243, 162719, 65503, 65471, 64947, 49119, 52703, 65022, 60895, 278495, 294303, 1342879, 1339359, 920031, 1183641, 922961, 853913, 1316317, 98322, 98578]
+theorem checked68 : checkTrace blocks trace68=true := by decide +kernel
+theorem old68 : phaseClean508 reference 522=some 98578 := by decide +kernel
+theorem row68 (m n : List Bool) : run candidate m ⟨false,tbN_t8 522⟩=run reference n ⟨false,tbN_t8 522⟩ := by
+ have h:=trace_sound blocks 522 [23, 15903, 16031, 16315, 7119, 15870, 16207, 32243, 29659, 20447, 32254, 31199, 32543, 32243, 162719, 65503, 65471, 64947, 49119, 52703, 65022, 60895, 278495, 294303, 1342879, 1339359, 920031, 1183641, 922961, 853913, 1316317, 98322, 98578] checked68 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old68 n]
+ rfl
+def trace69 : List Nat := [15882, 14423, 3665, 2777, 3745, 1881, 23907, 18265, 23633, 22617, 42843, 40294, 38235, 50777, 56417, 187993, 34521, 23165, 23649, 18265, 22137, 23652, 22137, 313049, 302105, 1350681, 1349593, 946393, 1341145, 287953, 484377, 1996381, 32786, 33042]
+theorem checked69 : checkTrace blocks trace69=true := by decide +kernel
+theorem old69 : phaseClean508 reference 15882=some 33042 := by decide +kernel
+theorem row69 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15882⟩=run reference n ⟨false,tbN_t8 15882⟩ := by
+ have h:=trace_sound blocks 15882 [14423, 3665, 2777, 3745, 1881, 23907, 18265, 23633, 22617, 42843, 40294, 38235, 50777, 56417, 187993, 34521, 23165, 23649, 18265, 22137, 23652, 22137, 313049, 302105, 1350681, 1349593, 946393, 1341145, 287953, 484377, 1996381, 32786, 33042] checked69 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old69 n]
+ rfl
+def trace70 : List Nat := [1285, 15934, 60, 60, 374, 8236, 626, 8364, 624, 2616, 16444, 17010, 16444, 4604, 612, 132668, 49468, 33308, 33356, 33084, 32828, 33394, 32828, 262460, 279165, 279165, 282940, 264700, 2035642, 202098, 3995, 1643615, 98323, 98579]
+theorem checked70 : checkTrace blocks trace70=true := by decide +kernel
+theorem old70 : phaseClean508 reference 1285=some 98579 := by decide +kernel
+theorem row70 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1285⟩=run reference n ⟨false,tbN_t8 1285⟩ := by
+ have h:=trace_sound blocks 1285 [15934, 60, 60, 374, 8236, 626, 8364, 624, 2616, 16444, 17010, 16444, 4604, 612, 132668, 49468, 33308, 33356, 33084, 32828, 33394, 32828, 262460, 279165, 279165, 282940, 264700, 2035642, 202098, 3995, 1643615, 98323, 98579] checked70 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old70 n]
+ rfl
+def trace71 : List Nat := [1405, 14350, 12402, 13434, 12396, 15546, 25327, 22714, 9170, 8634, 43192, 41706, 44216, 43194, 41974, 173050, 47162, 10206, 9118, 31162, 7066, 9192, 15258, 325690, 304123, 304123, 305466, 291066, 1668858, 615666, 683035, 1275871, 32787, 33043]
+theorem checked71 : checkTrace blocks trace71=true := by decide +kernel
+theorem old71 : phaseClean508 reference 1405=some 33043 := by decide +kernel
+theorem row71 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1405⟩=run reference n ⟨false,tbN_t8 1405⟩ := by
+ have h:=trace_sound blocks 1405 [14350, 12402, 13434, 12396, 15546, 25327, 22714, 9170, 8634, 43192, 41706, 44216, 43194, 41974, 173050, 47162, 10206, 9118, 31162, 7066, 9192, 15258, 325690, 304123, 304123, 305466, 291066, 1668858, 615666, 683035, 1275871, 32787, 33043] checked71 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old71 n]
+ rfl
+def trace72 : List Nat := [1038, 15907, 15885, 15885, 15927, 15053, 15542, 7885, 15757, 47565, 11983, 15540, 13519, 77517, 81317, 81293, 130637, 81293, 343437, 360141, 344045, 343476, 335853, 605773, 605612, 605644, 605773, 2005573, 1485829, 907277, 901677, 1366025, 66566, 196646]
+theorem checked72 : checkTrace blocks trace72=true := by decide +kernel
+theorem old72 : phaseClean508 reference 1038=some 196646 := by decide +kernel
+theorem row72 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1038⟩=run reference n ⟨false,tbN_t8 1038⟩ := by
+ have h:=trace_sound blocks 1038 [15907, 15885, 15885, 15927, 15053, 15542, 7885, 15757, 47565, 11983, 15540, 13519, 77517, 81317, 81293, 130637, 81293, 343437, 360141, 344045, 343476, 335853, 605773, 605612, 605644, 605773, 2005573, 1485829, 907277, 901677, 1366025, 66566, 196646] checked72 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old72 n]
+ rfl
+def trace73 : List Nat := [15374, 1571, 3653, 2765, 3765, 1869, 23859, 18253, 23565, 55373, 34637, 40245, 39245, 120525, 121893, 121869, 100045, 88681, 89125, 83789, 87661, 89140, 87661, 116429, 105485, 1154061, 1152973, 718861, 256077, 326725, 517805, 2030729, 65542, 65574]
+theorem checked73 : checkTrace blocks trace73=true := by decide +kernel
+theorem old73 : phaseClean508 reference 15374=some 65574 := by decide +kernel
+theorem row73 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15374⟩=run reference n ⟨false,tbN_t8 15374⟩ := by
+ have h:=trace_sound blocks 15374 [1571, 3653, 2765, 3765, 1869, 23859, 18253, 23565, 55373, 34637, 40245, 39245, 120525, 121893, 121869, 100045, 88681, 89125, 83789, 87661, 89140, 87661, 116429, 105485, 1154061, 1152973, 718861, 256077, 326725, 517805, 2030729, 65542, 65574] checked73 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old73 n]
+ rfl
+def trace74 : List Nat := [1801, 90, 15918, 15918, 15994, 15086, 16058, 7918, 16270, 47598, 12012, 16056, 13548, 77550, 81842, 81326, 130670, 81326, 344050, 360174, 344014, 343992, 335822, 605806, 606094, 606094, 605806, 2005606, 1485862, 907310, 903727, 1366411, 66567, 196647]
+theorem checked74 : checkTrace blocks trace74=true := by decide +kernel
+theorem old74 : phaseClean508 reference 1801=some 196647 := by decide +kernel
+theorem row74 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1801⟩=run reference n ⟨false,tbN_t8 1801⟩ := by
+ have h:=trace_sound blocks 1801 [90, 15918, 15918, 15994, 15086, 16058, 7918, 16270, 47598, 12012, 16056, 13548, 77550, 81842, 81326, 130670, 81326, 344050, 360174, 344014, 343992, 335822, 605806, 606094, 606094, 605806, 2005606, 1485862, 907310, 903727, 1366411, 66567, 196647] checked74 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old74 n]
+ rfl
+def trace75 : List Nat := [1913, 1658, 12390, 13422, 12408, 15534, 25279, 22702, 9102, 41390, 34990, 41657, 41134, 112686, 107442, 106926, 112686, 75722, 74714, 96686, 72590, 74680, 80782, 129070, 107503, 107503, 108846, 63534, 977006, 654438, 716463, 1309963, 65543, 65575]
+theorem checked75 : checkTrace blocks trace75=true := by decide +kernel
+theorem old75 : phaseClean508 reference 1913=some 65575 := by decide +kernel
+theorem row75 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1913⟩=run reference n ⟨false,tbN_t8 1913⟩ := by
+ have h:=trace_sound blocks 1913 [1658, 12390, 13422, 12408, 15534, 25279, 22702, 9102, 41390, 34990, 41657, 41134, 112686, 107442, 106926, 112686, 75722, 74714, 96686, 72590, 74680, 80782, 129070, 107503, 107503, 108846, 63534, 977006, 654438, 716463, 1309963, 65543, 65575] checked75 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old75 n]
+ rfl
+def trace76 : List Nat := [1296, 96, 586, 66, 520, 66, 1032, 66, 1026, 66, 66, 1033, 66, 66, 1046, 131138, 49218, 70, 1110, 16578, 4194, 1034, 4194, 262210, 263203, 1311811, 1310786, 931394, 603714, 1579594, 394100, 396112, 98320, 98576]
+theorem checked76 : checkTrace blocks trace76=true := by decide +kernel
+theorem old76 : phaseClean508 reference 1296=some 98576 := by decide +kernel
+theorem row76 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1296⟩=run reference n ⟨false,tbN_t8 1296⟩ := by
+ have h:=trace_sound blocks 1296 [96, 586, 66, 520, 66, 1032, 66, 1026, 66, 66, 1033, 66, 66, 1046, 131138, 49218, 70, 1110, 16578, 4194, 1034, 4194, 262210, 263203, 1311811, 1310786, 931394, 603714, 1579594, 394100, 396112, 98320, 98576] checked76 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old76 n]
+ rfl
+def trace77 : List Nat := [15120, 14370, 12810, 13322, 12840, 15562, 9389, 6346, 9618, 9690, 2250, 9385, 8394, 14410, 9654, 139722, 63562, 8654, 9694, 30922, 14826, 9642, 6634, 276554, 271787, 1320395, 1325130, 921162, 593482, 1329794, 1397108, 1399120, 32784, 33040]
+theorem checked77 : checkTrace blocks trace77=true := by decide +kernel
+theorem old77 : phaseClean508 reference 15120=some 33040 := by decide +kernel
+theorem row77 (m n : List Bool) : run candidate m ⟨false,tbN_t8 15120⟩=run reference n ⟨false,tbN_t8 15120⟩ := by
+ have h:=trace_sound blocks 15120 [14370, 12810, 13322, 12840, 15562, 9389, 6346, 9618, 9690, 2250, 9385, 8394, 14410, 9654, 139722, 63562, 8654, 9694, 30922, 14826, 9642, 6634, 276554, 271787, 1320395, 1325130, 921162, 593482, 1329794, 1397108, 1399120, 32784, 33040] checked77 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old77 n]
+ rfl
+def trace78 : List Nat := [2059, 2073, 15977, 14945, 11845, 4833, 7812, 5857, 8065, 6625, 1761, 7813, 6369, 13921, 8085, 7585, 13921, 6629, 8105, 13921, 2017, 8069, 2017, 13921, 8096, 8128, 13921, 13921, 13921, 1120873, 985974, 985810, 98321, 98577]
+theorem checked78 : checkTrace blocks trace78=true := by decide +kernel
+theorem old78 : phaseClean508 reference 2059=some 98577 := by decide +kernel
+theorem row78 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2059⟩=run reference n ⟨false,tbN_t8 2059⟩ := by
+ have h:=trace_sound blocks 2059 [2073, 15977, 14945, 11845, 4833, 7812, 5857, 8065, 6625, 1761, 7813, 6369, 13921, 8085, 7585, 13921, 6629, 8105, 13921, 2017, 8069, 2017, 13921, 8096, 8128, 13921, 13921, 13921, 1120873, 985974, 985810, 98321, 98577] checked78 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old78 n]
+ rfl
+def trace79 : List Nat := [2167, 12379, 3625, 3625, 7781, 11881, 15905, 3689, 15889, 15481, 3689, 15909, 14441, 3689, 15925, 15401, 3689, 14445, 15905, 3689, 11881, 15909, 3689, 3689, 15912, 15944, 3689, 3689, 3689, 1919649, 1857910, 1857746, 32785, 33041]
+theorem checked79 : checkTrace blocks trace79=true := by decide +kernel
+theorem old79 : phaseClean508 reference 2167=some 33041 := by decide +kernel
+theorem row79 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2167⟩=run reference n ⟨false,tbN_t8 2167⟩ := by
+ have h:=trace_sound blocks 2167 [12379, 3625, 3625, 7781, 11881, 15905, 3689, 15889, 15481, 3689, 15909, 14441, 3689, 15925, 15401, 3689, 14445, 15905, 3689, 11881, 15909, 3689, 3689, 15912, 15944, 3689, 3689, 3689, 1919649, 1857910, 1857746, 32785, 33041] checked79 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old79 n]
+ rfl
+def trace80 : List Nat := [2575, 13933, 15997, 14965, 11857, 4853, 7892, 5877, 8157, 39413, 9975, 7894, 5367, 75509, 73681, 204789, 79477, 72177, 335853, 341621, 329717, 335829, 329717, 865909, 860084, 860116, 865909, 1743549, 953597, 1218101, 1019842, 1017350, 66565, 196645]
+theorem checked80 : checkTrace blocks trace80=true := by decide +kernel
+theorem old80 : phaseClean508 reference 2575=some 196645 := by decide +kernel
+theorem row80 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2575⟩=run reference n ⟨false,tbN_t8 2575⟩ := by
+ have h:=trace_sound blocks 2575 [13933, 15997, 14965, 11857, 4853, 7892, 5877, 8157, 39413, 9975, 7894, 5367, 75509, 73681, 204789, 79477, 72177, 335853, 341621, 329717, 335829, 329717, 865909, 860084, 860116, 865909, 1743549, 953597, 1218101, 1019842, 1017350, 66565, 196645] checked80 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old80 n]
+ rfl
+def trace81 : List Nat := [2675, 3631, 3645, 3645, 7793, 11901, 15985, 3709, 15949, 48237, 11903, 15990, 13439, 73469, 81521, 212605, 69245, 79993, 81509, 69245, 77437, 81525, 69245, 331389, 343612, 343644, 331389, 296637, 1544445, 1954357, 1891266, 1888774, 65541, 65573]
+theorem checked81 : checkTrace blocks trace81=true := by decide +kernel
+theorem old81 : phaseClean508 reference 2675=some 65573 := by decide +kernel
+theorem row81 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2675⟩=run reference n ⟨false,tbN_t8 2675⟩ := by
+ have h:=trace_sound blocks 2675 [3631, 3645, 3645, 7793, 11901, 15985, 3709, 15949, 48237, 11903, 15990, 13439, 73469, 81521, 212605, 69245, 79993, 81509, 69245, 77437, 81525, 69245, 331389, 343612, 343644, 331389, 296637, 1544445, 1954357, 1891266, 1888774, 65541, 65573] checked81 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old81 n]
+ rfl
+def trace82 : List Nat := [268, 15974, 15896, 15896, 16166, 6856, 15584, 15944, 15860, 13276, 20184, 31970, 30936, 12184, 15836, 14808, 16216, 49080, 48564, 65496, 49144, 48610, 40952, 16216, 32249, 32249, 28504, 16216, 465182, 868638, 868638, 1331892, 81940, 82196]
+theorem checked82 : checkTrace blocks trace82=true := by decide +kernel
+theorem old82 : phaseClean508 reference 268=some 82196 := by decide +kernel
+theorem row82 (m n : List Bool) : run candidate m ⟨false,tbN_t8 268⟩=run reference n ⟨false,tbN_t8 268⟩ := by
+ have h:=trace_sound blocks 268 [15974, 15896, 15896, 16166, 6856, 15584, 15944, 15860, 13276, 20184, 31970, 30936, 12184, 15836, 14808, 16216, 49080, 48564, 65496, 49144, 48610, 40952, 16216, 32249, 32249, 28504, 16216, 465182, 868638, 868638, 1331892, 81940, 82196] checked82 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old82 n]
+ rfl
+def trace83 : List Nat := [16140, 1572, 3672, 2640, 3846, 9792, 7237, 9920, 7268, 5700, 18000, 23618, 22608, 6032, 7292, 6224, 1872, 40496, 39996, 51152, 38512, 40002, 38512, 1872, 23665, 23665, 22352, 1872, 467222, 70102, 1970974, 458932, 16404, 16660]
+theorem checked83 : checkTrace blocks trace83=true := by decide +kernel
+theorem old83 : phaseClean508 reference 16140=some 16660 := by decide +kernel
+theorem row83 (m n : List Bool) : run candidate m ⟨false,tbN_t8 16140⟩=run reference n ⟨false,tbN_t8 16140⟩ := by
+ have h:=trace_sound blocks 16140 [1572, 3672, 2640, 3846, 9792, 7237, 9920, 7268, 5700, 18000, 23618, 22608, 6032, 7292, 6224, 1872, 40496, 39996, 51152, 38512, 40002, 38512, 1872, 23665, 23665, 22352, 1872, 467222, 70102, 1970974, 458932, 16404, 16660] checked83 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old83 n]
+ rfl
+def trace84 : List Nat := [1539, 79, 59, 187, 491, 8491, 876, 8619, 17015, 19007, 16699, 17262, 16699, 16763, 16971, 17531, 443, 49691, 49739, 49467, 61979, 49774, 61979, 443, 16923, 1065499, 1069499, 671611, 661821, 16701, 18716, 1659702, 81941, 82197]
+theorem checked84 : checkTrace blocks trace84=true := by decide +kernel
+theorem old84 : phaseClean508 reference 1539=some 82197 := by decide +kernel
+theorem row84 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1539⟩=run reference n ⟨false,tbN_t8 1539⟩ := by
+ have h:=trace_sound blocks 1539 [79, 59, 187, 491, 8491, 876, 8619, 17015, 19007, 16699, 17262, 16699, 16763, 16971, 17531, 443, 49691, 49739, 49467, 61979, 49774, 61979, 443, 16923, 1065499, 1069499, 671611, 661821, 16701, 18716, 1659702, 81941, 82197] checked84 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old84 n]
+ rfl
+def trace85 : List Nat := [1663, 14349, 12411, 13555, 12747, 7587, 9161, 14627, 25575, 28583, 18867, 25550, 25011, 31091, 25579, 26099, 14771, 58259, 58307, 63795, 56211, 58318, 64403, 14771, 25491, 1074067, 1075635, 657267, 663861, 791029, 1252124, 655670, 16405, 16661]
+theorem checked85 : checkTrace blocks trace85=true := by decide +kernel
+theorem old85 : phaseClean508 reference 1663=some 16661 := by decide +kernel
+theorem row85 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1663⟩=run reference n ⟨false,tbN_t8 1663⟩ := by
+ have h:=trace_sound blocks 1663 [14349, 12411, 13555, 12747, 7587, 9161, 14627, 25575, 28583, 18867, 25550, 25011, 31091, 25579, 26099, 14771, 58259, 58307, 63795, 56211, 58318, 64403, 14771, 25491, 1074067, 1075635, 657267, 663861, 791029, 1252124, 655670, 16405, 16661] checked85 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old85 n]
+ rfl
+def trace86 : List Nat := [1797, 15932, 54, 54, 92, 54, 600, 54, 606, 32822, 8244, 602, 3124, 69814, 66130, 66166, 114742, 66674, 66158, 82102, 69654, 66136, 69654, 65590, 66103, 1114711, 1114166, 704246, 2009270, 1606334, 1677641, 35655, 33803, 163883]
+theorem checked86 : checkTrace blocks trace86=true := by decide +kernel
+theorem old86 : phaseClean508 reference 1797=some 163883 := by decide +kernel
+theorem row86 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1797⟩=run reference n ⟨false,tbN_t8 1797⟩ := by
+ have h:=trace_sound blocks 1797 [15932, 54, 54, 92, 54, 600, 54, 606, 32822, 8244, 602, 3124, 69814, 66130, 66166, 114742, 66674, 66158, 82102, 69654, 66136, 69654, 65590, 66103, 1114711, 1114166, 704246, 2009270, 1606334, 1677641, 35655, 33803, 163883] checked86 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old86 n]
+ rfl
+def trace87 : List Nat := [1917, 14348, 12408, 13424, 12614, 7328, 8901, 14368, 9188, 12196, 18608, 25282, 24752, 10736, 9152, 10160, 14640, 42964, 41876, 63920, 47504, 41921, 39312, 14640, 25585, 25585, 26928, 14640, 466806, 1132406, 1268809, 675399, 32779, 32811]
+theorem checked87 : checkTrace blocks trace87=true := by decide +kernel
+theorem old87 : phaseClean508 reference 1917=some 32811 := by decide +kernel
+theorem row87 (m n : List Bool) : run candidate m ⟨false,tbN_t8 1917⟩=run reference n ⟨false,tbN_t8 1917⟩ := by
+ have h:=trace_sound blocks 1917 [14348, 12408, 13424, 12614, 7328, 8901, 14368, 9188, 12196, 18608, 25282, 24752, 10736, 9152, 10160, 14640, 42964, 41876, 63920, 47504, 41921, 39312, 14640, 25585, 25585, 26928, 14640, 466806, 1132406, 1268809, 675399, 32779, 32811] checked87 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old87 n]
+ rfl
+def trace88 : List Nat := [2055, 13947, 97, 1257, 4327, 10537, 8996, 2345, 25097, 24617, 2345, 8997, 8489, 22697, 25141, 24617, 2217, 25709, 25121, 2217, 18985, 25125, 27177, 2217, 8808, 8808, 2217, 2217, 1845417, 1704609, 1775958, 1775858, 49169, 49425]
+theorem checked88 : checkTrace blocks trace88=true := by decide +kernel
+theorem old88 : phaseClean508 reference 2055=some 49425 := by decide +kernel
+theorem row88 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2055⟩=run reference n ⟨false,tbN_t8 2055⟩ := by
+ have h:=trace_sound blocks 2055 [13947, 97, 1257, 4327, 10537, 8996, 2345, 25097, 24617, 2345, 8997, 8489, 22697, 25141, 24617, 2217, 25709, 25121, 2217, 18985, 25125, 27177, 2217, 8808, 8808, 2217, 2217, 1845417, 1704609, 1775958, 1775858, 49169, 49425] checked88 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old88 n]
+ rfl
+def trace89 : List Nat := [2171, 3641, 12321, 12449, 8391, 5537, 897, 4513, 17305, 17841, 417, 901, 417, 24737, 17301, 16801, 12449, 17893, 17321, 12449, 25505, 17285, 25505, 12449, 992, 992, 12449, 12449, 1839265, 1462889, 543574, 543474, 114705, 114961]
+theorem checked89 : checkTrace blocks trace89=true := by decide +kernel
+theorem old89 : phaseClean508 reference 2171=some 114961 := by decide +kernel
+theorem row89 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2171⟩=run reference n ⟨false,tbN_t8 2171⟩ := by
+ have h:=trace_sound blocks 2171 [3641, 12321, 12449, 8391, 5537, 897, 4513, 17305, 17841, 417, 901, 417, 24737, 17301, 16801, 12449, 17893, 17321, 12449, 25505, 17285, 25505, 12449, 992, 992, 12449, 12449, 1839265, 1462889, 543574, 543474, 114705, 114961] checked89 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old89 n]
+ rfl
+def trace90 : List Nat := [2051, 2057, 107, 1251, 4301, 10531, 8972, 2339, 25091, 24611, 2339, 8972, 8483, 22691, 25111, 24611, 2211, 25703, 25131, 2211, 18979, 25101, 27171, 2211, 8802, 8802, 2211, 2211, 1845411, 1704619, 1775964, 131890, 81937, 82193]
+theorem checked90 : checkTrace blocks trace90=true := by decide +kernel
+theorem old90 : phaseClean508 reference 2051=some 82193 := by decide +kernel
+theorem row90 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2051⟩=run reference n ⟨false,tbN_t8 2051⟩ := by
+ have h:=trace_sound blocks 2051 [2057, 107, 1251, 4301, 10531, 8972, 2339, 25091, 24611, 2339, 8972, 8483, 22691, 25111, 24611, 2211, 25703, 25131, 2211, 18979, 25101, 27171, 2211, 8802, 8802, 2211, 2211, 1845411, 1704619, 1775964, 131890, 81937, 82193] checked90 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old90 n]
+ rfl
+def trace91 : List Nat := [2175, 12363, 12331, 12459, 8429, 5547, 937, 4523, 17299, 17851, 427, 940, 427, 24747, 17335, 16811, 12459, 17903, 17315, 12459, 25515, 17325, 25515, 12459, 1002, 1002, 12459, 12459, 1839275, 1462883, 543580, 1134898, 16401, 16657]
+theorem checked91 : checkTrace blocks trace91=true := by decide +kernel
+theorem old91 : phaseClean508 reference 2175=some 16657 := by decide +kernel
+theorem row91 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2175⟩=run reference n ⟨false,tbN_t8 2175⟩ := by
+ have h:=trace_sound blocks 2175 [12363, 12331, 12459, 8429, 5547, 937, 4523, 17299, 17851, 427, 940, 427, 24747, 17335, 16811, 12459, 17903, 17315, 12459, 25515, 17325, 25515, 12459, 1002, 1002, 12459, 12459, 1839275, 1462883, 543580, 1134898, 16401, 16657] checked91 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old91 n]
+ rfl
+def trace92 : List Nat := [2309, 13950, 118, 1150, 4478, 2094, 8826, 10414, 8818, 10810, 18494, 25211, 90174, 2430, 8806, 140862, 133438, 173658, 172570, 182718, 178206, 172664, 170014, 411966, 418334, 418334, 411710, 328190, 77624, 1727280, 1792743, 1792847, 33795, 163875]
+theorem checked92 : checkTrace blocks trace92=true := by decide +kernel
+theorem old92 : phaseClean508 reference 2309=some 163875 := by decide +kernel
+theorem row92 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2309⟩=run reference n ⟨false,tbN_t8 2309⟩ := by
+ have h:=trace_sound blocks 2309 [13950, 118, 1150, 4478, 2094, 8826, 10414, 8818, 10810, 18494, 25211, 90174, 2430, 8806, 140862, 133438, 173658, 172570, 182718, 178206, 172664, 170014, 411966, 418334, 418334, 411710, 328190, 77624, 1727280, 1792743, 1792847, 33795, 163875] checked92 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old92 n]
+ rfl
+def trace93 : List Nat := [2429, 12366, 12344, 12344, 8292, 5304, 17127, 20664, 976, 440, 41146, 33507, 101562, 45112, 33780, 164856, 159800, 131992, 394184, 405816, 402360, 394210, 402360, 962616, 951192, 951192, 962616, 1793264, 1995376, 1261176, 1130343, 1130191, 32771, 32803]
+theorem checked93 : checkTrace blocks trace93=true := by decide +kernel
+theorem old93 : phaseClean508 reference 2429=some 32803 := by decide +kernel
+theorem row93 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2429⟩=run reference n ⟨false,tbN_t8 2429⟩ := by
+ have h:=trace_sound blocks 2429 [12366, 12344, 12344, 8292, 5304, 17127, 20664, 976, 440, 41146, 33507, 101562, 45112, 33780, 164856, 159800, 131992, 394184, 405816, 402360, 394210, 402360, 962616, 951192, 951192, 962616, 1793264, 1995376, 1261176, 1130343, 1130191, 32771, 32803] checked93 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old93 n]
+ rfl
+def trace94 : List Nat := [2567, 13949, 127, 1271, 4313, 10551, 9052, 2359, 25183, 57399, 10549, 9055, 77109, 88247, 90747, 90167, 198839, 222323, 221807, 198839, 215607, 221789, 223799, 215223, 205366, 205398, 203191, 100535, 898679, 1874559, 166752, 166694, 81925, 81957]
+theorem checked94 : checkTrace blocks trace94=true := by decide +kernel
+theorem old94 : phaseClean508 reference 2567=some 81957 := by decide +kernel
+theorem row94 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2567⟩=run reference n ⟨false,tbN_t8 2567⟩ := by
+ have h:=trace_sound blocks 2567 [13949, 127, 1271, 4313, 10551, 9052, 2359, 25183, 57399, 10549, 9055, 77109, 88247, 90747, 90167, 198839, 222323, 221807, 198839, 215607, 221789, 223799, 215223, 205366, 205398, 203191, 100535, 898679, 1874559, 166752, 166694, 81925, 81957] checked94 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old94 n]
+ rfl
+def trace95 : List Nat := [2683, 3647, 12351, 12479, 8441, 5567, 1017, 4543, 17359, 50607, 8637, 1023, 69053, 90303, 82907, 82367, 209087, 214523, 476135, 471231, 484287, 476157, 484287, 749759, 721854, 721886, 729535, 2069687, 1354359, 1302143, 1171296, 1171238, 82949, 213029]
+theorem checked95 : checkTrace blocks trace95=true := by decide +kernel
+theorem old95 : phaseClean508 reference 2683=some 213029 := by decide +kernel
+theorem row95 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2683⟩=run reference n ⟨false,tbN_t8 2683⟩ := by
+ have h:=trace_sound blocks 2683 [3647, 12351, 12479, 8441, 5567, 1017, 4543, 17359, 50607, 8637, 1023, 69053, 90303, 82907, 82367, 209087, 214523, 476135, 471231, 484287, 476157, 484287, 749759, 721854, 721886, 729535, 2069687, 1354359, 1302143, 1171296, 1171238, 82949, 213029] checked95 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old95 n]
+ rfl
+def trace96 : List Nat := [2563, 2063, 117, 1277, 4595, 2349, 9078, 10669, 25201, 27193, 18749, 25463, 90429, 23037, 25165, 25725, 182717, 190041, 188953, 166333, 182845, 189045, 191037, 149949, 156284, 156284, 149693, 68029, 337787, 2037691, 134732, 1774638, 17421, 147501]
+theorem checked96 : checkTrace blocks trace96=true := by decide +kernel
+theorem old96 : phaseClean508 reference 2563=some 147501 := by decide +kernel
+theorem row96 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2563⟩=run reference n ⟨false,tbN_t8 2563⟩ := by
+ have h:=trace_sound blocks 2563 [2063, 117, 1277, 4595, 2349, 9078, 10669, 25201, 27193, 18749, 25463, 90429, 23037, 25165, 25725, 182717, 190041, 188953, 166333, 182845, 189045, 191037, 149949, 156284, 156284, 149693, 68029, 337787, 2037691, 134732, 1774638, 17421, 147501] checked96 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old96 n]
+ rfl
+def trace97 : List Nat := [2687, 12365, 12341, 12469, 8659, 13733, 17363, 28965, 17401, 19377, 57783, 50134, 52663, 57845, 50157, 50677, 29109, 49589, 50105, 61493, 53653, 50134, 53653, 61877, 50164, 50164, 61621, 29109, 1724915, 1078075, 1145548, 549038, 16397, 16429]
+theorem checked97 : checkTrace blocks trace97=true := by decide +kernel
+theorem old97 : phaseClean508 reference 2687=some 16429 := by decide +kernel
+theorem row97 (m n : List Bool) : run candidate m ⟨false,tbN_t8 2687⟩=run reference n ⟨false,tbN_t8 2687⟩ := by
+ have h:=trace_sound blocks 2687 [12365, 12341, 12469, 8659, 13733, 17363, 28965, 17401, 19377, 57783, 50134, 52663, 57845, 50157, 50677, 29109, 49589, 50105, 61493, 53653, 50134, 53653, 61877, 50164, 50164, 61621, 29109, 1724915, 1078075, 1145548, 549038, 16397, 16429] checked97 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old97 n]
+ rfl
+def trace98 : List Nat := [3075, 2121, 109, 1125, 4181, 10277, 8726, 2085, 8709, 8229, 2085, 8725, 8229, 2085, 8761, 8805, 2085, 8229, 8825, 2085, 10277, 8725, 2085, 2085, 8709, 1057285, 1050661, 669413, 1119973, 480301, 1793548, 148522, 17417, 147497]
+theorem checked98 : checkTrace blocks trace98=true := by decide +kernel
+theorem old98 : phaseClean508 reference 3075=some 147497 := by decide +kernel
+theorem row98 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3075⟩=run reference n ⟨false,tbN_t8 3075⟩ := by
+ have h:=trace_sound blocks 3075 [2121, 109, 1125, 4181, 10277, 8726, 2085, 8709, 8229, 2085, 8725, 8229, 2085, 8761, 8805, 2085, 8229, 8825, 2085, 10277, 8725, 2085, 2085, 8709, 1057285, 1050661, 669413, 1119973, 480301, 1793548, 148522, 17417, 147497] checked98 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old98 n]
+ rfl
+def trace99 : List Nat := [3199, 12299, 12333, 12333, 8309, 5293, 17075, 20653, 909, 33197, 32941, 33461, 32941, 110637, 99225, 99309, 110637, 67529, 66521, 94637, 78733, 66486, 78733, 127021, 99277, 99245, 106797, 61485, 974957, 569517, 567948, 1159338, 16393, 16425]
+theorem checked99 : checkTrace blocks trace99=true := by decide +kernel
+theorem old99 : phaseClean508 reference 3199=some 16425 := by decide +kernel
+theorem row99 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3199⟩=run reference n ⟨false,tbN_t8 3199⟩ := by
+ have h:=trace_sound blocks 3199 [12299, 12333, 12333, 8309, 5293, 17075, 20653, 909, 33197, 32941, 33461, 32941, 110637, 99225, 99309, 110637, 67529, 66521, 94637, 78733, 66486, 78733, 127021, 99277, 99245, 106797, 61485, 974957, 569517, 567948, 1159338, 16393, 16425] checked99 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old99 n]
+ rfl
+def trace100 : List Nat := [3587, 2127, 115, 1147, 4459, 2091, 8812, 10411, 8823, 10815, 18491, 25198, 24635, 6651, 8779, 9339, 2363, 42591, 41503, 51643, 47131, 565871, 563227, 18747, 25115, 1073691, 1067067, 141307, 1974717, 1658749, 1793122, 1791398, 17413, 147493]
+theorem checked100 : checkTrace blocks trace100=true := by decide +kernel
+theorem old100 : phaseClean508 reference 3587=some 147493 := by decide +kernel
+theorem row100 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3587⟩=run reference n ⟨false,tbN_t8 3587⟩ := by
+ have h:=trace_sound blocks 3587 [2127, 115, 1147, 4459, 2091, 8812, 10411, 8823, 10815, 18491, 25198, 24635, 6651, 8779, 9339, 2363, 42591, 41503, 51643, 47131, 565871, 563227, 18747, 25115, 1073691, 1067067, 141307, 1974717, 1658749, 1793122, 1791398, 17413, 147493] checked100 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old100 n]
+ rfl
+def trace101 : List Nat := [3711, 12301, 12339, 12339, 8523, 13475, 713, 12323, 999, 4007, 16563, 17102, 16563, 8691, 1003, 1523, 12595, 34775, 295831, 324019, 299411, 820175, 823699, 553267, 541587, 1590163, 1601587, 1850363, 474557, 1444733, 526434, 524710, 16389, 16421]
+theorem checked101 : checkTrace blocks trace101=true := by decide +kernel
+theorem old101 : phaseClean508 reference 3711=some 16421 := by decide +kernel
+theorem row101 (m n : List Bool) : run candidate m ⟨false,tbN_t8 3711⟩=run reference n ⟨false,tbN_t8 3711⟩ := by
+ have h:=trace_sound blocks 3711 [12301, 12339, 12339, 8523, 13475, 713, 12323, 999, 4007, 16563, 17102, 16563, 8691, 1003, 1523, 12595, 34775, 295831, 324019, 299411, 820175, 823699, 553267, 541587, 1590163, 1601587, 1850363, 474557, 1444733, 526434, 524710, 16389, 16421] checked101 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old101 n]
+ rfl
+def trace102 : List Nat := [4099, 4105, 4131, 4131, 79, 5155, 521, 4131, 667, 1203, 5283, 654, 2723, 4131, 703, 739, 4131, 163, 767, 4131, 163, 652, 163, 4131, 738, 738, 4131, 4131, 4131, 724203, 527394, 525730, 17409, 147489]
+theorem checked102 : checkTrace blocks trace102=true := by decide +kernel
+theorem old102 : phaseClean508 reference 4099=some 147489 := by decide +kernel
+theorem row102 (m n : List Bool) : run candidate m ⟨false,tbN_t8 4099⟩=run reference n ⟨false,tbN_t8 4099⟩ := by
+ have h:=trace_sound blocks 4099 [4105, 4131, 4131, 79, 5155, 521, 4131, 667, 1203, 5283, 654, 2723, 4131, 703, 739, 4131, 163, 767, 4131, 163, 652, 163, 4131, 738, 738, 4131, 4131, 4131, 724203, 527394, 525730, 17409, 147489] checked102 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old102 n]
+ rfl
+def trace103 : List Nat := [4223, 10315, 8291, 9323, 12399, 10411, 8876, 2219, 8971, 8491, 7211, 8750, 10795, 10283, 8991, 9067, 10283, 8491, 271223, 272427, 272683, 271148, 264491, 534571, 533354, 533354, 534571, 1969187, 1641507, 280811, 1792034, 1790370, 16385, 16417]
+theorem checked103 : checkTrace blocks trace103=true := by decide +kernel
+theorem old103 : phaseClean508 reference 4223=some 16417 := by decide +kernel
+theorem row103 (m n : List Bool) : run candidate m ⟨false,tbN_t8 4223⟩=run reference n ⟨false,tbN_t8 4223⟩ := by
+ have h:=trace_sound blocks 4223 [10315, 8291, 9323, 12399, 10411, 8876, 2219, 8971, 8491, 7211, 8750, 10795, 10283, 8991, 9067, 10283, 8491, 271223, 272427, 272683, 271148, 264491, 534571, 533354, 533354, 534571, 1969187, 1641507, 280811, 1792034, 1790370, 16385, 16417] checked103 m
+ change run candidate m _ = _ at h
+ rw [h,checked_run reference _ _ old103 n]
+ rfl
 end ECDSAAdd.Entrant.CompactForward11
 
 -- Verified CompactForwardFinal
@@ -12287,22 +13087,114 @@ namespace ECDSAAdd.Entrant.CompactForward11
 open Arithmetic MappedCompressed Secp256k1 History5 CompactCertificates
 attribute [local irreducible] run candidate reference Forward11Width.candidate MorningFour.forward13
 def rowInputs : List Nat := [2,2,257,257,260,16132,515,639,518,15878,773,893,776,15624,1031,1147,1034,15370,1289,1401,1292,15116,1547,1655,1550,14862,1805,1909,1808,14608,2063,2163,2066,14354,2321,2417,2324,14100,2579,2671,2582,13846,2837,2925,2840,13592,3095,3179,3098,13338,3353,3433,3356,13084,3611,3687,3614,12830,3869,3941,3872,12576,4127,4195,264,16136,1027,1151,522,15882,1285,1405,1038,15374,1801,1913,1296,15120,2059,2167,2575,2675,268,16140,1539,1663,1797,1917,2055,2171,2051,2175,2309,2429,2567,2683,2563,2687,3075,3199,3587,3711,4099,4223]
-open CodecBitSliceVerify
-private def checkColumns : Cols := [20282394854756671125471319870668, 20267307415369599999374461748163, 13506522451357669059141575921584, 13521609599783004711278396553344, 13521596796506683380640567036032, 13521596569841239514828033788032, 13521596569837780750314213247104, 0, 15102188282070424572789537852, 4100361059202662063196044533728, 4753989715244963429924313489952, 5070307281971278569035547157024, 15211817035349254074999674905120, 9832596666198983954276896, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-private theorem checkEnumeration :
-    rowInputs = (List.finRange 104).map (CompactProgramRows.word checkColumns) := by decide +kernel
-private theorem checkTargets : (∀ i ∈ candidate, target i < checkColumns.length) ∧
-    (∀ i ∈ reference, target i < checkColumns.length) := by decide +kernel
-private theorem checkPrograms :
-    (CodecBitSliceVerify.eval (2^104-1) candidate checkColumns).1 = true ∧
-    (CodecBitSliceVerify.eval (2^104-1) reference checkColumns).1 = true ∧
-    (CodecBitSliceVerify.eval (2^104-1) candidate checkColumns).2 =
-      (CodecBitSliceVerify.eval (2^104-1) reference checkColumns).2 := by decide +kernel
 theorem allRows (b : Nat) (h : b∈rowInputs) (m n : List Bool) :
- run candidate m ⟨false,tbN_t8 b⟩=run reference n ⟨false,tbN_t8 b⟩ :=
-  CompactProgramRows.sound candidate reference checkColumns rowInputs checkEnumeration
-    checkTargets.1 checkTargets.2 checkPrograms b h m n
-
+ run candidate m ⟨false,tbN_t8 b⟩=run reference n ⟨false,tbN_t8 b⟩ := by
+ simp only [rowInputs,List.mem_cons,List.not_mem_nil,or_false] at h
+ rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+ · exact row0 m n
+ · exact row1 m n
+ · exact row2 m n
+ · exact row3 m n
+ · exact row4 m n
+ · exact row5 m n
+ · exact row6 m n
+ · exact row7 m n
+ · exact row8 m n
+ · exact row9 m n
+ · exact row10 m n
+ · exact row11 m n
+ · exact row12 m n
+ · exact row13 m n
+ · exact row14 m n
+ · exact row15 m n
+ · exact row16 m n
+ · exact row17 m n
+ · exact row18 m n
+ · exact row19 m n
+ · exact row20 m n
+ · exact row21 m n
+ · exact row22 m n
+ · exact row23 m n
+ · exact row24 m n
+ · exact row25 m n
+ · exact row26 m n
+ · exact row27 m n
+ · exact row28 m n
+ · exact row29 m n
+ · exact row30 m n
+ · exact row31 m n
+ · exact row32 m n
+ · exact row33 m n
+ · exact row34 m n
+ · exact row35 m n
+ · exact row36 m n
+ · exact row37 m n
+ · exact row38 m n
+ · exact row39 m n
+ · exact row40 m n
+ · exact row41 m n
+ · exact row42 m n
+ · exact row43 m n
+ · exact row44 m n
+ · exact row45 m n
+ · exact row46 m n
+ · exact row47 m n
+ · exact row48 m n
+ · exact row49 m n
+ · exact row50 m n
+ · exact row51 m n
+ · exact row52 m n
+ · exact row53 m n
+ · exact row54 m n
+ · exact row55 m n
+ · exact row56 m n
+ · exact row57 m n
+ · exact row58 m n
+ · exact row59 m n
+ · exact row60 m n
+ · exact row61 m n
+ · exact row62 m n
+ · exact row63 m n
+ · exact row64 m n
+ · exact row65 m n
+ · exact row66 m n
+ · exact row67 m n
+ · exact row68 m n
+ · exact row69 m n
+ · exact row70 m n
+ · exact row71 m n
+ · exact row72 m n
+ · exact row73 m n
+ · exact row74 m n
+ · exact row75 m n
+ · exact row76 m n
+ · exact row77 m n
+ · exact row78 m n
+ · exact row79 m n
+ · exact row80 m n
+ · exact row81 m n
+ · exact row82 m n
+ · exact row83 m n
+ · exact row84 m n
+ · exact row85 m n
+ · exact row86 m n
+ · exact row87 m n
+ · exact row88 m n
+ · exact row89 m n
+ · exact row90 m n
+ · exact row91 m n
+ · exact row92 m n
+ · exact row93 m n
+ · exact row94 m n
+ · exact row95 m n
+ · exact row96 m n
+ · exact row97 m n
+ · exact row98 m n
+ · exact row99 m n
+ · exact row100 m n
+ · exact row101 m n
+ · exact row102 m n
+ · exact row103 m n
 def localSites : List Wire := List.range 22
 def encodedInput (g s : Bool) (uv : Nat×Nat) : Nat :=
  encN_t8 (fun q=>MorningFour.pre507 g s uv.1 uv.2 (perm q)) localSites
@@ -12822,36 +13714,6 @@ pool-B wires at stage 506; earlier ticks already use them. -/
 
 set_option maxRecDepth 30000
 set_option maxHeartbeats 0
-
-namespace ECDSAAdd.Entrant.CoverageBits
-abbrev Row := Bool × Bool × Nat × Nat
-def index (r : Row) : Nat := 4 * Nat.pair r.2.2.1 r.2.2.2 + 2 * r.1.toNat + r.2.1.toNat
-
-private theorem index_inj : Function.Injective index := by
-  rintro ⟨a,b,u,v⟩ ⟨c,d,w,z⟩ h
-  cases a <;> cases b <;> cases c <;> cases d <;> simp [index] at h ⊢ <;> omega
-
-def members : List Row → Nat
-  | [] => 0
-  | x :: xs => 2 ^ index x ||| members xs
-
-theorem member_of_bit (rows : List Row) (r : Row)
-    (h : (members rows).testBit (index r) = true) : r ∈ rows := by
-  induction rows with
-  | nil => simp [members] at h
-  | cons x xs ih =>
-    simp only [members, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
-      decide_eq_true_eq] at h
-    rcases h with h | h
-    · exact List.mem_cons.mpr (Or.inl (index_inj h).symm)
-    · exact List.mem_cons_of_mem _ (ih h)
-
-theorem cover {cheap hit good target : Bool}
-    (h : (!cheap || hit || !good) = true) (lookup : hit = true → target = true) :
-    (!(cheap && good) || target) = true := by
-  cases cheap <;> cases hit <;> cases good <;> simp_all
-end ECDSAAdd.Entrant.CoverageBits
-
 namespace ECDSAAdd.Entrant.Five506
 open Arithmetic MappedCompressed Secp256k1 History5
 
@@ -13926,73 +14788,39 @@ def cv (v : Nat) : Bool :=
   (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || decide ((g,s,u,v) ∈ rows)
 
-
-private def rowWordMask : Nat := 0xf000000000000000000000000000000f000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000f0000000000000000000000000000f0000000000000000000000000000000000000000000000000000000f00000000000000000000000000f00000000000000000000000000f000000000000000000000000000000000000000000000000000f000000000000000000000000f000000000000000000000000f00000000000000000000000000000000000000000000000f0000000000000000000000f0000000000000000000000f0000000000000000000000000000000000000000000f00000000000000000000f00000000000000000000f000000000000000000000000000000000000000f000000000000000000f000000000000000000f00000000000000000000000000000000000f0000000000000000f0000000000000000f0000000000000000000000000000000f0000000000000ff000000000000f0f0000000000000000000000000f0f0000000000fff000000000000f000000000000000000000f0f00000000fff00000000f0f0000000000000000000f0000000ff000000f0f00000000000f0f0f0ffffff00f000f000000000f0f0ffff00f0f0000000f0ff00f000f0f0
-private theorem rowWordMask_eq : CoverageBits.members rows = rowWordMask := by decide +kernel
-private def siteWord : Nat := 0xf78000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fc0000000000000000000000000000000000000000000000000000000000000003fc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-private theorem siteWord_eq : encN_t8 (fun _ => true) MorningFour.sites = siteWord := by decide +kernel
-private theorem projected (x : Nat) :
-    encN_t8 (tbN_t8 x) MorningFour.sites = (x &&& siteWord) := by
-  apply Nat.eq_of_testBit_eq
-  intro q
-  have bit (f : BasisState) : (encN_t8 f MorningFour.sites).testBit q =
-      (decide (q ∈ MorningFour.sites) && f q) :=
-    (foldl_tb_t8 f MorningFour.sites 0 q).trans (by simp)
-  rw [← siteWord_eq, Nat.testBit_and]
-  simp only [bit, tbN_t8]
-  cases (x.testBit q) <;> cases (decide (q ∈ MorningFour.sites)) <;> rfl
-private def fastGood (r : CoverageBits.Row) : Bool :=
-  decide (((runN_t8 tick506 [] (false, enc r)).2 &&& siteWord) ∈ legalCodes)
-private theorem fastGood_eq (r : CoverageBits.Row) : fastGood r = goodRow r := by
-  simp only [fastGood, goodRow, projected]
-private theorem hit_sound (r : CoverageBits.Row)
-    (h : rowWordMask.testBit (CoverageBits.index r) = true) : decide (r ∈ rows) = true := by
-  rw [← rowWordMask_eq] at h
-  have mem := CoverageBits.member_of_bit rows r h
-  exact decide_eq_true mem
-private def cvFast (v : Nat) : Bool :=
-  (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
-    !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1)) ||
-      rowWordMask.testBit (CoverageBits.index (g,s,u,v)) || !fastGood (g,s,u,v)
-theorem cv_of_checked {v : Nat} (h : cvFast v = true) : cv v = true := by
-  simp only [cvFast, List.all_eq_true, fastGood_eq] at h
-  simp only [cv, List.all_eq_true]
-  intro u hu g hg s hs
-  exact CoverageBits.cover (h u hu g hg s hs) (hit_sound (g,s,u,v))
-
-theorem cv0 : cv 0 = true := cv_of_checked (by decide +kernel)
-theorem cv1 : cv 1 = true := cv_of_checked (by decide +kernel)
-theorem cv2 : cv 2 = true := cv_of_checked (by decide +kernel)
-theorem cv3 : cv 3 = true := cv_of_checked (by decide +kernel)
-theorem cv4 : cv 4 = true := cv_of_checked (by decide +kernel)
-theorem cv5 : cv 5 = true := cv_of_checked (by decide +kernel)
-theorem cv6 : cv 6 = true := cv_of_checked (by decide +kernel)
-theorem cv7 : cv 7 = true := cv_of_checked (by decide +kernel)
-theorem cv8 : cv 8 = true := cv_of_checked (by decide +kernel)
-theorem cv9 : cv 9 = true := cv_of_checked (by decide +kernel)
-theorem cv10 : cv 10 = true := cv_of_checked (by decide +kernel)
-theorem cv11 : cv 11 = true := cv_of_checked (by decide +kernel)
-theorem cv12 : cv 12 = true := cv_of_checked (by decide +kernel)
-theorem cv13 : cv 13 = true := cv_of_checked (by decide +kernel)
-theorem cv14 : cv 14 = true := cv_of_checked (by decide +kernel)
-theorem cv15 : cv 15 = true := cv_of_checked (by decide +kernel)
-theorem cv16 : cv 16 = true := cv_of_checked (by decide +kernel)
-theorem cv17 : cv 17 = true := cv_of_checked (by decide +kernel)
-theorem cv18 : cv 18 = true := cv_of_checked (by decide +kernel)
-theorem cv19 : cv 19 = true := cv_of_checked (by decide +kernel)
-theorem cv20 : cv 20 = true := cv_of_checked (by decide +kernel)
-theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
-theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
-theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
-theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
-theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
-theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
-theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
-theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
-theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
-theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
-theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
-theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
+theorem cv0 : cv 0 = true := by decide +kernel
+theorem cv1 : cv 1 = true := by decide +kernel
+theorem cv2 : cv 2 = true := by decide +kernel
+theorem cv3 : cv 3 = true := by decide +kernel
+theorem cv4 : cv 4 = true := by decide +kernel
+theorem cv5 : cv 5 = true := by decide +kernel
+theorem cv6 : cv 6 = true := by decide +kernel
+theorem cv7 : cv 7 = true := by decide +kernel
+theorem cv8 : cv 8 = true := by decide +kernel
+theorem cv9 : cv 9 = true := by decide +kernel
+theorem cv10 : cv 10 = true := by decide +kernel
+theorem cv11 : cv 11 = true := by decide +kernel
+theorem cv12 : cv 12 = true := by decide +kernel
+theorem cv13 : cv 13 = true := by decide +kernel
+theorem cv14 : cv 14 = true := by decide +kernel
+theorem cv15 : cv 15 = true := by decide +kernel
+theorem cv16 : cv 16 = true := by decide +kernel
+theorem cv17 : cv 17 = true := by decide +kernel
+theorem cv18 : cv 18 = true := by decide +kernel
+theorem cv19 : cv 19 = true := by decide +kernel
+theorem cv20 : cv 20 = true := by decide +kernel
+theorem cv21 : cv 21 = true := by decide +kernel
+theorem cv22 : cv 22 = true := by decide +kernel
+theorem cv23 : cv 23 = true := by decide +kernel
+theorem cv24 : cv 24 = true := by decide +kernel
+theorem cv25 : cv 25 = true := by decide +kernel
+theorem cv26 : cv 26 = true := by decide +kernel
+theorem cv27 : cv 27 = true := by decide +kernel
+theorem cv28 : cv 28 = true := by decide +kernel
+theorem cv29 : cv 29 = true := by decide +kernel
+theorem cv30 : cv 30 = true := by decide +kernel
+theorem cv31 : cv 31 = true := by decide +kernel
+theorem cv32 : cv 32 = true := by decide +kernel
 
 theorem rows_complete : ∀ v, v < 33 → ∀ u, u < 33 → ∀ g s : Bool,
     (u+v ≤ 32 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
@@ -17250,62 +18078,27 @@ def cv (v : Nat) : Bool :=
   (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || rowFast (g,s,u,v)
 
-
-private def rowWordMask : Nat := 0xf00000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000f000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000f0000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000f00000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000f000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000f0000000000000000000000000000000000f0000000000000000000000000000000000000f00000000000000000000000000000f00f00000000000000000000000000000f00000000000000000000000000000000f00000000000000000000000000000000000f0000000000000000000000000f0f00f0000000000000000000000000fff000000000000000000000000000000f000000000000000000000000000000000f00000000000000000000000f0f00f00000000000000000000000fff00000000000000000000000000f0f0000000000000000000000000000000f00000000000000000000000f00f0000000000000000000000ff000000000000000000000000f0f00000000000000000000000000000f0000000000000000000f0f00f0000000000000000000fff000000000000000000000000f000000000000000000000000000f00000000000000000f0f00f00000000000000000fff00000000000000000000f0f0000000000000000000000000f00000000000000000f00f0000000000000000ff000000000000000000f0f00000000000000000000000f0f0f00000f0f0f0f00f0f0f00000f0f0fff000000000000000000f000000000000000000000f0f0f000f0f0f0f00f0f0f000f0f0fff00000000000000f0f0000000000000000000f0f000f00000f00f0f000f00f0ff0000000000f0f0f00000000000000000f0f0f0f0f0f00f0f0fffffff000000f0f000f000000000000000f0f0f0f0f00f0fffffff0000f000f0f0000000000000f0f000f00f0ff0ff00f0f0f0f00000000000f0f0f0ffffff00f000f000000000f0f0ffff00f0f0000000f0ff00f000f0f0
-private theorem rowWordMask_eq : CoverageBits.members rows = rowWordMask := by decide +kernel
-private def siteWord : Nat := 0x1f7c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffc0000000000000000000000000000000000000000000000000000000000000003fe0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-private theorem siteWord_eq : encN_t8 (fun _ => true) Five506.sites = siteWord := by decide +kernel
-private theorem projected (x : Nat) :
-    encN_t8 (tbN_t8 x) Five506.sites = (x &&& siteWord) := by
-  apply Nat.eq_of_testBit_eq
-  intro q
-  have bit (f : BasisState) : (encN_t8 f Five506.sites).testBit q =
-      (decide (q ∈ Five506.sites) && f q) :=
-    (foldl_tb_t8 f Five506.sites 0 q).trans (by simp)
-  rw [← siteWord_eq, Nat.testBit_and]
-  simp only [bit, tbN_t8]
-  cases (x.testBit q) <;> cases (decide (q ∈ Five506.sites)) <;> rfl
-private def fastGood (r : CoverageBits.Row) : Bool :=
-  legalFingerprint ((runN_t8 tick505 [] (false, enc r)).2 &&& siteWord)
-private theorem fastGood_eq (r : CoverageBits.Row) : fastGood r = goodRow r := by
-  simp only [fastGood, goodRow, projected]
-private theorem rows_indexed : rows.all rowFast = true := by decide +kernel
-private theorem hit_sound (r : CoverageBits.Row)
-    (h : rowWordMask.testBit (CoverageBits.index r) = true) : rowFast r = true := by
-  rw [← rowWordMask_eq] at h
-  have mem := CoverageBits.member_of_bit rows r h
-  exact List.all_eq_true.mp rows_indexed r mem
-private def cvFast (v : Nat) : Bool :=
-  (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
-    !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1)) ||
-      rowWordMask.testBit (CoverageBits.index (g,s,u,v)) || !fastGood (g,s,u,v)
-theorem cv_of_checked {v : Nat} (h : cvFast v = true) : cv v = true := by
-  simp only [cvFast, List.all_eq_true, fastGood_eq] at h
-  simp only [cv, List.all_eq_true]
-  intro u hu g hg s hs
-  exact CoverageBits.cover (h u hu g hg s hs) (hit_sound (g,s,u,v))
-
-theorem cv0 : cv 0 = true := cv_of_checked (by decide +kernel)
-theorem cv1 : cv 1 = true := cv_of_checked (by decide +kernel)
-theorem cv2 : cv 2 = true := cv_of_checked (by decide +kernel)
-theorem cv3 : cv 3 = true := cv_of_checked (by decide +kernel)
-theorem cv4 : cv 4 = true := cv_of_checked (by decide +kernel)
-theorem cv5 : cv 5 = true := cv_of_checked (by decide +kernel)
-theorem cv6 : cv 6 = true := cv_of_checked (by decide +kernel)
-theorem cv7 : cv 7 = true := cv_of_checked (by decide +kernel)
-theorem cv8 : cv 8 = true := cv_of_checked (by decide +kernel)
-theorem cv9 : cv 9 = true := cv_of_checked (by decide +kernel)
-theorem cv10 : cv 10 = true := cv_of_checked (by decide +kernel)
-theorem cv11 : cv 11 = true := cv_of_checked (by decide +kernel)
-theorem cv12 : cv 12 = true := cv_of_checked (by decide +kernel)
-theorem cv13 : cv 13 = true := cv_of_checked (by decide +kernel)
-theorem cv14 : cv 14 = true := cv_of_checked (by decide +kernel)
-theorem cv15 : cv 15 = true := cv_of_checked (by decide +kernel)
-theorem cv16 : cv 16 = true := cv_of_checked (by decide +kernel)
-theorem cv17 : cv 17 = true := cv_of_checked (by decide +kernel)
-theorem cv18 : cv 18 = true := cv_of_checked (by decide +kernel)
-theorem cv19 : cv 19 = true := cv_of_checked (by decide +kernel)
-theorem cv20 : cv 20 = true := cv_of_checked (by decide +kernel)
+theorem cv0 : cv 0 = true := by decide +kernel
+theorem cv1 : cv 1 = true := by decide +kernel
+theorem cv2 : cv 2 = true := by decide +kernel
+theorem cv3 : cv 3 = true := by decide +kernel
+theorem cv4 : cv 4 = true := by decide +kernel
+theorem cv5 : cv 5 = true := by decide +kernel
+theorem cv6 : cv 6 = true := by decide +kernel
+theorem cv7 : cv 7 = true := by decide +kernel
+theorem cv8 : cv 8 = true := by decide +kernel
+theorem cv9 : cv 9 = true := by decide +kernel
+theorem cv10 : cv 10 = true := by decide +kernel
+theorem cv11 : cv 11 = true := by decide +kernel
+theorem cv12 : cv 12 = true := by decide +kernel
+theorem cv13 : cv 13 = true := by decide +kernel
+theorem cv14 : cv 14 = true := by decide +kernel
+theorem cv15 : cv 15 = true := by decide +kernel
+theorem cv16 : cv 16 = true := by decide +kernel
+theorem cv17 : cv 17 = true := by decide +kernel
+theorem cv18 : cv 18 = true := by decide +kernel
+theorem cv19 : cv 19 = true := by decide +kernel
+theorem cv20 : cv 20 = true := by decide +kernel
 
 end ECDSAAdd.Entrant.Six505
 end
