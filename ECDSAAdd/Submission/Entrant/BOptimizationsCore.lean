@@ -14,6 +14,46 @@ import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.KnownZeroArithmetic
 
+
+-- Peak-memory helpers (kernel replay): symbolic list slicing so `decide +kernel` only sees literals.
+section
+namespace ECDSAAdd.Entrant.PeakBCore
+open ECDSAAdd
+
+theorem all_app {α : Type} (f : α → Bool) (l1 l2 : List α) (h1 : l1.all f = true)
+    (h2 : l2.all f = true) : (l1 ++ l2).all f = true := by
+  rw [List.all_append, h1, h2]; rfl
+
+theorem patch_app_r (A B r : Program) (i : Nat) (h : A.length ≤ i) :
+    SixCarryPatchGeneric.patch (A ++ B) i r = A ++ SixCarryPatchGeneric.patch B (i - A.length) r := by
+  unfold SixCarryPatchGeneric.patch
+  have e : i + 1 - A.length = i - A.length + 1 := by omega
+  simp only [List.take_append, List.drop_append, List.take_of_length_le h,
+    List.drop_of_length_le (Nat.le_succ_of_le h), e, List.nil_append, List.append_assoc]
+
+theorem patch_app_l (A B r : Program) (i : Nat) (h : i < A.length) :
+    SixCarryPatchGeneric.patch (A ++ B) i r = SixCarryPatchGeneric.patch A i r ++ B := by
+  unfold SixCarryPatchGeneric.patch
+  rw [List.take_append_of_le_length (by omega), List.drop_append_of_le_length (by omega)]
+  simp only [List.append_assoc]
+
+theorem take_app_r (A B : Program) (n : Nat) (h : A.length ≤ n) :
+    (A ++ B).take n = A ++ B.take (n - A.length) := by
+  rw [List.take_append, List.take_of_length_le h]
+
+theorem take_app_l (A B : Program) (n : Nat) (h : n < A.length) : (A ++ B).take n = A.take n :=
+  List.take_append_of_le_length (Nat.le_of_lt h)
+
+theorem drop_app_r (A B : Program) (n : Nat) (h : A.length ≤ n) :
+    (A ++ B).drop n = B.drop (n - A.length) := by
+  rw [List.drop_append, List.drop_of_length_le h, List.nil_append]
+
+theorem drop_app_l (A B : Program) (n : Nat) (h : n < A.length) : (A ++ B).drop n = A.drop n ++ B :=
+  List.drop_append_of_le_length (Nat.le_of_lt h)
+
+end ECDSAAdd.Entrant.PeakBCore
+end
+
 -- BOptimizationsCore = BOptimizationsCore ++ ACCache
 -- ==== begin BOptimizationsCore ====
 section
@@ -8299,7 +8339,24 @@ def encodedInput (g s : Bool) (uv : Nat×Nat) : Nat :=
 def checkInput (uv : Nat×Nat) : Bool :=
  [false,true].all fun g=>[false,true].all fun s=>
   if Forward11Width.legal uv g then decide (encodedInput g s uv∈rowInputs) else true
-theorem inputTable : MorningFour.pairs.all checkInput=true := by decide +kernel
+theorem inputTable : MorningFour.pairs.all checkInput=true := by
+  -- peak memory: one kernel check per group of pairs
+  have e : MorningFour.pairs = [(0, 1), (1, 1), (2, 1)] ++ ([(3, 1), (4, 1), (5, 1)] ++ ([(6, 1), (7, 1), (8, 1)] ++ ([(9, 1), (10, 1), (11, 1)] ++ ([(12, 1), (13, 1), (14, 1)] ++ ([(15, 1), (1, 3), (2, 3)] ++ ([(4, 3), (5, 3), (7, 3)] ++ ([(10, 3), (13, 3), (1, 5)] ++ ([(2, 5), (3, 5), (6, 5)] ++ ([(7, 5), (11, 5), (1, 7)] ++ ([(2, 7), (3, 7), (5, 7)] ++ ([(9, 7), (1, 9), (7, 9)] ++ ([(1, 11), (5, 11), (1, 13)] ++ ([(3, 13), (1, 15)]))))))))))))) := rfl
+  rw [e]
+  exact (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (PeakBCore.all_app _ _ _ (by decide +kernel)
+    (by decide +kernel))))))))))))))
 theorem sitesTable : sites.all (fun q=>decide (perm.symm q < 23))=true := by decide +kernel
 theorem sample_run (g s : Bool) (uv : Nat×Nat) (h : uv∈MorningFour.pairs)
  (hl : Forward11Width.legal uv g=true) (m n : List Bool) :
@@ -19181,6 +19238,14 @@ def e:Program:=(p.drop 4616).take 2356
 def f:Program:=(p.drop 6972).take 10
 def g:Program:=p.drop 6982
 
+-- peak memory: evaluate `p` from the literal compiler output, not by re-running the compiler
+theorem peak_out_lit : SixCarryLoopAnchor.output = LowAccMiddleLiteral.output := by
+  delta SixCarryLoopAnchor.output
+  exact LowAccMiddleLiteral.compiler_output_eq
+theorem peak_p_eq : p = SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch LowAccMiddleLiteral.output 7950 SixCarryGateRepairs.repair11959) 7944 SixCarryGateRepairs.repair11953) 7938 SixCarryGateRepairs.repair11947) 7932 SixCarryGateRepairs.repair11941) 7926 SixCarryGateRepairs.repair11935) 904 SixCarryGateRepairs.repair4913) 898 ExtraCarryGateRepairs.repair4907) 892 EightCarryPrefix.repair := by
+  rw [← peak_out_lit]
+  rfl
+
 theorem checked:
  PairedWritesResearch.check 4760 (p.take 2420) none=some none ∧
  PairedWritesResearch.check 4760 (p.take 4609) none=some none ∧
@@ -19743,6 +19808,11 @@ def center:Program:=(old.drop 3112).take 1497++d0++(old.drop 4616).take 758
 def suffix:Program:=(old.drop 5376).take 1596++f0++g
 
 theorem ports_inj:Function.Injective ports:=by decide +kernel
+
+-- peak memory: evaluate `old` from the literal compiler output, not by re-running the compiler
+theorem peak_old_eq : old = SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch LowAccMiddleLiteral.output 7950 SixCarryGateRepairs.repair11959) 7944 SixCarryGateRepairs.repair11953) 7938 SixCarryGateRepairs.repair11947) 7932 SixCarryGateRepairs.repair11941) 7926 SixCarryGateRepairs.repair11935) 904 SixCarryGateRepairs.repair4913) 898 ExtraCarryGateRepairs.repair4907) 892 EightCarryPrefix.repair := by
+  rw [← BShortGhostFactsResearch.peak_out_lit]
+  rfl
 
 theorem checked:
  b0=oldWindow ∧

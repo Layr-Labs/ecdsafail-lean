@@ -53886,6 +53886,66 @@ theorem full_domain_nodup (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup)
 end ECDSAAdd.Entrant.A161Low4Domains
 end
 
+section
+-- Peak-memory helper: linear-time bitmask freshness/duplicate checks (kernel-accelerated Nat bit ops).
+namespace ECDSAAdd.Entrant.PeakNodupFL
+
+/-- Linear-time duplicate check with a bitmask accumulator. -/
+def nodupMask : List Nat → Nat → Bool
+  | [], _ => true
+  | a :: as, m => !(m.testBit a) && nodupMask as (m ||| (1 <<< a))
+
+theorem nodupMask_sound : ∀ (l : List Nat) (m : Nat), nodupMask l m = true →
+    l.Nodup ∧ ∀ a ∈ l, m.testBit a = false
+  | [], _, _ => ⟨List.nodup_nil, by simp⟩
+  | a :: as, m, h => by
+    simp only [nodupMask, Bool.and_eq_true, Bool.not_eq_true'] at h
+    obtain ⟨ha, hrest⟩ := h
+    obtain ⟨hnd, hbits⟩ := nodupMask_sound as _ hrest
+    have key : ∀ b ∈ as, b ≠ a ∧ m.testBit b = false := by
+      intro b hb
+      have hb' := hbits b hb
+      rw [Nat.testBit_or, Bool.or_eq_false_iff] at hb'
+      refine ⟨?_, hb'.1⟩
+      rintro rfl
+      have h2 := hb'.2
+      rw [Nat.one_shiftLeft, Nat.testBit_two_pow_self] at h2
+      exact Bool.noConfusion h2
+    refine ⟨List.nodup_cons.mpr ⟨fun hm => (key a hm).1 rfl, hnd⟩, ?_⟩
+    intro b hb
+    rcases List.mem_cons.mp hb with rfl | hb
+    · exact ha
+    · exact (key b hb).2
+
+theorem nodup_of_mask (l : List Nat) (h : nodupMask l 0 = true) : l.Nodup :=
+  (nodupMask_sound l 0 h).1
+
+/-- Bitmask of a list of wires. -/
+def mkMask : List Nat → Nat
+  | [] => 0
+  | a :: as => mkMask as ||| (1 <<< a)
+
+def freshMask (us l : List Nat) : Bool := us.all (fun u => !(mkMask l).testBit u)
+
+theorem fresh_of_mask (us l : List Nat) (h : freshMask us l = true) : ∀ u ∈ us, u ∉ l := by
+  intro u hu hl
+  simp only [freshMask, List.all_eq_true, Bool.not_eq_true'] at h
+  have h1 := h u hu
+  have h2 : (mkMask l).testBit u = true := by
+    clear h h1 hu
+    induction l with
+    | nil => cases hl
+    | cons a as ih =>
+      simp only [mkMask, Nat.testBit_or, Bool.or_eq_true, Nat.one_shiftLeft, Nat.testBit_two_pow]
+      rcases List.mem_cons.mp hl with rfl | h
+      · exact Or.inr (decide_eq_true rfl)
+      · exact Or.inl (ih h)
+  rw [h1] at h2
+  exact Bool.noConfusion h2
+
+end ECDSAAdd.Entrant.PeakNodupFL
+end
+
 -- Low4 component Geometry
 section
 namespace ECDSAAdd.Entrant.A161Low4Geometry
@@ -53923,7 +53983,22 @@ theorem geometry : g∉L.wires ∧ hs100.length=100 ∧ hs100.Nodup ∧
  (∀u∈hs100,u∉domain) ∧ (∀u∈hs100,u≠q ∧ u≠r ∧ u≠p) ∧
  q∉domain ∧ r∉domain ∧ p∉domain ∧ r≠q ∧ p≠q ∧ p≠r ∧
  (∀u∈([q,r,p,d]:List Wire),u∉g::(L.core.work.take 161) ∧ u∉L.measuredCore.wires ∧ u∉L.core.out) ∧
- (∀u∈hs99,u∈L.core.work) := by decide
+ (∀u∈hs99,u∈L.core.work) := by
+ -- Peak memory: each conjunct is its own kernel check; the 100×483 freshness check uses a bitmask.
+ refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · exact PeakNodupFL.fresh_of_mask hs100 domain (by decide +kernel)
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
+ · decide +kernel
 
 
 
@@ -61153,6 +61228,66 @@ end ECDSAAdd.Entrant.KnownAMidStaged
 end
 
 section
+-- Peak-memory helpers: evaluate a chunked `compileS?` one compile chunk per declaration.
+namespace ECDSAAdd.Entrant.PeakChunkFL
+open ECDSAAdd ZeroSetDevelop
+
+theorem some_of_map {α β : Type} {o : Option α} {f : α → β} {b : β} (h : o.map f = some b) :
+    ∃ a, o = some a ∧ f a = b := by
+  cases o with
+  | none => cases h
+  | some a => exact ⟨a, rfl, Option.some.inj h⟩
+
+theorem out_sound {Q : List Wire} {p : Program} (o : Option (CheckedS Q p)) (T : Program)
+    (h : o.elim false (fun cm => ParkAProgramBool.programEq cm.out T) = true) :
+    o.map (fun cm => cm.out) = some T := by
+  cases o with
+  | none => cases h
+  | some cm => exact congrArg some (ParkAProgramBool.programEq_sound _ _ h)
+
+theorem split_out (Q : List Wire) (p : Program) (c : Nat) (rest : Unit → Option (CheckedS Q (p.drop c)))
+    (o1 o2 : Program)
+    (h1 : (compileFuelS Q (c+1) (p.take c)).map (fun cm => cm.out) = some o1)
+    (h2 : (rest ()).map (fun cm => cm.out) = some o2) :
+    (splitAt? Q p c rest).map (fun cm => cm.out) = some (o1 ++ o2) := by
+  obtain ⟨a, ha, rfl⟩ := some_of_map h1
+  obtain ⟨b, hb, rfl⟩ := some_of_map h2
+  unfold splitAt?
+  simp only [ha, hb, Option.map_some]
+
+theorem step (Q : List Wire) (n : Nat) (p o1 o2 : Program) (hlen : ¬ p.length ≤ 1024)
+    (h1 : (compileFuelS Q (1024+1) (p.take 1024)).map (fun cm => cm.out) = some o1)
+    (h2 : (chunkFuelS Q n (p.drop 1024)).map (fun cm => cm.out) = some o2) :
+    (chunkFuelS Q (n+1) p).map (fun cm => cm.out) = some (o1 ++ o2) := by
+  obtain ⟨x, hx, hxo⟩ :=
+    some_of_map (split_out Q p 1024 (fun _ => chunkFuelS Q n (p.drop 1024)) o1 o2 h1 h2)
+  rw [chunkFuelS, if_neg hlen, hx]
+  simp only [Option.orElse_some, Option.map_some, hxo]
+
+theorem last (Q : List Wire) (n : Nat) (p o : Program) (hlen : p.length ≤ 1024)
+    (h : (compileFuelS Q (p.length+1) p).map (fun cm => cm.out) = some o) :
+    (chunkFuelS Q (n+1) p).map (fun cm => cm.out) = some o := by
+  rw [chunkFuelS, if_pos hlen]
+  exact h
+
+theorem take_drop_app {α : Type} (l r : List α) (n : Nat) : l.take n ++ (l.drop n ++ r) = l ++ r := by
+  rw [← List.append_assoc, List.take_append_drop]
+
+theorem elim_of_map {Q : List Wire} {p : Program} (o : Option (CheckedS Q p)) (lit : Program)
+    (h : o.map (fun cm => cm.out) = some lit) :
+    o.elim false (fun c => ParkAProgramBool.programEq lit c.out) = true := by
+  cases o with
+  | none => cases h
+  | some c =>
+    have hc : c.out = lit := Option.some.inj h
+    show ParkAProgramBool.programEq lit c.out = true
+    rw [hc]
+    exact (ParkAProgramBool.programEq_iff lit lit).mpr rfl
+
+end ECDSAAdd.Entrant.PeakChunkFL
+end
+
+section
 namespace ECDSAAdd.Entrant.A161Low4Facts
 
 set_option maxRecDepth 100000
@@ -61160,9 +61295,69 @@ set_option maxHeartbeats 500000000
 
 def hs99 := A161Facts.loans95 A161FixedFold.L++A161FixedFold.L.core.work.take 4
 
+-- Peak memory: compileS? hs99 pLow, one declaration per compile chunk.
+theorem peak_m99_len : List.length pLow = 7949 := by decide +kernel
+theorem peak_m99_long0 : ¬ (List.length pLow) ≤ 1024 := by decide +kernel
+theorem peak_m99_long1 : ¬ (List.length (List.drop 1024 pLow)) ≤ 1024 := by decide +kernel
+theorem peak_m99_long2 : ¬ (List.length (List.drop 1024 (List.drop 1024 pLow))) ≤ 1024 := by decide +kernel
+theorem peak_m99_long3 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow)))) ≤ 1024 := by decide +kernel
+theorem peak_m99_long4 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow))))) ≤ 1024 := by decide +kernel
+theorem peak_m99_long5 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow)))))) ≤ 1024 := by decide +kernel
+theorem peak_m99_long6 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow))))))) ≤ 1024 := by decide +kernel
+theorem peak_m99_short7 : (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow)))))))) ≤ 1024 := by decide +kernel
+theorem peak_m99_seg0 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 pLow)).map (fun cm => cm.out) =
+  some (ECDSAAdd.Entrant.KnownAMidStaged.block0 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block1 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block2 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block3 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block4 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block5 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block6 ++ (List.take 119 ECDSAAdd.Entrant.KnownAMidStaged.block7)))))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg1 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 (List.drop 1024 pLow))).map (fun cm => cm.out) =
+  some ((List.drop 119 ECDSAAdd.Entrant.KnownAMidStaged.block7) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block8 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block9 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block10 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block11 ++ (List.take 1 ECDSAAdd.Entrant.KnownAMidStaged.block12)))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg2 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 pLow)))).map (fun cm => cm.out) =
+  some ((List.drop 1 ECDSAAdd.Entrant.KnownAMidStaged.block12) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block13 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block14 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block15 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block16 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block17 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block18 ++ (List.take 64 ECDSAAdd.Entrant.KnownAMidStaged.block19)))))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg3 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow))))).map (fun cm => cm.out) =
+  some ((List.drop 64 ECDSAAdd.Entrant.KnownAMidStaged.block19) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block20 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block21 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block22 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block23 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block24 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block25 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block26 ++ (List.take 80 ECDSAAdd.Entrant.KnownAMidStaged.block27))))))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg4 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow)))))).map (fun cm => cm.out) =
+  some ((List.drop 80 ECDSAAdd.Entrant.KnownAMidStaged.block27) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block28 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block29 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block30 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block31 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block32 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block33 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block34 ++ (List.take 63 ECDSAAdd.Entrant.KnownAMidStaged.block35))))))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg5 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow))))))).map (fun cm => cm.out) =
+  some ((List.drop 63 ECDSAAdd.Entrant.KnownAMidStaged.block35) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block36 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block37 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block38 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block39 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block40 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block41 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block42 ++ (List.take 63 ECDSAAdd.Entrant.KnownAMidStaged.block43))))))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg6 : (ZeroSetDevelop.compileFuelS hs99 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow)))))))).map (fun cm => cm.out) =
+  some ((List.drop 63 ECDSAAdd.Entrant.KnownAMidStaged.block43) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block44 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block45 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block46 ++ (List.take 105 ECDSAAdd.Entrant.KnownAMidStaged.block47))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_seg7 : (ZeroSetDevelop.compileFuelS hs99 ((List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow))))))))+1) (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 pLow)))))))).map (fun cm => cm.out) =
+  some ((List.drop 105 ECDSAAdd.Entrant.KnownAMidStaged.block47) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block48 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block49 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block50 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block51 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block52 ++ ECDSAAdd.Entrant.KnownAMidStaged.block53)))))) := by
+  apply PeakChunkFL.out_sound
+  decide +kernel
+theorem peak_m99_map : (ZeroSetDevelop.compileS? hs99 pLow).map (fun cm => cm.out) =
+  some ECDSAAdd.Entrant.KnownAMidStaged.literal := by
+ have e : (ZeroSetDevelop.compileS? hs99 pLow).map (fun cm => cm.out) =
+   some ((ECDSAAdd.Entrant.KnownAMidStaged.block0 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block1 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block2 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block3 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block4 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block5 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block6 ++ (List.take 119 ECDSAAdd.Entrant.KnownAMidStaged.block7)))))))) ++ (((List.drop 119 ECDSAAdd.Entrant.KnownAMidStaged.block7) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block8 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block9 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block10 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block11 ++ (List.take 1 ECDSAAdd.Entrant.KnownAMidStaged.block12)))))) ++ (((List.drop 1 ECDSAAdd.Entrant.KnownAMidStaged.block12) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block13 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block14 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block15 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block16 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block17 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block18 ++ (List.take 64 ECDSAAdd.Entrant.KnownAMidStaged.block19)))))))) ++ (((List.drop 64 ECDSAAdd.Entrant.KnownAMidStaged.block19) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block20 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block21 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block22 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block23 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block24 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block25 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block26 ++ (List.take 80 ECDSAAdd.Entrant.KnownAMidStaged.block27))))))))) ++ (((List.drop 80 ECDSAAdd.Entrant.KnownAMidStaged.block27) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block28 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block29 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block30 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block31 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block32 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block33 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block34 ++ (List.take 63 ECDSAAdd.Entrant.KnownAMidStaged.block35))))))))) ++ (((List.drop 63 ECDSAAdd.Entrant.KnownAMidStaged.block35) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block36 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block37 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block38 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block39 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block40 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block41 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block42 ++ (List.take 63 ECDSAAdd.Entrant.KnownAMidStaged.block43))))))))) ++ (((List.drop 63 ECDSAAdd.Entrant.KnownAMidStaged.block43) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block44 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block45 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block46 ++ (List.take 105 ECDSAAdd.Entrant.KnownAMidStaged.block47))))) ++ ((List.drop 105 ECDSAAdd.Entrant.KnownAMidStaged.block47) ++ (ECDSAAdd.Entrant.KnownAMidStaged.block48 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block49 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block50 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block51 ++ (ECDSAAdd.Entrant.KnownAMidStaged.block52 ++ ECDSAAdd.Entrant.KnownAMidStaged.block53))))))))))))) := by
+  delta ZeroSetDevelop.compileS?
+  rw [peak_m99_len]
+  exact (PeakChunkFL.step _ 7949 _ _ _ peak_m99_long0 peak_m99_seg0
+   (PeakChunkFL.step _ 7948 _ _ _ peak_m99_long1 peak_m99_seg1
+   (PeakChunkFL.step _ 7947 _ _ _ peak_m99_long2 peak_m99_seg2
+   (PeakChunkFL.step _ 7946 _ _ _ peak_m99_long3 peak_m99_seg3
+   (PeakChunkFL.step _ 7945 _ _ _ peak_m99_long4 peak_m99_seg4
+   (PeakChunkFL.step _ 7944 _ _ _ peak_m99_long5 peak_m99_seg5
+   (PeakChunkFL.step _ 7943 _ _ _ peak_m99_long6 peak_m99_seg6
+   (PeakChunkFL.last _ 7942 _ _ peak_m99_short7 peak_m99_seg7))))))))
+ rw [e, Option.some.injEq]
+ delta ECDSAAdd.Entrant.KnownAMidStaged.literal ECDSAAdd.Entrant.KnownAMidStaged.join1_3 ECDSAAdd.Entrant.KnownAMidStaged.join0_3 ECDSAAdd.Entrant.KnownAMidStaged.join4_6 ECDSAAdd.Entrant.KnownAMidStaged.join3_6 ECDSAAdd.Entrant.KnownAMidStaged.join0_6 ECDSAAdd.Entrant.KnownAMidStaged.join7_9 ECDSAAdd.Entrant.KnownAMidStaged.join6_9 ECDSAAdd.Entrant.KnownAMidStaged.join9_11 ECDSAAdd.Entrant.KnownAMidStaged.join11_13 ECDSAAdd.Entrant.KnownAMidStaged.join9_13 ECDSAAdd.Entrant.KnownAMidStaged.join6_13 ECDSAAdd.Entrant.KnownAMidStaged.join0_13 ECDSAAdd.Entrant.KnownAMidStaged.join14_16 ECDSAAdd.Entrant.KnownAMidStaged.join13_16 ECDSAAdd.Entrant.KnownAMidStaged.join16_18 ECDSAAdd.Entrant.KnownAMidStaged.join18_20 ECDSAAdd.Entrant.KnownAMidStaged.join16_20 ECDSAAdd.Entrant.KnownAMidStaged.join13_20 ECDSAAdd.Entrant.KnownAMidStaged.join21_23 ECDSAAdd.Entrant.KnownAMidStaged.join20_23 ECDSAAdd.Entrant.KnownAMidStaged.join23_25 ECDSAAdd.Entrant.KnownAMidStaged.join25_27 ECDSAAdd.Entrant.KnownAMidStaged.join23_27 ECDSAAdd.Entrant.KnownAMidStaged.join20_27 ECDSAAdd.Entrant.KnownAMidStaged.join13_27 ECDSAAdd.Entrant.KnownAMidStaged.join0_27 ECDSAAdd.Entrant.KnownAMidStaged.join28_30 ECDSAAdd.Entrant.KnownAMidStaged.join27_30 ECDSAAdd.Entrant.KnownAMidStaged.join31_33 ECDSAAdd.Entrant.KnownAMidStaged.join30_33 ECDSAAdd.Entrant.KnownAMidStaged.join27_33 ECDSAAdd.Entrant.KnownAMidStaged.join34_36 ECDSAAdd.Entrant.KnownAMidStaged.join33_36 ECDSAAdd.Entrant.KnownAMidStaged.join36_38 ECDSAAdd.Entrant.KnownAMidStaged.join38_40 ECDSAAdd.Entrant.KnownAMidStaged.join36_40 ECDSAAdd.Entrant.KnownAMidStaged.join33_40 ECDSAAdd.Entrant.KnownAMidStaged.join27_40 ECDSAAdd.Entrant.KnownAMidStaged.join41_43 ECDSAAdd.Entrant.KnownAMidStaged.join40_43 ECDSAAdd.Entrant.KnownAMidStaged.join43_45 ECDSAAdd.Entrant.KnownAMidStaged.join45_47 ECDSAAdd.Entrant.KnownAMidStaged.join43_47 ECDSAAdd.Entrant.KnownAMidStaged.join40_47 ECDSAAdd.Entrant.KnownAMidStaged.join48_50 ECDSAAdd.Entrant.KnownAMidStaged.join47_50 ECDSAAdd.Entrant.KnownAMidStaged.join50_52 ECDSAAdd.Entrant.KnownAMidStaged.join52_54 ECDSAAdd.Entrant.KnownAMidStaged.join50_54 ECDSAAdd.Entrant.KnownAMidStaged.join47_54 ECDSAAdd.Entrant.KnownAMidStaged.join40_54 ECDSAAdd.Entrant.KnownAMidStaged.join27_54 ECDSAAdd.Entrant.KnownAMidStaged.join0_54
+ simp only [List.append_assoc, PeakChunkFL.take_drop_app]
+
 theorem match99 : (ZeroSetDevelop.compileS? hs99 pLow).elim false
-    (fun c => ParkAProgramBool.programEq ECDSAAdd.Entrant.KnownAMidStaged.literal c.out) = true := by
- decide +kernel
+    (fun c => ParkAProgramBool.programEq ECDSAAdd.Entrant.KnownAMidStaged.literal c.out) = true :=
+ PeakChunkFL.elim_of_map _ _ peak_m99_map
 
 theorem compiled99 : (ZeroSetDevelop.compileS? hs99 pLow).isSome=true :=
  ECDSAAdd.Entrant.D1Opt.isSome_of_elim match99
@@ -62311,6 +62506,18 @@ set_option maxHeartbeats 500000000
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
+-- Peak-memory helper: gate-count triples, so count facts split into per-part kernel checks.
+namespace ECDSAAdd.Entrant.PeakFullLogic
+open ECDSAAdd
+
+def trip (p : Program) : Nat × Nat × Nat := (toffoliCount p, measurementCount p, Challenge.gateSlots p)
+
+theorem trip_append (p q : Program) :
+    trip (p ++ q) = ((trip p).1 + (trip q).1, (trip p).2.1 + (trip q).2.1, (trip p).2.2 + (trip q).2.2) := by
+  simp only [trip, toffoliCount_append, measurementCount_append, Challenge.gateSlots_append]
+
+end ECDSAAdd.Entrant.PeakFullLogic
+
 namespace ECDSAAdd.Entrant.WholePadConcrete
 
  def oldCachedBuild := buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
@@ -62321,9 +62528,49 @@ namespace ECDSAAdd.Entrant.WholePadConcrete
 
  def newCachedUnbuild := unbuildConsumed (accReg L) pad (accBank L) L.core.cin (hiReg L) L.core.sumCarry
 
- theorem cached_build_counts : SeedPadDevelop.Counts newCachedBuild oldCachedBuild := by unfold SeedPadDevelop.Counts; decide +kernel
+ -- Peak memory: one kernel check per program part (each part is generated only in its own declaration).
+ theorem peak_ncb1 : PeakFullLogic.trip (InverseCarryDevelop.buildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (128, 128, 1697) := by decide +kernel
+ theorem peak_ncb2 : PeakFullLogic.trip (InverseCarryDevelop.cachedSub (Acc.tx pad 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) = (131, 132, 1850) := by decide +kernel
+ theorem peak_ncb3 : PeakFullLogic.trip (InverseCarryDevelop.buildPost (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (128, 128, 1538) := by decide +kernel
+ theorem peak_ncb : PeakFullLogic.trip newCachedBuild = (387, 388, 5085) := by
+  show PeakFullLogic.trip ((InverseCarryDevelop.buildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) ++ (InverseCarryDevelop.cachedSub (Acc.tx pad 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) ++ (InverseCarryDevelop.buildPost (accReg L) pad (accBank L) L.core.cin (hiReg L))) = _
+  rw [PeakFullLogic.trip_append, PeakFullLogic.trip_append, peak_ncb1, peak_ncb2, peak_ncb3]
+  rfl
+ theorem peak_ocb1 : PeakFullLogic.trip (InverseCarryDevelop.buildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (128, 128, 1697) := by decide +kernel
+ theorem peak_ocb2 : PeakFullLogic.trip (InverseCarryDevelop.cachedSub (Acc.tx (accZ L) 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) = (131, 132, 1850) := by decide +kernel
+ theorem peak_ocb3 : PeakFullLogic.trip (InverseCarryDevelop.buildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (128, 128, 1538) := by decide +kernel
+ theorem peak_ocb : PeakFullLogic.trip oldCachedBuild = (387, 388, 5085) := by
+  show PeakFullLogic.trip ((InverseCarryDevelop.buildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) ++ (InverseCarryDevelop.cachedSub (Acc.tx (accZ L) 139 (Acc.earlyTerm (hiReg L) true 6)) (Acc.ty (List.take 139 (accReg L)) (Acc.earlyTerm (hiReg L) true 6)) (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry) ++ (InverseCarryDevelop.buildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L))) = _
+  rw [PeakFullLogic.trip_append, PeakFullLogic.trip_append, peak_ocb1, peak_ocb2, peak_ocb3]
+  rfl
+ theorem peak_ncu1 : PeakFullLogic.trip (InverseCarryDevelop.unbuildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (105, 128, 1727) := by decide +kernel
+ theorem peak_ncu2 : PeakFullLogic.trip (InverseCarryDevelop.consumedAdd (hiReg L) pad (List.drop 6 (List.take 139 (accReg L))) (List.take 132 (accBank L)) L.core.cin L.core.sumCarry) = (127, 132, 1571) := by decide +kernel
+ theorem peak_ncu3 : PeakFullLogic.trip (InverseCarryDevelop.unbuildPost (accReg L) pad (accBank L) L.core.cin (hiReg L)) = (0, 128, 1692) := by decide +kernel
+ theorem peak_ncu : PeakFullLogic.trip newCachedUnbuild = (232, 388, 4990) := by
+  show PeakFullLogic.trip ((InverseCarryDevelop.unbuildPre (accReg L) pad (accBank L) L.core.cin (hiReg L)) ++ (InverseCarryDevelop.consumedAdd (hiReg L) pad (List.drop 6 (List.take 139 (accReg L))) (List.take 132 (accBank L)) L.core.cin L.core.sumCarry) ++ (InverseCarryDevelop.unbuildPost (accReg L) pad (accBank L) L.core.cin (hiReg L))) = _
+  rw [PeakFullLogic.trip_append, PeakFullLogic.trip_append, peak_ncu1, peak_ncu2, peak_ncu3]
+  rfl
+ theorem peak_ocu1 : PeakFullLogic.trip (InverseCarryDevelop.unbuildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (105, 128, 1727) := by decide +kernel
+ theorem peak_ocu2 : PeakFullLogic.trip (InverseCarryDevelop.consumedAdd (hiReg L) (accZ L) (List.drop 6 (List.take 139 (accReg L))) (List.take 132 (accBank L)) L.core.cin L.core.sumCarry) = (127, 132, 1571) := by decide +kernel
+ theorem peak_ocu3 : PeakFullLogic.trip (InverseCarryDevelop.unbuildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) = (0, 128, 1692) := by decide +kernel
+ theorem peak_ocu : PeakFullLogic.trip oldCachedUnbuild = (232, 388, 4990) := by
+  show PeakFullLogic.trip ((InverseCarryDevelop.unbuildPre (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) ++ (InverseCarryDevelop.consumedAdd (hiReg L) (accZ L) (List.drop 6 (List.take 139 (accReg L))) (List.take 132 (accBank L)) L.core.cin L.core.sumCarry) ++ (InverseCarryDevelop.unbuildPost (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L))) = _
+  rw [PeakFullLogic.trip_append, PeakFullLogic.trip_append, peak_ocu1, peak_ocu2, peak_ocu3]
+  rfl
 
- theorem cached_unbuild_counts : SeedPadDevelop.Counts newCachedUnbuild oldCachedUnbuild := by unfold SeedPadDevelop.Counts; decide +kernel
+ theorem cached_build_counts : SeedPadDevelop.Counts newCachedBuild oldCachedBuild := by
+  have h1:=peak_ncb
+  have h2:=peak_ocb
+  simp only [PeakFullLogic.trip,Prod.mk.injEq] at h1 h2
+  unfold SeedPadDevelop.Counts
+  refine ⟨?_,?_,?_⟩ <;> omega
+
+ theorem cached_unbuild_counts : SeedPadDevelop.Counts newCachedUnbuild oldCachedUnbuild := by
+  have h1:=peak_ncu
+  have h2:=peak_ocu
+  simp only [PeakFullLogic.trip,Prod.mk.injEq] at h1 h2
+  unfold SeedPadDevelop.Counts
+  refine ⟨?_,?_,?_⟩ <;> omega
 
 end ECDSAAdd.Entrant.WholePadConcrete
 
