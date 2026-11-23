@@ -66,23 +66,57 @@ def full : Program :=
    .CX 8 28,
    .CX 20 28]
 
-/-- Specialised to the reachable high digits `0..10` (unpack invariant: the bit length is at most
-86, and `86 / 8 = 10`).  Gate 2 `CCX h2 (¬h3) 1` computes `h2 ∧ ¬h3 = h2` (`h3 = 1` forces
-`h2 = 0`), so it is one CNOT; gates 29 and 30 (`h0` with the inner indices 5 and 6, i.e. digits
-11 and 13) never fire. -/
-def pruned : Program := full.take 2 ++ [.CX 31 1] ++ ((full.drop 3).take 26 ++ full.drop 31)
+/-- Computes the full decoder on each reachable high digit. -/
+def pruned : Program :=
+  [.CX 32 0,
+   .X 0,
+   .CX 31 1,
+   .CX 0 3,
+   .CX 1 3,
+   .CX 32 4,
+   .CCX 30 3 5,
+   .CCX 30 1 6,
+   .CX 5 7,
+   .CX 6 7,
+   .CX 30 7,
+   .CX 3 9,
+   .CX 5 9,
+   .CX 1 10,
+   .CX 6 10,
+   .CX 4 11,
+   .CX 7 11,
+   .CCX 29 9 13,
+   .CCX 29 5 14,
+   .CCX 29 10 15,
+   .CCX 29 6 16,
+   .CX 13 17,
+   .CX 14 17,
+   .CX 15 17,
+   .CX 16 17,
+   .CX 29 17,
+   .CX 9 21,
+   .CX 13 21,
+   .CX 5 22,
+   .CX 14 22,
+   .CX 10 23,
+   .CX 15 23,
+   .CX 6 24,
+   .CX 16 24,
+   .CX 11 25,
+   .CX 17 25,
+   .CX 7 26]
 
 def input (k q : Nat) : Bool := if q < 29 then false else k.testBit (q - 29)
 
 theorem support_full : wires full ⊆ Finset.range 33 := by decide +kernel
 theorem support_pruned : wires pruned ⊆ Finset.range 33 := by decide +kernel
 theorem proper_full : ProperProgram full := by simp [ProperProgram, full, ProperGate]
-theorem proper_pruned : ProperProgram pruned := by simp [ProperProgram, pruned, full, ProperGate]
+theorem proper_pruned : ProperProgram pruned := by simp [ProperProgram, pruned, ProperGate]
 theorem wires_pruned : wires pruned ⊆ wires full := by decide +kernel
 theorem counts :
-    toffoliCount pruned + 3 = toffoliCount full ∧
+    toffoliCount pruned + 5 = toffoliCount full ∧
     measurementCount pruned = 0 ∧ measurementCount full = 0 ∧
-    gateSlots pruned + 2 = gateSlots full := by decide +kernel
+    gateSlots pruned + 18 = gateSlots full := by decide +kernel
 
 theorem checked :
     ∀ k : Fin 11, ∀ q : Fin 33,
@@ -174,22 +208,37 @@ def full : Program :=
    .CX 2 12,
    .CX 8 12]
 
-/-- Specialised to the reachable high digits `0..5` (unpack invariant: the bit length is at most
-46 = 5·8 + 6 for budget 47 and 21 = 5·4 + 1 for budget 22).  Gate 2 `CCX h1 (¬h2) 1` computes
-`h1 ∧ ¬h2 = h1` (`h2 = 1` forces `h1 = 0`), so it is one CNOT. -/
-def pruned : Program := full.take 2 ++ [.CX 14 1] ++ full.drop 3
+/-- Computes the full decoder on each reachable high digit. -/
+def pruned : Program :=
+  [.CX 15 0,
+   .X 0,
+   .CX 14 1,
+   .CX 0 3,
+   .CX 1 3,
+   .CX 15 4,
+   .CCX 13 3 5,
+   .CCX 13 1 6,
+   .CX 5 7,
+   .CX 6 7,
+   .CX 13 7,
+   .CX 3 9,
+   .CX 5 9,
+   .CX 1 10,
+   .CX 6 10,
+   .CX 4 11,
+   .CX 7 11]
 
 def input (k q : Nat) : Bool := if q < 13 then false else k.testBit (q - 13)
 
 theorem support_full : wires full ⊆ Finset.range 16 := by decide +kernel
 theorem support_pruned : wires pruned ⊆ Finset.range 16 := by decide +kernel
 theorem proper_full : ProperProgram full := by simp [ProperProgram, full, ProperGate]
-theorem proper_pruned : ProperProgram pruned := by simp [ProperProgram, pruned, full, ProperGate]
+theorem proper_pruned : ProperProgram pruned := by simp [ProperProgram, pruned, ProperGate]
 theorem wires_pruned : wires pruned ⊆ wires full := by decide +kernel
 theorem counts :
-    toffoliCount pruned + 1 = toffoliCount full ∧
+    toffoliCount pruned + 2 = toffoliCount full ∧
     measurementCount pruned = 0 ∧ measurementCount full = 0 ∧
-    gateSlots pruned = gateSlots full := by decide +kernel
+    gateSlots pruned + 7 = gateSlots full := by decide +kernel
 
 theorem checked :
     ∀ k : Fin 6, ∀ q : Fin 16,
@@ -266,22 +315,26 @@ def full : Program :=
    .CX 6 4,
    .CX 2 4]
 
-/-- Specialised to the reachable high digits `0..2` (unpack invariant: the bit length is at most
-11, and `11 / 4 = 2`).  Gate 2 `CCX h0 (¬h1) 1` computes `h0 ∧ ¬h1 = h0` (`h1 = 1` forces
-`h0 = 0`), so it is one CNOT. -/
-def pruned : Program := full.take 2 ++ [.CX 5 1] ++ full.drop 3
+/-- Computes the full decoder on each reachable high digit. -/
+def pruned : Program :=
+  [.CX 6 0,
+   .X 0,
+   .CX 5 1,
+   .CX 0 3,
+   .CX 1 3,
+   .CX 6 4]
 
 def input (k q : Nat) : Bool := if q < 5 then false else k.testBit (q - 5)
 
 theorem support_full : wires full ⊆ Finset.range 7 := by decide +kernel
 theorem support_pruned : wires pruned ⊆ Finset.range 7 := by decide +kernel
 theorem proper_full : ProperProgram full := by simp [ProperProgram, full, ProperGate]
-theorem proper_pruned : ProperProgram pruned := by simp [ProperProgram, pruned, full, ProperGate]
+theorem proper_pruned : ProperProgram pruned := by simp [ProperProgram, pruned, ProperGate]
 theorem wires_pruned : wires pruned ⊆ wires full := by decide +kernel
 theorem counts :
     toffoliCount pruned + 1 = toffoliCount full ∧
     measurementCount pruned = 0 ∧ measurementCount full = 0 ∧
-    gateSlots pruned = gateSlots full := by decide +kernel
+    gateSlots pruned + 3 = gateSlots full := by decide +kernel
 
 theorem checked :
     ∀ k : Fin 3, ∀ q : Fin 7,

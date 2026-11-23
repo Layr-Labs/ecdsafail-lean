@@ -1,5 +1,5 @@
-import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Decoder87
+import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Math.SkywalkTerminationBudget
@@ -38,6 +38,8 @@ import ECDSAAdd.Arithmetic.Registers
 import ECDSAAdd.Arithmetic.Rotate
 import ECDSAAdd.Arithmetic.Shift
 import ECDSAAdd.Framework.GateInverse
+import ECDSAAdd.Framework.FiniteUnitary
+
 
 -- StairSideA = StairSideA ++ PrizeStairArchiveEnter09fd522f ++ PrizeStair44PointMap486a9e3 ++ PrizeHighBankJoin5ab3264 ++ PrizeHighBankFirstHit91f0292
 -- ==== begin StairSideA ====
@@ -2405,7 +2407,7 @@ def highProgram (L : Layout) (B : Nat) : Program :=
 
 /-- Toffoli gates saved by `highProgram` against the generated high decoder. -/
 def highSaving (B : Nat) : Nat :=
-  if B = 87 then 3 else if B = 47 then 1 else if B = 22 then 1 else if B = 12 then 1 else 0
+  if B = 87 then 5 else if B = 47 then 2 else if B = 22 then 2 else if B = 12 then 1 else 0
 
 def unpack (L : Layout) (B : Nat) : Program :=
   unpackWithHigh L B (highProgram L B)
@@ -4311,19 +4313,19 @@ theorem unpackFull_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   omega
 
 theorem high87_counts (L : Layout) :
-    toffoliCount (high87Program L) + 3 = toffoliCount (highDecoder L 87).program ∧
+    toffoliCount (high87Program L) + 5 = toffoliCount (highDecoder L 87).program ∧
     measurementCount (high87Program L) = measurementCount (highDecoder L 87).program := by
   simp only [high87Program, ← high87_full L, renameProgram_counts]
   exact ⟨Decoder87.counts.1, Decoder87.counts.2.1.trans Decoder87.counts.2.2.1.symm⟩
 
 theorem high47_counts (L : Layout) :
-    toffoliCount (high47Program L) + 1 = toffoliCount (highDecoder L 47).program ∧
+    toffoliCount (high47Program L) + 2 = toffoliCount (highDecoder L 47).program ∧
     measurementCount (high47Program L) = measurementCount (highDecoder L 47).program := by
   simp only [high47Program, ← high47_full L, renameProgram_counts]
   exact ⟨Decoder3.counts.1, Decoder3.counts.2.1.trans Decoder3.counts.2.2.1.symm⟩
 
 theorem high22_counts (L : Layout) :
-    toffoliCount (high22Program L) + 1 = toffoliCount (highDecoder L 22).program ∧
+    toffoliCount (high22Program L) + 2 = toffoliCount (highDecoder L 22).program ∧
     measurementCount (high22Program L) = measurementCount (highDecoder L 22).program := by
   simp only [high22Program, ← high22_full L, renameProgram_counts]
   exact ⟨Decoder3.counts.1, Decoder3.counts.2.1.trans Decoder3.counts.2.2.1.symm⟩
@@ -4339,15 +4341,15 @@ theorem highProgram_counts (L : Layout) (B : Nat) :
     measurementCount (highProgram L B) = measurementCount (highDecoder L B).program := by
   by_cases h87 : B = 87
   · subst h87
-    rw [highProgram_87, show highSaving 87 = 3 from rfl]
+    rw [highProgram_87, show highSaving 87 = 5 from rfl]
     exact high87_counts L
   by_cases h47 : B = 47
   · subst h47
-    rw [highProgram_47, show highSaving 47 = 1 from rfl]
+    rw [highProgram_47, show highSaving 47 = 2 from rfl]
     exact high47_counts L
   by_cases h22 : B = 22
   · subst h22
-    rw [highProgram_22, show highSaving 22 = 1 from rfl]
+    rw [highProgram_22, show highSaving 22 = 2 from rfl]
     exact high22_counts L
   by_cases h12 : B = 12
   · subst h12
@@ -22688,7 +22690,7 @@ theorem k5_dh (L : StairCodec.Layout) (B x : Nat) :
 
 theorem codecPair87 :
     gateSlots (StairPhysicalPrimitives.pack 87) +
-      gateSlots (StairPhysicalPrimitives.unpack 87) = 5756 := by
+      gateSlots (StairPhysicalPrimitives.unpack 87) = 5740 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_87, StairCodec.high87Program,
     Baselines.rename_gateSlots, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
@@ -22706,7 +22708,7 @@ theorem codecPair62 :
 
 theorem codecPair47 :
     gateSlots (StairPhysicalPrimitives.pack 47) +
-      gateSlots (StairPhysicalPrimitives.unpack 47) = 2911 := by
+      gateSlots (StairPhysicalPrimitives.unpack 47) = 2904 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_47, StairCodec.high47Program,
     Baselines.rename_gateSlots,
@@ -22725,7 +22727,7 @@ theorem codecPair32 :
 
 theorem codecPair22 :
     gateSlots (StairPhysicalPrimitives.pack 22) +
-      gateSlots (StairPhysicalPrimitives.unpack 22) = 1259 := by
+      gateSlots (StairPhysicalPrimitives.unpack 22) = 1252 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_22, StairCodec.high22Program,
     Baselines.rename_gateSlots,
@@ -60138,8 +60140,8 @@ theorem v3Plan_loanUnits : v3Plan.loanUnits = 461 := by decide
 pack+unpack totals (`5410, 3656, 2725, 1757, 1173, 582`) plus two sign
 extensions and `4 * (B - 1)` relocation CX gates (proved in `StairSlotsV3`). -/
 def v3CodecPair (B : Nat) : Nat :=
-  if B = 87 then 5756 else if B = 62 then 3902 else if B = 47 then 2911
-  else if B = 32 then 1883 else if B = 22 then 1259 else if B = 12 then 628
+  if B = 87 then 5740 else if B = 62 then 3902 else if B = 47 then 2904
+  else if B = 32 then 1883 else if B = 22 then 1252 else if B = 12 then 625
   else 0
 
 /-- CANON v3 costs: repaired `B + 1`-bit orientation (`3 (B + 1)` slots),
@@ -60172,7 +60174,7 @@ def v3Boundary1806 : Boundary where
   multEnd := 30000
   center := 430
 
-theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335192 := by
+theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335126 := by
   decide
 
 /-! ### Cross-check: the superseded eight-row plan reproduces 639,954 -/
@@ -60330,7 +60332,7 @@ from one lazily evaluated table per decoder (`k5_dl`, `k5_dh`), so each of the a
 
 theorem codecPair12 :
     gateSlots (StairPhysicalPrimitives.pack 12) +
-      gateSlots (StairPhysicalPrimitives.unpack 12) = 628 := by
+      gateSlots (StairPhysicalPrimitives.unpack 12) = 625 := by
   decide +kernel
 
 /-- The loaned division endpoint costs at most 10,000 slots more than the
