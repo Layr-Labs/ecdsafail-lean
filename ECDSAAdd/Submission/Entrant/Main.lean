@@ -4,6 +4,7 @@ import ECDSAAdd.Submission.Entrant.StairSideA
 import ECDSAAdd.Submission.Entrant.Window
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Stair44Stock
+import ECDSAAdd.Submission.Entrant.SplitLeafSquare
 import Mathlib.Tactic
 import ECDSAAdd.Framework.WireRenamePool
 import ECDSAAdd.Submission.Entrant.CRT
@@ -27401,20 +27402,12 @@ attribute [local irreducible] run wires
 /-- The three branches use the same expanded inner-S bank; the tail leaves the
 one live high bit on the carrier consumed by the following integer stage. -/
 def program (k : Fp) : Program :=
-  let hs := StairSqLoopA.hostDomain
-  placedN (StairSquareFinal.brC hs) (StairSquareFinal.brB hs) (StairSquareFinal.brA hs) ++
+  placedN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA ++
     StairEntryRehost.routed (k - (C163Low4Offsets.delta : Fp))
 
 abbrev hs := StairSqLoopA.hostDomain
-theorem coreOK : CoreOK L0 (coreN (StairSquareFinal.brC hs) (StairSquareFinal.brB hs) (StairSquareFinal.brA hs)) := by
-  let sub : hs.Sublist StairSqLoopA.hostDomain := List.Sublist.refl _
-  have a := StairSquareBodyOK.bodyA_ok44 hs sub
-  have b := StairSqBodyB.bodyB_ok44 hs sub
-  have c := StairSquareBodyOK.bodyC_ok44 hs sub
-  exact coreN_coreOK _ _ _ _ _ _ a b c
-    (StairSquareKernel26C.kC_run_eq44 hs _ c (StairSquareBodyC.bodyC_avoids44 hs sub))
-    (StairSquareKernel26C.kB_run_eq44 hs _ b (StairSqBodyB.bodyB_avoids44 hs sub))
-    (StairSquareKernel26C.kA_run_eq44 hs _ a (StairSquareBodyA.bodyA_avoids44 hs sub))
+theorem coreOK : CoreOK L0 (coreN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA) :=
+  SplitLeafSquare.coreOK
 
 /-- On the following stage's physical carrier, the entire square executes the stock operation. -/
 theorem fullRunOf (P : Program) (hP : CoreOK L0 P) (k X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m1 m2 : List Bool)
@@ -27591,20 +27584,21 @@ theorem changingTail (P : Program) (k : Fp) :
     t,m,g,et,em,StairSquareEntryR.entryRH_slots,Nat.add_assoc,and_self]
 
 theorem metrics (k : Fp) :
-    toffoliCount (program k) = toffoliCount (A161Generic.squareEntry L0 k) + 151 ∧
-    measurementCount (program k) = measurementCount (A161Generic.squareEntry L0 k) ∧
-    Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 3 := by
-  have h : toffoliCount (program k) = toffoliCount (StairSquareFinal.square hs k) ∧
-      measurementCount (program k) = measurementCount (StairSquareFinal.square hs k) ∧
-      Challenge.gateSlots (program k) = Challenge.gateSlots (StairSquareFinal.square hs k) + 3 :=
+    toffoliCount (program k) + 865 = toffoliCount (A161Generic.squareEntry L0 k) ∧
+    measurementCount (program k) + 589 = measurementCount (A161Generic.squareEntry L0 k) ∧
+    Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 5490003 := by
+  have h : toffoliCount (program k) = toffoliCount (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) ∧
+      measurementCount (program k) = measurementCount (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) ∧
+      Challenge.gateSlots (program k) = Challenge.gateSlots (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) + 3 :=
     changingTail _ _
-  have c := StairSquareFinal.square_counts hs k
-  exact ⟨h.1.trans c.1,h.2.1.trans c.2,h.2.2.le.trans (Nat.add_le_add_right (StairSquareFinal.square_slots_le hs k) 3)⟩
+  have c := SplitLeafSquare.square_counts k
+  have s := SplitLeafSquare.square_slots_le k
+  exact ⟨by omega, by omega, by omega⟩
 
 theorem physical (k : Fp) : GatePhysical (program k) := by
-  have p := StairSquareFinal.square_physical hs k
-  rw [StairSquareFinal.square,squareN,gatePhysical_append] at p
-  exact (gatePhysical_append _ _).mpr ⟨p.1,routedPhysical _⟩
+  have p := SplitLeafSquare.square_physical k
+  rw [squareN, gatePhysical_append] at p
+  exact (gatePhysical_append _ _).mpr ⟨p.1, routedPhysical _⟩
 end ECDSAAdd.Entrant.Stair44Square
 
 end
@@ -27657,35 +27651,37 @@ private theorem fixedUG : ∀ q ∈ hs, StairSiteAvoidance.UG q = q := by
   simp only [StairPlaceFast.ug_eqB]
   decide +kernel
 theorem piece (k : Fp) : StairSiteAvoidance.PieceOK hs StairSiteAvoidance.UG (program k) := by
-  let sub : hs.Sublist StairSqLoopA.hostDomain := List.Sublist.refl _
-  have member : ∀q∈hs, q∈StairSqLoopA.hostDomain := fun _ h => h
-  have avC := StairSquareKernel26C.kC_avoids44 hs member _ (StairSquareBodyOK.bodyC_ok44 hs sub)
-    (StairSquareBodyC.bodyC_avoids44 hs sub)
-  have avB := StairSquareKernel26C.kB_avoids44 hs member _ (StairSqBodyB.bodyB_ok44 hs sub)
-    (StairSqBodyB.bodyB_avoids44 hs sub)
-  have avA := StairSquareKernel26C.kA_avoids44 hs member _ (StairSquareBodyOK.bodyA_ok44 hs sub)
-    (StairSquareBodyA.bodyA_avoids44 hs sub)
-  have hostsGood : ∀ h ∈ StairSquareKernel26C.hostsK,
+  have avC := SplitLeafSquare.brC_avoids
+  have avB := SplitLeafSquare.brB_avoids
+  have avA := SplitLeafSquare.brA_avoids
+  have hostsGood : ∀ h ∈ SplitLeafSquare.allowedWires,
       StairSiteAvoidance.UG (placeFn h) ∈ StairHoleSupport.recordArena ∧
         StairSiteAvoidance.UG (placeFn h) ∉ StairHoleSupport.oldHoles := by
+    have allG : SplitLeafSquare.allowedWires.all
+        (fun w => Stair44TailBounds.good (StairPlaceFast.ugB (LT48K.placeF w))) = true := by
+      rw [SplitLeafSquare.allowedWires_eq]; decide +kernel
     intro h hh
-    obtain ⟨n, h1, h2, rfl⟩ := StairSquareKernel26C.hostsK_pool h hh
-    exact host_good n h1 h2
-  have arena := placedN_arenaB (StairSquareBodyA.bodyA hs) (StairSqBodyB.bodyB hs)
-    (StairSquareBodyC.bodyC hs) (StairSquareFinal.brC hs) (StairSquareFinal.brB hs) (StairSquareFinal.brA hs) StairSquareKernel26C.hostsK
-    (StairSquareBodyA.bodyA_coarse44 hs sub) (StairSquareBodyA.bodyA_fine44 hs sub)
-    (StairSquareBodyC.bodyC_fine44 hs sub) (StairSqBodyB.bodyB_support44 hs sub)
-    (StairSqBodyB.bodyB_normFlag44 hs sub (StairSquareBChecks.touchedAny_spec _ _ StairSqBodyB.middle_norm _ (List.mem_singleton_self _)))
-    (StairSquareKernel26C.kC_support hs _) (StairSquareKernel26C.kB_support hs _)
-    (StairSquareKernel26C.kA_support hs _) hostsGood
+    have hg := List.all_eq_true.mp allG h hh
+    have hmap : StairSiteAvoidance.UG (placeFn h) = StairPlaceFast.ugB (LT48K.placeF h) := by
+      rw [LT48K.placeFn_eq]; exact StairPlaceFast.ug_eqB _
+    rw [hmap]
+    exact ⟨(good_sites _ hg).1, (good_sites _ hg).2.1⟩
+  have arena := placedN_arenaB SplitLeafSquare.bodyAPlain SplitLeafSquare.bodyB
+    SplitLeafSquare.bodyCPlain SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA
+    SplitLeafSquare.allowedWires
+    SplitLeafSquare.bodyAPlain_coarse SplitLeafSquare.bodyAPlain_fine
+    SplitLeafSquare.bodyCPlain_fine SplitLeafSquare.bodyB_ok.support
+    SplitLeafSquare.bodyB_normFlag
+    SplitLeafSquare.brC_support SplitLeafSquare.brB_support
+    SplitLeafSquare.brA_support hostsGood
   have unplaced := coreN_avoids hs _ _ _ avC avB avA
   apply StairSiteAvoidance.PieceOK.append _ (tailPiece _)
-  refine ⟨arena,?_⟩
+  refine ⟨arena, ?_⟩
   intro x hx hxh
   have ex : x = StairSiteAvoidance.UG x := UG_inj (fixedUG _ hxh).symm
   unfold placedN at hx
   rw [placed_wires, Finset.mem_image] at hx
-  obtain ⟨y,hy,rfl⟩ := hx
+  obtain ⟨y, hy, rfl⟩ := hx
   have ey : y = StairSiteAvoidance.UG (placeFn y) := placeFn_inj (ex.trans (fixedPlace _ hxh).symm)
   rw [ey] at hy
   exact unplaced _ hxh hy
@@ -27784,29 +27780,40 @@ theorem finite_eq (c : Cost) (C : Point) (cx cy : Fp)
     hostedGeneric,hostedSecondStage,Stair44PointMap.encode,Stair44PointMap.encodeY,Stair44PointMap.switchX,
     c.append,c.rename,divide_eq,multiply_eq,sq,Nat.add_assoc]
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2169082 ∧ measurementCount (program C) ≤ 1520242 := by
+theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
+    (sq : c.measure (Stair44Square.program (ReflectionE1.correction cx)) + d =
+      c.measure (StairSquareFinal.squareEntryHL StairSqLoopA.holes layout (ReflectionE1.correction cx))) :
+    c.measure (finite C cx cy) + d = c.measure (hostedFinite C cx cy) := by
+  simp only [finite,borrowGeneric,generic,hostedFinite,hostedMiddle,hostedBorrowGeneric,hostedGenericBlock,
+    hostedGeneric,hostedSecondStage,Stair44PointMap.encode,Stair44PointMap.encodeY,Stair44PointMap.switchX,
+    c.append,c.rename,divide_eq,multiply_eq]
+  omega
+
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2168066 ∧ measurementCount (program C) ≤ 1519653 := by
   have h := StairCountsHosted.count_totals C
   change toffoliCount (concreteProgram C) ≤ 2169082 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
   cases C with
-  | zero => exact h
+  | zero =>
+    change toffoliCount [] ≤ 2168066 ∧ measurementCount [] ≤ 1519653
+    simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
     have old := StairSquareFinal.square_counts StairSqLoopA.holes k
     have new := Stair44Square.metrics k
-    have ft := finite_eq tc (.some hc) cx cy (by
-      change toffoliCount (Stair44Square.program k) = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
-      rw [StairSquareFinal.squareEntryHL_layout]; exact new.1.trans old.1.symm)
-    have fm := finite_eq mc (.some hc) cx cy (by
-      change measurementCount (Stair44Square.program k) = measurementCount (StairSquareFinal.squareEntryHL _ layout k)
-      rw [StairSquareFinal.squareEntryHL_layout]; exact new.2.1.trans old.2.symm)
-    change toffoliCount _ = toffoliCount _ at ft
-    change measurementCount _ = measurementCount _ at fm
+    have ft := finite_sub tc (.some hc) cx cy 1016 (by
+      change toffoliCount (Stair44Square.program k) + 1016 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
+      rw [StairSquareFinal.squareEntryHL_layout]; omega)
+    have fm := finite_sub mc (.some hc) cx cy 589 (by
+      change measurementCount (Stair44Square.program k) + 589 = measurementCount (StairSquareFinal.squareEntryHL _ layout k)
+      rw [StairSquareFinal.squareEntryHL_layout]; omega)
+    change toffoliCount _ + 1016 = toffoliCount _ at ft
+    change measurementCount _ + 589 = measurementCount _ at fm
     simp only [program,concreteProgram,hostedWrapper,(renameProgram_counts _ _).1,
       (renameProgram_counts _ _).2] at h ⊢
-    exact ⟨ft.le.trans h.1,fm.le.trans h.2⟩
+    exact ⟨by omega, by omega⟩
 open StairSlotsPlan
 
-theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860482 := by
+theorem slotBound (C : Point) : gateSlots (program C) ≤ 56350482 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -27826,13 +27833,13 @@ theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860482 := by
       exact exitRestOf_slots_le checkpointPrimitives hostPlan _ _ v3WalkFacts
         (v3GroupFacts _) (v3BoundaryFacts _) layout cx.val
     have sq : gateSlots (Stair44Square.program (ReflectionE1.correction cx)) ≤
-        gateSlots (A161Generic.squareEntry layout (ReflectionE1.correction cx)) + 3 :=
+        gateSlots (A161Generic.squareEntry layout (ReflectionE1.correction cx)) + 5490003 :=
       (Stair44Square.metrics (ReflectionE1.correction cx)).2.2
-    have gen : gateSlots (generic cx cy) ≤ gateSlots (FlagExit.genericN layout cx cy) + (dE + dX) + 3 := by
+    have gen : gateSlots (generic cx cy) ≤ gateSlots (FlagExit.genericN layout cx cy) + (dE + dX) + 5490003 := by
       simp only [generic,FlagExit.genericN,FlagExit.secondStageN,Stair44PointMap.encodeY,
         Stair44PointMap.switchX,gateSlots_append,rename_gateSlots]
       omega
-    have whole : gateSlots (program C) ≤ gateSlots (AboveFieldPointDevelop.programQ C) + (dE + dX) + 3 := by
+    have whole : gateSlots (program C) ≤ gateSlots (AboveFieldPointDevelop.programQ C) + (dE + dX) + 5490003 := by
       simp only [C,program,finite,borrowGeneric,Stair44PointMap.encode,AboveFieldPointDevelop.programQ,
         AboveFieldPointDevelop.wrapperBorrow,AboveFieldPointDevelop.finiteBorrow,AboveFieldPointDevelop.middle,
         ControlPointEncodingDevelop.borrowGeneric,ControlPointEncodingDevelop.genericBlock,
@@ -27840,7 +27847,7 @@ theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860482 := by
       omega
     have sum : dE + dX = 335192 := v3_slotDelta_1806
     have old := AboveFieldPointDevelop.program_slots_Q C
-    change gateSlots (program C) ≤ 50860482
+    change gateSlots (program C) ≤ 56350482
     omega
 end ECDSAAdd.Entrant.Stair44Resources
 
@@ -28950,8 +28957,8 @@ theorem deltas (C : Point) (cx cy : Fp) :
   ⟨finite_delta tc C cx cy 145616 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 47596 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2023466 ∧
-    measurementCount (program C) ≤ 1472890 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2022450 ∧
+    measurementCount (program C) ≤ 1472301 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -29054,7 +29061,7 @@ private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (Stair44Outer.finite C cx cy)+11339495 :=
   finite_upper slots C cx cy 11339495 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 62199977 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 67689977 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -33211,8 +33218,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2023466 ∧
-    measurementCount (program C) ≤ 1472890 ∧ gateSlots (program C) ≤ 62199977 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2022450 ∧
+    measurementCount (program C) ≤ 1472301 ∧ gateSlots (program C) ≤ 67689977 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -33410,7 +33417,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2023466,1472890,1543,62199977⟩
+def bounds : Challenge.Bounds := ⟨2022450,1472301,1543,67689977⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -33419,7 +33426,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1472890
+    change measurementCount (normalizeProgram _) ≤ 1472301
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -33427,7 +33434,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 62199977
+    change gateSlots (normalizeProgram _) ≤ 67689977
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
