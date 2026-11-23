@@ -1,4 +1,5 @@
 import ECDSAAdd.Submission.Entrant.QTop
+import ECDSAAdd.Submission.Entrant.Decoder87
 import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Math.SkywalkTerminationBudget
@@ -2080,6 +2081,31 @@ def lowDecoder (L : Layout) (B : Nat) : Decoder :=
 def highDecoder (L : Layout) (B : Nat) : Decoder :=
   oneHot (highBits L B) L.highWork
 
+def high87Map (L : Layout) (q : Wire) : Wire :=
+  if q < 29 then L.highWork q else L.A (q - 26)
+
+def high87Program (L : Layout) : Program :=
+  renameProgram (high87Map L) Decoder87.pruned
+
+theorem high87_full (L : Layout) :
+    renameProgram (high87Map L) Decoder87.full = (highDecoder L 87).program := by
+  simp [high87Map, Decoder87.full, renameProgram, renameInstr, highDecoder, highBits,
+    reg, show bitWidth 87 = 7 by decide +kernel, oneHot, cxTo, interleave, List.range_succ]
+
+theorem high87_sites (L : Layout) : (highDecoder L 87).sites = reg L.highWork 29 := by
+  simp [highDecoder, highBits, reg, show bitWidth 87 = 7 by decide +kernel,
+    oneHot, interleave, List.range_succ]
+
+theorem high87_pool (L : Layout) :
+    reg (high87Map L) 33 = (highDecoder L 87).sites ++ highBits L 87 := by
+  simp [high87Map, high87_sites, highBits, reg,
+    show bitWidth 87 = 7 by decide +kernel, List.range_succ]
+
+theorem high87_sublist (L : Layout) :
+    (high87Program L).Sublist (highDecoder L 87).program := by
+  rw [← high87_full]
+  exact Decoder87.pruned_sublist.map (renameInstr (high87Map L))
+
 def registerBasis (bits : List Wire) (x : Nat) : BasisState := fun q =>
   if bits.idxOf q < bits.length then x.testBit (bits.idxOf q) else false
 
@@ -2275,16 +2301,35 @@ def unpackStep (L : Layout) (B j : Nat) : Program :=
   cxInto L.t ((List.range nb).filter (fun b => k.testBit b) |>.map L.A) ++
   [.measureX L.t [] [.CZ (L.D j) L.z]]
 
-def unpack (L : Layout) (B : Nat) : Program :=
+def unpackWithHigh (L : Layout) (B : Nat) (high : Program) : Program :=
   let ld := lowDecoder L B
   let hd := highDecoder L B
-  ld.program ++ hd.program ++
+  ld.program ++ high ++
   [.CCX (outAt hd 0 L.z) (outAt ld 0 L.z) L.z] ++
   (List.range (B - 2)).flatMap (unpackStep L B) ++
   unpackStep L B (B - 2) ++
   [.X L.z] ++ decoderInit ld (lowBits L B) ++ decoderInit hd (highBits L B) ++
   [.X (L.S 0)] ++ unpackAdder L B ++
   cxInto (L.D (B - 1)) (reg L.D (B - 1))
+
+def unpackFull (L : Layout) (B : Nat) : Program :=
+  unpackWithHigh L B (highDecoder L B).program
+
+def unpack (L : Layout) (B : Nat) : Program :=
+  unpackWithHigh L B (if B = 87 then high87Program L else (highDecoder L B).program)
+
+theorem unpack_sublist (L : Layout) (B : Nat) :
+    (unpack L B).Sublist (unpackFull L B) := by
+  unfold unpack unpackFull
+  have hp : (if B = 87 then high87Program L else (highDecoder L B).program).Sublist
+      (highDecoder L B).program := by
+    split
+    · subst B
+      exact high87_sublist L
+    · exact List.Sublist.refl _
+  unfold unpackWithHigh
+  repeat' apply List.Sublist.append
+  all_goals first | exact hp | exact List.Sublist.refl _
 
 /-- The checkpoint boundary uses exactly one Fredkin per signed rail bit. -/
 def orient (letter : Wire) (L : Layout) (B : Nat) : Program :=
@@ -3580,8 +3625,8 @@ theorem pack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   simpa only [pack] using hp012
 
 /-- Every wire touched by the unpacking circuit belongs to the same declared pool. -/
-theorem unpack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
-    wires (unpack L B) ⊆ (declaredSites L B).toFinset := by
+theorem unpackFull_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    wires (unpackFull L B) ⊆ (declaredSites L B).toFinset := by
   let ld := lowDecoder L B
   let hd := highDecoder L B
   have hsig := declared_D L B (B - 1) (by omega)
@@ -3633,7 +3678,12 @@ theorem unpack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   have hu08 := support_append hu07 hu8
   have hu09 := support_append hu08 hu9
   have hu010 := support_append hu09 hu10
-  simpa only [unpack] using hu010
+  simpa only [unpackFull, unpackWithHigh] using hu010
+
+theorem unpack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    wires (unpack L B) ⊆ (declaredSites L B).toFinset :=
+  (Skip4.wires_mono_of_mem _ _ (fun _ hi => (unpack_sublist L B).subset hi)).trans
+    (unpackFull_support L B hB)
 
 /-- Every ordinary gate in packing has a target distinct from its controls. -/
 theorem pack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
@@ -3688,8 +3738,8 @@ theorem pack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
   simpa only [pack] using hp012
 
 /-- Every ordinary gate in unpacking has a target distinct from its controls. -/
-theorem unpack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
-    GatePhysical (unpack L B) := by
+theorem unpackFull_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
+    GatePhysical (unpackFull L B) := by
   let ld := lowDecoder L B
   let hd := highDecoder L B
   have hu0 : GatePhysical ld.program := by
@@ -3733,7 +3783,11 @@ theorem unpack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
   have hu08 := (gatePhysical_append _ _).mpr ⟨hu07, hu8⟩
   have hu09 := (gatePhysical_append _ _).mpr ⟨hu08, hu9⟩
   have hu010 := (gatePhysical_append _ _).mpr ⟨hu09, hu10⟩
-  simpa only [unpack] using hu010
+  simpa only [unpackFull, unpackWithHigh] using hu010
+
+theorem unpack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
+    GatePhysical (unpack L B) :=
+  fun i hi => unpackFull_physical L B hB hn i ((unpack_sublist L B).subset hi)
 
 def natBitLength (x : Nat) : Nat := if x = 0 then 0 else x.log2 + 1
 
@@ -3975,9 +4029,9 @@ theorem pack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   have hprogram := lowHigh_program_toffoli L B
   omega
 
-theorem unpack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
-    toffoliCount (unpack L B) = 3 * B - 3 + decoderCost (bitWidth B) ∧
-    measurementCount (unpack L B) = 2 * B - 3 := by
+theorem unpackFull_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    toffoliCount (unpackFull L B) = 3 * B - 3 + decoderCost (bitWidth B) ∧
+    measurementCount (unpackFull L B) = 2 * B - 3 := by
   have ha := unpackAdder_counts L B hB
   have ht := unpackStep_counts_top L B
   have hs := flatMap_uniform_counts (List.range (B - 2))
@@ -3985,13 +4039,32 @@ theorem unpack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
       intro j hj
       exact unpackStep_counts_normal L B j (List.mem_range.mp hj))
   have hd := decoder_pair_cost L B
-  simp only [unpack, toffoliCount_append, measurementCount_append]
+  simp only [unpackFull, unpackWithHigh, toffoliCount_append, measurementCount_append]
   simp only [cxInto_toffoli, cxInto_measurements, decoderInit_toffoli,
     decoderInit_measurements, ha.1, ha.2, ht.1, ht.2, hs.1, hs.2,
     hd.2.1, hd.2.2.1, List.length_range]
   have hcost := hd.1
   simp only [toffoliCount, measurementCount]
   omega
+
+theorem high87_counts (L : Layout) :
+    toffoliCount (high87Program L) + 2 = toffoliCount (highDecoder L 87).program ∧
+    measurementCount (high87Program L) = measurementCount (highDecoder L 87).program := by
+  simp only [high87Program, ← high87_full L, renameProgram_counts]
+  exact ⟨Decoder87.counts.1, Decoder87.counts.2.1.trans Decoder87.counts.2.2.1.symm⟩
+
+theorem unpack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
+    toffoliCount (unpack L B) =
+      3 * B - 3 + decoderCost (bitWidth B) - (if B = 87 then 2 else 0) ∧
+    measurementCount (unpack L B) = 2 * B - 3 := by
+  have h := unpackFull_counts L B hB
+  by_cases he : B = 87
+  · subst B
+    have hh := high87_counts L
+    simp only [unpack, unpackFull, unpackWithHigh, ↓reduceIte,
+      toffoliCount_append, measurementCount_append] at h ⊢
+    omega
+  · simpa only [unpack, unpackFull, if_neg he, Nat.sub_zero] using h
 
 
 
@@ -22218,8 +22291,8 @@ section Merge_StairSlotsV3Codec_at_QTop
 `StairPhysicalPrimitives.pack B` is sign extension, the generated codec
 `StairCodec.pack (physicalLayout B) B` and the rest relocation
 (`2 (B - 1)` CX); `unpack B` mirrors it.  The six pair totals are checked by
-kernel evaluation.  They equal the PK2 generated-codec totals
-`5412, 3656, 2725, 1757, 1173, 582` plus `2 + 4 (B - 1)`.
+kernel evaluation.  They equal the generated-codec totals
+`5410, 3656, 2725, 1757, 1173, 582` plus `2 + 4 (B - 1)`.
 -/
 
 section
@@ -22314,9 +22387,10 @@ theorem k5_dh (L : StairCodec.Layout) (B x : Nat) :
 
 theorem codecPair87 :
     gateSlots (StairPhysicalPrimitives.pack 87) +
-      gateSlots (StairPhysicalPrimitives.unpack 87) = 5758 := by
+      gateSlots (StairPhysicalPrimitives.unpack 87) = 5756 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
+    Baselines.rename_gateSlots, ↓reduceIte, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22324,7 +22398,8 @@ theorem codecPair62 :
     gateSlots (StairPhysicalPrimitives.pack 62) +
       gateSlots (StairPhysicalPrimitives.unpack 62) = 3902 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
+    gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22332,7 +22407,8 @@ theorem codecPair47 :
     gateSlots (StairPhysicalPrimitives.pack 47) +
       gateSlots (StairPhysicalPrimitives.unpack 47) = 2911 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
+    gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22340,7 +22416,8 @@ theorem codecPair32 :
     gateSlots (StairPhysicalPrimitives.pack 32) +
       gateSlots (StairPhysicalPrimitives.unpack 32) = 1883 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
+    gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22348,7 +22425,8 @@ theorem codecPair22 :
     gateSlots (StairPhysicalPrimitives.pack 22) +
       gateSlots (StairPhysicalPrimitives.unpack 22) = 1259 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
+    gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -40436,11 +40514,75 @@ theorem compact_unpack_finish_staged (L : Layout) (B u v : Nat) (sigma : Bool)
             simp [signedWord, Nat.mod_eq_of_lt hsub]
   exact ⟨hcxPhase.trans (hadd.1.trans hcl.1), hSOut, hDOut, hWorkOut⟩
 
-theorem unpack_eq_stages (L : Layout) (B : Nat) :
-    unpack L B = unpackSweepPrefix L B ++
+theorem high87_run (L : Layout) (hn : L.Nodup 87) (k : Nat) (hk : k < 11)
+    (s : State) (m : List Bool)
+    (hbits : ∀ i, i < 4 → s.basis (L.A (3 + i)) = k.testBit i)
+    (hclean : ∀ q ∈ (highDecoder L 87).sites, s.basis q = false) :
+    run (high87Program L) m s = run (highDecoder L 87).program m s := by
+  have hreg : (reg (high87Map L) 33).Nodup := by
+    rw [high87_pool, List.nodup_append_comm]
+    exact highDecoder_nodup L 87 hn
+  rw [← high87_full]
+  refine Decoder87.placed_run (high87Map L) ?_ k hk s m ?_
+  · intro a ha b hb hab
+    by_contra hne
+    exact reg_ne (high87Map L) 33 a b hreg
+      (Finset.mem_range.mp ha) (Finset.mem_range.mp hb) hne hab
+  · intro q hq
+    have hq' := Finset.mem_range.mp hq
+    by_cases hs : q < 29
+    · simp only [high87Map, if_pos hs, Decoder87.input]
+      apply hclean
+      rw [high87_sites]
+      exact reg_mem _ _ _ hs
+    · have hi : q - 29 < 4 := by omega
+      simpa only [high87Map, if_neg hs, Decoder87.input,
+        show q - 26 = 3 + (q - 29) by omega] using hbits (q - 29) hi
+
+theorem unpack87_run_full (L : Layout) (u v : Nat) (sigma : Bool)
+    (hd : CodecDomain 87 u v sigma) (hn : L.Nodup 87) (s : State) (m : List Bool)
+    (hc : CompactCode L 87 u v sigma s.basis) :
+    run (unpack L 87) m s = run (unpackFull L 87) m s := by
+  rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
+  have hlen := domain_w_bitLength_le 87 u v sigma hd
+  change natBitLength (u - sigma.toNat) ≤ 86 at hlen
+  have hbound : natBitLength (u - sigma.toNat) < 2 ^ bitWidth 87 := by
+    change natBitLength (u - sigma.toNat) < 128
+    omega
+  have hlo := lowDecoder_output L 87 (natBitLength (u - sigma.toNat)) hn s []
+    hvalue hbound (fun q hq => hclean q (by simp [hq]))
+  have hhi := high87_run L hn (natBitLength (u - sigma.toNat) / 8) (by omega)
+    (run (lowDecoder L 87).program [] s) [] (by
+      intro i hi
+      rw [hlo.2.1 (L.A (3 + i)) (by
+        intro hq
+        exact sep_A_rest L 87 hn (reg_mem L.A _ (3 + i) (by change 3 + i < 7; omega))
+          (by simp [hq]) rfl)]
+      have hh := highBits_read L 87 (natBitLength (u - sigma.toNat)) i s.basis
+        hvalue (by change i < 4; exact hi)
+      have hw : (highBits L 87).getD i 0 = L.A (3 + i) := by
+        interval_cases i <;> rfl
+      rw [hw] at hh
+      exact hh) (by
+      intro q hq
+      rw [hlo.2.1 q (by
+        intro hlq
+        exact sep_low_high L 87 hn hlq hq rfl)]
+      exact hclean q (by simp [hq]))
+  have hlm : measurementCount (lowDecoder L 87).program = 0 :=
+    oneHot_program_measurements _ _
+  have hhm : measurementCount (highDecoder L 87).program = 0 :=
+    oneHot_program_measurements _ _
+  have hpm : measurementCount (high87Program L) = 0 := (high87_counts L).2.trans hhm
+  simp only [unpack, unpackFull, unpackWithHigh, ↓reduceIte, run_append,
+    measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
+    List.take_zero, List.drop_zero, hhi]
+
+theorem unpackFull_eq_stages (L : Layout) (B : Nat) :
+    unpackFull L B = unpackSweepPrefix L B ++
       (unpackCleanup L B ++
         (unpackAdder L B ++ cxInto (L.D (B - 1)) (reg L.D (B - 1)))) := by
-  simp [unpack, unpackSweepPrefix, unpackCleanup, List.append_assoc]
+  simp [unpackFull, unpackWithHigh, unpackSweepPrefix, unpackCleanup, List.append_assoc]
 
 /-- Exact semantic direction of the literal generated inverse codec, for every
 measurement tape. -/
@@ -40449,6 +40591,12 @@ theorem unpack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     (hc : CompactCode L B u v sigma s.basis) :
     (run (unpack L B) m s).phase = s.phase ∧
     CodecInput L B u v sigma (run (unpack L B) m s).basis := by
+  have he : run (unpack L B) m s = run (unpackFull L B) m s := by
+    by_cases hb : B = 87
+    · subst B
+      exact unpack87_run_full L u v sigma hd hn s m hc
+    · simp only [unpack, unpackFull, if_neg hb]
+  rw [he]
   let P := unpackSweepPrefix L B
   let C := unpackCleanup L B
   let A := unpackAdder L B
@@ -40460,7 +40608,7 @@ theorem unpack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
   let ma := m2.take (measurementCount A)
   let mx := m2.drop (measurementCount A)
   have hs := compact_unpack_finish_staged L B u v sigma hd hn s mp mc ma mx hc
-  rw [unpack_eq_stages]
+  rw [unpackFull_eq_stages]
   change (run (P ++ (C ++ (A ++ X))) m s).phase = s.phase ∧
     CodecInput L B u v sigma (run (P ++ (C ++ (A ++ X))) m s).basis
   simp only [run_append]
@@ -59500,10 +59648,10 @@ def v3Plan : Plan where
 theorem v3Plan_loanUnits : v3Plan.loanUnits = 461 := by decide
 
 /-- Exact checkpoint slot costs on LT13's `physicalLayout`: generated-codec
-pack+unpack totals (`5412, 3656, 2725, 1757, 1173, 582`) plus two sign
+pack+unpack totals (`5410, 3656, 2725, 1757, 1173, 582`) plus two sign
 extensions and `4 * (B - 1)` relocation CX gates (proved in `StairSlotsV3`). -/
 def v3CodecPair (B : Nat) : Nat :=
-  if B = 87 then 5758 else if B = 62 then 3902 else if B = 47 then 2911
+  if B = 87 then 5756 else if B = 62 then 3902 else if B = 47 then 2911
   else if B = 32 then 1883 else if B = 22 then 1259 else if B = 12 then 628
   else 0
 
@@ -59537,7 +59685,7 @@ def v3Boundary1806 : Boundary where
   multEnd := 30000
   center := 430
 
-theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335196 := by
+theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335192 := by
   decide
 
 /-! ### Cross-check: the superseded eight-row plan reproduces 639,954 -/
@@ -59654,8 +59802,8 @@ section Merge_StairSlotsV3Codec_at_StairSideA
 `StairPhysicalPrimitives.pack B` is sign extension, the generated codec
 `StairCodec.pack (physicalLayout B) B` and the rest relocation
 (`2 (B - 1)` CX); `unpack B` mirrors it.  The six pair totals are checked by
-kernel evaluation.  They equal the PK2 generated-codec totals
-`5412, 3656, 2725, 1757, 1173, 582` plus `2 + 4 (B - 1)`.
+kernel evaluation.  They equal the generated-codec totals
+`5410, 3656, 2725, 1757, 1173, 582` plus `2 + 4 (B - 1)`.
 -/
 
 section

@@ -55987,7 +55987,7 @@ theorem v3_pack_counts (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
 
 theorem v3_unpack_counts (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
     toffoliCount (checkpointPrimitives.unpack B) =
-        3 * B - 3 + StairCodec.decoderCost (StairCodec.bitWidth B) ∧
+        3 * B - 3 + StairCodec.decoderCost (StairCodec.bitWidth B) - (if B = 87 then 2 else 0) ∧
       measurementCount (checkpointPrimitives.unpack B) = 2 * B - 3 := by
   have h3 := StairPhysicalPrimitives.budget_three B hB
   obtain ⟨h1, h2⟩ := StairCodec.unpack_counts (StairPhysicalLayout.physicalLayout B) B h3
@@ -56006,7 +56006,7 @@ theorem v3_codec_row (B w c : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
     (hw : StairCodec.bitWidth B = w) (hc : StairCodec.decoderCost w = c) :
     toffoliCount (checkpointPrimitives.pack B) = 2 * B - 4 ∧
       measurementCount (checkpointPrimitives.pack B) = 3 * B - 3 + c ∧
-      toffoliCount (checkpointPrimitives.unpack B) = 3 * B - 3 + c ∧
+      toffoliCount (checkpointPrimitives.unpack B) = 3 * B - 3 + c - (if B = 87 then 2 else 0) ∧
       measurementCount (checkpointPrimitives.unpack B) = 2 * B - 3 := by
   obtain ⟨p1, p2⟩ := v3_pack_counts B hB
   obtain ⟨u1, u2⟩ := v3_unpack_counts B hB
@@ -56016,7 +56016,7 @@ theorem v3_codec_row (B w c : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
 theorem v3_codec87 :
     toffoliCount (checkpointPrimitives.pack 87) = 170 ∧
       measurementCount (checkpointPrimitives.pack 87) = 273 ∧
-      toffoliCount (checkpointPrimitives.unpack 87) = 273 ∧
+      toffoliCount (checkpointPrimitives.unpack 87) = 271 ∧
       measurementCount (checkpointPrimitives.unpack 87) = 171 :=
   v3_codec_row 87 7 15 (by decide) (v3_bitWidth_eq 87 6 (by norm_num) (by norm_num))
     (by decide)
@@ -56375,7 +56375,7 @@ theorem v3_entryWalk_counts :
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490) +
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500) +
         toffoliCount (StairSchedule.forwardLast checkpointPrimitives) =
-      toffoliCount (Six505.stackForward6 true) + 1579 ∧
+      toffoliCount (Six505.stackForward6 true) + 1577 ∧
     measurementCount (StairSchedule.stackForward6 checkpointPrimitives) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465) +
@@ -56437,7 +56437,7 @@ theorem v3_exitWalk_counts :
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465) +
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450) =
-      toffoliCount (InverseFive23.stackReverse15 true) + 1579 ∧
+      toffoliCount (InverseFive23.stackReverse15 true) + 1577 ∧
     measurementCount (StairSchedule.stackReverse15 checkpointPrimitives) +
         measurementCount (StairSchedule.reverseLast checkpointPrimitives) +
         measurementCount (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500) +
@@ -56644,7 +56644,7 @@ theorem hostedEntryRest_counts_of (δT δM : Nat)
           measurementCount R2SqEp760.canon760 + δM)
     (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δT ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δT ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δM := by
   obtain ⟨b1, b2⟩ := boundary
@@ -56676,7 +56676,7 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
           measurementCount (R2SqEp760.endPacket760 false) + δM)
     (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δM := by
   obtain ⟨b1, b2⟩ := boundary
@@ -56698,7 +56698,7 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
 
 theorem hostedEntryRest_counts (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10899 ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10897 ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10635 := by
   obtain ⟨h1, h2⟩ := hostedEntryRest_counts_of 87 87 v3_boundary_counts.1 L
@@ -56706,7 +56706,7 @@ theorem hostedEntryRest_counts (L : ControlledPointLayout) :
 
 theorem hostedExitRest_counts (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10987 ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10985 ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10723 := by
   obtain ⟨h1, h2⟩ := hostedExitRest_counts_of 175 175 v3_boundary_counts.2 L k
@@ -56752,16 +56752,16 @@ attribute [local irreducible] toffoliCount measurementCount
     parametric in the two boundary deltas. -/
 theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (hostedGeneric L cx cy) ≤
-        toffoliCount (FlagExit.genericN L cx cy) + 21624 + 151 + δET + δXT ∧
+        toffoliCount (FlagExit.genericN L cx cy) + 21620 + 151 + δET + δXT ∧
       measurementCount (hostedGeneric L cx cy) =
         measurementCount (FlagExit.genericN L cx cy) + 21096 + δEM + δXM := by
   obtain ⟨e1, e2⟩ := hE L
@@ -56776,16 +56776,16 @@ theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     parametric in the two boundary deltas. -/
 theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
     toffoliCount (concreteProgram C) ≤
-        toffoliCount (AboveFieldPointDevelop.programQ C) + 21624 + 151 + δET + δXT ∧
+        toffoliCount (AboveFieldPointDevelop.programQ C) + 21620 + 151 + δET + δXT ∧
       measurementCount (concreteProgram C) ≤
         measurementCount (AboveFieldPointDevelop.programQ C) + 21096 + δEM + δXM := by
   cases C with
@@ -56809,15 +56809,15 @@ theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     plus `22316 + δ` Toffoli and `21776 + δ` measurements. -/
 theorem count_totals_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10812 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10812 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21624 + 151 + δET + δXT ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21620 + 151 + δET + δXT ∧
       measurementCount (concreteAssembly.program C) ≤ 1498884 + 21096 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
@@ -56826,9 +56826,9 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
   constructor <;> omega
 
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
-    + the PSQ hole-free square, +151 T): **T ≤ 2,169,094, M ≤ 1,520,242**. -/
+    + the PSQ hole-free square, +151 T): **T ≤ 2,169,090, M ≤ 1,520,242**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2169094 ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2169090 ∧
       measurementCount (concreteAssembly.program C) ≤ 1520242 := by
   intro C
   have h := count_totals_of 87 87 175 175
@@ -70942,7 +70942,7 @@ theorem v3WalkFacts : WalkFacts StairConcreteAssembly.checkpointPrimitives v3Cos
 /-- Exact slot overhead of the CANON v3 program over the record program. -/
 theorem slot_totals : ∀ C,
     gateSlots (StairConcreteAssembly.concreteAssembly.program C) ≤
-      gateSlots (AboveFieldPointDevelop.programQ C) + 335196 := by
+      gateSlots (AboveFieldPointDevelop.programQ C) + 335192 := by
   intro C
   have hc := slot_composition_of_rests StairConcreteAssembly.checkpointPrimitives
     StairConcreteAssembly.hostPlan v3Costs v3Boundary1806 v3WalkFacts
@@ -73900,7 +73900,7 @@ def backward : Program := [.CX 11 8,
 .CX 3 5,
 .CX 1 5,
 .CX 1 3,
-.CCX 4 3 1,
+.measureX 1 [] [.CZ 4 3],
 .CX 0 2,
 .CCX 4 2 0,
 .CX 0 2,
