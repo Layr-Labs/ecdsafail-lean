@@ -61152,6 +61152,124 @@ def literal:Program:=join0_54
 end ECDSAAdd.Entrant.KnownAMidStaged
 end
 
+namespace ZeroSetDevelop.MaskedRewrite
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant ZeroReadDevelop
+
+def maskOf : List Wire → Nat
+  | [] => 0
+  | x :: xs => 2 ^ x ||| maskOf xs
+
+theorem mask_mem : ∀ (xs : List Wire) (q : Wire), (maskOf xs).testBit q = decide (q ∈ xs)
+  | [], q => by simp [maskOf]
+  | x :: xs, q => by
+    simp only [maskOf, Nat.testBit_or, mask_mem xs q, Nat.testBit_two_pow, List.mem_cons,
+      Bool.decide_or]
+    congr 1
+    exact decide_eq_decide.mpr eq_comm
+
+structure Lookup (Q : List Wire) where
+  hit : Wire → Bool
+  correct : ∀ q, hit q = decide (q ∈ Q)
+
+def fromMask (Q : List Wire) (bits : Nat) (h : maskOf Q = bits) : Lookup Q :=
+  ⟨bits.testBit, fun q => by rw [← h]; exact mask_mem Q q⟩
+
+private def keepBy (hit : Wire → Bool) : Correction → Bool
+  | .Z t => !hit t
+  | .CZ a b => !hit a && !hit b
+
+private def eraseBy (hit : Wire → Bool) : Instr → Program
+  | .X t => [.X t]
+  | .CX a t => if hit a then [] else [.CX a t]
+  | .CCX a b t => if hit a || hit b then [] else [.CCX a b t]
+  | .measureX t c0 c1 => [.measureX t (c0.filter (keepBy hit)) (c1.filter (keepBy hit))]
+
+private theorem eraseBy_eq {Q : List Wire} (table : Lookup Q) (i : Instr) :
+    eraseBy table.hit i = eraseS Q i := by
+  have same : keepBy table.hit = keepS Q := by
+    funext c
+    cases c <;> simp only [keepBy, keepS, table.correct]
+  cases i <;> simp [eraseBy, eraseS, table.correct, same, pruneS]
+
+private structure Step (Q : List Wire) (p : Program) where
+  rest : Program
+  output : Program
+  sound : ∀ r, SRewrites Q rest r → SRewrites Q p (output ++ r)
+
+private def single {Q : List Wire} (table : Lookup Q) (i : Instr) (p : Program) :
+    Option (Step Q (i::p)) :=
+  if h : table.hit (targetOf i) = false then
+    some ⟨p, eraseBy table.hit i, fun r tail => by
+      rw [eraseBy_eq]
+      exact SRewrites.normal i p r (by simpa only [table.correct, decide_eq_false_iff_not] using h) tail⟩
+  else none
+
+private def next {Q : List Wire} (table : Lookup Q) : (p : Program) → Option (Step Q p)
+  | [] => none
+  | .CX a b :: .CX c d :: .CCX e f g :: i3 :: i4 :: i5 :: rest =>
+    let block : Program := [.CX a b,.CX c d,.CCX e f g,i3,i4,i5]
+    if h : block = majority a b d g ∧ table.hit b = true ∧ table.hit g = false ∧ [a,b,d,g].Nodup then
+      some ⟨rest, eraseBy table.hit (.CCX a d g), fun r ht => by
+        have hb : b ∈ Q := by simpa only [table.correct, decide_eq_true_eq] using h.2.1
+        have hg : g ∉ Q := by simpa only [table.correct, decide_eq_false_iff_not] using h.2.2.1
+        have got := SRewrites.zeroMajority a b d g rest r hb hg h.2.2.2 ht
+        rw [← h.1] at got
+        rw [eraseBy_eq]
+        exact got⟩
+    else single table (.CX a b) (.CX c d :: .CCX e f g :: i3 :: i4 :: i5 :: rest)
+  | i :: rest => single table i rest
+
+private def strip : Program → Program → Option Program
+  | [], out => some out
+  | _::_, [] => none
+  | i::p, j::out => if i=j then strip p out else none
+
+private theorem strip_eq (front out tail : Program) (h : strip front out = some tail) : out = front ++ tail := by
+  induction front generalizing out with
+  | nil => simpa [strip] using h
+  | cons i p ih =>
+    cases out with
+    | nil => simp [strip] at h
+    | cons j rest =>
+      simp only [strip] at h
+      split at h
+      · rename_i same
+        cases same
+        exact congrArg (List.cons i) (ih rest h)
+      · contradiction
+
+def check {Q : List Wire} (table : Lookup Q) : Nat → Program → Program → Bool
+  | 0, _, _ => false
+  | _+1, [], out => out.isEmpty
+  | n+1, i::p, out =>
+    match next table (i::p) with
+    | none => false
+    | some step => match strip step.output out with
+      | none => false
+      | some tail => check table n step.rest tail
+
+theorem sound {Q : List Wire} (table : Lookup Q) (fuel : Nat) (p out : Program) (h : check table fuel p out = true) : SRewrites Q p out := by
+  induction fuel generalizing p out with
+  | zero => simp [check] at h
+  | succ n ih =>
+    cases p with
+    | nil =>
+      cases out with
+      | nil => exact SRewrites.nil
+      | cons => simp [check] at h
+    | cons i p =>
+      simp only [check] at h
+      split at h
+      · contradiction
+      · rename_i step _
+        split at h
+        · contradiction
+        · rename_i tail same
+          rw [strip_eq _ _ _ same]
+          exact step.sound tail (ih _ _ h)
+
+end ZeroSetDevelop.MaskedRewrite
+
 section
 namespace ECDSAAdd.Entrant.A161Low4Facts
 
@@ -61160,12 +61278,12 @@ set_option maxHeartbeats 500000000
 
 def hs99 := A161Facts.loans95 A161FixedFold.L++A161FixedFold.L.core.work.take 4
 
-theorem match99 : (ZeroSetDevelop.compileS? hs99 pLow).elim false
-    (fun c => ParkAProgramBool.programEq ECDSAAdd.Entrant.KnownAMidStaged.literal c.out) = true := by
- decide +kernel
+private theorem loanMask_eq : ZeroSetDevelop.MaskedRewrite.maskOf hs99 = 0x1fffffffffffffffffffffffc000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 := by decide +kernel
+private def wireLookup := ZeroSetDevelop.MaskedRewrite.fromMask hs99 0x1fffffffffffffffffffffffc000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 loanMask_eq
 
-theorem compiled99 : (ZeroSetDevelop.compileS? hs99 pLow).isSome=true :=
- ECDSAAdd.Entrant.D1Opt.isSome_of_elim match99
+theorem literal_rewrites : ZeroSetDevelop.SRewrites hs99 pLow KnownAMidStaged.literal := by
+  apply ZeroSetDevelop.MaskedRewrite.sound wireLookup (pLow.length+1)
+  decide +kernel
 
 end ECDSAAdd.Entrant.A161Low4Facts
 end
@@ -61799,7 +61917,7 @@ theorem hw:L.Widths:=A161FixedFold.hw
 theorem hn:L.wires.Nodup:=A161FixedFold.hn
 
 def checked : ZeroSetDevelop.CheckedS hs99 A161Low4Facts.pLow :=
- (ZeroSetDevelop.compileS? hs99 A161Low4Facts.pLow).get A161Low4Facts.compiled99
+ ⟨KnownAMidStaged.literal, A161Low4Facts.literal_rewrites⟩
 attribute [local irreducible] checked
 
 theorem cert99 : ZeroSetDevelop.SRewrites hs99 (A161Low4Fold.aMiddle L g) checked.out := by
@@ -62479,7 +62597,21 @@ theorem geometry : (loans L).length=82 ∧ (L.core.sumCarry::hosts L).Nodup ∧
  unfold LoanReadyTrim
  decide +kernel
 
-theorem used_data : ∀x∈hosts L,FourthASavedCarryDevelop.hasWire BData301.p0 x=true := by decide +kernel
+private def hostBlocks : Program := BData301.shared140 ++ (BData301.shared105 ++ (BData301.shared39 ++ (BData301.shared29)))
+
+private theorem hosts_in_blocks : ∀x∈FullBTemp.hosts FullBReady.L, FourthASavedCarryDevelop.hasWire hostBlocks x = true := by decide +kernel
+
+theorem used_data : ∀x∈FullBTemp.hosts FullBReady.L, FourthASavedCarryDevelop.hasWire BData301.p0 x = true := by
+  intro x hx
+  have h := (FourthASavedCarryDevelop.hasWire_iff _ _).mp (hosts_in_blocks x hx)
+  apply (FourthASavedCarryDevelop.hasWire_iff _ _).mpr
+  simp only [hostBlocks, wires_append, Finset.mem_union] at h
+  simp only [BData301.p0, wires_append, Finset.mem_union]
+  rcases h with h | h | h | h
+  · exact Or.inr (Or.inr (Or.inl (Or.inr (Or.inr (Or.inl (Or.inr (Or.inl h)))))))
+  · exact Or.inr (Or.inl (Or.inr (Or.inl (Or.inl (Or.inr (Or.inl h))))))
+  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h)))))))
+  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inl (Or.inl h))))))
 
 private theorem hasWire_transport (p q:Program) (e:p=q) (x:Wire)
  (h:FourthASavedCarryDevelop.hasWire p x=true):FourthASavedCarryDevelop.hasWire q x=true := e ▸ h
