@@ -9438,16 +9438,38 @@ theorem specials_nd : (L.core.sumCarry::FullBTemp.hostR L::FullBTemp.hostP L::lo
 
 -- Peak memory: compileS? hosts88 p0 is evaluated one 256-instruction piece per declaration.
 theorem peak_lac_len : List.length BData301.p0 = 9751 := by decide +kernel
-theorem peak_lac_long0 : ¬ (List.length BData301.p0) ≤ 1024 := by decide +kernel
-theorem peak_lac_long1 : ¬ (List.length (List.drop 1024 BData301.p0)) ≤ 1024 := by decide +kernel
-theorem peak_lac_long2 : ¬ (List.length (List.drop 1024 (List.drop 1024 BData301.p0))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long3 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long4 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long5 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long6 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long7 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long8 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_short9 : (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ≤ 1024 := by decide +kernel
+section
+attribute [local irreducible] BData301.p0
+theorem peak_lac_long0 : ¬ (List.length BData301.p0) ≤ 1024 := by
+  simp only [peak_lac_len]
+  decide
+theorem peak_lac_long1 : ¬ (List.length (List.drop 1024 BData301.p0)) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long2 : ¬ (List.length (List.drop 1024 (List.drop 1024 BData301.p0))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long3 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long4 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long5 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long6 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long7 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_long8 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
+theorem peak_lac_short9 : (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ≤ 1024 := by
+  simp only [List.length_drop, peak_lac_len]
+  decide
 theorem peak_lac_seg0_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 BData301.p0)))+1) (List.take 256 (List.take 1024 BData301.p0))).map (fun cm => cm.out) =
   some (LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) := by
   apply PeakChunkS.out_sound
@@ -9464,6 +9486,7 @@ theorem peak_lac_seg0_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts8
   some (LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)) := by
   apply PeakChunkS.out_sound
   decide +kernel
+end
 theorem peak_lac_seg0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 BData301.p0)).map (fun cm => cm.out) =
   some ((LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) ++ ((LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) ++ ((LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) ++ ((LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)))))) := by
   have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_2 peak_lac_seg0_3)))

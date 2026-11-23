@@ -1,7 +1,6 @@
 import ECDSAAdd.Framework.RunAppendAgreement
 import ECDSAAdd.Submission.Entrant.BOptimizations
 import ECDSAAdd.Submission.Entrant.StairSideA
-import ECDSAAdd.Submission.Entrant.Window
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Stair44Stock
 import ECDSAAdd.Submission.Entrant.WindowLeave
@@ -602,10 +601,7 @@ theorem input {j : Fin 25} (lo : 0≤j.val) (hi : j.val≤23) {s : State} {z : S
       have hmul : 2^k0.val * x < 2^k0.val * 2^(barrelWidth (start j) - k0.val) := by
         rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)]
         have hle : 2^k0.val * x ≤ TrueMiddle.F j z := by rw [law.2, xAdj]; exact Nat.le_add_right _ _
-        exact lt_of_le_of_lt hle (by
-          have hbw : barrelWidth (start j) = railP (start j + 15) - (Shadow7.sbP (start j) + 1) := by
-            unfold barrelWidth; omega
-          rw [hbw]; exact h.fit)
+        exact lt_of_le_of_lt hle h.fit
       rw [hslot]
       exact Nat.lt_of_mul_lt_mul_left hmul
     · have x0 : x = 0 := by
@@ -3101,28 +3097,28 @@ theorem counts (d : Bool) (j : Fin 25) (js : List (Fin 25)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=121482 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=121482 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=121841 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=121841 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65641 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65641 ∧
-    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=64801 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=64801 := by
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=121393 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=121393 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=121752 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=121752 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65509 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65509 ∧
+    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=64669 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=64669 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
     (counts true first WindowParams7.rest7).2.2.1,(counts false first WindowParams7.rest7).2.2.1,(counts true first WindowParams7.rest7).2.2.2,
     (counts false first WindowParams7.rest7).2.2.2]
   decide +kernel
 
-theorem slot_sums : (forwardL slotsV true first WindowParams7.rest7).sum ≤ 2603942 ∧ (forwardL slotsV false first WindowParams7.rest7).sum ≤ 2603942 ∧
-    (reverseL slotsV true first WindowParams7.rest7).sum ≤ 2514817 ∧ (reverseL slotsV false first WindowParams7.rest7).sum ≤ 2514817 := by
+theorem slot_sums : (forwardL slotsV true first WindowParams7.rest7).sum ≤ 2602199 ∧ (forwardL slotsV false first WindowParams7.rest7).sum ≤ 2602199 ∧
+    (reverseL slotsV true first WindowParams7.rest7).sum ≤ 2514013 ∧ (reverseL slotsV false first WindowParams7.rest7).sum ≤ 2514013 := by
   decide +kernel
 
 /-- Slot bounds of the CRT window (upper bounds only; the judge has no slot ceiling). -/
-theorem ship_slots : gateSlots (forwardW CRTBarrel.params true first WindowParams7.rest7) ≤ 2603942 ∧
-    gateSlots (forwardW CRTBarrel.params false first WindowParams7.rest7) ≤ 2603942 ∧
-    gateSlots (reverseW CRTBarrel.params true first WindowParams7.rest7) ≤ 2514817 ∧
-    gateSlots (reverseW CRTBarrel.params false first WindowParams7.rest7) ≤ 2514817 := by
+theorem ship_slots : gateSlots (forwardW CRTBarrel.params true first WindowParams7.rest7) ≤ 2602199 ∧
+    gateSlots (forwardW CRTBarrel.params false first WindowParams7.rest7) ≤ 2602199 ∧
+    gateSlots (reverseW CRTBarrel.params true first WindowParams7.rest7) ≤ 2514013 ∧
+    gateSlots (reverseW CRTBarrel.params false first WindowParams7.rest7) ≤ 2514013 := by
   rw [measure_forward gateSlots gateSlots_append, measure_forward gateSlots gateSlots_append,
     measure_reverse gateSlots gateSlots_append, measure_reverse gateSlots gateSlots_append]
   exact ⟨(forwardL_le slots_le true first WindowParams7.rest7).trans slot_sums.1,
@@ -3200,30 +3196,30 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 121482 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 121393 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 121482 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 121393 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 121841 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 121752 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 121841 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 121752 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65641 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65641 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65509 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65509 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
-theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 64801 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 64801 :=
+theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 64669 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 64669 :=
   ship_counts.2.2.2.2.2.2
 
-theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2603942 ∧ gateSlots (forward45plus1 false) ≤ 2603942 :=
+theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2602199 ∧ gateSlots (forward45plus1 false) ≤ 2602199 :=
   ⟨ship_slots.1, ship_slots.2.1⟩
 
-theorem ship_slotsR : gateSlots (reverse45plus1 true) ≤ 2514817 ∧ gateSlots (reverse45plus1 false) ≤ 2514817 :=
+theorem ship_slotsR : gateSlots (reverse45plus1 true) ≤ 2514013 ∧ gateSlots (reverse45plus1 false) ≤ 2514013 :=
   ship_slots.2.2
 
 end ECDSAAdd.Entrant.StairPacket.CRTWindow
@@ -19931,17 +19927,17 @@ theorem group_cost (d : Bool) :
 /-- Static syntax counts include both correction lists of every measurement. -/
 theorem group_slots (d : Bool) :
     slots.measure (group84 d)+(if d then 7065 else 3340)=
-      slots.measure (group d 1 84)+24*(if d then 8271 else 9723)+(if d then 0 else 0) := by
+      slots.measure (group d 1 84)+24*(if d then 8001 else 9173)+(if d then 0 else 0) := by
   have hc := ofield_slots d
   have h (j : Nat) : slots.measure (oten j (!d)) =
-      slots.measure (ogroup d j 2)+(if d then 8271 else 9723) := by
+      slots.measure (ogroup d j 2)+(if d then 8001 else 9173) := by
     rw [show slots.measure=Challenge.gateSlots from rfl]
     cases d <;>
       simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
         enter,shift,leave,fieldHook,program,if_true,if_false,Bool.false_eq_true,List.nil_append,
         List.append_nil,Challenge.gateSlots_append,Baselines.rename_gateSlots,ReducedWindowArchives.enter0_counts.2.2.2,
         ReducedWindowArchives.switch0_counts.2.2.2,ReducedWindowArchives.leave0_counts.2.2.2,ReducedWindowArchives.enter1_counts.2.2.2,ReducedWindowArchives.switch1_counts.2.2.2,ReducedWindowArchives.leave1_counts.2.2.2] <;> omega
-  have w := osolve slots d (if d then 8271 else 9723) h
+  have w := osolve slots d (if d then 8001 else 9173) h
   cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at hc w ⊢ <;> omega
 
 theorem group_cost_div :
@@ -20101,42 +20097,42 @@ attribute [local irreducible] CRTWindow.forward45plus1 CRTWindow.reverse45plus1 
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 36881 else 36881)=
+    toffoliCount (forward d tail)+(if d then 36970 else 36970)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 36504 else 36504)=
+    toffoliCount (backward d tail)+(if d then 36593 else 36593)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
-    measurementCount (forward d tail)+13703=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
-    measurementCount (backward d tail)+14230=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
+    measurementCount (forward d tail)+13835=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
+    measurementCount (backward d tail)+14362=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   cases d
   · have sf := StockWindowCosts420.stock420from60 false
-    have a : toffoliCount (CRTWindow.forward45plus1 false) = 121482 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_false
-    have b : toffoliCount (CRTWindow.reverse45plus1 false) = 121841 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_false
-    have c : measurementCount (CRTWindow.forward45plus1 false) = 65641 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.2
-    have e : measurementCount (CRTWindow.reverse45plus1 false) = 64801 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.2
-    have t := walk tc false tail 36881 36504
-      (subEq 36881 a sf.1 (by omega)) (subEq 36504 b sf.2.2.1 (by omega))
-    have m := walk mc false tail 13703 14230
-      (subEq 13703 c sf.2.1 (by omega)) (subEq 14230 e sf.2.2.2 (by omega))
+    have a : toffoliCount (CRTWindow.forward45plus1 false) = 121393 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_false
+    have b : toffoliCount (CRTWindow.reverse45plus1 false) = 121752 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_false
+    have c : measurementCount (CRTWindow.forward45plus1 false) = 65509 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.2
+    have e : measurementCount (CRTWindow.reverse45plus1 false) = 64669 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.2
+    have t := walk tc false tail 36970 36593
+      (subEq 36970 a sf.1 (by omega)) (subEq 36593 b sf.2.2.1 (by omega))
+    have m := walk mc false tail 13835 14362
+      (subEq 13835 c sf.2.1 (by omega)) (subEq 14362 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts420.stock420from60 true
-    have a : toffoliCount (CRTWindow.forward45plus1 true) = 121482 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_true
-    have b : toffoliCount (CRTWindow.reverse45plus1 true) = 121841 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_true
-    have c : measurementCount (CRTWindow.forward45plus1 true) = 65641 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.1
-    have e : measurementCount (CRTWindow.reverse45plus1 true) = 64801 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.1
-    have t := walk tc true tail 36881 36504
-      (subEq 36881 a sf.1 (by omega)) (subEq 36504 b sf.2.2.1 (by omega))
-    have m := walk mc true tail 13703 14230
-      (subEq 13703 c sf.2.1 (by omega)) (subEq 14230 e sf.2.2.2 (by omega))
+    have a : toffoliCount (CRTWindow.forward45plus1 true) = 121393 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_true
+    have b : toffoliCount (CRTWindow.reverse45plus1 true) = 121752 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_true
+    have c : measurementCount (CRTWindow.forward45plus1 true) = 65509 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.1
+    have e : measurementCount (CRTWindow.reverse45plus1 true) = 64669 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.1
+    have t := walk tc true tail 36970 36593
+      (subEq 36970 a sf.1 (by omega)) (subEq 36593 b sf.2.2.1 (by omega))
+    have m := walk mc true tail 13835 14362
+      (subEq 13835 c sf.2.1 (by omega)) (subEq 14362 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
 
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 36881 else 36881)=f) (hr : (if d then 36504 else 36504)=r) :
+    (hf : (if d then 36970 else 36970)=f) (hr : (if d then 36593 else 36593)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+13703=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+14230=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+13835=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+14362=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 end ECDSAAdd.Entrant.StairPacket.WindowWalkCosts
@@ -20440,30 +20436,30 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+36881+36504=tc.measure Stair44Outer.divide+1987 :=
-  kernels tc 36881 36504 1987 (WindowWalkCosts.inst true 4 409 36881 36504 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 36881 36504 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+36970+36593=tc.measure Stair44Outer.divide+1987 :=
+  kernels tc 36970 36593 1987 (WindowWalkCosts.inst true 4 409 36970 36593 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 36970 36593 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+36881+36504=tc.measure (Stair44Outer.multiply k)+1987 :=
-  kernelsM tc k 36881 36504 1987 (WindowWalkCosts.inst false 84 489 36881 36504 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 36881 36504 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+36970+36593=tc.measure (Stair44Outer.multiply k)+1987 :=
+  kernelsM tc k 36970 36593 1987 (WindowWalkCosts.inst false 84 489 36970 36593 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 36970 36593 rfl rfl rfl).2.1 fieldTcMul
 
-theorem mc_div : mc.measure divide+13703+14230=mc.measure Stair44Outer.divide+5479 :=
-  kernels mc 13703 14230 5479 (WindowWalkCosts.inst true 4 409 36881 36504 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 85 490 36881 36504 rfl rfl rfl).2.2.2 fieldMcDiv
+theorem mc_div : mc.measure divide+13835+14362=mc.measure Stair44Outer.divide+5479 :=
+  kernels mc 13835 14362 5479 (WindowWalkCosts.inst true 4 409 36970 36593 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 85 490 36970 36593 rfl rfl rfl).2.2.2 fieldMcDiv
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+13703+14230=mc.measure (Stair44Outer.multiply k)+5479 :=
-  kernelsM mc k 13703 14230 5479 (WindowWalkCosts.inst false 84 489 36881 36504 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 4 409 36881 36504 rfl rfl rfl).2.2.2 fieldMcMul
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+13835+14362=mc.measure (Stair44Outer.multiply k)+5479 :=
+  kernelsM mc k 13835 14362 5479 (WindowWalkCosts.inst false 84 489 36970 36593 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 4 409 36970 36593 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+142796=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+44908=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 142796 (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 44908 (sum_delta2 mc_div (mc_mul _) rfl)⟩
+    toffoliCount (finite C cx cy)+143152=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+45436=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 143152 (pair_delta2 tc_div (tc_mul _) rfl),
+    finite_delta mc C cx cy 45436 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2026298 ∧
-    measurementCount (program C) ≤ 1475578 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2025942 ∧
+    measurementCount (program C) ≤ 1475050 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -20540,33 +20536,33 @@ private theorem finite_upper (c : Cost) (C : Point) (cx cy : Fp) (gain : Nat)
 
 private theorem casts {P : Program} {n : Nat} (h : gateSlots P ≤ n) : slots.measure P ≤ n := h
 private theorem groupCap (d : Bool) (n : Nat)
-    (hn : 24*(if d then 8271 else 9723)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
+    (hn : 24*(if d then 8001 else 9173)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
     slots.measure (WindowFieldCosts.group84 d)=slots.measure (WindowFieldCosts.group d 1 84)+n := by
   have h := WindowFieldCosts.group_slots d
   omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+2603942+2514817+191439 :=
-  kernels slots 2603942 2514817 191439
-    (walk slots true 4 2603942 2514817 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).1
-    (walk slots false 85 2603942 2514817 490 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).2
-    (groupCap true 191439 rfl)
+    slots.measure Stair44Outer.divide+2602199+2514013+184959 :=
+  kernels slots 2602199 2514013 184959
+    (walk slots true 4 2602199 2514013 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).1
+    (walk slots false 85 2602199 2514013 490 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).2
+    (groupCap true 184959 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+2603942+2514817+230012 :=
-  kernelsM slots k 2603942 2514817 230012
-    (walk slots false 84 2603942 2514817 489 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).1
-    (walk slots true 4 2603942 2514817 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).2
-    (groupCap false 230012 rfl)
+    slots.measure (Stair44Outer.multiply k)+2602199+2514013+216812 :=
+  kernelsM slots k 2602199 2514013 216812
+    (walk slots false 84 2602199 2514013 489 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).1
+    (walk slots true 4 2602199 2514013 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).2
+    (groupCap false 216812 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2603942+2514817+191439)
-    (hm : b ≤ y+2603942+2514817+230012) : a+b ≤ x+y+10658969 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2602199+2514013+184959)
+    (hm : b ≤ y+2602199+2514013+216812) : a+b ≤ x+y+10634195 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+10658969 :=
-  finite_upper slots C cx cy 10658969 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+10634195 :=
+  finite_upper slots C cx cy 10634195 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 61519451 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 61494677 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -21483,1136 +21479,20 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
 set_option maxRecDepth 36000
 set_option maxHeartbeats 3500000
-theorem wl13 : (slots 13).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 13 := by
-  decide +kernel
-theorem wl16 : (slots 16).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 16 := by
-  decide +kernel
-theorem wl19 : (slots 19).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 19 := by
-  decide +kernel
-theorem wl22 : (slots 22).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 22 := by
-  decide +kernel
-theorem wl25 : (slots 25).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 25 := by
-  decide +kernel
-theorem wl28 : (slots 28).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 28 := by
-  decide +kernel
-theorem wl31 : (slots 31).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 31 := by
-  decide +kernel
-theorem wl34 : (slots 34).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 34 := by
-  decide +kernel
-theorem wl37 : (slots 37).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 37 := by
-  decide +kernel
-theorem wl40 : (slots 40).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 40 := by
-  decide +kernel
-theorem wl43 : (slots 43).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 43 := by
-  decide +kernel
-theorem wl46 : (slots 46).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 46 := by
-  decide +kernel
-theorem wl49 : (slots 49).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 49 := by
-  decide +kernel
-theorem wl52 : (slots 52).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 52 := by
-  decide +kernel
-theorem wl55 : (slots 55).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 55 := by
-  decide +kernel
-theorem wl58 : (slots 58).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 58 := by
-  decide +kernel
-theorem wl61 : (slots 61).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 61 := by
-  decide +kernel
-theorem wl64 : (slots 64).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 64 := by
-  decide +kernel
-theorem wl67 : (slots 67).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 67 := by
-  decide +kernel
-theorem wl70 : (slots 70).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 70 := by
-  decide +kernel
-theorem wl73 : (slots 73).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 73 := by
-  decide +kernel
-theorem wl76 : (slots 76).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 76 := by
-  decide +kernel
-theorem wl79 : (slots 79).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 79 := by
-  decide +kernel
-theorem wl82 : (slots 82).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
-    cellsW 82 := by
-  decide +kernel
-theorem h25_1 : part 25 1 7 = true := by
-  rw [part_eq_W 25 1 7 _ wl25]
-  exact partW_cells 25 1 7 (by decide) (by decide) (by decide)
-theorem h25_8 : part 25 8 7 = true := by
-  rw [part_eq_W 25 8 7 _ wl25]
-  exact partW_cells 25 8 7 (by decide) (by decide) (by decide)
-theorem h25_15 : part 25 15 7 = true := by
-  rw [part_eq_W 25 15 7 _ wl25]
-  exact partW_cells 25 15 7 (by decide) (by decide) (by decide)
-theorem h25_22 : part 25 22 7 = true := by
-  rw [part_eq_W 25 22 7 _ wl25]
-  exact partW_cells 25 22 7 (by decide) (by decide) (by decide)
-theorem h25_29 : part 25 29 7 = true := by
-  rw [part_eq_W 25 29 7 _ wl25]
-  exact partW_cells 25 29 7 (by decide) (by decide) (by decide)
-theorem h25_36 : part 25 36 7 = true := by
-  rw [part_eq_W 25 36 7 _ wl25]
-  exact partW_cells 25 36 7 (by decide) (by decide) (by decide)
-theorem h25_43 : part 25 43 7 = true := by
-  rw [part_eq_W 25 43 7 _ wl25]
-  exact partW_cells 25 43 7 (by decide) (by decide) (by decide)
-theorem h25_50 : part 25 50 7 = true := by
-  rw [part_eq_W 25 50 7 _ wl25]
-  exact partW_cells 25 50 7 (by decide) (by decide) (by decide)
-theorem h25_57 : part 25 57 7 = true := by
-  rw [part_eq_W 25 57 7 _ wl25]
-  exact partW_cells 25 57 7 (by decide) (by decide) (by decide)
-theorem h25_64 : part 25 64 7 = true := by
-  rw [part_eq_W 25 64 7 _ wl25]
-  exact partW_cells 25 64 7 (by decide) (by decide) (by decide)
-theorem h25_71 : part 25 71 7 = true := by
-  rw [part_eq_W 25 71 7 _ wl25]
-  exact partW_cells 25 71 7 (by decide) (by decide) (by decide)
-theorem h25_78 : part 25 78 7 = true := by
-  rw [part_eq_W 25 78 7 _ wl25]
-  exact partW_cells 25 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h28_1 : part 28 1 7 = true := by
-  rw [part_eq_W 28 1 7 _ wl28]
-  exact partW_cells 28 1 7 (by decide) (by decide) (by decide)
-theorem h28_8 : part 28 8 7 = true := by
-  rw [part_eq_W 28 8 7 _ wl28]
-  exact partW_cells 28 8 7 (by decide) (by decide) (by decide)
-theorem h28_15 : part 28 15 7 = true := by
-  rw [part_eq_W 28 15 7 _ wl28]
-  exact partW_cells 28 15 7 (by decide) (by decide) (by decide)
-theorem h28_22 : part 28 22 7 = true := by
-  rw [part_eq_W 28 22 7 _ wl28]
-  exact partW_cells 28 22 7 (by decide) (by decide) (by decide)
-theorem h28_29 : part 28 29 7 = true := by
-  rw [part_eq_W 28 29 7 _ wl28]
-  exact partW_cells 28 29 7 (by decide) (by decide) (by decide)
-theorem h28_36 : part 28 36 7 = true := by
-  rw [part_eq_W 28 36 7 _ wl28]
-  exact partW_cells 28 36 7 (by decide) (by decide) (by decide)
-theorem h28_43 : part 28 43 7 = true := by
-  rw [part_eq_W 28 43 7 _ wl28]
-  exact partW_cells 28 43 7 (by decide) (by decide) (by decide)
-theorem h28_50 : part 28 50 7 = true := by
-  rw [part_eq_W 28 50 7 _ wl28]
-  exact partW_cells 28 50 7 (by decide) (by decide) (by decide)
-theorem h28_57 : part 28 57 7 = true := by
-  rw [part_eq_W 28 57 7 _ wl28]
-  exact partW_cells 28 57 7 (by decide) (by decide) (by decide)
-theorem h28_64 : part 28 64 7 = true := by
-  rw [part_eq_W 28 64 7 _ wl28]
-  exact partW_cells 28 64 7 (by decide) (by decide) (by decide)
-theorem h28_71 : part 28 71 7 = true := by
-  rw [part_eq_W 28 71 7 _ wl28]
-  exact partW_cells 28 71 7 (by decide) (by decide) (by decide)
-theorem h28_78 : part 28 78 7 = true := by
-  rw [part_eq_W 28 78 7 _ wl28]
-  exact partW_cells 28 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h31_1 : part 31 1 7 = true := by
-  rw [part_eq_W 31 1 7 _ wl31]
-  exact partW_cells 31 1 7 (by decide) (by decide) (by decide)
-theorem h31_8 : part 31 8 7 = true := by
-  rw [part_eq_W 31 8 7 _ wl31]
-  exact partW_cells 31 8 7 (by decide) (by decide) (by decide)
-theorem h31_15 : part 31 15 7 = true := by
-  rw [part_eq_W 31 15 7 _ wl31]
-  exact partW_cells 31 15 7 (by decide) (by decide) (by decide)
-theorem h31_22 : part 31 22 7 = true := by
-  rw [part_eq_W 31 22 7 _ wl31]
-  exact partW_cells 31 22 7 (by decide) (by decide) (by decide)
-theorem h31_29 : part 31 29 7 = true := by
-  rw [part_eq_W 31 29 7 _ wl31]
-  exact partW_cells 31 29 7 (by decide) (by decide) (by decide)
-theorem h31_36 : part 31 36 7 = true := by
-  rw [part_eq_W 31 36 7 _ wl31]
-  exact partW_cells 31 36 7 (by decide) (by decide) (by decide)
-theorem h31_43 : part 31 43 7 = true := by
-  rw [part_eq_W 31 43 7 _ wl31]
-  exact partW_cells 31 43 7 (by decide) (by decide) (by decide)
-theorem h31_50 : part 31 50 7 = true := by
-  rw [part_eq_W 31 50 7 _ wl31]
-  exact partW_cells 31 50 7 (by decide) (by decide) (by decide)
-theorem h31_57 : part 31 57 7 = true := by
-  rw [part_eq_W 31 57 7 _ wl31]
-  exact partW_cells 31 57 7 (by decide) (by decide) (by decide)
-theorem h31_64 : part 31 64 7 = true := by
-  rw [part_eq_W 31 64 7 _ wl31]
-  exact partW_cells 31 64 7 (by decide) (by decide) (by decide)
-theorem h31_71 : part 31 71 7 = true := by
-  rw [part_eq_W 31 71 7 _ wl31]
-  exact partW_cells 31 71 7 (by decide) (by decide) (by decide)
-theorem h31_78 : part 31 78 7 = true := by
-  rw [part_eq_W 31 78 7 _ wl31]
-  exact partW_cells 31 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h34_1 : part 34 1 7 = true := by
-  rw [part_eq_W 34 1 7 _ wl34]
-  exact partW_cells 34 1 7 (by decide) (by decide) (by decide)
-theorem h34_8 : part 34 8 7 = true := by
-  rw [part_eq_W 34 8 7 _ wl34]
-  exact partW_cells 34 8 7 (by decide) (by decide) (by decide)
-theorem h34_15 : part 34 15 7 = true := by
-  rw [part_eq_W 34 15 7 _ wl34]
-  exact partW_cells 34 15 7 (by decide) (by decide) (by decide)
-theorem h34_22 : part 34 22 7 = true := by
-  rw [part_eq_W 34 22 7 _ wl34]
-  exact partW_cells 34 22 7 (by decide) (by decide) (by decide)
-theorem h34_29 : part 34 29 7 = true := by
-  rw [part_eq_W 34 29 7 _ wl34]
-  exact partW_cells 34 29 7 (by decide) (by decide) (by decide)
-theorem h34_36 : part 34 36 7 = true := by
-  rw [part_eq_W 34 36 7 _ wl34]
-  exact partW_cells 34 36 7 (by decide) (by decide) (by decide)
-theorem h34_43 : part 34 43 7 = true := by
-  rw [part_eq_W 34 43 7 _ wl34]
-  exact partW_cells 34 43 7 (by decide) (by decide) (by decide)
-theorem h34_50 : part 34 50 7 = true := by
-  rw [part_eq_W 34 50 7 _ wl34]
-  exact partW_cells 34 50 7 (by decide) (by decide) (by decide)
-theorem h34_57 : part 34 57 7 = true := by
-  rw [part_eq_W 34 57 7 _ wl34]
-  exact partW_cells 34 57 7 (by decide) (by decide) (by decide)
-theorem h34_64 : part 34 64 7 = true := by
-  rw [part_eq_W 34 64 7 _ wl34]
-  exact partW_cells 34 64 7 (by decide) (by decide) (by decide)
-theorem h34_71 : part 34 71 7 = true := by
-  rw [part_eq_W 34 71 7 _ wl34]
-  exact partW_cells 34 71 7 (by decide) (by decide) (by decide)
-theorem h34_78 : part 34 78 7 = true := by
-  rw [part_eq_W 34 78 7 _ wl34]
-  exact partW_cells 34 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h37_1 : part 37 1 7 = true := by
-  rw [part_eq_W 37 1 7 _ wl37]
-  exact partW_cells 37 1 7 (by decide) (by decide) (by decide)
-theorem h37_8 : part 37 8 7 = true := by
-  rw [part_eq_W 37 8 7 _ wl37]
-  exact partW_cells 37 8 7 (by decide) (by decide) (by decide)
-theorem h37_15 : part 37 15 7 = true := by
-  rw [part_eq_W 37 15 7 _ wl37]
-  exact partW_cells 37 15 7 (by decide) (by decide) (by decide)
-theorem h37_22 : part 37 22 7 = true := by
-  rw [part_eq_W 37 22 7 _ wl37]
-  exact partW_cells 37 22 7 (by decide) (by decide) (by decide)
-theorem h37_29 : part 37 29 7 = true := by
-  rw [part_eq_W 37 29 7 _ wl37]
-  exact partW_cells 37 29 7 (by decide) (by decide) (by decide)
-theorem h37_36 : part 37 36 7 = true := by
-  rw [part_eq_W 37 36 7 _ wl37]
-  exact partW_cells 37 36 7 (by decide) (by decide) (by decide)
-theorem h37_43 : part 37 43 7 = true := by
-  rw [part_eq_W 37 43 7 _ wl37]
-  exact partW_cells 37 43 7 (by decide) (by decide) (by decide)
-theorem h37_50 : part 37 50 7 = true := by
-  rw [part_eq_W 37 50 7 _ wl37]
-  exact partW_cells 37 50 7 (by decide) (by decide) (by decide)
-theorem h37_57 : part 37 57 7 = true := by
-  rw [part_eq_W 37 57 7 _ wl37]
-  exact partW_cells 37 57 7 (by decide) (by decide) (by decide)
-theorem h37_64 : part 37 64 7 = true := by
-  rw [part_eq_W 37 64 7 _ wl37]
-  exact partW_cells 37 64 7 (by decide) (by decide) (by decide)
-theorem h37_71 : part 37 71 7 = true := by
-  rw [part_eq_W 37 71 7 _ wl37]
-  exact partW_cells 37 71 7 (by decide) (by decide) (by decide)
-theorem h37_78 : part 37 78 7 = true := by
-  rw [part_eq_W 37 78 7 _ wl37]
-  exact partW_cells 37 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h40_1 : part 40 1 7 = true := by
-  rw [part_eq_W 40 1 7 _ wl40]
-  exact partW_cells 40 1 7 (by decide) (by decide) (by decide)
-theorem h40_8 : part 40 8 7 = true := by
-  rw [part_eq_W 40 8 7 _ wl40]
-  exact partW_cells 40 8 7 (by decide) (by decide) (by decide)
-theorem h40_15 : part 40 15 7 = true := by
-  rw [part_eq_W 40 15 7 _ wl40]
-  exact partW_cells 40 15 7 (by decide) (by decide) (by decide)
-theorem h40_22 : part 40 22 7 = true := by
-  rw [part_eq_W 40 22 7 _ wl40]
-  exact partW_cells 40 22 7 (by decide) (by decide) (by decide)
-theorem h40_29 : part 40 29 7 = true := by
-  rw [part_eq_W 40 29 7 _ wl40]
-  exact partW_cells 40 29 7 (by decide) (by decide) (by decide)
-theorem h40_36 : part 40 36 7 = true := by
-  rw [part_eq_W 40 36 7 _ wl40]
-  exact partW_cells 40 36 7 (by decide) (by decide) (by decide)
-theorem h40_43 : part 40 43 7 = true := by
-  rw [part_eq_W 40 43 7 _ wl40]
-  exact partW_cells 40 43 7 (by decide) (by decide) (by decide)
-theorem h40_50 : part 40 50 7 = true := by
-  rw [part_eq_W 40 50 7 _ wl40]
-  exact partW_cells 40 50 7 (by decide) (by decide) (by decide)
-theorem h40_57 : part 40 57 7 = true := by
-  rw [part_eq_W 40 57 7 _ wl40]
-  exact partW_cells 40 57 7 (by decide) (by decide) (by decide)
-theorem h40_64 : part 40 64 7 = true := by
-  rw [part_eq_W 40 64 7 _ wl40]
-  exact partW_cells 40 64 7 (by decide) (by decide) (by decide)
-theorem h40_71 : part 40 71 7 = true := by
-  rw [part_eq_W 40 71 7 _ wl40]
-  exact partW_cells 40 71 7 (by decide) (by decide) (by decide)
-theorem h40_78 : part 40 78 7 = true := by
-  rw [part_eq_W 40 78 7 _ wl40]
-  exact partW_cells 40 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h43_1 : part 43 1 7 = true := by
-  rw [part_eq_W 43 1 7 _ wl43]
-  exact partW_cells 43 1 7 (by decide) (by decide) (by decide)
-theorem h43_8 : part 43 8 7 = true := by
-  rw [part_eq_W 43 8 7 _ wl43]
-  exact partW_cells 43 8 7 (by decide) (by decide) (by decide)
-theorem h43_15 : part 43 15 7 = true := by
-  rw [part_eq_W 43 15 7 _ wl43]
-  exact partW_cells 43 15 7 (by decide) (by decide) (by decide)
-theorem h43_22 : part 43 22 7 = true := by
-  rw [part_eq_W 43 22 7 _ wl43]
-  exact partW_cells 43 22 7 (by decide) (by decide) (by decide)
-theorem h43_29 : part 43 29 7 = true := by
-  rw [part_eq_W 43 29 7 _ wl43]
-  exact partW_cells 43 29 7 (by decide) (by decide) (by decide)
-theorem h43_36 : part 43 36 7 = true := by
-  rw [part_eq_W 43 36 7 _ wl43]
-  exact partW_cells 43 36 7 (by decide) (by decide) (by decide)
-theorem h43_43 : part 43 43 7 = true := by
-  rw [part_eq_W 43 43 7 _ wl43]
-  exact partW_cells 43 43 7 (by decide) (by decide) (by decide)
-theorem h43_50 : part 43 50 7 = true := by
-  rw [part_eq_W 43 50 7 _ wl43]
-  exact partW_cells 43 50 7 (by decide) (by decide) (by decide)
-theorem h43_57 : part 43 57 7 = true := by
-  rw [part_eq_W 43 57 7 _ wl43]
-  exact partW_cells 43 57 7 (by decide) (by decide) (by decide)
-theorem h43_64 : part 43 64 7 = true := by
-  rw [part_eq_W 43 64 7 _ wl43]
-  exact partW_cells 43 64 7 (by decide) (by decide) (by decide)
-theorem h43_71 : part 43 71 7 = true := by
-  rw [part_eq_W 43 71 7 _ wl43]
-  exact partW_cells 43 71 7 (by decide) (by decide) (by decide)
-theorem h43_78 : part 43 78 7 = true := by
-  rw [part_eq_W 43 78 7 _ wl43]
-  exact partW_cells 43 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h46_1 : part 46 1 7 = true := by
-  rw [part_eq_W 46 1 7 _ wl46]
-  exact partW_cells 46 1 7 (by decide) (by decide) (by decide)
-theorem h46_8 : part 46 8 7 = true := by
-  rw [part_eq_W 46 8 7 _ wl46]
-  exact partW_cells 46 8 7 (by decide) (by decide) (by decide)
-theorem h46_15 : part 46 15 7 = true := by
-  rw [part_eq_W 46 15 7 _ wl46]
-  exact partW_cells 46 15 7 (by decide) (by decide) (by decide)
-theorem h46_22 : part 46 22 7 = true := by
-  rw [part_eq_W 46 22 7 _ wl46]
-  exact partW_cells 46 22 7 (by decide) (by decide) (by decide)
-theorem h46_29 : part 46 29 7 = true := by
-  rw [part_eq_W 46 29 7 _ wl46]
-  exact partW_cells 46 29 7 (by decide) (by decide) (by decide)
-theorem h46_36 : part 46 36 7 = true := by
-  rw [part_eq_W 46 36 7 _ wl46]
-  exact partW_cells 46 36 7 (by decide) (by decide) (by decide)
-theorem h46_43 : part 46 43 7 = true := by
-  rw [part_eq_W 46 43 7 _ wl46]
-  exact partW_cells 46 43 7 (by decide) (by decide) (by decide)
-theorem h46_50 : part 46 50 7 = true := by
-  rw [part_eq_W 46 50 7 _ wl46]
-  exact partW_cells 46 50 7 (by decide) (by decide) (by decide)
-theorem h46_57 : part 46 57 7 = true := by
-  rw [part_eq_W 46 57 7 _ wl46]
-  exact partW_cells 46 57 7 (by decide) (by decide) (by decide)
-theorem h46_64 : part 46 64 7 = true := by
-  rw [part_eq_W 46 64 7 _ wl46]
-  exact partW_cells 46 64 7 (by decide) (by decide) (by decide)
-theorem h46_71 : part 46 71 7 = true := by
-  rw [part_eq_W 46 71 7 _ wl46]
-  exact partW_cells 46 71 7 (by decide) (by decide) (by decide)
-theorem h46_78 : part 46 78 7 = true := by
-  rw [part_eq_W 46 78 7 _ wl46]
-  exact partW_cells 46 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h49_1 : part 49 1 7 = true := by
-  rw [part_eq_W 49 1 7 _ wl49]
-  exact partW_cells 49 1 7 (by decide) (by decide) (by decide)
-theorem h49_8 : part 49 8 7 = true := by
-  rw [part_eq_W 49 8 7 _ wl49]
-  exact partW_cells 49 8 7 (by decide) (by decide) (by decide)
-theorem h49_15 : part 49 15 7 = true := by
-  rw [part_eq_W 49 15 7 _ wl49]
-  exact partW_cells 49 15 7 (by decide) (by decide) (by decide)
-theorem h49_22 : part 49 22 7 = true := by
-  rw [part_eq_W 49 22 7 _ wl49]
-  exact partW_cells 49 22 7 (by decide) (by decide) (by decide)
-theorem h49_29 : part 49 29 7 = true := by
-  rw [part_eq_W 49 29 7 _ wl49]
-  exact partW_cells 49 29 7 (by decide) (by decide) (by decide)
-theorem h49_36 : part 49 36 7 = true := by
-  rw [part_eq_W 49 36 7 _ wl49]
-  exact partW_cells 49 36 7 (by decide) (by decide) (by decide)
-theorem h49_43 : part 49 43 7 = true := by
-  rw [part_eq_W 49 43 7 _ wl49]
-  exact partW_cells 49 43 7 (by decide) (by decide) (by decide)
-theorem h49_50 : part 49 50 7 = true := by
-  rw [part_eq_W 49 50 7 _ wl49]
-  exact partW_cells 49 50 7 (by decide) (by decide) (by decide)
-theorem h49_57 : part 49 57 7 = true := by
-  rw [part_eq_W 49 57 7 _ wl49]
-  exact partW_cells 49 57 7 (by decide) (by decide) (by decide)
-theorem h49_64 : part 49 64 7 = true := by
-  rw [part_eq_W 49 64 7 _ wl49]
-  exact partW_cells 49 64 7 (by decide) (by decide) (by decide)
-theorem h49_71 : part 49 71 7 = true := by
-  rw [part_eq_W 49 71 7 _ wl49]
-  exact partW_cells 49 71 7 (by decide) (by decide) (by decide)
-theorem h49_78 : part 49 78 7 = true := by
-  rw [part_eq_W 49 78 7 _ wl49]
-  exact partW_cells 49 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h52_1 : part 52 1 7 = true := by
-  rw [part_eq_W 52 1 7 _ wl52]
-  exact partW_cells 52 1 7 (by decide) (by decide) (by decide)
-theorem h52_8 : part 52 8 7 = true := by
-  rw [part_eq_W 52 8 7 _ wl52]
-  exact partW_cells 52 8 7 (by decide) (by decide) (by decide)
-theorem h52_15 : part 52 15 7 = true := by
-  rw [part_eq_W 52 15 7 _ wl52]
-  exact partW_cells 52 15 7 (by decide) (by decide) (by decide)
-theorem h52_22 : part 52 22 7 = true := by
-  rw [part_eq_W 52 22 7 _ wl52]
-  exact partW_cells 52 22 7 (by decide) (by decide) (by decide)
-theorem h52_29 : part 52 29 7 = true := by
-  rw [part_eq_W 52 29 7 _ wl52]
-  exact partW_cells 52 29 7 (by decide) (by decide) (by decide)
-theorem h52_36 : part 52 36 7 = true := by
-  rw [part_eq_W 52 36 7 _ wl52]
-  exact partW_cells 52 36 7 (by decide) (by decide) (by decide)
-theorem h52_43 : part 52 43 7 = true := by
-  rw [part_eq_W 52 43 7 _ wl52]
-  exact partW_cells 52 43 7 (by decide) (by decide) (by decide)
-theorem h52_50 : part 52 50 7 = true := by
-  rw [part_eq_W 52 50 7 _ wl52]
-  exact partW_cells 52 50 7 (by decide) (by decide) (by decide)
-theorem h52_57 : part 52 57 7 = true := by
-  rw [part_eq_W 52 57 7 _ wl52]
-  exact partW_cells 52 57 7 (by decide) (by decide) (by decide)
-theorem h52_64 : part 52 64 7 = true := by
-  rw [part_eq_W 52 64 7 _ wl52]
-  exact partW_cells 52 64 7 (by decide) (by decide) (by decide)
-theorem h52_71 : part 52 71 7 = true := by
-  rw [part_eq_W 52 71 7 _ wl52]
-  exact partW_cells 52 71 7 (by decide) (by decide) (by decide)
-theorem h52_78 : part 52 78 7 = true := by
-  rw [part_eq_W 52 78 7 _ wl52]
-  exact partW_cells 52 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-end
-
-
-section
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h55_1 : part 55 1 7 = true := by
-  rw [part_eq_W 55 1 7 _ wl55]
-  exact partW_cells 55 1 7 (by decide) (by decide) (by decide)
-theorem h55_8 : part 55 8 7 = true := by
-  rw [part_eq_W 55 8 7 _ wl55]
-  exact partW_cells 55 8 7 (by decide) (by decide) (by decide)
-theorem h55_15 : part 55 15 7 = true := by
-  rw [part_eq_W 55 15 7 _ wl55]
-  exact partW_cells 55 15 7 (by decide) (by decide) (by decide)
-theorem h55_22 : part 55 22 7 = true := by
-  rw [part_eq_W 55 22 7 _ wl55]
-  exact partW_cells 55 22 7 (by decide) (by decide) (by decide)
-theorem h55_29 : part 55 29 7 = true := by
-  rw [part_eq_W 55 29 7 _ wl55]
-  exact partW_cells 55 29 7 (by decide) (by decide) (by decide)
-theorem h55_36 : part 55 36 7 = true := by
-  rw [part_eq_W 55 36 7 _ wl55]
-  exact partW_cells 55 36 7 (by decide) (by decide) (by decide)
-theorem h55_43 : part 55 43 7 = true := by
-  rw [part_eq_W 55 43 7 _ wl55]
-  exact partW_cells 55 43 7 (by decide) (by decide) (by decide)
-theorem h55_50 : part 55 50 7 = true := by
-  rw [part_eq_W 55 50 7 _ wl55]
-  exact partW_cells 55 50 7 (by decide) (by decide) (by decide)
-theorem h55_57 : part 55 57 7 = true := by
-  rw [part_eq_W 55 57 7 _ wl55]
-  exact partW_cells 55 57 7 (by decide) (by decide) (by decide)
-theorem h55_64 : part 55 64 7 = true := by
-  rw [part_eq_W 55 64 7 _ wl55]
-  exact partW_cells 55 64 7 (by decide) (by decide) (by decide)
-theorem h55_71 : part 55 71 7 = true := by
-  rw [part_eq_W 55 71 7 _ wl55]
-  exact partW_cells 55 71 7 (by decide) (by decide) (by decide)
-theorem h55_78 : part 55 78 7 = true := by
-  rw [part_eq_W 55 78 7 _ wl55]
-  exact partW_cells 55 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h58_1 : part 58 1 7 = true := by
-  rw [part_eq_W 58 1 7 _ wl58]
-  exact partW_cells 58 1 7 (by decide) (by decide) (by decide)
-theorem h58_8 : part 58 8 7 = true := by
-  rw [part_eq_W 58 8 7 _ wl58]
-  exact partW_cells 58 8 7 (by decide) (by decide) (by decide)
-theorem h58_15 : part 58 15 7 = true := by
-  rw [part_eq_W 58 15 7 _ wl58]
-  exact partW_cells 58 15 7 (by decide) (by decide) (by decide)
-theorem h58_22 : part 58 22 7 = true := by
-  rw [part_eq_W 58 22 7 _ wl58]
-  exact partW_cells 58 22 7 (by decide) (by decide) (by decide)
-theorem h58_29 : part 58 29 7 = true := by
-  rw [part_eq_W 58 29 7 _ wl58]
-  exact partW_cells 58 29 7 (by decide) (by decide) (by decide)
-theorem h58_36 : part 58 36 7 = true := by
-  rw [part_eq_W 58 36 7 _ wl58]
-  exact partW_cells 58 36 7 (by decide) (by decide) (by decide)
-theorem h58_43 : part 58 43 7 = true := by
-  rw [part_eq_W 58 43 7 _ wl58]
-  exact partW_cells 58 43 7 (by decide) (by decide) (by decide)
-theorem h58_50 : part 58 50 7 = true := by
-  rw [part_eq_W 58 50 7 _ wl58]
-  exact partW_cells 58 50 7 (by decide) (by decide) (by decide)
-theorem h58_57 : part 58 57 7 = true := by
-  rw [part_eq_W 58 57 7 _ wl58]
-  exact partW_cells 58 57 7 (by decide) (by decide) (by decide)
-theorem h58_64 : part 58 64 7 = true := by
-  rw [part_eq_W 58 64 7 _ wl58]
-  exact partW_cells 58 64 7 (by decide) (by decide) (by decide)
-theorem h58_71 : part 58 71 7 = true := by
-  rw [part_eq_W 58 71 7 _ wl58]
-  exact partW_cells 58 71 7 (by decide) (by decide) (by decide)
-theorem h58_78 : part 58 78 7 = true := by
-  rw [part_eq_W 58 78 7 _ wl58]
-  exact partW_cells 58 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h61_1 : part 61 1 7 = true := by
-  rw [part_eq_W 61 1 7 _ wl61]
-  exact partW_cells 61 1 7 (by decide) (by decide) (by decide)
-theorem h61_8 : part 61 8 7 = true := by
-  rw [part_eq_W 61 8 7 _ wl61]
-  exact partW_cells 61 8 7 (by decide) (by decide) (by decide)
-theorem h61_15 : part 61 15 7 = true := by
-  rw [part_eq_W 61 15 7 _ wl61]
-  exact partW_cells 61 15 7 (by decide) (by decide) (by decide)
-theorem h61_22 : part 61 22 7 = true := by
-  rw [part_eq_W 61 22 7 _ wl61]
-  exact partW_cells 61 22 7 (by decide) (by decide) (by decide)
-theorem h61_29 : part 61 29 7 = true := by
-  rw [part_eq_W 61 29 7 _ wl61]
-  exact partW_cells 61 29 7 (by decide) (by decide) (by decide)
-theorem h61_36 : part 61 36 7 = true := by
-  rw [part_eq_W 61 36 7 _ wl61]
-  exact partW_cells 61 36 7 (by decide) (by decide) (by decide)
-theorem h61_43 : part 61 43 7 = true := by
-  rw [part_eq_W 61 43 7 _ wl61]
-  exact partW_cells 61 43 7 (by decide) (by decide) (by decide)
-theorem h61_50 : part 61 50 7 = true := by
-  rw [part_eq_W 61 50 7 _ wl61]
-  exact partW_cells 61 50 7 (by decide) (by decide) (by decide)
-theorem h61_57 : part 61 57 7 = true := by
-  rw [part_eq_W 61 57 7 _ wl61]
-  exact partW_cells 61 57 7 (by decide) (by decide) (by decide)
-theorem h61_64 : part 61 64 7 = true := by
-  rw [part_eq_W 61 64 7 _ wl61]
-  exact partW_cells 61 64 7 (by decide) (by decide) (by decide)
-theorem h61_71 : part 61 71 7 = true := by
-  rw [part_eq_W 61 71 7 _ wl61]
-  exact partW_cells 61 71 7 (by decide) (by decide) (by decide)
-theorem h61_78 : part 61 78 7 = true := by
-  rw [part_eq_W 61 78 7 _ wl61]
-  exact partW_cells 61 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h64_1 : part 64 1 7 = true := by
-  rw [part_eq_W 64 1 7 _ wl64]
-  exact partW_cells 64 1 7 (by decide) (by decide) (by decide)
-theorem h64_8 : part 64 8 7 = true := by
-  rw [part_eq_W 64 8 7 _ wl64]
-  exact partW_cells 64 8 7 (by decide) (by decide) (by decide)
-theorem h64_15 : part 64 15 7 = true := by
-  rw [part_eq_W 64 15 7 _ wl64]
-  exact partW_cells 64 15 7 (by decide) (by decide) (by decide)
-theorem h64_22 : part 64 22 7 = true := by
-  rw [part_eq_W 64 22 7 _ wl64]
-  exact partW_cells 64 22 7 (by decide) (by decide) (by decide)
-theorem h64_29 : part 64 29 7 = true := by
-  rw [part_eq_W 64 29 7 _ wl64]
-  exact partW_cells 64 29 7 (by decide) (by decide) (by decide)
-theorem h64_36 : part 64 36 7 = true := by
-  rw [part_eq_W 64 36 7 _ wl64]
-  exact partW_cells 64 36 7 (by decide) (by decide) (by decide)
-theorem h64_43 : part 64 43 7 = true := by
-  rw [part_eq_W 64 43 7 _ wl64]
-  exact partW_cells 64 43 7 (by decide) (by decide) (by decide)
-theorem h64_50 : part 64 50 7 = true := by
-  rw [part_eq_W 64 50 7 _ wl64]
-  exact partW_cells 64 50 7 (by decide) (by decide) (by decide)
-theorem h64_57 : part 64 57 7 = true := by
-  rw [part_eq_W 64 57 7 _ wl64]
-  exact partW_cells 64 57 7 (by decide) (by decide) (by decide)
-theorem h64_64 : part 64 64 7 = true := by
-  rw [part_eq_W 64 64 7 _ wl64]
-  exact partW_cells 64 64 7 (by decide) (by decide) (by decide)
-theorem h64_71 : part 64 71 7 = true := by
-  rw [part_eq_W 64 71 7 _ wl64]
-  exact partW_cells 64 71 7 (by decide) (by decide) (by decide)
-theorem h64_78 : part 64 78 7 = true := by
-  rw [part_eq_W 64 78 7 _ wl64]
-  exact partW_cells 64 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h67_1 : part 67 1 7 = true := by
-  rw [part_eq_W 67 1 7 _ wl67]
-  exact partW_cells 67 1 7 (by decide) (by decide) (by decide)
-theorem h67_8 : part 67 8 7 = true := by
-  rw [part_eq_W 67 8 7 _ wl67]
-  exact partW_cells 67 8 7 (by decide) (by decide) (by decide)
-theorem h67_15 : part 67 15 7 = true := by
-  rw [part_eq_W 67 15 7 _ wl67]
-  exact partW_cells 67 15 7 (by decide) (by decide) (by decide)
-theorem h67_22 : part 67 22 7 = true := by
-  rw [part_eq_W 67 22 7 _ wl67]
-  exact partW_cells 67 22 7 (by decide) (by decide) (by decide)
-theorem h67_29 : part 67 29 7 = true := by
-  rw [part_eq_W 67 29 7 _ wl67]
-  exact partW_cells 67 29 7 (by decide) (by decide) (by decide)
-theorem h67_36 : part 67 36 7 = true := by
-  rw [part_eq_W 67 36 7 _ wl67]
-  exact partW_cells 67 36 7 (by decide) (by decide) (by decide)
-theorem h67_43 : part 67 43 7 = true := by
-  rw [part_eq_W 67 43 7 _ wl67]
-  exact partW_cells 67 43 7 (by decide) (by decide) (by decide)
-theorem h67_50 : part 67 50 7 = true := by
-  rw [part_eq_W 67 50 7 _ wl67]
-  exact partW_cells 67 50 7 (by decide) (by decide) (by decide)
-theorem h67_57 : part 67 57 7 = true := by
-  rw [part_eq_W 67 57 7 _ wl67]
-  exact partW_cells 67 57 7 (by decide) (by decide) (by decide)
-theorem h67_64 : part 67 64 7 = true := by
-  rw [part_eq_W 67 64 7 _ wl67]
-  exact partW_cells 67 64 7 (by decide) (by decide) (by decide)
-theorem h67_71 : part 67 71 7 = true := by
-  rw [part_eq_W 67 71 7 _ wl67]
-  exact partW_cells 67 71 7 (by decide) (by decide) (by decide)
-theorem h67_78 : part 67 78 7 = true := by
-  rw [part_eq_W 67 78 7 _ wl67]
-  exact partW_cells 67 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h70_1 : part 70 1 7 = true := by
-  rw [part_eq_W 70 1 7 _ wl70]
-  exact partW_cells 70 1 7 (by decide) (by decide) (by decide)
-theorem h70_8 : part 70 8 7 = true := by
-  rw [part_eq_W 70 8 7 _ wl70]
-  exact partW_cells 70 8 7 (by decide) (by decide) (by decide)
-theorem h70_15 : part 70 15 7 = true := by
-  rw [part_eq_W 70 15 7 _ wl70]
-  exact partW_cells 70 15 7 (by decide) (by decide) (by decide)
-theorem h70_22 : part 70 22 7 = true := by
-  rw [part_eq_W 70 22 7 _ wl70]
-  exact partW_cells 70 22 7 (by decide) (by decide) (by decide)
-theorem h70_29 : part 70 29 7 = true := by
-  rw [part_eq_W 70 29 7 _ wl70]
-  exact partW_cells 70 29 7 (by decide) (by decide) (by decide)
-theorem h70_36 : part 70 36 7 = true := by
-  rw [part_eq_W 70 36 7 _ wl70]
-  exact partW_cells 70 36 7 (by decide) (by decide) (by decide)
-theorem h70_43 : part 70 43 7 = true := by
-  rw [part_eq_W 70 43 7 _ wl70]
-  exact partW_cells 70 43 7 (by decide) (by decide) (by decide)
-theorem h70_50 : part 70 50 7 = true := by
-  rw [part_eq_W 70 50 7 _ wl70]
-  exact partW_cells 70 50 7 (by decide) (by decide) (by decide)
-theorem h70_57 : part 70 57 7 = true := by
-  rw [part_eq_W 70 57 7 _ wl70]
-  exact partW_cells 70 57 7 (by decide) (by decide) (by decide)
-theorem h70_64 : part 70 64 7 = true := by
-  rw [part_eq_W 70 64 7 _ wl70]
-  exact partW_cells 70 64 7 (by decide) (by decide) (by decide)
-theorem h70_71 : part 70 71 7 = true := by
-  rw [part_eq_W 70 71 7 _ wl70]
-  exact partW_cells 70 71 7 (by decide) (by decide) (by decide)
-theorem h70_78 : part 70 78 7 = true := by
-  rw [part_eq_W 70 78 7 _ wl70]
-  exact partW_cells 70 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h73_1 : part 73 1 7 = true := by
-  rw [part_eq_W 73 1 7 _ wl73]
-  exact partW_cells 73 1 7 (by decide) (by decide) (by decide)
-theorem h73_8 : part 73 8 7 = true := by
-  rw [part_eq_W 73 8 7 _ wl73]
-  exact partW_cells 73 8 7 (by decide) (by decide) (by decide)
-theorem h73_15 : part 73 15 7 = true := by
-  rw [part_eq_W 73 15 7 _ wl73]
-  exact partW_cells 73 15 7 (by decide) (by decide) (by decide)
-theorem h73_22 : part 73 22 7 = true := by
-  rw [part_eq_W 73 22 7 _ wl73]
-  exact partW_cells 73 22 7 (by decide) (by decide) (by decide)
-theorem h73_29 : part 73 29 7 = true := by
-  rw [part_eq_W 73 29 7 _ wl73]
-  exact partW_cells 73 29 7 (by decide) (by decide) (by decide)
-theorem h73_36 : part 73 36 7 = true := by
-  rw [part_eq_W 73 36 7 _ wl73]
-  exact partW_cells 73 36 7 (by decide) (by decide) (by decide)
-theorem h73_43 : part 73 43 7 = true := by
-  rw [part_eq_W 73 43 7 _ wl73]
-  exact partW_cells 73 43 7 (by decide) (by decide) (by decide)
-theorem h73_50 : part 73 50 7 = true := by
-  rw [part_eq_W 73 50 7 _ wl73]
-  exact partW_cells 73 50 7 (by decide) (by decide) (by decide)
-theorem h73_57 : part 73 57 7 = true := by
-  rw [part_eq_W 73 57 7 _ wl73]
-  exact partW_cells 73 57 7 (by decide) (by decide) (by decide)
-theorem h73_64 : part 73 64 7 = true := by
-  rw [part_eq_W 73 64 7 _ wl73]
-  exact partW_cells 73 64 7 (by decide) (by decide) (by decide)
-theorem h73_71 : part 73 71 7 = true := by
-  rw [part_eq_W 73 71 7 _ wl73]
-  exact partW_cells 73 71 7 (by decide) (by decide) (by decide)
-theorem h73_78 : part 73 78 7 = true := by
-  rw [part_eq_W 73 78 7 _ wl73]
-  exact partW_cells 73 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h76_1 : part 76 1 7 = true := by
-  rw [part_eq_W 76 1 7 _ wl76]
-  exact partW_cells 76 1 7 (by decide) (by decide) (by decide)
-theorem h76_8 : part 76 8 7 = true := by
-  rw [part_eq_W 76 8 7 _ wl76]
-  exact partW_cells 76 8 7 (by decide) (by decide) (by decide)
-theorem h76_15 : part 76 15 7 = true := by
-  rw [part_eq_W 76 15 7 _ wl76]
-  exact partW_cells 76 15 7 (by decide) (by decide) (by decide)
-theorem h76_22 : part 76 22 7 = true := by
-  rw [part_eq_W 76 22 7 _ wl76]
-  exact partW_cells 76 22 7 (by decide) (by decide) (by decide)
-theorem h76_29 : part 76 29 7 = true := by
-  rw [part_eq_W 76 29 7 _ wl76]
-  exact partW_cells 76 29 7 (by decide) (by decide) (by decide)
-theorem h76_36 : part 76 36 7 = true := by
-  rw [part_eq_W 76 36 7 _ wl76]
-  exact partW_cells 76 36 7 (by decide) (by decide) (by decide)
-theorem h76_43 : part 76 43 7 = true := by
-  rw [part_eq_W 76 43 7 _ wl76]
-  exact partW_cells 76 43 7 (by decide) (by decide) (by decide)
-theorem h76_50 : part 76 50 7 = true := by
-  rw [part_eq_W 76 50 7 _ wl76]
-  exact partW_cells 76 50 7 (by decide) (by decide) (by decide)
-theorem h76_57 : part 76 57 7 = true := by
-  rw [part_eq_W 76 57 7 _ wl76]
-  exact partW_cells 76 57 7 (by decide) (by decide) (by decide)
-theorem h76_64 : part 76 64 7 = true := by
-  rw [part_eq_W 76 64 7 _ wl76]
-  exact partW_cells 76 64 7 (by decide) (by decide) (by decide)
-theorem h76_71 : part 76 71 7 = true := by
-  rw [part_eq_W 76 71 7 _ wl76]
-  exact partW_cells 76 71 7 (by decide) (by decide) (by decide)
-theorem h76_78 : part 76 78 7 = true := by
-  rw [part_eq_W 76 78 7 _ wl76]
-  exact partW_cells 76 78 7 (by decide) (by decide) (by decide)
-theorem h79_1 : part 79 1 7 = true := by
-  rw [part_eq_W 79 1 7 _ wl79]
-  exact partW_cells 79 1 7 (by decide) (by decide) (by decide)
-theorem h79_8 : part 79 8 7 = true := by
-  rw [part_eq_W 79 8 7 _ wl79]
-  exact partW_cells 79 8 7 (by decide) (by decide) (by decide)
-theorem h79_15 : part 79 15 7 = true := by
-  rw [part_eq_W 79 15 7 _ wl79]
-  exact partW_cells 79 15 7 (by decide) (by decide) (by decide)
-theorem h79_22 : part 79 22 7 = true := by
-  rw [part_eq_W 79 22 7 _ wl79]
-  exact partW_cells 79 22 7 (by decide) (by decide) (by decide)
-theorem h79_29 : part 79 29 7 = true := by
-  rw [part_eq_W 79 29 7 _ wl79]
-  exact partW_cells 79 29 7 (by decide) (by decide) (by decide)
-theorem h79_36 : part 79 36 7 = true := by
-  rw [part_eq_W 79 36 7 _ wl79]
-  exact partW_cells 79 36 7 (by decide) (by decide) (by decide)
-theorem h79_43 : part 79 43 7 = true := by
-  rw [part_eq_W 79 43 7 _ wl79]
-  exact partW_cells 79 43 7 (by decide) (by decide) (by decide)
-theorem h79_50 : part 79 50 7 = true := by
-  rw [part_eq_W 79 50 7 _ wl79]
-  exact partW_cells 79 50 7 (by decide) (by decide) (by decide)
-theorem h79_57 : part 79 57 7 = true := by
-  rw [part_eq_W 79 57 7 _ wl79]
-  exact partW_cells 79 57 7 (by decide) (by decide) (by decide)
-theorem h79_64 : part 79 64 7 = true := by
-  rw [part_eq_W 79 64 7 _ wl79]
-  exact partW_cells 79 64 7 (by decide) (by decide) (by decide)
-theorem h79_71 : part 79 71 7 = true := by
-  rw [part_eq_W 79 71 7 _ wl79]
-  exact partW_cells 79 71 7 (by decide) (by decide) (by decide)
-theorem h79_78 : part 79 78 7 = true := by
-  rw [part_eq_W 79 78 7 _ wl79]
-  exact partW_cells 79 78 7 (by decide) (by decide) (by decide)
-theorem h82_1 : part 82 1 7 = true := by
-  rw [part_eq_W 82 1 7 _ wl82]
-  exact partW_cells 82 1 7 (by decide) (by decide) (by decide)
-theorem h82_8 : part 82 8 7 = true := by
-  rw [part_eq_W 82 8 7 _ wl82]
-  exact partW_cells 82 8 7 (by decide) (by decide) (by decide)
-theorem h82_15 : part 82 15 7 = true := by
-  rw [part_eq_W 82 15 7 _ wl82]
-  exact partW_cells 82 15 7 (by decide) (by decide) (by decide)
-theorem h82_22 : part 82 22 7 = true := by
-  rw [part_eq_W 82 22 7 _ wl82]
-  exact partW_cells 82 22 7 (by decide) (by decide) (by decide)
-theorem h82_29 : part 82 29 7 = true := by
-  rw [part_eq_W 82 29 7 _ wl82]
-  exact partW_cells 82 29 7 (by decide) (by decide) (by decide)
-theorem h82_36 : part 82 36 7 = true := by
-  rw [part_eq_W 82 36 7 _ wl82]
-  exact partW_cells 82 36 7 (by decide) (by decide) (by decide)
-theorem h82_43 : part 82 43 7 = true := by
-  rw [part_eq_W 82 43 7 _ wl82]
-  exact partW_cells 82 43 7 (by decide) (by decide) (by decide)
-theorem h82_50 : part 82 50 7 = true := by
-  rw [part_eq_W 82 50 7 _ wl82]
-  exact partW_cells 82 50 7 (by decide) (by decide) (by decide)
-theorem h82_57 : part 82 57 7 = true := by
-  rw [part_eq_W 82 57 7 _ wl82]
-  exact partW_cells 82 57 7 (by decide) (by decide) (by decide)
-theorem h82_64 : part 82 64 7 = true := by
-  rw [part_eq_W 82 64 7 _ wl82]
-  exact partW_cells 82 64 7 (by decide) (by decide) (by decide)
-theorem h82_71 : part 82 71 7 = true := by
-  rw [part_eq_W 82 71 7 _ wl82]
-  exact partW_cells 82 71 7 (by decide) (by decide) (by decide)
-theorem h82_78 : part 82 78 7 = true := by
-  rw [part_eq_W 82 78 7 _ wl82]
-  exact partW_cells 82 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h13_1 : part 13 1 7 = true := by
-  rw [part_eq_W 13 1 7 _ wl13]
-  exact partW_cells 13 1 7 (by decide) (by decide) (by decide)
-theorem h13_8 : part 13 8 7 = true := by
-  rw [part_eq_W 13 8 7 _ wl13]
-  exact partW_cells 13 8 7 (by decide) (by decide) (by decide)
-theorem h13_15 : part 13 15 7 = true := by
-  rw [part_eq_W 13 15 7 _ wl13]
-  exact partW_cells 13 15 7 (by decide) (by decide) (by decide)
-theorem h13_22 : part 13 22 7 = true := by
-  rw [part_eq_W 13 22 7 _ wl13]
-  exact partW_cells 13 22 7 (by decide) (by decide) (by decide)
-theorem h13_29 : part 13 29 7 = true := by
-  rw [part_eq_W 13 29 7 _ wl13]
-  exact partW_cells 13 29 7 (by decide) (by decide) (by decide)
-theorem h13_36 : part 13 36 7 = true := by
-  rw [part_eq_W 13 36 7 _ wl13]
-  exact partW_cells 13 36 7 (by decide) (by decide) (by decide)
-theorem h13_43 : part 13 43 7 = true := by
-  rw [part_eq_W 13 43 7 _ wl13]
-  exact partW_cells 13 43 7 (by decide) (by decide) (by decide)
-theorem h13_50 : part 13 50 7 = true := by
-  rw [part_eq_W 13 50 7 _ wl13]
-  exact partW_cells 13 50 7 (by decide) (by decide) (by decide)
-theorem h13_57 : part 13 57 7 = true := by
-  rw [part_eq_W 13 57 7 _ wl13]
-  exact partW_cells 13 57 7 (by decide) (by decide) (by decide)
-theorem h13_64 : part 13 64 7 = true := by
-  rw [part_eq_W 13 64 7 _ wl13]
-  exact partW_cells 13 64 7 (by decide) (by decide) (by decide)
-theorem h13_71 : part 13 71 7 = true := by
-  rw [part_eq_W 13 71 7 _ wl13]
-  exact partW_cells 13 71 7 (by decide) (by decide) (by decide)
-theorem h13_78 : part 13 78 7 = true := by
-  rw [part_eq_W 13 78 7 _ wl13]
-  exact partW_cells 13 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h16_1 : part 16 1 7 = true := by
-  rw [part_eq_W 16 1 7 _ wl16]
-  exact partW_cells 16 1 7 (by decide) (by decide) (by decide)
-theorem h16_8 : part 16 8 7 = true := by
-  rw [part_eq_W 16 8 7 _ wl16]
-  exact partW_cells 16 8 7 (by decide) (by decide) (by decide)
-theorem h16_15 : part 16 15 7 = true := by
-  rw [part_eq_W 16 15 7 _ wl16]
-  exact partW_cells 16 15 7 (by decide) (by decide) (by decide)
-theorem h16_22 : part 16 22 7 = true := by
-  rw [part_eq_W 16 22 7 _ wl16]
-  exact partW_cells 16 22 7 (by decide) (by decide) (by decide)
-theorem h16_29 : part 16 29 7 = true := by
-  rw [part_eq_W 16 29 7 _ wl16]
-  exact partW_cells 16 29 7 (by decide) (by decide) (by decide)
-theorem h16_36 : part 16 36 7 = true := by
-  rw [part_eq_W 16 36 7 _ wl16]
-  exact partW_cells 16 36 7 (by decide) (by decide) (by decide)
-theorem h16_43 : part 16 43 7 = true := by
-  rw [part_eq_W 16 43 7 _ wl16]
-  exact partW_cells 16 43 7 (by decide) (by decide) (by decide)
-theorem h16_50 : part 16 50 7 = true := by
-  rw [part_eq_W 16 50 7 _ wl16]
-  exact partW_cells 16 50 7 (by decide) (by decide) (by decide)
-theorem h16_57 : part 16 57 7 = true := by
-  rw [part_eq_W 16 57 7 _ wl16]
-  exact partW_cells 16 57 7 (by decide) (by decide) (by decide)
-theorem h16_64 : part 16 64 7 = true := by
-  rw [part_eq_W 16 64 7 _ wl16]
-  exact partW_cells 16 64 7 (by decide) (by decide) (by decide)
-theorem h16_71 : part 16 71 7 = true := by
-  rw [part_eq_W 16 71 7 _ wl16]
-  exact partW_cells 16 71 7 (by decide) (by decide) (by decide)
-theorem h16_78 : part 16 78 7 = true := by
-  rw [part_eq_W 16 78 7 _ wl16]
-  exact partW_cells 16 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h19_1 : part 19 1 7 = true := by
-  rw [part_eq_W 19 1 7 _ wl19]
-  exact partW_cells 19 1 7 (by decide) (by decide) (by decide)
-theorem h19_8 : part 19 8 7 = true := by
-  rw [part_eq_W 19 8 7 _ wl19]
-  exact partW_cells 19 8 7 (by decide) (by decide) (by decide)
-theorem h19_15 : part 19 15 7 = true := by
-  rw [part_eq_W 19 15 7 _ wl19]
-  exact partW_cells 19 15 7 (by decide) (by decide) (by decide)
-theorem h19_22 : part 19 22 7 = true := by
-  rw [part_eq_W 19 22 7 _ wl19]
-  exact partW_cells 19 22 7 (by decide) (by decide) (by decide)
-theorem h19_29 : part 19 29 7 = true := by
-  rw [part_eq_W 19 29 7 _ wl19]
-  exact partW_cells 19 29 7 (by decide) (by decide) (by decide)
-theorem h19_36 : part 19 36 7 = true := by
-  rw [part_eq_W 19 36 7 _ wl19]
-  exact partW_cells 19 36 7 (by decide) (by decide) (by decide)
-theorem h19_43 : part 19 43 7 = true := by
-  rw [part_eq_W 19 43 7 _ wl19]
-  exact partW_cells 19 43 7 (by decide) (by decide) (by decide)
-theorem h19_50 : part 19 50 7 = true := by
-  rw [part_eq_W 19 50 7 _ wl19]
-  exact partW_cells 19 50 7 (by decide) (by decide) (by decide)
-theorem h19_57 : part 19 57 7 = true := by
-  rw [part_eq_W 19 57 7 _ wl19]
-  exact partW_cells 19 57 7 (by decide) (by decide) (by decide)
-theorem h19_64 : part 19 64 7 = true := by
-  rw [part_eq_W 19 64 7 _ wl19]
-  exact partW_cells 19 64 7 (by decide) (by decide) (by decide)
-theorem h19_71 : part 19 71 7 = true := by
-  rw [part_eq_W 19 71 7 _ wl19]
-  exact partW_cells 19 71 7 (by decide) (by decide) (by decide)
-theorem h19_78 : part 19 78 7 = true := by
-  rw [part_eq_W 19 78 7 _ wl19]
-  exact partW_cells 19 78 7 (by decide) (by decide) (by decide)
-end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
-set_option maxRecDepth 36000
-set_option maxHeartbeats 3500000
-theorem h22_1 : part 22 1 7 = true := by
-  rw [part_eq_W 22 1 7 _ wl22]
-  exact partW_cells 22 1 7 (by decide) (by decide) (by decide)
-theorem h22_8 : part 22 8 7 = true := by
-  rw [part_eq_W 22 8 7 _ wl22]
-  exact partW_cells 22 8 7 (by decide) (by decide) (by decide)
-theorem h22_15 : part 22 15 7 = true := by
-  rw [part_eq_W 22 15 7 _ wl22]
-  exact partW_cells 22 15 7 (by decide) (by decide) (by decide)
-theorem h22_22 : part 22 22 7 = true := by
-  rw [part_eq_W 22 22 7 _ wl22]
-  exact partW_cells 22 22 7 (by decide) (by decide) (by decide)
-theorem h22_29 : part 22 29 7 = true := by
-  rw [part_eq_W 22 29 7 _ wl22]
-  exact partW_cells 22 29 7 (by decide) (by decide) (by decide)
-theorem h22_36 : part 22 36 7 = true := by
-  rw [part_eq_W 22 36 7 _ wl22]
-  exact partW_cells 22 36 7 (by decide) (by decide) (by decide)
-theorem h22_43 : part 22 43 7 = true := by
-  rw [part_eq_W 22 43 7 _ wl22]
-  exact partW_cells 22 43 7 (by decide) (by decide) (by decide)
-theorem h22_50 : part 22 50 7 = true := by
-  rw [part_eq_W 22 50 7 _ wl22]
-  exact partW_cells 22 50 7 (by decide) (by decide) (by decide)
-theorem h22_57 : part 22 57 7 = true := by
-  rw [part_eq_W 22 57 7 _ wl22]
-  exact partW_cells 22 57 7 (by decide) (by decide) (by decide)
-theorem h22_64 : part 22 64 7 = true := by
-  rw [part_eq_W 22 64 7 _ wl22]
-  exact partW_cells 22 64 7 (by decide) (by decide) (by decide)
-theorem h22_71 : part 22 71 7 = true := by
-  rw [part_eq_W 22 71 7 _ wl22]
-  exact partW_cells 22 71 7 (by decide) (by decide) (by decide)
-theorem h22_78 : part 22 78 7 = true := by
-  rw [part_eq_W 22 78 7 _ wl22]
-  exact partW_cells 22 78 7 (by decide) (by decide) (by decide)
+open ArchiveFieldScratch StairArchiveRelease
+theorem packet_slots (j : Nat) : slots j = packetSites j := by
+  apply List.ext_getElem
+  · simp only [WindowBankCheck.slots,List.length_map,List.length_range,packetSites_length]
+  · intro i hi hp
+    simp only [WindowBankCheck.slots,List.getElem_map,List.getElem_range,fieldPort,fieldSites,
+      List.getElem?_append_left hp,List.getElem?_eq_getElem hp,Option.getD_some]
+
+theorem bankWires (j : Nat) (hj : j ∈ banks) :
+    (slots j).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) = cellsW j := by
+  have all : banks.all (fun h => (packetSites h).map (fun q =>
+      OB5.sig 511 (StairArchiveInactive.host.symm q)) == cellsW h) = true := by decide +kernel
+  rw [packet_slots]
+  exact beq_iff_eq.mp (List.all_eq_true.mp all j hj)
 end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
 
 end
@@ -22640,131 +21520,13 @@ open Arithmetic MappedCompressed ArchiveFieldScratch StairArchiveInactive StairA
 set_option maxRecDepth 10000
 set_option maxHeartbeats 1200000
 set_option exponentiation.threshold 100000
-private theorem splitRange : List.range' 1 84 = List.range' 1 7 ++ List.range' 8 7 ++ List.range' 15 7 ++ List.range' 22 7 ++ List.range' 29 7 ++ List.range' 36 7 ++ List.range' 43 7 ++ List.range' 50 7 ++ List.range' 57 7 ++ List.range' 64 7 ++ List.range' 71 7 ++ List.range' 78 7 := by decide +kernel
+private theorem pass (j : Nat) (hj : j ∈ banks) : (List.range' 1 84).all (allowed j) = true := by
+  change part j 1 84 = true
+  rw [part_eq_W _ _ _ _ (bankWires j hj)]
+  have limits : banks.all (fun h => decide (1 ≤ h ∧ h ≤ 100)) = true := by decide +kernel
+  have range := of_decide_eq_true (List.all_eq_true.mp limits j hj)
+  exact partW_cells j 1 84 range.1 range.2 (by decide)
 attribute [local irreducible] allowed fieldPort packet cover preimage
-private theorem pass55 : (List.range' 1 84).all (allowed 55)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h55_1,h55_8⟩,h55_15⟩,h55_22⟩,h55_29⟩,h55_36⟩,h55_43⟩,h55_50⟩,h55_57⟩,h55_64⟩,h55_71⟩,h55_78⟩
-private theorem pass58 : (List.range' 1 84).all (allowed 58)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h58_1,h58_8⟩,h58_15⟩,h58_22⟩,h58_29⟩,h58_36⟩,h58_43⟩,h58_50⟩,h58_57⟩,h58_64⟩,h58_71⟩,h58_78⟩
-private theorem pass61 : (List.range' 1 84).all (allowed 61)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h61_1,h61_8⟩,h61_15⟩,h61_22⟩,h61_29⟩,h61_36⟩,h61_43⟩,h61_50⟩,h61_57⟩,h61_64⟩,h61_71⟩,h61_78⟩
-private theorem pass64 : (List.range' 1 84).all (allowed 64)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h64_1,h64_8⟩,h64_15⟩,h64_22⟩,h64_29⟩,h64_36⟩,h64_43⟩,h64_50⟩,h64_57⟩,h64_64⟩,h64_71⟩,h64_78⟩
-private theorem pass67 : (List.range' 1 84).all (allowed 67)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h67_1,h67_8⟩,h67_15⟩,h67_22⟩,h67_29⟩,h67_36⟩,h67_43⟩,h67_50⟩,h67_57⟩,h67_64⟩,h67_71⟩,h67_78⟩
-private theorem pass70 : (List.range' 1 84).all (allowed 70)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h70_1,h70_8⟩,h70_15⟩,h70_22⟩,h70_29⟩,h70_36⟩,h70_43⟩,h70_50⟩,h70_57⟩,h70_64⟩,h70_71⟩,h70_78⟩
-private theorem pass73 : (List.range' 1 84).all (allowed 73)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h73_1,h73_8⟩,h73_15⟩,h73_22⟩,h73_29⟩,h73_36⟩,h73_43⟩,h73_50⟩,h73_57⟩,h73_64⟩,h73_71⟩,h73_78⟩
-private theorem pass76 : (List.range' 1 84).all (allowed 76)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h76_1,h76_8⟩,h76_15⟩,h76_22⟩,h76_29⟩,h76_36⟩,h76_43⟩,h76_50⟩,h76_57⟩,h76_64⟩,h76_71⟩,h76_78⟩
-private theorem pass79 : (List.range' 1 84).all (allowed 79)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h79_1,h79_8⟩,h79_15⟩,h79_22⟩,h79_29⟩,h79_36⟩,h79_43⟩,h79_50⟩,h79_57⟩,h79_64⟩,h79_71⟩,h79_78⟩
-private theorem pass82 : (List.range' 1 84).all (allowed 82)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h82_1,h82_8⟩,h82_15⟩,h82_22⟩,h82_29⟩,h82_36⟩,h82_43⟩,h82_50⟩,h82_57⟩,h82_64⟩,h82_71⟩,h82_78⟩
-private theorem pass13 : (List.range' 1 84).all (allowed 13)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h13_1,h13_8⟩,h13_15⟩,h13_22⟩,h13_29⟩,h13_36⟩,h13_43⟩,h13_50⟩,h13_57⟩,h13_64⟩,h13_71⟩,h13_78⟩
-private theorem pass16 : (List.range' 1 84).all (allowed 16)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h16_1,h16_8⟩,h16_15⟩,h16_22⟩,h16_29⟩,h16_36⟩,h16_43⟩,h16_50⟩,h16_57⟩,h16_64⟩,h16_71⟩,h16_78⟩
-private theorem pass19 : (List.range' 1 84).all (allowed 19)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h19_1,h19_8⟩,h19_15⟩,h19_22⟩,h19_29⟩,h19_36⟩,h19_43⟩,h19_50⟩,h19_57⟩,h19_64⟩,h19_71⟩,h19_78⟩
-private theorem pass22 : (List.range' 1 84).all (allowed 22)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h22_1,h22_8⟩,h22_15⟩,h22_22⟩,h22_29⟩,h22_36⟩,h22_43⟩,h22_50⟩,h22_57⟩,h22_64⟩,h22_71⟩,h22_78⟩
-private theorem pass25 : (List.range' 1 84).all (allowed 25)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h25_1,h25_8⟩,h25_15⟩,h25_22⟩,h25_29⟩,h25_36⟩,h25_43⟩,h25_50⟩,h25_57⟩,h25_64⟩,h25_71⟩,h25_78⟩
-private theorem pass28 : (List.range' 1 84).all (allowed 28)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h28_1,h28_8⟩,h28_15⟩,h28_22⟩,h28_29⟩,h28_36⟩,h28_43⟩,h28_50⟩,h28_57⟩,h28_64⟩,h28_71⟩,h28_78⟩
-private theorem pass31 : (List.range' 1 84).all (allowed 31)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h31_1,h31_8⟩,h31_15⟩,h31_22⟩,h31_29⟩,h31_36⟩,h31_43⟩,h31_50⟩,h31_57⟩,h31_64⟩,h31_71⟩,h31_78⟩
-private theorem pass34 : (List.range' 1 84).all (allowed 34)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h34_1,h34_8⟩,h34_15⟩,h34_22⟩,h34_29⟩,h34_36⟩,h34_43⟩,h34_50⟩,h34_57⟩,h34_64⟩,h34_71⟩,h34_78⟩
-private theorem pass37 : (List.range' 1 84).all (allowed 37)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h37_1,h37_8⟩,h37_15⟩,h37_22⟩,h37_29⟩,h37_36⟩,h37_43⟩,h37_50⟩,h37_57⟩,h37_64⟩,h37_71⟩,h37_78⟩
-private theorem pass40 : (List.range' 1 84).all (allowed 40)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h40_1,h40_8⟩,h40_15⟩,h40_22⟩,h40_29⟩,h40_36⟩,h40_43⟩,h40_50⟩,h40_57⟩,h40_64⟩,h40_71⟩,h40_78⟩
-private theorem pass43 : (List.range' 1 84).all (allowed 43)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h43_1,h43_8⟩,h43_15⟩,h43_22⟩,h43_29⟩,h43_36⟩,h43_43⟩,h43_50⟩,h43_57⟩,h43_64⟩,h43_71⟩,h43_78⟩
-private theorem pass46 : (List.range' 1 84).all (allowed 46)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h46_1,h46_8⟩,h46_15⟩,h46_22⟩,h46_29⟩,h46_36⟩,h46_43⟩,h46_50⟩,h46_57⟩,h46_64⟩,h46_71⟩,h46_78⟩
-private theorem pass49 : (List.range' 1 84).all (allowed 49)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h49_1,h49_8⟩,h49_15⟩,h49_22⟩,h49_29⟩,h49_36⟩,h49_43⟩,h49_50⟩,h49_57⟩,h49_64⟩,h49_71⟩,h49_78⟩
-private theorem pass52 : (List.range' 1 84).all (allowed 52)=true := by
-  rw [splitRange]
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h52_1,h52_8⟩,h52_15⟩,h52_22⟩,h52_29⟩,h52_36⟩,h52_43⟩,h52_50⟩,h52_57⟩,h52_64⟩,h52_71⟩,h52_78⟩
-private theorem pass (h : Nat) (hm : h ∈ banks) : (List.range' 1 84).all (allowed h) = true := by
-  simp only [banks,List.mem_cons,List.mem_nil_iff,or_false] at hm
-  rcases hm with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
-  · exact pass13
-  · exact pass16
-  · exact pass19
-  · exact pass22
-  · exact pass25
-  · exact pass28
-  · exact pass31
-  · exact pass34
-  · exact pass37
-  · exact pass40
-  · exact pass43
-  · exact pass46
-  · exact pass49
-  · exact pass52
-  · exact pass55
-  · exact pass58
-  · exact pass61
-  · exact pass64
-  · exact pass67
-  · exact pass70
-  · exact pass73
-  · exact pass76
-  · exact pass79
-  · exact pass82
 
 theorem packet_free (h k : Nat) (hm : h∈banks) (km : k∈List.range' 1 84)
     (not0 : k≠h) (not1 : k≠h+1) (d : Bool) : avoids (packet d k) (bank h) := by
@@ -24666,8 +23428,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2026298 ∧
-    measurementCount (program C) ≤ 1475578 ∧ gateSlots (program C) ≤ 61519451 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2025942 ∧
+    measurementCount (program C) ≤ 1475050 ∧ gateSlots (program C) ≤ 61494677 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -24865,7 +23627,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2026298,1475578,1543,61519451⟩
+def bounds : Challenge.Bounds := ⟨2025942,1475050,1543,61494677⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -24874,7 +23636,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1475578
+    change measurementCount (normalizeProgram _) ≤ 1475050
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -24882,7 +23644,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 61519451
+    change gateSlots (normalizeProgram _) ≤ 61494677
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -25001,7 +23763,20 @@ def physical (j : Nat) := ((List.range 16).all (fun q=>fieldPort j q == wire (hi
   (List.range' 17 104).all (fun q=>fieldPort j q == wire (base (Placement5.H (8+(q-17)))))
 private theorem physicalHead :
     WindowBankCheck.banks.all (fun j => (List.range 16).all (fun q=>fieldPort j q == wire (histPort j q)))=true := by
-  decide +kernel
+  have codes : WindowBankCheck.banks.all (fun j =>
+      WindowBankCheck.cellsW j == (List.range 16).map (histPort j)) = true := by decide +kernel
+  apply List.all_eq_true.mpr
+  intro j hj
+  have eq := WindowBankCheck.bankWires j hj
+  rw [beq_iff_eq.mp (List.all_eq_true.mp codes j hj)] at eq
+  apply List.all_eq_true.mpr
+  intro q hq
+  have lt := List.mem_range.mp hq
+  have atWire := congrArg (fun xs : List Wire => xs[q]?) eq
+  simp only [WindowBankCheck.slots,List.getElem?_map,List.getElem?_range lt,
+    Option.map_some,Option.some.injEq] at atWire
+  apply beq_iff_eq.mpr
+  rw [wire, ←atWire, OB5.sig_invol 511 (by decide), Equiv.apply_symm_apply]
 private theorem physicalTail : ((fieldPort 0 16 == base 720) &&
     (List.range' 17 104).all (fun q=>fieldPort 0 q == wire (base (Placement5.H (8+(q-17))))))=true := by
   decide +kernel
@@ -25247,7 +24022,16 @@ def StockCut (c : Nat) (origin : BasisState) (r : State) : Prop :=
     Rolling1588.CutFrame c origin X Y (pullState wire ideal) ∧ tracks r ideal
 
 private def allowedTag (k : Nat) := !(cover k).contains (preimage k (base 720))
-private theorem tagged : (List.range' 1 84).all allowedTag=true := by decide +kernel
+private theorem tagged : (List.range' 1 84).all allowedTag=true := by
+  have checked : (List.range' 1 84).all (fun k => !WindowBankCheck.compactCover k (preimage k (base 720))) = true := by decide +kernel
+  apply List.all_eq_true.mpr
+  intro k hk
+  have clear := List.all_eq_true.mp checked k hk
+  simp only [allowedTag,Bool.not_eq_true'] at clear ⊢
+  apply Bool.eq_false_iff.mpr
+  intro used
+  have present := WindowBankCheck.compactCover_present (List.contains_iff_mem.mp used)
+  simp [present] at clear
 private theorem packetUses (d : Bool) (k : Nat) (lo : 1≤k) (hi : k≤84) {q : Wire} (h : q∈wires (packet d k)) :
     q∈surface ∧ q≠base 720 := by
   constructor
@@ -25363,8 +24147,8 @@ open GateMirror
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
 private def headSites := WindowBankCheck.banks.flatMap (fun j =>
-  (List.range 16).map (fun q => host.symm (fieldPort j q)))
-private def tailSites := (List.range' 17 104).map (fun q => host.symm (fieldPort 0 q))
+  (List.range 16).map (fun q => OB5.sig 511 (histPort j q)))
+private def tailSites := (List.range' 17 104).map (fun q => OB5.sig 511 (base (Placement5.H (8+(q-17)))))
 private def blocked := EP ++ futurePayload 87
 
 private theorem regularFrom {sites : List Wire} (checked : maskSites sites &&& maskSites blocked = 0)
@@ -25380,8 +24164,13 @@ private theorem regularFrom {sites : List Wire} (checked : maskSites sites &&& m
 private theorem portsHead :
     WindowBankCheck.banks.all (fun j => (List.range 16).all (fun q => regular (host.symm (fieldPort j q))))=true := by
   have checked : maskSites headSites &&& maskSites blocked = 0 := by decide +kernel
-  exact List.all_eq_true.mpr (fun j hj => List.all_eq_true.mpr (fun q hq =>
-    regularFrom checked (List.mem_flatMap.mpr ⟨j,hj,List.mem_map.mpr ⟨q,hq,rfl⟩⟩)))
+  apply List.all_eq_true.mpr
+  intro j hj
+  apply List.all_eq_true.mpr
+  intro q hq
+  have eq := beq_iff_eq.mp (List.all_eq_true.mp (List.all_eq_true.mp physicalHead j hj) q hq)
+  have site := regularFrom checked (List.mem_flatMap.mpr ⟨j,hj,List.mem_map.mpr ⟨q,hq,rfl⟩⟩)
+  simpa only [eq,wire,Equiv.symm_apply_apply] using site
 
 private theorem portsTail :
     (List.range' 16 105).all (fun q => q==16 || regular (host.symm (fieldPort 0 q)))=true := by
@@ -25393,7 +24182,8 @@ private theorem portsTail :
   · have limits := List.mem_range'_1.mp hq
     have use : q ∈ List.range' 17 104 := List.mem_range'_1.mpr ⟨by omega, by omega⟩
     have ok := regularFrom checked (List.mem_map.mpr ⟨q,use,rfl⟩)
-    simp [ok]
+    have eq := beq_iff_eq.mp (List.all_eq_true.mp (Bool.and_eq_true_iff.mp physicalTail).2 q use)
+    simp only [eq,wire,Equiv.symm_apply_apply,ok,Bool.or_true]
 
 end
 
@@ -29408,36 +28198,67 @@ def fast (q : Wire) := pwB (swB 785 1813 (phaseHostB q)-16)
 theorem phys_fast (q : Wire) : phys q=fast q := by
   simp only [phys,fast,wireFn2_eqN,phaseHost_eqN,phaseHostB,phaseHostN,pwB_eq,swB_eq]
 
-private theorem high (q : Wire) (h : 2428 ≤ q) : fast q=0 := by
-  have ne (i : Nat) (hi : i<2428) : q≠i := fun eq => (Nat.not_lt_of_ge h) (eq ▸ hi)
-  have hrest : 12≤q-16-2400 := Nat.le_sub_of_add_le (Nat.le_sub_of_add_le h)
-  have ne2 (i : Nat) (hi : i<12) : q-16-2400≠i := fun eq => (Nat.not_lt_of_ge hrest) (eq ▸ hi)
-  have above : ¬q-16<2314 := Nat.not_lt_of_ge (Nat.le_trans (by decide : 2314≤2412) (Nat.le_sub_of_add_le h))
-  simp only [fast,phaseHostB,swB_eq,pwB_eq,sw,pwN,metaN,above,
-    ne _ (by decide : 1042<2428),ne _ (by decide : 737<2428),ne _ (by decide : 1557<2428),
-    ne _ (by decide : 738<2428),ne _ (by decide : 1558<2428),ne _ (by decide : 736<2428),
-    ne _ (by decide : 785<2428),ne _ (by decide : 1813<2428),ite_false]
-  simp (disch := decide) only [ne2,ite_false]
-
-private theorem boundMap (q : Wire) (h : 2428 ≤ q) : first q=q ∧ rawX q=q ∧ rawOut q=q := by
-  have ne (i : Nat) (hi : base i<2428) : q≠base i := fun eq => (Nat.not_lt_of_ge h) (eq ▸ hi)
-  simp (disch := decide) only [rawX,rawOut,first,shared,chain,Equiv.trans_apply,Equiv.swap_apply_def,
-    ne,ite_false,Equiv.refl_apply,and_self]
-
 def test (q : Wire) := fast (first q)==integerFirst (fast q) &&
   fast (rawX q)==duringX (fast q) && fast (rawOut q)==outer (fast q)
 
-private theorem checked : (List.range 2428).all test=true := by decide +kernel
+private def nearOutput (y : Nat) : Prop :=
+  (4615 ≤ y ∧ y ≤ 4619) ∨ (4835 ≤ y ∧ y ≤ 4839) ∨ y = 4629
+
+private def nearIndex (i : Nat) : Prop :=
+  (500 ≤ i ∧ i ≤ 504) ∨ (720 ≤ i ∧ i ≤ 724) ∨ i = 514
+
+private theorem outsideMeta (j : Nat) : ¬ nearOutput (metaN j) := by
+  unfold metaN
+  split_ifs <;> unfold nearOutput <;> decide
+
+private theorem nearIndex_of_output (i : Nat) (h : nearOutput (pwN i)) : nearIndex i := by
+  unfold pwN at h
+  split_ifs at h <;> first
+    | exact (outsideMeta _ h).elim
+    | (unfold nearOutput at h; unfold nearIndex; omega)
+
+private def testInputs : List Wire := [1558,1042,1557,739,740,516,517,518,519,520,530,737,738,736,785,1813]
+
+private theorem outside_input (q : Nat) (outside : q ∉ testInputs) : ¬ nearOutput (fast q) := by
+  intro hit
+  rw [fast,pwB_eq] at hit
+  have index := nearIndex_of_output _ hit
+  simp only [testInputs,List.mem_cons,List.not_mem_nil,or_false,not_or] at outside
+  obtain ⟨a,b,c,d,e,f,g,i,j,k,l,u,v,w,x,y⟩ := outside
+  simp only [phaseHostB,swB_eq,sw,a,b,c,u,v,w,x,y,ite_false] at index
+  unfold nearIndex at index
+  omega
+
+private theorem fixed_input (q : Wire) (h : q ∉ changeList) :
+    first q=q ∧ rawX q=q ∧ rawOut q=q := by
+  simp only [changeList,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,or_false,not_or] at h
+  obtain ⟨a,b,c,d,e,f,g,i,j,k,l⟩ := h
+  simp [rawX,rawOut,first,shared,chain,Equiv.swap_apply_def,a,b,c,d,e,f,g,i,j,k,l]
+
+private theorem fixed_output (q : Wire) (h : ¬ nearOutput q) :
+    integerFirst q=q ∧ duringX q=q ∧ outer q=q := by
+  have off : q ∉ Stair44PointMap.changed := by
+    intro used
+    apply h
+    simp only [Stair44PointMap.changed,List.mem_cons,List.not_mem_nil,or_false] at used
+    unfold nearOutput
+    rcases used with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  simp only [Stair44PointMap.changed,List.mem_cons,List.not_mem_nil,or_false,not_or] at off
+  obtain ⟨a,b,c,d,e,f,g,i,j,k,l⟩ := off
+  simp [integerFirst,duringX,outer,earlyPairs,chain,Equiv.swap_apply_def,a,b,c,d,e,f,g,i,j,k,l]
+
+private theorem checkedInputs : ∀ q ∈ testInputs, test q = true := by decide +kernel
 
 theorem maps (q : Wire) : phys (first q)=integerFirst (phys q) ∧
     phys (rawX q)=duringX (phys q) ∧ phys (rawOut q)=outer (phys q) := by
   simp only [phys_fast]
-  by_cases h : q<2428
-  · have t := List.all_eq_true.mp checked q (List.mem_range.mpr h)
-    simpa only [test,Bool.and_eq_true,beq_iff_eq,and_assoc] using t
-  · have f := boundMap q (Nat.le_of_not_gt h)
-    rw [f.1,f.2.1,f.2.2,high q (Nat.le_of_not_gt h)]
-    decide +kernel
+  by_cases h : q ∈ testInputs
+  · simpa only [test,Bool.and_eq_true,beq_iff_eq,and_assoc] using checkedInputs q h
+  · have subset : ∀ w ∈ changeList, w ∈ testInputs := by decide
+    have a := fixed_input q (fun use => h (subset _ use))
+    have b := fixed_output _ (outside_input q h)
+    rw [a.1,a.2.1,a.2.2,b.1,b.2.1,b.2.2]
+    exact ⟨rfl,rfl,rfl⟩
 
 end ECDSAAdd.Entrant.Stair44Placement
 

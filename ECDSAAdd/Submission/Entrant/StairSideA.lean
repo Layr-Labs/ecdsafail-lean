@@ -10009,29 +10009,25 @@ private def enter0Block0 : Program := [
   .CX 14 5,
   .CX 15 5,
   .CCX 21 5 25,
-  .CX 15 5,
-  .CX 14 5,
-  .CX 13 5,
-  .CX 9 5,
-  .CX 8 5,
-  .CX 7 5,
-  .CX 6 5,
-  .CX 8 7
+  .CX 15 7,
+  .CX 14 7,
+  .CX 13 7,
+  .CX 11 7,
+  .CX 10 7,
+  .CX 9 7
 ]
 
 private def enter0Block1 : Program := [
-  .CX 9 7,
-  .CX 10 7,
-  .CX 11 7,
-  .CX 13 7,
-  .CX 14 7,
-  .CX 15 7,
+  .CX 8 7,
+  .CX 11 5,
+  .CX 10 5,
+  .CX 7 5,
+  .CX 6 5,
   .CCX 21 7 26,
   .CX 15 7,
   .CX 14 7,
   .CX 13 7,
   .CX 11 7,
-  .CX 10 7,
   .CX 9 7,
   .CX 8 7,
   .CX 18 9,
@@ -10058,40 +10054,32 @@ private def enter0Block2 : Program := [
   .CCX 27 12 30,
   .CX 22 12,
   .CX 21 12,
-  .CX 28 27,
   .CX 2 1,
   .CX 24 1,
-  .CX 28 27,
   .CX 30 27,
   .CCX 1 27 31,
+  .CX 27 2,
+  .CX 24 2,
+  .CX 23 2,
+  .CX 1 2,
   .CX 30 27,
   .CX 28 27,
-  .CX 24 1,
-  .CX 2 1,
-  .CX 2 1,
-  .CX 24 1,
-  .CX 1 2,
-  .CX 23 2,
-  .CX 24 2,
-  .CX 27 2,
-  .CX 28 2,
-  .CX 30 2,
   .CCX 1 2 32,
   .CX 30 2,
   .CX 28 2,
   .CX 27 2,
   .CX 24 2,
   .CX 23 2,
-  .CX 1 2
-]
-
-private def enter0Block3 : Program := [
+  .CX 1 2,
   .CX 24 1,
   .CX 2 1,
   .CX 27 1,
   .CX 28 1,
   .CX 30 1,
-  .CX 31 1,
+  .CX 31 1
+]
+
+private def enter0Block3 : Program := [
   .CCX 2 1 33,
   .CX 31 1,
   .CX 30 1,
@@ -10101,28 +10089,16 @@ private def enter0Block3 : Program := [
   .CX 28 21,
   .CX 30 21,
   .CCX 29 21 34,
-  .CX 30 21,
-  .CX 28 21,
   .CX 27 21,
   .CX 28 27,
   .CX 30 27,
   .CCX 0 27 35,
-  .CX 30 27,
-  .CX 28 27,
   .CX 9 6,
-  .CX 28 27,
-  .CX 30 27,
   .CCX 6 27 36,
   .CX 30 27,
   .CX 28 27,
-  .CX 9 6
-]
-
-private def enter0Block4 : Program := [
-  .CX 10 7,
+  .CX 9 6,
   .CX 27 21,
-  .CX 28 21,
-  .CX 30 21,
   .CCX 7 21 37,
   .CX 30 21,
   .CX 28 21,
@@ -10131,7 +10107,10 @@ private def enter0Block4 : Program := [
   .CX 21 20,
   .CX 36 6,
   .CCX 20 6 38,
-  .CX 36 6,
+  .CX 36 6
+]
+
+private def enter0Block4 : Program := [
   .CX 21 20,
   .CX 27 7,
   .CX 28 7,
@@ -10148,24 +10127,21 @@ private def enter0Block4 : Program := [
   .CX 28 27,
   .CX 29 27,
   .CX 30 27,
-  .CX 36 27
-]
-
-private def enter0Block5 : Program := [
+  .CX 36 27,
   .CX 39 27,
   .CCX 5 27 40,
-  .CX 39 27,
   .CX 36 27,
-  .CX 30 27,
   .CX 29 27,
-  .CX 28 27,
   .CX 26 5,
   .CX 25 5,
   .CX 24 5,
   .CCX 8 39 41,
   .CX 2 1,
   .CX 3 1,
-  .CX 4 1,
+  .CX 4 1
+]
+
+private def enter0Block5 : Program := [
   .CX 5 1,
   .CX 6 1,
   .CX 7 1,
@@ -10178,16 +10154,8 @@ private def enter0Block5 : Program := [
   .CX 14 1,
   .CX 15 1,
   .X 1,
-  .CX 28 27,
-  .CX 30 27,
+  .CCX 1 27 42,
   .CX 39 27,
-  .CCX 1 27 42
-]
-
-private def enter0Block6 : Program := [
-  .CX 39 27,
-  .CX 30 27,
-  .CX 28 27,
   .X 1,
   .CX 15 1,
   .CX 14 1,
@@ -10196,28 +10164,24 @@ private def enter0Block6 : Program := [
   .CX 11 1,
   .CX 10 1,
   .CX 9 1,
-  .CX 8 1,
   .CX 7 1,
   .CX 6 1,
   .CX 5 1,
   .CX 4 1,
   .CX 3 1,
-  .CX 2 1,
-  .CX 24 5,
+  .CX 24 5
+]
+
+private def enter0Block6 : Program := [
   .CX 25 5,
   .CX 26 5,
-  .CX 28 27,
   .CX 29 27,
-  .CX 30 27,
   .CX 35 27,
   .CX 36 27,
   .CX 42 27,
   .CCX 5 27 43,
   .CX 42 27,
-  .CX 36 27
-]
-
-private def enter0Block7 : Program := [
+  .CX 36 27,
   .CX 35 27,
   .CX 30 27,
   .CX 29 27,
@@ -10232,95 +10196,76 @@ private def enter0Block7 : Program := [
   .CX 8 3,
   .CCX 21 3 44,
   .CX 8 3,
-  .CX 39 21,
-  .CX 30 21,
-  .CX 28 21,
-  .CX 27 21,
-  .CX 27 21,
-  .CX 28 21,
-  .CX 30 21,
-  .CX 39 21,
   .CX 5 4,
   .CX 6 4,
   .CX 8 4,
   .CCX 21 4 45,
-  .CX 8 4,
-  .CX 6 4,
-  .CX 5 4,
-  .CX 39 21
+  .CX 39 2
 ]
 
-private def enter0Block8 : Program := [
+private def enter0Block7 : Program := [
+  .CX 33 2,
+  .CX 32 2,
+  .CX 23 2,
+  .CX 21 2,
+  .CX 8 2,
+  .CX 1 2,
+  .CX 40 1,
+  .CX 36 1,
+  .CX 29 1,
+  .CX 24 1,
+  .CX 8 1,
+  .CX 6 1,
+  .CX 5 1,
+  .CX 4 1,
+  .CX 39 21,
   .CX 30 21,
   .CX 28 21,
   .CX 27 21,
-  .CX 2 1,
-  .CX 4 1,
-  .CX 8 1,
-  .CX 24 1,
-  .CX 29 1,
-  .CX 36 1,
-  .CX 40 1,
+  .CX 8 4,
+  .CX 6 4,
+  .CX 5 4,
+  .CCX 1 2 46,
   .CX 1 2,
   .CX 4 2,
   .CX 8 2,
-  .CX 21 2,
-  .CX 23 2,
   .CX 24 2,
   .CX 27 2,
-  .CX 28 2,
+  .CX 28 2
+]
+
+private def enter0Block8 : Program := [
   .CX 29 2,
   .CX 30 2,
-  .CX 32 2,
+  .CX 31 2,
   .CX 33 2,
   .CX 36 2,
   .CX 40 2,
-  .CCX 1 2 46,
-  .CX 40 2,
-  .CX 36 2,
-  .CX 33 2,
+  .CX 2 1,
+  .CX 4 1,
+  .CX 8 1,
+  .CX 21 1,
+  .CX 22 1,
+  .CX 23 1,
+  .CX 24 1,
+  .CX 25 1,
+  .CX 29 1,
+  .CX 31 1,
+  .CX 32 1,
+  .CX 35 1,
+  .CX 36 1,
+  .CX 40 1,
+  .CX 42 1,
+  .CCX 2 1 47,
+  .CX 22 1,
   .CX 32 2,
-  .CX 30 2
+  .CX 31 2,
+  .CX 23 2,
+  .CX 21 2,
+  .CCX 13 7 48
 ]
 
 private def enter0Block9 : Program := [
-  .CX 29 2,
-  .CX 28 2,
-  .CX 27 2,
-  .CX 24 2,
-  .CX 23 2,
-  .CX 21 2,
-  .CX 8 2,
-  .CX 4 2,
-  .CX 1 2,
-  .CX 40 1,
-  .CX 36 1,
-  .CX 29 1,
-  .CX 24 1,
-  .CX 8 1,
-  .CX 4 1,
-  .CX 2 1,
-  .CX 21 2,
-  .CX 23 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 22 1,
-  .CX 25 1,
-  .CX 35 1,
-  .CX 42 1,
-  .CCX 2 1 47,
-  .CX 42 1,
-  .CX 35 1,
-  .CX 25 1,
-  .CX 22 1,
-  .CX 32 2
-]
-
-private def enter0Block10 : Program := [
-  .CX 31 2,
-  .CX 23 2,
-  .CX 21 2,
-  .CCX 13 7 48,
   .CX 24 5,
   .CX 25 5,
   .CX 26 5,
@@ -10346,12 +10291,12 @@ private def enter0Block10 : Program := [
   .CX 25 22,
   .CX 23 22,
   .CX 26 5,
-  .CX 25 5
+  .CX 25 5,
+  .CX 24 5,
+  .X 14
 ]
 
-private def enter0Block11 : Program := [
-  .CX 24 5,
-  .X 14,
+private def enter0Block10 : Program := [
   .CX 13 7,
   .CX 48 7,
   .CCX 14 7 50,
@@ -10362,11 +10307,8 @@ private def enter0Block11 : Program := [
   .CX 21 1,
   .CX 22 1,
   .CX 23 1,
-  .CX 25 1,
   .CX 31 1,
   .CX 32 1,
-  .CX 35 1,
-  .CX 42 1,
   .CX 47 1,
   .CX 1 2,
   .CX 4 2,
@@ -10379,13 +10321,13 @@ private def enter0Block11 : Program := [
   .CX 29 2,
   .CX 31 2,
   .CX 32 2,
-  .CX 34 2
-]
-
-private def enter0Block12 : Program := [
+  .CX 34 2,
   .CX 35 2,
   .CX 42 2,
-  .CX 45 2,
+  .CX 45 2
+]
+
+private def enter0Block11 : Program := [
   .CX 47 2,
   .CX 49 2,
   .CCX 1 2 51,
@@ -10406,23 +10348,17 @@ private def enter0Block12 : Program := [
   .CX 6 2,
   .CX 4 2,
   .CX 1 2,
-  .CX 47 1,
-  .CX 42 1,
-  .CX 35 1,
   .CX 32 1,
-  .CX 31 1,
-  .CX 25 1,
-  .CX 23 1
-]
-
-private def enter0Block13 : Program := [
+  .CX 23 1,
   .CX 22 1,
   .CX 21 1,
   .CX 2 1,
   .CX 50 14,
   .CCX 15 14 52,
-  .CX 50 14,
-  .CX 27 21,
+  .CX 27 21
+]
+
+private def enter0Block12 : Program := [
   .CX 28 21,
   .CX 30 21,
   .CX 39 21,
@@ -10445,15 +10381,15 @@ private def enter0Block13 : Program := [
   .CX 45 34,
   .CX 49 34,
   .CCX 2 34 54,
-  .CX 49 34
-]
-
-private def enter0Block14 : Program := [
+  .CX 49 34,
   .CX 45 34,
   .CX 43 34,
   .CX 40 34,
   .CX 36 34,
-  .CX 32 2,
+  .CX 32 2
+]
+
+private def enter0Block13 : Program := [
   .CX 31 2,
   .CX 23 2,
   .CX 21 2,
@@ -10478,25 +10414,18 @@ private def enter0Block14 : Program := [
   .CX 4 27,
   .CX 41 4,
   .CX 39 4,
-  .CX 30 4
-]
-
-private def enter0Block15 : Program := [
-  .CX 28 4,
-  .CX 27 4,
   .CX 8 4,
   .CX 15 14,
-  .CX 50 14,
   .CX 52 14,
-  .X 14,
+  .X 14
+]
+
+private def enter0Block14 : Program := [
   .CX 21 4,
   .CX 22 4,
   .CX 24 4,
   .CX 25 4,
   .CX 26 4,
-  .CX 27 4,
-  .CX 28 4,
-  .CX 30 4,
   .CX 31 4,
   .CX 35 4,
   .CCX 14 4 56,
@@ -10510,77 +10439,38 @@ private def enter0Block15 : Program := [
   .CX 24 4,
   .CX 22 4,
   .CX 21 4,
-  .X 14,
-  .CX 52 14
+  .CX 51 1,
+  .CX 49 1,
+  .CX 45 1,
+  .CX 33 1,
+  .CX 26 1,
+  .CX 6 1,
+  .CX 2 1,
+  .CX 46 6,
+  .CX 41 6,
+  .CX 39 6
 ]
 
-private def enter0Block16 : Program := [
+private def enter0Block15 : Program := [
+  .CX 26 6,
+  .CX 25 6,
+  .CX 24 6,
+  .X 14,
+  .CX 52 14,
   .CX 50 14,
   .CX 15 14,
-  .CX 24 6,
-  .CX 25 6,
-  .CX 26 6,
-  .CX 39 6,
-  .CX 41 6,
-  .CX 46 6,
-  .CX 2 1,
-  .CX 6 1,
-  .CX 24 1,
-  .CX 31 1,
-  .CX 33 1,
-  .CX 35 1,
-  .CX 39 1,
-  .CX 41 1,
-  .CX 42 1,
-  .CX 45 1,
-  .CX 46 1,
-  .CX 47 1,
-  .CX 49 1,
-  .CX 51 1,
   .CCX 6 1 57,
-  .CX 51 1,
-  .CX 49 1,
-  .CX 47 1,
-  .CX 46 1,
-  .CX 45 1,
-  .CX 42 1,
-  .CX 41 1
-]
-
-private def enter0Block17 : Program := [
-  .CX 39 1,
-  .CX 35 1,
-  .CX 33 1,
-  .CX 31 1,
-  .CX 24 1,
-  .CX 6 1,
-  .CX 2 1,
-  .CX 46 6,
-  .CX 41 6,
-  .CX 39 6,
-  .CX 26 6,
-  .CX 25 6,
-  .CX 24 6,
-  .CX 2 1,
-  .CX 6 1,
-  .CX 25 1,
-  .CX 26 1,
-  .CX 31 1,
-  .CX 33 1,
-  .CX 35 1,
   .CX 40 1,
-  .CX 42 1,
-  .CX 45 1,
-  .CX 47 1,
-  .CX 49 1,
-  .CX 51 1,
+  .CX 24 6,
+  .CX 25 6,
+  .CX 26 6,
+  .CX 39 6,
+  .CX 41 6,
+  .CX 46 6,
   .CX 1 2,
   .CX 6 2,
   .CX 23 2,
-  .CX 25 2
-]
-
-private def enter0Block18 : Program := [
+  .CX 25 2,
   .CX 26 2,
   .CX 29 2,
   .CX 31 2,
@@ -10589,7 +10479,10 @@ private def enter0Block18 : Program := [
   .CX 35 2,
   .CX 40 2,
   .CX 42 2,
-  .CX 45 2,
+  .CX 45 2
+]
+
+private def enter0Block16 : Program := [
   .CX 47 2,
   .CX 49 2,
   .CX 51 2,
@@ -10610,43 +10503,28 @@ private def enter0Block18 : Program := [
   .CX 23 2,
   .CX 6 2,
   .CX 1 2,
-  .CX 51 1
+  .CX 51 1,
+  .CX 49 1,
+  .CX 45 1,
+  .CX 40 1,
+  .CX 33 1,
+  .CX 26 1,
+  .CX 6 1,
+  .CX 9 1
 ]
 
-private def enter0Block19 : Program := [
-  .CX 49 1,
-  .CX 47 1,
-  .CX 45 1,
-  .CX 42 1,
-  .CX 40 1,
-  .CX 35 1,
-  .CX 33 1,
-  .CX 31 1,
-  .CX 26 1,
-  .CX 25 1,
-  .CX 6 1,
-  .CX 2 1,
-  .CX 2 1,
-  .CX 9 1,
+private def enter0Block17 : Program := [
   .CX 21 1,
   .CX 22 1,
   .CX 23 1,
-  .CX 25 1,
-  .CX 31 1,
   .CX 32 1,
-  .CX 35 1,
-  .CX 42 1,
-  .CX 47 1,
   .CX 27 21,
   .CX 28 21,
   .CX 30 21,
   .CCX 1 21 59,
   .CX 30 21,
   .CX 28 21,
-  .CX 27 21
-]
-
-private def enter0Block20 : Program := [
+  .CX 27 21,
   .CX 47 1,
   .CX 42 1,
   .CX 35 1,
@@ -10663,7 +10541,10 @@ private def enter0Block20 : Program := [
   .CX 30 27,
   .CX 39 27,
   .CCX 27 12 61,
-  .CX 39 27,
+  .CX 39 27
+]
+
+private def enter0Block18 : Program := [
   .CX 30 27,
   .CX 28 27,
   .CX 61 57,
@@ -10676,10 +10557,7 @@ private def enter0Block20 : Program := [
   .CX 61 34,
   .CX 61 33,
   .CX 61 32,
-  .CX 61 31
-]
-
-private def enter0Block21 : Program := [
+  .CX 61 31,
   .CX 61 28,
   .CX 61 25,
   .CX 61 23,
@@ -10694,7 +10572,10 @@ private def enter0Block21 : Program := [
   .CX 60 61,
   .CX 60 53,
   .CX 60 49,
-  .CX 60 47,
+  .CX 60 47
+]
+
+private def enter0Block19 : Program := [
   .CX 60 41,
   .CX 60 39,
   .CX 61 60,
@@ -10709,10 +10590,7 @@ private def enter0Block21 : Program := [
   .CX 59 47,
   .CX 59 44,
   .CX 59 42,
-  .CX 59 39
-]
-
-private def enter0Block22 : Program := [
+  .CX 59 39,
   .CX 59 37,
   .CX 59 36,
   .CX 59 35,
@@ -10725,7 +10603,10 @@ private def enter0Block22 : Program := [
   .CX 59 19,
   .CX 59 18,
   .CX 59 17,
-  .CX 59 12,
+  .CX 59 12
+]
+
+private def enter0Block20 : Program := [
   .CX 59 11,
   .CX 59 10,
   .CX 59 3,
@@ -10742,10 +10623,7 @@ private def enter0Block22 : Program := [
   .CX 58 43,
   .CX 58 41,
   .CX 58 39,
-  .CX 58 38
-]
-
-private def enter0Block23 : Program := [
+  .CX 58 38,
   .CX 58 36,
   .CX 58 34,
   .CX 58 33,
@@ -10756,7 +10634,10 @@ private def enter0Block23 : Program := [
   .CX 58 28,
   .CX 58 27,
   .CX 58 25,
-  .CX 58 23,
+  .CX 58 23
+]
+
+private def enter0Block21 : Program := [
   .CX 58 22,
   .CX 58 20,
   .CX 58 19,
@@ -10775,10 +10656,7 @@ private def enter0Block23 : Program := [
   .CX 57 51,
   .CX 57 50,
   .CX 57 47,
-  .CX 57 45
-]
-
-private def enter0Block24 : Program := [
+  .CX 57 45,
   .CX 57 44,
   .CX 57 41,
   .CX 57 39,
@@ -10787,7 +10665,10 @@ private def enter0Block24 : Program := [
   .CX 57 21,
   .CX 57 12,
   .CX 57 8,
-  .CX 57 7,
+  .CX 57 7
+]
+
+private def enter0Block22 : Program := [
   .CX 57 6,
   .CX 57 4,
   .CX 59 57,
@@ -10808,17 +10689,17 @@ private def enter0Block24 : Program := [
   .CX 55 30,
   .CX 55 27,
   .CX 55 24,
-  .CX 55 23
-]
-
-private def enter0Block25 : Program := [
+  .CX 55 23,
   .CX 55 22,
   .CX 55 12,
   .CX 55 8,
   .CX 55 7,
   .CX 55 6,
   .CX 55 4,
-  .CX 55 2,
+  .CX 55 2
+]
+
+private def enter0Block23 : Program := [
   .CX 57 55,
   .CX 54 61,
   .CX 54 49,
@@ -10841,15 +10722,15 @@ private def enter0Block25 : Program := [
   .CX 53 38,
   .CX 53 34,
   .CX 53 33,
-  .CX 53 32
-]
-
-private def enter0Block26 : Program := [
+  .CX 53 32,
   .CX 53 27,
   .CX 53 26,
   .CX 53 25,
   .CX 53 24,
-  .CX 53 11,
+  .CX 53 11
+]
+
+private def enter0Block24 : Program := [
   .CX 53 7,
   .CX 53 6,
   .CX 53 5,
@@ -10874,13 +10755,13 @@ private def enter0Block26 : Program := [
   .CX 49 44,
   .CX 49 42,
   .CX 49 38,
-  .CX 49 37
-]
-
-private def enter0Block27 : Program := [
+  .CX 49 37,
   .CX 49 32,
   .CX 49 30,
-  .CX 49 28,
+  .CX 49 28
+]
+
+private def enter0Block25 : Program := [
   .CX 49 26,
   .CX 49 12,
   .CX 49 10,
@@ -10907,11 +10788,11 @@ private def enter0Block27 : Program := [
   .CX 47 27,
   .CX 47 26,
   .CX 47 25,
-  .CX 47 24
+  .CX 47 24,
+  .CX 47 11
 ]
 
-private def enter0Block28 : Program := [
-  .CX 47 11,
+private def enter0Block26 : Program := [
   .CX 47 7,
   .CX 47 6,
   .CX 47 5,
@@ -10939,11 +10820,11 @@ private def enter0Block28 : Program := [
   .CX 46 28,
   .CX 46 27,
   .CX 46 26,
-  .CX 46 22,
-  .CX 46 21
+  .CX 46 22
 ]
 
-private def enter0Block29 : Program := [
+private def enter0Block27 : Program := [
+  .CX 46 21,
   .CX 46 20,
   .CX 46 19,
   .CX 46 18,
@@ -10970,13 +10851,13 @@ private def enter0Block29 : Program := [
   .CX 45 35,
   .CX 45 34,
   .CX 45 31,
-  .CX 45 26,
-  .CX 45 25,
-  .CX 45 23,
-  .CX 45 21
+  .CX 45 26
 ]
 
-private def enter0Block30 : Program := [
+private def enter0Block28 : Program := [
+  .CX 45 25,
+  .CX 45 23,
+  .CX 45 21,
   .CX 45 12,
   .CX 45 9,
   .CX 45 8,
@@ -11001,15 +10882,15 @@ private def enter0Block30 : Program := [
   .CX 44 33,
   .CX 44 31,
   .CX 44 30,
-  .CX 44 28,
+  .CX 44 28
+]
+
+private def enter0Block29 : Program := [
   .CX 44 27,
   .CX 44 26,
   .CX 44 24,
   .CX 44 23,
-  .CX 44 22
-]
-
-private def enter0Block31 : Program := [
+  .CX 44 22,
   .CX 44 12,
   .CX 44 11,
   .CX 44 10,
@@ -11032,17 +10913,17 @@ private def enter0Block31 : Program := [
   .CX 43 45,
   .CX 43 44,
   .CX 43 41,
-  .CX 43 40,
+  .CX 43 40
+]
+
+private def enter0Block30 : Program := [
   .CX 43 39,
   .CX 43 38,
   .CX 43 37,
   .CX 43 35,
   .CX 43 32,
   .CX 43 31,
-  .CX 43 30
-]
-
-private def enter0Block32 : Program := [
+  .CX 43 30,
   .CX 43 28,
   .CX 43 26,
   .CX 43 24,
@@ -11063,7 +10944,10 @@ private def enter0Block32 : Program := [
   .CX 42 41,
   .CX 42 40,
   .CX 42 39,
-  .CX 42 38,
+  .CX 42 38
+]
+
+private def enter0Block31 : Program := [
   .CX 42 37,
   .CX 42 36,
   .CX 42 33,
@@ -11072,10 +10956,7 @@ private def enter0Block32 : Program := [
   .CX 42 29,
   .CX 42 24,
   .CX 42 21,
-  .CX 42 20
-]
-
-private def enter0Block33 : Program := [
+  .CX 42 20,
   .CX 42 19,
   .CX 42 18,
   .CX 42 17,
@@ -11094,7 +10975,10 @@ private def enter0Block33 : Program := [
   .CX 41 49,
   .CX 41 45,
   .CX 41 42,
-  .CX 41 34,
+  .CX 41 34
+]
+
+private def enter0Block32 : Program := [
   .CX 41 33,
   .CX 41 32,
   .CX 41 31,
@@ -11105,10 +10989,7 @@ private def enter0Block33 : Program := [
   .CX 41 24,
   .CX 41 23,
   .CX 41 20,
-  .CX 41 19
-]
-
-private def enter0Block34 : Program := [
+  .CX 41 19,
   .CX 41 18,
   .CX 41 17,
   .CX 41 11,
@@ -11125,7 +11006,10 @@ private def enter0Block34 : Program := [
   .CX 40 55,
   .CX 40 53,
   .CX 40 52,
-  .CX 40 49,
+  .CX 40 49
+]
+
+private def enter0Block33 : Program := [
   .CX 40 46,
   .CX 40 45,
   .CX 40 43,
@@ -11138,10 +11022,7 @@ private def enter0Block34 : Program := [
   .CX 40 31,
   .CX 40 29,
   .CX 40 28,
-  .CX 40 26
-]
-
-private def enter0Block35 : Program := [
+  .CX 40 26,
   .CX 40 23,
   .CX 40 21,
   .CX 40 20,
@@ -11156,7 +11037,10 @@ private def enter0Block35 : Program := [
   .CX 40 4,
   .CX 40 1,
   .CX 40 0,
-  .CX 41 40,
+  .CX 41 40
+]
+
+private def enter0Block34 : Program := [
   .CX 39 59,
   .CX 39 56,
   .CX 39 55,
@@ -11171,10 +11055,7 @@ private def enter0Block35 : Program := [
   .CX 39 40,
   .CX 39 37,
   .CX 39 36,
-  .CX 39 35
-]
-
-private def enter0Block36 : Program := [
+  .CX 39 35,
   .CX 39 33,
   .CX 39 29,
   .CX 39 28,
@@ -11187,7 +11068,10 @@ private def enter0Block36 : Program := [
   .CX 39 9,
   .CX 39 8,
   .CX 39 5,
-  .CX 39 4,
+  .CX 39 4
+]
+
+private def enter0Block35 : Program := [
   .CX 39 3,
   .CX 39 0,
   .CX 38 45,
@@ -11204,10 +11088,7 @@ private def enter0Block36 : Program := [
   .CX 35 51,
   .CX 35 41,
   .CX 35 40,
-  .CX 35 39
-]
-
-private def enter0Block37 : Program := [
+  .CX 35 39,
   .CX 35 38,
   .CX 35 37,
   .CX 35 36,
@@ -11218,7 +11099,10 @@ private def enter0Block37 : Program := [
   .CX 35 27,
   .CX 35 24,
   .CX 35 22,
-  .CX 35 19,
+  .CX 35 19
+]
+
+private def enter0Block36 : Program := [
   .CX 35 17,
   .CX 35 11,
   .CX 35 9,
@@ -11237,10 +11121,7 @@ private def enter0Block37 : Program := [
   .CX 34 44,
   .CX 34 42,
   .CX 34 41,
-  .CX 34 40
-]
-
-private def enter0Block38 : Program := [
+  .CX 34 40,
   .CX 34 39,
   .CX 34 36,
   .CX 34 33,
@@ -11249,7 +11130,10 @@ private def enter0Block38 : Program := [
   .CX 34 23,
   .CX 34 22,
   .CX 34 20,
-  .CX 34 19,
+  .CX 34 19
+]
+
+private def enter0Block37 : Program := [
   .CX 34 18,
   .CX 34 12,
   .CX 34 11,
@@ -11270,17 +11154,17 @@ private def enter0Block38 : Program := [
   .CX 33 48,
   .CX 33 45,
   .CX 33 44,
-  .CX 33 43
-]
-
-private def enter0Block39 : Program := [
+  .CX 33 43,
   .CX 33 42,
   .CX 33 41,
   .CX 33 40,
   .CX 33 38,
   .CX 33 36,
   .CX 33 32,
-  .CX 33 31,
+  .CX 33 31
+]
+
+private def enter0Block38 : Program := [
   .CX 33 29,
   .CX 33 27,
   .CX 33 26,
@@ -11303,15 +11187,15 @@ private def enter0Block39 : Program := [
   .CX 32 49,
   .CX 32 45,
   .CX 32 44,
-  .CX 32 43
-]
-
-private def enter0Block40 : Program := [
+  .CX 32 43,
   .CX 32 40,
   .CX 32 39,
   .CX 32 38,
   .CX 32 36,
-  .CX 32 33,
+  .CX 32 33
+]
+
+private def enter0Block39 : Program := [
   .CX 32 31,
   .CX 32 26,
   .CX 32 25,
@@ -11336,13 +11220,13 @@ private def enter0Block40 : Program := [
   .CX 31 38,
   .CX 31 33,
   .CX 31 32,
-  .CX 31 26
-]
-
-private def enter0Block41 : Program := [
+  .CX 31 26,
   .CX 31 23,
   .CX 31 22,
-  .CX 31 20,
+  .CX 31 20
+]
+
+private def enter0Block40 : Program := [
   .CX 31 19,
   .CX 31 11,
   .CX 31 5,
@@ -11369,11 +11253,11 @@ private def enter0Block41 : Program := [
   .CX 29 4,
   .CX 30 29,
   .CX 28 53,
-  .CX 28 52
+  .CX 28 52,
+  .CX 28 27
 ]
 
-private def enter0Block42 : Program := [
-  .CX 28 27,
+private def enter0Block41 : Program := [
   .CX 52 28,
   .CX 27 61,
   .CX 27 59,
@@ -11401,11 +11285,11 @@ private def enter0Block42 : Program := [
   .CX 27 18,
   .CX 27 17,
   .CX 27 12,
-  .CX 27 11,
-  .CX 27 8
+  .CX 27 11
 ]
 
-private def enter0Block43 : Program := [
+private def enter0Block42 : Program := [
+  .CX 27 8,
   .CX 27 5,
   .CX 27 4,
   .CX 27 3,
@@ -11432,13 +11316,13 @@ private def enter0Block43 : Program := [
   .CX 34 26,
   .CX 25 60,
   .CX 25 56,
-  .CX 25 52,
-  .CX 25 48,
-  .CX 25 44,
-  .CX 25 42
+  .CX 25 52
 ]
 
-private def enter0Block44 : Program := [
+private def enter0Block43 : Program := [
+  .CX 25 48,
+  .CX 25 44,
+  .CX 25 42,
   .CX 25 38,
   .CX 25 37,
   .CX 25 36,
@@ -11463,15 +11347,15 @@ private def enter0Block44 : Program := [
   .CX 24 61,
   .CX 24 60,
   .CX 24 56,
-  .CX 24 52,
+  .CX 24 52
+]
+
+private def enter0Block44 : Program := [
   .CX 24 51,
   .CX 24 48,
   .CX 24 44,
   .CX 24 40,
-  .CX 24 39
-]
-
-private def enter0Block45 : Program := [
+  .CX 24 39,
   .CX 24 38,
   .CX 24 35,
   .CX 24 28,
@@ -11494,17 +11378,17 @@ private def enter0Block45 : Program := [
   .CX 23 44,
   .CX 23 43,
   .CX 23 42,
-  .CX 23 40,
+  .CX 23 40
+]
+
+private def enter0Block45 : Program := [
   .CX 23 39,
   .CX 23 38,
   .CX 23 34,
   .CX 23 32,
   .CX 23 29,
   .CX 23 27,
-  .CX 23 25
-]
-
-private def enter0Block46 : Program := [
+  .CX 23 25,
   .CX 23 24,
   .CX 23 22,
   .CX 23 20,
@@ -11525,7 +11409,10 @@ private def enter0Block46 : Program := [
   .CX 22 44,
   .CX 22 43,
   .CX 22 42,
-  .CX 22 40,
+  .CX 22 40
+]
+
+private def enter0Block46 : Program := [
   .CX 22 39,
   .CX 22 38,
   .CX 22 37,
@@ -11534,10 +11421,7 @@ private def enter0Block46 : Program := [
   .CX 22 31,
   .CX 22 30,
   .CX 22 27,
-  .CX 22 26
-]
-
-private def enter0Block47 : Program := [
+  .CX 22 26,
   .CX 22 20,
   .CX 22 19,
   .CX 22 9,
@@ -11556,7 +11440,10 @@ private def enter0Block47 : Program := [
   .CX 21 40,
   .CX 21 39,
   .CX 21 36,
-  .CX 21 34,
+  .CX 21 34
+]
+
+private def enter0Block47 : Program := [
   .CX 21 31,
   .CX 21 28,
   .CX 21 25,
@@ -11567,10 +11454,7 @@ private def enter0Block47 : Program := [
   .CX 21 12,
   .CX 21 8,
   .CX 21 7,
-  .CX 21 6
-]
-
-private def enter0Block48 : Program := [
+  .CX 21 6,
   .CX 21 2,
   .CX 23 21,
   .CX 20 35,
@@ -11587,7 +11471,10 @@ private def enter0Block48 : Program := [
   .CX 12 51,
   .CX 12 49,
   .CX 12 48,
-  .CX 12 45,
+  .CX 12 45
+]
+
+private def enter0Block48 : Program := [
   .CX 12 40,
   .CX 12 39,
   .CX 12 36,
@@ -11600,10 +11487,7 @@ private def enter0Block48 : Program := [
   .CX 11 59,
   .CX 11 56,
   .CX 11 55,
-  .CX 11 51
-]
-
-private def enter0Block49 : Program := [
+  .CX 11 51,
   .CX 11 49,
   .CX 11 48,
   .CX 11 45,
@@ -11618,7 +11502,10 @@ private def enter0Block49 : Program := [
   .CX 11 19,
   .CX 11 4,
   .CX 11 3,
-  .CX 10 59,
+  .CX 10 59
+]
+
+private def enter0Block49 : Program := [
   .CX 10 56,
   .CX 10 55,
   .CX 10 51,
@@ -11633,10 +11520,7 @@ private def enter0Block49 : Program := [
   .CX 10 29,
   .CX 10 25,
   .CX 10 24,
-  .CX 10 22
-]
-
-private def enter0Block50 : Program := [
+  .CX 10 22,
   .CX 10 19,
   .CX 10 17,
   .CX 10 4,
@@ -11649,7 +11533,10 @@ private def enter0Block50 : Program := [
   .CX 9 48,
   .CX 9 45,
   .CX 9 40,
-  .CX 9 39,
+  .CX 9 39
+]
+
+private def enter0Block50 : Program := [
   .CX 9 37,
   .CX 9 36,
   .CX 9 30,
@@ -11666,10 +11553,7 @@ private def enter0Block50 : Program := [
   .CX 8 40,
   .CX 8 39,
   .CX 8 32,
-  .CX 8 29
-]
-
-private def enter0Block51 : Program := [
+  .CX 8 29,
   .CX 8 25,
   .CX 8 24,
   .CX 8 22,
@@ -11680,7 +11564,10 @@ private def enter0Block51 : Program := [
   .CX 7 56,
   .CX 7 55,
   .CX 7 49,
-  .CX 7 48,
+  .CX 7 48
+]
+
+private def enter0Block51 : Program := [
   .CX 7 45,
   .CX 7 40,
   .CX 7 39,
@@ -11699,10 +11586,7 @@ private def enter0Block51 : Program := [
   .CX 6 40,
   .CX 6 39,
   .CX 6 5,
-  .CX 5 59
-]
-
-private def enter0Block52 : Program := [
+  .CX 5 59,
   .CX 5 56,
   .CX 5 55,
   .CX 5 51,
@@ -11711,7 +11595,10 @@ private def enter0Block52 : Program := [
   .CX 5 45,
   .CX 5 42,
   .CX 5 30,
-  .CX 5 29,
+  .CX 5 29
+]
+
+private def enter0Block52 : Program := [
   .CX 5 27,
   .CX 5 26,
   .CX 5 25,
@@ -11732,17 +11619,17 @@ private def enter0Block52 : Program := [
   .CX 4 39,
   .CX 4 36,
   .CX 4 31,
-  .CX 4 29
-]
-
-private def enter0Block53 : Program := [
+  .CX 4 29,
   .CX 4 25,
   .CX 4 24,
   .CX 4 21,
   .CX 4 20,
   .CX 4 3,
   .CX 20 4,
-  .CX 3 29,
+  .CX 3 29
+]
+
+private def enter0Block53 : Program := [
   .CX 3 27,
   .CX 3 26,
   .CX 3 25,
@@ -11765,15 +11652,15 @@ private def enter0Block53 : Program := [
   .CX 1 38,
   .CX 1 35,
   .CX 1 34,
-  .CX 1 33
-]
-
-private def enter0Block54 : Program := [
+  .CX 1 33,
   .CX 1 32,
   .CX 1 31,
   .CX 1 30,
   .CX 1 29,
-  .CX 1 28,
+  .CX 1 28
+]
+
+private def enter0Block54 : Program := [
   .CX 1 23,
   .CX 1 20,
   .CX 1 19,
@@ -11798,13 +11685,13 @@ private def enter0Block54 : Program := [
   .measureX 58 [] [.Z 8, .Z 9, .Z 10, .Z 12, .Z 19, .Z 20, .Z 24, .Z 25, .Z 27, .Z 28, .Z 29, .Z 39, .Z 40, .Z 41, .Z 42, .Z 44, .Z 46, .Z 47, .Z 48, .Z 49, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 18, .CZ 0 23, .CZ 0 24, .CZ 0 26, .CZ 0 31, .CZ 0 32, .CZ 0 38, .CZ 0 44, .CZ 0 46, .CZ 0 47, .CZ 0 51, .CZ 1 3, .CZ 1 5, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 22, .CZ 1 26, .CZ 1 27, .CZ 1 29, .CZ 1 36, .CZ 1 37, .CZ 1 38, .CZ 1 42, .CZ 1 44, .CZ 1 51, .CZ 2 8, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 26, .CZ 2 29, .CZ 2 30, .CZ 2 44, .CZ 2 51, .CZ 2 56, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 17, .CZ 3 20, .CZ 3 21, .CZ 3 22, .CZ 3 24, .CZ 3 26, .CZ 3 30, .CZ 3 32, .CZ 3 46, .CZ 3 47, .CZ 4 5, .CZ 4 8, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 19, .CZ 4 20, .CZ 4 21, .CZ 4 22, .CZ 4 30, .CZ 4 31, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 21, .CZ 5 30, .CZ 5 36, .CZ 5 41, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 17, .CZ 6 18, .CZ 6 22, .CZ 6 30, .CZ 6 31, .CZ 7 8, .CZ 7 10, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 30, .CZ 7 31, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 20, .CZ 8 21, .CZ 8 22, .CZ 8 27, .CZ 8 28, .CZ 8 30, .CZ 8 31, .CZ 8 41, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 22, .CZ 10 27, .CZ 10 28, .CZ 10 30, .CZ 10 31, .CZ 10 41, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 12 22, .CZ 13 16, .CZ 13 18, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 13 30, .CZ 13 31, .CZ 13 41, .CZ 14 28, .CZ 14 30, .CZ 14 31, .CZ 14 40, .CZ 14 42, .CZ 15 28, .CZ 15 30, .CZ 15 31, .CZ 15 40, .CZ 15 42, .CZ 16 55, .CZ 16 57, .CZ 18 55, .CZ 18 57, .CZ 21 55, .CZ 21 57, .CZ 22 55, .CZ 22 57, .CZ 23 55, .CZ 23 57, .CZ 25 55, .CZ 25 57, .CZ 27 55, .CZ 27 57, .CZ 40 55, .CZ 40 57, .CZ 41 55, .CZ 41 57, .CZ 42 55, .CZ 42 57],
   .measureX 57 [] [.Z 0, .Z 2, .Z 3, .Z 5, .Z 9, .Z 11, .Z 16, .Z 18, .Z 20, .Z 21, .Z 22, .Z 23, .Z 25, .Z 28, .Z 29, .Z 32, .Z 37, .Z 40, .Z 41, .Z 42, .Z 44, .Z 46, .Z 47, .Z 49, .Z 51, .CZ 0 2, .CZ 0 4, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 24, .CZ 0 26, .CZ 0 28, .CZ 0 29, .CZ 0 36, .CZ 0 38, .CZ 0 41, .CZ 0 42, .CZ 0 44, .CZ 1 2, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 20, .CZ 1 21, .CZ 1 22, .CZ 1 26, .CZ 1 29, .CZ 1 36, .CZ 1 37, .CZ 1 39, .CZ 1 42, .CZ 1 46, .CZ 1 47, .CZ 1 49, .CZ 1 56, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 22, .CZ 2 28, .CZ 2 29, .CZ 2 30, .CZ 2 37, .CZ 2 38, .CZ 2 39, .CZ 2 41, .CZ 3 6, .CZ 3 7, .CZ 3 9, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 18, .CZ 3 19, .CZ 3 24, .CZ 3 26, .CZ 3 28, .CZ 3 29, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 4 20, .CZ 4 22, .CZ 4 31, .CZ 5 6, .CZ 5 7, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 18, .CZ 5 30, .CZ 5 31, .CZ 5 41, .CZ 6 7, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 30, .CZ 6 36, .CZ 6 37, .CZ 7 8, .CZ 7 10, .CZ 7 15, .CZ 7 22, .CZ 7 30, .CZ 7 31, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 9 10, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 12 18, .CZ 13 16, .CZ 13 18, .CZ 13 19, .CZ 13 20, .CZ 13 23, .CZ 13 24, .CZ 13 26, .CZ 13 29, .CZ 13 32, .CZ 13 36, .CZ 13 37, .CZ 13 50, .CZ 14 15, .CZ 14 16, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 23, .CZ 14 24, .CZ 14 26, .CZ 14 29, .CZ 14 32, .CZ 14 36, .CZ 14 37, .CZ 14 50, .CZ 15 27, .CZ 15 28, .CZ 15 30, .CZ 15 31, .CZ 15 41, .CZ 15 55],
   .measureX 56 [] [.Z 0, .Z 2, .Z 6, .Z 8, .Z 9, .Z 11, .Z 16, .Z 19, .Z 21, .Z 22, .Z 25, .Z 28, .Z 30, .Z 37, .Z 38, .Z 40, .Z 41, .Z 49, .CZ 0 7, .CZ 0 10, .CZ 0 12, .CZ 0 18, .CZ 0 22, .CZ 0 23, .CZ 0 24, .CZ 0 26, .CZ 0 28, .CZ 0 29, .CZ 0 32, .CZ 0 38, .CZ 0 44, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 16, .CZ 1 19, .CZ 1 20, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 30, .CZ 1 31, .CZ 1 36, .CZ 1 37, .CZ 1 39, .CZ 1 46, .CZ 1 47, .CZ 1 49, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 19, .CZ 2 21, .CZ 2 22, .CZ 2 30, .CZ 2 31, .CZ 2 37, .CZ 2 39, .CZ 3 5, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 12, .CZ 3 18, .CZ 3 21, .CZ 3 24, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 38, .CZ 3 46, .CZ 3 47, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 12, .CZ 4 20, .CZ 4 21, .CZ 4 22, .CZ 4 24, .CZ 4 31, .CZ 5 7, .CZ 5 18, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 30, .CZ 5 36, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 17, .CZ 6 20, .CZ 6 22, .CZ 6 24, .CZ 6 30, .CZ 6 36, .CZ 6 37, .CZ 7 8, .CZ 7 9, .CZ 7 18, .CZ 7 22, .CZ 7 30, .CZ 7 31, .CZ 8 10, .CZ 8 11, .CZ 8 18, .CZ 8 20, .CZ 8 24, .CZ 8 29, .CZ 12 38, .CZ 24 38],
-  .measureX 55 [] [.Z 13, .Z 51, .Z 54, .CZ 7 14, .CZ 10 14, .CZ 13 14, .CZ 14 16, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 23, .CZ 14 24, .CZ 14 26, .CZ 14 27, .CZ 14 28, .CZ 14 29, .CZ 14 30, .CZ 14 31, .CZ 14 32, .CZ 14 36, .CZ 14 37, .CZ 14 41, .CZ 14 50, .CZ 14 51, .CZ 14 54]
+  .measureX 55 [] [.Z 13, .Z 51, .Z 54, .CZ 7 14, .CZ 10 14, .CZ 13 14, .CZ 14 16, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 23, .CZ 14 24, .CZ 14 26, .CZ 14 27, .CZ 14 28, .CZ 14 29, .CZ 14 30, .CZ 14 31, .CZ 14 32, .CZ 14 36, .CZ 14 37, .CZ 14 41, .CZ 14 50, .CZ 14 51, .CZ 14 54],
+  .measureX 54 [] [.CZ 7 13, .CZ 10 13, .CZ 13 16, .CZ 13 18, .CZ 13 19, .CZ 13 20, .CZ 13 23, .CZ 13 24, .CZ 13 26, .CZ 13 27, .CZ 13 28, .CZ 13 29, .CZ 13 30, .CZ 13 31, .CZ 13 32, .CZ 13 36, .CZ 13 37, .CZ 13 41, .CZ 13 50, .CZ 13 51],
+  .measureX 53 [] [.Z 0, .Z 3, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 17, .Z 18, .Z 20, .Z 21, .Z 22, .Z 23, .Z 24, .Z 25, .Z 29, .Z 30, .Z 32, .Z 40, .Z 49, .Z 50, .Z 52, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 0 22, .CZ 0 24, .CZ 0 26, .CZ 0 28, .CZ 0 30, .CZ 0 41, .CZ 0 42, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 30, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 19, .CZ 2 21, .CZ 2 22, .CZ 2 30, .CZ 2 31, .CZ 2 37, .CZ 3 7, .CZ 3 10, .CZ 3 17, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 18, .CZ 4 19, .CZ 7 52, .CZ 10 52, .CZ 11 52, .CZ 17 52],
+  .measureX 52 [] [.Z 1, .Z 3, .Z 4, .Z 6, .Z 10, .Z 18, .Z 19, .Z 20, .Z 21, .Z 23, .Z 24, .Z 27, .Z 29, .Z 32, .Z 36, .Z 37, .Z 38, .Z 42, .Z 43, .Z 44, .Z 46, .Z 47, .Z 49, .Z 50, .Z 51, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 10, .CZ 0 12, .CZ 0 17, .CZ 0 20, .CZ 0 21, .CZ 0 22, .CZ 0 24, .CZ 0 28, .CZ 0 31, .CZ 0 38, .CZ 0 42, .CZ 0 44, .CZ 0 46, .CZ 0 47, .CZ 0 51, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 17, .CZ 1 20, .CZ 1 21, .CZ 1 27, .CZ 1 29, .CZ 1 30, .CZ 1 31, .CZ 1 36, .CZ 1 43, .CZ 1 46, .CZ 1 47, .CZ 1 49, .CZ 1 51, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 11, .CZ 2 17, .CZ 2 22, .CZ 2 27, .CZ 2 28, .CZ 2 29, .CZ 2 41, .CZ 2 46, .CZ 2 47, .CZ 3 5, .CZ 3 6, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 19, .CZ 3 21, .CZ 3 22, .CZ 3 24, .CZ 3 26, .CZ 3 28, .CZ 3 29, .CZ 3 30, .CZ 3 31, .CZ 3 43, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 11, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 43, .CZ 4 51, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 17, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 30, .CZ 5 31, .CZ 5 43, .CZ 5 51, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 30, .CZ 6 31, .CZ 6 43, .CZ 6 51, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 24, .CZ 7 43, .CZ 8 10, .CZ 8 18, .CZ 8 20, .CZ 8 21, .CZ 8 26, .CZ 8 28, .CZ 8 29, .CZ 8 31, .CZ 8 32, .CZ 9 10, .CZ 9 12, .CZ 9 24, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 23, .CZ 10 24, .CZ 10 37, .CZ 10 43, .CZ 11 12, .CZ 11 24, .CZ 11 43, .CZ 12 24, .CZ 12 43, .CZ 13 24, .CZ 13 26, .CZ 13 27, .CZ 13 28, .CZ 13 30, .CZ 13 31, .CZ 13 41, .CZ 13 51, .CZ 14 24, .CZ 14 26, .CZ 14 27, .CZ 14 28, .CZ 14 30, .CZ 14 31, .CZ 14 41, .CZ 14 51, .CZ 15 24, .CZ 15 26, .CZ 15 27, .CZ 15 28, .CZ 15 30, .CZ 15 31, .CZ 15 41, .CZ 15 51, .CZ 18 43, .CZ 20 26, .CZ 20 43, .CZ 30 43, .CZ 43 51]
 ]
 
 private def enter0Block55 : Program := [
-  .measureX 54 [] [.CZ 7 13, .CZ 10 13, .CZ 13 16, .CZ 13 18, .CZ 13 19, .CZ 13 20, .CZ 13 23, .CZ 13 24, .CZ 13 26, .CZ 13 27, .CZ 13 28, .CZ 13 29, .CZ 13 30, .CZ 13 31, .CZ 13 32, .CZ 13 36, .CZ 13 37, .CZ 13 41, .CZ 13 50, .CZ 13 51],
-  .measureX 53 [] [.Z 0, .Z 3, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 17, .Z 18, .Z 20, .Z 21, .Z 22, .Z 23, .Z 24, .Z 25, .Z 29, .Z 30, .Z 32, .Z 40, .Z 49, .Z 50, .Z 52, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 0 22, .CZ 0 24, .CZ 0 26, .CZ 0 28, .CZ 0 30, .CZ 0 41, .CZ 0 42, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 30, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 19, .CZ 2 21, .CZ 2 22, .CZ 2 30, .CZ 2 31, .CZ 2 37, .CZ 3 7, .CZ 3 10, .CZ 3 17, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 18, .CZ 4 19, .CZ 7 52, .CZ 10 52, .CZ 11 52, .CZ 17 52],
-  .measureX 52 [] [.Z 1, .Z 3, .Z 4, .Z 6, .Z 10, .Z 18, .Z 19, .Z 20, .Z 21, .Z 23, .Z 24, .Z 27, .Z 29, .Z 32, .Z 36, .Z 37, .Z 38, .Z 42, .Z 43, .Z 44, .Z 46, .Z 47, .Z 49, .Z 50, .Z 51, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 10, .CZ 0 12, .CZ 0 17, .CZ 0 20, .CZ 0 21, .CZ 0 22, .CZ 0 24, .CZ 0 28, .CZ 0 31, .CZ 0 38, .CZ 0 42, .CZ 0 44, .CZ 0 46, .CZ 0 47, .CZ 0 51, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 17, .CZ 1 20, .CZ 1 21, .CZ 1 27, .CZ 1 29, .CZ 1 30, .CZ 1 31, .CZ 1 36, .CZ 1 43, .CZ 1 46, .CZ 1 47, .CZ 1 49, .CZ 1 51, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 11, .CZ 2 17, .CZ 2 22, .CZ 2 27, .CZ 2 28, .CZ 2 29, .CZ 2 41, .CZ 2 46, .CZ 2 47, .CZ 3 5, .CZ 3 6, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 19, .CZ 3 21, .CZ 3 22, .CZ 3 24, .CZ 3 26, .CZ 3 28, .CZ 3 29, .CZ 3 30, .CZ 3 31, .CZ 3 43, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 11, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 43, .CZ 4 51, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 17, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 30, .CZ 5 31, .CZ 5 43, .CZ 5 51, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 30, .CZ 6 31, .CZ 6 43, .CZ 6 51, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 24, .CZ 7 43, .CZ 8 10, .CZ 8 18, .CZ 8 20, .CZ 8 21, .CZ 8 26, .CZ 8 28, .CZ 8 29, .CZ 8 31, .CZ 8 32, .CZ 9 10, .CZ 9 12, .CZ 9 24, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 23, .CZ 10 24, .CZ 10 37, .CZ 10 43, .CZ 11 12, .CZ 11 24, .CZ 11 43, .CZ 12 24, .CZ 12 43, .CZ 13 24, .CZ 13 26, .CZ 13 27, .CZ 13 28, .CZ 13 30, .CZ 13 31, .CZ 13 41, .CZ 13 51, .CZ 14 24, .CZ 14 26, .CZ 14 27, .CZ 14 28, .CZ 14 30, .CZ 14 31, .CZ 14 41, .CZ 14 51, .CZ 15 24, .CZ 15 26, .CZ 15 27, .CZ 15 28, .CZ 15 30, .CZ 15 31, .CZ 15 41, .CZ 15 51, .CZ 18 43, .CZ 20 26, .CZ 20 43, .CZ 30 43, .CZ 43 51],
   .measureX 51 [] [.Z 17, .Z 19, .Z 27, .Z 28, .Z 30, .Z 31, .Z 41, .CZ 7 10, .CZ 10 16, .CZ 10 18, .CZ 10 20, .CZ 10 23, .CZ 10 24, .CZ 10 26, .CZ 10 29, .CZ 10 32, .CZ 10 36, .CZ 10 37, .CZ 10 50],
   .measureX 50 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 12, .Z 17, .Z 18, .Z 20, .Z 25, .Z 26, .Z 27, .Z 29, .Z 36, .Z 41, .Z 48, .Z 49, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 30, .CZ 1 31, .CZ 1 36, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 26, .CZ 2 27, .CZ 2 28, .CZ 2 30, .CZ 2 31, .CZ 2 36],
   .measureX 49 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 10, .Z 12, .Z 16, .Z 19, .Z 21, .Z 22, .Z 24, .Z 25, .Z 29, .Z 31, .Z 36, .Z 41, .Z 42, .Z 48, .CZ 0 1, .CZ 0 5, .CZ 0 19, .CZ 0 20, .CZ 0 21, .CZ 0 22, .CZ 0 23, .CZ 0 24, .CZ 0 26, .CZ 0 31, .CZ 0 42, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 30, .CZ 1 31, .CZ 1 36, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 26, .CZ 2 27, .CZ 2 28, .CZ 2 30, .CZ 2 31, .CZ 2 36, .CZ 4 16],
@@ -11831,11 +11718,11 @@ private def enter0Block55 : Program := [
   .measureX 28 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 9, .Z 10, .Z 16, .Z 17, .Z 18, .Z 19, .Z 20, .Z 21, .Z 22, .Z 23, .CZ 0 7, .CZ 0 10, .CZ 0 18, .CZ 0 19, .CZ 1 18, .CZ 1 27, .CZ 2 18, .CZ 2 27, .CZ 3 7, .CZ 3 10, .CZ 3 18, .CZ 3 19, .CZ 4 7, .CZ 4 10, .CZ 4 18, .CZ 4 19, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 8 11, .CZ 8 16, .CZ 9 11, .CZ 11 27],
   .measureX 27 [] [.Z 0, .Z 1, .Z 2, .Z 10, .Z 12, .Z 16, .Z 18, .Z 19, .Z 24, .Z 25, .Z 26, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 17, .CZ 0 23, .CZ 1 7, .CZ 1 10, .CZ 1 17, .CZ 2 7, .CZ 2 10, .CZ 2 17, .CZ 3 7, .CZ 3 10, .CZ 3 17, .CZ 3 19, .CZ 3 20, .CZ 3 25, .CZ 4 7, .CZ 4 10, .CZ 4 16, .CZ 4 17, .CZ 5 7, .CZ 5 10, .CZ 5 17, .CZ 6 7, .CZ 6 10, .CZ 6 17, .CZ 7 10, .CZ 7 12, .CZ 7 20, .CZ 7 24, .CZ 7 26],
   .measureX 26 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 17, .Z 20, .Z 23, .Z 24, .Z 25, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 23, .CZ 3 16, .CZ 3 19, .CZ 3 20, .CZ 3 25, .CZ 4 16, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 19],
-  .measureX 25 [] [.Z 0, .Z 16, .Z 19, .Z 20, .CZ 0 16]
+  .measureX 25 [] [.Z 0, .Z 16, .Z 19, .Z 20, .CZ 0 16],
+  .measureX 24 [] [.Z 1, .Z 16, .Z 19, .Z 20, .CZ 1 16, .CZ 1 23]
 ]
 
 private def enter0Block56 : Program := [
-  .measureX 24 [] [.Z 1, .Z 16, .Z 19, .Z 20, .CZ 1 16, .CZ 1 23],
   .measureX 23 [] [.Z 1, .Z 2, .CZ 1 16, .CZ 2 16],
   .measureX 22 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 9, .Z 18, .Z 19, .Z 20, .Z 21, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 8 11, .CZ 8 16, .CZ 9 11, .CZ 11 18],
   .measureX 21 [] [.Z 3, .Z 7, .Z 12, .Z 16, .Z 17, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 7 10, .CZ 7 18, .CZ 7 19, .CZ 10 11, .CZ 11 12, .CZ 11 18, .CZ 11 20],
@@ -11843,7 +11730,6 @@ private def enter0Block56 : Program := [
   .measureX 19 [] [.Z 11, .Z 17, .Z 18, .CZ 11 16],
   .measureX 18 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 16, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 3 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 8 16, .CZ 10 16, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
   .measureX 17 [] [.Z 7, .Z 10, .Z 16, .CZ 7 16],
-  .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
@@ -11894,6 +11780,7 @@ private def enter0Block57 : Program := [
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
+  .measureX 17 [] [],
   .measureX 17 [] []
 ]
 
@@ -11903,7 +11790,7 @@ theorem enter0_checked : eval StairArchiveColumns.col312 enter0 enter0StoredIn =
   WSlimTree.eval_of_checkSeq _ enter0Block0 [enter0Block1, enter0Block2, enter0Block3, enter0Block4, enter0Block5, enter0Block6, enter0Block7, enter0Block8, enter0Block9, enter0Block10, enter0Block11, enter0Block12, enter0Block13, enter0Block14, enter0Block15, enter0Block16, enter0Block17, enter0Block18, enter0Block19, enter0Block20, enter0Block21, enter0Block22, enter0Block23, enter0Block24, enter0Block25, enter0Block26, enter0Block27, enter0Block28, enter0Block29, enter0Block30, enter0Block31, enter0Block32, enter0Block33, enter0Block34, enter0Block35, enter0Block36, enter0Block37, enter0Block38, enter0Block39, enter0Block40, enter0Block41, enter0Block42, enter0Block43, enter0Block44, enter0Block45, enter0Block46, enter0Block47, enter0Block48, enter0Block49, enter0Block50, enter0Block51, enter0Block52, enter0Block53, enter0Block54, enter0Block55, enter0Block56, enter0Block57] _ _ (by decide +kernel)
 
 theorem enter0_counts : GatePhysical enter0 ∧ toffoliCount enter0 = 45 ∧
-    measurementCount enter0 = 93 ∧ gateSlots enter0 = 4599 :=
+    measurementCount enter0 = 93 ∧ gateSlots enter0 = 4486 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 theorem enter0_scope : ∀ x ∈ wires enter0, x < 79 := by
@@ -11919,35 +11806,25 @@ private def enter1Block0 : Program := [
   .CCX 4 21 22,
   .CX 22 21,
   .CCX 12 21 23,
-  .CX 22 21,
-  .CX 22 21,
   .CCX 11 21 24,
-  .CX 22 21,
   .X 8,
-  .CX 22 21,
   .CCX 8 21 25,
-  .CX 22 21,
   .X 8,
-  .CX 22 21,
   .X 21,
   .CCX 21 10 26,
-  .X 21,
-  .CX 22 21,
-  .CX 22 21,
-  .X 21,
   .CX 6 5,
   .CCX 21 5 27,
   .CX 6 5,
   .X 21,
   .CX 22 21,
-  .CX 21 11
-]
-
-private def enter1Block1 : Program := [
+  .CX 21 11,
   .CX 22 11,
   .CX 24 11,
   .CCX 20 11 28,
-  .CX 24 11,
+  .CX 24 11
+]
+
+private def enter1Block1 : Program := [
   .CX 22 11,
   .CX 21 11,
   .CCX 6 22 29,
@@ -11960,27 +11837,22 @@ private def enter1Block1 : Program := [
   .CX 21 12,
   .CX 30 28,
   .CCX 0 28 31,
+  .CX 28 21,
+  .CX 22 21,
   .CX 30 28,
   .CX 10 7,
-  .CX 22 21,
-  .CX 28 21,
-  .CX 30 21,
   .CCX 7 21 32,
-  .CX 30 21,
   .CX 28 21,
   .CX 22 21,
   .CX 10 7,
   .CX 30 28,
   .CCX 3 28 33,
   .CX 30 28,
-  .CX 28 21
+  .CX 28 21,
+  .CCX 6 21 34
 ]
 
 private def enter1Block2 : Program := [
-  .CX 30 21,
-  .CCX 6 21 34,
-  .CX 30 21,
-  .CX 28 21,
   .CX 28 7,
   .CX 30 7,
   .CX 32 7,
@@ -11990,42 +11862,26 @@ private def enter1Block2 : Program := [
   .CX 28 7,
   .CX 27 6,
   .CX 22 21,
-  .CX 28 21,
-  .CX 30 21,
   .CX 35 21,
   .CCX 6 21 36,
-  .CX 35 21,
-  .CX 30 21,
   .CX 28 21,
-  .CX 22 21,
   .CX 27 6,
   .CCX 9 35 37,
   .CX 30 28,
   .CCX 4 28 38,
   .CX 30 28,
-  .CX 22 21,
   .CX 28 21,
-  .CX 30 21,
-  .CX 35 21
-]
-
-private def enter1Block3 : Program := [
   .CCX 13 21 39,
-  .CX 35 21,
-  .CX 30 21,
-  .CX 28 21,
-  .CX 22 21,
   .CCX 26 35 40,
   .CX 8 4,
   .CCX 4 35 41,
   .CX 8 4,
   .X 12,
-  .CCX 12 35 42,
+  .CCX 12 35 42
+]
+
+private def enter1Block3 : Program := [
   .X 12,
-  .CX 22 21,
-  .CX 28 21,
-  .CX 30 21,
-  .CX 35 21,
   .CX 2 1,
   .CX 9 1,
   .CX 14 1,
@@ -12035,27 +11891,8 @@ private def enter1Block3 : Program := [
   .CX 14 1,
   .CX 9 1,
   .CX 2 1,
-  .CX 35 21,
-  .CX 30 21,
-  .CX 28 21,
-  .CX 22 21,
-  .CX 22 21
-]
-
-private def enter1Block4 : Program := [
-  .CX 28 21,
-  .CX 30 21,
-  .CX 35 21,
   .CCX 21 14 44,
-  .CX 35 21,
-  .CX 30 21,
-  .CX 28 21,
-  .CX 22 21,
   .CX 15 14,
-  .CX 22 21,
-  .CX 28 21,
-  .CX 30 21,
-  .CX 35 21,
   .CX 44 21,
   .CCX 14 21 45,
   .CX 44 21,
@@ -12068,14 +11905,14 @@ private def enter1Block4 : Program := [
   .CX 21 1,
   .CX 22 1,
   .CX 26 1,
-  .CX 42 1,
+  .CX 42 1
+]
+
+private def enter1Block4 : Program := [
   .CX 6 5,
   .CX 23 5,
   .CX 24 5,
-  .CX 25 5
-]
-
-private def enter1Block5 : Program := [
+  .CX 25 5,
   .CX 27 5,
   .CX 28 5,
   .CX 30 5,
@@ -12088,275 +11925,139 @@ private def enter1Block5 : Program := [
   .CX 39 5,
   .CX 43 5,
   .CCX 1 5 46,
-  .CX 43 5,
-  .CX 39 5,
-  .CX 38 5,
-  .CX 36 5,
-  .CX 34 5,
-  .CX 33 5,
-  .CX 32 5,
-  .CX 31 5,
-  .CX 30 5,
-  .CX 28 5,
-  .CX 27 5,
-  .CX 25 5,
-  .CX 24 5,
-  .CX 23 5,
+  .CX 10 1,
+  .CX 3 10,
+  .CX 9 10,
+  .CX 26 10,
+  .CX 32 10,
+  .CX 9 3,
+  .CX 21 3,
+  .CX 22 3,
+  .CX 28 3
+]
+
+private def enter1Block5 : Program := [
+  .CX 30 3,
+  .CX 37 3,
+  .CX 42 3,
   .CX 6 5,
-  .CX 42 1,
-  .CX 26 1,
-  .CX 22 1
+  .CX 23 5,
+  .CX 24 5,
+  .CX 25 5,
+  .CX 27 5,
+  .CX 28 5,
+  .CX 30 5,
+  .CX 31 5,
+  .CX 32 5,
+  .CX 33 5,
+  .CX 34 5,
+  .CX 36 5,
+  .CX 38 5,
+  .CX 39 5,
+  .CX 43 5,
+  .CCX 3 10 47,
+  .CX 45 44,
+  .CX 35 7,
+  .CX 40 7,
+  .X 7,
+  .CX 9 3,
+  .CX 21 3
 ]
 
 private def enter1Block6 : Program := [
-  .CX 21 1,
-  .CX 10 1,
-  .CX 9 3,
-  .CX 21 3,
   .CX 22 3,
   .CX 28 3,
   .CX 30 3,
-  .CX 37 3,
   .CX 42 3,
   .CX 3 10,
-  .CX 21 10,
-  .CX 22 10,
+  .CX 9 10,
   .CX 26 10,
-  .CX 28 10,
-  .CX 30 10,
   .CX 32 10,
   .CX 37 10,
-  .CX 42 10,
-  .CCX 3 10 47,
-  .CX 42 10,
-  .CX 37 10,
-  .CX 32 10,
-  .CX 30 10,
-  .CX 28 10,
-  .CX 26 10,
-  .CX 22 10,
-  .CX 21 10,
-  .CX 3 10,
-  .CX 42 3,
-  .CX 37 3
+  .CCX 7 44 48,
+  .CX 35 7,
+  .CX 40 7,
+  .X 7,
+  .CX 1 2,
+  .CX 21 2,
+  .CX 22 2,
+  .CX 24 2,
+  .CX 26 2,
+  .CX 42 2,
+  .CX 5 1,
+  .CX 6 1,
+  .CX 10 1,
+  .CX 23 1,
+  .CX 24 1,
+  .CX 25 1
 ]
 
 private def enter1Block7 : Program := [
-  .CX 30 3,
-  .CX 28 3,
-  .CX 22 3,
-  .CX 21 3,
-  .CX 9 3,
-  .CX 35 7,
-  .CX 40 7,
-  .X 7,
-  .CX 45 44,
-  .CCX 7 44 48,
-  .CX 45 44,
-  .X 7,
-  .CX 40 7,
-  .CX 35 7,
-  .CX 5 1,
-  .CX 6 1,
-  .CX 10 1,
-  .CX 21 1,
-  .CX 22 1,
-  .CX 23 1,
-  .CX 24 1,
-  .CX 25 1,
-  .CX 26 1,
   .CX 27 1,
   .CX 28 1,
   .CX 30 1,
   .CX 31 1,
   .CX 32 1,
   .CX 33 1,
-  .CX 34 1
+  .CX 34 1,
+  .CX 35 1,
+  .CX 36 1,
+  .CX 38 1,
+  .CX 39 1,
+  .CX 41 1,
+  .CX 43 1,
+  .CX 46 1,
+  .CCX 1 2 49,
+  .CX 27 6,
+  .CX 5 1,
+  .CX 6 1,
+  .CX 24 1,
+  .CX 25 1,
+  .CX 36 1,
+  .CX 38 1,
+  .CX 41 1,
+  .CX 1 2
 ]
 
 private def enter1Block8 : Program := [
-  .CX 35 1,
-  .CX 36 1,
-  .CX 38 1,
-  .CX 39 1,
-  .CX 41 1,
-  .CX 42 1,
-  .CX 43 1,
-  .CX 46 1,
-  .CX 1 2,
   .CX 5 2,
-  .CX 6 2,
-  .CX 10 2,
-  .CX 21 2,
-  .CX 22 2,
-  .CX 23 2,
+  .CX 24 2,
   .CX 25 2,
-  .CX 26 2,
-  .CX 27 2,
-  .CX 28 2,
-  .CX 30 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 33 2,
-  .CX 34 2,
   .CX 35 2,
-  .CX 36 2,
   .CX 38 2,
-  .CX 39 2,
-  .CX 41 2,
-  .CX 42 2
-]
-
-private def enter1Block9 : Program := [
-  .CX 43 2,
-  .CX 46 2,
-  .CCX 1 2 49,
-  .CX 46 2,
-  .CX 43 2,
   .CX 42 2,
-  .CX 41 2,
-  .CX 39 2,
-  .CX 38 2,
-  .CX 36 2,
-  .CX 35 2,
-  .CX 34 2,
-  .CX 33 2,
-  .CX 32 2,
-  .CX 31 2,
-  .CX 30 2,
-  .CX 28 2,
-  .CX 27 2,
-  .CX 26 2,
-  .CX 25 2,
-  .CX 23 2,
-  .CX 22 2,
-  .CX 21 2,
-  .CX 10 2,
-  .CX 6 2,
-  .CX 5 2,
-  .CX 1 2,
-  .CX 46 1,
-  .CX 43 1,
-  .CX 42 1
-]
-
-private def enter1Block10 : Program := [
-  .CX 41 1,
-  .CX 39 1,
-  .CX 38 1,
-  .CX 36 1,
-  .CX 35 1,
-  .CX 34 1,
-  .CX 33 1,
-  .CX 32 1,
-  .CX 31 1,
-  .CX 30 1,
-  .CX 28 1,
-  .CX 27 1,
-  .CX 26 1,
-  .CX 25 1,
-  .CX 24 1,
-  .CX 23 1,
-  .CX 22 1,
-  .CX 21 1,
-  .CX 10 1,
-  .CX 6 1,
-  .CX 5 1,
-  .CX 27 6,
-  .CX 5 2,
-  .CX 10 2,
-  .CX 21 2,
-  .CX 22 2,
-  .CX 23 2,
-  .CX 25 2,
-  .CX 26 2,
-  .CX 28 2
-]
-
-private def enter1Block11 : Program := [
-  .CX 30 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 33 2,
-  .CX 34 2,
-  .CX 38 2,
-  .CX 39 2,
-  .CX 43 2,
-  .CX 46 2,
   .CX 49 2,
   .CCX 6 2 50,
-  .CX 49 2,
-  .CX 46 2,
-  .CX 43 2,
-  .CX 39 2,
-  .CX 38 2,
   .CX 34 2,
-  .CX 33 2,
-  .CX 32 2,
-  .CX 31 2,
   .CX 30 2,
   .CX 28 2,
-  .CX 26 2,
-  .CX 25 2,
-  .CX 23 2,
   .CX 22 2,
   .CX 21 2,
-  .CX 10 2,
   .CX 5 2,
-  .CX 27 6
-]
-
-private def enter1Block12 : Program := [
+  .CX 27 6,
   .CX 12 3,
   .CX 23 3,
   .CX 26 3,
-  .CX 37 3,
   .CX 47 3,
   .CCX 39 3 51,
   .CX 47 3,
   .CX 37 3,
   .CX 26 3,
   .CX 23 3,
-  .CX 12 3,
-  .CX 27 5,
-  .CX 37 5,
-  .CX 41 5,
-  .CX 42 5,
-  .CX 10 2,
-  .CX 23 2,
-  .CX 25 2,
-  .CX 26 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 33 2,
-  .CX 38 2,
-  .CX 39 2,
-  .CX 43 2,
-  .CX 46 2,
-  .CX 49 2,
-  .CX 50 2,
-  .CCX 5 2 52,
-  .CX 50 2
+  .CX 12 3
 ]
 
-private def enter1Block13 : Program := [
-  .CX 49 2,
-  .CX 46 2,
-  .CX 43 2,
-  .CX 39 2,
-  .CX 38 2,
-  .CX 33 2,
-  .CX 32 2,
-  .CX 31 2,
-  .CX 26 2,
-  .CX 25 2,
-  .CX 23 2,
-  .CX 10 2,
+private def enter1Block9 : Program := [
+  .CX 27 5,
+  .CX 37 5,
+  .CX 41 5,
+  .CX 42 5,
+  .CX 50 2,
+  .CCX 5 2 52,
   .CX 42 5,
   .CX 41 5,
   .CX 37 5,
   .CX 27 5,
-  .CX 45 44,
   .CX 9 7,
   .CX 13 7,
   .CX 21 7,
@@ -12369,83 +12070,25 @@ private def enter1Block13 : Program := [
   .CX 22 7,
   .CX 21 7,
   .CX 13 7,
-  .CX 9 7
+  .CX 9 7,
+  .CX 6 2,
+  .CX 21 2
 ]
 
-private def enter1Block14 : Program := [
-  .CX 45 44,
-  .CX 6 2,
-  .CX 10 2,
-  .CX 21 2,
+private def enter1Block10 : Program := [
   .CX 22 2,
-  .CX 23 2,
-  .CX 25 2,
-  .CX 26 2,
   .CX 29 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 33 2,
   .CX 34 2,
   .CX 35 2,
-  .CX 38 2,
-  .CX 39 2,
   .CX 42 2,
-  .CX 43 2,
-  .CX 46 2,
-  .CX 49 2,
-  .CX 50 2,
   .CX 52 2,
   .CX 2 1,
   .CX 6 1,
-  .CX 10 1,
-  .CX 21 1,
-  .CX 22 1,
-  .CX 23 1,
-  .CX 26 1,
-  .CX 28 1
-]
-
-private def enter1Block15 : Program := [
   .CX 29 1,
-  .CX 30 1,
-  .CX 31 1,
-  .CX 32 1,
-  .CX 33 1,
-  .CX 34 1,
-  .CX 35 1,
-  .CX 39 1,
-  .CX 42 1,
-  .CX 43 1,
-  .CX 46 1,
   .CX 49 1,
   .CX 50 1,
   .CX 52 1,
   .CCX 2 1 54,
-  .CX 52 1,
-  .CX 50 1,
-  .CX 49 1,
-  .CX 46 1,
-  .CX 43 1,
-  .CX 42 1,
-  .CX 39 1,
-  .CX 35 1,
-  .CX 34 1,
-  .CX 33 1,
-  .CX 32 1,
-  .CX 31 1,
-  .CX 30 1,
-  .CX 29 1,
-  .CX 28 1
-]
-
-private def enter1Block16 : Program := [
-  .CX 26 1,
-  .CX 23 1,
-  .CX 22 1,
-  .CX 21 1,
-  .CX 10 1,
-  .CX 6 1,
-  .CX 2 1,
   .CX 52 2,
   .CX 50 2,
   .CX 49 2,
@@ -12457,7 +12100,10 @@ private def enter1Block16 : Program := [
   .CX 35 2,
   .CX 34 2,
   .CX 33 2,
-  .CX 32 2,
+  .CX 32 2
+]
+
+private def enter1Block11 : Program := [
   .CX 31 2,
   .CX 29 2,
   .CX 26 2,
@@ -12467,59 +12113,34 @@ private def enter1Block16 : Program := [
   .CX 21 2,
   .CX 10 2,
   .CX 6 2,
+  .CX 47 1,
+  .CX 38 1,
+  .CX 33 1,
+  .CX 32 1,
+  .CX 30 1,
+  .CX 28 1,
+  .CX 25 1,
+  .CX 9 1,
+  .CX 8 1,
+  .CX 3 1,
   .CX 54 8,
-  .CX 2 1
+  .CCX 8 1 55,
+  .CX 54 8,
+  .CX 7 1,
+  .CX 10 1,
+  .CX 32 1
 ]
 
-private def enter1Block17 : Program := [
-  .CX 3 1,
-  .CX 8 1,
-  .CX 9 1,
-  .CX 32 1,
+private def enter1Block12 : Program := [
   .CX 33 1,
-  .CX 47 1,
-  .CX 54 1,
-  .CCX 8 1 55,
-  .CX 54 1,
-  .CX 47 1,
-  .CX 33 1,
-  .CX 32 1,
-  .CX 9 1,
-  .CX 8 1,
-  .CX 3 1,
-  .CX 2 1,
-  .CX 54 8,
-  .CX 2 1,
-  .CX 3 1,
-  .CX 7 1,
-  .CX 8 1,
-  .CX 9 1,
-  .CX 10 1,
   .CX 37 1,
+  .CX 47 1,
   .CX 55 1,
   .CCX 51 1 56,
-  .CX 55 1,
-  .CX 37 1,
-  .CX 10 1,
-  .CX 9 1
-]
-
-private def enter1Block18 : Program := [
   .CX 8 1,
-  .CX 7 1,
-  .CX 3 1,
-  .CX 2 1,
-  .CX 45 44,
-  .CX 2 1,
-  .CX 3 1,
-  .CX 7 1,
-  .CX 9 1,
-  .CX 10 1,
   .CX 12 1,
   .CX 23 1,
-  .CX 37 1,
   .CX 54 1,
-  .CX 55 1,
   .CCX 44 1 57,
   .CX 55 1,
   .CX 54 1,
@@ -12534,11 +12155,11 @@ private def enter1Block18 : Program := [
   .CX 45 44,
   .CX 57 51,
   .CX 57 48,
-  .CX 57 38
+  .CX 57 38,
+  .CX 57 36
 ]
 
-private def enter1Block19 : Program := [
-  .CX 57 36,
+private def enter1Block13 : Program := [
   .CX 57 35,
   .CX 57 33,
   .CX 56 57,
@@ -12563,14 +12184,14 @@ private def enter1Block19 : Program := [
   .CX 56 18,
   .CX 56 13,
   .CX 56 9,
-  .CX 56 7,
+  .CX 56 7
+]
+
+private def enter1Block14 : Program := [
   .CX 56 6,
   .CX 56 5,
   .CX 56 4,
-  .CX 56 3
-]
-
-private def enter1Block20 : Program := [
+  .CX 56 3,
   .CX 56 2,
   .CX 56 1,
   .CX 55 56,
@@ -12590,7 +12211,10 @@ private def enter1Block20 : Program := [
   .CX 55 4,
   .CX 56 55,
   .CX 54 55,
-  .CX 54 41,
+  .CX 54 41
+]
+
+private def enter1Block15 : Program := [
   .CX 54 37,
   .CX 54 32,
   .CX 54 31,
@@ -12600,10 +12224,7 @@ private def enter1Block20 : Program := [
   .CX 54 23,
   .CX 54 21,
   .CX 54 20,
-  .CX 54 19
-]
-
-private def enter1Block21 : Program := [
+  .CX 54 19,
   .CX 54 18,
   .CX 54 17,
   .CX 54 12,
@@ -12618,7 +12239,10 @@ private def enter1Block21 : Program := [
   .CX 53 52,
   .CX 53 51,
   .CX 53 49,
-  .CX 53 46,
+  .CX 53 46
+]
+
+private def enter1Block16 : Program := [
   .CX 53 42,
   .CX 53 41,
   .CX 53 39,
@@ -12633,10 +12257,7 @@ private def enter1Block21 : Program := [
   .CX 53 25,
   .CX 53 21,
   .CX 53 17,
-  .CX 53 15
-]
-
-private def enter1Block22 : Program := [
+  .CX 53 15,
   .CX 53 11,
   .CX 53 10,
   .CX 53 9,
@@ -12646,7 +12267,10 @@ private def enter1Block22 : Program := [
   .CX 52 54,
   .CX 54 52,
   .CX 51 57,
-  .CX 51 56,
+  .CX 51 56
+]
+
+private def enter1Block17 : Program := [
   .CX 51 55,
   .CX 51 52,
   .CX 51 49,
@@ -12666,15 +12290,15 @@ private def enter1Block22 : Program := [
   .CX 51 27,
   .CX 51 26,
   .CX 51 23,
-  .CX 51 19
-]
-
-private def enter1Block23 : Program := [
+  .CX 51 19,
   .CX 51 17,
   .CX 51 15,
   .CX 51 11,
   .CX 51 10,
-  .CX 51 8,
+  .CX 51 8
+]
+
+private def enter1Block18 : Program := [
   .CX 51 7,
   .CX 51 6,
   .CX 51 5,
@@ -12702,7 +12326,7 @@ private def enter1Block23 : Program := [
   .CX 48 30
 ]
 
-private def enter1Block24 : Program := [
+private def enter1Block19 : Program := [
   .CX 48 29,
   .CX 48 27,
   .CX 48 26,
@@ -12727,15 +12351,15 @@ private def enter1Block24 : Program := [
   .CX 47 7,
   .CX 48 47,
   .CX 46 51,
-  .CX 51 46,
+  .CX 51 46
+]
+
+private def enter1Block20 : Program := [
   .CX 45 50,
   .CX 45 49,
   .CX 45 44,
   .CX 45 34,
-  .CX 45 30
-]
-
-private def enter1Block25 : Program := [
+  .CX 45 30,
   .CX 45 29,
   .CX 45 28,
   .CX 45 15,
@@ -12755,7 +12379,10 @@ private def enter1Block25 : Program := [
   .CX 44 29,
   .CX 44 28,
   .CX 44 27,
-  .CX 44 23,
+  .CX 44 23
+]
+
+private def enter1Block21 : Program := [
   .CX 44 13,
   .CX 44 8,
   .CX 44 6,
@@ -12765,10 +12392,7 @@ private def enter1Block25 : Program := [
   .CX 44 1,
   .CX 45 44,
   .CX 43 48,
-  .CX 43 47
-]
-
-private def enter1Block26 : Program := [
+  .CX 43 47,
   .CX 43 40,
   .CX 43 37,
   .CX 43 34,
@@ -12782,7 +12406,10 @@ private def enter1Block26 : Program := [
   .CX 47 43,
   .CX 42 56,
   .CX 42 55,
-  .CX 42 49,
+  .CX 42 49
+]
+
+private def enter1Block22 : Program := [
   .CX 42 45,
   .CX 42 44,
   .CX 42 41,
@@ -12798,10 +12425,7 @@ private def enter1Block26 : Program := [
   .CX 42 19,
   .CX 42 18,
   .CX 42 17,
-  .CX 42 15
-]
-
-private def enter1Block27 : Program := [
+  .CX 42 15,
   .CX 42 11,
   .CX 42 10,
   .CX 42 8,
@@ -12810,7 +12434,10 @@ private def enter1Block27 : Program := [
   .CX 42 5,
   .CX 42 4,
   .CX 42 3,
-  .CX 42 2,
+  .CX 42 2
+]
+
+private def enter1Block23 : Program := [
   .CX 42 1,
   .CX 44 42,
   .CX 41 56,
@@ -12831,14 +12458,14 @@ private def enter1Block27 : Program := [
   .CX 41 8,
   .CX 41 4,
   .CX 46 41,
-  .CX 40 57
-]
-
-private def enter1Block28 : Program := [
+  .CX 40 57,
   .CX 40 55,
   .CX 40 50,
   .CX 40 49,
-  .CX 40 47,
+  .CX 40 47
+]
+
+private def enter1Block24 : Program := [
   .CX 40 42,
   .CX 40 41,
   .CX 40 39,
@@ -12863,11 +12490,11 @@ private def enter1Block28 : Program := [
   .CX 39 56,
   .CX 39 55,
   .CX 39 50,
-  .CX 39 46,
-  .CX 39 44
+  .CX 39 46
 ]
 
-private def enter1Block29 : Program := [
+private def enter1Block25 : Program := [
+  .CX 39 44,
   .CX 39 41,
   .CX 39 40,
   .CX 39 38,
@@ -12891,16 +12518,16 @@ private def enter1Block29 : Program := [
   .CX 38 57,
   .CX 38 56,
   .CX 38 49,
-  .CX 38 46,
+  .CX 38 46
+]
+
+private def enter1Block26 : Program := [
   .CX 38 44,
   .CX 38 42,
   .CX 38 39,
   .CX 38 36,
   .CX 38 34,
-  .CX 38 33
-]
-
-private def enter1Block30 : Program := [
+  .CX 38 33,
   .CX 38 31,
   .CX 38 30,
   .CX 38 29,
@@ -12919,7 +12546,10 @@ private def enter1Block30 : Program := [
   .CX 38 4,
   .CX 38 0,
   .CX 37 47,
-  .CX 37 46,
+  .CX 37 46
+]
+
+private def enter1Block27 : Program := [
   .CX 37 40,
   .CX 37 34,
   .CX 37 33,
@@ -12930,10 +12560,7 @@ private def enter1Block30 : Program := [
   .CX 37 3,
   .CX 40 37,
   .CX 36 57,
-  .CX 36 56
-]
-
-private def enter1Block31 : Program := [
+  .CX 36 56,
   .CX 36 49,
   .CX 36 46,
   .CX 36 45,
@@ -12947,7 +12574,10 @@ private def enter1Block31 : Program := [
   .CX 36 34,
   .CX 36 31,
   .CX 36 30,
-  .CX 36 29,
+  .CX 36 29
+]
+
+private def enter1Block28 : Program := [
   .CX 36 28,
   .CX 36 26,
   .CX 36 24,
@@ -12963,10 +12593,7 @@ private def enter1Block31 : Program := [
   .CX 36 7,
   .CX 36 6,
   .CX 36 4,
-  .CX 36 3
-]
-
-private def enter1Block32 : Program := [
+  .CX 36 3,
   .CX 36 2,
   .CX 36 0,
   .CX 37 36,
@@ -12974,7 +12601,10 @@ private def enter1Block32 : Program := [
   .CX 35 55,
   .CX 35 47,
   .CX 35 46,
-  .CX 35 44,
+  .CX 35 44
+]
+
+private def enter1Block29 : Program := [
   .CX 35 43,
   .CX 35 33,
   .CX 35 30,
@@ -12996,13 +12626,13 @@ private def enter1Block32 : Program := [
   .CX 34 50,
   .CX 34 29,
   .CX 50 34,
-  .CX 33 50
-]
-
-private def enter1Block33 : Program := [
+  .CX 33 50,
   .CX 33 47,
   .CX 33 45,
-  .CX 33 44,
+  .CX 33 44
+]
+
+private def enter1Block30 : Program := [
   .CX 33 40,
   .CX 33 39,
   .CX 33 37,
@@ -13027,12 +12657,12 @@ private def enter1Block33 : Program := [
   .CX 32 31,
   .CX 32 30,
   .CX 32 28,
-  .CX 32 26,
-  .CX 32 13,
-  .CX 32 10
+  .CX 32 26
 ]
 
-private def enter1Block34 : Program := [
+private def enter1Block31 : Program := [
+  .CX 32 13,
+  .CX 32 10,
   .CX 32 7,
   .CX 32 0,
   .CX 34 32,
@@ -13055,17 +12685,17 @@ private def enter1Block34 : Program := [
   .CX 29 33,
   .CX 29 27,
   .CX 29 22,
-  .CX 29 21,
+  .CX 29 21
+]
+
+private def enter1Block32 : Program := [
   .CX 29 18,
   .CX 29 6,
   .CX 29 5,
   .CX 33 29,
   .CX 28 56,
   .CX 28 50,
-  .CX 28 49
-]
-
-private def enter1Block35 : Program := [
+  .CX 28 49,
   .CX 28 48,
   .CX 28 47,
   .CX 28 44,
@@ -13083,7 +12713,10 @@ private def enter1Block35 : Program := [
   .CX 28 22,
   .CX 28 20,
   .CX 28 13,
-  .CX 28 12,
+  .CX 28 12
+]
+
+private def enter1Block33 : Program := [
   .CX 28 11,
   .CX 28 9,
   .CX 28 8,
@@ -13095,10 +12728,7 @@ private def enter1Block35 : Program := [
   .CX 27 55,
   .CX 27 49,
   .CX 27 44,
-  .CX 27 43
-]
-
-private def enter1Block36 : Program := [
+  .CX 27 43,
   .CX 27 40,
   .CX 27 39,
   .CX 27 36,
@@ -13111,7 +12741,10 @@ private def enter1Block36 : Program := [
   .CX 27 24,
   .CX 27 23,
   .CX 27 22,
-  .CX 27 21,
+  .CX 27 21
+]
+
+private def enter1Block34 : Program := [
   .CX 27 18,
   .CX 27 17,
   .CX 27 14,
@@ -13128,10 +12761,7 @@ private def enter1Block36 : Program := [
   .CX 26 37,
   .CX 26 36,
   .CX 26 35,
-  .CX 26 33
-]
-
-private def enter1Block37 : Program := [
+  .CX 26 33,
   .CX 26 32,
   .CX 26 31,
   .CX 26 29,
@@ -13139,7 +12769,10 @@ private def enter1Block37 : Program := [
   .CX 26 23,
   .CX 26 22,
   .CX 26 21,
-  .CX 26 20,
+  .CX 26 20
+]
+
+private def enter1Block35 : Program := [
   .CX 26 19,
   .CX 26 18,
   .CX 26 17,
@@ -13161,12 +12794,12 @@ private def enter1Block37 : Program := [
   .CX 25 32,
   .CX 25 30,
   .CX 25 27,
-  .CX 25 22
+  .CX 25 22,
+  .CX 25 18,
+  .CX 25 17
 ]
 
-private def enter1Block38 : Program := [
-  .CX 25 18,
-  .CX 25 17,
+private def enter1Block36 : Program := [
   .CX 25 15,
   .CX 25 14,
   .CX 25 13,
@@ -13191,13 +12824,13 @@ private def enter1Block38 : Program := [
   .CX 24 27,
   .CX 24 23,
   .CX 24 22,
-  .CX 24 21,
-  .CX 24 20,
-  .CX 24 14,
-  .CX 24 12
+  .CX 24 21
 ]
 
-private def enter1Block39 : Program := [
+private def enter1Block37 : Program := [
+  .CX 24 20,
+  .CX 24 14,
+  .CX 24 12,
   .CX 24 11,
   .CX 24 2,
   .CX 27 24,
@@ -13219,7 +12852,10 @@ private def enter1Block39 : Program := [
   .CX 22 21,
   .CX 45 22,
   .CX 21 57,
-  .CX 21 47,
+  .CX 21 47
+]
+
+private def enter1Block38 : Program := [
   .CX 21 46,
   .CX 21 45,
   .CX 21 43,
@@ -13227,10 +12863,7 @@ private def enter1Block39 : Program := [
   .CX 21 40,
   .CX 21 39,
   .CX 21 38,
-  .CX 21 37
-]
-
-private def enter1Block40 : Program := [
+  .CX 21 37,
   .CX 21 35,
   .CX 21 34,
   .CX 21 30,
@@ -13247,7 +12880,10 @@ private def enter1Block40 : Program := [
   .CX 21 11,
   .CX 21 10,
   .CX 21 6,
-  .CX 21 3,
+  .CX 21 3
+]
+
+private def enter1Block39 : Program := [
   .CX 21 2,
   .CX 21 0,
   .CX 22 21,
@@ -13260,10 +12896,7 @@ private def enter1Block40 : Program := [
   .CX 17 41,
   .CX 41 17,
   .CX 15 20,
-  .CX 15 19
-]
-
-private def enter1Block41 : Program := [
+  .CX 15 19,
   .CX 14 36,
   .CX 14 32,
   .CX 14 20,
@@ -13275,7 +12908,10 @@ private def enter1Block41 : Program := [
   .CX 13 19,
   .CX 12 35,
   .CX 12 33,
-  .CX 12 20,
+  .CX 12 20
+]
+
+private def enter1Block40 : Program := [
   .CX 12 19,
   .CX 12 18,
   .CX 11 39,
@@ -13293,17 +12929,17 @@ private def enter1Block41 : Program := [
   .CX 10 44,
   .CX 10 43,
   .CX 10 42,
-  .CX 10 41
-]
-
-private def enter1Block42 : Program := [
+  .CX 10 41,
   .CX 10 40,
   .CX 10 35,
   .CX 10 33,
   .CX 10 31,
   .CX 10 27,
   .CX 10 22,
-  .CX 10 21,
+  .CX 10 21
+]
+
+private def enter1Block41 : Program := [
   .CX 10 19,
   .CX 10 7,
   .CX 10 1,
@@ -13326,12 +12962,12 @@ private def enter1Block42 : Program := [
   .CX 7 35,
   .CX 7 34,
   .CX 7 26,
-  .CX 7 20
+  .CX 7 20,
+  .CX 7 19,
+  .CX 6 47
 ]
 
-private def enter1Block43 : Program := [
-  .CX 7 19,
-  .CX 6 47,
+private def enter1Block42 : Program := [
   .CX 6 46,
   .CX 6 44,
   .CX 6 42,
@@ -13355,14 +12991,14 @@ private def enter1Block43 : Program := [
   .CX 4 46,
   .CX 4 44,
   .CX 4 42,
-  .CX 4 39,
+  .CX 4 39
+]
+
+private def enter1Block43 : Program := [
   .CX 4 35,
   .CX 4 34,
   .CX 4 29,
-  .CX 4 28
-]
-
-private def enter1Block44 : Program := [
+  .CX 4 28,
   .CX 4 26,
   .CX 4 25,
   .CX 4 24,
@@ -13383,7 +13019,10 @@ private def enter1Block44 : Program := [
   .CX 2 21,
   .CX 2 20,
   .CX 2 18,
-  .CX 2 14,
+  .CX 2 14
+]
+
+private def enter1Block44 : Program := [
   .CX 1 55,
   .CX 1 49,
   .CX 1 45,
@@ -13392,10 +13031,7 @@ private def enter1Block44 : Program := [
   .CX 1 42,
   .CX 1 41,
   .CX 1 40,
-  .CX 1 35
-]
-
-private def enter1Block45 : Program := [
+  .CX 1 35,
   .CX 1 33,
   .CX 1 27,
   .CX 1 26,
@@ -13411,7 +13047,10 @@ private def enter1Block45 : Program := [
   .CX 0 19,
   .CX 57 16,
   .CX 16 57,
-  .measureX 56 [] [.Z 1, .Z 3, .Z 5, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 13, .Z 14, .Z 15, .Z 16, .Z 17, .Z 20, .Z 25, .Z 26, .Z 28, .Z 29, .Z 31, .Z 37, .Z 40, .Z 46, .Z 47, .Z 48, .Z 52, .Z 53, .CZ 0 1, .CZ 0 4, .CZ 0 21, .CZ 0 22, .CZ 0 28, .CZ 1 3, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 20, .CZ 1 21, .CZ 1 23, .CZ 1 26, .CZ 2 5, .CZ 2 6, .CZ 2 21, .CZ 2 22, .CZ 2 24, .CZ 3 4, .CZ 3 6, .CZ 3 50, .CZ 4 6, .CZ 4 21, .CZ 4 51, .CZ 5 6, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 52, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 19, .CZ 6 51, .CZ 6 52, .CZ 6 53, .CZ 6 54, .CZ 16 54],
+  .measureX 56 [] [.Z 1, .Z 3, .Z 5, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 13, .Z 14, .Z 15, .Z 16, .Z 17, .Z 20, .Z 25, .Z 26, .Z 28, .Z 29, .Z 31, .Z 37, .Z 40, .Z 46, .Z 47, .Z 48, .Z 52, .Z 53, .CZ 0 1, .CZ 0 4, .CZ 0 21, .CZ 0 22, .CZ 0 28, .CZ 1 3, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 20, .CZ 1 21, .CZ 1 23, .CZ 1 26, .CZ 2 5, .CZ 2 6, .CZ 2 21, .CZ 2 22, .CZ 2 24, .CZ 3 4, .CZ 3 6, .CZ 3 50, .CZ 4 6, .CZ 4 21, .CZ 4 51, .CZ 5 6, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 52, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 19, .CZ 6 51, .CZ 6 52, .CZ 6 53, .CZ 6 54, .CZ 16 54]
+]
+
+private def enter1Block45 : Program := [
   .measureX 55 [] [.Z 7, .Z 16, .Z 19, .Z 20, .Z 27, .Z 29, .Z 47, .Z 51, .Z 52, .Z 53, .CZ 0 1, .CZ 0 2, .CZ 0 4, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 23, .CZ 0 24, .CZ 0 26, .CZ 0 28, .CZ 0 51, .CZ 0 52, .CZ 0 53, .CZ 0 54, .CZ 1 2, .CZ 1 16, .CZ 1 23, .CZ 1 24, .CZ 2 5, .CZ 2 7, .CZ 2 16, .CZ 2 21, .CZ 2 22, .CZ 3 6, .CZ 3 50, .CZ 3 52, .CZ 3 53, .CZ 3 54, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 19, .CZ 4 20, .CZ 4 21, .CZ 4 51, .CZ 4 52, .CZ 4 53, .CZ 4 54, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 20, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 34, .CZ 5 39, .CZ 5 47, .CZ 5 48, .CZ 5 50, .CZ 5 52, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 19, .CZ 6 21, .CZ 6 51, .CZ 6 52, .CZ 6 53, .CZ 6 54, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 17, .CZ 7 20, .CZ 7 30, .CZ 7 31, .CZ 7 34, .CZ 7 39, .CZ 7 48, .CZ 7 51, .CZ 7 52, .CZ 7 53, .CZ 7 54, .CZ 8 52, .CZ 8 53, .CZ 8 54, .CZ 9 52, .CZ 9 53, .CZ 9 54, .CZ 10 52, .CZ 10 53, .CZ 10 54, .CZ 11 52, .CZ 11 53, .CZ 11 54, .CZ 12 52, .CZ 12 53, .CZ 12 54, .CZ 13 52, .CZ 13 53, .CZ 13 54, .CZ 14 52, .CZ 14 53, .CZ 14 54, .CZ 15 52, .CZ 15 53, .CZ 15 54, .CZ 16 54, .CZ 17 52, .CZ 17 53, .CZ 17 54, .CZ 19 52, .CZ 19 53, .CZ 19 54, .CZ 20 50, .CZ 20 51, .CZ 21 50, .CZ 21 52, .CZ 21 53, .CZ 21 54],
   .measureX 54 [] [.Z 0, .Z 7, .Z 16, .Z 19, .Z 20, .Z 23, .Z 24, .Z 27, .Z 28, .Z 29, .Z 31, .Z 37, .Z 39, .Z 47, .Z 48, .Z 50, .Z 51, .Z 53, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 19, .CZ 0 22, .CZ 0 23, .CZ 0 24, .CZ 0 26, .CZ 0 30, .CZ 0 31, .CZ 0 34, .CZ 0 39, .CZ 0 48, .CZ 0 50, .CZ 0 51, .CZ 0 52, .CZ 0 53, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 19, .CZ 1 21, .CZ 1 22, .CZ 1 24, .CZ 2 4, .CZ 2 6, .CZ 2 7, .CZ 2 21, .CZ 2 22, .CZ 2 23, .CZ 2 24, .CZ 3 4, .CZ 3 50, .CZ 3 52, .CZ 3 53, .CZ 4 7, .CZ 4 52, .CZ 5 27, .CZ 5 52, .CZ 6 53, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 17, .CZ 7 20, .CZ 7 30, .CZ 7 31, .CZ 7 34, .CZ 7 39, .CZ 7 48, .CZ 7 51, .CZ 7 52, .CZ 7 53, .CZ 8 52, .CZ 8 53, .CZ 9 52, .CZ 9 53, .CZ 10 52, .CZ 10 53, .CZ 11 52, .CZ 11 53, .CZ 12 52, .CZ 12 53, .CZ 13 52, .CZ 13 53, .CZ 14 52, .CZ 14 53, .CZ 15 52, .CZ 15 53, .CZ 17 52, .CZ 17 53, .CZ 19 52, .CZ 19 53, .CZ 21 53, .CZ 22 53, .CZ 27 51, .CZ 28 53],
   .measureX 53 [] [.Z 1, .Z 23, .Z 25, .Z 31, .Z 37, .Z 39, .Z 43, .Z 48, .Z 50, .CZ 0 1, .CZ 0 2, .CZ 0 4, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 20, .CZ 0 24, .CZ 0 30, .CZ 0 31, .CZ 0 34, .CZ 0 39, .CZ 0 48, .CZ 0 50, .CZ 0 51, .CZ 0 52, .CZ 1 16, .CZ 2 5, .CZ 4 51, .CZ 5 52, .CZ 16 43],
@@ -13425,10 +13064,7 @@ private def enter1Block45 : Program := [
   .measureX 45 [] [.Z 43, .CZ 1 40, .CZ 40 43],
   .measureX 44 [] [.Z 1, .Z 5, .Z 7, .Z 8, .Z 9, .Z 11, .Z 13, .Z 14, .Z 16, .Z 17, .Z 19, .Z 20, .Z 22, .Z 25, .Z 26, .Z 30, .Z 31, .Z 34, .Z 36, .Z 37, .Z 40, .Z 42, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 19, .CZ 0 22, .CZ 0 24, .CZ 0 30, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 20, .CZ 1 21, .CZ 1 22, .CZ 1 24, .CZ 1 25, .CZ 1 26, .CZ 1 27, .CZ 1 30, .CZ 1 31, .CZ 1 39, .CZ 1 40, .CZ 2 4, .CZ 2 6, .CZ 2 11, .CZ 2 22, .CZ 2 24, .CZ 2 30, .CZ 2 31, .CZ 2 34, .CZ 2 39, .CZ 2 40, .CZ 2 42, .CZ 3 5, .CZ 3 9, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 14, .CZ 3 15, .CZ 3 42, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 19, .CZ 4 20, .CZ 4 21, .CZ 4 30, .CZ 4 32, .CZ 4 34, .CZ 4 42, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 20, .CZ 5 22, .CZ 5 27, .CZ 5 31, .CZ 5 34, .CZ 5 42, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 6 38, .CZ 6 40, .CZ 6 42, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 17, .CZ 7 20, .CZ 7 30, .CZ 8 11, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 8 22, .CZ 8 27, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 20, .CZ 9 23, .CZ 9 25, .CZ 9 30, .CZ 9 31, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 10 27, .CZ 10 30, .CZ 11 12, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 27, .CZ 11 29, .CZ 11 30, .CZ 11 32, .CZ 11 42, .CZ 12 30, .CZ 12 40, .CZ 12 42, .CZ 13 15, .CZ 13 19, .CZ 13 20, .CZ 13 22, .CZ 13 32, .CZ 13 40, .CZ 13 42, .CZ 14 19, .CZ 14 20, .CZ 14 22, .CZ 14 40, .CZ 14 42, .CZ 15 40, .CZ 15 42, .CZ 19 42, .CZ 20 34, .CZ 22 34, .CZ 25 42, .CZ 26 42, .CZ 29 39, .CZ 29 42],
   .measureX 43 [] [.CZ 1 27, .CZ 2 41],
-  .measureX 42 [] [.Z 0, .Z 1, .Z 2, .Z 5, .Z 6, .Z 23, .Z 24, .Z 25, .Z 27, .Z 28, .Z 29, .Z 39, .Z 40, .CZ 0 4, .CZ 0 21, .CZ 0 22, .CZ 0 28, .CZ 1 6, .CZ 1 21, .CZ 1 22, .CZ 1 24, .CZ 2 6, .CZ 2 21, .CZ 2 22, .CZ 2 24, .CZ 3 6, .CZ 4 6, .CZ 4 9, .CZ 4 21, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 20, .CZ 6 39, .CZ 6 40, .CZ 9 17]
-]
-
-private def enter1Block46 : Program := [
+  .measureX 42 [] [.Z 0, .Z 1, .Z 2, .Z 5, .Z 6, .Z 23, .Z 24, .Z 25, .Z 27, .Z 28, .Z 29, .Z 39, .Z 40, .CZ 0 4, .CZ 0 21, .CZ 0 22, .CZ 0 28, .CZ 1 6, .CZ 1 21, .CZ 1 22, .CZ 1 24, .CZ 2 6, .CZ 2 21, .CZ 2 22, .CZ 2 24, .CZ 3 6, .CZ 4 6, .CZ 4 9, .CZ 4 21, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 20, .CZ 6 39, .CZ 6 40, .CZ 9 17],
   .measureX 41 [] [.Z 1, .CZ 1 38],
   .measureX 40 [] [.Z 0, .Z 2, .Z 5, .Z 6, .Z 7, .Z 9, .Z 13, .Z 14, .Z 15, .Z 18, .Z 19, .Z 22, .Z 23, .Z 27, .Z 28, .Z 29, .Z 31, .CZ 0 17, .CZ 0 21, .CZ 0 22, .CZ 0 28, .CZ 1 4, .CZ 1 6, .CZ 1 8, .CZ 1 16, .CZ 1 17, .CZ 2 4, .CZ 2 8, .CZ 2 16, .CZ 2 17, .CZ 3 4, .CZ 3 6, .CZ 3 8, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 19, .CZ 4 20, .CZ 4 21, .CZ 4 39, .CZ 5 6, .CZ 5 8, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 19, .CZ 7 17, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 20, .CZ 8 21, .CZ 8 27, .CZ 8 31, .CZ 9 17, .CZ 9 21, .CZ 9 22, .CZ 9 24],
   .measureX 39 [] [.Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 9, .Z 18, .Z 19, .Z 20, .Z 21, .Z 22, .Z 25, .Z 26, .Z 28, .Z 30, .Z 31, .Z 32, .Z 33, .Z 36, .Z 37, .CZ 1 16, .CZ 2 16, .CZ 9 16, .CZ 13 32, .CZ 13 36],
@@ -13439,7 +13075,10 @@ private def enter1Block46 : Program := [
   .measureX 34 [] [.Z 1, .Z 2, .Z 6, .Z 8, .Z 10, .Z 11, .Z 13, .Z 14, .Z 15, .Z 17, .Z 20, .Z 21, .Z 22, .Z 24, .Z 28, .Z 31, .Z 33, .CZ 0 32, .CZ 1 13, .CZ 1 14, .CZ 1 32, .CZ 2 13, .CZ 2 32, .CZ 3 14, .CZ 4 6, .CZ 4 14, .CZ 4 17, .CZ 4 32, .CZ 5 14, .CZ 6 8, .CZ 6 14, .CZ 6 17, .CZ 7 30, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 8 30, .CZ 8 32, .CZ 9 32, .CZ 10 30, .CZ 11 13, .CZ 11 14, .CZ 11 30, .CZ 12 32, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 32, .CZ 13 33, .CZ 14 22, .CZ 14 33],
   .measureX 33 [] [.Z 1, .Z 3, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 13, .Z 17, .Z 24, .Z 25, .CZ 0 2, .CZ 0 4, .CZ 0 7, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 2 3, .CZ 2 7, .CZ 2 8, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 3 5, .CZ 3 7, .CZ 3 12, .CZ 4 12, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 19, .CZ 6 7, .CZ 6 12, .CZ 6 21, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 17, .CZ 7 18, .CZ 7 20, .CZ 9 11, .CZ 9 16, .CZ 9 18, .CZ 10 11, .CZ 10 18, .CZ 11 18, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 19],
   .measureX 32 [] [.Z 14, .CZ 14 16],
-  .measureX 31 [] [.Z 1, .Z 2, .Z 10, .Z 19, .Z 20, .Z 22, .Z 24, .Z 27, .CZ 10 16],
+  .measureX 31 [] [.Z 1, .Z 2, .Z 10, .Z 19, .Z 20, .Z 22, .Z 24, .Z 27, .CZ 10 16]
+]
+
+private def enter1Block46 : Program := [
   .measureX 30 [] [.Z 13, .CZ 13 16],
   .measureX 29 [] [.Z 1, .Z 2, .Z 19, .Z 20, .Z 22, .Z 27, .CZ 1 4, .CZ 1 6, .CZ 1 16, .CZ 1 21, .CZ 1 22, .CZ 1 28],
   .measureX 28 [] [.Z 4, .Z 6, .Z 21, .Z 22, .CZ 4 16],
@@ -13458,15 +13097,16 @@ private def enter1Block46 : Program := [
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
   .measureX 17 [] []
 ]
 
 private def enter1Block47 : Program := [
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
@@ -13519,7 +13159,6 @@ private def enter1Block48 : Program := [
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
-  .measureX 17 [] [],
   .measureX 17 [] []
 ]
 
@@ -13529,7 +13168,7 @@ theorem enter1_checked : eval StairArchiveColumns.col312 enter1 enter1StoredIn =
   WSlimTree.eval_of_checkSeq _ enter1Block0 [enter1Block1, enter1Block2, enter1Block3, enter1Block4, enter1Block5, enter1Block6, enter1Block7, enter1Block8, enter1Block9, enter1Block10, enter1Block11, enter1Block12, enter1Block13, enter1Block14, enter1Block15, enter1Block16, enter1Block17, enter1Block18, enter1Block19, enter1Block20, enter1Block21, enter1Block22, enter1Block23, enter1Block24, enter1Block25, enter1Block26, enter1Block27, enter1Block28, enter1Block29, enter1Block30, enter1Block31, enter1Block32, enter1Block33, enter1Block34, enter1Block35, enter1Block36, enter1Block37, enter1Block38, enter1Block39, enter1Block40, enter1Block41, enter1Block42, enter1Block43, enter1Block44, enter1Block45, enter1Block46, enter1Block47, enter1Block48] _ _ (by decide +kernel)
 
 theorem enter1_counts : GatePhysical enter1 ∧ toffoliCount enter1 = 41 ∧
-    measurementCount enter1 = 101 ∧ gateSlots enter1 = 3260 :=
+    measurementCount enter1 = 101 ∧ gateSlots enter1 = 3012 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 theorem enter1_scope : ∀ x ∈ wires enter1, x < 77 := by
@@ -13549,34 +13188,32 @@ private def switch0Block0 : Program := [
   .CX 16 0,
   .CX 0 16,
   .CCX 0 16 18,
-  .CX 0 16,
-  .CX 16 0,
-  .CX 12 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 4 0,
-  .CX 3 0,
-  .CX 2 0,
-  .CX 1 0,
   .CX 12 5,
+  .CX 0 16,
+  .CX 1 0,
+  .CX 2 0,
+  .CX 3 0,
+  .CX 4 0,
+  .CX 5 0,
+  .CX 6 0,
+  .CX 7 0,
+  .CX 16 0,
   .CCX 5 16 19,
   .CX 12 5,
   .CCX 16 3 20,
-  .CCX 16 4 21,
-  .CCX 16 10 22,
-  .CX 14 13,
-  .CCX 16 13 23
+  .CCX 16 4 21
 ]
 
 private def switch0Block1 : Program := [
+  .CCX 16 10 22,
+  .CX 14 13,
+  .CCX 16 13 23,
   .CX 14 13,
   .CX 15 13,
   .CCX 16 13 24,
-  .CX 15 13,
-  .CX 13 8,
   .CX 14 8,
-  .CX 15 8,
+  .CX 13 8,
+  .CX 15 13,
   .CCX 16 8 25,
   .CX 15 8,
   .CX 14 8,
@@ -13594,15 +13231,15 @@ private def switch0Block1 : Program := [
   .CX 26 0,
   .CCX 21 0 30,
   .CX 26 0,
-  .CX 1 0,
+  .CX 1 0
+]
+
+private def switch0Block2 : Program := [
   .CX 2 0,
   .CX 3 0,
   .CX 4 0,
   .CX 5 0,
-  .CX 6 0
-]
-
-private def switch0Block2 : Program := [
+  .CX 6 0,
   .CX 7 0,
   .CX 12 0,
   .CX 16 0,
@@ -13610,32 +13247,7 @@ private def switch0Block2 : Program := [
   .CX 10 8,
   .CX 29 8,
   .CCX 0 8 31,
-  .CX 29 8,
-  .CX 10 8,
-  .CX 18 0,
-  .CX 16 0,
-  .CX 12 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 4 0,
-  .CX 3 0,
-  .CX 2 0,
-  .CX 1 0,
   .CCX 17 30 32,
-  .CX 1 0,
-  .CX 2 0,
-  .CX 3 0,
-  .CX 4 0,
-  .CX 5 0,
-  .CX 6 0,
-  .CX 7 0,
-  .CX 12 0,
-  .CX 16 0,
-  .CX 18 0
-]
-
-private def switch0Block3 : Program := [
   .CX 31 0,
   .CX 27 13,
   .CX 28 13,
@@ -13646,16 +13258,14 @@ private def switch0Block3 : Program := [
   .CX 18 0,
   .CX 16 0,
   .CX 12 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
   .CX 4 0,
   .CX 3 0,
-  .CX 2 0,
+  .CX 2 0
+]
+
+private def switch0Block3 : Program := [
   .CX 1 0,
-  .CX 10 8,
   .CX 16 8,
-  .CX 29 8,
   .CX 8 16,
   .CX 23 16,
   .CX 24 16,
@@ -13665,14 +13275,8 @@ private def switch0Block3 : Program := [
   .CX 29 16,
   .CX 28 16,
   .CX 24 16,
-  .CX 23 16
-]
-
-private def switch0Block4 : Program := [
+  .CX 23 16,
   .CX 8 16,
-  .CX 29 8,
-  .CX 16 8,
-  .CX 10 8,
   .CX 2 1,
   .CX 3 1,
   .CX 4 1,
@@ -13682,112 +13286,62 @@ private def switch0Block4 : Program := [
   .CX 30 1,
   .CX 32 1,
   .CX 33 1,
-  .CX 5 0,
-  .CX 6 0,
-  .CX 7 0,
   .CX 16 0,
   .CX 17 0,
   .CX 19 0,
   .CX 21 0,
-  .CCX 1 0 35,
-  .CX 21 0,
-  .CX 19 0,
+  .CCX 1 0 35
+]
+
+private def switch0Block4 : Program := [
+  .CX 34 8,
+  .CX 1 0,
   .CX 17 0,
-  .CX 16 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
+  .CX 18 0,
+  .CX 19 0,
+  .CX 21 0,
+  .CX 30 0,
+  .CX 32 0,
+  .CX 2 1,
+  .CX 3 1,
+  .CX 4 1,
+  .CX 12 1,
+  .CX 16 1,
+  .CX 18 1,
+  .CX 30 1,
+  .CX 32 1,
   .CX 33 1,
-  .CX 32 1
+  .CCX 8 0 36,
+  .CX 33 0,
+  .CX 7 0,
+  .CX 34 8,
+  .CX 16 8,
+  .CX 18 0,
+  .CX 20 0,
+  .CX 31 0,
+  .CCX 0 30 37
 ]
 
 private def switch0Block5 : Program := [
-  .CX 30 1,
-  .CX 18 1,
-  .CX 16 1,
-  .CX 12 1,
-  .CX 4 1,
-  .CX 3 1,
-  .CX 2 1,
-  .CX 10 8,
-  .CX 16 8,
-  .CX 29 8,
-  .CX 34 8,
-  .CX 1 0,
-  .CX 2 0,
-  .CX 3 0,
-  .CX 4 0,
-  .CX 5 0,
-  .CX 6 0,
-  .CX 7 0,
-  .CX 12 0,
-  .CX 33 0,
-  .CCX 8 0 36,
-  .CX 33 0,
-  .CX 12 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 4 0,
-  .CX 3 0,
-  .CX 2 0,
-  .CX 1 0
-]
-
-private def switch0Block6 : Program := [
-  .CX 34 8,
-  .CX 29 8,
-  .CX 16 8,
-  .CX 10 8,
-  .CX 1 0,
-  .CX 2 0,
-  .CX 3 0,
-  .CX 4 0,
-  .CX 5 0,
-  .CX 6 0,
-  .CX 12 0,
-  .CX 18 0,
-  .CX 20 0,
   .CX 31 0,
-  .CCX 0 30 37,
-  .CX 31 0,
-  .CX 20 0,
   .CX 18 0,
   .CX 12 0,
-  .CX 6 0,
-  .CX 5 0,
   .CX 4 0,
   .CX 3 0,
   .CX 2 0,
   .CX 1 0,
   .CX 27 16,
-  .CX 10 8,
-  .CX 29 8,
   .CCX 16 8 38,
-  .CX 29 8
-]
-
-private def switch0Block7 : Program := [
-  .CX 10 8,
+  .CX 29 8,
   .CX 27 16,
-  .CX 10 8,
   .CX 16 8,
   .CX 22 8,
   .CX 23 8,
   .CX 25 8,
   .CX 34 8,
   .CCX 15 8 39,
-  .CX 34 8,
-  .CX 25 8,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 16 8,
-  .CX 10 8,
   .CX 26 2,
-  .CX 5 0,
-  .CX 6 0,
   .CX 7 0,
-  .CX 20 0,
   .CX 30 0,
   .CX 32 0,
   .CX 35 0,
@@ -13795,28 +13349,21 @@ private def switch0Block7 : Program := [
   .CX 35 0,
   .CX 32 0,
   .CX 30 0,
-  .CX 20 0,
-  .CX 7 0,
-  .CX 6 0
+  .CX 20 0
 ]
 
-private def switch0Block8 : Program := [
+private def switch0Block6 : Program := [
+  .CX 7 0,
+  .CX 6 0,
   .CX 5 0,
   .CX 26 2,
   .CCX 16 11 41,
-  .CX 10 8,
-  .CX 16 8,
-  .CX 22 8,
-  .CX 23 8,
-  .CX 25 8,
-  .CX 34 8,
-  .CX 35 8,
-  .CX 8 22,
-  .CX 23 22,
-  .CX 25 22,
-  .CX 29 22,
-  .CX 35 22,
   .CX 36 22,
+  .CX 29 22,
+  .CX 25 22,
+  .CX 23 22,
+  .CX 8 22,
+  .CX 35 8,
   .CCX 8 22 42,
   .CX 36 22,
   .CX 35 22,
@@ -13830,11 +13377,11 @@ private def switch0Block8 : Program := [
   .CX 23 8,
   .CX 22 8,
   .CX 16 8,
-  .CX 10 8
+  .CX 10 8,
+  .CCX 6 16 43
 ]
 
-private def switch0Block9 : Program := [
-  .CCX 6 16 43,
+private def switch0Block7 : Program := [
   .CX 7 5,
   .CX 12 5,
   .CX 30 16,
@@ -13861,12 +13408,12 @@ private def switch0Block9 : Program := [
   .CX 43 3,
   .CX 43 0,
   .CX 42 44,
-  .CX 42 43,
-  .CX 42 39,
-  .CX 42 38
+  .CX 42 43
 ]
 
-private def switch0Block10 : Program := [
+private def switch0Block8 : Program := [
+  .CX 42 39,
+  .CX 42 38,
   .CX 42 36,
   .CX 42 35,
   .CX 42 33,
@@ -13890,16 +13437,16 @@ private def switch0Block10 : Program := [
   .CX 42 5,
   .CX 42 3,
   .CX 42 2,
-  .CX 42 1,
+  .CX 42 1
+]
+
+private def switch0Block9 : Program := [
   .CX 42 0,
   .CX 41 43,
   .CX 41 42,
   .CX 41 40,
   .CX 41 39,
-  .CX 41 38
-]
-
-private def switch0Block11 : Program := [
+  .CX 41 38,
   .CX 41 37,
   .CX 41 36,
   .CX 41 35,
@@ -13920,7 +13467,10 @@ private def switch0Block11 : Program := [
   .CX 41 6,
   .CX 41 5,
   .CX 41 2,
-  .CX 41 1,
+  .CX 41 1
+]
+
+private def switch0Block10 : Program := [
   .CX 41 0,
   .CX 40 43,
   .CX 40 42,
@@ -13929,10 +13479,7 @@ private def switch0Block11 : Program := [
   .CX 40 20,
   .CX 40 4,
   .CX 40 3,
-  .CX 40 2
-]
-
-private def switch0Block12 : Program := [
+  .CX 40 2,
   .CX 40 0,
   .CX 42 40,
   .CX 39 40,
@@ -13949,7 +13496,10 @@ private def switch0Block12 : Program := [
   .CX 39 1,
   .CX 40 39,
   .CX 38 44,
-  .CX 38 43,
+  .CX 38 43
+]
+
+private def switch0Block11 : Program := [
   .CX 38 42,
   .CX 38 40,
   .CX 38 39,
@@ -13962,10 +13512,7 @@ private def switch0Block12 : Program := [
   .CX 38 26,
   .CX 38 25,
   .CX 38 24,
-  .CX 38 20
-]
-
-private def switch0Block13 : Program := [
+  .CX 38 20,
   .CX 38 18,
   .CX 38 15,
   .CX 38 11,
@@ -13979,7 +13526,10 @@ private def switch0Block13 : Program := [
   .CX 37 43,
   .CX 37 42,
   .CX 37 40,
-  .CX 37 21,
+  .CX 37 21
+]
+
+private def switch0Block12 : Program := [
   .CX 37 20,
   .CX 37 7,
   .CX 37 4,
@@ -13995,10 +13545,7 @@ private def switch0Block13 : Program := [
   .CX 36 26,
   .CX 36 21,
   .CX 36 20,
-  .CX 36 19
-]
-
-private def switch0Block14 : Program := [
+  .CX 36 19,
   .CX 36 17,
   .CX 36 7,
   .CX 36 5,
@@ -14008,7 +13555,10 @@ private def switch0Block14 : Program := [
   .CX 41 36,
   .CX 35 43,
   .CX 35 41,
-  .CX 35 40,
+  .CX 35 40
+]
+
+private def switch0Block13 : Program := [
   .CX 35 38,
   .CX 35 21,
   .CX 35 20,
@@ -14028,17 +13578,17 @@ private def switch0Block14 : Program := [
   .CX 34 28,
   .CX 34 24,
   .CX 34 23,
-  .CX 34 22
-]
-
-private def switch0Block15 : Program := [
+  .CX 34 22,
   .CX 34 20,
   .CX 34 18,
   .CX 34 13,
   .CX 34 12,
   .CX 34 11,
   .CX 34 10,
-  .CX 34 9,
+  .CX 34 9
+]
+
+private def switch0Block14 : Program := [
   .CX 34 8,
   .CX 34 7,
   .CX 34 6,
@@ -14061,13 +13611,13 @@ private def switch0Block15 : Program := [
   .CX 33 7,
   .CX 33 6,
   .CX 33 5,
-  .CX 33 4
-]
-
-private def switch0Block16 : Program := [
+  .CX 33 4,
   .CX 34 33,
   .CX 32 43,
-  .CX 32 41,
+  .CX 32 41
+]
+
+private def switch0Block15 : Program := [
   .CX 32 37,
   .CX 32 26,
   .CX 32 21,
@@ -14097,7 +13647,7 @@ private def switch0Block16 : Program := [
   .CX 30 38
 ]
 
-private def switch0Block17 : Program := [
+private def switch0Block16 : Program := [
   .CX 30 35,
   .CX 30 26,
   .CX 30 2,
@@ -14123,14 +13673,14 @@ private def switch0Block17 : Program := [
   .CX 29 11,
   .CX 29 9,
   .CX 29 8,
-  .CX 29 6,
+  .CX 29 6
+]
+
+private def switch0Block17 : Program := [
   .CX 29 5,
   .CX 29 4,
   .CX 29 2,
-  .CX 29 1
-]
-
-private def switch0Block18 : Program := [
+  .CX 29 1,
   .CX 30 29,
   .CX 28 33,
   .CX 28 30,
@@ -14153,17 +13703,17 @@ private def switch0Block18 : Program := [
   .CX 27 19,
   .CX 27 18,
   .CX 27 17,
-  .CX 27 15,
+  .CX 27 15
+]
+
+private def switch0Block18 : Program := [
   .CX 27 14,
   .CX 27 12,
   .CX 27 11,
   .CX 27 9,
   .CX 27 8,
   .CX 27 7,
-  .CX 27 6
-]
-
-private def switch0Block19 : Program := [
+  .CX 27 6,
   .CX 27 5,
   .CX 27 4,
   .CX 27 2,
@@ -14182,7 +13732,10 @@ private def switch0Block19 : Program := [
   .CX 25 26,
   .CX 25 22,
   .CX 25 10,
-  .CX 26 25,
+  .CX 26 25
+]
+
+private def switch0Block19 : Program := [
   .CX 24 42,
   .CX 24 40,
   .CX 24 39,
@@ -14193,10 +13746,7 @@ private def switch0Block19 : Program := [
   .CX 24 26,
   .CX 24 25,
   .CX 24 22,
-  .CX 24 21
-]
-
-private def switch0Block20 : Program := [
+  .CX 24 21,
   .CX 24 19,
   .CX 24 18,
   .CX 24 17,
@@ -14212,7 +13762,10 @@ private def switch0Block20 : Program := [
   .CX 24 4,
   .CX 24 2,
   .CX 24 1,
-  .CX 25 24,
+  .CX 25 24
+]
+
+private def switch0Block20 : Program := [
   .CX 23 30,
   .CX 23 28,
   .CX 23 27,
@@ -14226,10 +13779,7 @@ private def switch0Block20 : Program := [
   .CX 22 30,
   .CX 22 29,
   .CX 22 28,
-  .CX 22 27
-]
-
-private def switch0Block21 : Program := [
+  .CX 22 27,
   .CX 22 26,
   .CX 22 24,
   .CX 22 21,
@@ -14241,7 +13791,10 @@ private def switch0Block21 : Program := [
   .CX 22 11,
   .CX 22 10,
   .CX 22 8,
-  .CX 22 6,
+  .CX 22 6
+]
+
+private def switch0Block21 : Program := [
   .CX 22 4,
   .CX 22 3,
   .CX 24 22,
@@ -14259,10 +13812,7 @@ private def switch0Block21 : Program := [
   .CX 20 27,
   .CX 20 24,
   .CX 20 14,
-  .CX 20 8
-]
-
-private def switch0Block22 : Program := [
+  .CX 20 8,
   .CX 20 7,
   .CX 20 3,
   .CX 20 2,
@@ -14271,7 +13821,10 @@ private def switch0Block22 : Program := [
   .CX 19 44,
   .CX 19 42,
   .CX 19 34,
-  .CX 19 17,
+  .CX 19 17
+]
+
+private def switch0Block22 : Program := [
   .CX 19 7,
   .CX 19 6,
   .CX 19 5,
@@ -14292,15 +13845,15 @@ private def switch0Block22 : Program := [
   .CX 17 43,
   .CX 17 42,
   .CX 17 41,
-  .CX 17 40
-]
-
-private def switch0Block23 : Program := [
+  .CX 17 40,
   .CX 17 39,
   .CX 17 36,
   .CX 17 20,
   .CX 17 19,
-  .CX 17 12,
+  .CX 17 12
+]
+
+private def switch0Block23 : Program := [
   .CX 17 7,
   .CX 17 6,
   .CX 17 2,
@@ -14325,12 +13878,12 @@ private def switch0Block23 : Program := [
   .CX 15 28,
   .CX 15 14,
   .CX 15 13,
-  .CX 15 8
+  .CX 15 8,
+  .CX 14 33,
+  .CX 14 32
 ]
 
 private def switch0Block24 : Program := [
-  .CX 14 33,
-  .CX 14 32,
   .CX 14 31,
   .CX 14 28,
   .CX 14 27,
@@ -14356,12 +13909,12 @@ private def switch0Block24 : Program := [
   .CX 10 44,
   .CX 10 37,
   .CX 10 29,
-  .CX 10 27,
-  .CX 10 23,
-  .CX 10 14
+  .CX 10 27
 ]
 
 private def switch0Block25 : Program := [
+  .CX 10 23,
+  .CX 10 14,
   .CX 10 7,
   .CX 9 17,
   .CX 8 44,
@@ -14386,15 +13939,15 @@ private def switch0Block25 : Program := [
   .CX 5 34,
   .CX 5 20,
   .CX 5 2,
-  .CX 4 39,
+  .CX 4 39
+]
+
+private def switch0Block26 : Program := [
   .CX 4 22,
   .CX 4 13,
   .CX 4 7,
   .CX 3 36,
-  .CX 3 13
-]
-
-private def switch0Block26 : Program := [
+  .CX 3 13,
   .CX 3 7,
   .CX 2 42,
   .CX 2 41,
@@ -14415,7 +13968,10 @@ private def switch0Block26 : Program := [
   .CX 0 13,
   .CX 0 7,
   .measureX 44 [] [.Z 1, .Z 2, .Z 16, .Z 37, .Z 40, .CZ 0 3, .CZ 0 5, .CZ 0 7, .CZ 0 22, .CZ 0 36, .CZ 0 37, .CZ 0 38, .CZ 0 39, .CZ 0 43],
-  .measureX 43 [] [.Z 1, .Z 3, .Z 7, .Z 16, .Z 20, .Z 34, .Z 36, .Z 37, .Z 40, .Z 42, .CZ 0 2, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 0 34, .CZ 0 38, .CZ 0 39, .CZ 1 2, .CZ 1 7, .CZ 1 16, .CZ 1 20, .CZ 1 34, .CZ 1 37, .CZ 35 42],
+  .measureX 43 [] [.Z 1, .Z 3, .Z 7, .Z 16, .Z 20, .Z 34, .Z 36, .Z 37, .Z 40, .Z 42, .CZ 0 2, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 0 34, .CZ 0 38, .CZ 0 39, .CZ 1 2, .CZ 1 7, .CZ 1 16, .CZ 1 20, .CZ 1 34, .CZ 1 37, .CZ 35 42]
+]
+
+private def switch0Block27 : Program := [
   .measureX 42 [] [.Z 1, .Z 2, .Z 16, .Z 40, .CZ 0 3, .CZ 0 5, .CZ 0 7, .CZ 0 16, .CZ 0 19, .CZ 0 21, .CZ 0 22, .CZ 0 40, .CZ 0 41],
   .measureX 41 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 19, .Z 21, .Z 34, .Z 35, .Z 37, .Z 39, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 0 34, .CZ 0 38, .CZ 0 39, .CZ 1 3, .CZ 1 36, .CZ 5 35, .CZ 35 40],
   .measureX 40 [] [.Z 0, .Z 1, .Z 3, .Z 36, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 16, .CZ 0 20, .CZ 0 22, .CZ 0 34, .CZ 0 35, .CZ 0 38, .CZ 0 39, .CZ 1 3, .CZ 1 16, .CZ 1 36, .CZ 2 16],
@@ -14424,10 +13980,7 @@ private def switch0Block26 : Program := [
   .measureX 37 [] [.Z 0, .Z 1, .Z 2, .Z 7, .Z 16, .Z 20, .Z 34, .Z 35, .CZ 0 3, .CZ 0 5, .CZ 0 6, .CZ 0 19, .CZ 0 20, .CZ 0 21, .CZ 0 22, .CZ 0 34, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 22, .CZ 1 34, .CZ 2 3, .CZ 2 16, .CZ 2 35, .CZ 2 36, .CZ 3 7, .CZ 7 36],
   .measureX 36 [] [.Z 0, .Z 3, .CZ 0 16, .CZ 1 16, .CZ 1 35],
   .measureX 35 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 5, .Z 7, .Z 16, .Z 19, .Z 20, .Z 21, .Z 22, .Z 34, .CZ 0 6, .CZ 0 16, .CZ 0 20, .CZ 0 34, .CZ 1 6, .CZ 1 16, .CZ 1 20, .CZ 1 34, .CZ 2 6, .CZ 2 16, .CZ 2 20, .CZ 2 34, .CZ 3 6, .CZ 4 6, .CZ 4 20, .CZ 4 34, .CZ 5 6, .CZ 6 7, .CZ 6 19, .CZ 6 21],
-  .measureX 34 [] [.Z 20, .CZ 6 16]
-]
-
-private def switch0Block27 : Program := [
+  .measureX 34 [] [.Z 20, .CZ 6 16],
   .measureX 33 [] [.Z 27, .Z 28, .Z 29, .Z 32, .CZ 9 31, .CZ 9 32],
   .measureX 32 [] [.Z 4, .Z 5, .Z 11, .Z 12, .Z 18, .Z 19, .Z 20, .Z 22, .Z 23, .Z 24, .Z 30, .Z 31, .CZ 8 16, .CZ 9 15, .CZ 9 23, .CZ 9 24, .CZ 9 25, .CZ 9 26, .CZ 9 28, .CZ 9 29, .CZ 9 31, .CZ 10 15, .CZ 10 24, .CZ 10 26, .CZ 10 28, .CZ 10 29],
   .measureX 31 [] [.Z 4, .Z 5, .Z 9, .Z 11, .Z 12, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 20, .Z 22, .Z 26, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 17, .CZ 8 25, .CZ 8 26, .CZ 10 25, .CZ 10 26, .CZ 11 14, .CZ 11 25, .CZ 11 26, .CZ 14 15, .CZ 14 27],
@@ -14445,26 +13998,10 @@ private def switch0Block27 : Program := [
   .measureX 19 [] [.Z 12, .CZ 5 16, .CZ 12 16],
   .measureX 18 [] [.Z 11, .CZ 4 16, .CZ 11 16],
   .measureX 17 [] [.Z 9, .CZ 9 16],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
   .measureX 17 [] []
 ]
 
 private def switch0Block28 : Program := [
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
@@ -14504,6 +14041,22 @@ private def switch0Block29 : Program := [
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
   .measureX 17 [] []
 ]
 
@@ -14513,7 +14066,7 @@ theorem switch0_checked : eval StairArchiveColumns.col312 switch0 switch0Trace0I
   WSlimTree.eval_of_checkSeq _ switch0Block0 [switch0Block1, switch0Block2, switch0Block3, switch0Block4, switch0Block5, switch0Block6, switch0Block7, switch0Block8, switch0Block9, switch0Block10, switch0Block11, switch0Block12, switch0Block13, switch0Block14, switch0Block15, switch0Block16, switch0Block17, switch0Block18, switch0Block19, switch0Block20, switch0Block21, switch0Block22, switch0Block23, switch0Block24, switch0Block25, switch0Block26, switch0Block27, switch0Block28, switch0Block29] _ _ (by decide +kernel)
 
 theorem switch0_counts : GatePhysical switch0 ∧ toffoliCount switch0 = 28 ∧
-    measurementCount switch0 = 82 ∧ gateSlots switch0 = 1274 :=
+    measurementCount switch0 = 82 ∧ gateSlots switch0 = 1188 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 theorem switch0_scope : ∀ x ∈ wires switch0, x < 62 := by
@@ -14544,16 +14097,15 @@ private def switch1Block0 : Program := [
   .CX 14 13,
   .CX 15 13,
   .CCX 16 13 28,
-  .CX 15 13,
-  .CX 13 8,
   .CX 14 8,
-  .CX 15 8,
+  .CX 13 8,
+  .CX 15 13,
   .CCX 16 8 29,
-  .CX 15 8,
-  .CX 14 8
+  .CX 15 8
 ]
 
 private def switch1Block1 : Program := [
+  .CX 14 8,
   .CX 13 8,
   .CX 7 6,
   .CCX 6 24 30,
@@ -14561,11 +14113,7 @@ private def switch1Block1 : Program := [
   .CX 25 16,
   .CX 30 16,
   .CCX 1 16 31,
-  .CX 30 16,
-  .CX 25 16,
   .CX 19 16,
-  .CX 25 16,
-  .CX 30 16,
   .CCX 1 16 32,
   .CX 30 16,
   .CX 25 16,
@@ -14583,31 +14131,18 @@ private def switch1Block1 : Program := [
   .CX 31 25,
   .CCX 2 25 36,
   .CX 31 25,
-  .CX 30 25
+  .CX 30 25,
+  .CX 9 8
 ]
 
 private def switch1Block2 : Program := [
-  .CX 9 8,
   .CX 10 8,
   .CX 11 8,
   .CX 12 8,
   .CX 34 8,
   .CCX 27 8 37,
-  .CX 34 8,
-  .CX 12 8,
-  .CX 11 8,
-  .CX 10 8,
-  .CX 9 8,
-  .CX 9 8,
-  .CX 10 8,
-  .CX 11 8,
-  .CX 12 8,
-  .CX 34 8,
   .CCX 28 8 38,
   .CX 34 8,
-  .CX 12 8,
-  .CX 11 8,
-  .CX 10 8,
   .CX 9 8,
   .CX 18 17,
   .CX 20 17,
@@ -14616,30 +14151,25 @@ private def switch1Block2 : Program := [
   .CX 27 17,
   .CX 29 17,
   .CX 34 17,
-  .CCX 15 17 39
+  .CCX 15 17 39,
+  .CX 34 17,
+  .CX 29 17,
+  .CX 27 17,
+  .CX 23 17,
+  .CX 22 17,
+  .CX 20 17,
+  .CX 18 17,
+  .CX 31 19,
+  .CX 5 19,
+  .CX 36 5,
+  .CCX 5 19 40,
+  .CX 36 19,
+  .CX 31 19
 ]
 
 private def switch1Block3 : Program := [
-  .CX 34 17,
-  .CX 29 17,
-  .CX 27 17,
-  .CX 23 17,
-  .CX 22 17,
-  .CX 20 17,
-  .CX 18 17,
-  .CX 36 5,
   .CX 5 19,
-  .CX 31 19,
-  .CX 36 19,
-  .CCX 5 19 40,
-  .CX 36 19,
-  .CX 31 19,
-  .CX 5 19,
-  .CX 36 5,
   .CX 39 23,
-  .CX 10 8,
-  .CX 11 8,
-  .CX 12 8,
   .CX 14 8,
   .CX 15 8,
   .CX 37 8,
@@ -14649,10 +14179,7 @@ private def switch1Block3 : Program := [
   .CX 37 8,
   .CX 15 8,
   .CX 14 8,
-  .CX 12 8
-]
-
-private def switch1Block4 : Program := [
+  .CX 12 8,
   .CX 11 8,
   .CX 10 8,
   .CX 39 23,
@@ -14668,7 +14195,10 @@ private def switch1Block4 : Program := [
   .CX 41 16,
   .CX 29 16,
   .CX 27 16,
-  .CX 23 16,
+  .CX 23 16
+]
+
+private def switch1Block4 : Program := [
   .CX 22 16,
   .CX 20 16,
   .CX 18 16,
@@ -14682,10 +14212,7 @@ private def switch1Block4 : Program := [
   .CX 38 17,
   .CX 39 17,
   .CX 41 17,
-  .CCX 9 17 43
-]
-
-private def switch1Block5 : Program := [
+  .CCX 9 17 43,
   .CX 41 17,
   .CX 39 17,
   .CX 38 17,
@@ -14700,7 +14227,10 @@ private def switch1Block5 : Program := [
   .CX 26 0,
   .CX 32 0,
   .CX 33 0,
-  .CX 35 0,
+  .CX 35 0
+]
+
+private def switch1Block5 : Program := [
   .CX 36 0,
   .CX 40 0,
   .CX 0 5,
@@ -14710,34 +14240,28 @@ private def switch1Block5 : Program := [
   .CX 21 5,
   .CX 33 5,
   .CX 35 5,
-  .CX 36 5,
   .CX 40 5,
   .CCX 0 5 44,
-  .CX 40 5,
-  .CX 36 5,
-  .CX 35 5
-]
-
-private def switch1Block6 : Program := [
-  .CX 33 5,
-  .CX 21 5,
-  .CX 20 5,
-  .CX 19 5,
-  .CX 16 5,
-  .CX 0 5,
-  .CX 40 0,
-  .CX 36 0,
-  .CX 35 0,
-  .CX 33 0,
-  .CX 32 0,
-  .CX 26 0,
-  .CX 25 0,
-  .CX 16 0,
   .CX 25 16,
   .CX 26 16,
   .CX 36 16,
   .CX 40 16,
   .CX 44 16,
+  .CX 16 0,
+  .CX 32 0,
+  .CX 33 0,
+  .CX 35 0,
+  .CX 44 0,
+  .CX 0 5,
+  .CX 19 5,
+  .CX 20 5,
+  .CX 21 5,
+  .CX 25 5,
+  .CX 26 5,
+  .CX 32 5
+]
+
+private def switch1Block6 : Program := [
   .CCX 0 16 45,
   .CX 44 16,
   .CX 40 16,
@@ -14748,10 +14272,7 @@ private def switch1Block6 : Program := [
   .CX 5 0,
   .CX 16 0,
   .CX 17 0,
-  .CX 19 0
-]
-
-private def switch1Block7 : Program := [
+  .CX 19 0,
   .CX 20 0,
   .CX 21 0,
   .CX 26 0,
@@ -14768,7 +14289,10 @@ private def switch1Block7 : Program := [
   .CX 33 4,
   .CX 44 4,
   .CX 45 4,
-  .CCX 0 4 46,
+  .CCX 0 4 46
+]
+
+private def switch1Block7 : Program := [
   .CX 45 4,
   .CX 44 4,
   .CX 33 4,
@@ -14781,16 +14305,12 @@ private def switch1Block7 : Program := [
   .CX 0 4,
   .CX 44 0,
   .CX 32 0,
-  .CX 30 0
-]
-
-private def switch1Block8 : Program := [
+  .CX 30 0,
   .CX 26 0,
   .CX 21 0,
   .CX 20 0,
   .CX 19 0,
   .CX 17 0,
-  .CX 16 0,
   .CX 5 0,
   .CX 4 0,
   .CX 46 45,
@@ -14801,7 +14321,10 @@ private def switch1Block8 : Program := [
   .CX 46 33,
   .CX 46 28,
   .CX 46 27,
-  .CX 46 19,
+  .CX 46 19
+]
+
+private def switch1Block8 : Program := [
   .CX 46 13,
   .CX 45 40,
   .CX 45 36,
@@ -14814,10 +14337,7 @@ private def switch1Block8 : Program := [
   .CX 44 35,
   .CX 44 34,
   .CX 44 33,
-  .CX 44 31
-]
-
-private def switch1Block9 : Program := [
+  .CX 44 31,
   .CX 44 30,
   .CX 44 29,
   .CX 44 27,
@@ -14832,7 +14352,10 @@ private def switch1Block9 : Program := [
   .CX 43 34,
   .CX 43 23,
   .CX 43 9,
-  .CX 42 41,
+  .CX 42 41
+]
+
+private def switch1Block9 : Program := [
   .CX 42 38,
   .CX 42 36,
   .CX 42 32,
@@ -14847,10 +14370,7 @@ private def switch1Block9 : Program := [
   .CX 42 12,
   .CX 42 8,
   .CX 42 7,
-  .CX 42 6
-]
-
-private def switch1Block10 : Program := [
+  .CX 42 6,
   .CX 41 43,
   .CX 41 42,
   .CX 41 27,
@@ -14864,7 +14384,10 @@ private def switch1Block10 : Program := [
   .CX 41 9,
   .CX 41 8,
   .CX 42 41,
-  .CX 40 46,
+  .CX 40 46
+]
+
+private def switch1Block10 : Program := [
   .CX 40 45,
   .CX 40 39,
   .CX 40 36,
@@ -14880,10 +14403,7 @@ private def switch1Block10 : Program := [
   .CX 40 6,
   .CX 40 2,
   .CX 40 1,
-  .CX 40 0
-]
-
-private def switch1Block11 : Program := [
+  .CX 40 0,
   .CX 39 42,
   .CX 39 34,
   .CX 39 29,
@@ -14895,7 +14415,10 @@ private def switch1Block11 : Program := [
   .CX 39 15,
   .CX 39 14,
   .CX 39 12,
-  .CX 39 11,
+  .CX 39 11
+]
+
+private def switch1Block11 : Program := [
   .CX 39 8,
   .CX 42 39,
   .CX 38 43,
@@ -14913,10 +14436,7 @@ private def switch1Block11 : Program := [
   .CX 38 22,
   .CX 38 21,
   .CX 38 20,
-  .CX 38 18
-]
-
-private def switch1Block12 : Program := [
+  .CX 38 18,
   .CX 38 14,
   .CX 38 12,
   .CX 38 11,
@@ -14926,7 +14446,10 @@ private def switch1Block12 : Program := [
   .CX 37 38,
   .CX 37 29,
   .CX 37 27,
-  .CX 37 14,
+  .CX 37 14
+]
+
+private def switch1Block12 : Program := [
   .CX 38 37,
   .CX 36 41,
   .CX 36 32,
@@ -14946,10 +14469,7 @@ private def switch1Block12 : Program := [
   .CX 35 30,
   .CX 35 29,
   .CX 35 27,
-  .CX 35 26
-]
-
-private def switch1Block13 : Program := [
+  .CX 35 26,
   .CX 35 24,
   .CX 35 22,
   .CX 35 19,
@@ -14958,7 +14478,10 @@ private def switch1Block13 : Program := [
   .CX 35 7,
   .CX 35 2,
   .CX 35 1,
-  .CX 41 35,
+  .CX 41 35
+]
+
+private def switch1Block13 : Program := [
   .CX 34 44,
   .CX 34 29,
   .CX 34 27,
@@ -14979,17 +14502,17 @@ private def switch1Block13 : Program := [
   .CX 33 13,
   .CX 33 5,
   .CX 33 3,
-  .CX 33 2
-]
-
-private def switch1Block14 : Program := [
+  .CX 33 2,
   .CX 32 46,
   .CX 32 45,
   .CX 32 44,
   .CX 32 42,
   .CX 32 41,
   .CX 32 35,
-  .CX 32 34,
+  .CX 32 34
+]
+
+private def switch1Block14 : Program := [
   .CX 32 31,
   .CX 32 30,
   .CX 32 27,
@@ -15012,16 +14535,16 @@ private def switch1Block14 : Program := [
   .CX 31 45,
   .CX 31 44,
   .CX 31 41,
-  .CX 31 38
-]
-
-private def switch1Block15 : Program := [
+  .CX 31 38,
   .CX 31 35,
   .CX 31 34,
   .CX 31 33,
   .CX 31 32,
   .CX 31 26,
-  .CX 31 25,
+  .CX 31 25
+]
+
+private def switch1Block15 : Program := [
   .CX 31 24,
   .CX 31 22,
   .CX 31 20,
@@ -15045,14 +14568,14 @@ private def switch1Block15 : Program := [
   .CX 30 27,
   .CX 30 26,
   .CX 30 25,
-  .CX 30 21
-]
-
-private def switch1Block16 : Program := [
+  .CX 30 21,
   .CX 30 20,
   .CX 30 19,
   .CX 30 18,
-  .CX 30 14,
+  .CX 30 14
+]
+
+private def switch1Block16 : Program := [
   .CX 30 12,
   .CX 30 11,
   .CX 30 8,
@@ -15078,12 +14601,12 @@ private def switch1Block16 : Program := [
   .CX 36 28,
   .CX 27 42,
   .CX 27 39,
-  .CX 27 36
+  .CX 27 36,
+  .CX 27 21,
+  .CX 27 20
 ]
 
 private def switch1Block17 : Program := [
-  .CX 27 21,
-  .CX 27 20,
   .CX 27 14,
   .CX 27 12,
   .CX 27 8,
@@ -15111,11 +14634,11 @@ private def switch1Block17 : Program := [
   .CX 25 22,
   .CX 25 15,
   .CX 25 14,
-  .CX 25 13
+  .CX 25 13,
+  .CX 25 10
 ]
 
 private def switch1Block18 : Program := [
-  .CX 25 10,
   .CX 25 4,
   .CX 25 2,
   .CX 25 0,
@@ -15143,11 +14666,11 @@ private def switch1Block18 : Program := [
   .CX 22 44,
   .CX 22 38,
   .CX 22 37,
-  .CX 22 33,
-  .CX 22 21
+  .CX 22 33
 ]
 
 private def switch1Block19 : Program := [
+  .CX 22 21,
   .CX 22 20,
   .CX 22 12,
   .CX 22 10,
@@ -15175,12 +14698,12 @@ private def switch1Block19 : Program := [
   .CX 20 33,
   .CX 20 31,
   .CX 20 29,
-  .CX 20 26,
-  .CX 20 25,
-  .CX 20 22
+  .CX 20 26
 ]
 
 private def switch1Block20 : Program := [
+  .CX 20 25,
+  .CX 20 22,
   .CX 20 18,
   .CX 20 15,
   .CX 20 14,
@@ -15206,14 +14729,14 @@ private def switch1Block20 : Program := [
   .CX 20 19,
   .CX 18 36,
   .CX 18 31,
-  .CX 18 11,
-  .CX 31 18,
-  .CX 17 35,
-  .CX 17 26,
-  .CX 17 25
+  .CX 18 11
 ]
 
 private def switch1Block21 : Program := [
+  .CX 31 18,
+  .CX 17 35,
+  .CX 17 26,
+  .CX 17 25,
   .CX 17 20,
   .CX 17 19,
   .CX 17 6,
@@ -15237,16 +14760,15 @@ private def switch1Block21 : Program := [
   .CX 16 6,
   .CX 16 3,
   .CX 16 2,
-  .CX 16 1,
-  .CX 16 0,
+  .CX 16 1
+]
+
+private def switch1Block22 : Program := [
   .CX 15 39,
   .CX 15 29,
   .CX 15 28,
   .CX 14 38,
-  .CX 14 33
-]
-
-private def switch1Block22 : Program := [
+  .CX 14 33,
   .CX 14 29,
   .CX 14 27,
   .CX 13 46,
@@ -15270,16 +14792,16 @@ private def switch1Block22 : Program := [
   .CX 8 38,
   .CX 8 37,
   .CX 8 36,
-  .CX 8 33,
+  .CX 8 33
+]
+
+private def switch1Block23 : Program := [
   .CX 8 31,
   .CX 8 29,
   .CX 7 41,
   .CX 7 24,
   .CX 6 35,
-  .CX 6 26
-]
-
-private def switch1Block23 : Program := [
+  .CX 6 26,
   .CX 6 25,
   .CX 6 19,
   .CX 6 18,
@@ -15301,7 +14823,10 @@ private def switch1Block23 : Program := [
   .CX 1 26,
   .CX 0 40,
   .CX 0 35,
-  .CX 0 34,
+  .CX 0 34
+]
+
+private def switch1Block24 : Program := [
   .CX 0 32,
   .CX 0 26,
   .CX 0 4,
@@ -15309,10 +14834,7 @@ private def switch1Block23 : Program := [
   .measureX 45 [] [.Z 2, .Z 4, .Z 7, .Z 12, .Z 18, .Z 20, .Z 22, .Z 30, .Z 34, .Z 40, .Z 41, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 12, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 0 22, .CZ 1 2, .CZ 1 21, .CZ 1 40, .CZ 2 40],
   .measureX 46 [] [.Z 8, .Z 10, .Z 12, .CZ 0 8, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 16, .CZ 0 23, .CZ 0 33, .CZ 0 37, .CZ 1 8, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 16, .CZ 1 23, .CZ 1 33, .CZ 1 37, .CZ 2 8, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 16, .CZ 2 33, .CZ 2 37, .CZ 3 8, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 16, .CZ 3 33, .CZ 3 37, .CZ 4 8, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 33, .CZ 4 37, .CZ 5 8, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 33, .CZ 5 37, .CZ 6 8, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 16, .CZ 6 23, .CZ 6 33, .CZ 6 37, .CZ 7 8, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 16, .CZ 7 23, .CZ 7 33, .CZ 7 37, .CZ 8 9, .CZ 8 11, .CZ 8 13, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 21, .CZ 8 22, .CZ 8 24, .CZ 8 26, .CZ 8 28, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 11, .CZ 10 12, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 12 14, .CZ 12 33, .CZ 12 37, .CZ 13 14, .CZ 13 15, .CZ 13 17, .CZ 13 18, .CZ 13 19, .CZ 13 20, .CZ 13 21, .CZ 13 24, .CZ 13 26, .CZ 13 28, .CZ 13 31, .CZ 13 33, .CZ 13 36, .CZ 13 37, .CZ 14 15, .CZ 14 16, .CZ 14 31, .CZ 14 43, .CZ 15 16, .CZ 15 38, .CZ 15 43, .CZ 31 33],
   .measureX 40 [] [.Z 0, .Z 5, .Z 16, .CZ 0 2, .CZ 0 5, .CZ 0 7, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 21, .CZ 0 24, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 21, .CZ 1 24, .CZ 2 4, .CZ 2 5, .CZ 2 18, .CZ 2 20, .CZ 3 6, .CZ 4 5, .CZ 4 32, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 34, .CZ 5 35, .CZ 6 12, .CZ 6 17, .CZ 6 19, .CZ 6 22, .CZ 6 30, .CZ 12 16],
-  .measureX 41 [] [.Z 12, .Z 19, .Z 22, .Z 24, .Z 25, .Z 30, .Z 34, .Z 35, .CZ 1 5, .CZ 2 5, .CZ 4 5, .CZ 5 6, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 30, .CZ 5 32, .CZ 5 34, .CZ 6 12, .CZ 6 19, .CZ 6 22]
-]
-
-private def switch1Block24 : Program := [
+  .measureX 41 [] [.Z 12, .Z 19, .Z 22, .Z 24, .Z 25, .Z 30, .Z 34, .Z 35, .CZ 1 5, .CZ 2 5, .CZ 4 5, .CZ 5 6, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 30, .CZ 5 32, .CZ 5 34, .CZ 6 12, .CZ 6 19, .CZ 6 22],
   .measureX 42 [] [.Z 16, .Z 23, .CZ 8 9, .CZ 8 11, .CZ 8 16, .CZ 8 20, .CZ 8 22, .CZ 9 10, .CZ 10 11, .CZ 10 20, .CZ 10 22, .CZ 11 13, .CZ 13 20, .CZ 13 22, .CZ 13 36, .CZ 13 37, .CZ 14 31, .CZ 31 33],
   .measureX 43 [] [.Z 8, .Z 9, .Z 10, .Z 18, .Z 20, .Z 22, .Z 23, .Z 28, .Z 29, .Z 33, .CZ 0 4, .CZ 0 8, .CZ 0 11, .CZ 0 12, .CZ 0 18, .CZ 0 23, .CZ 0 33, .CZ 0 36, .CZ 0 37, .CZ 0 39, .CZ 1 4, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 18, .CZ 1 23, .CZ 1 33, .CZ 1 36, .CZ 1 37, .CZ 1 39, .CZ 2 4, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 18, .CZ 2 33, .CZ 2 36, .CZ 2 37, .CZ 2 39, .CZ 3 4, .CZ 3 8, .CZ 3 12, .CZ 3 33, .CZ 3 36, .CZ 3 37, .CZ 3 39, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 11, .CZ 4 17, .CZ 4 18, .CZ 4 33, .CZ 4 36, .CZ 4 37, .CZ 4 39, .CZ 5 8, .CZ 5 11, .CZ 5 12, .CZ 5 18, .CZ 5 33, .CZ 5 36, .CZ 5 37, .CZ 5 39, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 18, .CZ 6 23, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 6 39, .CZ 7 8, .CZ 7 11, .CZ 7 12, .CZ 7 18, .CZ 7 23, .CZ 7 33, .CZ 7 36, .CZ 7 37, .CZ 7 39, .CZ 8 13, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 8 24, .CZ 8 26, .CZ 8 27, .CZ 8 29, .CZ 8 33, .CZ 9 15, .CZ 10 12, .CZ 10 13, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 33, .CZ 10 39, .CZ 11 12, .CZ 11 13, .CZ 11 15, .CZ 11 17, .CZ 12 14, .CZ 12 15, .CZ 12 18, .CZ 12 33, .CZ 12 36, .CZ 12 37, .CZ 12 39, .CZ 13 16, .CZ 13 20, .CZ 13 23, .CZ 13 33, .CZ 13 36, .CZ 13 38, .CZ 14 17, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 21, .CZ 14 23, .CZ 14 24, .CZ 14 26, .CZ 15 17, .CZ 15 18, .CZ 15 19, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 26, .CZ 15 31, .CZ 15 38, .CZ 38 39],
   .measureX 44 [] [.Z 4, .Z 12, .Z 13, .CZ 0 4, .CZ 0 8, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 18, .CZ 0 23, .CZ 0 33, .CZ 0 36, .CZ 0 37, .CZ 0 39, .CZ 1 4, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 18, .CZ 1 23, .CZ 1 33, .CZ 1 36, .CZ 1 37, .CZ 1 39, .CZ 2 4, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 18, .CZ 2 33, .CZ 2 36, .CZ 2 37, .CZ 2 39, .CZ 3 4, .CZ 3 8, .CZ 3 12, .CZ 3 13, .CZ 3 33, .CZ 3 36, .CZ 3 37, .CZ 3 39, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 11, .CZ 4 13, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 33, .CZ 4 36, .CZ 4 37, .CZ 4 39, .CZ 5 8, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 18, .CZ 5 33, .CZ 5 36, .CZ 5 37, .CZ 5 39, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 23, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 6 39, .CZ 7 8, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 18, .CZ 7 23, .CZ 7 33, .CZ 7 36, .CZ 7 37, .CZ 7 39, .CZ 8 10, .CZ 8 13, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 8 23, .CZ 8 24, .CZ 8 26, .CZ 8 28, .CZ 8 33, .CZ 9 15, .CZ 10 12, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 33, .CZ 10 39, .CZ 11 12, .CZ 11 13, .CZ 11 15, .CZ 11 17, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 18, .CZ 12 33, .CZ 12 36, .CZ 12 37, .CZ 12 39, .CZ 13 15, .CZ 13 17, .CZ 13 18, .CZ 13 19, .CZ 13 21, .CZ 13 23, .CZ 13 24, .CZ 13 26, .CZ 13 27, .CZ 13 33, .CZ 13 36, .CZ 14 15, .CZ 14 16, .CZ 14 17, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 21, .CZ 14 23, .CZ 14 24, .CZ 14 26, .CZ 15 17, .CZ 15 18, .CZ 15 19, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 26, .CZ 15 27, .CZ 15 31, .CZ 15 38, .CZ 38 39],
@@ -15333,7 +14855,10 @@ private def switch1Block24 : Program := [
   .measureX 21 [] [.Z 2, .CZ 2 16],
   .measureX 22 [] [.Z 12, .CZ 12 16],
   .measureX 23 [] [.Z 10, .CZ 10 16],
-  .measureX 24 [] [.Z 7, .CZ 7 16],
+  .measureX 24 [] [.Z 7, .CZ 7 16]
+]
+
+private def switch1Block25 : Program := [
   .measureX 25 [] [.Z 6, .CZ 6 16],
   .measureX 26 [] [.Z 0, .Z 1, .Z 6, .CZ 0 16, .CZ 1 16, .CZ 6 16],
   .measureX 27 [] [.Z 13, .Z 14, .CZ 13 16, .CZ 14 16],
@@ -15342,10 +14867,7 @@ private def switch1Block24 : Program := [
   .measureX 47 [] [],
   .measureX 48 [] [],
   .measureX 49 [] [],
-  .measureX 50 [] []
-]
-
-private def switch1Block25 : Program := [
+  .measureX 50 [] [],
   .measureX 51 [] [],
   .measureX 52 [] [],
   .measureX 53 [] [],
@@ -15364,21 +14886,21 @@ private def switch1Block25 : Program := [
   .measureX 66 [] [],
   .measureX 66 [] [],
   .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
-  .measureX 66 [] [],
   .measureX 66 [] []
 ]
 
 private def switch1Block26 : Program := [
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
+  .measureX 66 [] [],
   .measureX 66 [] [],
   .measureX 66 [] [],
   .measureX 66 [] [],
@@ -15405,7 +14927,7 @@ theorem switch1_checked : eval StairArchiveColumns.col312 switch1 switch1Trace0I
   WSlimTree.eval_of_checkSeq _ switch1Block0 [switch1Block1, switch1Block2, switch1Block3, switch1Block4, switch1Block5, switch1Block6, switch1Block7, switch1Block8, switch1Block9, switch1Block10, switch1Block11, switch1Block12, switch1Block13, switch1Block14, switch1Block15, switch1Block16, switch1Block17, switch1Block18, switch1Block19, switch1Block20, switch1Block21, switch1Block22, switch1Block23, switch1Block24, switch1Block25, switch1Block26] _ _ (by decide +kernel)
 
 theorem switch1_counts : GatePhysical switch1 ∧ toffoliCount switch1 = 30 ∧
-    measurementCount switch1 = 82 ∧ gateSlots switch1 = 1623 :=
+    measurementCount switch1 = 82 ∧ gateSlots switch1 = 1592 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 theorem switch1_scope : ∀ x ∈ wires switch1, x < 67 := by
@@ -15436,19 +14958,13 @@ private def leave0Block0 : Program := [
   .CCX 16 1 30,
   .CX 15 1,
   .CX 9 1,
-  .CX 2 1,
   .CX 26 16,
   .CX 27 16,
-  .CX 2 1,
   .CCX 16 1 31,
-  .CX 2 1,
-  .CX 27 16
+  .CX 2 1
 ]
 
 private def leave0Block1 : Program := [
-  .CX 26 16,
-  .CX 26 16,
-  .CX 27 16,
   .CCX 16 2 32,
   .CX 27 16,
   .CX 26 16,
@@ -15461,68 +14977,41 @@ private def leave0Block1 : Program := [
   .CX 10 1,
   .CX 33 1,
   .CCX 1 2 34,
-  .CX 33 1,
   .CX 18 5,
   .CX 20 5,
   .CX 2 1,
-  .CX 33 1,
   .CX 34 1,
   .CCX 5 1 35,
-  .CX 34 1,
-  .CX 33 1,
-  .CX 2 1,
-  .CX 20 5,
-  .CX 18 5,
   .CX 6 5,
   .CX 17 5,
-  .CX 18 5
+  .CX 23 5,
+  .CX 6 1,
+  .CX 17 1,
+  .CX 18 1,
+  .CX 35 1,
+  .CCX 5 1 36,
+  .CX 18 1,
+  .CX 17 1,
+  .CX 6 1
 ]
 
 private def leave0Block2 : Program := [
-  .CX 20 5,
-  .CX 23 5,
-  .CX 2 1,
-  .CX 6 1,
-  .CX 17 1,
-  .CX 18 1,
-  .CX 33 1,
-  .CX 34 1,
-  .CX 35 1,
-  .CCX 5 1 36,
-  .CX 35 1,
-  .CX 34 1,
-  .CX 33 1,
-  .CX 18 1,
-  .CX 17 1,
-  .CX 6 1,
-  .CX 2 1,
   .CX 23 5,
   .CX 20 5,
   .CX 18 5,
   .CX 17 5,
   .CX 6 5,
-  .CX 2 1,
   .CX 7 1,
   .CX 8 1,
   .CX 9 1,
   .CX 10 1,
   .CX 11 1,
   .CX 12 1,
-  .CX 13 1
-]
-
-private def leave0Block3 : Program := [
+  .CX 13 1,
   .CX 14 1,
   .CX 15 1,
-  .CX 33 1,
-  .CX 34 1,
-  .CX 35 1,
   .CX 36 1,
   .CCX 27 1 37,
-  .CX 36 1,
-  .CX 35 1,
-  .CX 34 1,
-  .CX 33 1,
   .CX 15 1,
   .CX 14 1,
   .CX 13 1,
@@ -15532,19 +15021,13 @@ private def leave0Block3 : Program := [
   .CX 9 1,
   .CX 8 1,
   .CX 7 1,
-  .CX 2 1,
-  .CX 2 1,
   .CX 5 1,
   .CX 20 1,
-  .CX 23 1,
-  .CX 33 1,
-  .CX 34 1,
-  .CX 35 1,
-  .CX 36 1,
-  .CX 16 6
+  .CX 23 1
 ]
 
-private def leave0Block4 : Program := [
+private def leave0Block3 : Program := [
+  .CX 16 6,
   .CX 19 6,
   .CX 21 6,
   .CX 22 6,
@@ -15553,31 +15036,30 @@ private def leave0Block4 : Program := [
   .CX 29 6,
   .CX 30 6,
   .CCX 1 6 38,
-  .CX 30 6,
-  .CX 29 6,
-  .CX 28 6,
-  .CX 24 6,
-  .CX 22 6,
-  .CX 21 6,
-  .CX 19 6,
-  .CX 16 6,
-  .CX 36 1,
-  .CX 35 1,
-  .CX 34 1,
-  .CX 33 1,
-  .CX 23 1,
-  .CX 20 1,
-  .CX 5 1,
-  .CX 2 1,
   .CX 28 19,
   .CX 14 13,
   .CX 15 13,
-  .CCX 19 13 39,
-  .CX 15 13,
-  .CX 14 13
+  .CX 16 6,
+  .CX 19 6,
+  .CX 21 6,
+  .CX 22 6,
+  .CX 24 6,
+  .CX 29 6,
+  .CX 30 6,
+  .CX 2 1,
+  .CX 5 1,
+  .CX 20 1,
+  .CX 23 1,
+  .CX 33 1,
+  .CX 34 1,
+  .CX 35 1,
+  .CX 36 1,
+  .CCX 19 13 39
 ]
 
-private def leave0Block5 : Program := [
+private def leave0Block4 : Program := [
+  .CX 15 13,
+  .CX 14 13,
   .CX 28 19,
   .CX 24 22,
   .CX 29 22,
@@ -15588,100 +15070,76 @@ private def leave0Block5 : Program := [
   .CX 28 16,
   .CX 39 16,
   .CCX 15 16 41,
-  .CX 39 16,
-  .CX 28 16,
+  .CX 39 22,
+  .CX 28 22,
+  .CX 24 22,
+  .CX 11 22,
+  .CX 24 16,
   .CX 22 16,
+  .CX 11 16,
   .CX 41 11,
-  .CX 11 22,
-  .CX 24 22,
-  .CX 28 22,
-  .CX 39 22,
-  .CX 41 22,
   .CCX 11 22 42,
-  .CX 41 22,
-  .CX 39 22,
-  .CX 28 22,
-  .CX 24 22,
-  .CX 11 22,
   .CX 41 11,
+  .CX 11 22,
+  .CX 24 22,
+  .CX 28 22,
+  .CX 39 22,
+  .CX 11 0,
+  .CX 17 0
+]
+
+private def leave0Block5 : Program := [
+  .CX 19 0,
+  .CX 20 0,
+  .CX 23 0,
+  .CX 24 0,
+  .CX 29 0,
+  .CX 30 0,
+  .CX 41 0,
+  .CX 42 0,
   .CX 6 1,
   .CX 16 1,
   .CX 19 1,
-  .CX 21 1
+  .CX 21 1,
+  .CX 22 1,
+  .CX 24 1,
+  .CX 28 1,
+  .CX 29 1,
+  .CX 30 1,
+  .CX 31 1,
+  .CX 32 1,
+  .CX 38 1,
+  .X 1,
+  .CCX 1 0 43,
+  .CX 1 0,
+  .CX 6 0,
+  .CX 16 0,
+  .CX 31 0,
+  .CX 32 0,
+  .CX 38 0
 ]
 
 private def leave0Block6 : Program := [
-  .CX 22 1,
-  .CX 24 1,
-  .CX 28 1,
-  .CX 29 1,
-  .CX 30 1,
-  .CX 31 1,
-  .CX 32 1,
-  .CX 38 1,
-  .X 1,
-  .CX 11 0,
-  .CX 17 0,
-  .CX 19 0,
-  .CX 20 0,
-  .CX 23 0,
-  .CX 24 0,
-  .CX 29 0,
-  .CX 30 0,
-  .CX 41 0,
-  .CX 42 0,
-  .CCX 1 0 43,
-  .CX 42 0,
-  .CX 41 0,
-  .CX 30 0,
-  .CX 29 0,
-  .CX 24 0,
-  .CX 23 0,
-  .CX 20 0,
-  .CX 19 0,
-  .CX 17 0,
-  .CX 11 0
-]
-
-private def leave0Block7 : Program := [
-  .X 1,
-  .CX 38 1,
-  .CX 32 1,
-  .CX 31 1,
-  .CX 30 1,
-  .CX 29 1,
-  .CX 28 1,
-  .CX 24 1,
-  .CX 22 1,
-  .CX 21 1,
-  .CX 19 1,
-  .CX 16 1,
-  .CX 6 1,
-  .CX 1 0,
-  .CX 11 0,
-  .CX 17 0,
-  .CX 20 0,
-  .CX 21 0,
-  .CX 22 0,
-  .CX 23 0,
-  .CX 28 0,
-  .CX 41 0,
-  .CX 42 0,
   .CX 43 0,
+  .X 0,
+  .CX 6 1,
+  .CX 16 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CX 22 1,
+  .CX 24 1,
+  .CX 28 1,
+  .CX 29 1,
+  .CX 30 1,
+  .CX 31 1,
+  .CX 32 1,
+  .CX 38 1,
+  .X 1,
   .CCX 34 0 44,
   .CX 43 0,
-  .CX 42 0,
   .CX 41 0,
-  .CX 28 0,
-  .CX 23 0
-]
-
-private def leave0Block8 : Program := [
   .CX 22 0,
   .CX 21 0,
-  .CX 20 0,
-  .CX 17 0,
-  .CX 11 0,
   .CX 1 0,
   .CX 42 40,
   .CX 28 22,
@@ -15689,7 +15147,10 @@ private def leave0Block8 : Program := [
   .CCX 40 22 45,
   .CX 41 22,
   .CX 28 22,
-  .CX 42 40,
+  .CX 42 40
+]
+
+private def leave0Block7 : Program := [
   .CX 19 16,
   .CX 45 16,
   .CCX 15 16 46,
@@ -15698,55 +15159,29 @@ private def leave0Block8 : Program := [
   .CX 29 21,
   .CX 45 21,
   .CCX 9 21 47,
+  .CX 47 0,
+  .CX 40 0,
+  .CX 39 0,
+  .CX 30 0,
+  .CX 21 0,
+  .CX 19 0,
+  .CX 16 0,
+  .CX 32 1,
+  .CX 31 1,
+  .CX 27 1,
+  .CX 26 1,
+  .CX 16 1,
   .CX 45 21,
   .CX 29 21,
+  .CCX 1 0 48,
+  .CX 27 26,
   .CX 16 1,
   .CX 26 1,
-  .CX 27 1,
   .CX 31 1,
-  .CX 32 1,
-  .CX 11 0,
-  .CX 16 0
-]
-
-private def leave0Block9 : Program := [
-  .CX 17 0,
-  .CX 19 0,
-  .CX 20 0,
-  .CX 21 0,
-  .CX 23 0,
-  .CX 28 0,
-  .CX 29 0,
-  .CX 30 0,
-  .CX 39 0,
-  .CX 40 0,
-  .CX 42 0,
-  .CX 45 0,
-  .CX 47 0,
-  .CCX 1 0 48,
-  .CX 47 0,
-  .CX 45 0,
-  .CX 42 0,
-  .CX 40 0,
-  .CX 39 0,
-  .CX 30 0,
-  .CX 29 0,
-  .CX 28 0,
-  .CX 23 0,
-  .CX 21 0,
-  .CX 20 0,
-  .CX 19 0,
-  .CX 17 0,
-  .CX 16 0,
-  .CX 11 0,
   .CX 32 1
 ]
 
-private def leave0Block10 : Program := [
-  .CX 31 1,
-  .CX 27 1,
-  .CX 26 1,
-  .CX 16 1,
+private def leave0Block8 : Program := [
   .CX 9 3,
   .CX 16 3,
   .CX 22 3,
@@ -15756,11 +15191,28 @@ private def leave0Block10 : Program := [
   .CX 45 3,
   .CX 46 3,
   .CX 47 3,
-  .CX 27 26,
+  .CX 11 0,
+  .CX 16 0,
+  .CX 17 0,
+  .CX 19 0,
+  .CX 20 0,
+  .CX 21 0,
+  .CX 23 0,
+  .CX 28 0,
+  .CX 29 0,
+  .CX 30 0,
+  .CX 39 0,
+  .CX 40 0,
+  .CX 42 0,
+  .CX 45 0,
+  .CX 47 0,
   .CCX 3 26 49,
   .CX 27 26,
   .CX 47 3,
-  .CX 46 3,
+  .CX 46 3
+]
+
+private def leave0Block9 : Program := [
   .CX 45 3,
   .CX 41 3,
   .CX 39 3,
@@ -15772,10 +15224,7 @@ private def leave0Block10 : Program := [
   .CX 34 16,
   .CX 37 16,
   .CX 44 16,
-  .CX 49 3
-]
-
-private def leave0Block11 : Program := [
+  .CX 49 3,
   .CCX 16 3 50,
   .CX 49 3,
   .CX 44 16,
@@ -15790,7 +15239,10 @@ private def leave0Block11 : Program := [
   .CCX 51 7 52,
   .CX 5 0,
   .CX 7 0,
-  .CX 9 0,
+  .CX 9 0
+]
+
+private def leave0Block10 : Program := [
   .CX 13 0,
   .CX 14 0,
   .CCX 51 0 53,
@@ -15805,10 +15257,7 @@ private def leave0Block11 : Program := [
   .CX 19 6,
   .CX 21 6,
   .CX 22 6,
-  .CX 24 6
-]
-
-private def leave0Block12 : Program := [
+  .CX 24 6,
   .CX 27 6,
   .CX 28 6,
   .CX 30 6,
@@ -15821,7 +15270,10 @@ private def leave0Block12 : Program := [
   .CX 41 9,
   .CX 45 9,
   .CX 46 9,
-  .CX 47 9,
+  .CX 47 9
+]
+
+private def leave0Block11 : Program := [
   .CCX 6 9 54,
   .CX 47 9,
   .CX 46 9,
@@ -15838,25 +15290,21 @@ private def leave0Block12 : Program := [
   .CX 27 6,
   .CX 24 6,
   .CX 22 6,
-  .CX 21 6
-]
-
-private def leave0Block13 : Program := [
+  .CX 21 6,
   .CX 19 6,
-  .CX 17 6,
   .CX 16 6,
   .CX 8 6,
-  .CX 17 6,
   .CX 23 6,
   .CCX 6 50 55,
   .CX 23 6,
-  .CX 17 6,
   .CX 9 6,
   .CX 16 6,
-  .CX 17 6,
   .CX 19 6,
   .CX 21 6,
-  .CX 24 6,
+  .CX 24 6
+]
+
+private def leave0Block12 : Program := [
   .CX 26 6,
   .CX 27 6,
   .CX 29 6,
@@ -15871,10 +15319,7 @@ private def leave0Block13 : Program := [
   .CX 49 6,
   .CX 51 6,
   .CX 54 6,
-  .CX 21 10
-]
-
-private def leave0Block14 : Program := [
+  .CX 21 10,
   .CX 31 10,
   .CX 32 10,
   .CCX 6 10 56,
@@ -15887,7 +15332,10 @@ private def leave0Block14 : Program := [
   .CX 47 6,
   .CX 46 6,
   .CX 45 6,
-  .CX 41 6,
+  .CX 41 6
+]
+
+private def leave0Block13 : Program := [
   .CX 39 6,
   .CX 38 6,
   .CX 37 6,
@@ -15904,10 +15352,7 @@ private def leave0Block14 : Program := [
   .CX 16 11,
   .CX 19 11,
   .CCX 56 11 57,
-  .CX 19 11
-]
-
-private def leave0Block15 : Program := [
+  .CX 19 11,
   .CX 16 11,
   .CX 57 56,
   .CX 57 53,
@@ -15918,7 +15363,10 @@ private def leave0Block15 : Program := [
   .CX 57 42,
   .CX 57 40,
   .CX 57 34,
-  .CX 57 33,
+  .CX 57 33
+]
+
+private def leave0Block14 : Program := [
   .CX 57 32,
   .CX 57 31,
   .CX 57 30,
@@ -15937,10 +15385,7 @@ private def leave0Block15 : Program := [
   .CX 57 9,
   .CX 57 8,
   .CX 57 7,
-  .CX 57 6
-]
-
-private def leave0Block16 : Program := [
+  .CX 57 6,
   .CX 57 1,
   .CX 56 57,
   .CX 56 53,
@@ -15949,7 +15394,10 @@ private def leave0Block16 : Program := [
   .CX 56 49,
   .CX 56 46,
   .CX 56 41,
-  .CX 56 40,
+  .CX 56 40
+]
+
+private def leave0Block15 : Program := [
   .CX 56 39,
   .CX 56 34,
   .CX 56 33,
@@ -15970,17 +15418,17 @@ private def leave0Block16 : Program := [
   .CX 56 8,
   .CX 56 7,
   .CX 56 6,
-  .CX 56 1
-]
-
-private def leave0Block17 : Program := [
+  .CX 56 1,
   .CX 55 57,
   .CX 55 51,
   .CX 55 48,
   .CX 55 46,
   .CX 55 45,
   .CX 55 43,
-  .CX 55 42,
+  .CX 55 42
+]
+
+private def leave0Block16 : Program := [
   .CX 55 41,
   .CX 55 40,
   .CX 55 39,
@@ -16003,15 +15451,15 @@ private def leave0Block17 : Program := [
   .CX 54 57,
   .CX 54 53,
   .CX 54 52,
-  .CX 54 50
-]
-
-private def leave0Block18 : Program := [
+  .CX 54 50,
   .CX 54 49,
   .CX 54 46,
   .CX 54 44,
   .CX 54 42,
-  .CX 54 40,
+  .CX 54 40
+]
+
+private def leave0Block17 : Program := [
   .CX 54 38,
   .CX 54 33,
   .CX 54 31,
@@ -16036,13 +15484,13 @@ private def leave0Block18 : Program := [
   .CX 53 22,
   .CX 53 21,
   .CX 53 19,
-  .CX 53 15
-]
-
-private def leave0Block19 : Program := [
+  .CX 53 15,
   .CX 53 14,
   .CX 53 11,
-  .CX 53 9,
+  .CX 53 9
+]
+
+private def leave0Block18 : Program := [
   .CX 55 53,
   .CX 52 55,
   .CX 52 54,
@@ -16072,7 +15520,7 @@ private def leave0Block19 : Program := [
   .CX 52 7
 ]
 
-private def leave0Block20 : Program := [
+private def leave0Block19 : Program := [
   .CX 52 6,
   .CX 52 2,
   .CX 52 1,
@@ -16100,12 +15548,12 @@ private def leave0Block20 : Program := [
   .CX 51 6,
   .CX 51 5,
   .CX 51 3,
-  .CX 51 2,
-  .CX 50 56,
-  .CX 50 55
+  .CX 51 2
 ]
 
-private def leave0Block21 : Program := [
+private def leave0Block20 : Program := [
+  .CX 50 56,
+  .CX 50 55,
   .CX 50 54,
   .CX 50 52,
   .CX 50 49,
@@ -16131,14 +15579,14 @@ private def leave0Block21 : Program := [
   .CX 49 54,
   .CX 49 53,
   .CX 49 51,
-  .CX 49 46,
+  .CX 49 46
+]
+
+private def leave0Block21 : Program := [
   .CX 49 43,
   .CX 49 42,
   .CX 49 41,
-  .CX 49 39
-]
-
-private def leave0Block22 : Program := [
+  .CX 49 39,
   .CX 49 37,
   .CX 49 36,
   .CX 49 35,
@@ -16162,16 +15610,16 @@ private def leave0Block22 : Program := [
   .CX 48 43,
   .CX 48 39,
   .CX 48 38,
-  .CX 48 28,
+  .CX 48 28
+]
+
+private def leave0Block22 : Program := [
   .CX 48 20,
   .CX 48 5,
   .CX 51 48,
   .CX 47 55,
   .CX 47 46,
-  .CX 47 43
-]
-
-private def leave0Block23 : Program := [
+  .CX 47 43,
   .CX 47 42,
   .CX 47 41,
   .CX 47 39,
@@ -16193,7 +15641,10 @@ private def leave0Block23 : Program := [
   .CX 45 39,
   .CX 45 30,
   .CX 45 29,
-  .CX 45 22,
+  .CX 45 22
+]
+
+private def leave0Block23 : Program := [
   .CX 45 19,
   .CX 45 15,
   .CX 45 14,
@@ -16201,10 +15652,7 @@ private def leave0Block23 : Program := [
   .CX 45 8,
   .CX 53 45,
   .CX 44 47,
-  .CX 44 34
-]
-
-private def leave0Block24 : Program := [
+  .CX 44 34,
   .CX 47 44,
   .CX 43 57,
   .CX 43 55,
@@ -16224,7 +15672,10 @@ private def leave0Block24 : Program := [
   .CX 52 43,
   .CX 42 57,
   .CX 42 56,
-  .CX 42 40,
+  .CX 42 40
+]
+
+private def leave0Block24 : Program := [
   .CX 42 39,
   .CX 42 28,
   .CX 42 24,
@@ -16234,10 +15685,7 @@ private def leave0Block24 : Program := [
   .CX 41 56,
   .CX 41 52,
   .CX 41 44,
-  .CX 41 28
-]
-
-private def leave0Block25 : Program := [
+  .CX 41 28,
   .CX 41 24,
   .CX 41 21,
   .CX 41 19,
@@ -16255,7 +15703,10 @@ private def leave0Block25 : Program := [
   .CX 40 12,
   .CX 54 40,
   .CX 39 56,
-  .CX 39 52,
+  .CX 39 52
+]
+
+private def leave0Block25 : Program := [
   .CX 39 51,
   .CX 39 30,
   .CX 39 28,
@@ -16267,10 +15718,7 @@ private def leave0Block25 : Program := [
   .CX 39 10,
   .CX 51 39,
   .CX 38 54,
-  .CX 38 52
-]
-
-private def leave0Block26 : Program := [
+  .CX 38 52,
   .CX 38 50,
   .CX 38 30,
   .CX 38 24,
@@ -16286,7 +15734,10 @@ private def leave0Block26 : Program := [
   .CX 37 45,
   .CX 37 44,
   .CX 37 41,
-  .CX 37 40,
+  .CX 37 40
+]
+
+private def leave0Block26 : Program := [
   .CX 37 36,
   .CX 37 33,
   .CX 37 32,
@@ -16300,10 +15751,7 @@ private def leave0Block26 : Program := [
   .CX 37 16,
   .CX 37 13,
   .CX 37 8,
-  .CX 37 7
-]
-
-private def leave0Block27 : Program := [
+  .CX 37 7,
   .CX 37 6,
   .CX 37 2,
   .CX 37 0,
@@ -16317,7 +15765,10 @@ private def leave0Block27 : Program := [
   .CX 34 54,
   .CX 34 51,
   .CX 34 50,
-  .CX 34 47,
+  .CX 34 47
+]
+
+private def leave0Block27 : Program := [
   .CX 34 46,
   .CX 34 45,
   .CX 34 44,
@@ -16333,10 +15784,7 @@ private def leave0Block27 : Program := [
   .CX 34 29,
   .CX 34 28,
   .CX 34 27,
-  .CX 34 26
-]
-
-private def leave0Block28 : Program := [
+  .CX 34 26,
   .CX 34 24,
   .CX 34 23,
   .CX 34 14,
@@ -16347,7 +15795,10 @@ private def leave0Block28 : Program := [
   .CX 34 5,
   .CX 34 4,
   .CX 34 3,
-  .CX 34 2,
+  .CX 34 2
+]
+
+private def leave0Block28 : Program := [
   .CX 33 46,
   .CX 46 33,
   .CX 32 53,
@@ -16366,10 +15817,7 @@ private def leave0Block28 : Program := [
   .CX 32 17,
   .CX 32 16,
   .CX 32 11,
-  .CX 32 10
-]
-
-private def leave0Block29 : Program := [
+  .CX 32 10,
   .CX 32 8,
   .CX 32 6,
   .CX 32 5,
@@ -16378,7 +15826,10 @@ private def leave0Block29 : Program := [
   .CX 31 56,
   .CX 31 52,
   .CX 31 50,
-  .CX 31 41,
+  .CX 31 41
+]
+
+private def leave0Block29 : Program := [
   .CX 31 39,
   .CX 31 37,
   .CX 31 33,
@@ -16399,17 +15850,17 @@ private def leave0Block29 : Program := [
   .CX 30 55,
   .CX 30 54,
   .CX 30 53,
-  .CX 30 51
-]
-
-private def leave0Block30 : Program := [
+  .CX 30 51,
   .CX 30 45,
   .CX 30 29,
   .CX 30 22,
   .CX 30 19,
   .CX 30 15,
   .CX 30 14,
-  .CX 30 13,
+  .CX 30 13
+]
+
+private def leave0Block30 : Program := [
   .CX 30 11,
   .CX 30 9,
   .CX 30 8,
@@ -16432,15 +15883,15 @@ private def leave0Block30 : Program := [
   .CX 28 56,
   .CX 28 54,
   .CX 28 52,
-  .CX 28 51
-]
-
-private def leave0Block31 : Program := [
+  .CX 28 51,
   .CX 28 50,
   .CX 28 44,
   .CX 28 43,
   .CX 28 42,
-  .CX 28 22,
+  .CX 28 22
+]
+
+private def leave0Block31 : Program := [
   .CX 28 21,
   .CX 28 19,
   .CX 28 15,
@@ -16465,13 +15916,13 @@ private def leave0Block31 : Program := [
   .CX 27 11,
   .CX 27 9,
   .CX 27 8,
-  .CX 27 5
+  .CX 27 5,
+  .CX 27 4,
+  .CX 38 27,
+  .CX 26 53
 ]
 
 private def leave0Block32 : Program := [
-  .CX 27 4,
-  .CX 38 27,
-  .CX 26 53,
   .CX 26 52,
   .CX 26 45,
   .CX 26 42,
@@ -16498,11 +15949,11 @@ private def leave0Block32 : Program := [
   .CX 25 18,
   .CX 25 0,
   .CX 36 25,
-  .CX 24 54
+  .CX 24 54,
+  .CX 24 52
 ]
 
 private def leave0Block33 : Program := [
-  .CX 24 52,
   .CX 24 50,
   .CX 24 39,
   .CX 24 21,
@@ -16530,11 +15981,11 @@ private def leave0Block33 : Program := [
   .CX 23 0,
   .CX 30 23,
   .CX 22 55,
-  .CX 22 54,
-  .CX 22 50
+  .CX 22 54
 ]
 
 private def leave0Block34 : Program := [
+  .CX 22 50,
   .CX 22 45,
   .CX 22 44,
   .CX 22 40,
@@ -16561,13 +16012,13 @@ private def leave0Block34 : Program := [
   .CX 21 23,
   .CX 21 22,
   .CX 21 17,
-  .CX 21 13,
-  .CX 21 12,
-  .CX 21 10,
-  .CX 21 7
+  .CX 21 13
 ]
 
 private def leave0Block35 : Program := [
+  .CX 21 12,
+  .CX 21 10,
+  .CX 21 7,
   .CX 21 4,
   .CX 22 21,
   .CX 20 39,
@@ -16592,15 +16043,15 @@ private def leave0Block35 : Program := [
   .CX 19 6,
   .CX 19 0,
   .CX 22 19,
-  .CX 18 53,
+  .CX 18 53
+]
+
+private def leave0Block36 : Program := [
   .CX 18 51,
   .CX 18 50,
   .CX 18 44,
   .CX 18 36,
-  .CX 18 32
-]
-
-private def leave0Block36 : Program := [
+  .CX 18 32,
   .CX 18 26,
   .CX 18 25,
   .CX 18 22,
@@ -16622,7 +16073,10 @@ private def leave0Block36 : Program := [
   .CX 17 32,
   .CX 17 25,
   .CX 17 24,
-  .CX 17 23,
+  .CX 17 23
+]
+
+private def leave0Block37 : Program := [
   .CX 17 22,
   .CX 17 19,
   .CX 17 18,
@@ -16630,10 +16084,7 @@ private def leave0Block36 : Program := [
   .CX 17 14,
   .CX 17 12,
   .CX 17 9,
-  .CX 17 8
-]
-
-private def leave0Block37 : Program := [
+  .CX 17 8,
   .CX 17 6,
   .CX 17 3,
   .CX 17 2,
@@ -16653,7 +16104,10 @@ private def leave0Block37 : Program := [
   .CX 16 25,
   .CX 16 24,
   .CX 16 18,
-  .CX 16 17,
+  .CX 16 17
+]
+
+private def leave0Block38 : Program := [
   .CX 16 14,
   .CX 16 12,
   .CX 16 9,
@@ -16663,10 +16117,7 @@ private def leave0Block37 : Program := [
   .CX 16 1,
   .CX 15 43,
   .CX 14 50,
-  .CX 14 42
-]
-
-private def leave0Block38 : Program := [
+  .CX 14 42,
   .CX 13 56,
   .CX 13 51,
   .CX 13 45,
@@ -16684,7 +16135,10 @@ private def leave0Block38 : Program := [
   .CX 12 16,
   .CX 12 0,
   .CX 16 12,
-  .CX 11 44,
+  .CX 11 44
+]
+
+private def leave0Block39 : Program := [
   .CX 11 43,
   .CX 11 36,
   .CX 11 33,
@@ -16696,10 +16150,7 @@ private def leave0Block38 : Program := [
   .CX 11 23,
   .CX 11 19,
   .CX 11 15,
-  .CX 11 0
-]
-
-private def leave0Block39 : Program := [
+  .CX 11 0,
   .CX 10 52,
   .CX 10 51,
   .CX 10 43,
@@ -16715,7 +16166,10 @@ private def leave0Block39 : Program := [
   .CX 8 40,
   .CX 8 38,
   .CX 8 36,
-  .CX 8 34,
+  .CX 8 34
+]
+
+private def leave0Block40 : Program := [
   .CX 8 33,
   .CX 8 30,
   .CX 8 26,
@@ -16729,10 +16183,7 @@ private def leave0Block39 : Program := [
   .CX 8 0,
   .CX 12 8,
   .CX 7 40,
-  .CX 7 38
-]
-
-private def leave0Block40 : Program := [
+  .CX 7 38,
   .CX 7 36,
   .CX 7 34,
   .CX 7 33,
@@ -16746,7 +16197,10 @@ private def leave0Block40 : Program := [
   .CX 7 6,
   .CX 7 4,
   .CX 7 0,
-  .CX 8 7,
+  .CX 8 7
+]
+
+private def leave0Block41 : Program := [
   .CX 6 38,
   .CX 6 36,
   .CX 6 33,
@@ -16762,10 +16216,7 @@ private def leave0Block40 : Program := [
   .CX 6 0,
   .CX 7 6,
   .CX 5 39,
-  .CX 5 21
-]
-
-private def leave0Block41 : Program := [
+  .CX 5 21,
   .CX 5 16,
   .CX 4 38,
   .CX 4 23,
@@ -16777,7 +16228,10 @@ private def leave0Block41 : Program := [
   .CX 3 31,
   .CX 3 30,
   .CX 3 16,
-  .CX 2 20,
+  .CX 2 20
+]
+
+private def leave0Block42 : Program := [
   .CX 2 18,
   .CX 2 17,
   .CX 2 16,
@@ -16795,10 +16249,7 @@ private def leave0Block41 : Program := [
   .measureX 53 [] [.Z 4, .Z 6, .Z 7, .Z 9, .Z 11, .Z 13, .Z 19, .Z 25, .Z 31, .Z 34, .Z 44, .Z 45, .Z 52, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 13, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 13, .CZ 3 8, .CZ 3 10, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 42, .CZ 3 43, .CZ 3 44, .CZ 3 45, .CZ 4 5, .CZ 4 6, .CZ 4 13, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 19, .CZ 5 43, .CZ 5 44, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 20, .CZ 6 22, .CZ 6 23, .CZ 6 42, .CZ 6 43, .CZ 6 44, .CZ 6 45, .CZ 7 8, .CZ 7 10, .CZ 7 13, .CZ 7 19, .CZ 7 20, .CZ 7 22, .CZ 7 23, .CZ 7 42, .CZ 8 13, .CZ 8 45, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 41, .CZ 9 42, .CZ 9 43, .CZ 9 44, .CZ 9 45, .CZ 10 11, .CZ 10 13, .CZ 10 20, .CZ 10 42, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 40, .CZ 13 42, .CZ 13 43, .CZ 14 21, .CZ 14 40, .CZ 14 52, .CZ 15 21, .CZ 15 40, .CZ 15 52, .CZ 21 43, .CZ 21 44, .CZ 40 43, .CZ 40 44, .CZ 43 52],
   .measureX 52 [] [.Z 1, .Z 2, .Z 4, .Z 7, .Z 10, .Z 11, .Z 20, .Z 23, .Z 34, .Z 35, .CZ 3 13, .CZ 3 45, .CZ 5 13, .CZ 6 13, .CZ 6 45, .CZ 7 45, .CZ 8 45, .CZ 9 13, .CZ 9 45, .CZ 10 45, .CZ 11 45, .CZ 12 45, .CZ 13 14, .CZ 13 21, .CZ 13 40, .CZ 13 44, .CZ 13 50, .CZ 13 51],
   .measureX 51 [] [.Z 1, .Z 4, .Z 7, .Z 8, .Z 10, .Z 13, .Z 14, .Z 24, .Z 31, .Z 32, .Z 34, .Z 35, .Z 38, .Z 44, .Z 45, .Z 50, .CZ 3 7, .CZ 3 9, .CZ 3 34, .CZ 7 9, .CZ 9 34],
-  .measureX 50 [] [.Z 1, .Z 2, .Z 3, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 12, .Z 13, .Z 14, .Z 15, .Z 20, .Z 29, .Z 31, .Z 32, .Z 40, .Z 43, .Z 46, .CZ 0 4, .CZ 0 31, .CZ 0 32, .CZ 1 5, .CZ 1 8, .CZ 1 30, .CZ 1 33, .CZ 1 36, .CZ 1 39, .CZ 2 8, .CZ 2 11, .CZ 2 29, .CZ 2 30, .CZ 2 31, .CZ 3 4, .CZ 3 5, .CZ 3 32, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 30, .CZ 4 36, .CZ 4 46, .CZ 5 23, .CZ 5 29, .CZ 5 30, .CZ 8 20, .CZ 8 46, .CZ 30 47, .CZ 30 48, .CZ 30 49, .CZ 31 47, .CZ 31 48, .CZ 31 49]
-]
-
-private def leave0Block42 : Program := [
+  .measureX 50 [] [.Z 1, .Z 2, .Z 3, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 12, .Z 13, .Z 14, .Z 15, .Z 20, .Z 29, .Z 31, .Z 32, .Z 40, .Z 43, .Z 46, .CZ 0 4, .CZ 0 31, .CZ 0 32, .CZ 1 5, .CZ 1 8, .CZ 1 30, .CZ 1 33, .CZ 1 36, .CZ 1 39, .CZ 2 8, .CZ 2 11, .CZ 2 29, .CZ 2 30, .CZ 2 31, .CZ 3 4, .CZ 3 5, .CZ 3 32, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 30, .CZ 4 36, .CZ 4 46, .CZ 5 23, .CZ 5 29, .CZ 5 30, .CZ 8 20, .CZ 8 46, .CZ 30 47, .CZ 30 48, .CZ 30 49, .CZ 31 47, .CZ 31 48, .CZ 31 49],
   .measureX 49 [] [.Z 2, .Z 4, .Z 5, .Z 6, .Z 11, .Z 20, .Z 21, .Z 23, .Z 33, .Z 34, .Z 36, .Z 37, .Z 40, .CZ 5 6, .CZ 5 20, .CZ 5 46, .CZ 5 47, .CZ 5 48, .CZ 6 20, .CZ 6 46, .CZ 6 47, .CZ 6 48],
   .measureX 48 [] [.CZ 1 5, .CZ 1 6, .CZ 2 5, .CZ 2 6, .CZ 6 20, .CZ 21 46, .CZ 21 47],
   .measureX 47 [] [.Z 1, .Z 37, .Z 46, .CZ 1 2, .CZ 1 10, .CZ 2 10, .CZ 2 46, .CZ 10 20, .CZ 11 46],
@@ -16808,7 +16259,10 @@ private def leave0Block42 : Program := [
   .measureX 43 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 7, .Z 10, .Z 12, .Z 14, .Z 15, .Z 20, .Z 21, .Z 23, .Z 24, .Z 29, .Z 31, .Z 32, .Z 33, .Z 39, .Z 40, .Z 42, .CZ 0 14, .CZ 0 42, .CZ 1 11, .CZ 1 14, .CZ 1 29, .CZ 1 42, .CZ 2 11, .CZ 2 14, .CZ 2 29, .CZ 2 42, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 34, .CZ 3 42, .CZ 4 9, .CZ 4 14, .CZ 4 42, .CZ 5 14, .CZ 6 14, .CZ 6 42, .CZ 7 9, .CZ 7 14, .CZ 7 42, .CZ 8 14, .CZ 8 42, .CZ 9 11, .CZ 9 14, .CZ 9 19, .CZ 9 34, .CZ 9 42, .CZ 10 14, .CZ 10 42, .CZ 11 14, .CZ 11 42, .CZ 12 14, .CZ 12 42, .CZ 13 14, .CZ 13 42, .CZ 14 39],
   .measureX 42 [] [.Z 14, .CZ 14 31, .CZ 14 35],
   .measureX 41 [] [.Z 3, .Z 10, .Z 31, .CZ 3 10, .CZ 10 35],
-  .measureX 40 [] [.Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 11, .Z 20, .Z 21, .Z 22, .Z 29, .Z 30, .Z 34, .Z 35, .Z 37, .Z 38, .CZ 3 9, .CZ 4 9, .CZ 9 11, .CZ 9 19, .CZ 9 35],
+  .measureX 40 [] [.Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 11, .Z 20, .Z 21, .Z 22, .Z 29, .Z 30, .Z 34, .Z 35, .Z 37, .Z 38, .CZ 3 9, .CZ 4 9, .CZ 9 11, .CZ 9 19, .CZ 9 35]
+]
+
+private def leave0Block43 : Program := [
   .measureX 39 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 12, .Z 20, .Z 22, .Z 24, .Z 29, .Z 30, .Z 31, .Z 32, .Z 33, .Z 34, .Z 35, .Z 38, .CZ 1 11, .CZ 1 29, .CZ 2 11, .CZ 2 29, .CZ 3 9, .CZ 3 10, .CZ 9 35, .CZ 10 35, .CZ 13 31, .CZ 13 35, .CZ 14 31, .CZ 14 35, .CZ 15 31, .CZ 15 35],
   .measureX 38 [] [.Z 3, .Z 4, .Z 31, .Z 32, .CZ 3 8, .CZ 8 35],
   .measureX 37 [] [.Z 12, .Z 24, .Z 29, .Z 31, .Z 35, .CZ 3 12, .CZ 12 35],
@@ -16828,36 +16282,11 @@ private def leave0Block42 : Program := [
   .measureX 23 [] [.Z 1, .Z 2, .Z 19, .Z 20, .CZ 4 10, .CZ 10 11, .CZ 10 19],
   .measureX 22 [] [.CZ 4 8, .CZ 8 11, .CZ 8 19],
   .measureX 21 [] [.Z 5, .CZ 4 5, .CZ 4 6, .CZ 5 11, .CZ 5 19, .CZ 6 11, .CZ 6 19],
-  .measureX 20 [] [.Z 1, .Z 2, .Z 11, .CZ 4 10, .CZ 4 11, .CZ 10 11, .CZ 10 19, .CZ 11 19]
-]
-
-private def leave0Block43 : Program := [
+  .measureX 20 [] [.Z 1, .Z 2, .Z 11, .CZ 4 10, .CZ 4 11, .CZ 10 11, .CZ 10 19, .CZ 11 19],
   .measureX 19 [] [.Z 2, .Z 4, .Z 11, .Z 18, .CZ 2 4, .CZ 4 18],
   .measureX 18 [] [.Z 2, .CZ 2 3, .CZ 3 17],
   .measureX 17 [] [.CZ 0 2, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 9, .CZ 2 12, .CZ 2 13, .CZ 2 16],
   .measureX 16 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 9, .Z 12, .Z 13, .CZ 0 1],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
@@ -16892,12 +16321,34 @@ private def leave0Block44 : Program := [
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
-  .measureX 17 [] [],
-  .measureX 17 [] [],
   .measureX 17 [] []
 ]
 
 private def leave0Block45 : Program := [
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
+  .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
   .measureX 17 [] [],
@@ -16910,7 +16361,7 @@ theorem leave0_checked : eval StairArchiveColumns.col312 leave0 leave0Trace0In =
   WSlimTree.eval_of_checkSeq _ leave0Block0 [leave0Block1, leave0Block2, leave0Block3, leave0Block4, leave0Block5, leave0Block6, leave0Block7, leave0Block8, leave0Block9, leave0Block10, leave0Block11, leave0Block12, leave0Block13, leave0Block14, leave0Block15, leave0Block16, leave0Block17, leave0Block18, leave0Block19, leave0Block20, leave0Block21, leave0Block22, leave0Block23, leave0Block24, leave0Block25, leave0Block26, leave0Block27, leave0Block28, leave0Block29, leave0Block30, leave0Block31, leave0Block32, leave0Block33, leave0Block34, leave0Block35, leave0Block36, leave0Block37, leave0Block38, leave0Block39, leave0Block40, leave0Block41, leave0Block42, leave0Block43, leave0Block44, leave0Block45] _ _ (by decide +kernel)
 
 theorem leave0_counts : GatePhysical leave0 ∧ toffoliCount leave0 = 41 ∧
-    measurementCount leave0 = 102 ∧ gateSlots leave0 = 2398 :=
+    measurementCount leave0 = 102 ∧ gateSlots leave0 = 2327 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 theorem leave0_scope : ∀ x ∈ wires leave0, x < 103 := by
@@ -16932,37 +16383,19 @@ private def leave1Block0 : Program := [
   .CX 14 0,
   .CX 15 0,
   .CCX 16 0 21,
-  .CX 15 0,
-  .CX 14 0,
-  .CX 13 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 4 0,
-  .CX 2 0,
-  .CX 1 0,
   .CCX 16 7 22,
-  .CX 1 0,
-  .CX 2 0,
   .CX 3 0,
-  .CX 4 0,
-  .CX 5 0,
-  .CX 6 0
-]
-
-private def leave1Block1 : Program := [
-  .CX 7 0,
   .CX 8 0,
-  .CX 13 0,
-  .CX 14 0,
-  .CX 15 0,
   .CCX 16 0 23,
   .CX 15 0,
   .CX 14 0,
   .CX 13 0,
   .CX 8 0,
   .CX 7 0,
-  .CX 6 0,
+  .CX 6 0
+]
+
+private def leave1Block1 : Program := [
   .CX 5 0,
   .CX 4 0,
   .CX 3 0,
@@ -16980,17 +16413,17 @@ private def leave1Block1 : Program := [
   .CX 15 7,
   .CX 14 7,
   .CX 13 7,
-  .CX 8 7
-]
-
-private def leave1Block2 : Program := [
+  .CX 8 7,
   .CCX 4 24 27,
   .CX 16 2,
   .CX 25 2,
   .CCX 1 2 28,
   .CX 25 2,
   .CX 16 2,
-  .CX 20 16,
+  .CX 20 16
+]
+
+private def leave1Block2 : Program := [
   .CCX 8 16 29,
   .CX 20 16,
   .CCX 7 27 30,
@@ -17003,27 +16436,22 @@ private def leave1Block2 : Program := [
   .CX 27 1,
   .CX 28 1,
   .CCX 1 17 32,
-  .CX 28 1,
-  .CX 27 1,
-  .CX 25 1,
-  .CX 16 1,
-  .CX 2 1,
   .CX 13 10,
   .CX 14 10,
   .CX 15 10,
   .CCX 20 10 33,
   .CX 15 10,
-  .CX 14 10
-]
-
-private def leave1Block3 : Program := [
+  .CX 14 10,
   .CX 13 10,
   .CX 8 4,
   .CX 16 4,
   .CX 17 4,
   .CX 21 4,
   .CX 23 4,
-  .CX 24 4,
+  .CX 24 4
+]
+
+private def leave1Block3 : Program := [
   .CX 25 4,
   .CX 27 4,
   .CX 30 4,
@@ -17034,61 +16462,31 @@ private def leave1Block3 : Program := [
   .CX 27 4,
   .CX 25 4,
   .CX 24 4,
-  .CX 23 4,
-  .CX 21 4,
   .CX 17 4,
   .CX 16 4,
-  .CX 8 4,
-  .CX 2 1,
-  .CX 16 1,
-  .CX 25 1,
-  .CX 27 1,
-  .CX 28 1,
+  .CX 6 4,
+  .CX 34 4,
+  .CCX 1 4 35,
+  .CX 17 1,
+  .CX 32 1,
+  .CX 4 2,
+  .CX 22 2,
   .CX 6 4,
   .CX 8 4,
-  .CX 21 4
+  .CX 21 4,
+  .CX 23 4,
+  .CX 34 4,
+  .CCX 1 2 36
 ]
 
 private def leave1Block4 : Program := [
-  .CX 23 4,
-  .CX 34 4,
-  .CCX 1 4 35,
-  .CX 34 4,
-  .CX 23 4,
-  .CX 21 4,
-  .CX 8 4,
-  .CX 6 4,
-  .CX 28 1,
-  .CX 27 1,
-  .CX 25 1,
-  .CX 16 1,
-  .CX 2 1,
-  .CX 2 1,
-  .CX 16 1,
-  .CX 17 1,
-  .CX 25 1,
-  .CX 27 1,
-  .CX 28 1,
-  .CX 32 1,
-  .CX 4 2,
-  .CX 6 2,
-  .CX 8 2,
-  .CX 21 2,
-  .CX 22 2,
+  .CX 34 2,
   .CX 23 2,
-  .CX 34 2,
-  .CCX 1 2 36,
-  .CX 34 2,
-  .CX 23 2
-]
-
-private def leave1Block5 : Program := [
   .CX 22 2,
   .CX 21 2,
   .CX 8 2,
   .CX 6 2,
   .CX 4 2,
-  .CX 32 1,
   .CX 28 1,
   .CX 27 1,
   .CX 25 1,
@@ -17100,22 +16498,20 @@ private def leave1Block5 : Program := [
   .CX 32 3,
   .CX 35 3,
   .CCX 16 3 37,
-  .CX 35 3,
-  .CX 32 3,
-  .CX 4 3,
   .CX 20 16,
   .CX 3 1,
-  .CX 4 1,
-  .CX 35 1,
-  .CCX 16 1 38,
+  .CX 4 3,
+  .CX 32 3,
+  .CX 35 3,
+  .CCX 16 1 38
+]
+
+private def leave1Block5 : Program := [
   .CX 35 1,
   .CX 4 1,
   .CX 3 1,
   .CX 16 2,
-  .CX 23 2
-]
-
-private def leave1Block6 : Program := [
+  .CX 23 2,
   .CX 24 2,
   .CX 25 2,
   .CX 26 2,
@@ -17134,21 +16530,14 @@ private def leave1Block6 : Program := [
   .CX 22 5,
   .CX 17 5,
   .CX 6 5,
-  .CX 36 2,
-  .CX 35 2,
   .CX 34 2,
-  .CX 32 2,
-  .CX 26 2,
-  .CX 25 2,
-  .CX 24 2,
-  .CX 23 2,
-  .CX 16 2,
-  .CX 39 4,
-  .CCX 16 4 40,
-  .CX 39 4
+  .CX 16 2
 ]
 
-private def leave1Block7 : Program := [
+private def leave1Block6 : Program := [
+  .CX 39 4,
+  .CCX 16 4 40,
+  .CX 39 4,
   .CX 20 16,
   .CX 7 3,
   .CX 10 3,
@@ -17166,22 +16555,14 @@ private def leave1Block7 : Program := [
   .CX 10 3,
   .CX 7 3,
   .CX 20 16,
-  .CX 3 1,
-  .CX 27 1,
-  .CX 30 1,
-  .CX 39 1,
-  .CX 39 1,
-  .CX 30 1,
-  .CX 27 1,
-  .CX 3 1,
   .CX 16 9,
   .CX 18 9,
   .CX 26 9,
-  .CX 30 9
+  .CX 30 9,
+  .CX 31 9
 ]
 
-private def leave1Block8 : Program := [
-  .CX 31 9,
+private def leave1Block7 : Program := [
   .CX 33 9,
   .CX 41 9,
   .CCX 8 9 43,
@@ -17196,27 +16577,20 @@ private def leave1Block8 : Program := [
   .CX 16 2,
   .CX 17 2,
   .CX 22 2,
-  .CX 23 2,
-  .CX 24 2,
-  .CX 25 2,
-  .CX 26 2,
   .CX 30 2,
-  .CX 32 2,
-  .CX 35 2,
-  .CX 36 2,
   .CX 38 2,
   .CX 40 2,
   .CX 17 16,
   .CX 27 16,
   .CX 32 16,
   .CX 34 16,
-  .CCX 2 16 44
-]
-
-private def leave1Block9 : Program := [
+  .CCX 2 16 44,
   .CX 34 16,
   .CX 32 16,
-  .CX 27 16,
+  .CX 27 16
+]
+
+private def leave1Block8 : Program := [
   .CX 17 16,
   .CX 40 2,
   .CX 38 2,
@@ -17239,98 +16613,39 @@ private def leave1Block9 : Program := [
   .CX 36 0,
   .CX 44 0,
   .CCX 16 0 45,
-  .CX 44 0,
-  .CX 36 0,
-  .CX 27 0,
   .CX 4 0,
-  .CX 2 0
+  .CX 20 16
 ]
 
-private def leave1Block10 : Program := [
-  .CX 20 16,
+private def leave1Block9 : Program := [
   .CX 18 7,
   .CX 22 7,
-  .X 7,
-  .CX 5 2,
-  .CX 19 2,
-  .CX 23 2,
-  .CX 24 2,
-  .CX 25 2,
-  .CX 26 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 35 2,
-  .CX 36 2,
-  .CX 37 2,
-  .CX 38 2,
-  .CX 40 2,
-  .CX 42 2,
-  .CX 45 2,
   .CX 16 46,
   .CX 18 46,
-  .CX 45 2,
-  .CX 42 2,
-  .CX 40 2,
-  .CX 38 2,
-  .CX 37 2,
-  .CX 36 2,
-  .CX 35 2,
-  .CX 32 2,
-  .CX 31 2,
-  .CX 26 2
-]
-
-private def leave1Block11 : Program := [
-  .CX 25 2,
-  .CX 24 2,
-  .CX 23 2,
-  .CX 19 2,
-  .CX 5 2,
-  .X 7,
-  .CX 22 7,
-  .CX 18 7,
-  .CX 16 7,
-  .CX 22 7,
-  .CX 46 7,
   .CCX 13 7 47,
-  .CX 46 7,
-  .CX 22 7,
-  .CX 16 7,
   .CX 13 7,
-  .CX 16 7,
-  .CX 22 7,
-  .CX 46 7,
   .CX 47 7,
   .CCX 14 7 48,
-  .CX 47 7,
-  .CX 46 7,
-  .CX 22 7,
-  .CX 16 7,
-  .CX 13 7,
   .CX 16 1,
   .CX 20 1,
   .CX 32 1,
-  .CX 37 1
-]
-
-private def leave1Block12 : Program := [
+  .CX 37 1,
   .CX 38 1,
-  .CX 2 0,
   .CX 17 0,
   .CX 18 0,
   .CX 22 0,
   .CX 23 0,
-  .CX 27 0,
   .CX 32 0,
   .CX 34 0,
   .CX 35 0,
-  .CX 36 0,
   .CX 39 0,
-  .CX 44 0,
   .CCX 1 0 49,
   .CX 44 0,
   .CX 39 0,
-  .CX 36 0,
+  .CX 36 0
+]
+
+private def leave1Block10 : Program := [
   .CX 35 0,
   .CX 34 0,
   .CX 32 0,
@@ -17340,13 +16655,6 @@ private def leave1Block12 : Program := [
   .CX 18 0,
   .CX 17 0,
   .CX 2 0,
-  .CX 38 1,
-  .CX 37 1,
-  .CX 32 1,
-  .CX 20 1
-]
-
-private def leave1Block13 : Program := [
   .CX 16 1,
   .CX 16 2,
   .CX 20 2,
@@ -17362,27 +16670,21 @@ private def leave1Block13 : Program := [
   .CX 31 2,
   .CX 25 2,
   .CX 20 2,
-  .CX 16 2,
+  .CX 16 2
+]
+
+private def leave1Block11 : Program := [
   .X 15,
-  .CX 13 7,
   .CX 14 7,
-  .CX 16 7,
-  .CX 22 7,
-  .CX 46 7,
-  .CX 47 7,
   .CX 48 7,
   .CCX 15 7 51,
   .CX 48 7,
   .CX 47 7,
   .CX 46 7,
   .CX 22 7,
-  .CX 16 7
-]
-
-private def leave1Block14 : Program := [
+  .CX 16 7,
   .CX 14 7,
   .CX 13 7,
-  .X 15,
   .CX 16 3,
   .CX 20 3,
   .CX 21 3,
@@ -17396,7 +16698,10 @@ private def leave1Block14 : Program := [
   .CX 50 16,
   .CX 30 16,
   .CX 27 16,
-  .CX 22 16,
+  .CX 22 16
+]
+
+private def leave1Block12 : Program := [
   .CX 29 3,
   .CX 23 3,
   .CX 21 3,
@@ -17409,10 +16714,7 @@ private def leave1Block14 : Program := [
   .CX 26 4,
   .CX 27 4,
   .CX 31 4,
-  .CX 33 4
-]
-
-private def leave1Block15 : Program := [
+  .CX 33 4,
   .CX 40 4,
   .CX 41 4,
   .X 4,
@@ -17423,9 +16725,10 @@ private def leave1Block15 : Program := [
   .CX 33 4,
   .CX 31 4,
   .CX 27 4,
-  .CX 26 4,
-  .CX 23 4,
-  .CX 21 4,
+  .CX 23 4
+]
+
+private def leave1Block13 : Program := [
   .CX 20 4,
   .CX 18 4,
   .CX 29 7,
@@ -17436,23 +16739,6 @@ private def leave1Block15 : Program := [
   .CX 45 7,
   .CX 53 7,
   .CCX 18 7 54,
-  .CX 53 7,
-  .CX 45 7,
-  .CX 41 7,
-  .CX 37 7,
-  .CX 31 7,
-  .CX 30 7,
-  .CX 29 7
-]
-
-private def leave1Block16 : Program := [
-  .CX 29 7,
-  .CX 30 7,
-  .CX 31 7,
-  .CX 37 7,
-  .CX 41 7,
-  .CX 45 7,
-  .CX 53 7,
   .CCX 25 7 55,
   .CX 53 7,
   .CX 45 7,
@@ -17464,32 +16750,25 @@ private def leave1Block16 : Program := [
   .CX 8 4,
   .CX 16 4,
   .CX 17 4,
-  .CX 21 4,
   .CX 22 4,
-  .CX 26 4,
   .CX 32 4,
   .CX 34 4,
-  .CX 35 4,
+  .CX 35 4
+]
+
+private def leave1Block14 : Program := [
   .CX 37 4,
   .CCX 52 4 56,
   .CX 37 4,
   .CX 35 4,
   .CX 34 4,
-  .CX 32 4
-]
-
-private def leave1Block17 : Program := [
+  .CX 32 4,
   .CX 26 4,
   .CX 22 4,
-  .CX 21 4,
   .CX 17 4,
-  .CX 16 4,
   .CX 8 4,
   .CX 51 15,
-  .X 15,
-  .CX 16 4,
   .CX 20 4,
-  .CX 21 4,
   .CX 23 4,
   .CX 25 4,
   .CX 27 4,
@@ -17502,49 +16781,43 @@ private def leave1Block17 : Program := [
   .CX 53 4,
   .CX 44 4,
   .CX 40 4,
-  .CX 30 4,
+  .CX 30 4
+]
+
+private def leave1Block15 : Program := [
   .CX 29 4,
   .CX 27 4,
   .CX 25 4,
   .CX 23 4,
   .CX 21 4,
-  .CX 20 4
-]
-
-private def leave1Block18 : Program := [
+  .CX 20 4,
   .CX 16 4,
-  .X 15,
-  .CX 51 15,
   .CX 43 29,
   .CX 18 10,
   .CX 37 10,
   .CCX 29 10 58,
-  .CX 37 10,
-  .CX 18 10,
   .CX 43 29,
   .CX 11 9,
   .CX 22 9,
   .CCX 58 9 59,
   .CX 22 9,
   .CX 11 9,
-  .CX 51 15,
   .CX 57 15,
-  .X 15,
   .CX 16 7,
   .CX 17 7,
   .CX 23 7,
   .CX 26 7,
   .CCX 15 7 60,
   .CX 26 7,
-  .CX 23 7,
+  .CX 23 7
+]
+
+private def leave1Block16 : Program := [
   .CX 17 7,
   .CX 16 7,
   .X 15,
   .CX 57 15,
-  .CX 51 15
-]
-
-private def leave1Block19 : Program := [
+  .CX 51 15,
   .CX 16 8,
   .CX 18 8,
   .CX 22 8,
@@ -17558,983 +16831,887 @@ private def leave1Block19 : Program := [
   .X 8,
   .CCX 8 20 61,
   .X 8,
-  .CX 60 8,
-  .CX 53 8,
-  .CX 45 8,
-  .CX 37 8,
-  .CX 33 8,
-  .CX 29 8,
-  .CX 26 8,
-  .CX 22 8,
-  .CX 18 8,
-  .CX 16 8,
-  .CX 61 60,
-  .CX 61 59,
-  .CX 61 57,
-  .CX 61 56,
-  .CX 61 54,
-  .CX 61 50,
-  .CX 61 49
+  .CX 20 9,
+  .CX 29 9,
+  .CX 55 9,
+  .CX 20 10,
+  .CX 54 10,
+  .CX 61 10
 ]
 
-private def leave1Block20 : Program := [
-  .CX 61 48,
-  .CX 61 46,
-  .CX 61 41,
-  .CX 61 40,
-  .CX 61 37,
-  .CX 61 35,
-  .CX 61 33,
-  .CX 61 30,
-  .CX 61 28,
-  .CX 61 26,
-  .CX 61 24,
-  .CX 61 23,
-  .CX 61 20,
-  .CX 61 12,
+private def leave1Block17 : Program := [
+  .CX 22 11,
+  .CX 30 11,
+  .CX 31 11,
+  .CX 37 11,
   .CX 61 11,
-  .CX 61 9,
-  .CX 61 7,
-  .CX 61 0,
-  .CX 60 61,
-  .CX 60 59,
-  .CX 60 57,
-  .CX 60 56,
-  .CX 60 55,
-  .CX 60 53,
-  .CX 60 52,
-  .CX 60 51,
-  .CX 60 48,
-  .CX 60 46,
-  .CX 60 45,
-  .CX 60 44
-]
-
-private def leave1Block21 : Program := [
-  .CX 60 43,
-  .CX 60 38,
-  .CX 60 37,
-  .CX 60 35,
-  .CX 60 34,
-  .CX 60 33,
-  .CX 60 30,
-  .CX 60 29,
-  .CX 60 28,
-  .CX 60 24,
-  .CX 60 23,
-  .CX 60 21,
-  .CX 60 18,
-  .CX 60 12,
-  .CX 60 8,
-  .CX 60 7,
-  .CX 60 5,
-  .CX 60 2,
-  .CX 60 1,
-  .CX 60 0,
-  .CX 59 61,
-  .CX 59 57,
-  .CX 59 54,
-  .CX 59 52,
-  .CX 59 46,
-  .CX 59 41,
-  .CX 59 38,
-  .CX 59 37,
-  .CX 59 36,
-  .CX 59 34
-]
-
-private def leave1Block22 : Program := [
-  .CX 59 27,
-  .CX 59 26,
-  .CX 59 25,
-  .CX 59 23,
-  .CX 59 22,
-  .CX 59 21,
-  .CX 59 16,
-  .CX 59 12,
-  .CX 59 7,
-  .CX 59 2,
-  .CX 59 0,
-  .CX 61 59,
-  .CX 58 56,
-  .CX 58 47,
-  .CX 58 42,
-  .CX 58 39,
-  .CX 58 36,
-  .CX 58 24,
-  .CX 57 61,
-  .CX 61 57,
-  .CX 56 58,
-  .CX 56 47,
-  .CX 58 56,
-  .CX 55 60,
-  .CX 55 51,
-  .CX 55 45,
-  .CX 55 44,
-  .CX 55 43,
-  .CX 55 40,
-  .CX 55 39
-]
-
-private def leave1Block23 : Program := [
-  .CX 55 38,
-  .CX 55 29,
-  .CX 55 23,
-  .CX 55 5,
-  .CX 55 2,
-  .CX 55 1,
-  .CX 60 55,
-  .CX 54 55,
-  .CX 54 26,
-  .CX 54 23,
-  .CX 54 21,
-  .CX 54 18,
-  .CX 55 54,
-  .CX 53 60,
-  .CX 53 59,
-  .CX 53 58,
-  .CX 53 52,
-  .CX 53 51,
-  .CX 53 50,
-  .CX 53 49,
-  .CX 53 48,
-  .CX 53 47,
-  .CX 53 45,
-  .CX 53 43,
-  .CX 53 40,
-  .CX 53 39,
-  .CX 53 32,
-  .CX 53 30,
-  .CX 53 29,
-  .CX 53 28
-]
-
-private def leave1Block24 : Program := [
-  .CX 53 27,
-  .CX 53 26,
-  .CX 53 25,
-  .CX 53 21,
-  .CX 53 12,
-  .CX 53 11,
-  .CX 53 9,
-  .CX 53 6,
-  .CX 53 5,
-  .CX 53 1,
-  .CX 52 60,
-  .CX 52 59,
-  .CX 52 51,
-  .CX 52 48,
-  .CX 52 45,
-  .CX 52 44,
-  .CX 52 43,
-  .CX 52 41,
-  .CX 52 40,
-  .CX 52 38,
-  .CX 52 35,
-  .CX 52 34,
-  .CX 52 29,
-  .CX 52 28,
-  .CX 52 26,
-  .CX 52 25,
-  .CX 52 24,
-  .CX 52 21,
-  .CX 52 16,
-  .CX 52 12
-]
-
-private def leave1Block25 : Program := [
-  .CX 52 9,
-  .CX 52 7,
-  .CX 52 4,
-  .CX 52 1,
-  .CX 51 60,
-  .CX 60 51,
-  .CX 50 57,
-  .CX 50 49,
-  .CX 50 46,
-  .CX 50 44,
-  .CX 50 40,
-  .CX 50 39,
-  .CX 50 38,
-  .CX 50 35,
-  .CX 50 32,
-  .CX 50 28,
-  .CX 50 27,
-  .CX 50 23,
-  .CX 50 21,
-  .CX 50 19,
-  .CX 50 17,
-  .CX 50 12,
-  .CX 57 50,
-  .CX 49 55,
-  .CX 49 45,
-  .CX 49 44,
-  .CX 49 41,
-  .CX 49 34,
-  .CX 49 31,
-  .CX 49 28
-]
-
-private def leave1Block26 : Program := [
-  .CX 49 26,
-  .CX 49 25,
-  .CX 49 23,
-  .CX 49 22,
-  .CX 49 21,
-  .CX 49 18,
-  .CX 49 10,
-  .CX 49 5,
-  .CX 48 59,
-  .CX 59 48,
-  .CX 47 58,
-  .CX 58 47,
-  .CX 46 57,
-  .CX 57 46,
-  .CX 45 51,
-  .CX 45 50,
-  .CX 45 44,
-  .CX 45 43,
-  .CX 45 40,
-  .CX 45 39,
-  .CX 45 38,
-  .CX 45 36,
-  .CX 45 33,
-  .CX 45 29,
-  .CX 45 26,
-  .CX 45 25,
-  .CX 45 24,
-  .CX 45 21,
-  .CX 45 9,
-  .CX 45 5
-]
-
-private def leave1Block27 : Program := [
-  .CX 45 1,
-  .CX 45 0,
-  .CX 50 45,
-  .CX 44 48,
-  .CX 44 47,
-  .CX 44 45,
-  .CX 44 39,
-  .CX 44 33,
-  .CX 44 26,
-  .CX 44 25,
-  .CX 44 23,
-  .CX 44 21,
-  .CX 44 2,
-  .CX 45 44,
-  .CX 43 55,
-  .CX 43 52,
-  .CX 43 51,
-  .CX 43 49,
-  .CX 43 48,
-  .CX 43 41,
-  .CX 43 39,
-  .CX 43 36,
-  .CX 43 35,
-  .CX 43 32,
-  .CX 43 31,
-  .CX 43 30,
-  .CX 43 29,
-  .CX 43 28,
-  .CX 43 23,
-  .CX 43 21
-]
-
-private def leave1Block28 : Program := [
-  .CX 43 18,
-  .CX 43 17,
-  .CX 43 12,
-  .CX 43 10,
-  .CX 43 9,
-  .CX 43 7,
-  .CX 43 5,
-  .CX 43 4,
-  .CX 43 3,
-  .CX 43 1,
-  .CX 42 56,
-  .CX 56 42,
-  .CX 41 55,
-  .CX 41 53,
-  .CX 41 52,
-  .CX 41 49,
-  .CX 41 47,
-  .CX 41 43,
-  .CX 41 40,
-  .CX 41 31,
-  .CX 41 28,
-  .CX 41 27,
-  .CX 41 26,
-  .CX 41 25,
-  .CX 41 23,
-  .CX 41 19,
-  .CX 41 18,
-  .CX 41 11,
-  .CX 41 10,
+  .CX 4 46,
+  .CX 6 46,
+  .CX 12 46,
+  .CX 16 46,
+  .CX 18 46,
+  .CX 2 42,
+  .CX 3 42,
+  .CX 6 42,
+  .CX 9 42,
+  .CX 12 42,
+  .CX 20 42,
+  .CX 29 42,
+  .CX 39 42,
+  .CX 55 42,
+  .CX 18 7,
+  .CX 29 7,
+  .CX 30 7,
+  .CX 31 7,
+  .CX 37 7,
   .CX 41 7
 ]
 
-private def leave1Block29 : Program := [
-  .CX 41 6,
-  .CX 41 4,
+private def leave1Block18 : Program := [
+  .CX 45 7,
+  .CX 53 7,
+  .CX 54 7,
+  .CX 60 7,
+  .CX 17 12,
+  .CX 22 12,
+  .CX 29 12,
+  .CX 30 12,
+  .CX 31 12,
+  .CX 37 12,
+  .CX 41 12,
+  .CX 45 12,
+  .CX 60 12,
+  .CX 61 12,
+  .CX 4 29,
+  .CX 6 29,
+  .CX 11 29,
+  .CX 12 29,
+  .CX 17 29,
+  .CX 20 29,
+  .CX 41 29,
+  .CX 45 29,
+  .CX 46 29,
+  .CX 60 29,
+  .CX 10 31
+]
+
+private def leave1Block19 : Program := [
+  .CX 11 31,
+  .CX 18 31,
+  .CX 22 31,
+  .CX 29 31,
+  .CX 30 31,
+  .CX 54 31,
+  .CX 10 61,
+  .CX 18 61,
+  .CX 20 61,
+  .CX 31 61,
+  .CX 37 61,
+  .CX 54 61,
+  .CX 57 61,
+  .CX 16 57,
+  .CX 18 57,
+  .CX 61 57,
+  .CX 11 3,
+  .CX 16 3,
+  .CX 21 3,
+  .CX 23 3,
+  .CX 29 3,
   .CX 41 3,
-  .CX 40 44,
-  .CX 40 36,
-  .CX 40 34,
-  .CX 40 30,
-  .CX 40 26,
-  .CX 40 23,
-  .CX 40 22,
-  .CX 40 21,
-  .CX 40 7,
-  .CX 44 40,
-  .CX 39 51,
-  .CX 39 38,
-  .CX 39 36,
-  .CX 39 33,
-  .CX 39 26,
-  .CX 39 23,
-  .CX 39 21,
-  .CX 39 5,
-  .CX 39 2,
+  .CX 45 3,
+  .CX 53 3,
+  .CX 2 53
+]
+
+private def leave1Block20 : Program := [
+  .CX 3 53,
+  .CX 9 53,
+  .CX 12 53,
+  .CX 16 53,
+  .CX 17 53,
+  .CX 21 53,
+  .CX 23 53,
+  .CX 39 53,
+  .CX 42 53,
+  .CX 55 53,
+  .CX 60 53,
+  .CX 2 1,
+  .CX 3 1,
+  .CX 4 1,
+  .CX 9 1,
+  .CX 21 1,
+  .CX 23 1,
   .CX 39 1,
-  .CX 51 39,
-  .CX 38 53,
-  .CX 38 36,
-  .CX 38 35,
-  .CX 38 33,
+  .CX 42 1,
+  .CX 46 1,
+  .CX 55 1,
+  .CX 1 17,
+  .CX 2 17,
+  .CX 4 17
+]
+
+private def leave1Block21 : Program := [
+  .CX 53 17,
+  .CX 7 17,
+  .CX 10 17,
+  .CX 16 17,
+  .CX 20 17,
+  .CX 25 17,
+  .CX 27 17,
+  .CX 29 17,
+  .CX 32 17,
+  .CX 38 17,
+  .CX 46 17,
+  .CX 49 17,
+  .CX 60 17,
+  .CX 16 18,
+  .CX 17 18,
+  .CX 49 18,
+  .CX 50 18,
+  .CX 57 18,
+  .CX 0 50,
+  .CX 17 50,
+  .CX 18 50,
+  .CX 49 50,
+  .CX 50 26,
+  .CX 3 26,
+  .CX 5 26
+]
+
+private def leave1Block22 : Program := [
+  .CX 8 26,
+  .CX 9 26,
+  .CX 11 26,
+  .CX 17 26,
+  .CX 21 26,
+  .CX 25 26,
+  .CX 27 26,
+  .CX 33 26,
+  .CX 37 26,
+  .CX 41 26,
+  .CX 46 26,
+  .CX 49 26,
+  .CX 55 26,
+  .CX 60 26,
+  .CX 50 45,
+  .CX 3 45,
+  .CX 5 45,
+  .CX 7 45,
+  .CX 10 45,
+  .CX 11 45,
+  .CX 12 45,
+  .CX 20 45,
+  .CX 21 45,
+  .CX 22 45,
+  .CX 26 45
+]
+
+private def leave1Block23 : Program := [
+  .CX 29 45,
+  .CX 37 45,
+  .CX 41 45,
+  .CX 46 45,
+  .CX 57 45,
+  .CX 50 32,
+  .CX 1 32,
+  .CX 4 32,
+  .CX 5 32,
+  .CX 7 32,
+  .CX 10 32,
+  .CX 16 32,
+  .CX 20 32,
+  .CX 22 32,
+  .CX 23 32,
+  .CX 26 32,
+  .CX 29 32,
   .CX 38 32,
-  .CX 38 26
+  .CX 39 32,
+  .CX 42 32,
+  .CX 57 32,
+  .CX 60 32,
+  .CX 50 22,
+  .CX 5 22,
+  .CX 9 22
+]
+
+private def leave1Block24 : Program := [
+  .CX 16 22,
+  .CX 17 22,
+  .CX 20 22,
+  .CX 21 22,
+  .CX 25 22,
+  .CX 27 22,
+  .CX 29 22,
+  .CX 32 22,
+  .CX 46 22,
+  .CX 49 22,
+  .CX 55 22,
+  .CX 57 22,
+  .CX 50 20,
+  .CX 5 20,
+  .CX 9 20,
+  .CX 21 20,
+  .CX 22 20,
+  .CX 25 20,
+  .CX 29 20,
+  .CX 30 20,
+  .CX 32 20,
+  .CX 46 20,
+  .CX 52 20,
+  .CX 55 20
+]
+
+private def leave1Block25 : Program := [
+  .CX 57 20,
+  .CX 50 23,
+  .CX 2 23,
+  .CX 5 23,
+  .CX 53 23,
+  .CX 16 23,
+  .CX 19 23,
+  .CX 20 23,
+  .CX 25 23,
+  .CX 26 23,
+  .CX 30 23,
+  .CX 32 23,
+  .CX 39 23,
+  .CX 42 23,
+  .CX 46 23,
+  .CX 52 23,
+  .CX 57 23,
+  .CX 50 19,
+  .CX 4 19,
+  .CX 5 19,
+  .CX 53 19,
+  .CX 9 19,
+  .CX 21 19,
+  .CX 23 19,
+  .CX 25 19
+]
+
+private def leave1Block26 : Program := [
+  .CX 29 19,
+  .CX 30 19,
+  .CX 32 19,
+  .CX 55 19,
+  .CX 57 19,
+  .CX 58 19,
+  .CX 3 16,
+  .CX 7 16,
+  .CX 9 16,
+  .CX 10 16,
+  .CX 17 16,
+  .CX 20 16,
+  .CX 25 16,
+  .CX 26 16,
+  .CX 27 16,
+  .CX 29 16,
+  .CX 32 16,
+  .CX 37 16,
+  .CX 43 16,
+  .CX 45 16,
+  .CX 49 16,
+  .CX 52 16,
+  .CX 55 16,
+  .CX 60 16,
+  .CX 50 43
+]
+
+private def leave1Block27 : Program := [
+  .CX 2 43,
+  .CX 4 43,
+  .CX 5 43,
+  .CX 16 43,
+  .CX 19 43,
+  .CX 20 43,
+  .CX 21 43,
+  .CX 22 43,
+  .CX 25 43,
+  .CX 29 43,
+  .CX 30 43,
+  .CX 32 43,
+  .CX 39 43,
+  .CX 42 43,
+  .CX 52 43,
+  .CX 57 43,
+  .CX 58 43,
+  .CX 2 25,
+  .CX 4 25,
+  .CX 17 25,
+  .CX 27 25,
+  .CX 32 25,
+  .CX 39 25,
+  .CX 42 25,
+  .CX 43 25
+]
+
+private def leave1Block28 : Program := [
+  .CX 45 25,
+  .CX 46 25,
+  .CX 49 25,
+  .CX 50 49,
+  .CX 2 49,
+  .CX 3 49,
+  .CX 4 49,
+  .CX 7 49,
+  .CX 9 49,
+  .CX 10 49,
+  .CX 17 49,
+  .CX 20 49,
+  .CX 21 49,
+  .CX 26 49,
+  .CX 27 49,
+  .CX 29 49,
+  .CX 30 49,
+  .CX 32 49,
+  .CX 37 49,
+  .CX 46 49,
+  .CX 52 49,
+  .CX 55 49,
+  .CX 57 49,
+  .CX 60 49
+]
+
+private def leave1Block29 : Program := [
+  .CX 50 37,
+  .CX 2 37,
+  .CX 3 37,
+  .CX 5 37,
+  .CX 7 37,
+  .CX 10 37,
+  .CX 22 37,
+  .CX 25 37,
+  .CX 26 37,
+  .CX 29 37,
+  .CX 32 37,
+  .CX 45 37,
+  .CX 49 37,
+  .CX 60 37,
+  .CX 50 30,
+  .CX 2 30,
+  .CX 4 30,
+  .CX 9 30,
+  .CX 19 30,
+  .CX 21 30,
+  .CX 27 30,
+  .CX 28 30,
+  .CX 29 30,
+  .CX 32 30,
+  .CX 46 30
 ]
 
 private def leave1Block30 : Program := [
-  .CX 38 19,
-  .CX 38 17,
-  .CX 38 12,
-  .CX 38 6,
-  .CX 53 38,
-  .CX 37 55,
-  .CX 37 53,
-  .CX 37 48,
-  .CX 37 47,
-  .CX 37 46,
-  .CX 37 45,
-  .CX 37 44,
-  .CX 37 40,
-  .CX 37 32,
-  .CX 37 30,
-  .CX 37 28,
-  .CX 37 27,
-  .CX 37 25,
-  .CX 37 18,
-  .CX 37 7,
-  .CX 37 6,
-  .CX 37 2,
-  .CX 40 37,
-  .CX 36 53,
-  .CX 36 52,
-  .CX 36 50,
-  .CX 36 48,
-  .CX 36 44,
-  .CX 36 43,
-  .CX 36 34
+  .CX 49 30,
+  .CX 55 30,
+  .CX 57 30,
+  .CX 58 30,
+  .CX 2 4,
+  .CX 5 4,
+  .CX 8 4,
+  .CX 20 4,
+  .CX 21 4,
+  .CX 26 4,
+  .CX 28 4,
+  .CX 29 4,
+  .CX 30 4,
+  .CX 32 4,
+  .CX 37 4,
+  .CX 39 4,
+  .CX 40 4,
+  .CX 42 4,
+  .CX 45 4,
+  .CX 52 4,
+  .CX 57 4,
+  .CX 2 52,
+  .CX 4 52,
+  .CX 5 52,
+  .CX 8 52
 ]
 
 private def leave1Block31 : Program := [
-  .CX 36 24,
-  .CX 36 23,
-  .CX 36 6,
-  .CX 36 5,
-  .CX 36 4,
-  .CX 36 3,
-  .CX 36 0,
-  .CX 43 36,
-  .CX 35 51,
-  .CX 35 46,
-  .CX 35 33,
-  .CX 35 32,
-  .CX 35 26,
-  .CX 35 19,
-  .CX 35 17,
-  .CX 35 12,
-  .CX 35 5,
-  .CX 35 2,
-  .CX 35 1,
-  .CX 46 35,
-  .CX 34 49,
-  .CX 34 23,
-  .CX 34 21,
-  .CX 34 5,
-  .CX 49 34,
-  .CX 33 48,
-  .CX 33 47,
-  .CX 33 45,
-  .CX 33 42,
-  .CX 33 26
+  .CX 20 52,
+  .CX 21 52,
+  .CX 26 52,
+  .CX 28 52,
+  .CX 29 52,
+  .CX 30 52,
+  .CX 32 52,
+  .CX 37 52,
+  .CX 39 52,
+  .CX 40 52,
+  .CX 42 52,
+  .CX 45 52,
+  .CX 57 52,
+  .CX 1 2,
+  .CX 4 2,
+  .CX 8 2,
+  .CX 10 2,
+  .CX 11 2,
+  .CX 21 2,
+  .CX 25 2,
+  .CX 26 2,
+  .CX 28 2,
+  .CX 30 2,
+  .CX 31 2,
+  .CX 37 2
 ]
 
 private def leave1Block32 : Program := [
-  .CX 33 25,
-  .CX 33 23,
-  .CX 33 21,
-  .CX 33 2,
-  .CX 42 33,
-  .CX 32 53,
-  .CX 32 52,
-  .CX 32 51,
-  .CX 32 50,
-  .CX 32 49,
-  .CX 32 47,
-  .CX 32 46,
-  .CX 32 45,
-  .CX 32 44,
-  .CX 32 43,
-  .CX 32 42,
-  .CX 32 41,
-  .CX 32 25,
-  .CX 32 24,
-  .CX 32 23,
-  .CX 32 19,
-  .CX 32 17,
-  .CX 32 12,
-  .CX 32 6,
-  .CX 32 5,
-  .CX 32 4,
-  .CX 32 3,
-  .CX 32 1,
-  .CX 32 0,
-  .CX 41 32
+  .CX 40 2,
+  .CX 43 2,
+  .CX 46 2,
+  .CX 49 2,
+  .CX 52 2,
+  .CX 54 2,
+  .CX 50 28,
+  .CX 4 28,
+  .CX 7 28,
+  .CX 10 28,
+  .CX 11 28,
+  .CX 19 28,
+  .CX 21 28,
+  .CX 22 28,
+  .CX 26 28,
+  .CX 29 28,
+  .CX 30 28,
+  .CX 39 28,
+  .CX 40 28,
+  .CX 41 28,
+  .CX 42 28,
+  .CX 49 28,
+  .CX 52 28,
+  .CX 57 28
 ]
 
 private def leave1Block33 : Program := [
-  .CX 31 53,
-  .CX 31 48,
-  .CX 31 47,
-  .CX 31 46,
-  .CX 31 45,
-  .CX 31 35,
-  .CX 31 34,
-  .CX 31 30,
-  .CX 31 27,
-  .CX 31 6,
-  .CX 31 2,
-  .CX 34 31,
-  .CX 30 52,
-  .CX 30 50,
-  .CX 30 47,
-  .CX 30 45,
-  .CX 30 41,
-  .CX 30 38,
-  .CX 30 26,
-  .CX 30 25,
-  .CX 30 24,
-  .CX 30 22,
-  .CX 30 19,
-  .CX 30 17,
-  .CX 30 12,
-  .CX 30 7,
-  .CX 30 5,
-  .CX 30 4,
-  .CX 30 2,
-  .CX 30 0
+  .CX 58 28,
+  .CX 50 39,
+  .CX 1 39,
+  .CX 2 39,
+  .CX 53 39,
+  .CX 7 39,
+  .CX 8 39,
+  .CX 19 39,
+  .CX 22 39,
+  .CX 25 39,
+  .CX 29 39,
+  .CX 33 39,
+  .CX 41 39,
+  .CX 42 39,
+  .CX 43 39,
+  .CX 46 39,
+  .CX 52 39,
+  .CX 54 39,
+  .CX 57 39,
+  .CX 58 39,
+  .CX 50 54,
+  .CX 1 54,
+  .CX 2 54,
+  .CX 5 54,
+  .CX 53 54
 ]
 
 private def leave1Block34 : Program := [
-  .CX 38 30,
-  .CX 29 55,
+  .CX 7 54,
+  .CX 8 54,
+  .CX 19 54,
+  .CX 22 54,
+  .CX 25 54,
   .CX 29 54,
-  .CX 29 53,
-  .CX 29 50,
-  .CX 29 48,
-  .CX 29 47,
-  .CX 29 46,
-  .CX 29 45,
-  .CX 29 42,
-  .CX 29 39,
-  .CX 29 38,
+  .CX 33 54,
+  .CX 39 54,
+  .CX 41 54,
+  .CX 45 54,
+  .CX 49 54,
+  .CX 52 54,
+  .CX 57 54,
+  .CX 58 54,
+  .CX 5 33,
+  .CX 53 33,
+  .CX 7 33,
+  .CX 8 33,
+  .CX 10 33,
+  .CX 11 33,
+  .CX 24 33,
   .CX 29 33,
-  .CX 29 32,
-  .CX 29 30,
-  .CX 29 28,
-  .CX 29 26,
-  .CX 29 24,
-  .CX 29 23,
-  .CX 29 22,
-  .CX 29 20,
-  .CX 29 18,
-  .CX 29 16,
-  .CX 29 11,
-  .CX 29 8,
-  .CX 29 6,
-  .CX 29 0,
-  .CX 30 29,
-  .CX 28 55,
-  .CX 28 53
+  .CX 31 33,
+  .CX 39 33,
+  .CX 41 33
 ]
 
 private def leave1Block35 : Program := [
-  .CX 28 52,
-  .CX 28 50,
-  .CX 28 49,
-  .CX 28 47,
-  .CX 28 46,
-  .CX 28 45,
-  .CX 28 42,
+  .CX 45 33,
+  .CX 49 33,
+  .CX 52 33,
+  .CX 54 33,
+  .CX 50 41,
+  .CX 53 41,
+  .CX 7 41,
+  .CX 8 41,
+  .CX 10 41,
+  .CX 11 41,
+  .CX 24 41,
   .CX 28 41,
-  .CX 28 38,
-  .CX 28 36,
-  .CX 28 35,
-  .CX 28 31,
-  .CX 28 27,
-  .CX 28 26,
-  .CX 28 25,
-  .CX 28 24,
-  .CX 28 18,
-  .CX 28 17,
-  .CX 28 12,
-  .CX 28 10,
-  .CX 28 7,
-  .CX 28 6,
-  .CX 28 4,
-  .CX 28 2,
-  .CX 28 0,
-  .CX 31 28,
-  .CX 27 55,
-  .CX 27 53,
-  .CX 27 52,
-  .CX 27 50
+  .CX 29 41,
+  .CX 33 41,
+  .CX 35 41,
+  .CX 37 41,
+  .CX 46 41,
+  .CX 52 41,
+  .CX 54 41,
+  .CX 53 35,
+  .CX 27 35,
+  .CX 37 35,
+  .CX 41 35,
+  .CX 46 35,
+  .CX 52 35
 ]
 
 private def leave1Block36 : Program := [
-  .CX 27 49,
-  .CX 27 47,
-  .CX 27 46,
-  .CX 27 45,
-  .CX 27 42,
-  .CX 27 41,
-  .CX 27 38,
-  .CX 27 36,
-  .CX 27 35,
-  .CX 27 31,
-  .CX 27 30,
-  .CX 27 26,
-  .CX 27 25,
-  .CX 27 24,
-  .CX 27 18,
-  .CX 27 17,
-  .CX 27 12,
-  .CX 27 10,
-  .CX 27 7,
+  .CX 1 6,
+  .CX 2 6,
+  .CX 3 6,
+  .CX 8 6,
+  .CX 12 6,
+  .CX 19 6,
+  .CX 21 6,
+  .CX 22 6,
+  .CX 23 6,
+  .CX 25 6,
   .CX 27 6,
-  .CX 27 4,
-  .CX 27 2,
-  .CX 27 0,
-  .CX 30 27,
-  .CX 26 54,
-  .CX 26 53,
-  .CX 26 52,
-  .CX 26 50,
-  .CX 26 48,
-  .CX 26 46
+  .CX 28 6,
+  .CX 31 6,
+  .CX 33 6,
+  .CX 34 6,
+  .CX 38 6,
+  .CX 39 6,
+  .CX 42 6,
+  .CX 44 6,
+  .CX 54 6,
+  .CX 55 6,
+  .CX 57 6,
+  .CX 58 6,
+  .CX 60 6
 ]
 
 private def leave1Block37 : Program := [
-  .CX 26 45,
-  .CX 26 44,
-  .CX 26 35,
-  .CX 26 32,
-  .CX 26 24,
-  .CX 26 19,
-  .CX 26 17,
-  .CX 26 12,
-  .CX 26 8,
-  .CX 26 6,
-  .CX 26 5,
-  .CX 26 4,
+  .CX 1 0,
+  .CX 4 0,
+  .CX 5 0,
+  .CX 6 0,
+  .CX 11 0,
+  .CX 22 0,
+  .CX 23 0,
   .CX 26 0,
-  .CX 32 26,
-  .CX 25 53,
-  .CX 25 49,
-  .CX 25 48,
-  .CX 25 47,
-  .CX 25 45,
-  .CX 25 42,
-  .CX 25 41,
-  .CX 25 40,
-  .CX 25 19,
-  .CX 25 17,
-  .CX 25 12,
-  .CX 25 6,
-  .CX 25 5,
-  .CX 25 2,
-  .CX 40 25,
-  .CX 24 52
+  .CX 28 0,
+  .CX 31 0,
+  .CX 32 0,
+  .CX 33 0,
+  .CX 36 0,
+  .CX 39 0,
+  .CX 40 0,
+  .CX 41 0,
+  .CX 43 0,
+  .CX 46 0,
+  .CX 49 0,
+  .CX 50 0,
+  .CX 53 0,
+  .CX 55 0,
+  .CX 0 34,
+  .CX 2 34,
+  .CX 3 34
 ]
 
 private def leave1Block38 : Program := [
-  .CX 24 50,
-  .CX 24 49,
-  .CX 24 48,
-  .CX 24 46,
-  .CX 24 44,
-  .CX 24 43,
-  .CX 24 42,
-  .CX 24 39,
-  .CX 24 23,
-  .CX 24 4,
-  .CX 24 3,
-  .CX 24 0,
-  .CX 39 24,
-  .CX 23 46,
-  .CX 23 42,
-  .CX 23 41,
-  .CX 23 40,
-  .CX 23 36,
-  .CX 23 21,
-  .CX 23 19,
-  .CX 23 17,
-  .CX 23 12,
-  .CX 36 23,
-  .CX 22 55,
-  .CX 22 52,
-  .CX 22 51,
-  .CX 22 49,
-  .CX 22 47,
-  .CX 22 46,
-  .CX 22 42
+  .CX 11 34,
+  .CX 12 34,
+  .CX 22 34,
+  .CX 25 34,
+  .CX 36 34,
+  .CX 38 34,
+  .CX 41 34,
+  .CX 42 34,
+  .CX 44 34,
+  .CX 45 34,
+  .CX 49 34,
+  .CX 50 34,
+  .CX 52 34,
+  .CX 54 34,
+  .CX 60 34,
+  .CX 4 27,
+  .CX 5 27,
+  .CX 8 27,
+  .CX 21 27,
+  .CX 26 27,
+  .CX 29 27,
+  .CX 32 27,
+  .CX 34 27,
+  .CX 40 27,
+  .CX 43 27
 ]
 
 private def leave1Block39 : Program := [
-  .CX 22 41,
-  .CX 22 40,
-  .CX 22 39,
-  .CX 22 35,
-  .CX 22 31,
-  .CX 22 30,
-  .CX 22 29,
-  .CX 22 25,
-  .CX 22 24,
-  .CX 22 23,
-  .CX 22 21,
-  .CX 22 18,
-  .CX 22 17,
-  .CX 22 11,
-  .CX 22 10,
-  .CX 22 7,
-  .CX 22 5,
-  .CX 22 4,
-  .CX 22 2,
-  .CX 22 1,
-  .CX 21 52,
-  .CX 21 49,
+  .CX 45 27,
+  .CX 46 27,
+  .CX 50 27,
+  .CX 52 27,
+  .CX 57 27,
+  .CX 19 58,
+  .CX 22 58,
+  .CX 27 58,
+  .CX 29 58,
+  .CX 47 58,
+  .CX 4 47,
+  .CX 5 47,
+  .CX 8 47,
   .CX 21 47,
-  .CX 21 46,
-  .CX 21 44,
-  .CX 21 43,
-  .CX 21 42,
-  .CX 21 41,
-  .CX 21 38,
-  .CX 21 37
+  .CX 26 47,
+  .CX 27 47,
+  .CX 29 47,
+  .CX 32 47,
+  .CX 34 47,
+  .CX 35 47,
+  .CX 37 47,
+  .CX 40 47,
+  .CX 43 47,
+  .CX 46 47,
+  .CX 50 47
 ]
 
 private def leave1Block40 : Program := [
-  .CX 21 4,
-  .CX 21 3,
-  .CX 37 21,
-  .CX 20 52,
-  .CX 20 51,
-  .CX 20 50,
-  .CX 20 49,
-  .CX 20 48,
-  .CX 20 45,
-  .CX 20 44,
-  .CX 20 43,
-  .CX 20 40,
-  .CX 20 39,
-  .CX 20 38,
-  .CX 20 37,
-  .CX 20 36,
-  .CX 20 33,
-  .CX 20 31,
-  .CX 20 29,
-  .CX 20 28,
-  .CX 20 27,
-  .CX 20 26,
-  .CX 20 25,
-  .CX 20 24,
-  .CX 20 23,
-  .CX 20 22,
-  .CX 20 17,
-  .CX 20 12,
-  .CX 20 10,
-  .CX 20 9
+  .CX 52 47,
+  .CX 56 47,
+  .CX 57 47,
+  .CX 58 47,
+  .CX 4 56,
+  .CX 5 56,
+  .CX 8 56,
+  .CX 21 56,
+  .CX 26 56,
+  .CX 27 56,
+  .CX 29 56,
+  .CX 32 56,
+  .CX 34 56,
+  .CX 35 56,
+  .CX 37 56,
+  .CX 40 56,
+  .CX 43 56,
+  .CX 46 56,
+  .CX 47 56,
+  .CX 50 56,
+  .CX 52 56,
+  .CX 57 56,
+  .CX 0 40,
+  .CX 4 40
 ]
 
 private def leave1Block41 : Program := [
-  .CX 20 5,
-  .CX 20 4,
-  .CX 20 3,
-  .CX 20 2,
-  .CX 20 1,
-  .CX 20 0,
-  .CX 19 53,
-  .CX 19 50,
-  .CX 19 49,
-  .CX 19 48,
-  .CX 19 47,
-  .CX 19 40,
-  .CX 19 38,
-  .CX 19 37,
-  .CX 19 33,
-  .CX 19 17,
-  .CX 19 12,
-  .CX 19 6,
-  .CX 19 5,
-  .CX 19 0,
-  .CX 33 19,
-  .CX 18 55,
-  .CX 18 54,
-  .CX 18 52,
-  .CX 18 50,
-  .CX 18 49,
-  .CX 18 48,
-  .CX 18 46,
-  .CX 18 45,
-  .CX 18 41
+  .CX 6 40,
+  .CX 7 40,
+  .CX 10 40,
+  .CX 11 40,
+  .CX 22 40,
+  .CX 23 40,
+  .CX 25 40,
+  .CX 26 40,
+  .CX 28 40,
+  .CX 31 40,
+  .CX 32 40,
+  .CX 33 40,
+  .CX 36 40,
+  .CX 38 40,
+  .CX 39 40,
+  .CX 41 40,
+  .CX 52 40,
+  .CX 55 40,
+  .CX 60 40,
+  .CX 1 60,
+  .CX 5 60,
+  .CX 7 60,
+  .CX 10 60,
+  .CX 25 60,
+  .CX 38 60
 ]
 
 private def leave1Block42 : Program := [
-  .CX 18 40,
-  .CX 18 36,
-  .CX 18 35,
-  .CX 18 33,
-  .CX 18 32,
-  .CX 18 31,
-  .CX 18 10,
-  .CX 18 8,
-  .CX 18 7,
-  .CX 18 4,
-  .CX 18 0,
-  .CX 31 18,
-  .CX 17 50,
-  .CX 17 48,
-  .CX 17 47,
-  .CX 17 46,
-  .CX 17 42,
-  .CX 17 40,
-  .CX 17 39,
-  .CX 17 38,
-  .CX 17 37,
-  .CX 17 36,
-  .CX 17 33,
-  .CX 17 23,
-  .CX 17 12,
-  .CX 17 0,
-  .CX 23 17,
-  .CX 16 54,
-  .CX 16 51,
-  .CX 16 50
+  .CX 40 60,
+  .CX 43 60,
+  .CX 46 60,
+  .CX 49 60,
+  .CX 51 60,
+  .CX 52 60,
+  .CX 53 60,
+  .CX 5 51,
+  .CX 49 51,
+  .CX 52 51,
+  .CX 60 51,
+  .CX 0 36,
+  .CX 1 36,
+  .CX 2 36,
+  .CX 3 36,
+  .CX 7 36,
+  .CX 9 36,
+  .CX 10 36,
+  .CX 11 36,
+  .CX 12 36,
+  .CX 21 36,
+  .CX 24 36,
+  .CX 31 36,
+  .CX 33 36,
+  .CX 34 36
 ]
 
 private def leave1Block43 : Program := [
-  .CX 16 49,
-  .CX 16 48,
-  .CX 16 47,
-  .CX 16 45,
-  .CX 16 43,
-  .CX 16 40,
-  .CX 16 39,
-  .CX 16 37,
-  .CX 16 35,
-  .CX 16 28,
-  .CX 16 27,
-  .CX 16 26,
-  .CX 16 25,
-  .CX 16 24,
-  .CX 16 22,
-  .CX 16 20,
-  .CX 16 8,
-  .CX 16 3,
-  .CX 16 2,
-  .CX 16 1,
-  .CX 16 0,
-  .CX 20 16,
-  .CX 12 46,
-  .CX 12 42,
-  .CX 12 41,
-  .CX 12 40,
-  .CX 12 36,
-  .CX 12 32,
-  .CX 12 30,
-  .CX 12 24
+  .CX 37 36,
+  .CX 41 36,
+  .CX 42 36,
+  .CX 43 36,
+  .CX 44 36,
+  .CX 49 36,
+  .CX 53 36,
+  .CX 55 36,
+  .CX 57 36,
+  .CX 0 5,
+  .CX 4 5,
+  .CX 7 5,
+  .CX 10 5,
+  .CX 11 5,
+  .CX 22 5,
+  .CX 23 5,
+  .CX 24 5,
+  .CX 25 5,
+  .CX 26 5,
+  .CX 27 5,
+  .CX 28 5,
+  .CX 32 5,
+  .CX 35 5,
+  .CX 36 5,
+  .CX 37 5
 ]
 
 private def leave1Block44 : Program := [
-  .CX 12 22,
-  .CX 12 20,
-  .CX 12 19,
-  .CX 12 18,
-  .CX 12 17,
-  .CX 12 16,
-  .CX 11 37,
-  .CX 11 35,
-  .CX 11 32,
-  .CX 11 29,
-  .CX 11 28,
-  .CX 11 24,
-  .CX 11 22,
-  .CX 11 20,
-  .CX 11 18,
-  .CX 11 17,
-  .CX 10 31,
-  .CX 10 28,
-  .CX 10 27,
-  .CX 10 26,
-  .CX 10 25,
-  .CX 10 24,
-  .CX 10 22,
-  .CX 10 20,
-  .CX 10 18,
-  .CX 10 17,
-  .CX 9 45,
-  .CX 9 42,
-  .CX 9 41,
-  .CX 9 39
+  .CX 38 5,
+  .CX 39 5,
+  .CX 40 5,
+  .CX 42 5,
+  .CX 44 5,
+  .CX 45 5,
+  .CX 46 5,
+  .CX 49 5,
+  .CX 50 5,
+  .CX 53 5,
+  .CX 0 38,
+  .CX 2 38,
+  .CX 3 38,
+  .CX 4 38,
+  .CX 5 38,
+  .CX 6 38,
+  .CX 8 38,
+  .CX 9 38,
+  .CX 11 38,
+  .CX 12 38,
+  .CX 24 38,
+  .CX 25 38,
+  .CX 26 38,
+  .CX 29 38
 ]
 
 private def leave1Block45 : Program := [
-  .CX 9 38,
-  .CX 9 37,
-  .CX 9 26,
-  .CX 9 24,
-  .CX 9 22,
-  .CX 9 19,
-  .CX 9 16,
-  .CX 8 54,
-  .CX 8 45,
-  .CX 8 41,
-  .CX 8 39,
-  .CX 8 38,
-  .CX 8 36,
-  .CX 8 35,
-  .CX 8 32,
-  .CX 8 28,
-  .CX 8 26,
-  .CX 8 24,
-  .CX 8 22,
-  .CX 8 19,
-  .CX 8 16,
+  .CX 32 38,
+  .CX 33 38,
+  .CX 37 38,
+  .CX 40 38,
+  .CX 46 38,
+  .CX 50 38,
+  .CX 51 38,
+  .CX 52 38,
+  .CX 53 38,
+  .CX 2 44,
+  .CX 3 44,
+  .CX 6 44,
   .CX 7 44,
-  .CX 7 39,
-  .CX 7 36,
-  .CX 7 28,
-  .CX 7 27,
-  .CX 7 26,
-  .CX 7 25,
-  .CX 7 24,
-  .CX 7 22
+  .CX 8 44,
+  .CX 10 44,
+  .CX 12 44,
+  .CX 21 44,
+  .CX 23 44,
+  .CX 27 44,
+  .CX 28 44,
+  .CX 29 44,
+  .CX 31 44,
+  .CX 33 44,
+  .CX 35 44,
+  .CX 36 44
 ]
 
 private def leave1Block46 : Program := [
-  .CX 7 20,
-  .CX 7 18,
-  .CX 7 17,
-  .CX 6 53,
-  .CX 6 46,
-  .CX 6 42,
-  .CX 6 39,
-  .CX 6 26,
-  .CX 6 24,
-  .CX 6 22,
-  .CX 6 19,
-  .CX 6 16,
-  .CX 5 49,
-  .CX 5 36,
-  .CX 5 26,
-  .CX 5 24,
-  .CX 5 22,
-  .CX 5 19,
-  .CX 5 16,
-  .CX 4 52,
-  .CX 4 49,
-  .CX 4 47,
-  .CX 4 46,
-  .CX 4 44,
-  .CX 4 41,
-  .CX 4 40,
-  .CX 4 37,
-  .CX 4 36,
-  .CX 4 26,
-  .CX 4 24
+  .CX 37 44,
+  .CX 38 44,
+  .CX 39 44,
+  .CX 42 44,
+  .CX 46 44,
+  .CX 49 44,
+  .CX 51 44,
+  .CX 52 44,
+  .CX 55 44,
+  .CX 57 44,
+  .CX 9 21,
+  .CX 22 21,
+  .CX 31 21,
+  .CX 37 21,
+  .CX 44 21,
+  .CX 45 21,
+  .CX 46 21,
+  .CX 49 21,
+  .CX 51 21,
+  .CX 52 21,
+  .CX 55 21,
+  .CX 57 21,
+  .CX 59 21,
+  .CX 21 59,
+  .CX 48 59
 ]
 
 private def leave1Block47 : Program := [
-  .CX 4 22,
-  .CX 4 19,
-  .CX 4 16,
-  .CX 3 43,
-  .CX 3 42,
-  .CX 3 40,
-  .CX 3 38,
-  .CX 3 36,
-  .CX 3 26,
-  .CX 2 50,
-  .CX 2 45,
-  .CX 2 42,
-  .CX 2 41,
-  .CX 2 38,
-  .CX 2 37,
-  .CX 2 34,
-  .CX 2 33,
-  .CX 2 30,
-  .CX 2 27,
-  .CX 2 20,
-  .CX 2 19,
-  .CX 2 18,
-  .CX 2 17,
-  .CX 2 16,
-  .CX 2 5,
-  .CX 2 0,
-  .CX 1 51,
-  .CX 1 49,
-  .CX 1 48,
-  .CX 1 47
+  .CX 24 48,
+  .CX 33 48,
+  .CX 38 48,
+  .CX 43 48,
+  .CX 45 48,
+  .CX 50 48,
+  .CX 59 48,
+  .CX 9 24,
+  .CX 22 24,
+  .CX 29 24,
+  .CX 33 24,
+  .CX 37 24,
+  .CX 38 24,
+  .CX 43 24,
+  .CX 45 24,
+  .CX 48 24,
+  .CX 52 24,
+  .CX 55 24,
+  .CX 9 55,
+  .CX 22 55,
+  .CX 24 55,
+  .CX 29 55,
+  .CX 37 55,
+  .CX 38 55,
+  .CX 43 55
 ]
 
 private def leave1Block48 : Program := [
-  .CX 1 45,
-  .CX 1 36,
-  .CX 1 34,
-  .CX 1 30,
-  .CX 1 27,
-  .CX 1 26,
-  .CX 1 24,
-  .CX 1 22,
-  .CX 1 20,
-  .CX 1 18,
-  .CX 1 17,
-  .CX 0 50,
-  .CX 0 48,
-  .CX 0 47,
-  .CX 0 41,
-  .CX 0 39,
-  .CX 0 38,
-  .CX 0 37,
-  .CX 0 33,
-  .CX 0 26,
-  .CX 0 24,
-  .CX 0 22,
-  .CX 0 19,
-  .CX 0 16,
+  .CX 45 55,
+  .CX 48 55,
+  .CX 50 55,
+  .CX 52 55,
+  .CX 57 55,
   .measureX 61 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 7, .Z 9, .Z 16, .Z 17, .Z 18, .Z 23, .Z 24, .Z 27, .Z 28, .Z 29, .Z 30, .Z 31, .Z 33, .Z 36, .Z 37, .Z 39, .Z 40, .Z 42, .Z 43, .Z 44, .Z 45, .Z 50, .Z 51, .Z 55, .CZ 0 8, .CZ 0 13, .CZ 0 14, .CZ 0 60, .CZ 1 6, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 17, .CZ 2 29, .CZ 2 31, .CZ 2 33, .CZ 2 60, .CZ 3 9, .CZ 3 10, .CZ 3 13, .CZ 3 14, .CZ 3 36, .CZ 3 39, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 39, .CZ 5 9, .CZ 5 37, .CZ 5 40, .CZ 5 43, .CZ 6 7, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 22, .CZ 6 27, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 7 8, .CZ 7 22, .CZ 7 23, .CZ 7 25, .CZ 7 28, .CZ 7 39, .CZ 8 11, .CZ 8 12, .CZ 8 23, .CZ 8 26, .CZ 8 60, .CZ 9 10, .CZ 10 13, .CZ 10 14, .CZ 10 51, .CZ 10 60, .CZ 11 12, .CZ 12 15, .CZ 12 39, .CZ 13 23, .CZ 13 28, .CZ 13 43, .CZ 13 50, .CZ 14 23, .CZ 14 28, .CZ 14 43, .CZ 14 50, .CZ 15 29, .CZ 15 32, .CZ 15 33, .CZ 15 34, .CZ 15 35, .CZ 22 60, .CZ 23 60, .CZ 24 60, .CZ 26 36, .CZ 28 60, .CZ 31 36, .CZ 33 60, .CZ 34 60, .CZ 36 39, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 32, .CZ 0 34, .CZ 0 37, .CZ 0 38, .CZ 0 39, .CZ 1 5, .CZ 1 11, .CZ 1 39, .CZ 1 41, .CZ 1 45, .CZ 1 46, .CZ 2 3, .CZ 2 13, .CZ 2 14, .CZ 3 5, .CZ 3 31, .CZ 3 40, .CZ 3 60, .CZ 4 36, .CZ 4 45, .CZ 4 51, .CZ 4 53, .CZ 5 50, .CZ 6 9, .CZ 6 15, .CZ 6 25, .CZ 6 35, .CZ 7 10, .CZ 7 12, .CZ 7 24, .CZ 7 27, .CZ 7 32, .CZ 7 43, .CZ 7 46, .CZ 7 53, .CZ 8 15, .CZ 8 24, .CZ 9 26, .CZ 9 43, .CZ 9 46, .CZ 9 53, .CZ 9 55, .CZ 12 37, .CZ 12 38, .CZ 12 60, .CZ 13 22, .CZ 13 24, .CZ 13 37, .CZ 13 39, .CZ 14 22, .CZ 14 24, .CZ 14 37, .CZ 14 39, .CZ 15 36, .CZ 15 37, .CZ 15 42, .CZ 29 60, .CZ 32 60, .CZ 35 60, .CZ 36 60, .CZ 39 60, .CZ 42 60, .CZ 43 60, .CZ 50 60, .CZ 1 4, .CZ 1 7, .CZ 1 12, .CZ 1 31, .CZ 1 37, .CZ 1 38, .CZ 3 4, .CZ 4 5, .CZ 4 8, .CZ 4 29, .CZ 4 32, .CZ 5 7, .CZ 5 10, .CZ 5 15, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 32, .CZ 5 36, .CZ 5 55, .CZ 5 60],
   .measureX 60 [] [.Z 0, .Z 2, .Z 5, .Z 7, .Z 8, .Z 9, .Z 12, .Z 13, .Z 14, .Z 16, .Z 22, .Z 24, .Z 25, .Z 26, .Z 28, .Z 29, .Z 33, .Z 34, .Z 35, .Z 36, .Z 38, .Z 39, .Z 42, .Z 45, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 16, .CZ 1 2, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 1 31, .CZ 1 36, .CZ 1 42, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 31, .CZ 3 4, .CZ 3 9, .CZ 3 30, .CZ 3 36, .CZ 3 39, .CZ 4 5, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 16, .CZ 4 30, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 5 8, .CZ 5 11, .CZ 5 16, .CZ 5 24, .CZ 5 27, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 33, .CZ 5 34, .CZ 5 37, .CZ 5 40, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 22, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 24, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 30, .CZ 7 37, .CZ 7 39, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 8 10, .CZ 8 12, .CZ 8 22, .CZ 8 26, .CZ 8 28, .CZ 8 30, .CZ 8 39, .CZ 9 30, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 42, .CZ 10 51, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 24, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 39, .CZ 13 14, .CZ 13 15, .CZ 13 29, .CZ 13 31, .CZ 13 32, .CZ 13 35, .CZ 13 57, .CZ 14 15, .CZ 14 29, .CZ 14 31, .CZ 14 32, .CZ 14 35, .CZ 14 57, .CZ 14 58, .CZ 15 29, .CZ 15 31, .CZ 15 32, .CZ 15 35, .CZ 15 57, .CZ 15 58, .CZ 15 59, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 23 36, .CZ 23 37, .CZ 23 42, .CZ 23 43, .CZ 24 36, .CZ 24 42, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 28 39, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 35 36, .CZ 36 39, .CZ 39 42, .CZ 0 34, .CZ 1 9, .CZ 1 37, .CZ 1 39, .CZ 1 44, .CZ 1 45, .CZ 3 5, .CZ 5 55],
   .measureX 59 [] [.CZ 13 14, .CZ 14 25, .CZ 14 31, .CZ 14 57, .CZ 14 58],
   .measureX 58 [] [.CZ 13 25, .CZ 13 31, .CZ 13 57],
   .measureX 57 [] [.Z 38, .Z 43, .Z 45, .Z 48, .Z 55],
-  .measureX 56 [] []
-]
-
-private def leave1Block49 : Program := [
+  .measureX 56 [] [],
   .measureX 50 [] [.Z 9, .Z 45, .Z 48, .Z 54, .CZ 9 38, .CZ 9 43, .CZ 9 45, .CZ 9 48],
   .measureX 51 [] [.Z 6, .Z 7, .Z 8, .Z 9, .Z 12, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 29, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 31, .CZ 1 42, .CZ 2 6, .CZ 2 9, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 31, .CZ 2 33, .CZ 2 36, .CZ 3 5, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 3 39, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 34, .CZ 4 36, .CZ 4 38, .CZ 4 39, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 45, .CZ 5 48, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 24, .CZ 6 27, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 37, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 8 9, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 27, .CZ 8 28, .CZ 8 30, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 20, .CZ 10 30, .CZ 10 42, .CZ 11 12, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 23, .CZ 11 24, .CZ 11 25, .CZ 11 36, .CZ 12 22, .CZ 12 23, .CZ 12 24, .CZ 12 30, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 31, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 30, .CZ 24 36, .CZ 24 42, .CZ 25 36, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 30 31, .CZ 30 32, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 35 36, .CZ 36 39, .CZ 39 42],
   .measureX 52 [] [.Z 12, .Z 32, .Z 37, .Z 38, .Z 43, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48],
@@ -18547,7 +17724,10 @@ private def leave1Block49 : Program := [
   .measureX 44 [] [.Z 1, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 29, .CZ 1 2, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 29, .CZ 1 36, .CZ 2 5, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 36, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 5 24, .CZ 5 25, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 24, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 23, .CZ 8 28, .CZ 8 31, .CZ 8 36, .CZ 9 10, .CZ 9 22, .CZ 9 30, .CZ 10 12, .CZ 10 36, .CZ 11 22, .CZ 11 25, .CZ 11 36, .CZ 12 22, .CZ 22 36, .CZ 23 30, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 32 36, .CZ 35 36],
   .measureX 45 [] [.Z 5, .Z 10, .Z 16, .Z 20, .Z 29, .Z 33, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 12, .CZ 0 36, .CZ 1 5, .CZ 1 9, .CZ 1 29, .CZ 2 4, .CZ 2 8, .CZ 2 10, .CZ 2 12, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 8, .CZ 3 30, .CZ 3 35, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 20, .CZ 4 29, .CZ 4 31, .CZ 5 7, .CZ 5 12, .CZ 5 22, .CZ 5 23, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 35, .CZ 5 36, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 29, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 39, .CZ 8 10, .CZ 8 23, .CZ 8 26, .CZ 8 31, .CZ 8 39, .CZ 9 11, .CZ 9 22, .CZ 9 36, .CZ 9 39, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 30, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 22 36, .CZ 23 30, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 30, .CZ 27 36, .CZ 28 39, .CZ 30 31],
   .measureX 46 [] [.Z 4, .Z 6, .Z 7, .Z 8, .Z 11, .Z 12, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 0 36, .CZ 1 4, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 36, .CZ 1 42, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 9, .CZ 2 10, .CZ 2 16, .CZ 2 33, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 10, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 31, .CZ 3 35, .CZ 3 39, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 33, .CZ 5 34, .CZ 5 37, .CZ 5 40, .CZ 6 10, .CZ 6 16, .CZ 6 23, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 31, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 6 36, .CZ 6 39, .CZ 6 42, .CZ 7 9, .CZ 7 11, .CZ 7 16, .CZ 7 25, .CZ 7 30, .CZ 7 39, .CZ 7 42, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 28, .CZ 8 30, .CZ 8 31, .CZ 8 37, .CZ 9 12, .CZ 9 22, .CZ 9 36, .CZ 10 12, .CZ 10 16, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 42, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 36, .CZ 24 42, .CZ 25 42, .CZ 27 36, .CZ 28 30, .CZ 28 39, .CZ 29 30, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 36, .CZ 32 42, .CZ 36 39, .CZ 39 42],
-  .measureX 47 [] [.Z 1, .Z 2, .Z 4, .Z 6, .Z 9, .Z 11, .Z 12, .Z 16, .Z 18, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 1 6, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 9, .CZ 2 16, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 35, .CZ 4 36, .CZ 4 38, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 16, .CZ 5 23, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 20, .CZ 6 22, .CZ 6 23, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 16, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 38, .CZ 7 39, .CZ 8 10, .CZ 8 20, .CZ 8 22, .CZ 8 23, .CZ 8 25, .CZ 8 31, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 20, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 24, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 12 38, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 38, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 36, .CZ 28 30, .CZ 28 39, .CZ 30 31, .CZ 32 36, .CZ 35 36],
+  .measureX 47 [] [.Z 1, .Z 2, .Z 4, .Z 6, .Z 9, .Z 11, .Z 12, .Z 16, .Z 18, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 1 6, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 9, .CZ 2 16, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 35, .CZ 4 36, .CZ 4 38, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 16, .CZ 5 23, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 20, .CZ 6 22, .CZ 6 23, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 16, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 38, .CZ 7 39, .CZ 8 10, .CZ 8 20, .CZ 8 22, .CZ 8 23, .CZ 8 25, .CZ 8 31, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 20, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 24, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 12 38, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 38, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 36, .CZ 28 30, .CZ 28 39, .CZ 30 31, .CZ 32 36, .CZ 35 36]
+]
+
+private def leave1Block49 : Program := [
   .measureX 37 [] [.Z 2, .Z 7, .Z 11, .Z 12, .Z 16, .Z 17, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 17, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 30, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 26, .CZ 5 27, .CZ 5 30, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 26, .CZ 6 27, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 30, .CZ 8 22, .CZ 8 36, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 30, .CZ 9 36, .CZ 10 22, .CZ 10 30, .CZ 11 22, .CZ 12 22, .CZ 12 30, .CZ 12 36, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 30 32, .CZ 32 36, .CZ 35 36],
   .measureX 38 [] [.Z 0, .Z 3, .Z 5, .Z 9, .Z 10, .Z 12, .CZ 0 5, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 3 5, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 4 5, .CZ 4 8, .CZ 4 10, .CZ 4 12, .CZ 5 6, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 26, .CZ 6 7, .CZ 6 8, .CZ 6 27, .CZ 6 32, .CZ 6 35, .CZ 7 8, .CZ 7 10, .CZ 7 30, .CZ 8 9, .CZ 8 12, .CZ 8 26, .CZ 8 30, .CZ 9 10, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 10 22, .CZ 10 30, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 23 30, .CZ 24 30, .CZ 26 30, .CZ 28 30],
   .measureX 39 [] [.Z 0, .Z 2, .Z 4, .Z 5, .Z 9, .Z 10, .Z 11, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 36, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 29, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 31, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 26, .CZ 5 29, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 26, .CZ 8 27, .CZ 8 31, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 22, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 23, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 24 30, .CZ 26 30, .CZ 30 31],
@@ -18564,10 +17744,7 @@ private def leave1Block49 : Program := [
   .measureX 30 [] [.Z 1, .Z 2, .Z 10, .Z 11, .Z 12, .CZ 0 10, .CZ 0 11, .CZ 1 2, .CZ 1 10, .CZ 1 12, .CZ 2 10, .CZ 2 12, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 10, .CZ 4 11, .CZ 5 10, .CZ 5 12, .CZ 5 22, .CZ 5 26, .CZ 6 10, .CZ 6 12, .CZ 6 22, .CZ 6 26, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 8 10, .CZ 8 12, .CZ 8 22, .CZ 8 26, .CZ 9 10, .CZ 9 11, .CZ 10 22, .CZ 11 12, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
   .measureX 23 [] [.Z 1, .Z 2, .Z 5, .Z 6, .Z 8, .Z 9, .Z 20, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 22, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 22, .CZ 13 22, .CZ 14 22, .CZ 15 22],
   .measureX 24 [] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 12, .Z 16, .Z 22, .CZ 0 9, .CZ 1 9, .CZ 2 9, .CZ 4 9, .CZ 5 9, .CZ 6 9, .CZ 7 9, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 22],
-  .measureX 25 [] [.Z 1, .Z 2, .Z 10, .Z 11, .Z 12, .Z 20, .CZ 0 10, .CZ 1 4, .CZ 1 10, .CZ 2 4, .CZ 2 10, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 5 10, .CZ 6 10, .CZ 7 10, .CZ 8 10, .CZ 9 10, .CZ 10 11, .CZ 10 12, .CZ 10 22]
-]
-
-private def leave1Block50 : Program := [
+  .measureX 25 [] [.Z 1, .Z 2, .Z 10, .Z 11, .Z 12, .Z 20, .CZ 0 10, .CZ 1 4, .CZ 1 10, .CZ 2 4, .CZ 2 10, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 5 10, .CZ 6 10, .CZ 7 10, .CZ 8 10, .CZ 9 10, .CZ 10 11, .CZ 10 12, .CZ 10 22],
   .measureX 26 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 20, .CZ 0 11, .CZ 0 12, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 2 4, .CZ 2 11, .CZ 2 12, .CZ 4 7, .CZ 4 10, .CZ 4 20, .CZ 5 11, .CZ 5 12, .CZ 6 11, .CZ 6 12, .CZ 7 11, .CZ 7 12, .CZ 8 11, .CZ 8 12, .CZ 9 11, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 11 22, .CZ 12 22],
   .measureX 27 [] [.Z 12, .Z 20, .CZ 0 11, .CZ 1 4, .CZ 1 11, .CZ 2 4, .CZ 2 11, .CZ 4 7, .CZ 4 10, .CZ 4 12, .CZ 4 20, .CZ 5 11, .CZ 6 11, .CZ 7 11, .CZ 8 11, .CZ 9 11, .CZ 10 11, .CZ 11 12, .CZ 11 22],
   .measureX 28 [] [.CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 7 9, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 8 9, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 22, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 13 22, .CZ 14 22, .CZ 15 22],
@@ -18575,7 +17752,10 @@ private def leave1Block50 : Program := [
   .measureX 20 [] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 1 3, .CZ 2 3, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18],
   .measureX 21 [] [.CZ 0 10, .CZ 0 11, .CZ 4 10, .CZ 4 11, .CZ 5 10, .CZ 5 11, .CZ 6 10, .CZ 6 11, .CZ 8 10, .CZ 8 11, .CZ 9 10, .CZ 9 11, .CZ 10 12, .CZ 10 16, .CZ 11 12, .CZ 11 19],
   .measureX 18 [] [.Z 1, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 1 2, .CZ 2 7, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 17],
-  .measureX 19 [] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 0 10, .CZ 4 10, .CZ 5 10, .CZ 6 10, .CZ 8 10, .CZ 9 10, .CZ 10 12, .CZ 10 16],
+  .measureX 19 [] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 0 10, .CZ 4 10, .CZ 5 10, .CZ 6 10, .CZ 8 10, .CZ 9 10, .CZ 10 12, .CZ 10 16]
+]
+
+private def leave1Block50 : Program := [
   .measureX 16 [] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 8 9],
   .measureX 17 [] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 0 1],
   .measureX 62 [] [],
@@ -18597,13 +17777,13 @@ private def leave1Block50 : Program := [
   .measureX 78 [] [],
   .measureX 79 [] [],
   .measureX 80 [] [],
-  .measureX 81 [] []
+  .measureX 81 [] [],
+  .measureX 82 [] [],
+  .measureX 83 [] [],
+  .measureX 84 [] []
 ]
 
 private def leave1Block51 : Program := [
-  .measureX 82 [] [],
-  .measureX 83 [] [],
-  .measureX 84 [] [],
   .measureX 85 [] [],
   .measureX 86 [] [],
   .measureX 87 [] [],
@@ -18637,7 +17817,7 @@ theorem leave1_checked : eval StairArchiveColumns.col312 leave1 leave1Trace0In =
   WSlimTree.eval_of_checkSeq _ leave1Block0 [leave1Block1, leave1Block2, leave1Block3, leave1Block4, leave1Block5, leave1Block6, leave1Block7, leave1Block8, leave1Block9, leave1Block10, leave1Block11, leave1Block12, leave1Block13, leave1Block14, leave1Block15, leave1Block16, leave1Block17, leave1Block18, leave1Block19, leave1Block20, leave1Block21, leave1Block22, leave1Block23, leave1Block24, leave1Block25, leave1Block26, leave1Block27, leave1Block28, leave1Block29, leave1Block30, leave1Block31, leave1Block32, leave1Block33, leave1Block34, leave1Block35, leave1Block36, leave1Block37, leave1Block38, leave1Block39, leave1Block40, leave1Block41, leave1Block42, leave1Block43, leave1Block44, leave1Block45, leave1Block46, leave1Block47, leave1Block48, leave1Block49, leave1Block50, leave1Block51] _ _ (by decide +kernel)
 
 theorem leave1_counts : GatePhysical leave1 ∧ toffoliCount leave1 = 43 ∧
-    measurementCount leave1 = 94 ∧ gateSlots leave1 = 4840 :=
+    measurementCount leave1 = 94 ∧ gateSlots leave1 = 4569 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 theorem leave1_scope : ∀ x ∈ wires leave1, x < 100 := by
