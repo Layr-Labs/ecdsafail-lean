@@ -28414,12 +28414,12 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2168066 ∧ measurementCount (program C) ≤ 1519653 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167954 ∧ measurementCount (program C) ≤ 1519653 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2169082 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
+  change toffoliCount (concreteProgram C) ≤ 2168970 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2168066 ∧ measurementCount [] ≤ 1519653
+    change toffoliCount [] ≤ 2167954 ∧ measurementCount [] ≤ 1519653
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
@@ -29582,7 +29582,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
   ⟨finite_delta tc C cx cy 145766 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 47646 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2022300 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2022188 ∧
     measurementCount (program C) ≤ 1472251 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -33843,7 +33843,7 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2022300 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2022188 ∧
     measurementCount (program C) ≤ 1472251 ∧ gateSlots (program C) ≤ 67689977 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -34042,7 +34042,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2022300,1472251,1543,67689977⟩
+def bounds : Challenge.Bounds := ⟨2022188,1472251,1543,67689977⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -42418,3 +42418,6 @@ end ECDSAAdd.Entrant
 end
 end
 -- ==== end Main ====
+#print axioms ECDSAAdd.Entrant.entry
+#print axioms ECDSAAdd.Entrant.bounds
+#print axioms ECDSAAdd.Entrant.certificate
