@@ -3,6 +3,501 @@ import ECDSAAdd.Submission.Entrant.Stair44Stock
 import ECDSAAdd.Framework.Semantics
 import ECDSAAdd.Framework.WireRenamePool
 
+-- ==== begin FlagLeave + DeadScan (credited to spariev 65b176b3) ====
+section
+namespace ECDSAAdd.Entrant.StairPacket.FlagLeave
+open Arithmetic GateMirror Partial
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+def hit (f u l : Wire) (g : Gate) : Bool :=
+  decide (g = .make f u l ∨ g = .pop f u l)
+
+def cut (f u l : Wire) : Nat → List Gate → List Gate
+  | 0, gs => gs
+  | _+1, [] => []
+  | n+1, g::gs => if hit f u l g then .cx u l :: cut f u l n gs
+      else g :: cut f u l (n+1) gs
+
+/-- Track the temporary far-flag XOR between its matching adjust gates. -/
+def check (f u c l : Wire) : Nat → Bool → List Gate → Bool
+  | 0, _, _ => true
+  | _+1, _, [] => true
+  | n+1, shifted, g::gs =>
+    if hit f u l g then !shifted && check f u c l n shifted gs
+    else if target g = f then
+      if g = .cx c f then check f u c l (n+1) (!shifted) gs else false
+    else if target g = u ∨ (shifted = true ∧ target g = c) then false
+    else check f u c l (n+1) shifted gs
+
+def Rel (f u c : Wire) (shifted : Bool) (s : State) : Prop :=
+  ((s.basis f ^^ (shifted && s.basis c)) && s.basis u) = s.basis u
+
+private theorem transition_frame (g : Gate) (s : State) (q : Wire) (hq : q ≠ target g) :
+    (transition g s).basis q = s.basis q := by
+  cases g <;> simp_all [transition,front,erase,run,measureAndCorrect,writeBit,target]
+
+private theorem transition_cut (f u l : Wire) (g : Gate) (s : State)
+    (hf : f ≠ l) (hu : u ≠ l) (hg : hit f u l g = true)
+    (rel : (s.basis f && s.basis u) = s.basis u)
+    (ok : ValueOK s g) :
+    transition (.cx u l) s = transition g s := by
+  have h := of_decide_eq_true hg
+  rcases h with rfl | rfl
+  · simp only [transition,front,run,rel]
+  · change s.basis l = (s.basis f && s.basis u) at ok
+    rw [rel] at ok
+    simp [transition,front,erase,run,measureAndCorrect,ECDSAAdd.correct,writeBit,ok]
+
+private theorem rel_step (f u c : Wire) (g : Gate) (s : State) (shifted : Bool)
+    (distinct : f ≠ u ∧ c ≠ f ∧ c ≠ u)
+    (hrel : Rel f u c shifted s)
+    (notf : target g ≠ f) (notu : target g ≠ u)
+    (notc : shifted = true → target g ≠ c) :
+    Rel f u c shifted (transition g s) := by
+  unfold Rel at *
+  rw [transition_frame _ _ _ (Ne.symm notf),transition_frame _ _ _ (Ne.symm notu)]
+  cases shifted with
+  | false => simpa using hrel
+  | true => rw [transition_frame _ _ _ (Ne.symm (notc rfl))]; exact hrel
+
+private theorem rel_toggle (f u c : Wire) (s : State) (shifted : Bool)
+    (distinct : f ≠ u ∧ c ≠ f ∧ c ≠ u)
+    (hrel : Rel f u c shifted s) : Rel f u c (!shifted) (transition (.cx c f) s) := by
+  unfold Rel at *
+  simp only [transition,front,run,writeBit,Function.update_self,
+    Function.update_of_ne (Ne.symm distinct.1),Function.update_of_ne distinct.2.1]
+  cases shifted <;> cases hF : s.basis f <;> cases hC : s.basis c <;> cases hU : s.basis u <;> simp_all
+
+/-- Each replacement has the reference default transition and preserves freshness/erasures. -/
+theorem cut_valid (f u c l : Wire) (n : Nat) (shifted : Bool) (gs : List Gate) (s : State)
+    (distinct : f ≠ u ∧ c ≠ f ∧ c ≠ u) (fl : f ≠ l) (ul : u ≠ l)
+    (checked : check f u c l n shifted gs = true)
+    (related : Rel f u c shifted s)
+    (phys : ∀ g ∈ gs, proper g = true) (prepared : Prepared s gs) (ready : Ready s gs) :
+    (∀ g ∈ cut f u l n gs, proper g = true) ∧ Prepared s (cut f u l n gs) ∧ Ready s (cut f u l n gs) ∧
+    run (GateMirror.forward (cut f u l n gs)) [] s = run (GateMirror.forward gs) [] s := by
+  induction gs generalizing n shifted s with
+  | nil => cases n <;> simp_all [cut,check,Prepared,Ready,forward]
+  | cons g gs ih =>
+    cases n with
+    | zero => exact ⟨phys,prepared,ready,rfl⟩
+    | succ n =>
+      have pg := phys g List.mem_cons_self
+      have tailphys : ∀ x ∈ gs, proper x = true := fun x hx => phys x (List.mem_cons_of_mem _ hx)
+      by_cases hitg : hit f u l g = true
+      · have checks := checked
+        rw [check,if_pos hitg] at checks
+        simp only [Bool.and_eq_true,Bool.not_eq_true'] at checks
+        have sm : shifted = false := checks.1
+        subst shifted
+        have eq := transition_cut f u l g s fl ul hitg (by simpa [Rel] using related) prepared.1
+        have newrel : Rel f u c false (transition g s) := by
+          unfold Rel at *
+          simp only [Bool.false_and,Bool.xor_false] at *
+          have hg := of_decide_eq_true hitg
+          rcases hg with rfl | rfl
+          all_goals rw [transition_frame _ _ _ fl,transition_frame _ _ _ ul]; exact related
+        obtain ⟨p,h,r,e⟩ := ih n false (transition g s) checks.2 newrel tailphys prepared.2 ready.2
+        refine ⟨?_,?_,?_,?_⟩
+        · intro x hx
+          simp only [cut,hitg,↓reduceIte,List.mem_cons] at hx
+          rcases hx with rfl | hx
+          · simpa [proper] using ul
+          · exact p x hx
+        · simpa only [cut,hitg,↓reduceIte,Prepared,eq] using (show True ∧ Prepared (transition g s) (cut f u l n gs) from ⟨trivial,h⟩)
+        · simpa only [cut,hitg,↓reduceIte,Ready,eq] using (show True ∧ Ready (transition g s) (cut f u l n gs) from ⟨trivial,r⟩)
+        · change run (GateMirror.forward (cut f u l (n+1) (g::gs))) [] s = _
+          simp only [cut,hitg,↓reduceIte,GateMirror.forward,List.map_cons]
+          change run ([front (.cx u l)] ++ GateMirror.forward (cut f u l n gs)) [] s = run ([front g] ++ GateMirror.forward gs) [] s
+          rw [run_append,run_take,List.drop_nil,run_append,run_take,List.drop_nil]
+          rw [show run [front (.cx u l)] [] s = transition g s from eq,e]
+          rfl
+      · have miss : hit f u l g = false := Bool.eq_false_iff.mpr hitg
+        have checks := checked
+        rw [check,if_neg hitg] at checks
+        obtain ⟨shifted',hc,hr⟩ : ∃ shifted', check f u c l (n+1) shifted' gs = true ∧ Rel f u c shifted' (transition g s) := by
+          by_cases gf : target g = f
+          · rw [if_pos gf] at checks
+            by_cases hg : g = .cx c f
+            · rw [if_pos hg] at checks
+              subst g
+              exact ⟨!shifted,checks,rel_toggle f u c s shifted distinct related⟩
+            · rw [if_neg hg] at checks
+              contradiction
+          · rw [if_neg gf] at checks
+            by_cases bad : target g = u ∨ (shifted = true ∧ target g = c)
+            · rw [if_pos bad] at checks
+              contradiction
+            · rw [if_neg bad] at checks
+              have hu : target g ≠ u := fun h => bad (Or.inl h)
+              have hc : shifted = true → target g ≠ c := fun hs h => bad (Or.inr ⟨hs,h⟩)
+              exact ⟨shifted,checks,rel_step f u c g s shifted distinct related gf hu hc⟩
+        obtain ⟨p,h,r,e⟩ := ih (n+1) shifted' (transition g s) hc hr tailphys prepared.2 ready.2
+        refine ⟨?_,?_,?_,?_⟩
+        · intro x hx
+          rw [cut,if_neg hitg] at hx
+          rcases List.mem_cons.mp hx with rfl | hx
+          · exact pg
+          · exact p x hx
+        · simpa only [cut,miss,↓reduceIte,Prepared] using (show ValueOK s g ∧ Prepared (transition g s) (cut f u l (n+1) gs) from ⟨prepared.1,h⟩)
+        · simpa only [cut,miss,↓reduceIte,Ready] using (show Fresh s g ∧ Ready (transition g s) (cut f u l (n+1) gs) from ⟨ready.1,r⟩)
+        · simp only [cut,miss,↓reduceIte,GateMirror.forward,List.map_cons]
+          change run ([front g] ++ GateMirror.forward (cut f u l (n+1) gs)) [] s = run ([front g] ++ GateMirror.forward gs) [] s
+          simp only [run_append,run_take,List.drop_nil]
+          exact e
+
+
+theorem cut_proper (f u l : Wire) (n : Nat) (gs : List Gate)
+    (phys : ∀ g ∈ gs, proper g = true) : ∀ g ∈ cut f u l n gs, proper g = true := by
+  induction gs generalizing n with
+  | nil => cases n <;> simp [cut]
+  | cons g gs ih =>
+    cases n with
+    | zero => exact phys
+    | succ n =>
+      have pg := phys g List.mem_cons_self
+      have pt : ∀ x ∈ gs, proper x = true := fun x hx => phys x (List.mem_cons_of_mem _ hx)
+      by_cases hh : hit f u l g = true
+      · rw [cut,if_pos hh]
+        intro x hx
+        rcases List.mem_cons.mp hx with rfl | hx
+        · have h := of_decide_eq_true hh
+          rcases h with rfl | rfl <;> simp_all [proper]
+        · exact ih n pt x hx
+      · rw [cut,if_neg hh]
+        intro x hx
+        rcases List.mem_cons.mp hx with rfl | hx
+        · exact pg
+        · exact ih (n+1) pt x hx
+
+theorem cut_allW {P : Wire → Prop} (f u l : Wire) (n : Nat) (gs : List Gate)
+    (box : AllW P gs) : AllW P (cut f u l n gs) := by
+  induction gs generalizing n with
+  | nil => cases n <;> simpa [cut] using box
+  | cons g gs ih =>
+    cases n with
+    | zero => exact box
+    | succ n =>
+      have bg := box g List.mem_cons_self
+      have bt : AllW P gs := fun x hx => box x (List.mem_cons_of_mem _ hx)
+      by_cases hh : hit f u l g = true
+      · rw [cut,if_pos hh]
+        apply allW_cons
+        · intro q hq
+          have h := of_decide_eq_true hh
+          rcases h with rfl | rfl
+          all_goals apply bg q; simp only [Gate.wires,List.mem_cons,List.mem_singleton] at *; tauto
+        · exact ih n bt
+      · rw [cut,if_neg hh]
+        exact allW_cons bg (ih (n+1) bt)
+
+end ECDSAAdd.Entrant.StairPacket.FlagLeave
+
+namespace ECDSAAdd.Entrant.StairPacket.FlagLeave
+open GateMirror Partial Challenge
+set_option linter.unusedSimpArgs false
+
+def removed (f u l : Wire) : Nat → List Gate → List Gate
+  | 0, _ => []
+  | _+1, [] => []
+  | n+1, g::gs => if hit f u l g then g :: removed f u l n gs else removed f u l (n+1) gs
+
+theorem cut_length (f u l : Wire) (n : Nat) (gs : List Gate) : (cut f u l n gs).length = gs.length := by
+  induction gs generalizing n with
+  | nil => cases n <;> rfl
+  | cons g gs ih =>
+    cases n with
+    | zero => rfl
+    | succ n =>
+      by_cases h : hit f u l g = true
+      · rw [cut,if_pos h]; simp only [List.length_cons,ih]
+      · rw [cut,if_neg h]; simp only [List.length_cons,ih]
+
+theorem cut_count (p : Gate → Bool) (f u l : Wire) (n : Nat) (gs : List Gate)
+    (zero : p (.cx u l) = false) :
+    (cut f u l n gs).countP p + (removed f u l n gs).countP p = gs.countP p := by
+  induction gs generalizing n with
+  | nil => cases n <;> rfl
+  | cons g gs ih =>
+    cases n with
+    | zero => simp [cut,removed]
+    | succ n =>
+      by_cases h : hit f u l g = true
+      · rw [cut,if_pos h,removed,if_pos h]
+        simp only [List.countP_cons,zero,Bool.false_eq_true,if_false]
+        have e := ih n
+        split <;> omega
+      · rw [cut,if_neg h,removed,if_neg h]
+        simp only [List.countP_cons]
+        have e := ih (n+1)
+        split <;> omega
+
+theorem cut_append (f u l : Wire) (n : Nat) (as bs : List Gate) :
+    cut f u l n (as++bs) = cut f u l n as ++ cut f u l (n-(removed f u l n as).length) bs := by
+  induction as generalizing n with
+  | nil => cases n <;> simp [cut,removed]
+  | cons g gs ih =>
+    cases n with
+    | zero => simp [cut,removed]
+    | succ n =>
+      by_cases h : hit f u l g = true
+      · simp only [List.cons_append]
+        rw [cut,if_pos h,cut,if_pos h,removed,if_pos h]
+        simp only [List.length_cons,Nat.add_sub_add_right,List.cons_append]
+        rw [ih]
+      · simp only [List.cons_append]
+        rw [cut,if_neg h,cut,if_neg h,removed,if_neg h]
+        simp only [List.cons_append]
+        rw [ih]
+
+theorem cut_of_removed_nil (f u l : Wire) (n : Nat) (gs : List Gate)
+    (empty : removed f u l n gs = []) : cut f u l n gs = gs := by
+  induction gs generalizing n with
+  | nil => cases n <;> rfl
+  | cons g gs ih =>
+    cases n with
+    | zero => rfl
+    | succ n =>
+      by_cases h : hit f u l g = true
+      · rw [removed,if_pos h] at empty
+        contradiction
+      · rw [removed,if_neg h] at empty
+        rw [cut,if_neg h,ih (n+1) empty]
+
+
+theorem pair_savings (f u l : Wire) (a b : List Gate)
+    (ha : removed f u l 2 a = [.make f u l]) (hb : removed f u l 1 b = [.pop f u l]) :
+    toffoliCount (GateMirror.forward (cut f u l 2 a)) + toffoliCount (GateMirror.forward (cut f u l 1 b)) + 1 =
+      toffoliCount (GateMirror.forward a) + toffoliCount (GateMirror.forward b) ∧
+    toffoliCount (inverse (cut f u l 1 b)) + toffoliCount (inverse (cut f u l 2 a)) + 1 =
+      toffoliCount (inverse b) + toffoliCount (inverse a) ∧
+    measurementCount (GateMirror.forward (cut f u l 2 a)) + measurementCount (GateMirror.forward (cut f u l 1 b)) + 1 =
+      measurementCount (GateMirror.forward a) + measurementCount (GateMirror.forward b) ∧
+    measurementCount (inverse (cut f u l 1 b)) + measurementCount (inverse (cut f u l 2 a)) + 1 =
+      measurementCount (inverse b) + measurementCount (inverse a) ∧
+    gateSlots (GateMirror.forward (cut f u l 2 a)) + gateSlots (GateMirror.forward (cut f u l 1 b)) + 1 =
+      gateSlots (GateMirror.forward a) + gateSlots (GateMirror.forward b) ∧
+    gateSlots (inverse (cut f u l 1 b)) + gateSlots (inverse (cut f u l 2 a)) + 1 =
+      gateSlots (inverse b) + gateSlots (inverse a) := by
+  have ac := cut_count isCCX f u l 2 a rfl
+  have am := cut_count isMake f u l 2 a rfl
+  have ap := cut_count isPop f u l 2 a rfl
+  have bc := cut_count isCCX f u l 1 b rfl
+  have bm := cut_count isMake f u l 1 b rfl
+  have bp := cut_count isPop f u l 1 b rfl
+  simp only [ha,hb,List.countP_cons,List.countP_nil,isCCX,isMake,isPop,Bool.true_eq_false,if_false,if_true,
+    Bool.false_eq_true,Nat.add_zero,Nat.zero_add] at ac am ap bc bm bp
+  simp only [toffoli_forward,toffoli_inverse,meas_forward,meas_inverse,slots_forward,slots_inverse,cut_length]
+  omega
+
+end ECDSAAdd.Entrant.StairPacket.FlagLeave
+
+namespace ECDSAAdd.Entrant.StairPacket.FlagLeave
+open GateMirror
+set_option linter.unusedSimpArgs false
+
+theorem check_prefix (f u c l : Wire) (n : Nat) (shifted : Bool) (a b : List Gate)
+    (ok : check f u c l n shifted (a++b) = true) : check f u c l n shifted a = true := by
+  induction a generalizing n shifted with
+  | nil => cases n <;> rfl
+  | cons g gs ih =>
+    cases n with
+    | zero => rfl
+    | succ n =>
+      simp only [List.cons_append] at ok
+      by_cases hh : hit f u l g = true
+      · rw [check,if_pos hh] at ok ⊢
+        obtain ⟨hs,ht⟩ := Bool.and_eq_true_iff.mp ok
+        exact Bool.and_eq_true_iff.mpr ⟨hs,ih n shifted ht⟩
+      · rw [check,if_neg hh] at ok ⊢
+        by_cases gf : target g = f
+        · rw [if_pos gf] at ok ⊢
+          by_cases hg : g = .cx c f
+          · rw [if_pos hg] at ok ⊢
+            exact ih (n+1) (!shifted) ok
+          · rw [if_neg hg] at ok
+            contradiction
+        · rw [if_neg gf] at ok ⊢
+          by_cases bad : target g = u ∨ (shifted = true ∧ target g = c)
+          · rw [if_pos bad] at ok
+            contradiction
+          · rw [if_neg bad] at ok ⊢
+            exact ih (n+1) shifted ok
+end ECDSAAdd.Entrant.StairPacket.FlagLeave
+
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.DeadScan
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+/-- Measured replacement for the last exchange in the leave scan. -/
+def topM (g a b : Wire) : Program :=
+  [.CX a b, .measureX a [] [.CZ g b], .CX a b]
+
+theorem eraseProduct (g b a : Wire) (ga : g ≠ a) (ba : b ≠ a)
+    (s : State) (m : List Bool) (known : s.basis a = (s.basis g && s.basis b)) :
+    run [.measureX a [] [.CZ g b]] m s = run [.CCX g b a] [] s := by
+  cases m with
+  | nil => simp [run,measureAndCorrect,correct,known,writeBit]
+  | cons c m =>
+    cases c <;> cases hg : s.basis g <;> cases hb : s.basis b <;>
+      simp [run,measureAndCorrect,correct,known,hg,hb,writeBit,ga,ba]
+
+/-- The sum rail is positive and lies opposite the oriented signed rail. -/
+theorem topM_eq (g a b : Wire) (ga : g ≠ a) (gb : g ≠ b) (ab : a ≠ b)
+    (s : State) (m : List Bool)
+    (known : s.basis a = (s.basis g && (s.basis a ^^ s.basis b))) :
+    run (topM g a b) m s = run (cswap g b a) [] s := by
+  let t : State := ⟨s.phase, writeBit s.basis b (s.basis b ^^ s.basis a)⟩
+  have kt : t.basis a = (t.basis g && t.basis b) := by
+    simp only [t, writeBit, Function.update_of_ne ab, Function.update_of_ne gb,
+      Function.update_self]
+    rw [Bool.xor_comm]
+    exact known
+  have same := eraseProduct g b a ga ab.symm t m kt
+  simp only [run] at same
+  simp only [topM,cswap,run]
+  change (let z := measureAndCorrect a [] [.CZ g b] (m.headD false) t
+    State.mk z.phase (writeBit z.basis b (z.basis b ^^ z.basis a))) = _
+  rw [same]
+
+theorem noTape (p : Program) (h : measurementCount p = 0) (m : List Bool) (s : State) :
+    run p m s = run p [] s := by
+  rw [←run_take p m s,h]
+  rfl
+
+theorem exchange_mc (g : Wire) (ps : List (Wire×Wire)) : measurementCount (RailPair.exchange g ps) = 0 := by
+  induction ps with
+  | nil => rfl
+  | cons p ps ih =>
+    simp only [RailPair.exchange,List.flatMap_cons,measurementCount_append] at *
+    simp only [cswap] at ih
+    simp [cswap,measurementCount,ih]
+
+def scanM (a b g n : Wire) (ps : List (Wire×Wire)) : Program :=
+  [.CX a n,.CX b n] ++ RailPair.exchange g ps ++ topM g a b ++
+    signComplement n ((ps++[(a,b)]).map Prod.snd)
+
+theorem scanM_eq (a b g n : Wire) (ps : List (Wire×Wire))
+    (ga : g ≠ a) (gb : g ≠ b) (ab : a ≠ b)
+    (an : a ≠ n) (bn : b ≠ n) (gn : g ≠ n)
+    (ap : a ∉ RailPair.sites ps) (bp : b ∉ RailPair.sites ps) (gp : g ∉ RailPair.sites ps)
+    (nd : (g::RailPair.sites ps).Nodup) (s : State) (m : List Bool)
+    (known : s.basis a = (s.basis g && (s.basis a ^^ s.basis b))) :
+    run (scanM a b g n ps) m s = run (RailPair.scan a b g n (ps++[(a,b)])) [] s := by
+  let P : Program := [.CX a n,.CX b n] ++ RailPair.exchange g ps
+  let S : Program := signComplement n ((ps++[(a,b)]).map Prod.snd)
+  let u := run ([.CX a n,.CX b n] : Program) [] s
+  let v := run P [] s
+  have Pu (q : Wire) (h : q ≠ n) : u.basis q = s.basis q := by
+    simp [u,run,writeBit,h]
+  have er := RailPair.exchange_run g ps nd u []
+  have vp : v = run (RailPair.exchange g ps) [] u := by
+    simp [v,P,u,run_append,run_take]
+  have Va : v.basis a = s.basis a := by rw [vp]; exact (er.2.1 a ap).trans (Pu a an)
+  have Vb : v.basis b = s.basis b := by rw [vp]; exact (er.2.1 b bp).trans (Pu b bn)
+  have Vg : v.basis g = s.basis g := by rw [vp]; exact (er.2.1 g gp).trans (Pu g gn)
+  have vm : run (topM g a b) m v = run (cswap g b a) [] v :=
+    topM_eq g a b ga gb ab v m (by rw [Va,Vb,Vg]; exact known)
+  have p0 : measurementCount P = 0 := by simp [P,measurementCount_append,measurementCount,exchange_mc]
+  have s0 : measurementCount S = 0 := (signComplement_counts _ _).2
+  have old : RailPair.scan a b g n (ps++[(a,b)]) = P ++ cswap g b a ++ S := by
+    simp [RailPair.scan,RailPair.exchange,List.flatMap_append,P,S,List.append_assoc]
+  rw [old]
+  change run (P ++ topM g a b ++ S) m s = _
+  simp only [run_append,run_take]
+  rw [p0,List.drop_zero,noTape P p0 m s,noTape P p0 [] s]
+  change run S _ (run (topM g a b) m v) = run S _ (run (cswap g b a) [] v)
+  rw [vm,noTape S s0,noTape S s0]
+  simp only [List.drop_nil]
+
+/-- The sign-side condition needed by topM follows solely from signed packet input. -/
+theorem sign_relation (L : SkywalkIntegerLayout) (G sg : Bool) (u v : Nat) (s : BasisState)
+    (ha : signedRegValue L.a s = (SkywalkRails.encode G sg u v).a)
+    (hb : signedRegValue L.b s = (SkywalkRails.encode G sg u v).b)
+    (hg : s L.previous = G) :
+    s L.aSign = (s L.previous && (s L.aSign ^^ s L.bSign)) := by
+  have sign (lo : List Wire) (q : Wire)
+      (h : signedRegValue (lo ++ [q]) s = SkywalkRails.signed sg u) :
+      s q = PortalValues.negative sg u := by
+    have z := (PortalValues.full lo q s _ h).1
+    cases sg <;> simpa [SkywalkRails.neg,SkywalkRails.signed,PortalValues.negative] using z
+  cases G with
+  | false =>
+    simp only [hg,Bool.false_and]
+    exact (PortalValues.positive (L.a0::L.aMid) L.aSign s (u+v)
+      (by simpa only [SkywalkIntegerLayout.a,SkywalkRails.encode,Bool.false_eq_true,ite_false,Nat.cast_add] using ha)).1
+  | true =>
+    have az : s L.aSign = PortalValues.negative sg u := sign (L.a0::L.aMid) L.aSign ha
+    have bz : s L.bSign = false := (PortalValues.positive (L.b0::L.bMid) L.bSign s (u+v)
+      (by simpa only [SkywalkIntegerLayout.b,SkywalkRails.encode,ite_true,Nat.cast_add] using hb)).1
+    simp [hg,bz]
+end ECDSAAdd.Entrant.StairPacket.DeadScan
+
+namespace ECDSAAdd.Entrant.StairPacket.DeadScan
+open GateMirror LeaveJ7
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option maxRecDepth 10000
+set_option maxHeartbeats 3000000
+
+def fix0M (s h : Nat) : List Gate :=
+  (Shadow7.fix0P s h).take 54 ++ [.pop (s+30) (h+803) (s+h+48)] ++ (Shadow7.fix0P s h).drop 55
+
+theorem fix0M_inverse (s h : Nat) : GateMirror.inverse (fix0M s h) =
+    GateMirror.inverse (Shadow7.fix0P s h) := rfl
+
+def lowerPairs (j : Fin 26) : List (Wire×Wire) :=
+  (List.range 17).map (fun i => (Shadow7.a0P (start j) - 1 + i, Shadow7.b0P (start j) - 1 + i))
+
+theorem fix0M_emitted : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
+    GateMirror.forward (fix0M (start j) (Shadow7.sbP (start j))) =
+    scanM (Shadow7.a0P (start j)+16) (Shadow7.b0P (start j)+16) (start j+30)
+      (Shadow7.e0P (start j)+5) (lowerPairs j) := by decide +kernel
+
+theorem scanPairs_split (j : Fin 26) : scanPairs j = lowerPairs j ++
+    [(Shadow7.a0P (start j)+16,Shadow7.b0P (start j)+16)] := by
+  revert j
+  decide +kernel
+
+theorem physical_geometry : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
+    let a := Shadow7.a0P (start j)+16
+    let b := Shadow7.b0P (start j)+16
+    let g := start j+30
+    let n := Shadow7.e0P (start j)+5
+    g ≠ a ∧ g ≠ b ∧ a ≠ b ∧ a ≠ n ∧ b ≠ n ∧ g ≠ n ∧
+      a ∉ RailPair.sites (lowerPairs j) ∧ b ∉ RailPair.sites (lowerPairs j) ∧
+      g ∉ RailPair.sites (lowerPairs j) ∧ (g::RailPair.sites (lowerPairs j)).Nodup := by
+  decide +kernel
+
+theorem fix0M_run (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24)
+    (s : State) (m : List Bool) (u v : Nat) (G sg : Bool)
+    (ready : Shadow7.onRails j 15 (SkywalkRails.encode G sg u v) s.basis) :
+    run (GateMirror.forward (fix0M (start j) (Shadow7.sbP (start j)))) m s =
+      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s := by
+  rw [fix0M_emitted j lo hi,scan_emitted j lo hi,scanPairs_split]
+  obtain ⟨ga,gb,ab,an,bn,gn,ap,bp,gp,nd⟩ := physical_geometry j lo hi
+  apply scanM_eq _ _ _ _ _ ga gb ab an bn gn ap bp gp nd
+  obtain ⟨pl,pr,pa,pb,pg,la,lb⟩ := scan_ports j lo hi
+  rw [pa,pb,pg]
+  let L := IntegerPacket.ports (Shadow7.shape j) 15
+  have hg : mappedBasis j s.basis L.previous = G := by
+    have eq := ready.2.2.1
+    cases G <;> exact eq
+  exact sign_relation L G sg u v (mappedBasis j s.basis) ready.1 ready.2.1 hg
+
+theorem fix0M_counts (s h : Nat) :
+    toffoliCount (GateMirror.forward (fix0M s h)) = 17 ∧
+    measurementCount (GateMirror.forward (fix0M s h)) = 1 ∧
+    Challenge.gateSlots (GateMirror.forward (fix0M s h)) = 75 := by
+  simp [fix0M,Shadow7.fix0P,GateMirror.forward,GateMirror.front,GateMirror.erase,toffoliCount,measurementCount,Challenge.gateSlots,Challenge.instructionSlots]
+
+end ECDSAAdd.Entrant.StairPacket.DeadScan
+
+end
+-- ==== end FlagLeave + DeadScan ====
+
 -- ==== CRT: merged by merge4.py from CRTBarrelData, CRTBarrel, CRTBitCount, CRTDomain, CRTResources, CRTBarrelMetrics, CRTLinear, CRTMeasurement, CRTPlacement, CRTShapeData, CRTPhysical, CRTBarrelChecks, CRTField, CRTFieldCases, CRTFieldRows, CRTMatrix, CRTFieldRun, CRTTriangle, CRTComponents, CRTCoordinates, CRTWindowRun, CRTBarrelRun, CRTPackedData, CRTPivots, CRTPacked, CRTBasisReceipt, CRTFastField, CRTPackedActions, CRTPrototype, CRTPrototypeReceipt, CRTPackedRun, CRTSlice, CRTTemplateAction, CRTBarrelCorrect ====
 
 -- ==== begin CRTBarrelData ====
@@ -1604,143 +2099,632 @@ def barrelSlots (s : Nat) (mirror : Bool) : Nat :=
   let v := (measuredCosts (barrelWidth s)).2.2
   if mirror then v.2 else v.1
 
-def before (s : Nat) : List GateMirror.Gate :=
+def beforeReference (s : Nat) : List GateMirror.Gate :=
   let b := Shadow7.sbP s
   Shadow7.fix0P s b ++ Partial.leaveFix1 s b ++ Shadow7.fix2P s b ++ Partial.leaveFix3 s b ++
     Partial.leaveFix4 s b ++ Shadow7.leaveFix5Move s b ++ Shadow7.leaveAdjust s
 
-def afterPart (s : Nat) : List GateMirror.Gate :=
+def afterReference (s : Nat) : List GateMirror.Gate :=
   let b := Shadow7.sbP s
   Shadow7.fix8P s b ++ Shadow7.leaveJoinMove s ++ Shadow7.fix10P s b ++
     Partial.leaveFix11 s b ++ Partial.leaveFix12 s b ++ Shadow7.leaveLowStore s ++
     Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
-/-- `before` up to Fix3's flag gate. -/
-def headA (s : Nat) : List GateMirror.Gate :=
+-- ==== begin DeadJoin (credited to spariev 65b176b3) ====
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel
+
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+def wordOpen (a : Wire) : List HighBankJoin.Column → List Gate
+  | [] => []
+  | r::rs => toggleG a r.hot ++ pairGM r.low a r.shadow r.tube ++ wordOpen a rs
+
+def wordClose (a : Wire) : List HighBankJoin.Column → List Gate
+  | [] => []
+  | r::rs => wordClose a rs ++ toggleG a r.hot
+
+theorem word_split (a : Wire) (rs tail : List HighBankJoin.Column) :
+    wordGM a (rs++tail) = wordOpen a rs ++ (wordGM a tail ++ wordClose a rs) := by
+  induction rs with
+  | nil => simp [wordGM,wordOpen,wordClose]
+  | cons r rs ih => simp only [List.cons_append,wordGM,wordOpen,wordClose,ih,List.append_assoc]
+
+def cols16 (s : Nat) : List HighBankJoin.Column :=
+  (List.range 16).map fun i => ⟨decide (i < Shadow7.lowsP s),
+    if i < 16 then some (tagsP.getD i 0) else none, Shadow7.a0P s + i, Shadow7.bankW s i⟩
+
+def lastCol (s : Nat) : HighBankJoin.Column :=
+  ⟨false,none,Shadow7.a0P s+16,Shadow7.bankW s 16⟩
+
+theorem cols_split : ∀ j : Fin 26, j.val≤24 →
+    Shadow7.columnsP (start j) = cols16 (start j) ++ [lastCol (start j)] := by
+  intro j hi
+  have high : ¬16 < Shadow7.lowsP (start j) := by revert j; decide +kernel
+  simp only [Shadow7.columnsP,cols16,List.range_succ,List.map_append,List.map_cons,List.map_nil,
+    decide_eq_false high,show ¬16<16 by decide,if_false,lastCol]
+
+def postEntry (s : Nat) : List Gate :=
+  leaveFix3 s (Shadow7.sbP s) ++ leaveFix4 s (Shadow7.sbP s) ++
+  Shadow7.leaveFix5Move s (Shadow7.sbP s) ++ Shadow7.leaveAdjust s ++ Shadow7.leaveBarrel s ++
+  Shadow7.fix8P s (Shadow7.sbP s) ++ keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s+i) 1613 0 8 ++ wordOpen 1614 (cols16 s)
+
+def pair16 (s : Nat) : List Gate :=
+  [.cx (Shadow7.a0P s+16) (Shadow7.bankW s 16),.cx (Shadow7.bankW s 16) (Shadow7.a0P s+16),
+   .pop 1614 (Shadow7.bankW s 16) (Shadow7.a0P s+16)]
+
+def afterWord (s : Nat) : List Gate :=
+  wordClose 1614 (cols16 s) ++ Shadow7.fix10P s (Shadow7.sbP s) ++ leaveFix11 s (Shadow7.sbP s) ++
+  leaveFix12 s (Shadow7.sbP s) ++ Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++
+  Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
+
+theorem post_keeps_checked : ∀ j : Fin 26, j.val≤24 →
+    (postEntry (start j)).all (fun g => decide (target g ≠ Shadow7.a0P (start j)+16)) = true := by
+  decide +kernel
+
+
+theorem pair_layout_checked : ∀ j : Fin 26, j.val≤24 →
+  [1614,Shadow7.a0P (start j)+16,Shadow7.bankW (start j) 16].Nodup := by decide +kernel
+
+def shortenedOps (s : Nat) : List Gate :=
+  LeaveJ7.entryOps s ++ postEntry s ++ afterWord s
+
+
+
+-- Explicit 3d shape; cached 83c has a different kept width.
+
+def referenceOps (s : Nat) : List Gate :=
+  Shadow7.fix0P s (Shadow7.sbP s) ++ leaveFix1 s (Shadow7.sbP s) ++ Shadow7.fix2P s (Shadow7.sbP s) ++
+  leaveFix3 s (Shadow7.sbP s) ++ leaveFix4 s (Shadow7.sbP s) ++ Shadow7.leaveFix5Move s (Shadow7.sbP s) ++
+  Shadow7.leaveAdjust s ++ Shadow7.leaveBarrel s ++ Shadow7.fix8P s (Shadow7.sbP s) ++
+  (keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s+i) 1613 0 8 ++ wordGM 1614 (Shadow7.columnsP s)) ++
+  Shadow7.fix10P s (Shadow7.sbP s) ++ leaveFix11 s (Shadow7.sbP s) ++ leaveFix12 s (Shadow7.sbP s) ++
+  Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
+
+theorem reference_shape (j : Fin 26) (hi : j.val≤24) :
+    referenceOps (start j) = LeaveJ7.entryOps (start j) ++
+      (postEntry (start j) ++ (pair16 (start j) ++ afterWord (start j))) := by
+  simp only [referenceOps,LeaveJ7.entryOps,postEntry,afterWord,cols_split j hi,word_split,
+    wordGM,toggleG,pairGM,lastCol,pair16,Bool.false_eq_true,if_false,
+    List.append_nil,List.nil_append,List.append_assoc]
+
+theorem wordOpenClose (a : Wire) (rs : List HighBankJoin.Column) :
+    wordGM a rs = wordOpen a rs ++ wordClose a rs := by
+  simpa only [List.append_nil,wordGM,List.nil_append] using word_split a rs []
+
+def afterShort (s : Nat) : List Gate :=
+  Shadow7.fix8P s (Shadow7.sbP s) ++
+  (keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s+i) 1613 0 8 ++ wordGM 1614 (cols16 s)) ++
+  Shadow7.fix10P s (Shadow7.sbP s) ++ leaveFix11 s (Shadow7.sbP s) ++ leaveFix12 s (Shadow7.sbP s) ++
+  Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
+
+theorem shortened_shape (s : Nat) : shortenedOps s = CRTBarrel.beforeReference s ++
+    (Shadow7.leaveBarrel s ++ afterShort s) := by
+  simp only [shortenedOps,postEntry,afterWord,afterShort,LeaveJ7.entryOps,
+    CRTBarrel.beforeReference,wordOpenClose,List.append_assoc]
+
+def scanTail (s : Nat) : List Gate :=
+  leaveFix1 s (Shadow7.sbP s) ++ Shadow7.fix2P s (Shadow7.sbP s) ++ postEntry s ++ afterWord s
+
+def scanShortenedOps (s : Nat) : List Gate := DeadScan.fix0M s (Shadow7.sbP s) ++ scanTail s
+
+theorem shortened_scan_shape (s : Nat) : shortenedOps s =
+    Shadow7.fix0P s (Shadow7.sbP s) ++ scanTail s := by
+  simp only [shortenedOps,LeaveJ7.entryOps,scanTail,List.append_assoc]
+
+theorem scan_physical : ∀ j : Fin 26, j.val≤24 →
+    (DeadScan.fix0M (start j) (Shadow7.sbP (start j))).all proper=true := by decide +kernel
+
+def beforeScanTail (s : Nat) : List Gate :=
+  leaveFix1 s (Shadow7.sbP s) ++ Shadow7.fix2P s (Shadow7.sbP s) ++
+  leaveFix3 s (Shadow7.sbP s) ++ leaveFix4 s (Shadow7.sbP s) ++
+  Shadow7.leaveFix5Move s (Shadow7.sbP s) ++ Shadow7.leaveAdjust s
+
+def beforeScan (s : Nat) : List Gate :=
+  DeadScan.fix0M s (Shadow7.sbP s) ++ beforeScanTail s
+
+def beforeAll (s : Nat) : List Gate :=
+  FlagLeave.cut (Shadow7.e0P s+3) (Shadow7.e0P s+4) 1559 2 (beforeScan s)
+
+def afterAll (s : Nat) : List Gate :=
+  FlagLeave.cut (Shadow7.e0P s+3) (Shadow7.e0P s+4) 1559 1 (afterShort s)
+
+def allOps (s : Nat) : List Gate :=
+  FlagLeave.cut (Shadow7.e0P s+3) (Shadow7.e0P s+4) 1559 2 (scanShortenedOps s)
+
+theorem scan_shortened_shape (s : Nat) : scanShortenedOps s = beforeScan s ++
+    (Shadow7.leaveBarrel s ++ afterShort s) := by
+  simp only [scanShortenedOps,scanTail,postEntry,afterWord,beforeScan,beforeScanTail,afterShort,
+    wordOpenClose,List.append_assoc]
+
+theorem all_checked : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.check (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) 1559
+      2 false (scanShortenedOps (start j)) = true := by decide +kernel
+
+theorem before_all_checked : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.check (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) 1559
+      2 false (beforeScan (start j)) = true := by
+  intro j hi
+  exact FlagLeave.check_prefix _ _ _ _ 2 false (beforeScan (start j))
+    (Shadow7.leaveBarrel (start j) ++ afterShort (start j))
+    (by rw [←scan_shortened_shape]; exact all_checked j hi)
+
+theorem removed_before : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (beforeScan (start j)) =
+      [.make (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559] := by decide +kernel
+
+theorem removed_barrel : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (Shadow7.leaveBarrel (start j)) = [] := by decide +kernel
+
+theorem all_split (j : Fin 26) (hi : j.val≤24) : allOps (start j) =
+    beforeAll (start j) ++ (Shadow7.leaveBarrel (start j) ++ afterAll (start j)) := by
+  rw [allOps,scan_shortened_shape,FlagLeave.cut_append,removed_before j hi]
+  simp only [List.length_singleton,show 2-1=1 by decide]
+  rw [FlagLeave.cut_append,removed_barrel j hi]
+  simp only [List.length_nil,Nat.sub_zero]
+  rw [FlagLeave.cut_of_removed_nil _ _ _ _ _ (removed_barrel j hi)]
+  rfl
+
+def afterReference (s : Nat) : List Gate :=
+  Shadow7.fix8P s (Shadow7.sbP s) ++
+  (keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s+i) 1613 0 8 ++ wordGM 1614 (Shadow7.columnsP s)) ++
+  Shadow7.fix10P s (Shadow7.sbP s) ++ leaveFix11 s (Shadow7.sbP s) ++ leaveFix12 s (Shadow7.sbP s) ++
+  Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
+
+def afterOpen (s : Nat) : List Gate :=
+  Shadow7.fix8P s (Shadow7.sbP s) ++ keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s+i) 1613 0 8 ++
+    wordOpen 1614 (cols16 s)
+theorem inverse_append (a b : List Gate) : inverse (a ++ b) = inverse b ++ inverse a := by
+  simp only [inverse,List.map_append,List.reverse_append]
+
+theorem cut_metrics (a c : List Gate) (active sh tu : Wire) :
+    let old := a ++ ([Gate.cx sh tu,Gate.cx tu sh,Gate.pop active tu sh] ++ c)
+    let new := a ++ c
+    toffoliCount (GateMirror.forward old) = toffoliCount (GateMirror.forward new) ∧
+    toffoliCount (GateMirror.inverse old) = toffoliCount (GateMirror.inverse new)+1 ∧
+    measurementCount (GateMirror.forward old) = measurementCount (GateMirror.forward new)+1 ∧
+    measurementCount (GateMirror.inverse old) = measurementCount (GateMirror.inverse new) ∧
+    gateSlots (GateMirror.forward old) = gateSlots (GateMirror.forward new)+4 ∧
+    gateSlots (GateMirror.inverse old) = gateSlots (GateMirror.inverse new)+3 := by
+  dsimp only
+  simp only [toffoli_forward,toffoli_inverse,meas_forward,meas_inverse,slots_forward,slots_inverse,
+    List.countP_append,List.length_append,List.countP_cons,List.countP_nil,List.length_cons,
+    List.length_nil,isCCX,isMake,isPop,if_false,if_true,Bool.false_eq_true]
+  omega
+
+
+set_option linter.constructorNameAsVariable false
+
+theorem after_short_metrics (j : Fin 26) (hi : j.val≤24) :
+    toffoliCount (GateMirror.forward (afterReference (start j))) =
+      toffoliCount (GateMirror.forward (afterShort (start j))) ∧
+    toffoliCount (GateMirror.inverse (afterReference (start j))) =
+      toffoliCount (GateMirror.inverse (afterShort (start j)))+1 ∧
+    measurementCount (GateMirror.forward (afterReference (start j))) =
+      measurementCount (GateMirror.forward (afterShort (start j)))+1 ∧
+    measurementCount (GateMirror.inverse (afterReference (start j))) =
+      measurementCount (GateMirror.inverse (afterShort (start j))) ∧
+    gateSlots (GateMirror.forward (afterReference (start j))) =
+      gateSlots (GateMirror.forward (afterShort (start j)))+4 ∧
+    gateSlots (GateMirror.inverse (afterReference (start j))) =
+      gateSlots (GateMirror.inverse (afterShort (start j)))+3 := by
+  have oldshape : afterReference (start j) = afterOpen (start j) ++
+      (pair16 (start j) ++ afterWord (start j)) := by
+    simp only [afterReference,afterOpen,afterWord,cols_split j hi,word_split,wordGM,toggleG,
+      pairGM,lastCol,pair16,Bool.false_eq_true,if_false,List.append_nil,List.nil_append,List.append_assoc]
+  have newshape : afterShort (start j) = afterOpen (start j) ++ afterWord (start j) := by
+    simp only [afterShort,afterOpen,afterWord,wordOpenClose,List.append_assoc]
+  rw [oldshape,newshape]
+  exact cut_metrics _ _ _ _ _
+
+theorem before_scan_metrics (s : Nat) :
+    toffoliCount (GateMirror.forward (beforeScan s))+1 = toffoliCount (GateMirror.forward (CRTBarrel.beforeReference s)) ∧
+    toffoliCount (GateMirror.inverse (beforeScan s)) = toffoliCount (GateMirror.inverse (CRTBarrel.beforeReference s)) ∧
+    measurementCount (GateMirror.forward (beforeScan s)) = measurementCount (GateMirror.forward (CRTBarrel.beforeReference s))+1 ∧
+    measurementCount (GateMirror.inverse (beforeScan s)) = measurementCount (GateMirror.inverse (CRTBarrel.beforeReference s)) ∧
+    gateSlots (GateMirror.forward (beforeScan s)) = gateSlots (GateMirror.forward (CRTBarrel.beforeReference s))+1 ∧
+    gateSlots (GateMirror.inverse (beforeScan s)) = gateSlots (GateMirror.inverse (CRTBarrel.beforeReference s)) := by
+  have oldshape : CRTBarrel.beforeReference s = Shadow7.fix0P s (Shadow7.sbP s) ++ beforeScanTail s := by
+    simp only [CRTBarrel.beforeReference,beforeScanTail,List.append_assoc]
+  obtain ⟨nt,nm,ns⟩ := DeadScan.fix0M_counts s (Shadow7.sbP s)
+  obtain ⟨ot,_it,om,_im,os,_is⟩ := (Shadow7.counts_fix0P s (Shadow7.sbP s)).programs
+  simp only [Nat.add_zero] at ot os
+  simp only [beforeScan,oldshape,forward_app,inverse_append,DeadScan.fix0M_inverse,
+    toffoliCount_append,measurementCount_append,gateSlots_append,nt,nm,ns,ot,om,os]
+  refine ⟨?_,trivial,?_,trivial,?_,trivial⟩ <;> omega
+
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+theorem removed_after : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1 (afterShort (start j)) =
+      [.pop (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559] := by decide +kernel
+
+theorem all_local_deltas (j : Fin 26) (hi : j.val≤24) :
+    toffoliCount (GateMirror.forward (beforeAll (start j))) +
+      toffoliCount (GateMirror.forward (afterAll (start j))) + 2 =
+      toffoliCount (GateMirror.forward (CRTBarrel.beforeReference (start j))) +
+      toffoliCount (GateMirror.forward (afterReference (start j))) ∧
+    toffoliCount (inverse (afterAll (start j))) + toffoliCount (inverse (beforeAll (start j))) + 2 =
+      toffoliCount (inverse (afterReference (start j))) + toffoliCount (inverse (CRTBarrel.beforeReference (start j))) ∧
+    measurementCount (GateMirror.forward (beforeAll (start j))) +
+      measurementCount (GateMirror.forward (afterAll (start j))) + 1 =
+      measurementCount (GateMirror.forward (CRTBarrel.beforeReference (start j))) +
+      measurementCount (GateMirror.forward (afterReference (start j))) ∧
+    measurementCount (inverse (afterAll (start j))) + measurementCount (inverse (beforeAll (start j))) + 1 =
+      measurementCount (inverse (afterReference (start j))) + measurementCount (inverse (CRTBarrel.beforeReference (start j))) ∧
+    gateSlots (GateMirror.forward (beforeAll (start j))) + gateSlots (GateMirror.forward (afterAll (start j))) + 4 =
+      gateSlots (GateMirror.forward (CRTBarrel.beforeReference (start j))) + gateSlots (GateMirror.forward (afterReference (start j))) ∧
+    gateSlots (inverse (afterAll (start j))) + gateSlots (inverse (beforeAll (start j))) + 4 =
+      gateSlots (inverse (afterReference (start j))) + gateSlots (inverse (CRTBarrel.beforeReference (start j))) := by
+  have flag := FlagLeave.pair_savings (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559
+    (beforeScan (start j)) (afterShort (start j)) (removed_before j hi) (removed_after j hi)
+  have scan := before_scan_metrics (start j)
+  have join := after_short_metrics j hi
+  dsimp only [beforeAll,afterAll]
+  omega
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 3000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+theorem scan_replacement_member (s h : Nat) (g : Gate) (hg : g ∈ DeadScan.fix0M s h) :
+    ∃ old ∈ Shadow7.fix0P s h, g.wires=old.wires ∧ proper g=proper old := by
+  have shape : Shadow7.fix0P s h = (Shadow7.fix0P s h).take 54 ++
+      [.ccx (s+30) (h+803) (s+h+48)] ++ (Shadow7.fix0P s h).drop 55 := rfl
+  rcases List.mem_append.mp hg with pre | tail
+  · rcases List.mem_append.mp pre with head | cell
+    · exact ⟨g,List.mem_of_mem_take head,rfl,rfl⟩
+    · have eg : g = .pop (s+30) (h+803) (s+h+48) := List.mem_singleton.mp cell
+      subst g
+      refine ⟨.ccx (s+30) (h+803) (s+h+48),?_,rfl,rfl⟩
+      rw [shape]
+      exact List.mem_append_left _ (List.mem_append_right _ List.mem_cons_self)
+  · exact ⟨g,List.mem_of_mem_drop tail,rfl,rfl⟩
+
+theorem before_scan_member (s : Nat) (g : Gate) (hg : g∈beforeScan s) :
+    ∃ old∈CRTBarrel.beforeReference s,g.wires=old.wires ∧ proper g=proper old := by
+  have shape : CRTBarrel.beforeReference s = Shadow7.fix0P s (Shadow7.sbP s) ++ beforeScanTail s := by
+    simp only [CRTBarrel.beforeReference,beforeScanTail,List.append_assoc]
+  rw [beforeScan,List.mem_append] at hg
+  rcases hg with head | tail
+  · obtain ⟨old,ho,hw,hp⟩ := scan_replacement_member s (Shadow7.sbP s) g head
+    exact ⟨old,by rw [shape]; exact List.mem_append_left _ ho,hw,hp⟩
+  · exact ⟨g,by rw [shape]; exact List.mem_append_right _ tail,rfl,rfl⟩
+
+theorem before_scan_allW {P : Wire → Prop} (s : Nat)
+    (h : AllW P (CRTBarrel.beforeReference s)) : AllW P (beforeScan s) := by
+  intro g hg q hq
+  obtain ⟨old,ho,hw,hp⟩ := before_scan_member s g hg
+  exact h old ho q (hw ▸ hq)
+
+theorem before_scan_proper (s : Nat) (h : Proper (CRTBarrel.beforeReference s)) : Proper (beforeScan s) := by
+  intro g hg
+  obtain ⟨old,ho,hw,hp⟩ := before_scan_member s g hg
+  exact hp.trans (h old ho)
+
+theorem after_short_member (j : Fin 26) (hi : j.val≤24) (g : Gate) (hg : g∈afterShort (start j)) :
+    g∈afterReference (start j) := by
+  have oldshape : afterReference (start j) = afterOpen (start j) ++
+      (pair16 (start j) ++ afterWord (start j)) := by
+    simp only [afterReference,afterOpen,afterWord,cols_split j hi,word_split,wordGM,toggleG,
+      pairGM,lastCol,pair16,Bool.false_eq_true,if_false,List.append_nil,List.nil_append,List.append_assoc]
+  have newshape : afterShort (start j) = afterOpen (start j) ++ afterWord (start j) := by
+    simp only [afterShort,afterOpen,afterWord,wordOpenClose,List.append_assoc]
+  rw [oldshape]
+  rw [newshape,List.mem_append] at hg
+  rcases hg with head | tail
+  · exact List.mem_append_left _ head
+  · exact List.mem_append_right _ (List.mem_append_right _ tail)
+
+theorem after_short_allW {P : Wire → Prop} (j : Fin 26) (hi : j.val≤24)
+    (h : AllW P (afterReference (start j))) : AllW P (afterShort (start j)) :=
+  fun g hg q hq => h g (after_short_member j hi g hg) q hq
+
+theorem after_short_proper (j : Fin 26) (hi : j.val≤24)
+    (h : Proper (afterReference (start j))) : Proper (afterShort (start j)) :=
+  fun g hg => h g (after_short_member j hi g hg)
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+
+
+-- ==== begin FlagCut57 (credited to ercumentyildirim ae9d602d) ====
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+set_option linter.unusedTactic false
+set_option linter.unnecessarySeqFocus false
+set_option linter.unreachableTactic false
+
+/-- Prefix of `beforeScan` before Fix5Move's row-0 swap. -/
+def beforePre5 (s : Nat) : List Gate :=
   let b := Shadow7.sbP s
-  Shadow7.fix0P s b ++ Partial.leaveFix1 s b ++ Shadow7.fix2P s b
+  DeadScan.fix0M s b ++ leaveFix1 s b ++ Shadow7.fix2P s b ++ leaveFix3 s b ++
+    leaveFix4 s b ++ (leaveFix5 s b).take 27
 
-/-- `before` after Fix3's flag gate. -/
-def headC (s : Nat) : List GateMirror.Gate :=
+/-- Stock Fix5Move row-0 controlled swap. -/
+def row0Old (s : Nat) : List Gate :=
+  [.cx (Shadow7.a0P s + 0) (Shadow7.e0P s + 6),
+   .ccx (tagsP.getD 0 0) (Shadow7.e0P s + 6) (Shadow7.a0P s + 0),
+   .cx (Shadow7.a0P s + 0) (Shadow7.e0P s + 6)]
+
+/-- Row-0 swap specialized for `e0+6 = 0`: fresh Toffoli copy plus CNOT. -/
+def row0New (s : Nat) : List Gate :=
+  [.make (tagsP.getD 0 0) (Shadow7.a0P s + 0) (Shadow7.e0P s + 6),
+   .cx (Shadow7.e0P s + 6) (Shadow7.a0P s + 0)]
+
+/-- Suffix of `beforeScan` after Fix5Move's row-0 swap. -/
+def beforePost5 (s : Nat) : List Gate :=
   let b := Shadow7.sbP s
-  [.cx (b+1577) 1560, .cx 1559 1560] ++ Partial.leaveFix4 s b ++ Shadow7.leaveFix5Move s b ++ Shadow7.leaveAdjust s
-
-/-- `afterPart` up to the low store's flag gate. -/
-def tailD (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  Shadow7.fix8P s b ++ Shadow7.leaveJoinMove s ++ Shadow7.fix10P s b ++ Partial.leaveFix11 s b ++ Partial.leaveFix12 s b ++
-    [.cx (Shadow7.e0P s + 3) 1560, .cx 1559 1560]
-
-/-- `afterPart` after the low store's flag gate. -/
-def tailE (s : Nat) : List GateMirror.Gate :=
-  Shadow7.lowRest s ++ Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
-
-/-- The flag `1559` holds `far ∧ side`, and side implies far: Fix3 copies `side` with a CNOT, and the low store clears
-it with the same CNOT. -/
-def beforeC (s : Nat) : List GateMirror.Gate := headA s ++ (.cx (Shadow7.sbP s + 1578) 1559 :: headC s)
-
-def afterPartC (s : Nat) : List GateMirror.Gate := tailD s ++ (.cx (Shadow7.e0P s + 4) 1559 :: tailE s)
-
-/-- `Shadow7.fix0P` before row 17's swap Toffoli. -/
-def headA0 (s : Nat) : List GateMirror.Gate := (Shadow7.fix0P s (Shadow7.sbP s)).take 54
-
-/-- `headA` after row 17's swap Toffoli. -/
-def headA1 (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  (Shadow7.fix0P s b).drop 55 ++ Partial.leaveFix1 s b ++ Shadow7.fix2P s b
-
-/-- Row 17's cells are zero after the scan, so its swap Toffoli finds `s30 ∧ B17` in its target: it is an erasure. -/
-def beforeC4 (s : Nat) : List GateMirror.Gate :=
-  headA0 s ++ (.pop (s+30) (Shadow7.sbP s + 803) (s + Shadow7.sbP s + 48) ::
-    (headA1 s ++ (.cx (Shadow7.sbP s + 1578) 1559 :: headC s)))
-
-/-- `headC` up to Fix5Move's row-0 swap. -/
-def headC0 (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  [.cx (b+1577) 1560, .cx 1559 1560] ++ Partial.leaveFix4 s b ++ (Partial.leaveFix5 s b).take 27
-
-/-- `headC` after Fix5Move's row-0 swap. -/
-def headC1 (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  GateMirror.rowGates (Shadow7.e0P s + 6) ((Shadow7.moveRows s).drop 1) ++ (Partial.leaveFix5 s b).drop 43 ++
+  rowGates (Shadow7.e0P s + 6) ((Shadow7.moveRows s).drop 1) ++ (leaveFix5 s b).drop 43 ++
     Shadow7.leaveAdjust s
 
-/-- Row 0's swap partner `e0+6` is still zero, so the swap is a fresh Toffoli copy plus a CNOT. -/
-def beforeC5 (s : Nat) : List GateMirror.Gate :=
-  headA0 s ++ (.pop (s+30) (Shadow7.sbP s + 803) (s + Shadow7.sbP s + 48) ::
-    (headA1 s ++ (.cx (Shadow7.sbP s + 1578) 1559 :: (headC0 s ++
-      (.make (Partial.tagsP.getD 0 0) (Shadow7.a0P s + 0) (Shadow7.e0P s + 6) ::
-        .cx (Shadow7.e0P s + 6) (Shadow7.a0P s + 0) :: headC1 s)))))
+theorem moveRows_cut5 (s : Nat) :
+    Shadow7.moveRows s = (tagsP.getD 0 0, Shadow7.a0P s + 0) :: (Shadow7.moveRows s).drop 1 := rfl
 
-/-- The join's live columns 0..15 (`Shadow7.columnsP` without its top column). -/
-def colsC (s : Nat) : List HighBankJoin.Column :=
-  (List.range 16).map fun i =>
-    ⟨decide (i < Shadow7.lowsP s), if i < 16 then some (Partial.tagsP.getD i 0) else none, Shadow7.a0P s + i, Shadow7.bankW s i⟩
+theorem beforeScan_split5 (s : Nat) :
+    beforeScan s = beforePre5 s ++ (row0Old s ++ beforePost5 s) := by
+  have e := moveRows_cut5 s
+  simp only [beforeScan, beforeScanTail, beforePre5, row0Old, beforePost5, Shadow7.leaveFix5Move]
+  conv_lhs => rw [e]
+  simp only [rowGates, List.append_assoc, List.cons_append, List.nil_append]
 
-/-- `Partial.wordGM`'s opening half: toggles and pairs, outermost column first. -/
-def wordPre (a : Wire) : List HighBankJoin.Column → List GateMirror.Gate
-  | [] => []
-  | r :: rs => Partial.toggleG a r.hot ++ (Partial.pairGM r.low a r.shadow r.tube ++ wordPre a rs)
+def beforePre5Cut (s : Nat) : List Gate :=
+  FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 (beforePre5 s)
 
-/-- `Partial.wordGM`'s closing toggles, innermost column first. -/
-def wordPost (a : Wire) : List HighBankJoin.Column → List GateMirror.Gate
-  | [] => []
-  | r :: rs => wordPost a rs ++ Partial.toggleG a r.hot
+def before5 (s : Nat) : List Gate :=
+  beforePre5Cut s ++ (row0New s ++ beforePost5 s)
 
-/-- `tailD` up to the join's top column. -/
-def tailD0 (s : Nat) : List GateMirror.Gate :=
-  Shadow7.fix8P s (Shadow7.sbP s) ++ (Partial.keptG (Partial.tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 8 ++
-    wordPre 1614 (colsC s))
+theorem removed_pre5 : ∀ j : Fin 26, j.val ≤ 24 →
+    FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 2 (beforePre5 (start j)) =
+      [.make (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] := by decide +kernel
 
-/-- `tailD` after the join's top column. -/
-def tailD1 (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  wordPost 1614 (colsC s) ++ (Shadow7.fix10P s b ++ Partial.leaveFix11 s b ++ Partial.leaveFix12 s b ++
-    [.cx (Shadow7.e0P s + 3) 1560, .cx 1559 1560])
+theorem removed_post5 : ∀ j : Fin 26, j.val ≤ 24 →
+    FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 1
+      (row0Old (start j) ++ beforePost5 (start j)) = [] := by decide +kernel
 
-/-- The join's top column reads a zero shadow cell, so its pair is the identity: drop it. -/
-def afterPartC2 (s : Nat) : List GateMirror.Gate := tailD0 s ++ (tailD1 s ++ (.cx (Shadow7.e0P s + 4) 1559 :: tailE s))
+theorem beforeAll_split5 (j : Fin 26) (hi : j.val ≤ 24) :
+    beforeAll (start j) = beforePre5Cut (start j) ++ (row0Old (start j) ++ beforePost5 (start j)) := by
+  rw [beforeAll, beforeScan_split5, FlagLeave.cut_append, removed_pre5 j hi]
+  simp only [List.length_singleton, show 2 - 1 = 1 by decide]
+  rw [FlagLeave.cut_of_removed_nil _ _ _ _ _ (removed_post5 j hi)]
+  rfl
+
+/-- `leaveLowStore` after its leading 3 flag gates. -/
+def lowRest7 (s : Nat) : List Gate :=
+  let L := Shadow7.lowsP s; let bs := (List.range L).map (Shadow7.b0P s + ·)
+  (List.range L).map (fun i => .make 1556 (Shadow7.a0P s + i) (Shadow7.b0P s + i)) ++ xsG bs ++
+    addG bs ((List.range (L-1)).map (1559 + ·)) 1558 ++ xsG bs ++
+    [.pop (Shadow7.b0P s - 1) 1557 1558, .cx (Shadow7.a0P s - 1) 1557, .x 1557]
 
 /-- `leaveStoreMapped` up to its carry chain. -/
-def storeHead (s : Nat) : List GateMirror.Gate :=
+def storeHead7 (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
-  [.x 1558, .x top] ++ Partial.xsG ((List.range H).map (fun i => Shadow7.bankW s (L+i)))
+  [.x 1558, .x top] ++ xsG ((List.range H).map (fun i => Shadow7.bankW s (L+i)))
 
-/-- `tailE` up to the store chain's level 0. -/
-def tailE0 (s : Nat) : List GateMirror.Gate := Shadow7.lowRest s ++ storeHead s
+def topW7 (s : Nat) : Wire := Shadow7.a0P s + Shadow7.lowsP s - 1
 
-/-- The store chain below its level 0. -/
-def chainMid (s : Nat) : List GateMirror.Gate :=
+/-- Prefix of `afterShort` up through the flag erasure at the start of `leaveLowStore`. -/
+def afterPre7Head (s : Nat) : List Gate :=
+  let b := Shadow7.sbP s
+  Shadow7.fix8P s b ++ (keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s+i) 1613 0 8 ++ wordGM 1614 (cols16 s)) ++
+  Shadow7.fix10P s b ++ leaveFix11 s b ++ leaveFix12 s b ++
+  [.cx (Shadow7.e0P s + 3) 1560, .cx 1559 1560, .pop (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559]
+
+def afterPre7Tail (s : Nat) : List Gate := lowRest7 s ++ storeHead7 s
+
+/-- The store chain below level 0. -/
+def chainMid7 (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
-  Partial.chainG (Shadow7.storeW s) (fun i => if i = 0 then top else Shadow7.bankW s (L+i-1))
+  chainG (Shadow7.storeW s) (fun i => if i = 0 then top else Shadow7.bankW s (L+i-1))
     [.cx (Shadow7.storeW s (H+1)) 1557, .x 1557] 1 H
 
-/-- `tailE` after the store chain's level 0. -/
-def tailE1 (s : Nat) : List GateMirror.Gate :=
+/-- Suffix of `afterShort` after the store chain's level-0 pop. -/
+def afterPost7 (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
   let hi := (List.range H).map (fun i => Shadow7.bankW s (L+i))
   let seq2 := (List.range (L+1)).map (Shadow7.b0P s - 1 + ·)
-  Partial.xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ Partial.xsG seq2 ++
-    Partial.chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+(L+1)) 1556, .x 1556] 0 (L+1) ++
-    Partial.xsG seq2.reverse ++ [.x 1558] ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
+  xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
+    chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+(L+1)) 1556, .x 1556] 0 (L+1) ++
+    xsG seq2.reverse ++ [.x 1558] ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
-/-- The store chain's carry-in `1558` is the constant 1 (the low store popped it, the store head flips it): its level-0
-make and pop are CNOTs from `top`. -/
-def afterPartC3 (s : Nat) : List GateMirror.Gate :=
-  tailD0 s ++ (tailD1 s ++ (.cx (Shadow7.e0P s + 4) 1559 :: (tailE0 s ++
-    (.cx (Shadow7.a0P s + Shadow7.lowsP s - 1) 1559 :: (chainMid s ++ (.cx (Shadow7.a0P s + Shadow7.lowsP s - 1) 1559 ::
-      tailE1 s))))))
+theorem store0_7 (s : Nat) : Shadow7.storeW s 0 = 1558 := by
+  simp only [Shadow7.storeW, Partial.storeW]
+  split_ifs <;> ((try unfold Shadow7.e0P at *); (try unfold Wire at *); omega)
+
+theorem store1_7 (s : Nat) : Shadow7.storeW s 1 = 1559 := by
+  simp only [Shadow7.storeW, Partial.storeW]
+  split_ifs <;> ((try unfold Shadow7.e0P at *); (try unfold Wire at *); omega)
+
+theorem afterShort_split7 (s : Nat) :
+    afterShort s = afterPre7Head s ++ (afterPre7Tail s ++
+      ([.make 1558 (topW7 s) 1559] ++ (chainMid7 s ++ ([.pop 1558 (topW7 s) 1559] ++ afterPost7 s)))) := by
+  simp only [afterShort, afterPre7Head, afterPre7Tail, lowRest7, storeHead7, topW7, chainMid7, afterPost7,
+    Shadow7.leaveLowStore, Shadow7.leaveStoreMapped, Partial.chainG, Nat.zero_add, store0_7, store1_7,
+    if_pos rfl, ite_true, if_true, List.append_assoc, List.cons_append, List.singleton_append, List.nil_append]
+
+def afterPre7HeadCut (s : Nat) : List Gate :=
+  FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 1 (afterPre7Head s)
+
+def after7 (s : Nat) : List Gate :=
+  afterPre7HeadCut s ++ (afterPre7Tail s ++
+    ([.cx (topW7 s) 1559] ++ (chainMid7 s ++ ([.cx (topW7 s) 1559] ++ afterPost7 s))))
+
+theorem removed_afterPre7Head : ∀ j : Fin 26, j.val ≤ 24 →
+    FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 1 (afterPre7Head (start j)) =
+      [.pop (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] := by decide +kernel
+
+theorem afterAll_split7 (j : Fin 26) (hi : j.val ≤ 24) :
+    afterAll (start j) = afterPre7HeadCut (start j) ++ (afterPre7Tail (start j) ++
+      ([.make 1558 (topW7 (start j)) 1559] ++ (chainMid7 (start j) ++ ([.pop 1558 (topW7 (start j)) 1559] ++ afterPost7 (start j))))) := by
+  rw [afterAll, afterShort_split7, FlagLeave.cut_append, removed_afterPre7Head j hi]
+  simp only [List.length_singleton, Nat.sub_self, FlagLeave.cut]
+  rfl
+
+theorem before5_deltas (j : Fin 26) (hi : j.val ≤ 24) :
+    toffoliCount (GateMirror.forward (before5 (start j))) = toffoliCount (GateMirror.forward (beforeAll (start j))) ∧
+    toffoliCount (inverse (before5 (start j))) + 1 = toffoliCount (inverse (beforeAll (start j))) ∧
+    measurementCount (GateMirror.forward (before5 (start j))) = measurementCount (GateMirror.forward (beforeAll (start j))) ∧
+    measurementCount (inverse (before5 (start j))) = measurementCount (inverse (beforeAll (start j))) + 1 ∧
+    gateSlots (GateMirror.forward (before5 (start j))) + 1 = gateSlots (GateMirror.forward (beforeAll (start j))) ∧
+    gateSlots (inverse (before5 (start j))) = gateSlots (inverse (beforeAll (start j))) := by
+  rw [beforeAll_split5 j hi, before5]
+  simp only [row0Old, row0New, toffoli_forward, toffoli_inverse, meas_forward, meas_inverse, slots_forward, slots_inverse,
+    List.countP_append, List.length_append, List.countP_cons, List.countP_nil, List.length_cons,
+    List.length_nil, isCCX, isMake, isPop, if_false, if_true, Bool.false_eq_true]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+
+theorem after7_deltas (j : Fin 26) (hi : j.val ≤ 24) :
+    toffoliCount (GateMirror.forward (after7 (start j))) + 1 = toffoliCount (GateMirror.forward (afterAll (start j))) ∧
+    toffoliCount (inverse (after7 (start j))) + 1 = toffoliCount (inverse (afterAll (start j))) ∧
+    measurementCount (GateMirror.forward (after7 (start j))) + 1 = measurementCount (GateMirror.forward (afterAll (start j))) ∧
+    measurementCount (inverse (after7 (start j))) + 1 = measurementCount (inverse (afterAll (start j))) ∧
+    gateSlots (GateMirror.forward (after7 (start j))) + 1 = gateSlots (GateMirror.forward (afterAll (start j))) ∧
+    gateSlots (inverse (after7 (start j))) + 1 = gateSlots (inverse (afterAll (start j))) := by
+  rw [afterAll_split7 j hi, after7]
+  have c1 : ∀ a b t : Wire, toffoliCount (GateMirror.forward [Gate.make a b t]) = 1 := fun _ _ _ => rfl
+  have c2 : ∀ a b t : Wire, toffoliCount (inverse [Gate.make a b t]) = 0 := fun _ _ _ => rfl
+  have c3 : ∀ a b t : Wire, toffoliCount (GateMirror.forward [Gate.pop a b t]) = 0 := fun _ _ _ => rfl
+  have c4 : ∀ a b t : Wire, toffoliCount (inverse [Gate.pop a b t]) = 1 := fun _ _ _ => rfl
+  have c5 : ∀ b t : Wire, toffoliCount (GateMirror.forward [Gate.cx b t]) = 0 := fun _ _ => rfl
+  have c6 : ∀ b t : Wire, toffoliCount (inverse [Gate.cx b t]) = 0 := fun _ _ => rfl
+  have d1 : ∀ a b t : Wire, measurementCount (GateMirror.forward [Gate.make a b t]) = 0 := fun _ _ _ => rfl
+  have d2 : ∀ a b t : Wire, measurementCount (inverse [Gate.make a b t]) = 1 := fun _ _ _ => rfl
+  have d3 : ∀ a b t : Wire, measurementCount (GateMirror.forward [Gate.pop a b t]) = 1 := fun _ _ _ => rfl
+  have d4 : ∀ a b t : Wire, measurementCount (inverse [Gate.pop a b t]) = 0 := fun _ _ _ => rfl
+  have d5 : ∀ b t : Wire, measurementCount (GateMirror.forward [Gate.cx b t]) = 0 := fun _ _ => rfl
+  have d6 : ∀ b t : Wire, measurementCount (inverse [Gate.cx b t]) = 0 := fun _ _ => rfl
+  have e1 : ∀ a b t : Wire, gateSlots (GateMirror.forward [Gate.make a b t]) = 1 := fun _ _ _ => rfl
+  have e2 : ∀ a b t : Wire, gateSlots (inverse [Gate.make a b t]) = 2 := fun _ _ _ => rfl
+  have e3 : ∀ a b t : Wire, gateSlots (GateMirror.forward [Gate.pop a b t]) = 2 := fun _ _ _ => rfl
+  have e4 : ∀ a b t : Wire, gateSlots (inverse [Gate.pop a b t]) = 1 := fun _ _ _ => rfl
+  have e5 : ∀ b t : Wire, gateSlots (GateMirror.forward [Gate.cx b t]) = 1 := fun _ _ => rfl
+  have e6 : ∀ b t : Wire, gateSlots (inverse [Gate.cx b t]) = 1 := fun _ _ => rfl
+  simp only [forward_app, inverse_append, toffoliCount_append, measurementCount_append, gateSlots_append,
+    c1, c2, c3, c4, c5, c6, d1, d2, d3, d4, d5, d6, e1, e2, e3, e4, e5, e6]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+
+theorem all_local_deltas57 (j : Fin 26) (hi : j.val ≤ 24) :
+    toffoliCount (GateMirror.forward (before5 (start j))) +
+      toffoliCount (GateMirror.forward (after7 (start j))) + 3 =
+      toffoliCount (GateMirror.forward (CRTBarrel.beforeReference (start j))) +
+      toffoliCount (GateMirror.forward (afterReference (start j))) ∧
+    toffoliCount (inverse (after7 (start j))) + toffoliCount (inverse (before5 (start j))) + 4 =
+      toffoliCount (inverse (afterReference (start j))) + toffoliCount (inverse (CRTBarrel.beforeReference (start j))) ∧
+    measurementCount (GateMirror.forward (before5 (start j))) +
+      measurementCount (GateMirror.forward (after7 (start j))) + 2 =
+      measurementCount (GateMirror.forward (CRTBarrel.beforeReference (start j))) +
+      measurementCount (GateMirror.forward (afterReference (start j))) ∧
+    measurementCount (inverse (after7 (start j))) + measurementCount (inverse (before5 (start j))) + 1 =
+      measurementCount (inverse (afterReference (start j))) + measurementCount (inverse (CRTBarrel.beforeReference (start j))) ∧
+    gateSlots (GateMirror.forward (before5 (start j))) + gateSlots (GateMirror.forward (after7 (start j))) + 6 =
+      gateSlots (GateMirror.forward (CRTBarrel.beforeReference (start j))) + gateSlots (GateMirror.forward (afterReference (start j))) ∧
+    gateSlots (inverse (after7 (start j))) + gateSlots (inverse (before5 (start j))) + 5 =
+      gateSlots (inverse (afterReference (start j))) + gateSlots (inverse (CRTBarrel.beforeReference (start j))) := by
+  obtain ⟨r1, r2, r3, r4, r5, r6⟩ := all_local_deltas j hi
+  obtain ⟨b1, b2, b3, b4, b5, b6⟩ := before5_deltas j hi
+  obtain ⟨a1, a2, a3, a4, a5, a6⟩ := after7_deltas j hi
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+
+theorem row0New_proper : ∀ j : Fin 26, j.val ≤ 24 →
+    (row0New (start j)).all proper = true := by decide +kernel
+
+theorem top_cx_proper : ∀ j : Fin 26, j.val ≤ 24 →
+    proper (.cx (topW7 (start j)) 1559) = true := by decide +kernel
+
+theorem before5_allW {P : Wire → Prop} (j : Fin 26) (hi : j.val ≤ 24)
+    (h : AllW P (beforeAll (start j))) : AllW P (before5 (start j)) := by
+  rw [beforeAll_split5 j hi] at h
+  intro x hx q hq
+  rw [before5] at hx
+  rcases List.mem_append.mp hx with hx | hx
+  · exact h x (List.mem_append_left _ hx) q hq
+  · rcases List.mem_append.mp hx with hx | hx
+    · refine h (.ccx (tagsP.getD 0 0) (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0))
+        (List.mem_append_right _ (List.mem_append_left _ (by simp [row0Old]))) q ?_
+      simp only [row0New, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl <;>
+        simp only [GateMirror.Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢ <;> tauto
+    · exact h x (List.mem_append_right _ (List.mem_append_right _ hx)) q hq
+
+theorem before5_proper (j : Fin 26) (hi : j.val ≤ 24)
+    (h : Proper (beforeAll (start j))) : Proper (before5 (start j)) := by
+  rw [beforeAll_split5 j hi] at h
+  intro x hx
+  rw [before5] at hx
+  rcases List.mem_append.mp hx with hx | hx
+  · exact h x (List.mem_append_left _ hx)
+  · rcases List.mem_append.mp hx with hx | hx
+    · exact List.all_eq_true.mp (row0New_proper j hi) x hx
+    · exact h x (List.mem_append_right _ (List.mem_append_right _ hx))
+
+theorem after7_allW {P : Wire → Prop} (j : Fin 26) (hi : j.val ≤ 24)
+    (h : AllW P (afterAll (start j))) : AllW P (after7 (start j)) := by
+  rw [afterAll_split7 j hi] at h
+  intro x hx q hq
+  rw [after7] at hx
+  simp only [List.mem_append, List.mem_singleton] at hx
+  rcases hx with hx | hx | rfl | hx | rfl | hx
+  · exact h x (by simp [hx]) q hq
+  · exact h x (by simp [hx]) q hq
+  · refine h (.make 1558 (topW7 (start j)) 1559) (by simp) q ?_
+    simp only [GateMirror.Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢; tauto
+  · exact h x (by simp [hx]) q hq
+  · refine h (.pop 1558 (topW7 (start j)) 1559) (by simp) q ?_
+    simp only [GateMirror.Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢; tauto
+  · exact h x (by simp [hx]) q hq
+
+theorem after7_proper (j : Fin 26) (hi : j.val ≤ 24)
+    (h : Proper (afterAll (start j))) : Proper (after7 (start j)) := by
+  rw [afterAll_split7 j hi] at h
+  intro x hx
+  rw [after7] at hx
+  simp only [List.mem_append, List.mem_singleton] at hx
+  rcases hx with hx | hx | rfl | hx | rfl | hx
+  · exact h x (by simp [hx])
+  · exact h x (by simp [hx])
+  · exact top_cx_proper j hi
+  · exact h x (by simp [hx])
+  · exact top_cx_proper j hi
+  · exact h x (by simp [hx])
+
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+-- ==== end FlagCut57 ====
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
+
+def before (s : Nat) : List GateMirror.Gate := DeadJoin.before5 s
+def afterPart (s : Nat) : List GateMirror.Gate := DeadJoin.after7 s
+-- ==== end DeadJoin ====
 
 def leave (j : Fin 26) : Program :=
   let s := start j
   if j.val ≤ 24 then
-    GateMirror.forward (beforeC5 s) ++ barrel s false ++ GateMirror.forward (afterPartC3 s)
+    GateMirror.forward (before s) ++ barrel s false ++ GateMirror.forward (afterPart s)
   else Shadow7.leaveMoveP j
 
 def unleave (j : Fin 26) : Program :=
   let s := start j
   if j.val ≤ 24 then
-    GateMirror.inverse (afterPartC3 s) ++ barrel s true ++ GateMirror.inverse (beforeC5 s)
+    GateMirror.inverse (afterPart s) ++ barrel s true ++ GateMirror.inverse (before s)
   else Shadow7.leaveMoveInvP j
 
 def params : WindowFold.Pieces Program := { Shadow7.params with leave := leave, leaveInv := unleave }
@@ -2323,8 +3307,66 @@ def extent (parts : List (Nat × Nat)) : Nat :=
 theorem schedule_extent (n : Nat) (hn : UsedWidth n) : extent (schedule n) = n := by
   rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
+/-- replay memory (build-chain s5-mem2): one decide per block, each its own kernel check (the single Fin 26 decide
+peaked at about +3 to +4.5 GB; per block <= +0.2 GB). -/
+private theorem place_nodup_0 : ((List.range (barrelWidth (start ⟨0, by decide⟩)+26)).map (place (start ⟨0, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_1 : ((List.range (barrelWidth (start ⟨1, by decide⟩)+26)).map (place (start ⟨1, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_2 : ((List.range (barrelWidth (start ⟨2, by decide⟩)+26)).map (place (start ⟨2, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_3 : ((List.range (barrelWidth (start ⟨3, by decide⟩)+26)).map (place (start ⟨3, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_4 : ((List.range (barrelWidth (start ⟨4, by decide⟩)+26)).map (place (start ⟨4, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_5 : ((List.range (barrelWidth (start ⟨5, by decide⟩)+26)).map (place (start ⟨5, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_6 : ((List.range (barrelWidth (start ⟨6, by decide⟩)+26)).map (place (start ⟨6, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_7 : ((List.range (barrelWidth (start ⟨7, by decide⟩)+26)).map (place (start ⟨7, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_8 : ((List.range (barrelWidth (start ⟨8, by decide⟩)+26)).map (place (start ⟨8, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_9 : ((List.range (barrelWidth (start ⟨9, by decide⟩)+26)).map (place (start ⟨9, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_10 : ((List.range (barrelWidth (start ⟨10, by decide⟩)+26)).map (place (start ⟨10, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_11 : ((List.range (barrelWidth (start ⟨11, by decide⟩)+26)).map (place (start ⟨11, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_12 : ((List.range (barrelWidth (start ⟨12, by decide⟩)+26)).map (place (start ⟨12, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_13 : ((List.range (barrelWidth (start ⟨13, by decide⟩)+26)).map (place (start ⟨13, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_14 : ((List.range (barrelWidth (start ⟨14, by decide⟩)+26)).map (place (start ⟨14, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_15 : ((List.range (barrelWidth (start ⟨15, by decide⟩)+26)).map (place (start ⟨15, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_16 : ((List.range (barrelWidth (start ⟨16, by decide⟩)+26)).map (place (start ⟨16, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_17 : ((List.range (barrelWidth (start ⟨17, by decide⟩)+26)).map (place (start ⟨17, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_18 : ((List.range (barrelWidth (start ⟨18, by decide⟩)+26)).map (place (start ⟨18, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_19 : ((List.range (barrelWidth (start ⟨19, by decide⟩)+26)).map (place (start ⟨19, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_20 : ((List.range (barrelWidth (start ⟨20, by decide⟩)+26)).map (place (start ⟨20, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_21 : ((List.range (barrelWidth (start ⟨21, by decide⟩)+26)).map (place (start ⟨21, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_22 : ((List.range (barrelWidth (start ⟨22, by decide⟩)+26)).map (place (start ⟨22, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_23 : ((List.range (barrelWidth (start ⟨23, by decide⟩)+26)).map (place (start ⟨23, by decide⟩))).Nodup := by
+  decide +kernel
+private theorem place_nodup_24 : ((List.range (barrelWidth (start ⟨24, by decide⟩)+26)).map (place (start ⟨24, by decide⟩))).Nodup := by
+  decide +kernel
+
 private theorem place_nodup : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
-    ((List.range (barrelWidth (start j)+26)).map (place (start j))).Nodup := by decide +kernel
+    ((List.range (barrelWidth (start j)+26)).map (place (start j))).Nodup := by
+  intro j lo hi
+  rcases j with ⟨k, hk⟩
+  change k ≤ 24 at hi
+  interval_cases k
+  exacts [place_nodup_0, place_nodup_1, place_nodup_2, place_nodup_3, place_nodup_4, place_nodup_5, place_nodup_6, place_nodup_7, place_nodup_8, place_nodup_9, place_nodup_10, place_nodup_11, place_nodup_12, place_nodup_13, place_nodup_14, place_nodup_15, place_nodup_16, place_nodup_17, place_nodup_18, place_nodup_19, place_nodup_20, place_nodup_21, place_nodup_22, place_nodup_23, place_nodup_24]
 
 theorem place_inj (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) : ∀ a, a < barrelWidth (start j)+26 →
     ∀ b, b < barrelWidth (start j)+26 → place (start j) a = place (start j) b → a = b := by
@@ -5356,7 +6398,508 @@ end ECDSAAdd.Entrant.StairPacket.CRTBarrel
 end
 -- ==== end CRTBarrelCorrect ====
 
--- ==== begin SplitLeafSquare (dadon's module, carried inside CRT so the replay holds one module environment fewer) ====
+-- ==== begin DeadJoinSemantic (credited to spariev 65b176b3) ====
+-- Generic semantic factoring for the specialized leave; circuit definitions above are unchanged.
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+
+/-- Generic trajectory facts, independent of the admission structure in Main. -/
+structure RawValid (s : State) (gs : List Gate) : Prop where
+  physical : ∀ g ∈ gs, proper g = true
+  prepared : Prepared s gs
+  ready : Ready s gs
+
+theorem RawValid.tail {s : State} {g : Gate} {gs : List Gate} (v : RawValid s (g::gs)) :
+    RawValid (transition g s) gs :=
+  ⟨fun x hx => v.physical x (List.mem_cons_of_mem _ hx),v.prepared.2,v.ready.2⟩
+
+theorem RawValid.default_run {s : State} {gs : List Gate} (v : RawValid s gs) (m : List Bool) :
+    run (GateMirror.forward gs) m s = run (GateMirror.forward gs) [] s := by
+  induction gs generalizing s m with
+  | nil => rfl
+  | cons g gs ih =>
+    change run ([front g] ++ GateMirror.forward gs) m s = run ([front g] ++ GateMirror.forward gs) [] s
+    simp only [run_append,run_take,List.drop_nil]
+    rw [head_default g s v.prepared.1 (v.physical _ List.mem_cons_self)]
+    exact ih v.tail _
+
+theorem RawValid.parts {s : State} {a b : List Gate} (ok : RawValid s (a++b)) :
+    RawValid s a ∧ RawValid (run (GateMirror.forward a) [] s) b := by
+  induction a generalizing s with
+  | nil => exact ⟨⟨by simp,trivial,trivial⟩,ok⟩
+  | cons g gs ih =>
+    obtain ⟨left,right⟩ := ih ok.tail
+    refine ⟨⟨fun x hx => ok.physical x (List.mem_append_left _ hx),⟨ok.prepared.1,left.prepared⟩,⟨ok.ready.1,left.ready⟩⟩,?_⟩
+    change RawValid (run ([front g]++GateMirror.forward gs) [] s) b
+    simpa only [run_append,run_take,List.drop_nil] using right
+
+theorem RawValid.undo_run {s : State} {a : List Gate} (v : RawValid s a) (m n : List Bool) :
+    run (GateMirror.inverse a) n (run (GateMirror.forward a) m s) = s :=
+  invert a s v.physical v.prepared v.ready m n
+
+theorem raw_append {s : State} {a b : List Gate} (va : RawValid s a)
+    (vb : RawValid (run (GateMirror.forward a) [] s) b) : RawValid s (a++b) := by
+  induction a generalizing s with
+  | nil => exact vb
+  | cons g gs ih =>
+    have after : RawValid (run (GateMirror.forward gs) [] (transition g s)) b := by
+      change RawValid (run ([front g]++GateMirror.forward gs) [] s) b at vb
+      rw [run_append,run_take,List.drop_nil] at vb
+      exact vb
+    have rest := ih va.tail after
+    exact ⟨fun x hx => by
+      rcases List.mem_cons.mp hx with rfl | ht
+      · exact va.physical _ List.mem_cons_self
+      · exact rest.physical x ht,
+      ⟨va.prepared.1,rest.prepared⟩,⟨va.ready.1,rest.ready⟩⟩
+
+theorem raw_replace (a b c : List Gate) (fwd rev : Program) (s : State) (v : RawValid s (a++(b++c)))
+    (same : ∀ t, run fwd t (run (GateMirror.forward a) [] s) = run (GateMirror.forward b) [] (run (GateMirror.forward a) [] s))
+    (back : ∀ t, run rev t (run (GateMirror.forward b) [] (run (GateMirror.forward a) [] s)) = run (GateMirror.forward a) [] s) :
+    (∀ m, run (GateMirror.forward a ++ fwd ++ GateMirror.forward c) m s = run (GateMirror.forward (a++(b++c))) m s) ∧
+    (∀ m n, run (GateMirror.inverse c ++ rev ++ GateMirror.inverse a) n (run (GateMirror.forward a ++ fwd ++ GateMirror.forward c) m s) = s) := by
+  obtain ⟨va,vbc⟩ := v.parts
+  obtain ⟨vb,vc⟩ := vbc.parts
+  let u := run (GateMirror.forward a) [] s
+  let z := run (GateMirror.forward b) [] u
+  have emitted (m : List Bool) : run (GateMirror.forward a ++ fwd ++ GateMirror.forward c) m s = run (GateMirror.forward c) [] z := by
+    simp only [run_append,run_take,va.default_run,same]
+    exact vc.default_run _
+  have old (m : List Bool) : run (GateMirror.forward (a++(b++c))) m s = run (GateMirror.forward c) [] z := by
+    simp only [forward_app,run_append,va.default_run,vb.default_run]
+    exact vc.default_run _
+  refine ⟨fun m => (emitted m).trans (old m).symm,?_⟩
+  intro m n
+  rw [emitted]
+  have undoC (l : List Bool) : run (GateMirror.inverse c) l (run (GateMirror.forward c) [] z) = z := vc.undo_run [] l
+  have undoB (l : List Bool) : run rev l z = u := back l
+  simp only [run_append,run_take,undoC,undoB]
+  exact va.undo_run [] _
+
+theorem high_pair_identity (a sh tu : Wire) (s : State) (m : List Bool)
+    (nd : [a,sh,tu].Nodup)
+    (prepared : Prepared s [.cx sh tu,.cx tu sh,.pop a tu sh])
+    (zero : s.basis sh = false) :
+    run (GateMirror.forward [.cx sh tu,.cx tu sh,.pop a tu sh]) m s = s := by
+  obtain ⟨has,hat,hst⟩ : a≠sh ∧ a≠tu ∧ sh≠tu := by simpa [and_assoc] using nd
+  have clean : if s.basis a then s.basis sh=false else s.basis tu=false := by
+    cases ha : s.basis a
+    · have hv := prepared.2.2.1
+      change (transition (.cx tu sh) (transition (.cx sh tu) s)).basis sh =
+        ((transition (.cx tu sh) (transition (.cx sh tu) s)).basis a &&
+          (transition (.cx tu sh) (transition (.cx sh tu) s)).basis tu) at hv
+      simpa [transition,front,run,writeBit,Function.update,zero,ha,has,hat,hst,Ne.symm hst] using hv
+    · simpa [ha] using zero
+  have result := pair_runM false a sh tu nd s m clean
+  change run (pairM false a sh tu) m s = s
+  apply State.extensionality
+  · exact result.1
+  · funext q
+    by_cases es : q=sh
+    · subst q; exact result.2.2.1.trans zero.symm
+    · by_cases et : q=tu
+      · subst q; simpa [zero] using result.2.1
+      · exact result.2.2.2 q es et
+
+theorem raw_delete_identity {s : State} {a b c : List Gate} (v : RawValid s (a++(b++c)))
+    (id : run (GateMirror.forward b) [] (run (GateMirror.forward a) [] s) =
+      run (GateMirror.forward a) [] s) : RawValid s (a++c) := by
+  obtain ⟨va,vbc⟩ := v.parts
+  obtain ⟨vb,vc⟩ := vbc.parts
+  rw [id] at vc
+  exact raw_append va vc
+
+theorem raw_drop_identity (a b c : List Gate) (s : State) (v : RawValid s (a++(b++c)))
+    (id : ∀ m, run (GateMirror.forward b) m (run (GateMirror.forward a) [] s) = run (GateMirror.forward a) [] s) :
+    RawValid s (a++c) ∧
+    (∀ m, run (GateMirror.forward (a++c)) m s = run (GateMirror.forward (a++(b++c))) m s) := by
+  have w := raw_delete_identity v (id [])
+  refine ⟨w,?_⟩
+  intro m
+  calc
+    run (GateMirror.forward (a++c)) m s = run (GateMirror.forward (a++c)) [] s := w.default_run m
+    _ = run (GateMirror.forward (a++(b++c))) [] s := by
+      simp only [forward_app,run_append,run_take,List.drop_nil,id []]
+    _ = run (GateMirror.forward (a++(b++c))) m s := (v.default_run m).symm
+
+theorem dest_forward (gs : List Gate) :
+    (GateMirror.forward gs).map LeaveReadoutFrame.destination = gs.map target := by
+  induction gs with
+  | nil => rfl
+  | cons g gs ih =>
+    simp only [GateMirror.forward,List.map_cons] at ih ⊢
+    rw [ih]
+    cases g <;> rfl
+
+theorem post_keeps (j : Fin 26) (hi : j.val≤24) (s : State) (m : List Bool) :
+    (run (GateMirror.forward (postEntry (start j))) m s).basis (Shadow7.a0P (start j)+16) =
+      s.basis (Shadow7.a0P (start j)+16) := by
+  apply LeaveReadoutFrame.preserved
+  rw [dest_forward]
+  rintro hit
+  obtain ⟨g,hg,e⟩ := List.mem_map.mp hit
+  exact of_decide_eq_true (List.all_eq_true.mp (post_keeps_checked j hi) g hg) e
+
+theorem pair_zero (j : Fin 26) (hi : j.val≤24) (s : State)
+    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j))) [] s).basis (Shadow7.a0P (start j)+16) = false) :
+    (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
+      (Shadow7.a0P (start j)+16) = false := by
+  rw [forward_app,run_append,run_take,List.drop_nil,post_keeps j hi]
+  exact zero
+
+theorem raw_reference_pair (j : Fin 26) (hi : j.val≤24) (s : State)
+    (valid : RawValid s (referenceOps (start j)))
+    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
+      (Shadow7.a0P (start j)+16) = false) :
+    RawValid s (shortenedOps (start j)) ∧
+    (∀ m, run (GateMirror.forward (shortenedOps (start j))) m s = run (GateMirror.forward (referenceOps (start j))) m s) := by
+  let a := LeaveJ7.entryOps (start j) ++ postEntry (start j)
+  have shape : referenceOps (start j) = a ++ (pair16 (start j) ++ afterWord (start j)) := by
+    rw [reference_shape j hi]; simp only [a,List.append_assoc]
+  rw [shape] at valid
+  have vb := valid.parts.2.parts.1
+  have same (m : List Bool) : run (GateMirror.forward (pair16 (start j))) m
+      (run (GateMirror.forward a) [] s) = run (GateMirror.forward a) [] s :=
+    high_pair_identity _ _ _ _ m (pair_layout_checked j hi) vb.prepared zero
+  obtain ⟨w,pair⟩ := raw_drop_identity a (pair16 (start j)) (afterWord (start j)) s valid same
+  exact ⟨w,by simpa only [shortenedOps,a,shape,List.append_assoc] using pair⟩
+
+theorem raw_prefix_replace {s : State} {a b anew : List Gate}
+    (v : RawValid s (a++b)) (phys : ∀ g∈anew,proper g=true) (ready : Ready s anew)
+    (same : ∀ m,run (GateMirror.forward anew) m s=run (GateMirror.forward a) [] s) :
+    RawValid s (anew++b) ∧
+    (∀ m,run (GateMirror.forward (anew++b)) m s=run (GateMirror.forward (a++b)) m s) := by
+  have quiet (m : List Bool) : (run (GateMirror.forward anew) m s).phase=s.phase :=
+    (congrArg State.phase (same m)).trans (no_phase a s)
+  have va : RawValid s anew := ⟨phys,all_prepared anew s phys quiet,ready⟩
+  have vb := v.parts.2
+  rw [←same []] at vb
+  have w := raw_append va vb
+  refine ⟨w,?_⟩
+  intro m
+  calc
+    run (GateMirror.forward (anew++b)) m s = run (GateMirror.forward (anew++b)) [] s := w.default_run m
+    _ = run (GateMirror.forward (a++b)) [] s := by
+      simp only [forward_app,run_append,run_take,List.drop_nil,same]
+    _ = run (GateMirror.forward (a++b)) m s := (v.default_run m).symm
+
+theorem scan_ready (s h : Nat) (st : State) : Ready st (DeadScan.fix0M s h) :=
+  ready_plain _ (by simp [DeadScan.fix0M,Shadow7.fix0P,plainGate]) st
+
+theorem raw_scan_join_valid (j : Fin 26) (hi : j.val≤24) (s : State)
+    (original : RawValid s (referenceOps (start j)))
+    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
+      (Shadow7.a0P (start j)+16) = false)
+    (scanEq : ∀ m, run (GateMirror.forward (DeadScan.fix0M (start j) (Shadow7.sbP (start j)))) m s =
+      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s) :
+    RawValid s (scanShortenedOps (start j)) ∧
+    (∀ m,run (GateMirror.forward (scanShortenedOps (start j))) m s=
+      run (GateMirror.forward (referenceOps (start j))) m s) := by
+  obtain ⟨v,same⟩ := raw_reference_pair j hi s original zero
+  rw [shortened_scan_shape] at v
+  have phys : ∀ x∈DeadScan.fix0M (start j) (Shadow7.sbP (start j)),proper x=true :=
+    fun x hx => List.all_eq_true.mp (scan_physical j hi) x hx
+  obtain ⟨w,eq⟩ := raw_prefix_replace v phys (scan_ready _ _ s) scanEq
+  refine ⟨w,?_⟩
+  intro m
+  exact (eq m).trans (by rw [←shortened_scan_shape]; exact same m)
+
+theorem flag_geometry : ∀ j : Fin 26, j.val≤24 →
+    (Shadow7.e0P (start j)+3 : Wire) ≠ Shadow7.e0P (start j)+4 ∧
+    (Shadow7.e0P (start j)+6 : Wire) ≠ Shadow7.e0P (start j)+3 ∧
+    (Shadow7.e0P (start j)+6 : Wire) ≠ Shadow7.e0P (start j)+4 ∧
+    (Shadow7.e0P (start j)+3 : Wire) ≠ 1559 ∧ (Shadow7.e0P (start j)+4 : Wire) ≠ 1559 := by decide +kernel
+
+theorem raw_all_valid (j : Fin 26) (hi : j.val≤24) (s : State)
+    (original : RawValid s (referenceOps (start j)))
+    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
+      (Shadow7.a0P (start j)+16) = false)
+    (scanEq : ∀ m, run (GateMirror.forward (DeadScan.fix0M (start j) (Shadow7.sbP (start j)))) m s =
+      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s)
+    (rel : FlagLeave.Rel (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) false s) :
+    RawValid s (allOps (start j)) ∧
+    (∀ m,run (GateMirror.forward (allOps (start j))) m s=run (GateMirror.forward (referenceOps (start j))) m s) ∧
+    run (GateMirror.forward (beforeAll (start j))) [] s =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s := by
+  obtain ⟨fu,cf,cu,fl,ul⟩ := flag_geometry j hi
+  obtain ⟨v,same⟩ := raw_scan_join_valid j hi s original zero scanEq
+  obtain ⟨phys,prepared,ready,eq⟩ := FlagLeave.cut_valid _ _ _ 1559 2 false
+    (scanShortenedOps (start j)) s ⟨fu,cf,cu⟩ fl ul (all_checked j hi) rel v.physical v.prepared v.ready
+  have w : RawValid s (allOps (start j)) := ⟨phys,prepared,ready⟩
+  refine ⟨w,?_,?_⟩
+  · intro m
+    exact (w.default_run m).trans (eq.trans ((v.default_run m).symm.trans (same m)))
+  · rw [scan_shortened_shape] at v
+    have vb := v.parts.1
+    have flagEq := (FlagLeave.cut_valid _ _ _ 1559 2 false (beforeScan (start j)) s ⟨fu,cf,cu⟩ fl ul
+      (before_all_checked j hi) rel vb.physical vb.prepared vb.ready).2.2.2
+    apply flagEq.trans
+    have before_shape : CRTBarrel.beforeReference (start j) =
+        Shadow7.fix0P (start j) (Shadow7.sbP (start j)) ++ beforeScanTail (start j) := by
+      simp only [CRTBarrel.beforeReference,beforeScanTail,List.append_assoc]
+    rw [beforeScan,before_shape,forward_app,forward_app,run_append,run_append,run_take,run_take,
+      List.drop_nil,scanEq []]
+    simp only [List.drop_nil]
+
+theorem raw_crt_all_pair (j : Fin 26) (hi : j.val≤24) (s : State)
+    (original : RawValid s (referenceOps (start j)))
+    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
+      (Shadow7.a0P (start j)+16) = false)
+    (scanEq : ∀ m, run (GateMirror.forward (DeadScan.fix0M (start j) (Shadow7.sbP (start j)))) m s =
+      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s)
+    (rel : FlagLeave.Rel (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) false s)
+    (barrelSame : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) =
+      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s))
+    (barrelBack : ∀ n, run (CRTBarrel.barrel (start j) true) n
+      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)) =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) :
+    (∀ m,run (GateMirror.forward (beforeAll (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (afterAll (start j))) m s=
+      run (GateMirror.forward (referenceOps (start j))) m s) ∧
+    (∀ m n,run (GateMirror.inverse (afterAll (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (beforeAll (start j))) n
+      (run (GateMirror.forward (beforeAll (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (afterAll (start j))) m s)=s) := by
+  obtain ⟨v,same,beforeEq⟩ := raw_all_valid j hi s original zero scanEq rel
+  rw [all_split j hi] at v
+  have same' : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (beforeAll (start j))) [] s) =
+      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (beforeAll (start j))) [] s) := by
+    simpa only [beforeEq] using barrelSame
+  have back' : ∀ n, run (CRTBarrel.barrel (start j) true) n
+      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (beforeAll (start j))) [] s)) =
+      run (GateMirror.forward (beforeAll (start j))) [] s := by
+    simpa only [beforeEq] using barrelBack
+  obtain ⟨f,r⟩ := raw_replace _ _ _ _ _ s v same' back'
+  exact ⟨fun m => (f m).trans (by rw [←all_split j hi]; exact same m),r⟩
+
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+
+end
+-- ==== end DeadJoinSemantic ====
+
+-- ==== begin FlagCut57Semantic (credited to ercumentyildirim ae9d602d) ====
+section
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+set_option linter.unusedTactic false
+set_option linter.unnecessarySeqFocus false
+set_option linter.unreachableTactic false
+
+theorem raw_swap_mid {s : State} {a b b' c : List Gate}
+    (v : RawValid s (a ++ (b ++ c)))
+    (vb' : RawValid (run (GateMirror.forward a) [] s) b')
+    (eq : run (GateMirror.forward b') [] (run (GateMirror.forward a) [] s) =
+          run (GateMirror.forward b) [] (run (GateMirror.forward a) [] s)) :
+    RawValid s (a ++ (b' ++ c)) ∧
+    (∀ m, run (GateMirror.forward (a ++ (b' ++ c))) m s = run (GateMirror.forward (a ++ (b ++ c))) m s) := by
+  obtain ⟨va, vbc⟩ := v.parts
+  obtain ⟨vb, vc⟩ := vbc.parts
+  have vc' : RawValid (run (GateMirror.forward b') [] (run (GateMirror.forward a) [] s)) c := by
+    rwa [eq]
+  have w : RawValid s (a ++ (b' ++ c)) := raw_append va (raw_append vb' vc')
+  refine ⟨w, fun m => ?_⟩
+  calc
+    run (GateMirror.forward (a ++ (b' ++ c))) m s
+        = run (GateMirror.forward (a ++ (b' ++ c))) [] s := w.default_run m
+    _ = run (GateMirror.forward (a ++ (b ++ c))) [] s := by
+        simp only [forward_app, run_append, run_take, List.drop_nil, eq]
+    _ = run (GateMirror.forward (a ++ (b ++ c))) m s := (v.default_run m).symm
+
+theorem keeps_of_targets57 (gs : List Gate) (q : Wire) (h : ∀ g ∈ gs, target g ≠ q) (m : List Bool) (t : State) :
+    (run (GateMirror.forward gs) m t).basis q = t.basis q := by
+  apply LeaveReadoutFrame.preserved
+  rw [dest_forward]
+  intro hit
+  obtain ⟨g, hg, e⟩ := List.mem_map.mp hit
+  exact h g hg e
+
+theorem swap_make57 (t x y : Wire) (u : State) (hxy : x ≠ y) (htx : t ≠ x) (hty : t ≠ y) (hy : u.basis y = false) :
+    run (GateMirror.forward [.make t x y, .cx y x]) [] u =
+    run (GateMirror.forward [.cx x y, .ccx t y x, .cx x y]) [] u := by
+  obtain ⟨ph, f⟩ := u
+  simp only at hy
+  simp only [GateMirror.forward, List.map, GateMirror.front, run, State.mk.injEq, true_and]
+  funext q
+  by_cases hqx : q = x
+  · subst hqx
+    cases h1 : f q <;> cases h2 : f t <;>
+      simp [writeBit, Function.update_apply, hxy, htx, hty, Ne.symm hxy, Ne.symm htx, Ne.symm hty, h1, h2, hy]
+  · by_cases hqy : q = y
+    · subst hqy
+      cases h1 : f x <;> cases h2 : f t <;>
+        simp [writeBit, Function.update_apply, hxy, htx, hty, Ne.symm hxy, Ne.symm htx, Ne.symm hty, h1, h2, hy, hqx]
+    · simp [writeBit, Function.update_apply, hqx, hqy]
+
+theorem row0_distinct57 : ∀ j : Fin 26, j.val ≤ 24 →
+    (Shadow7.a0P (start j) + 0 : Wire) ≠ Shadow7.e0P (start j) + 6 ∧
+    (tagsP.getD 0 0 : Wire) ≠ Shadow7.a0P (start j) + 0 ∧
+    (tagsP.getD 0 0 : Wire) ≠ Shadow7.e0P (start j) + 6 := by decide +kernel
+
+theorem pre5Cut_targets : ∀ j : Fin 26, j.val ≤ 24 →
+    (beforePre5Cut (start j)).all (fun g => decide (target g ≠ Shadow7.e0P (start j) + 6)) = true := by decide +kernel
+
+theorem lowRest7_1558 (s : Nat) (t : State) :
+    (run (GateMirror.forward (lowRest7 s)) [] t).basis 1558 = false := by
+  obtain ⟨X, hX⟩ : ∃ X, lowRest7 s =
+      X ++ [.pop (Shadow7.b0P s - 1) 1557 1558, .cx (Shadow7.a0P s - 1) 1557, .x 1557] := ⟨_, rfl⟩
+  rw [hX, forward_app, run_append, run_take, List.drop_nil]
+  generalize run (GateMirror.forward X) [] t = u
+  obtain ⟨ph, f⟩ := u
+  simp [GateMirror.forward, GateMirror.front, GateMirror.erase, run, measureAndCorrect, ECDSAAdd.correct, writeBit, Function.update_apply]
+
+theorem storeHead7_targets : ∀ j : Fin 26, j.val ≤ 24 →
+    ((storeHead7 (start j)).drop 1).all (fun g => decide (target g ≠ 1558)) = true := by decide +kernel
+
+theorem afterPre7Tail_1558 (j : Fin 26) (hi : j.val ≤ 24) (t : State) :
+    (run (GateMirror.forward (afterPre7Tail (start j))) [] t).basis 1558 = true := by
+  have hT := List.all_eq_true.mp (storeHead7_targets j hi)
+  have e : storeHead7 (start j) = [.x 1558] ++ (storeHead7 (start j)).drop 1 := rfl
+  rw [afterPre7Tail, forward_app, run_append, run_take, List.drop_nil, e, forward_app, run_append, run_take, List.drop_nil]
+  rw [keeps_of_targets57 _ _ (fun g hg => of_decide_eq_true (hT g hg))]
+  have z := lowRest7_1558 (start j) t
+  generalize run (GateMirror.forward (lowRest7 (start j))) [] t = u at z ⊢
+  obtain ⟨ph, f⟩ := u
+  simp only at z
+  simp [GateMirror.forward, GateMirror.front, run, writeBit, Function.update_apply, z]
+
+theorem chainMid7_targets (s : Nat) : ∀ g ∈ chainMid7 s, target g ≠ 1558 := by
+  have hb : AllAT (fun _ => True) (fun q => q ≠ 1558)
+      [GateMirror.Gate.cx (Shadow7.storeW s (Shadow7.liveW s - Shadow7.lowsP s + 1)) 1557, GateMirror.Gate.x 1557] :=
+    allAT_cons (ok_cx (A := fun _ => True) (T := fun q => q ≠ 1558) trivial (by decide))
+      (allAT_cons (ok_x (A := fun _ => True) (T := fun q => q ≠ 1558) (by decide)) allAT_nil)
+  have h := allAT_chainG (A := fun _ => True) (T := fun q => q ≠ 1558) (Shadow7.storeW s)
+    (fun i => if i = 0 then Shadow7.a0P s + Shadow7.lowsP s - 1 else Shadow7.bankW s (Shadow7.lowsP s + i - 1)) _ hb
+    1 (Shadow7.liveW s - Shadow7.lowsP s)
+    (fun k h1 h2 => ⟨trivial, fun hk => by
+      simp only [Shadow7.storeW, Partial.storeW]; split_ifs <;> ((try unfold Wire at *); omega)⟩)
+    (fun _ _ _ => trivial)
+  intro g hg
+  exact (h g hg).2
+
+theorem make_cx_1558 (top : Wire) (u : State) (h1558 : u.basis 1558 = true) :
+    run (GateMirror.forward [.cx top 1559]) [] u =
+    run (GateMirror.forward [.make 1558 top 1559]) [] u := by
+  simp [GateMirror.forward, GateMirror.front, run, writeBit, h1558]
+
+theorem pop_cx_1558 (top : Wire) (u : State) (h1558 : u.basis 1558 = true)
+    (val : ValueOK u (.pop 1558 top 1559)) :
+    run (GateMirror.forward [.cx top 1559]) [] u =
+    run (GateMirror.forward [.pop 1558 top 1559]) [] u := by
+  change u.basis 1559 = (u.basis 1558 && u.basis top) at val
+  rw [h1558, Bool.true_and] at val
+  simp [GateMirror.forward, GateMirror.front, GateMirror.erase, run, measureAndCorrect, ECDSAAdd.correct, writeBit, val]
+
+theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
+    (original : RawValid s (referenceOps (start j)))
+    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
+      (Shadow7.a0P (start j) + 16) = false)
+    (scanEq : ∀ m, run (GateMirror.forward (DeadScan.fix0M (start j) (Shadow7.sbP (start j)))) m s =
+      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s)
+    (rel : FlagLeave.Rel (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) (Shadow7.e0P (start j) + 6) false s)
+    (zero6 : s.basis (Shadow7.e0P (start j) + 6) = false)
+    (barrelSame : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) =
+      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s))
+    (barrelBack : ∀ n, run (CRTBarrel.barrel (start j) true) n
+      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)) =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) :
+    (∀ m, run (GateMirror.forward (before5 (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7 (start j))) m s =
+      run (GateMirror.forward (referenceOps (start j))) m s) ∧
+    (∀ m n, run (GateMirror.inverse (after7 (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (before5 (start j))) n
+      (run (GateMirror.forward (before5 (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7 (start j))) m s) = s) := by
+  obtain ⟨v0, same0, beforeEq⟩ := raw_all_valid j hi s original zero scanEq rel
+  -- Step 1: FlagCut5 (row0Old -> row0New inside beforeAll)
+  have shape0 : allOps (start j) =
+      beforePre5Cut (start j) ++ (row0Old (start j) ++ (beforePost5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ afterAll (start j)))) := by
+    rw [all_split j hi, beforeAll_split5 j hi]
+    simp only [List.append_assoc]
+  rw [shape0] at v0
+  have hy6 : (run (GateMirror.forward (beforePre5Cut (start j))) [] s).basis (Shadow7.e0P (start j) + 6) = false :=
+    (keeps_of_targets57 _ _ (fun g hg => of_decide_eq_true (List.all_eq_true.mp (pre5Cut_targets j hi) g hg)) [] s).trans zero6
+  obtain ⟨hxy, htx, hty⟩ := row0_distinct57 j hi
+  have eqRow0 : run (GateMirror.forward (row0New (start j))) [] (run (GateMirror.forward (beforePre5Cut (start j))) [] s) =
+      run (GateMirror.forward (row0Old (start j))) [] (run (GateMirror.forward (beforePre5Cut (start j))) [] s) :=
+    swap_make57 _ _ _ _ hxy htx hty hy6
+  have vRow0 : RawValid (run (GateMirror.forward (beforePre5Cut (start j))) [] s) (row0New (start j)) :=
+    ⟨fun x hx => List.all_eq_true.mp (row0New_proper j hi) x hx, ⟨trivial, trivial, trivial⟩, ⟨hy6, trivial, trivial⟩⟩
+  obtain ⟨v5, same5⟩ := raw_swap_mid v0 vRow0 eqRow0
+  have before5Eq : run (GateMirror.forward (before5 (start j))) [] s =
+      run (GateMirror.forward (beforeAll (start j))) [] s := by
+    rw [before5, beforeAll_split5 j hi]
+    simp only [forward_app, run_append, run_take, List.drop_nil, eqRow0]
+  -- Step 2: FlagCut7 part A (.make 1558 top 1559 -> .cx top 1559)
+  let pre7 := before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ (afterPre7HeadCut (start j) ++ afterPre7Tail (start j)))
+  have shape5 : beforePre5Cut (start j) ++ (row0New (start j) ++ (beforePost5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ afterAll (start j)))) =
+      pre7 ++ ([.make 1558 (topW7 (start j)) 1559] ++ (chainMid7 (start j) ++ ([.pop 1558 (topW7 (start j)) 1559] ++ afterPost7 (start j)))) := by
+    rw [afterAll_split7 j hi]
+    simp only [pre7, before5, List.append_assoc]
+  rw [shape5] at v5
+  have h1558A : (run (GateMirror.forward pre7) [] s).basis 1558 = true := by
+    have sp : pre7 = (before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ afterPre7HeadCut (start j))) ++ afterPre7Tail (start j) := by
+      simp only [pre7, List.append_assoc]
+    rw [sp, forward_app, run_append, run_take, List.drop_nil]
+    exact afterPre7Tail_1558 j hi _
+  have vCxA : RawValid (run (GateMirror.forward pre7) [] s) [.cx (topW7 (start j)) 1559] :=
+    ⟨fun x hx => by rw [List.mem_singleton.mp hx]; exact top_cx_proper j hi, ⟨trivial, trivial⟩, ⟨trivial, trivial⟩⟩
+  obtain ⟨v7a, same7a⟩ := raw_swap_mid v5 vCxA (make_cx_1558 _ _ h1558A)
+  -- Step 3: FlagCut7 part B (.pop 1558 top 1559 -> .cx top 1559)
+  let pre7b := pre7 ++ ([.cx (topW7 (start j)) 1559] ++ chainMid7 (start j))
+  have shape7a : pre7 ++ ([.cx (topW7 (start j)) 1559] ++ (chainMid7 (start j) ++ ([.pop 1558 (topW7 (start j)) 1559] ++ afterPost7 (start j)))) =
+      pre7b ++ ([.pop 1558 (topW7 (start j)) 1559] ++ afterPost7 (start j)) := by
+    simp only [pre7b, List.append_assoc]
+  rw [shape7a] at v7a
+  have h1558B : (run (GateMirror.forward pre7b) [] s).basis 1558 = true := by
+    simp only [pre7b, forward_app, run_append, run_take, List.drop_nil]
+    rw [keeps_of_targets57 _ 1558 (chainMid7_targets (start j))]
+    rw [keeps_of_targets57 [.cx (topW7 (start j)) 1559] 1558 (fun g hg => by
+      rw [List.mem_singleton.mp hg]; simp [target])]
+    exact h1558A
+  have valB : ValueOK (run (GateMirror.forward pre7b) [] s) (.pop 1558 (topW7 (start j)) 1559) :=
+    v7a.parts.2.parts.1.prepared.1
+  have vCxB : RawValid (run (GateMirror.forward pre7b) [] s) [.cx (topW7 (start j)) 1559] :=
+    ⟨fun x hx => by rw [List.mem_singleton.mp hx]; exact top_cx_proper j hi, ⟨trivial, trivial⟩, ⟨trivial, trivial⟩⟩
+  obtain ⟨v7, same7b⟩ := raw_swap_mid v7a vCxB (pop_cx_1558 _ _ h1558B valB)
+  -- Step 4: Splice in the CRT barrel
+  have shape7 : pre7b ++ ([.cx (topW7 (start j)) 1559] ++ afterPost7 (start j)) =
+      before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7 (start j)) := by
+    simp only [pre7b, pre7, after7, List.append_assoc]
+  rw [shape7] at v7
+  have bEq : run (GateMirror.forward (before5 (start j))) [] s =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s :=
+    before5Eq.trans beforeEq
+  have same' : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (before5 (start j))) [] s) =
+      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (before5 (start j))) [] s) := by
+    simpa only [bEq] using barrelSame
+  have back' : ∀ n, run (CRTBarrel.barrel (start j) true) n
+      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (before5 (start j))) [] s)) =
+      run (GateMirror.forward (before5 (start j))) [] s := by
+    simpa only [bEq] using barrelBack
+  obtain ⟨f, r⟩ := raw_replace _ _ _ _ _ s v7 same' back'
+  refine ⟨fun m => ?_, r⟩
+  have h1 := f m
+  rw [← shape7] at h1
+  have h2 := (same7b m)
+  rw [← shape7a] at h2
+  have h3 := (same7a m)
+  rw [← shape5] at h3
+  have h4 := (same5 m)
+  rw [← shape0] at h4
+  exact h1.trans (h2.trans (h3.trans (h4.trans (same0 m))))
+
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+end
+-- ==== end FlagCut57Semantic ====
+
+
+-- ==== begin SplitLeafSquare (folded into CRT to keep 18 modules; credited to dadon 568bda28) ====
 
 /-! # Split 65-bit Karatsuba leaves for the concrete square -/
 
@@ -8721,10 +10264,7 @@ theorem loopA_frame : A109SignResearch.DirectLoopFrame loopA := by
     · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
       exact (hf.2 _ (A161Low4FixedFold.hostClean base hc hd _ (StairSqLoopA.holes_geometry44.2.2 y hy)).1).trans
         (A161Low4FixedFold.hostClean base hc hd _ (StairSqLoopA.holes_geometry44.2.2 y hy)).2
-    · -- light: keep `ab.1` and rewrite it to `y`, so the kernel never reduces a projection of `run loopPCA m s`
-      intro ab hab; obtain ⟨y, hy, hyab⟩ := List.mem_map.mp hab
-      have hfst : ab.1 = y := by rw [← hyab]
-      rw [hfst]
+    · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
       have hg := StairSqLoopA.holes_geometry44.2.1 y hy
       exact (r.2.2 y hg.2).trans ((regValue_zero _ _).mp hc.pad y hg.1)
     · exact loopA_pairs_free
@@ -9939,10 +11479,7 @@ theorem loopC_frame : C105SignResearch.DirectLoopFrame loopC := by
       exact (hf.2 y hg.2).trans ((regValue_zero _ _).mp hc.pad y hg.1)
     · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
       exact StairSqLoopC.hs_zero base hc hd O s hf _ (StairSqLoopC.holes_geometry44.2.2 y hy)
-    · -- light: keep `ab.1` and rewrite it to `y`, so the kernel never reduces a projection of `run loopPCC m s`
-      intro ab hab; obtain ⟨y, hy, hyab⟩ := List.mem_map.mp hab
-      have hfst : ab.1 = y := by rw [← hyab]
-      rw [hfst]
+    · intro ab hab; obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hab
       have hg := StairSqLoopC.holes_geometry44.2.1 y hy
       exact (r.2.2 y hg.2).trans ((regValue_zero _ _).mp hc.pad y hg.1)
     · exact loopC_pairs_free
@@ -11682,4 +13219,5 @@ end Branches
 
 end ECDSAAdd.Entrant.SplitLeafSquare
 end
+
 -- ==== end SplitLeafSquare ====
