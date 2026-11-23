@@ -55987,7 +55987,7 @@ theorem v3_pack_counts (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
 
 theorem v3_unpack_counts (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) :
     toffoliCount (checkpointPrimitives.unpack B) =
-        3 * B - 3 + StairCodec.decoderCost (StairCodec.bitWidth B) - StairCodec.highSaving B ∧
+        3 * B - 3 + StairCodec.decoderCost (StairCodec.bitWidth B) - (if B = 87 then 2 else 0) ∧
       measurementCount (checkpointPrimitives.unpack B) = 2 * B - 3 := by
   have h3 := StairPhysicalPrimitives.budget_three B hB
   obtain ⟨h1, h2⟩ := StairCodec.unpack_counts (StairPhysicalLayout.physicalLayout B) B h3
@@ -56006,7 +56006,7 @@ theorem v3_codec_row (B w c : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
     (hw : StairCodec.bitWidth B = w) (hc : StairCodec.decoderCost w = c) :
     toffoliCount (checkpointPrimitives.pack B) = 2 * B - 4 ∧
       measurementCount (checkpointPrimitives.pack B) = 3 * B - 3 + c ∧
-      toffoliCount (checkpointPrimitives.unpack B) = 3 * B - 3 + c - StairCodec.highSaving B ∧
+      toffoliCount (checkpointPrimitives.unpack B) = 3 * B - 3 + c - (if B = 87 then 2 else 0) ∧
       measurementCount (checkpointPrimitives.unpack B) = 2 * B - 3 := by
   obtain ⟨p1, p2⟩ := v3_pack_counts B hB
   obtain ⟨u1, u2⟩ := v3_unpack_counts B hB
@@ -56016,7 +56016,7 @@ theorem v3_codec_row (B w c : Nat) (hB : B ∈ StairPhysicalLayout.budgets)
 theorem v3_codec87 :
     toffoliCount (checkpointPrimitives.pack 87) = 170 ∧
       measurementCount (checkpointPrimitives.pack 87) = 273 ∧
-      toffoliCount (checkpointPrimitives.unpack 87) = 270 ∧
+      toffoliCount (checkpointPrimitives.unpack 87) = 271 ∧
       measurementCount (checkpointPrimitives.unpack 87) = 171 :=
   v3_codec_row 87 7 15 (by decide) (v3_bitWidth_eq 87 6 (by norm_num) (by norm_num))
     (by decide)
@@ -56032,7 +56032,7 @@ theorem v3_codec62 :
 theorem v3_codec47 :
     toffoliCount (checkpointPrimitives.pack 47) = 90 ∧
       measurementCount (checkpointPrimitives.pack 47) = 146 ∧
-      toffoliCount (checkpointPrimitives.unpack 47) = 145 ∧
+      toffoliCount (checkpointPrimitives.unpack 47) = 146 ∧
       measurementCount (checkpointPrimitives.unpack 47) = 91 :=
   v3_codec_row 47 6 8 (by decide) (v3_bitWidth_eq 47 5 (by norm_num) (by norm_num))
     (by decide)
@@ -56048,7 +56048,7 @@ theorem v3_codec32 :
 theorem v3_codec22 :
     toffoliCount (checkpointPrimitives.pack 22) = 40 ∧
       measurementCount (checkpointPrimitives.pack 22) = 68 ∧
-      toffoliCount (checkpointPrimitives.unpack 22) = 67 ∧
+      toffoliCount (checkpointPrimitives.unpack 22) = 68 ∧
       measurementCount (checkpointPrimitives.unpack 22) = 41 :=
   v3_codec_row 22 5 5 (by decide) (v3_bitWidth_eq 22 4 (by norm_num) (by norm_num))
     (by decide)
@@ -56056,7 +56056,7 @@ theorem v3_codec22 :
 theorem v3_codec12 :
     toffoliCount (checkpointPrimitives.pack 12) = 20 ∧
       measurementCount (checkpointPrimitives.pack 12) = 35 ∧
-      toffoliCount (checkpointPrimitives.unpack 12) = 34 ∧
+      toffoliCount (checkpointPrimitives.unpack 12) = 35 ∧
       measurementCount (checkpointPrimitives.unpack 12) = 21 :=
   v3_codec_row 12 4 2 (by decide) (v3_bitWidth_eq 12 3 (by norm_num) (by norm_num))
     (by decide)
@@ -56375,7 +56375,7 @@ theorem v3_entryWalk_counts :
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490) +
         toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500) +
         toffoliCount (StairSchedule.forwardLast checkpointPrimitives) =
-      toffoliCount (Six505.stackForward6 true) + 1573 ∧
+      toffoliCount (Six505.stackForward6 true) + 1577 ∧
     measurementCount (StairSchedule.stackForward6 checkpointPrimitives) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450) +
         measurementCount (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465) +
@@ -56437,7 +56437,7 @@ theorem v3_exitWalk_counts :
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465) +
         toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450) =
-      toffoliCount (InverseFive23.stackReverse15 true) + 1573 ∧
+      toffoliCount (InverseFive23.stackReverse15 true) + 1577 ∧
     measurementCount (StairSchedule.stackReverse15 checkpointPrimitives) +
         measurementCount (StairSchedule.reverseLast checkpointPrimitives) +
         measurementCount (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500) +
@@ -56644,7 +56644,7 @@ theorem hostedEntryRest_counts_of (δT δM : Nat)
           measurementCount R2SqEp760.canon760 + δM)
     (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10806 + δT ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δT ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δM := by
   obtain ⟨b1, b2⟩ := boundary
@@ -56676,7 +56676,7 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
           measurementCount (R2SqEp760.endPacket760 false) + δM)
     (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10806 + δT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δM := by
   obtain ⟨b1, b2⟩ := boundary
@@ -56698,7 +56698,7 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
 
 theorem hostedEntryRest_counts (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10893 ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10897 ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10635 := by
   obtain ⟨h1, h2⟩ := hostedEntryRest_counts_of 87 87 v3_boundary_counts.1 L
@@ -56706,7 +56706,7 @@ theorem hostedEntryRest_counts (L : ControlledPointLayout) :
 
 theorem hostedExitRest_counts (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10981 ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10985 ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10723 := by
   obtain ⟨h1, h2⟩ := hostedExitRest_counts_of 175 175 v3_boundary_counts.2 L k
@@ -56752,16 +56752,16 @@ attribute [local irreducible] toffoliCount measurementCount
     parametric in the two boundary deltas. -/
 theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10806 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10806 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (hostedGeneric L cx cy) ≤
-        toffoliCount (FlagExit.genericN L cx cy) + 21612 + 151 + δET + δXT ∧
+        toffoliCount (FlagExit.genericN L cx cy) + 21620 + 151 + δET + δXT ∧
       measurementCount (hostedGeneric L cx cy) =
         measurementCount (FlagExit.genericN L cx cy) + 21096 + δEM + δXM := by
   obtain ⟨e1, e2⟩ := hE L
@@ -56776,16 +56776,16 @@ theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     parametric in the two boundary deltas. -/
 theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10806 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10806 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
     toffoliCount (concreteProgram C) ≤
-        toffoliCount (AboveFieldPointDevelop.programQ C) + 21612 + 151 + δET + δXT ∧
+        toffoliCount (AboveFieldPointDevelop.programQ C) + 21620 + 151 + δET + δXT ∧
       measurementCount (concreteProgram C) ≤
         measurementCount (AboveFieldPointDevelop.programQ C) + 21096 + δEM + δXM := by
   cases C with
@@ -56809,15 +56809,15 @@ theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     plus `22316 + δ` Toffoli and `21776 + δ` measurements. -/
 theorem count_totals_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 10806 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 10810 + δET ∧
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 10548 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10806 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10810 + δXT ∧
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21612 + 151 + δET + δXT ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21620 + 151 + δET + δXT ∧
       measurementCount (concreteAssembly.program C) ≤ 1498884 + 21096 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
@@ -56826,9 +56826,9 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
   constructor <;> omega
 
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
-    + the PSQ hole-free square, +151 T): **T ≤ 2,169,082, M ≤ 1,520,242**. -/
+    + the PSQ hole-free square, +151 T): **T ≤ 2,169,090, M ≤ 1,520,242**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2169082 ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2169090 ∧
       measurementCount (concreteAssembly.program C) ≤ 1520242 := by
   intro C
   have h := count_totals_of 87 87 175 175
@@ -72148,7 +72148,6 @@ def fix2P (s h : Nat) : List Gate := [
   .x (h+800),
   .x (h+801),
   .x (h+802),
-  .x (h+803),
   .make (h+786) (h+787) 1557,
   .make 1557 (h+788) 1558,
   .make 1558 (h+789) 1559,
@@ -72165,10 +72164,8 @@ def fix2P (s h : Nat) : List Gate := [
   .make 1569 (h+800) 1570,
   .make 1570 (h+801) 1571,
   .make 1571 (h+802) 1572,
-  .make 1572 (h+803) 1573,
-  .cx 1573 1556,
+  .cx 1572 1556,
   .x 1556,
-  .pop 1572 (h+803) 1573,
   .pop 1571 (h+802) 1572,
   .pop 1570 (h+801) 1571,
   .pop 1569 (h+800) 1570,
@@ -72185,7 +72182,6 @@ def fix2P (s h : Nat) : List Gate := [
   .pop 1558 (h+789) 1559,
   .pop 1557 (h+788) 1558,
   .pop (h+786) (h+787) 1557,
-  .x (h+803),
   .x (h+802),
   .x (h+801),
   .x (h+800),
@@ -72221,9 +72217,6 @@ def fix2P (s h : Nat) : List Gate := [
   .make (h+799) 1570 1571,
   .make (h+800) 1571 1572,
   .make (h+801) 1572 1573,
-  .make (h+802) 1573 1574,
-  .cx 1574 (h+803),
-  .pop (h+802) 1573 1574,
   .cx 1573 (h+802),
   .pop (h+801) 1572 1573,
   .cx 1572 (h+801),
@@ -72270,8 +72263,7 @@ def fix2P (s h : Nat) : List Gate := [
   .pop 1556 (s+h+44) (h+799),
   .pop 1556 (s+h+45) (h+800),
   .pop 1556 (s+h+46) (h+801),
-  .pop 1556 (s+h+47) (h+802),
-  .pop 1556 (s+h+48) (h+803)]
+  .pop 1556 (s+h+47) (h+802)]
 
 /-- Margin 17 sign bit before the join: `1613 := cin xor signExpr xor (d0 ∧ signExpr)` = bit 1 of the far digit
 (`cin = d0 xor far` sits on the far-flag wire `e0+3` during the adjust), then `e0+3` back to the far flag.
@@ -72320,7 +72312,7 @@ def storeW (s i : Nat) : Wire :=
   if q < Shadow7.e0P s then q else q + 10
 
 /-- Live non-zero bank width at block `s` (matching `Admission.Numeric.fit` and `CRTBarrel.barrelWidth`). -/
-def liveW (s : Nat) : Nat := (if 224 ≤ s+15 ∧ s+15 ≤ 286 then min 256 (511-(s+15)) else if 257 ≤ s+15 then 512-(s+15) else min 257 (Partial.railP (s+15))) - (Shadow7.sbP s + 1)
+def liveW (s : Nat) : Nat := Partial.railP (s + 15) - (Shadow7.sbP s + 1)
 
 def leaveStoreMapped (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 1; let H := Shadow7.liveW s - L
@@ -72356,7 +72348,7 @@ def leaveFix5Move (s h : Nat) : List Gate :=
   (leaveFix5 s h).take 27 ++ (rowGates (Shadow7.e0P s + 6) (Shadow7.moveRows s) ++ (leaveFix5 s h).drop 43)
 
 def leaveJoinMove (s : Nat) : List Gate :=
-  keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 16 ++ wordGM 1614 (Shadow7.columnsP s)
+  keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 8 ++ wordGM 1614 (Shadow7.columnsP s)
 
 def leaveMoveOps (s : Nat) : List Gate :=
   Shadow7.fix0P s (Shadow7.sbP s) ++ leaveFix1 s (Shadow7.sbP s) ++ Shadow7.fix2P s (Shadow7.sbP s) ++ leaveFix3 s (Shadow7.sbP s) ++
@@ -72495,7 +72487,10 @@ def moveB (s : Nat) : List Gate :=
 
 def moveDig (s : Nat) : List Gate := digitsG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) (Shadow7.e0P s + 6) 1613 0 16
 
-def moveKept (s : Nat) : List Gate := keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 16
+def moveKept (s : Nat) : List Gate := keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 8
+
+/-- The 16-gate kept pass (the reference the woven digit pass is stated with; kept8 runs its first 8 gates). -/
+def moveKept16 (s : Nat) : List Gate := keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 0 16
 
 def moveC (s : Nat) : List Gate :=
   wordGM 1614 (Shadow7.columnsP s) ++ Shadow7.fix10P s (Shadow7.sbP s) ++ leaveFix11 s (Shadow7.sbP s) ++
@@ -73472,6 +73467,26 @@ theorem inputFit_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.Small
     apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos b)).mpr
     rw [scale,pow_succ] at upper
     omega
+
+
+/-- research-far (cell16): at margin 17 the leave's scan value is one bit narrower than `inputFit_shadow7` says. The
+reduced sum stays below two limbs (far: `represented`, gap `(H-1)U`; near: not far), and the 15 steps never raise
+`u+v` (`iter_sum_nonincrease`), so `(a.u+a.v)/2^b < 2^17`: the 17th leave cell `a0P+16` (and `b0P+16`) is always 0. -/
+theorem inputTight17 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 15 z) :
+    let a:=step^[15] (reduced b 15 z)
+    (a.u+a.v)/2^b<2^17 := by
+  let r:=reduced b 15 z
+  have upper : r.u+r.v<2*limb b 15 := by
+    by_cases f : far b 15 z
+    · exact (represented b 15 z (small f) f).2.2
+    · have low : (z.u+z.v)/limb b 15<2 := Nat.lt_of_not_ge f
+      simpa only [r,reduced,if_neg f] using (Nat.div_lt_iff_lt_mul (by unfold limb;positivity)).mp low
+  dsimp only
+  have noninc:=iter_sum_nonincrease 15 r
+  apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos b)).mpr
+  change (step^[15] r).u+(step^[15] r).v<_
+  rw [scale,pow_succ] at upper
+  omega
 
 end ECDSAAdd.Entrant.StairPacket.LeaveShadowRails
 
@@ -75621,7 +75636,7 @@ set_option linter.unnecessarySeqFocus false
 set_option linter.unreachableTactic false
 set_option linter.unusedTactic false
 theorem counts_fix0P (s h : Nat) : Counts (fix0P s h) 18 0 0 74 := ⟨rfl, rfl, rfl, rfl⟩
-theorem counts_fix2P (s h : Nat) : Counts (fix2P s h) 0 34 50 141 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_fix2P (s h : Nat) : Counts (fix2P s h) 0 32 47 133 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_fix8P (s h : Nat) : Counts (fix8P s h) 0 0 0 4 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_fix10P (s h : Nat) : Counts (fix10P s h) 0 0 0 4 := ⟨rfl, rfl, rfl, rfl⟩
 
@@ -75699,8 +75714,8 @@ theorem counts_leaveClose (s : Nat) (hn : 3 ≤ wpP (s+15)) :
 /-- The whole leave, for every block start `s` with a sane geometry. -/
 theorem counts_leaveOps (s : Nat) (hw : 4 ≤ wpP s) (hL1 : 1 ≤ lowsP s) (hL2 : lowsP s ≤ 17)
     (hn : 3 ≤ wpP (s+15)) (hLW : lowsP s ≤ liveW s) :
-    Counts (leaveOps s) (4*wpP s + lowsP s + 78) (wpP s + liveW s + 2*lowsP s + 70) (wpP s + liveW s + lowsP s + 103)
-      (17*wpP s + 4*liveW s + 9*lowsP s + 669 + 3*wpP (s+15)) := by
+    Counts (leaveOps s) (4*wpP s + lowsP s + 78) (wpP s + liveW s + 2*lowsP s + 68) (wpP s + liveW s + lowsP s + 100)
+      (17*wpP s + 4*liveW s + 9*lowsP s + 661 + 3*wpP (s+15)) := by
   have := ((((((((((((((((Shadow7.counts_fix0P s (sbP s)).app (counts_leaveFix1 s (sbP s))).app
     (Shadow7.counts_fix2P s (sbP s))).app (counts_leaveFix3 s (sbP s))).app (counts_leaveFix4 s (sbP s))).app
     (counts_leaveFix5 s (sbP s))).app (counts_leaveAdjust s (by omega))).app (counts_leaveBarrel s)).app
@@ -75782,7 +75797,7 @@ theorem counts_leaveFix5Move (s h : Nat) : Counts (leaveFix5Move s h) 16 14 0 85
   rw [moveRows_length] at r
   exact (a.app (r.app b)).congr rfl rfl rfl rfl
 
-theorem counts_leaveJoinMove (s : Nat) (hL : lowsP s ≤ 17) : Counts (leaveJoinMove s) 16 0 17 (99 - lowsP s) := by
+theorem counts_leaveJoinMove (s : Nat) (hL : lowsP s ≤ 17) : Counts (leaveJoinMove s) 8 0 17 (91 - lowsP s) := by
   have hw := counts_wordGM 1614 (columnsP s)
   have e1 : (columnsP s).length = 17 := by simp [columnsP]
   have e2 : (columnsP s).countP (fun r => r.hot.isSome) = 16 := by
@@ -75797,12 +75812,12 @@ theorem counts_leaveJoinMove (s : Nat) (hL : lowsP s ≤ 17) : Counts (leaveJoin
     rw [e1, e2] at hw'
     omega
   rw [e1, e2, e3] at hw
-  exact ((counts_keptG _ _ 1613 0 16).app hw).congr (by omega) rfl (by omega) (by omega)
+  exact ((counts_keptG _ _ 1613 0 8).app hw).congr (by omega) rfl (by omega) (by omega)
 
 theorem counts_leaveMoveOps (s : Nat) (hw : 4 ≤ wpP s) (hL1 : 1 ≤ lowsP s) (hL2 : lowsP s ≤ 17)
     (hn : 3 ≤ wpP (s+15)) (hLW : lowsP s ≤ liveW s) :
-    Counts (leaveMoveOps s) (4*wpP s + lowsP s + 62) (wpP s + liveW s + 2*lowsP s + 70) (wpP s + liveW s + lowsP s + 103)
-      (17*wpP s + 4*liveW s + 9*lowsP s + 685 + 3*wpP (s+15)) := by
+    Counts (leaveMoveOps s) (4*wpP s + lowsP s + 54) (wpP s + liveW s + 2*lowsP s + 68) (wpP s + liveW s + lowsP s + 100)
+      (17*wpP s + 4*liveW s + 9*lowsP s + 669 + 3*wpP (s+15)) := by
   have := ((((((((((((((((Shadow7.counts_fix0P s (sbP s)).app (counts_leaveFix1 s (sbP s))).app
     (Shadow7.counts_fix2P s (sbP s))).app (counts_leaveFix3 s (sbP s))).app (counts_leaveFix4 s (sbP s))).app
     (counts_leaveFix5Move s (sbP s))).app (counts_leaveAdjust s (by omega))).app (counts_leaveBarrel s)).app
@@ -75813,12 +75828,12 @@ theorem counts_leaveMoveOps (s : Nat) (hw : 4 ≤ wpP s) (hL1 : 1 ≤ lowsP s) (
   exact this.congr (by omega) (by omega) (by omega) (by omega)
 
 theorem leaveMove_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
-    toffoliCount (leaveMoveP j) = 5*wpP (start j) + liveW (start j) + 3*lowsP (start j) + 132 ∧
-    toffoliCount (leaveMoveInvP j) = 5*wpP (start j) + liveW (start j) + 2*lowsP (start j) + 165 ∧
-    measurementCount (leaveMoveP j) = wpP (start j) + liveW (start j) + lowsP (start j) + 103 ∧
-    measurementCount (leaveMoveInvP j) = wpP (start j) + liveW (start j) + 2*lowsP (start j) + 70 ∧
-    gateSlots (leaveMoveP j) = 18*wpP (start j) + 5*liveW (start j) + 10*lowsP (start j) + 788 + 3*wpP (start j + 15) ∧
-    gateSlots (leaveMoveInvP j) = 18*wpP (start j) + 5*liveW (start j) + 11*lowsP (start j) + 755 + 3*wpP (start j + 15) := by
+    toffoliCount (leaveMoveP j) = 5*wpP (start j) + liveW (start j) + 3*lowsP (start j) + 122 ∧
+    toffoliCount (leaveMoveInvP j) = 5*wpP (start j) + liveW (start j) + 2*lowsP (start j) + 154 ∧
+    measurementCount (leaveMoveP j) = wpP (start j) + liveW (start j) + lowsP (start j) + 100 ∧
+    measurementCount (leaveMoveInvP j) = wpP (start j) + liveW (start j) + 2*lowsP (start j) + 68 ∧
+    gateSlots (leaveMoveP j) = 18*wpP (start j) + 5*liveW (start j) + 10*lowsP (start j) + 769 + 3*wpP (start j + 15) ∧
+    gateSlots (leaveMoveInvP j) = 18*wpP (start j) + 5*liveW (start j) + 11*lowsP (start j) + 737 + 3*wpP (start j + 15) := by
   obtain ⟨g1,g2,g3,g4,g5⟩ := window_geom j h0 (by omega)
   obtain ⟨t1,t2,m1,m2,s1,s2⟩ := (counts_leaveMoveOps (start j) (by omega) (by omega) (by omega) (by omega) g5).programs
   refine ⟨?_,?_,?_,?_,?_,?_⟩
@@ -75850,8 +75865,8 @@ theorem mux_forward (s : Nat) : GateMirror.forward (moveMux s) = MoveChain.mux (
 theorem rowsD_moveRows (s : Nat) : rowsD (tagsP.getD · 0) (fun i => a0P s + i) 0 16 = moveRows s := rfl
 
 theorem dig_forward (s : Nat) :
-    GateMirror.forward (moveDig s) = MoveChain.weave (e0P s + 6) (moveRows s) (GateMirror.forward (moveKept s)) := by
-  unfold moveDig moveKept; rw [digits_weave, rowsD_moveRows]
+    GateMirror.forward (moveDig s) = MoveChain.weave (e0P s + 6) (moveRows s) (GateMirror.forward (moveKept16 s)) := by
+  unfold moveDig moveKept16; rw [digits_weave, rowsD_moveRows]
 
 end ECDSAAdd.Entrant.StairPacket.Shadow7
 end
@@ -76086,15 +76101,8 @@ theorem rail_win {s : Nat} (h1 : 45 ≤ s) (h2 : s ≤ 405) :
     (try split_ifs) <;> omega
 
 theorem liveW_bounds {s : Nat} (h1 : 45 ≤ s) (h2 : s ≤ 405) :
-    liveW s ≤ wpP s + 15 ∧ lowsP s ≤ liveW s ∧ liveW s ≤ railP (s + 15) - (sbP s + 1) := by
-  have r := rail_win h1 h2
-  unfold liveW
-  split_ifs with mid late
-  · have base : min 256 (511-(s+15)) ≤ railP (s+15) := by unfold railP; split_ifs <;> omega
-    omega
-  · have eq : railP (s+15) = 513-(s+15) := by unfold railP; split_ifs <;> omega
-    omega
-  · omega
+    liveW s ≤ wpP s + 15 ∧ lowsP s ≤ liveW s ∧ liveW s = railP (s + 15) - (sbP s + 1) := by
+  have r := rail_win h1 h2; unfold liveW; omega
 
 /-- The bank wires `bankW s i`, `i < wp+15`: three disjoint runs. -/
 theorem bank_cases {s i : Nat} (h1 : 45 ≤ s) (h2 : s ≤ 405) (hi : i < wpP s + 15) :
@@ -76811,10 +76819,10 @@ theorem lone_move (s : Nat) : MoveChain.lone (moveRows s) = true := by
   exact List.Nodup.map (fun a b e => by simpa using e) List.nodup_range
 
 theorem woven_move {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) :
-    MoveChain.woven (e0P s + 6) (moveRows s) (GateMirror.forward (moveKept s)) = true := by
+    MoveChain.woven (e0P s + 6) (moveRows s) (GateMirror.forward (moveKept16 s)) = true := by
   have cl := cell_lt w1 w2
   apply woven_of
-  · simp [moveRows_length, GateMirror.forward, moveKept, keptG_length]
+  · simp [moveRows_length, GateMirror.forward, moveKept16, keptG_length]
   · intro k hk r hr
     obtain ⟨g, hg, rfl⟩ := List.mem_map.mp hk
     obtain ⟨i, _, hi, rfl⟩ := mem_keptG _ _ _ _ _ g hg
@@ -76824,18 +76832,160 @@ theorem woven_move {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) :
     simp only [front, MoveChain.quiet, Bool.and_eq_true, decide_eq_true_eq]
     refine ⟨?_, ?_, ?_, ?_⟩ <;> (try unfold Wire at *) <;> omega
 
-/-- The move leave runs exactly like the reference leave whenever, in front of the mux, the crossing wire is clean
-and every hot tag selects the same cell. -/
-theorem leaveMove_same {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) (v : State) (m : List Bool) (a0 : Wire)
+/-! kept8 (research-far / staircase82): the move leave keeps only the first 8 gates of the kept digit pass; the
+last 8 are no-ops because a hot tag `i ≥ 8` leaves `1613` clear (`dead`, proved in Main from the selector). -/
+
+theorem keptG_add (hot bank : Nat → Wire) (d : Nat) : ∀ start a b,
+    keptG hot bank d start (a+b) = keptG hot bank d start a ++ keptG hot bank d (start+a) b
+  | start, 0, b => by simp [keptG]
+  | start, a+1, b => by
+    rw [show a+1+b = (a+b)+1 by omega]
+    simp only [keptG, List.cons_append]
+    rw [keptG_add hot bank d (start+1) a b, show start+1+a = start+(a+1) by omega]
+
+theorem keptG_mc (hot bank : Nat → Wire) (d : Nat) : ∀ start n,
+    measurementCount (GateMirror.forward (keptG hot bank d start n)) = 0
+  | _, 0 => rfl
+  | start, n+1 => keptG_mc hot bank d (start+1) n
+
+/-- Every gate of the kept pass is a no-op when no hot control meets a set `d`. -/
+theorem keptG_idle (hot bank : Nat → Wire) (d : Nat) : ∀ start n (m : List Bool) (x : State),
+    (∀ i, start ≤ i → i < start + n → x.basis (hot i) = true → x.basis d = false) →
+    run (GateMirror.forward (keptG hot bank d start n)) m x = x
+  | _, 0, _, _, _ => rfl
+  | start, n+1, m, x, h => by
+    have step : (⟨x.phase, writeBit x.basis (bank (start+1))
+        (x.basis (bank (start+1)) ^^ (x.basis (hot start) && x.basis d))⟩ : State) = x := by
+      cases hh : x.basis (hot start)
+      · rw [Bool.false_and, Bool.xor_false, MoveChain.wb_keep]
+      · rw [h start (le_refl _) (by omega) hh, Bool.true_and, Bool.xor_false, MoveChain.wb_keep]
+    show run (GateMirror.forward (keptG hot bank d (start+1) n)) m ⟨x.phase, writeBit x.basis (bank (start+1))
+        (x.basis (bank (start+1)) ^^ (x.basis (hot start) && x.basis d))⟩ = x
+    rw [step]
+    exact keptG_idle hot bank d (start+1) n m x (fun i a b c => h i (by omega) (by omega) c)
+
+/-- The kept pass writes only its bank wires `bank (i+1)`. -/
+theorem keptG_frame (hot bank : Nat → Wire) (d : Nat) : ∀ start n (m : List Bool) (x : State) (q : Wire),
+    (∀ i, start ≤ i → i < start + n → q ≠ bank (i+1)) →
+    (run (GateMirror.forward (keptG hot bank d start n)) m x).basis q = x.basis q
+  | _, 0, _, _, _, _ => rfl
+  | start, n+1, m, x, q, h => by
+    show (run (GateMirror.forward (keptG hot bank d (start+1) n)) m ⟨x.phase, writeBit x.basis (bank (start+1))
+        (x.basis (bank (start+1)) ^^ (x.basis (hot start) && x.basis d))⟩).basis q = x.basis q
+    rw [keptG_frame hot bank d (start+1) n m _ q (fun i a b => h i (by omega) (by omega))]
+    exact MoveChain.wb_other _ _ _ _ (h start (le_refl _) (by omega))
+
+theorem clrAll_frame (c : Wire) : ∀ (rs : List MoveChain.Row) (s : State) (q : Wire), (∀ r ∈ rs, q ≠ r.2) →
+    (MoveChain.clrAll c rs s).basis q = s.basis q
+  | [], _, _, _ => rfl
+  | r :: rs, s, q, h => by
+    show (MoveChain.clrAll c rs (MoveChain.clr c r s)).basis q = s.basis q
+    rw [clrAll_frame c rs _ q (fun x hx => h x (List.mem_cons_of_mem _ hx))]
+    exact MoveChain.clr_frame c r s q (h r (List.mem_cons_self ..))
+
+/-- A measurement-free tail that is idle after a measurement-free pass can be dropped. -/
+theorem run_tail_idle (P K K' C : Program) (m : List Bool) (v : State)
+    (hK : measurementCount K = 0) (hK' : measurementCount K' = 0)
+    (idle : ∀ t, run K' t (run K t (run P m v)) = run K t (run P m v)) :
+    run (P ++ (K ++ (K' ++ C))) m v = run (P ++ (K ++ C)) m v := by
+  rw [run_append P, run_append P, run_take, run_append K, run_append K, hK, List.take_zero, List.drop_zero,
+    run_append K', hK', List.take_zero, List.drop_zero, idle]
+
+theorem moveKept16_split (s : Nat) :
+    moveKept16 s = moveKept s ++ keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 8 8 := by
+  unfold moveKept16 moveKept; exact keptG_add _ _ _ 0 8 8
+
+/-- In front of the kept pass the move leave's state is the stock state with all row clears applied. -/
+theorem prefix_rows {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) (v : State) (m : List Bool) (a0 : Wire)
     (clean : (run (GateMirror.forward (moveA s)) m v).basis (e0P s + 6) = false)
     (sel : ∀ r ∈ moveRows s, (run (GateMirror.forward (moveA s)) m v).basis r.1 = true → r.2 = a0) :
-    run (GateMirror.forward (leaveMoveOps s)) m v = run (GateMirror.forward (leaveOps s)) m v := by
-  rw [leaveMoveOps_shape, leaveOps_shape]
+    run (GateMirror.forward (moveA s) ++ (MoveChain.rows (e0P s + 6) (moveRows s) ++ GateMirror.forward (moveB s))) m v =
+      MoveChain.clrAll (e0P s + 6) (moveRows s)
+        (run (GateMirror.forward (moveA s ++ (moveMux s ++ moveB s))) m v) := by
+  simp only [forward_app, mux_forward, run_append, run_take, MoveChain.rows_count, MoveChain.mux_count, List.drop_zero]
+  rw [MoveChain.moved _ _ _ _ a0 (apart_move w1 w2) (lone_move s) clean sel,
+    MoveChain.commAll _ _ _ (stillB w1 w2)]
+
+/-- The tail `keptG 8 8` is idle after the 8-gate pass, from the stock-order `dead` fact. -/
+theorem tail_idle {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) (u : State) (t t' : List Bool)
+    (dead : ∀ i, 8 ≤ i → i < 16 → u.basis (tagsP.getD i 0) = true → u.basis 1613 = false) :
+    run (GateMirror.forward (keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s + i) 1613 8 8)) t
+        (run (GateMirror.forward (moveKept s)) t' (MoveChain.clrAll (e0P s + 6) (moveRows s) u)) =
+      run (GateMirror.forward (moveKept s)) t' (MoveChain.clrAll (e0P s + 6) (moveRows s) u) := by
+  have cl := cell_lt w1 w2
+  have offCells (q : Nat) (hq : 1556 ≤ q) : ∀ r ∈ moveRows s, q ≠ r.2 := by
+    intro r hr
+    obtain ⟨i', hi', rfl⟩ := mem_moveRows hr
+    dsimp only; unfold Wire at *; omega
+  have offBank (q : Nat) (hq : 1556 ≤ q) : ∀ i, 0 ≤ i → i < 0 + 8 → q ≠ (fun i => Shadow7.a0P s + i) (i+1) := by
+    intro i _ hi; dsimp only; unfold Wire at *; omega
+  apply keptG_idle
+  intro i h8 h16 hot
+  have ti := tags_range i (by omega)
+  unfold moveKept at hot ⊢
+  rw [keptG_frame _ _ _ 0 8 t' _ _ (offBank (tagsP.getD i 0) (by unfold Wire at *; omega)),
+    clrAll_frame _ _ _ _ (offCells (tagsP.getD i 0) (by unfold Wire at *; omega))] at hot
+  rw [keptG_frame _ _ _ 0 8 t' _ _ (offBank 1613 (by decide)), clrAll_frame _ _ _ _ (offCells 1613 (by decide))]
+  exact dead i (by omega) (by omega) hot
+
+/-- The old splice: the 16-gate move leave (shape form) runs like the reference leave. -/
+theorem leaveMove16_same {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) (v : State) (m : List Bool) (a0 : Wire)
+    (clean : (run (GateMirror.forward (moveA s)) m v).basis (e0P s + 6) = false)
+    (sel : ∀ r ∈ moveRows s, (run (GateMirror.forward (moveA s)) m v).basis r.1 = true → r.2 = a0) :
+    run (GateMirror.forward (moveA s ++ (rowGates (e0P s + 6) (moveRows s) ++ (moveB s ++ (moveKept16 s ++ moveC s))))) m v =
+      run (GateMirror.forward (leaveOps s)) m v := by
+  rw [leaveOps_shape]
   simp only [forward_app]
   rw [rowGates_forward, mux_forward, dig_forward]
   exact MoveChain.splice (e0P s + 6) (moveRows s) (GateMirror.forward (moveA s)) (GateMirror.forward (moveB s))
-    (GateMirror.forward (moveC s)) (GateMirror.forward (moveKept s)) v m a0 (apart_move w1 w2) (lone_move s)
+    (GateMirror.forward (moveC s)) (GateMirror.forward (moveKept16 s)) v m a0 (apart_move w1 w2) (lone_move s)
     (stillB w1 w2) (woven_move w1 w2) clean sel
+
+/-- Readiness of the reference-shaped 16-gate move leave transfers to the kept8 leave (the tail is idle). -/
+theorem ready_kept8 {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) (x : State) (a0 : Wire)
+    (clean : (run (GateMirror.forward (moveA s)) [] x).basis (e0P s + 6) = false)
+    (sel : ∀ r ∈ moveRows s, (run (GateMirror.forward (moveA s)) [] x).basis r.1 = true → r.2 = a0)
+    (dead : ∀ i, 8 ≤ i → i < 16 →
+      (run (GateMirror.forward (moveA s ++ (moveMux s ++ moveB s))) [] x).basis (tagsP.getD i 0) = true →
+      (run (GateMirror.forward (moveA s ++ (moveMux s ++ moveB s))) [] x).basis 1613 = false)
+    (rd : Ready x (moveA s ++ (rowGates (e0P s + 6) (moveRows s) ++ (moveB s ++ (moveKept16 s ++ moveC s))))) :
+    Ready x (moveA s ++ (rowGates (e0P s + 6) (moveRows s) ++ (moveB s ++ (moveKept s ++ moveC s)))) := by
+  have e (X : List Gate) : moveA s ++ (rowGates (e0P s + 6) (moveRows s) ++ (moveB s ++ X)) =
+      (moveA s ++ (rowGates (e0P s + 6) (moveRows s) ++ moveB s)) ++ X := by simp only [List.append_assoc]
+  rw [moveKept16_split] at rd
+  simp only [List.append_assoc] at rd
+  rw [e] at rd ⊢
+  obtain ⟨rP, r1⟩ := ready_split _ _ _ rd
+  obtain ⟨_, r2⟩ := ready_split _ _ _ r1
+  obtain ⟨_, rC⟩ := ready_split _ _ _ r2
+  have pre : run (GateMirror.forward (moveA s ++ (rowGates (e0P s + 6) (moveRows s) ++ moveB s))) [] x =
+      MoveChain.clrAll (e0P s + 6) (moveRows s) (run (GateMirror.forward (moveA s ++ (moveMux s ++ moveB s))) [] x) := by
+    rw [← prefix_rows w1 w2 x [] a0 clean sel]; simp only [forward_app, rowGates_forward]
+  rw [pre, tail_idle w1 w2 _ [] [] dead] at rC
+  refine ready_append _ _ _ rP (ready_append _ _ _ (ready_plain _ (kept_plain _ _ _ _ _) _) ?_)
+  rw [pre]; exact rC
+
+/-- The move leave runs exactly like the reference leave whenever, in front of the mux, the crossing wire is clean
+and every hot tag selects the same cell, and (kept8) a hot tag `i ≥ 8` leaves `1613` clear in front of the digit
+pass. -/
+theorem leaveMove_same {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) (v : State) (m : List Bool) (a0 : Wire)
+    (clean : (run (GateMirror.forward (moveA s)) m v).basis (e0P s + 6) = false)
+    (sel : ∀ r ∈ moveRows s, (run (GateMirror.forward (moveA s)) m v).basis r.1 = true → r.2 = a0)
+    (dead : ∀ i, 8 ≤ i → i < 16 →
+      (run (GateMirror.forward (moveA s ++ (moveMux s ++ moveB s))) m v).basis (tagsP.getD i 0) = true →
+      (run (GateMirror.forward (moveA s ++ (moveMux s ++ moveB s))) m v).basis 1613 = false) :
+    run (GateMirror.forward (leaveMoveOps s)) m v = run (GateMirror.forward (leaveOps s)) m v := by
+  rw [leaveMoveOps_shape, ← leaveMove16_same w1 w2 v m a0 clean sel, moveKept16_split]
+  simp only [forward_app, rowGates_forward, List.append_assoc]
+  have e (X : Program) : GateMirror.forward (moveA s) ++ (MoveChain.rows (e0P s + 6) (moveRows s) ++
+      (GateMirror.forward (moveB s) ++ X)) = (GateMirror.forward (moveA s) ++ (MoveChain.rows (e0P s + 6) (moveRows s) ++
+      GateMirror.forward (moveB s))) ++ X := by simp only [List.append_assoc]
+  rw [e, e]
+  symm
+  apply run_tail_idle _ _ _ _ _ _ (keptG_mc _ _ _ 0 8) (keptG_mc _ _ _ 8 8)
+  intro t
+  rw [prefix_rows w1 w2 v m a0 clean sel]
+  exact tail_idle w1 w2 _ t t dead
 
 theorem kept_proper {s : Nat} (w1 : 45 ≤ s) (w2 : s ≤ 405) : ∀ g ∈ moveKept s, proper g = true := by
   have cl := cell_lt w1 w2
@@ -76857,7 +77007,9 @@ theorem allW_leaveMove {P : Wire → Prop} (s : Nat) (h : AllW P (leaveOps s)) :
   simp only [allW_append_iff] at h ⊢
   obtain ⟨hA, hM, hB, hD, hC⟩ := h
   rw [moveMux_eq] at hM
-  exact ⟨hA, allW_rowGates _ _ hM, hB, allW_keptG _ _ _ _ _ _ hD, hC⟩
+  have h16 : AllW P (moveKept16 s) := allW_keptG _ _ _ _ _ _ hD
+  rw [moveKept16_split, allW_append_iff] at h16
+  exact ⟨hA, allW_rowGates _ _ hM, hB, h16.1, hC⟩
 
 end ECDSAAdd.Entrant.StairPacket.Shadow7
 end
@@ -76896,20 +77048,25 @@ theorem leaveMove_inverts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s
     (a0 : Wire)
     (hot : ∀ o, (run (GateMirror.forward (moveA (start j))) o s).basis (e0P (start j) + 6) = false ∧
       ∀ r ∈ moveRows (start j), (run (GateMirror.forward (moveA (start j))) o s).basis r.1 = true → r.2 = a0)
+    (dead : ∀ o, ∀ i, 8 ≤ i → i < 16 →
+      (run (GateMirror.forward (moveA (start j) ++ (moveMux (start j) ++ moveB (start j)))) o s).basis (tagsP.getD i 0) = true →
+      (run (GateMirror.forward (moveA (start j) ++ (moveMux (start j) ++ moveB (start j)))) o s).basis 1613 = false)
     (m n : List Bool) :
     run (leaveMoveInvP j) n (run (leaveMoveP j) m s) = s := by
   obtain ⟨w1, w2⟩ := start_win7 j h0 h1
   obtain ⟨ready, phys⟩ := leave_ready j h0 h1 s initial extra up core low post
   generalize hs : start j = t at *
   have same (o : List Bool) : run (GateMirror.forward (leaveMoveOps t)) o s = run (GateMirror.forward (leaveOps t)) o s :=
-    leaveMove_same w1 w2 s o a0 (hot o).1 (hot o).2
+    leaveMove_same w1 w2 s o a0 (hot o).1 (hot o).2 (dead o)
   have physM : ∀ g ∈ leaveMoveOps t, proper g = true := leaveMove_proper_of w1 w2 phys
   have ready' : Ready s (moveA t ++ (moveMux t ++ (moveB t ++ (moveDig t ++ moveC t)))) := by
     rw [← leaveOps_shape]; exact ready
-  have readyM : Ready s (moveA t ++ (rowGates (e0P t + 6) (moveRows t) ++ (moveB t ++ (moveKept t ++ moveC t)))) :=
-    GateMirror.ready_move (e0P t + 6) (moveRows t) (moveA t) (moveB t) (moveC t) (moveMux t) (moveDig t) (moveKept t)
+  have ready16 : Ready s (moveA t ++ (rowGates (e0P t + 6) (moveRows t) ++ (moveB t ++ (moveKept16 t ++ moveC t)))) :=
+    GateMirror.ready_move (e0P t + 6) (moveRows t) (moveA t) (moveB t) (moveC t) (moveMux t) (moveDig t) (moveKept16 t)
       s a0 (mux_forward t) (dig_forward t) (kept_plain _ _ _ _ _)
       (apart_move w1 w2) (lone_move t) (stillB w1 w2) (calmB w1 w2) (woven_move w1 w2) (hot []).1 (hot []).2 ready'
+  have readyM : Ready s (moveA t ++ (rowGates (e0P t + 6) (moveRows t) ++ (moveB t ++ (moveKept t ++ moveC t)))) :=
+    ready_kept8 w1 w2 s a0 (hot []).1 (hot []).2 (dead []) ready16
   rw [← leaveMoveOps_shape] at readyM
   have ph : ∀ o, (run (GateMirror.forward (leaveMoveOps t)) o s).phase = s.phase := by
     intro o; rw [same o]; have := phase o; rw [leaveP, hs] at this; exact this
@@ -78862,6 +79019,12 @@ def longPairs (j : Fin 26) : List (Wire × Wire) := (List.range 17).map (fun i =
 def fullA (j : Fin 26) : List Wire := (List.range 17).map (Shadow7.a0P (start j) + ·)
 def fullM (j : Fin 26) : List Wire := (List.range 17).map (Shadow7.b0P (start j) + ·)
 def fullC : List Wire := (List.range 16).map (1559 + ·)
+/-- The dead top bit (staircase82): the leave's long latch and companion erase run 16 bits wide; the 17-wide
+lists above stay the leave's interface (their top wires `a0P+16`, `b0P+16` are zero by the tight input bound). -/
+def longPairs16 (j : Fin 26) : List (Wire × Wire) := (List.range 16).map (fun i => (Shadow7.b0P (start j) + i, 1557 + i))
+def fullA16 (j : Fin 26) : List Wire := (List.range 16).map (Shadow7.a0P (start j) + ·)
+def fullM16 (j : Fin 26) : List Wire := (List.range 16).map (Shadow7.b0P (start j) + ·)
+def fullC15 : List Wire := (List.range 15).map (1559 + ·)
 def smallA (j : Fin 26) : List Wire := (List.range (Shadow7.lowsP (start j))).map (Shadow7.a0P (start j) + ·)
 def smallM (j : Fin 26) : List Wire := (List.range (Shadow7.lowsP (start j))).map (Shadow7.b0P (start j) + ·)
 def smallC (j : Fin 26) : List Wire := (List.range (Shadow7.lowsP (start j) - 1)).map (1559 + ·)
@@ -78869,38 +79032,58 @@ def smallC (j : Fin 26) : List Wire := (List.range (Shadow7.lowsP (start j) - 1)
 def maskP (j : Fin 26) : Program := [.X 1557, .CX (Shadow7.a0P (start j) - 1) 1557, .CCX (Shadow7.b0P (start j) - 1) 1557 1558]
 
 /-- `Shadow7.fix2P` = long latch ++ mask ++ companion erase (dadon's cuts 93/169/172/242). -/
-theorem fix2_parts : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
+theorem fix2_parts16 : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
     GateMirror.forward (Shadow7.fix2P (start j) (Shadow7.sbP (start j))) =
-      latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs j) ++ (maskP j ++
-        Companion.eraseM (fullA j) (fullM j) fullC 1556 1558) := by
+      latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs16 j) ++ (maskP j ++
+        Companion.eraseM (fullA16 j) (fullM16 j) fullC15 1556 1558) := by
   decide +kernel
 
-theorem long_layout : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
-    (1556 :: (Shadow7.b0P (start j) - 1) :: PortalAnd.sites (longPairs j)).Nodup := by
+theorem long_layout16 : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
+    (1556 :: (Shadow7.b0P (start j) - 1) :: PortalAnd.sites (longPairs16 j)).Nodup := by
   decide +kernel
 
-theorem full_geometry : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
-    Companion.Geometry (fullA j) (fullM j) fullC 1556 1558 := by
+theorem full_geometry16 : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
+    Companion.Geometry (fullA16 j) (fullM16 j) fullC15 1556 1558 := by
   intro j h0 h1
   constructor <;> revert j <;> decide +kernel
 
-/-- dadon's `long_run`. -/
-theorem long_run (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : State) (m : List Bool)
-    (clean : ∀ p ∈ longPairs j, s.basis p.2 = false) :
-    run (latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs j)) m s =
-      ⟨s.phase, writeBit s.basis 1556 (s.basis 1556 ^^ ((digits (Shadow7.b0P (start j) - 1) (longPairs j)).any s.basis))⟩ := by
+/-- dadon's `long_run`, 16 pairs. -/
+theorem long_run16 (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : State) (m : List Bool)
+    (clean : ∀ p ∈ longPairs16 j, s.basis p.2 = false) :
+    run (latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs16 j)) m s =
+      ⟨s.phase, writeBit s.basis 1556 (s.basis 1556 ^^ ((digits (Shadow7.b0P (start j) - 1) (longPairs16 j)).any s.basis))⟩ := by
   simpa only [active, Option.elim_none, Bool.true_and] using
-    run_latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs j) (long_layout j h0 (by omega)) (by simp) s m clean
+    run_latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs16 j) (long_layout16 j h0 (by omega)) (by simp) s m clean
 
-/-- dadon's `erase_run`. -/
-theorem erase_run (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : State) (m : List Bool)
-    (clean : ∀ q ∈ fullC, s.basis q = false)
-    (input : (regValue (fullM j) s.basis + (s.basis 1558).toNat) % 2^(fullM j).length =
-      copyValue (some 1556) s.basis (regValue (fullA j) s.basis)) :
-    let e := Companion.eraseM (fullA j) (fullM j) fullC 1556 1558
-    (run e m s).phase = s.phase ∧ (∀ q, q ∉ fullM j → (run e m s).basis q = s.basis q) ∧
-      regValue (fullM j) (run e m s).basis = 0 :=
-  Companion.clearM (fullA j) (fullM j) fullC 1556 1558 (full_geometry j h0 (by omega)) s m clean input
+/-- dadon's `erase_run`, 16 bits. -/
+theorem erase_run16 (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : State) (m : List Bool)
+    (clean : ∀ q ∈ fullC15, s.basis q = false)
+    (input : (regValue (fullM16 j) s.basis + (s.basis 1558).toNat) % 2^(fullM16 j).length =
+      copyValue (some 1556) s.basis (regValue (fullA16 j) s.basis)) :
+    let e := Companion.eraseM (fullA16 j) (fullM16 j) fullC15 1556 1558
+    (run e m s).phase = s.phase ∧ (∀ q, q ∉ fullM16 j → (run e m s).basis q = s.basis q) ∧
+      regValue (fullM16 j) (run e m s).basis = 0 :=
+  Companion.clearM (fullA16 j) (fullM16 j) fullC15 1556 1558 (full_geometry16 j h0 (by omega)) s m clean input
+
+theorem fullA_split (j : Fin 26) : fullA j = fullA16 j ++ [Shadow7.a0P (start j) + 16] := by
+  simp only [fullA, fullA16, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+
+theorem fullM_split (j : Fin 26) : fullM j = fullM16 j ++ [Shadow7.b0P (start j) + 16] := by
+  simp only [fullM, fullM16, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+
+theorem longPairs_split (j : Fin 26) : longPairs j = longPairs16 j ++ [(Shadow7.b0P (start j) + 16, 1557 + 16)] := by
+  simp only [longPairs, longPairs16, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+
+theorem fullC15_sub {q : Wire} (h : q ∈ fullC15) : q ∈ fullC := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
+  rw [List.mem_range] at hi
+  exact List.mem_map.mpr ⟨i, List.mem_range.mpr (by omega), rfl⟩
+
+theorem fullM16_sub (j : Fin 26) {q : Wire} (h : q ∈ fullM16 j) : q ∈ fullM j := by
+  rw [fullM_split]; exact List.mem_append_left _ h
+
+theorem longPairs16_sub (j : Fin 26) {p : Wire × Wire} (h : p ∈ longPairs16 j) : p ∈ longPairs j := by
+  rw [longPairs_split]; exact List.mem_append_left _ h
 
 /-! The low-store restore (generic): `Shadow7.lowRest` = companion restore ++ release mask. -/
 
@@ -79074,6 +79257,7 @@ attribute [local irreducible] run SkywalkNat.step Shadow7.fix0P leaveFix1 Shadow
 /-- dadon's `Leave{s}EraseActual.result`: the long latch, the mask and the companion erase (`Shadow7.fix2P`). -/
 theorem eraseActual_result (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : State) (tape : List Bool) (u v sign : Nat)
     (se : sign ≤ 1) (su : sign ≤ u) (small : min u v < 2^(Shadow7.sbP (start j))) (magFit : (u-sign)/2^(Shadow7.sbP (start j)) < 2^18)
+    (tight : (u+v)/2^(Shadow7.sbP (start j)) < 2^17)
     (bits : ∀ i < 18, s.basis (Shadow7.a0P (start j) - 1 + i) = ((u+v)/2^(Shadow7.sbP (start j))).testBit i ∧
       s.basis (Shadow7.b0P (start j) - 1 + i) = ((u-sign)/2^(Shadow7.sbP (start j))).testBit i)
     (clean : ∀ q ∈ 1556::1557::1558::fullC, s.basis q = false)
@@ -79089,12 +79273,35 @@ theorem eraseActual_result (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (
       (1556:Nat) ≠ Shadow7.b0P (start j) - 1 ∧ (1557:Nat) ≠ Shadow7.b0P (start j) - 1 ∧ (1558:Nat) ≠ Shadow7.b0P (start j) - 1 ∧
       Shadow7.a0P (start j) - 1 ≠ Shadow7.b0P (start j) - 1 := by omega
   have d := companionInput_decode j h0 (by omega) s u v sign magFit bits
+  -- the dead bit: the scan's top wires a0P+16 and b0P+16 are zero (bit 17 of values below 2^17)
+  have top18 : (17 : Nat) < 18 := by decide
+  have topA : s.basis (Shadow7.a0P (start j) + 16) = false := by
+    have h := (bits 17 top18).1
+    have e : Shadow7.a0P (start j) - 1 + 17 = Shadow7.a0P (start j) + 16 := by
+      have p : 1 ≤ Shadow7.a0P (start j) := by unfold Shadow7.a0P; omega
+      omega
+    rw [e] at h
+    rw [h]; exact Nat.testBit_eq_false_of_lt tight
+  have topM : s.basis (Shadow7.b0P (start j) + 16) = false := by
+    have h := (bits 17 top18).2
+    have e : Shadow7.b0P (start j) - 1 + 17 = Shadow7.b0P (start j) + 16 := by
+      have p : 1 ≤ Shadow7.b0P (start j) := by unfold Shadow7.b0P; omega
+      omega
+    rw [e] at h
+    rw [h]; apply Nat.testBit_eq_false_of_lt
+    exact lt_of_le_of_lt (Nat.div_le_div_right (by omega)) tight
+  have d1 : (digits (Shadow7.b0P (start j) - 1) (longPairs16 j)).any s.basis =
+      decide (2^(Shadow7.sbP (start j)) ≤ u-sign) := by
+    rw [← d.1]
+    simp only [longPairs_split, digits, List.map_append, List.map_cons, List.map_nil, List.any_cons, List.any_append,
+      List.any_nil, topM, Bool.or_false]
+  have temps16 : ∀ p ∈ longPairs16 j, s.basis p.2 = false := fun p hp => temps p (longPairs16_sub j hp)
   dsimp only
-  rw [fix2_parts j h0 (by omega), run_append, run_take, run_append, run_take]
-  generalize hl : run (latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs j)) tape s = l
-  generalize hs1 : tape.drop (measurementCount (latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs j))) = s1
+  rw [fix2_parts16 j h0 (by omega), run_append, run_take, run_append, run_take]
+  generalize hl : run (latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs16 j)) tape s = l
+  generalize hs1 : tape.drop (measurementCount (latch true none 1556 (Shadow7.b0P (start j) - 1) (longPairs16 j))) = s1
   have flag : l = ⟨s.phase, writeBit s.basis 1556 (decide (2^(Shadow7.sbP (start j)) ≤ u-sign))⟩ := by
-    rw [← hl, long_run j h0 (by omega) s tape temps, d.1, clean _ (by simp), Bool.false_xor]
+    rw [← hl, long_run16 j h0 (by omega) s tape temps16, d1, clean _ (by simp), Bool.false_xor]
   have base (q : Wire) (h : q ≠ 1556) : l.basis q = s.basis q := by rw [flag]; simp [writeBit, h]
   have hlA : l.basis (Shadow7.a0P (start j) - 1) = s.basis (Shadow7.a0P (start j) - 1) := base _ (fun e => hA.1 (by unfold Wire at *; omega))
   have hlB : l.basis (Shadow7.b0P (start j) - 1) = s.basis (Shadow7.b0P (start j) - 1) := base _ (fun e => hA.2.2.2.1 (by unfold Wire at *; omega))
@@ -79127,25 +79334,60 @@ theorem eraseActual_result (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (
     intro q hq; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq; rw [List.mem_range] at hi
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; unfold Wire at *; omega
   have mlen : (fullM j).length = 17 := by simp [fullM]
-  have condition : (regValue (fullM j) w.basis + (w.basis 1558).toNat) % 2^(fullM j).length =
+  have cond17 : (regValue (fullM j) w.basis + (w.basis 1558).toNat) % 2^(fullM j).length =
       copyValue (some 1556) w.basis (regValue (fullA j) w.basis) := by
     rw [same (fullM j) mOut, same (fullA j) aOut, d.2.2.1, d.2.2.2, borrow, mlen]
     have twice : 2*2^(Shadow7.sbP (start j)) = 2^(Shadow7.sbP (start j) + 1) := by rw [Nat.pow_succ]; omega
     have calcValue := upper_clear (2^(Shadow7.sbP (start j))) u v sign (2^17) (Nat.two_pow_pos _) se su small
     rw [twice] at calcValue
     simpa only [copyValue, isLong, decide_eq_true_eq] using calcValue
-  have e := erase_run j h0 (by omega) w (s1.drop (measurementCount (maskP j))) cs condition
-  have extern (q : Wire) (notM : q ∉ fullM j) :
-      (run (Companion.eraseM (fullA j) (fullM j) fullC 1556 1558) (s1.drop (measurementCount (maskP j))) w).basis q =
+  -- the 16-bit erase input from the 17-bit one: both top wires are zero, so both registers are below 2^16
+  have wA : w.basis (Shadow7.a0P (start j) + 16) = false :=
+    (kept _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; unfold Wire at *; omega)).trans topA
+  have wM : w.basis (Shadow7.b0P (start j) + 16) = false :=
+    (kept _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; unfold Wire at *; omega)).trans topM
+  have rA : regValue (fullA j) w.basis = regValue (fullA16 j) w.basis := by
+    rw [fullA_split, regValue_append]; simp [regValue, wA]
+  have rM : regValue (fullM j) w.basis = regValue (fullM16 j) w.basis := by
+    rw [fullM_split, regValue_append]; simp [regValue, wM]
+  have alen16 : (fullA16 j).length = 16 := by simp [fullA16]
+  have mlen16 : (fullM16 j).length = 16 := by simp [fullM16]
+  have bA := regValue_lt (fullA16 j) w.basis
+  have bM := regValue_lt (fullM16 j) w.basis
+  rw [alen16] at bA
+  rw [mlen16] at bM
+  have b1 : (w.basis 1558).toNat ≤ 1 := by cases w.basis 1558 <;> decide
+  have condition : (regValue (fullM16 j) w.basis + (w.basis 1558).toNat) % 2^(fullM16 j).length =
+      copyValue (some 1556) w.basis (regValue (fullA16 j) w.basis) := by
+    rw [rM, rA, mlen] at cond17
+    rw [mlen16]
+    simp only [copyValue] at cond17 ⊢
+    split_ifs at cond17 ⊢ <;> omega
+  have cs15 : ∀ q ∈ fullC15, w.basis q = false := fun q h => cs q (fullC15_sub h)
+  have e := erase_run16 j h0 (by omega) w (s1.drop (measurementCount (maskP j))) cs15 condition
+  have m16Out : ∀ q ∈ fullM16 j, q ∉ [1556, 1557, 1558] := fun q h => mOut q (fullM16_sub j h)
+  have extern (q : Wire) (notM : q ∉ fullM16 j) :
+      (run (Companion.eraseM (fullA16 j) (fullM16 j) fullC15 1556 1558) (s1.drop (measurementCount (maskP j))) w).basis q =
         w.basis q := e.2.1 q notM
-  refine ⟨e.1.trans wphase, e.2.2, (extern _ (fun h => mOut _ h (by simp))).trans isLong, ?_, ?_⟩
-  · have h158 := extern 1558 (fun h => (mOut 1558 h) (by simp))
+  have topOut : Shadow7.b0P (start j) + 16 ∉ fullM16 j := by
+    intro h
+    obtain ⟨i, hi, hx⟩ := List.mem_map.mp h
+    rw [List.mem_range] at hi
+    have hx' : Shadow7.b0P (start j) + i = Shadow7.b0P (start j) + 16 := hx
+    omega
+  have zero17 : regValue (fullM j) (run (Companion.eraseM (fullA16 j) (fullM16 j) fullC15 1556 1558)
+      (s1.drop (measurementCount (maskP j))) w).basis = 0 := by
+    rw [fullM_split, regValue_append, e.2.2]
+    have top := (extern _ topOut).trans wM
+    simp [regValue, top]
+  refine ⟨e.1.trans wphase, zero17, (extern _ (fun h => m16Out _ h (by simp))).trans isLong, ?_, ?_⟩
+  · have h158 := extern 1558 (fun h => (m16Out 1558 h) (by simp))
     simp only [maskP] at h158
     rw [h158]
     exact borrow
   · intro q out
     simp only [List.mem_cons, not_or] at out
-    exact (extern _ out.2.2.2).trans (kept _ (by simp [out.1, out.2.1, out.2.2.1]))
+    exact (extern _ (fun h => out.2.2.2 (fullM16_sub j h))).trans (kept _ (by simp [out.1, out.2.1, out.2.2.1]))
 
 end ECDSAAdd.Entrant.StairPacket.LeaveJ7
 
@@ -79417,6 +79659,7 @@ theorem entry_core (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : Stat
     obtain ⟨a1, a2, a3⟩ := away p.2 hr
     rw [same _ a1 a2 a3]; exact temp _ h
   have cap := LeaveShadowRails.inputFit_shadow7 (Shadow7.sbP (start j)) z small.1 small.2
+  have tight := LeaveShadowRails.inputTight17 (Shadow7.sbP (start j)) z small.1
   have fit : (a.u - e.toNat)/2^(Shadow7.sbP (start j)) < 2^18 :=
     lt_of_le_of_lt (Nat.div_le_div_right (Nat.le_trans (Nat.sub_le a.u e.toNat) (Nat.le_add_right a.u a.v))) cap.2
   have se : e.toNat ≤ 1 := by cases e <;> decide
@@ -79427,7 +79670,7 @@ theorem entry_core (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : Stat
       · exact Nat.succ_le_of_lt h
     · simp [e, negative, h]
   have done := eraseActual_result j h0 (by omega) v (t.drop (measurementCount (GateMirror.forward (leaveFix1 (start j) (Shadow7.sbP (start j))))))
-    a.u a.v e.toNat se su cap.1 fit outputBits clean temps
+    a.u a.v e.toNat se su cap.1 fit tight outputBits clean temps
   have splitTape :
       m.drop (measurementCount (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)) ++
           leaveFix1 (start j) (Shadow7.sbP (start j))))) =

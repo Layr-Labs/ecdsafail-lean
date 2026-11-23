@@ -2101,88 +2101,10 @@ theorem high87_pool (L : Layout) :
   simp [high87Map, high87_sites, highBits, reg,
     show bitWidth 87 = 7 by decide +kernel, List.range_succ]
 
-theorem high87_wires (L : Layout) :
-    wires (high87Program L) ⊆ wires (highDecoder L 87).program := by
-  rw [high87Program, ← high87_full, renameProgram_support, renameProgram_support]
-  exact Finset.image_subset_image Decoder87.wires_pruned
-
-/-! Budgets 47 and 22 (three high bits, reachable high digits `0..5`) share the template
-`Decoder3`; budget 12 (two high bits, reachable high digits `0..2`) uses `Decoder2`. -/
-
-def high47Map (L : Layout) (q : Wire) : Wire :=
-  if q < 13 then L.highWork q else L.A (q - 10)
-
-def high47Program (L : Layout) : Program :=
-  renameProgram (high47Map L) Decoder3.pruned
-
-theorem high47_full (L : Layout) :
-    renameProgram (high47Map L) Decoder3.full = (highDecoder L 47).program := by
-  simp [high47Map, Decoder3.full, renameProgram, renameInstr, highDecoder, highBits,
-    reg, show bitWidth 47 = 6 by decide +kernel, oneHot, cxTo, interleave, List.range_succ]
-
-theorem high47_sites (L : Layout) : (highDecoder L 47).sites = reg L.highWork 13 := by
-  simp [highDecoder, highBits, reg, show bitWidth 47 = 6 by decide +kernel,
-    oneHot, interleave, List.range_succ]
-
-theorem high47_pool (L : Layout) :
-    reg (high47Map L) 16 = (highDecoder L 47).sites ++ highBits L 47 := by
-  simp [high47Map, high47_sites, highBits, reg,
-    show bitWidth 47 = 6 by decide +kernel, List.range_succ]
-
-theorem high47_wires (L : Layout) :
-    wires (high47Program L) ⊆ wires (highDecoder L 47).program := by
-  rw [high47Program, ← high47_full, renameProgram_support, renameProgram_support]
-  exact Finset.image_subset_image Decoder3.wires_pruned
-
-def high22Map (L : Layout) (q : Wire) : Wire :=
-  if q < 13 then L.highWork q else L.A (q - 11)
-
-def high22Program (L : Layout) : Program :=
-  renameProgram (high22Map L) Decoder3.pruned
-
-theorem high22_full (L : Layout) :
-    renameProgram (high22Map L) Decoder3.full = (highDecoder L 22).program := by
-  simp [high22Map, Decoder3.full, renameProgram, renameInstr, highDecoder, highBits,
-    reg, show bitWidth 22 = 5 by decide +kernel, oneHot, cxTo, interleave, List.range_succ]
-
-theorem high22_sites (L : Layout) : (highDecoder L 22).sites = reg L.highWork 13 := by
-  simp [highDecoder, highBits, reg, show bitWidth 22 = 5 by decide +kernel,
-    oneHot, interleave, List.range_succ]
-
-theorem high22_pool (L : Layout) :
-    reg (high22Map L) 16 = (highDecoder L 22).sites ++ highBits L 22 := by
-  simp [high22Map, high22_sites, highBits, reg,
-    show bitWidth 22 = 5 by decide +kernel, List.range_succ]
-
-theorem high22_wires (L : Layout) :
-    wires (high22Program L) ⊆ wires (highDecoder L 22).program := by
-  rw [high22Program, ← high22_full, renameProgram_support, renameProgram_support]
-  exact Finset.image_subset_image Decoder3.wires_pruned
-
-def high12Map (L : Layout) (q : Wire) : Wire :=
-  if q < 5 then L.highWork q else L.A (q - 3)
-
-def high12Program (L : Layout) : Program :=
-  renameProgram (high12Map L) Decoder2.pruned
-
-theorem high12_full (L : Layout) :
-    renameProgram (high12Map L) Decoder2.full = (highDecoder L 12).program := by
-  simp [high12Map, Decoder2.full, renameProgram, renameInstr, highDecoder, highBits,
-    reg, show bitWidth 12 = 4 by decide +kernel, oneHot, cxTo, interleave, List.range_succ]
-
-theorem high12_sites (L : Layout) : (highDecoder L 12).sites = reg L.highWork 5 := by
-  simp [highDecoder, highBits, reg, show bitWidth 12 = 4 by decide +kernel,
-    oneHot, interleave, List.range_succ]
-
-theorem high12_pool (L : Layout) :
-    reg (high12Map L) 7 = (highDecoder L 12).sites ++ highBits L 12 := by
-  simp [high12Map, high12_sites, highBits, reg,
-    show bitWidth 12 = 4 by decide +kernel, List.range_succ]
-
-theorem high12_wires (L : Layout) :
-    wires (high12Program L) ⊆ wires (highDecoder L 12).program := by
-  rw [high12Program, ← high12_full, renameProgram_support, renameProgram_support]
-  exact Finset.image_subset_image Decoder2.wires_pruned
+theorem high87_sublist (L : Layout) :
+    (high87Program L).Sublist (highDecoder L 87).program := by
+  rw [← high87_full]
+  exact Decoder87.pruned_sublist.map (renameInstr (high87Map L))
 
 def registerBasis (bits : List Wire) (x : Nat) : BasisState := fun q =>
   if bits.idxOf q < bits.length then x.testBit (bits.idxOf q) else false
@@ -2393,97 +2315,21 @@ def unpackWithHigh (L : Layout) (B : Nat) (high : Program) : Program :=
 def unpackFull (L : Layout) (B : Nat) : Program :=
   unpackWithHigh L B (highDecoder L B).program
 
-/-- The high decoder emitted by `unpack`.  On the budgets whose reachable high digits do not fill
-the high register (87: `0..10`, 47 and 22: `0..5`, 12: `0..2`) it is a specialised decoder that
-agrees with `highDecoder` on every reachable digit; elsewhere it is the generated decoder. -/
-def highProgram (L : Layout) (B : Nat) : Program :=
-  if B = 87 then high87Program L
-  else if B = 47 then high47Program L
-  else if B = 22 then high22Program L
-  else if B = 12 then high12Program L
-  else (highDecoder L B).program
-
-/-- Toffoli gates saved by `highProgram` against the generated high decoder. -/
-def highSaving (B : Nat) : Nat :=
-  if B = 87 then 3 else if B = 47 then 1 else if B = 22 then 1 else if B = 12 then 1 else 0
-
 def unpack (L : Layout) (B : Nat) : Program :=
-  unpackWithHigh L B (highProgram L B)
+  unpackWithHigh L B (if B = 87 then high87Program L else (highDecoder L B).program)
 
-theorem highProgram_87 (L : Layout) : highProgram L 87 = high87Program L := by
-  simp [highProgram]
-
-theorem highProgram_47 (L : Layout) : highProgram L 47 = high47Program L := by
-  simp [highProgram]
-
-theorem highProgram_22 (L : Layout) : highProgram L 22 = high22Program L := by
-  simp [highProgram]
-
-theorem highProgram_12 (L : Layout) : highProgram L 12 = high12Program L := by
-  simp [highProgram]
-
-theorem highProgram_other (L : Layout) (B : Nat) (h87 : B ≠ 87) (h47 : B ≠ 47)
-    (h22 : B ≠ 22) (h12 : B ≠ 12) : highProgram L B = (highDecoder L B).program := by
-  simp only [highProgram, if_neg h87, if_neg h47, if_neg h22, if_neg h12]
-
-theorem highProgram_62 (L : Layout) : highProgram L 62 = (highDecoder L 62).program :=
-  highProgram_other L 62 (by decide) (by decide) (by decide) (by decide)
-
-theorem highProgram_32 (L : Layout) : highProgram L 32 = (highDecoder L 32).program :=
-  highProgram_other L 32 (by decide) (by decide) (by decide) (by decide)
-
-/-- Everything `unpackWithHigh` emits after the high decoder. -/
-def unpackTail (L : Layout) (B : Nat) : Program :=
-  let ld := lowDecoder L B
-  let hd := highDecoder L B
-  [.CCX (outAt hd 0 L.z) (outAt ld 0 L.z) L.z] ++
-  (List.range (B - 2)).flatMap (unpackStep L B) ++
-  unpackStep L B (B - 2) ++
-  [.X L.z] ++ decoderInit ld (lowBits L B) ++ decoderInit hd (highBits L B) ++
-  [.X (L.S 0)] ++ unpackAdder L B ++
-  cxInto (L.D (B - 1)) (reg L.D (B - 1))
-
-theorem unpackWithHigh_eq (L : Layout) (B : Nat) (H : Program) :
-    unpackWithHigh L B H = (lowDecoder L B).program ++ (H ++ unpackTail L B) := by
-  simp only [unpackWithHigh, unpackTail, List.append_assoc]
-
-theorem unpackWithHigh_wires (L : Layout) (B : Nat) (H H' : Program)
-    (h : wires H ⊆ wires H') :
-    wires (unpackWithHigh L B H) ⊆ wires (unpackWithHigh L B H') := by
-  intro q hq
-  simp only [unpackWithHigh_eq, wires_append, Finset.mem_union] at hq ⊢
-  rcases hq with hq | hq | hq
-  · exact Or.inl hq
-  · exact Or.inr (Or.inl (h hq))
-  · exact Or.inr (Or.inr hq)
-
-theorem unpackWithHigh_physical (L : Layout) (B : Nat) (H H' : Program)
-    (hH : GatePhysical H) (h : GatePhysical (unpackWithHigh L B H')) :
-    GatePhysical (unpackWithHigh L B H) := by
-  rw [unpackWithHigh_eq] at h ⊢
-  simp only [gatePhysical_append] at h ⊢
-  exact ⟨h.1, hH, h.2.2⟩
-
-theorem highProgram_wires (L : Layout) (B : Nat) :
-    wires (highProgram L B) ⊆ wires (highDecoder L B).program := by
-  by_cases h87 : B = 87
-  · subst h87
-    rw [highProgram_87]
-    exact high87_wires L
-  by_cases h47 : B = 47
-  · subst h47
-    rw [highProgram_47]
-    exact high47_wires L
-  by_cases h22 : B = 22
-  · subst h22
-    rw [highProgram_22]
-    exact high22_wires L
-  by_cases h12 : B = 12
-  · subst h12
-    rw [highProgram_12]
-    exact high12_wires L
-  intro q hq
-  rwa [highProgram_other L B h87 h47 h22 h12] at hq
+theorem unpack_sublist (L : Layout) (B : Nat) :
+    (unpack L B).Sublist (unpackFull L B) := by
+  unfold unpack unpackFull
+  have hp : (if B = 87 then high87Program L else (highDecoder L B).program).Sublist
+      (highDecoder L B).program := by
+    split
+    · subst B
+      exact high87_sublist L
+    · exact List.Sublist.refl _
+  unfold unpackWithHigh
+  repeat' apply List.Sublist.append
+  all_goals first | exact hp | exact List.Sublist.refl _
 
 /-- The checkpoint boundary uses exactly one Fredkin per signed rail bit. -/
 def orient (letter : Wire) (L : Layout) (B : Nat) : Program :=
@@ -3836,8 +3682,8 @@ theorem unpackFull_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
 
 theorem unpack_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
     wires (unpack L B) ⊆ (declaredSites L B).toFinset :=
-  (unpackWithHigh_wires L B (highProgram L B) (highDecoder L B).program
-    (highProgram_wires L B)).trans (unpackFull_support L B hB)
+  (Skip4.wires_mono_of_mem _ _ (fun _ hi => (unpack_sublist L B).subset hi)).trans
+    (unpackFull_support L B hB)
 
 /-- Every ordinary gate in packing has a target distinct from its controls. -/
 theorem pack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
@@ -3939,118 +3785,9 @@ theorem unpackFull_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup 
   have hu010 := (gatePhysical_append _ _).mpr ⟨hu09, hu10⟩
   simpa only [unpackFull, unpackWithHigh] using hu010
 
-theorem instr_wires_mem {p : Program} {j : Instr} {q : Wire} (hj : j ∈ p)
-    (hq : q ∈ j.wires) : q ∈ wires p := by
-  induction p with
-  | nil => cases hj
-  | cons i p ih =>
-    simp only [wires, Finset.mem_union]
-    rcases List.mem_cons.mp hj with rfl | hj
-    · exact Or.inl hq
-    · exact Or.inr (ih hj)
-
-/-- Renaming by a map injective on the support keeps every gate physical. -/
-theorem rename_gatePhysical (f : Wire → Wire) (S : Finset Wire) (p : Program)
-    (hf : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b) (hw : wires p ⊆ S)
-    (hp : ProperProgram p) : GatePhysical (renameProgram f p) := by
-  intro i hi
-  rw [renameProgram, List.mem_map] at hi
-  obtain ⟨j, hj, rfl⟩ := hi
-  have hS : ∀ q ∈ j.wires, q ∈ S := fun q hq => hw (instr_wires_mem hj hq)
-  cases j with
-  | X q => exact trivial
-  | CX c t =>
-    have hct : c ≠ t := hp _ hj
-    show f c ≠ f t
-    exact fun e => hct (hf c (hS c (by simp [Instr.wires])) t (hS t (by simp [Instr.wires])) e)
-  | CCX a b t =>
-    have habt : a ≠ t ∧ b ≠ t := hp _ hj
-    show f a ≠ f t ∧ f b ≠ f t
-    exact ⟨fun e => habt.1 (hf a (hS a (by simp [Instr.wires])) t (hS t (by simp [Instr.wires])) e),
-      fun e => habt.2 (hf b (hS b (by simp [Instr.wires])) t (hS t (by simp [Instr.wires])) e)⟩
-  | measureX q c0 c1 => exact trivial
-
-theorem high87_inj (L : Layout) (hn : L.Nodup 87) :
-    ∀ a ∈ Finset.range 33, ∀ b ∈ Finset.range 33, high87Map L a = high87Map L b → a = b := by
-  have hreg : (reg (high87Map L) 33).Nodup := by
-    rw [high87_pool, List.nodup_append_comm]
-    exact highDecoder_nodup L 87 hn
-  intro a ha b hb hab
-  by_contra hne
-  exact reg_ne (high87Map L) 33 a b hreg
-    (Finset.mem_range.mp ha) (Finset.mem_range.mp hb) hne hab
-
-theorem high47_inj (L : Layout) (hn : L.Nodup 47) :
-    ∀ a ∈ Finset.range 16, ∀ b ∈ Finset.range 16, high47Map L a = high47Map L b → a = b := by
-  have hreg : (reg (high47Map L) 16).Nodup := by
-    rw [high47_pool, List.nodup_append_comm]
-    exact highDecoder_nodup L 47 hn
-  intro a ha b hb hab
-  by_contra hne
-  exact reg_ne (high47Map L) 16 a b hreg
-    (Finset.mem_range.mp ha) (Finset.mem_range.mp hb) hne hab
-
-theorem high22_inj (L : Layout) (hn : L.Nodup 22) :
-    ∀ a ∈ Finset.range 16, ∀ b ∈ Finset.range 16, high22Map L a = high22Map L b → a = b := by
-  have hreg : (reg (high22Map L) 16).Nodup := by
-    rw [high22_pool, List.nodup_append_comm]
-    exact highDecoder_nodup L 22 hn
-  intro a ha b hb hab
-  by_contra hne
-  exact reg_ne (high22Map L) 16 a b hreg
-    (Finset.mem_range.mp ha) (Finset.mem_range.mp hb) hne hab
-
-theorem high12_inj (L : Layout) (hn : L.Nodup 12) :
-    ∀ a ∈ Finset.range 7, ∀ b ∈ Finset.range 7, high12Map L a = high12Map L b → a = b := by
-  have hreg : (reg (high12Map L) 7).Nodup := by
-    rw [high12_pool, List.nodup_append_comm]
-    exact highDecoder_nodup L 12 hn
-  intro a ha b hb hab
-  by_contra hne
-  exact reg_ne (high12Map L) 7 a b hreg
-    (Finset.mem_range.mp ha) (Finset.mem_range.mp hb) hne hab
-
-theorem high87_physical (L : Layout) (hn : L.Nodup 87) : GatePhysical (high87Program L) :=
-  rename_gatePhysical (high87Map L) (Finset.range 33) Decoder87.pruned (high87_inj L hn)
-    Decoder87.support_pruned Decoder87.proper_pruned
-
-theorem high47_physical (L : Layout) (hn : L.Nodup 47) : GatePhysical (high47Program L) :=
-  rename_gatePhysical (high47Map L) (Finset.range 16) Decoder3.pruned (high47_inj L hn)
-    Decoder3.support_pruned Decoder3.proper_pruned
-
-theorem high22_physical (L : Layout) (hn : L.Nodup 22) : GatePhysical (high22Program L) :=
-  rename_gatePhysical (high22Map L) (Finset.range 16) Decoder3.pruned (high22_inj L hn)
-    Decoder3.support_pruned Decoder3.proper_pruned
-
-theorem high12_physical (L : Layout) (hn : L.Nodup 12) : GatePhysical (high12Program L) :=
-  rename_gatePhysical (high12Map L) (Finset.range 7) Decoder2.pruned (high12_inj L hn)
-    Decoder2.support_pruned Decoder2.proper_pruned
-
-theorem highProgram_physical (L : Layout) (B : Nat) (hn : L.Nodup B) :
-    GatePhysical (highProgram L B) := by
-  by_cases h87 : B = 87
-  · subst h87
-    rw [highProgram_87]
-    exact high87_physical L hn
-  by_cases h47 : B = 47
-  · subst h47
-    rw [highProgram_47]
-    exact high47_physical L hn
-  by_cases h22 : B = 22
-  · subst h22
-    rw [highProgram_22]
-    exact high22_physical L hn
-  by_cases h12 : B = 12
-  · subst h12
-    rw [highProgram_12]
-    exact high12_physical L hn
-  rw [highProgram_other L B h87 h47 h22 h12]
-  exact (oneHot_physical_core (highBits L B) L.highWork (highDecoder_nodup L B hn)).1
-
 theorem unpack_physical (L : Layout) (B : Nat) (hB : 3 ≤ B) (hn : L.Nodup B) :
     GatePhysical (unpack L B) :=
-  unpackWithHigh_physical L B (highProgram L B) (highDecoder L B).program
-    (highProgram_physical L B hn) (unpackFull_physical L B hB hn)
+  fun i hi => unpackFull_physical L B hB hn i ((unpack_sublist L B).subset hi)
 
 def natBitLength (x : Nat) : Nat := if x = 0 then 0 else x.log2 + 1
 
@@ -4311,61 +4048,23 @@ theorem unpackFull_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   omega
 
 theorem high87_counts (L : Layout) :
-    toffoliCount (high87Program L) + 3 = toffoliCount (highDecoder L 87).program ∧
+    toffoliCount (high87Program L) + 2 = toffoliCount (highDecoder L 87).program ∧
     measurementCount (high87Program L) = measurementCount (highDecoder L 87).program := by
   simp only [high87Program, ← high87_full L, renameProgram_counts]
   exact ⟨Decoder87.counts.1, Decoder87.counts.2.1.trans Decoder87.counts.2.2.1.symm⟩
 
-theorem high47_counts (L : Layout) :
-    toffoliCount (high47Program L) + 1 = toffoliCount (highDecoder L 47).program ∧
-    measurementCount (high47Program L) = measurementCount (highDecoder L 47).program := by
-  simp only [high47Program, ← high47_full L, renameProgram_counts]
-  exact ⟨Decoder3.counts.1, Decoder3.counts.2.1.trans Decoder3.counts.2.2.1.symm⟩
-
-theorem high22_counts (L : Layout) :
-    toffoliCount (high22Program L) + 1 = toffoliCount (highDecoder L 22).program ∧
-    measurementCount (high22Program L) = measurementCount (highDecoder L 22).program := by
-  simp only [high22Program, ← high22_full L, renameProgram_counts]
-  exact ⟨Decoder3.counts.1, Decoder3.counts.2.1.trans Decoder3.counts.2.2.1.symm⟩
-
-theorem high12_counts (L : Layout) :
-    toffoliCount (high12Program L) + 1 = toffoliCount (highDecoder L 12).program ∧
-    measurementCount (high12Program L) = measurementCount (highDecoder L 12).program := by
-  simp only [high12Program, ← high12_full L, renameProgram_counts]
-  exact ⟨Decoder2.counts.1, Decoder2.counts.2.1.trans Decoder2.counts.2.2.1.symm⟩
-
-theorem highProgram_counts (L : Layout) (B : Nat) :
-    toffoliCount (highProgram L B) + highSaving B = toffoliCount (highDecoder L B).program ∧
-    measurementCount (highProgram L B) = measurementCount (highDecoder L B).program := by
-  by_cases h87 : B = 87
-  · subst h87
-    rw [highProgram_87, show highSaving 87 = 3 from rfl]
-    exact high87_counts L
-  by_cases h47 : B = 47
-  · subst h47
-    rw [highProgram_47, show highSaving 47 = 1 from rfl]
-    exact high47_counts L
-  by_cases h22 : B = 22
-  · subst h22
-    rw [highProgram_22, show highSaving 22 = 1 from rfl]
-    exact high22_counts L
-  by_cases h12 : B = 12
-  · subst h12
-    rw [highProgram_12, show highSaving 12 = 1 from rfl]
-    exact high12_counts L
-  have hs : highSaving B = 0 := by simp [highSaving, h87, h47, h22, h12]
-  rw [highProgram_other L B h87 h47 h22 h12, hs]
-  exact ⟨rfl, rfl⟩
-
 theorem unpack_counts (L : Layout) (B : Nat) (hB : 3 ≤ B) :
     toffoliCount (unpack L B) =
-      3 * B - 3 + decoderCost (bitWidth B) - highSaving B ∧
+      3 * B - 3 + decoderCost (bitWidth B) - (if B = 87 then 2 else 0) ∧
     measurementCount (unpack L B) = 2 * B - 3 := by
   have h := unpackFull_counts L B hB
-  have hh := highProgram_counts L B
-  simp only [unpack, unpackFull, unpackWithHigh,
-    toffoliCount_append, measurementCount_append] at h ⊢
-  omega
+  by_cases he : B = 87
+  · subst B
+    have hh := high87_counts L
+    simp only [unpack, unpackFull, unpackWithHigh, ↓reduceIte,
+      toffoliCount_append, measurementCount_append] at h ⊢
+    omega
+  · simpa only [unpack, unpackFull, if_neg he, Nat.sub_zero] using h
 
 
 
@@ -22690,8 +22389,8 @@ theorem codecPair87 :
     gateSlots (StairPhysicalPrimitives.pack 87) +
       gateSlots (StairPhysicalPrimitives.unpack 87) = 5756 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_87, StairCodec.high87Program,
-    Baselines.rename_gateSlots, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
+    Baselines.rename_gateSlots, ↓reduceIte, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
 
@@ -22699,7 +22398,7 @@ theorem codecPair62 :
     gateSlots (StairPhysicalPrimitives.pack 62) +
       gateSlots (StairPhysicalPrimitives.unpack 62) = 3902 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_62,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
@@ -22708,8 +22407,7 @@ theorem codecPair47 :
     gateSlots (StairPhysicalPrimitives.pack 47) +
       gateSlots (StairPhysicalPrimitives.unpack 47) = 2911 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_47, StairCodec.high47Program,
-    Baselines.rename_gateSlots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
@@ -22718,7 +22416,7 @@ theorem codecPair32 :
     gateSlots (StairPhysicalPrimitives.pack 32) +
       gateSlots (StairPhysicalPrimitives.unpack 32) = 1883 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_32,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
@@ -22727,8 +22425,7 @@ theorem codecPair22 :
     gateSlots (StairPhysicalPrimitives.pack 22) +
       gateSlots (StairPhysicalPrimitives.unpack 22) = 1259 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
-    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_22, StairCodec.high22Program,
-    Baselines.rename_gateSlots,
+    StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.high87Program,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
     k5_unpackStep_slots, k5_dl, k5_dh]
   decide +kernel
@@ -40877,182 +40574,7 @@ theorem unpack87_run_full (L : Layout) (u v : Nat) (sigma : Bool)
   have hhm : measurementCount (highDecoder L 87).program = 0 :=
     oneHot_program_measurements _ _
   have hpm : measurementCount (high87Program L) = 0 := (high87_counts L).2.trans hhm
-  rw [unpack, highProgram_87]
-  simp only [unpackFull, unpackWithHigh, run_append,
-    measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
-    List.take_zero, List.drop_zero, hhi]
-
-theorem high47_run (L : Layout) (hn : L.Nodup 47) (k : Nat) (hk : k < 6)
-    (s : State) (m : List Bool)
-    (hbits : ∀ i, i < 3 → s.basis (L.A (3 + i)) = k.testBit i)
-    (hclean : ∀ q ∈ (highDecoder L 47).sites, s.basis q = false) :
-    run (high47Program L) m s = run (highDecoder L 47).program m s := by
-  rw [← high47_full]
-  refine Decoder3.placed_run (high47Map L) (high47_inj L hn) k hk s m ?_
-  intro q hq
-  have hq' := Finset.mem_range.mp hq
-  by_cases hs : q < 13
-  · simp only [high47Map, if_pos hs, Decoder3.input]
-    apply hclean
-    rw [high47_sites]
-    exact reg_mem _ _ _ hs
-  · have hi : q - 13 < 3 := by omega
-    simpa only [high47Map, if_neg hs, Decoder3.input,
-      show q - 10 = 3 + (q - 13) by omega] using hbits (q - 13) hi
-
-theorem high22_run (L : Layout) (hn : L.Nodup 22) (k : Nat) (hk : k < 6)
-    (s : State) (m : List Bool)
-    (hbits : ∀ i, i < 3 → s.basis (L.A (2 + i)) = k.testBit i)
-    (hclean : ∀ q ∈ (highDecoder L 22).sites, s.basis q = false) :
-    run (high22Program L) m s = run (highDecoder L 22).program m s := by
-  rw [← high22_full]
-  refine Decoder3.placed_run (high22Map L) (high22_inj L hn) k hk s m ?_
-  intro q hq
-  have hq' := Finset.mem_range.mp hq
-  by_cases hs : q < 13
-  · simp only [high22Map, if_pos hs, Decoder3.input]
-    apply hclean
-    rw [high22_sites]
-    exact reg_mem _ _ _ hs
-  · have hi : q - 13 < 3 := by omega
-    simpa only [high22Map, if_neg hs, Decoder3.input,
-      show q - 11 = 2 + (q - 13) by omega] using hbits (q - 13) hi
-
-theorem high12_run (L : Layout) (hn : L.Nodup 12) (k : Nat) (hk : k < 3)
-    (s : State) (m : List Bool)
-    (hbits : ∀ i, i < 2 → s.basis (L.A (2 + i)) = k.testBit i)
-    (hclean : ∀ q ∈ (highDecoder L 12).sites, s.basis q = false) :
-    run (high12Program L) m s = run (highDecoder L 12).program m s := by
-  rw [← high12_full]
-  refine Decoder2.placed_run (high12Map L) (high12_inj L hn) k hk s m ?_
-  intro q hq
-  have hq' := Finset.mem_range.mp hq
-  by_cases hs : q < 5
-  · simp only [high12Map, if_pos hs, Decoder2.input]
-    apply hclean
-    rw [high12_sites]
-    exact reg_mem _ _ _ hs
-  · have hi : q - 5 < 2 := by omega
-    simpa only [high12Map, if_neg hs, Decoder2.input,
-      show q - 3 = 2 + (q - 5) by omega] using hbits (q - 5) hi
-
-theorem unpack47_run_full (L : Layout) (u v : Nat) (sigma : Bool)
-    (hd : CodecDomain 47 u v sigma) (hn : L.Nodup 47) (s : State) (m : List Bool)
-    (hc : CompactCode L 47 u v sigma s.basis) :
-    run (unpack L 47) m s = run (unpackFull L 47) m s := by
-  rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
-  have hlen := domain_w_bitLength_le 47 u v sigma hd
-  change natBitLength (u - sigma.toNat) ≤ 46 at hlen
-  have hbound : natBitLength (u - sigma.toNat) < 2 ^ bitWidth 47 := by
-    change natBitLength (u - sigma.toNat) < 64
-    omega
-  have hlo := lowDecoder_output L 47 (natBitLength (u - sigma.toNat)) hn s []
-    hvalue hbound (fun q hq => hclean q (by simp [hq]))
-  have hhi := high47_run L hn (natBitLength (u - sigma.toNat) / 8) (by omega)
-    (run (lowDecoder L 47).program [] s) [] (by
-      intro i hi
-      rw [hlo.2.1 (L.A (3 + i)) (by
-        intro hq
-        exact sep_A_rest L 47 hn (reg_mem L.A _ (3 + i) (by change 3 + i < 6; omega))
-          (by simp [hq]) rfl)]
-      have hh := highBits_read L 47 (natBitLength (u - sigma.toNat)) i s.basis
-        hvalue (by change i < 3; exact hi)
-      have hw : (highBits L 47).getD i 0 = L.A (3 + i) := by
-        interval_cases i <;> rfl
-      rw [hw] at hh
-      exact hh) (by
-      intro q hq
-      rw [hlo.2.1 q (by
-        intro hlq
-        exact sep_low_high L 47 hn hlq hq rfl)]
-      exact hclean q (by simp [hq]))
-  have hlm : measurementCount (lowDecoder L 47).program = 0 :=
-    oneHot_program_measurements _ _
-  have hhm : measurementCount (highDecoder L 47).program = 0 :=
-    oneHot_program_measurements _ _
-  have hpm : measurementCount (high47Program L) = 0 := (high47_counts L).2.trans hhm
-  rw [unpack, highProgram_47]
-  simp only [unpackFull, unpackWithHigh, run_append,
-    measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
-    List.take_zero, List.drop_zero, hhi]
-
-theorem unpack22_run_full (L : Layout) (u v : Nat) (sigma : Bool)
-    (hd : CodecDomain 22 u v sigma) (hn : L.Nodup 22) (s : State) (m : List Bool)
-    (hc : CompactCode L 22 u v sigma s.basis) :
-    run (unpack L 22) m s = run (unpackFull L 22) m s := by
-  rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
-  have hlen := domain_w_bitLength_le 22 u v sigma hd
-  change natBitLength (u - sigma.toNat) ≤ 21 at hlen
-  have hbound : natBitLength (u - sigma.toNat) < 2 ^ bitWidth 22 := by
-    change natBitLength (u - sigma.toNat) < 32
-    omega
-  have hlo := lowDecoder_output L 22 (natBitLength (u - sigma.toNat)) hn s []
-    hvalue hbound (fun q hq => hclean q (by simp [hq]))
-  have hhi := high22_run L hn (natBitLength (u - sigma.toNat) / 4) (by omega)
-    (run (lowDecoder L 22).program [] s) [] (by
-      intro i hi
-      rw [hlo.2.1 (L.A (2 + i)) (by
-        intro hq
-        exact sep_A_rest L 22 hn (reg_mem L.A _ (2 + i) (by change 2 + i < 5; omega))
-          (by simp [hq]) rfl)]
-      have hh := highBits_read L 22 (natBitLength (u - sigma.toNat)) i s.basis
-        hvalue (by change i < 3; exact hi)
-      have hw : (highBits L 22).getD i 0 = L.A (2 + i) := by
-        interval_cases i <;> rfl
-      rw [hw] at hh
-      exact hh) (by
-      intro q hq
-      rw [hlo.2.1 q (by
-        intro hlq
-        exact sep_low_high L 22 hn hlq hq rfl)]
-      exact hclean q (by simp [hq]))
-  have hlm : measurementCount (lowDecoder L 22).program = 0 :=
-    oneHot_program_measurements _ _
-  have hhm : measurementCount (highDecoder L 22).program = 0 :=
-    oneHot_program_measurements _ _
-  have hpm : measurementCount (high22Program L) = 0 := (high22_counts L).2.trans hhm
-  rw [unpack, highProgram_22]
-  simp only [unpackFull, unpackWithHigh, run_append,
-    measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
-    List.take_zero, List.drop_zero, hhi]
-
-theorem unpack12_run_full (L : Layout) (u v : Nat) (sigma : Bool)
-    (hd : CodecDomain 12 u v sigma) (hn : L.Nodup 12) (s : State) (m : List Bool)
-    (hc : CompactCode L 12 u v sigma s.basis) :
-    run (unpack L 12) m s = run (unpackFull L 12) m s := by
-  rcases hc with ⟨hvalue, hD, hDTop, hsig, hS, hclean⟩
-  have hlen := domain_w_bitLength_le 12 u v sigma hd
-  change natBitLength (u - sigma.toNat) ≤ 11 at hlen
-  have hbound : natBitLength (u - sigma.toNat) < 2 ^ bitWidth 12 := by
-    change natBitLength (u - sigma.toNat) < 16
-    omega
-  have hlo := lowDecoder_output L 12 (natBitLength (u - sigma.toNat)) hn s []
-    hvalue hbound (fun q hq => hclean q (by simp [hq]))
-  have hhi := high12_run L hn (natBitLength (u - sigma.toNat) / 4) (by omega)
-    (run (lowDecoder L 12).program [] s) [] (by
-      intro i hi
-      rw [hlo.2.1 (L.A (2 + i)) (by
-        intro hq
-        exact sep_A_rest L 12 hn (reg_mem L.A _ (2 + i) (by change 2 + i < 4; omega))
-          (by simp [hq]) rfl)]
-      have hh := highBits_read L 12 (natBitLength (u - sigma.toNat)) i s.basis
-        hvalue (by change i < 2; exact hi)
-      have hw : (highBits L 12).getD i 0 = L.A (2 + i) := by
-        interval_cases i <;> rfl
-      rw [hw] at hh
-      exact hh) (by
-      intro q hq
-      rw [hlo.2.1 q (by
-        intro hlq
-        exact sep_low_high L 12 hn hlq hq rfl)]
-      exact hclean q (by simp [hq]))
-  have hlm : measurementCount (lowDecoder L 12).program = 0 :=
-    oneHot_program_measurements _ _
-  have hhm : measurementCount (highDecoder L 12).program = 0 :=
-    oneHot_program_measurements _ _
-  have hpm : measurementCount (high12Program L) = 0 := (high12_counts L).2.trans hhm
-  rw [unpack, highProgram_12]
-  simp only [unpackFull, unpackWithHigh, run_append,
+  simp only [unpack, unpackFull, unpackWithHigh, ↓reduceIte, run_append,
     measurementCount_append, hlm, hhm, hpm, Nat.zero_add, Nat.add_zero,
     List.take_zero, List.drop_zero, hhi]
 
@@ -41070,19 +40592,10 @@ theorem unpack_spec (L : Layout) (B u v : Nat) (sigma : Bool)
     (run (unpack L B) m s).phase = s.phase ∧
     CodecInput L B u v sigma (run (unpack L B) m s).basis := by
   have he : run (unpack L B) m s = run (unpackFull L B) m s := by
-    by_cases h87 : B = 87
-    · subst h87
+    by_cases hb : B = 87
+    · subst B
       exact unpack87_run_full L u v sigma hd hn s m hc
-    by_cases h47 : B = 47
-    · subst h47
-      exact unpack47_run_full L u v sigma hd hn s m hc
-    by_cases h22 : B = 22
-    · subst h22
-      exact unpack22_run_full L u v sigma hd hn s m hc
-    by_cases h12 : B = 12
-    · subst h12
-      exact unpack12_run_full L u v sigma hd hn s m hc
-    rw [unpack, highProgram_other L B h87 h47 h22 h12, unpackFull]
+    · simp only [unpack, unpackFull, if_neg hb]
   rw [he]
   let P := unpackSweepPrefix L B
   let C := unpackCleanup L B
