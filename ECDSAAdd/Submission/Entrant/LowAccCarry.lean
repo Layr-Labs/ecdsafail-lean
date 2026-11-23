@@ -4,1035 +4,283 @@ import ECDSAAdd.Framework.Syntax
 import Mathlib.Tactic.Sat.FromLRAT
 import ECDSAAdd.Submission.Entrant.FullLogic
 section
--- Proof source component: LowAccGeometry
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.LowAccCarryDevelop
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+-- Peak-memory helpers: linear-time bitmask Nodup / freshness checks for wire lists.
+namespace ECDSAAdd.Entrant.PeakNodup
 
-def ghosts (L : CuccaroStreamedSquareWideLayout) : List Wire :=
- [L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.normFlag]
-def reg (L : CuccaroStreamedSquareWideLayout) : List Wire := L.core.work.take 163
-def ghostAcc (L : CuccaroStreamedSquareWideLayout) : List Wire := ghosts L ++ (reg L).drop 4
+/-- Linear-time duplicate check with a bitmask accumulator (kernel-accelerated `Nat` bit ops). -/
+def nodupMask : List Nat → Nat → Bool
+  | [], _ => true
+  | a :: as, m => !(m.testBit a) && nodupMask as (m ||| (1 <<< a))
 
-theorem ghostAcc_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (b : BasisState) (K : Nat) (hv : regValue (reg L) b=16*K)
- (hz : ∀w∈ghosts L,b w=false) : regValue (ghostAcc L) b=regValue (reg L) b := by
- have len : (reg L).length=163 := by simp [reg,hw.core.work]
- have low : regValue ((reg L).take 4) b=0 := by
-  rw [regValue_take_mod _ 4 (by omega) b,hv]
-  omega
- have old : regValue (reg L) b=16*regValue ((reg L).drop 4) b := by
-  calc
-   _=regValue (((reg L).take 4)++(reg L).drop 4) b := by rw [List.take_append_drop]
-   _=_ := by rw [regValue_append,low];simp [len]
- have gz : regValue (ghosts L) b=0 := (regValue_zero _ _).mpr hz
- rw [ghostAcc,regValue_append,gz]
- simpa [ghosts] using old.symm
+theorem nodupMask_sound : ∀ (l : List Nat) (m : Nat), nodupMask l m = true →
+    l.Nodup ∧ ∀ a ∈ l, m.testBit a = false
+  | [], _, _ => ⟨List.nodup_nil, by simp⟩
+  | a :: as, m, h => by
+    simp only [nodupMask, Bool.and_eq_true, Bool.not_eq_true'] at h
+    obtain ⟨ha, hrest⟩ := h
+    obtain ⟨hnd, hbits⟩ := nodupMask_sound as _ hrest
+    have key : ∀ b ∈ as, b ≠ a ∧ m.testBit b = false := by
+      intro b hb
+      have hb' := hbits b hb
+      rw [Nat.testBit_or, Bool.or_eq_false_iff] at hb'
+      refine ⟨?_, hb'.1⟩
+      rintro rfl
+      have h2 := hb'.2
+      rw [Nat.one_shiftLeft, Nat.testBit_two_pow_self] at h2
+      exact Bool.noConfusion h2
+    refine ⟨List.nodup_cons.mpr ⟨fun hm => (key a hm).1 rfl, hnd⟩, ?_⟩
+    intro b hb
+    rcases List.mem_cons.mp hb with rfl | hb
+    · exact ha
+    · exact (key b hb).2
 
+theorem nodup_of_mask (l : List Nat) (h : nodupMask l 0 = true) : l.Nodup :=
+  (nodupMask_sound l 0 h).1
 
-theorem ghostAcc_drop (L : CuccaroStreamedSquareWideLayout) (n : Nat) (hn : 4≤n) :
- (ghostAcc L).drop n = (reg L).drop n := by
- have gl : (ghosts L).length=4 := rfl
- have gd : (ghosts L).drop n=[] := List.drop_eq_nil_of_le (by omega)
- rw [ghostAcc,List.drop_append,gd,List.nil_append,gl,List.drop_drop]
- congr 1
- omega
+/-- Bitmask of a list of wires. -/
+def mkMask : List Nat → Nat
+  | [] => 0
+  | a :: as => mkMask as ||| (1 <<< a)
 
-theorem ghostAcc_take_drop (L : CuccaroStreamedSquareWideLayout) (w n : Nat) (hn : 4≤n) :
- ((ghostAcc L).take w).drop n = ((reg L).take w).drop n := by
- rw [List.drop_take,List.drop_take,ghostAcc_drop L n hn]
+def freshMask (us l : List Nat) : Bool := us.all (fun u => !(mkMask l).testBit u)
 
+theorem fresh_of_mask (us l : List Nat) (h : freshMask us l = true) : ∀ u ∈ us, u ∉ l := by
+  intro u hu hl
+  simp only [freshMask, List.all_eq_true, Bool.not_eq_true'] at h
+  have h1 := h u hu
+  have h2 : (mkMask l).testBit u = true := by
+    clear h h1 hu
+    induction l with
+    | nil => cases hl
+    | cons a as ih =>
+      simp only [mkMask, Nat.testBit_or, Bool.or_eq_true, Nat.one_shiftLeft, Nat.testBit_two_pow]
+      rcases List.mem_cons.mp hl with rfl | h
+      · exact Or.inr (decide_eq_true rfl)
+      · exact Or.inl (ih h)
+  rw [h1] at h2
+  exact Bool.noConfusion h2
 
-namespace Structural
-open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-open LowAccCarryDevelop InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-
-theorem ty (L : CuccaroStreamedSquareWideLayout) (src : List Wire) (neg : Bool) (n : Nat) (hn : 4≤n) :
- Acc.ty (ghostAcc L) (Acc.earlyTerm src neg n)=Acc.ty (accReg L) (Acc.earlyTerm src neg n) := by
- change (ghostAcc L).drop n=(accReg L).drop n
- exact ghostAcc_drop L n hn
-
-theorem ty_take (L : CuccaroStreamedSquareWideLayout) (src : List Wire) (neg : Bool) (w n : Nat) (hn : 4≤n) :
- Acc.ty ((ghostAcc L).take w) (Acc.earlyTerm src neg n)=Acc.ty ((accReg L).take w) (Acc.earlyTerm src neg n) := by
- change ((ghostAcc L).take w).drop n=((accReg L).take w).drop n
- exact ghostAcc_take_drop L w n hn
-
-theorem buildTriple_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin q r p : Wire) :
- buildTriple (ghostAcc L) Z bank cin src q r p=buildTriple (accReg L) Z bank cin src q r p := by
- simp only [buildTriple,buildPre,buildPost,Acc.seedOp,Acc.op]
- rw [ty L src false 4 (by decide +kernel),ty_take L src false 139 10 (by decide +kernel),
-  ty_take L src true 139 6 (by decide +kernel),ty_take L src false 161 32 (by decide +kernel)]
-
-theorem unbuildTriple_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin q r p : Wire) :
- unbuildTriple (ghostAcc L) Z bank cin src q r p=unbuildTriple (accReg L) Z bank cin src q r p := by
- simp only [unbuildTriple,unbuildPre,unbuildPost,CodexKnownOnesTail.accSub,SourceTailDevelop.tail,Acc.seedOp]
- rw [ty_take L src false 161 32 (by decide +kernel),
-  ghostAcc_take_drop L 139 6 (by decide +kernel),ghostAcc_take_drop L 139 10 (by decide +kernel),
-  ty L src false 4 (by decide +kernel)]
- simp only [LowAccCarryDevelop.reg,accReg]
-
-theorem plain_build_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin : Wire) :
- NarrowAcc.build8 (ghostAcc L) Z bank cin src=NarrowAcc.build8 (accReg L) Z bank cin src := by
- simp only [NarrowAcc.build8,NarrowAcc.pre8,CodexNarrowSub.accSub,Acc.seedOp,Acc.op]
- rw [ty L src false 4 (by decide +kernel),ty_take L src false 139 10 (by decide +kernel),
-  ty_take L src true 139 6 (by decide +kernel),ty_take L src false 161 32 (by decide +kernel)]
-
-theorem plain_unbuild_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin : Wire) :
- SourceAddFourDevelop.unbuild (ghostAcc L) Z bank cin src=SourceAddFourDevelop.unbuild (accReg L) Z bank cin src := by
- simp only [SourceAddFourDevelop.unbuild,CodexKnownOnesTail.accSub,SourceAddFourDevelop.add,SourceTailDevelop.tail,Acc.seedOp]
- rw [ty_take L src false 161 32 (by decide +kernel),
-  ghostAcc_take_drop L 139 6 (by decide +kernel),ghostAcc_take_drop L 139 10 (by decide +kernel),
-  ty L src false 4 (by decide +kernel)]
- simp only [LowAccCarryDevelop.reg,accReg]
-end Structural
-
-theorem ghost_zero_bstate (L : CuccaroStreamedSquareWideLayout) (hn : L.wires.Nodup)
- (base b : BasisState) (clean : L.PairClean base) (O E A : Nat)
- (hs : ControlLoan1589BFFold.BState L base O E A b) : ∀q∈ghosts L,b q=false := by
- intro q hq
- simp only [ghosts,List.mem_cons,List.not_mem_nil,or_false] at hq
- rcases hq with rfl|rfl|rfl|rfl
- · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.productHigh
- · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.outHigh
- · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.workHigh
- · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.normFlag
-
-
-open InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
-open ManyACarryDevelop FullBTemp ZeroReadDevelop
-
-def L : CuccaroStreamedSquareWideLayout := FullBReady.L
-def c : Wire := FullBReady.c
-def ga : List Wire := ghostAcc L
-def loans88 : List Wire := FullBTemp.loans L ++ (accReg L).take 4
-def hosts88 : List Wire := FullBTemp.hostR L :: FullBTemp.hostP L :: loans88
-
-theorem ga_length : ga.length=163 := by decide +kernel
-theorem src_length : (hiReg L).length=128 := by decide +kernel
-theorem pad_length : (FullBTemp.pad L).length=31 := by decide +kernel
-theorem bank_length : (accBank L).length=160 := by decide +kernel
-theorem loans_length : loans88.length=86 := by decide +kernel
-theorem loans_nd : loans88.Nodup := by decide +kernel
-theorem fit_nodup : (L.core.cin::(hiReg L++ga++(FullBTemp.pad L)++accBank L)).Nodup := by decide +kernel
-
-theorem fit : ∀f∈earlyHTerms (hiReg L),Acc.Fits ga (FullBTemp.pad L) (accBank L) L.core.cin 163 f := by
- intro f hf
- simp only [earlyHTerms,List.mem_cons,List.not_mem_nil,or_false] at hf
- rcases hf with rfl|rfl|rfl|rfl
- all_goals exact {len:=by decide +kernel,zpad:=by decide +kernel,bankLen:=by decide +kernel,nd:=fit_nodup}
-
-theorem fresh_q : L.core.sumCarry∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
-theorem fresh_r : FullBTemp.hostR L∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
-theorem fresh_p : FullBTemp.hostP L∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
-theorem fresh_hosts : ∀u∈loans88,u∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
-theorem host_ne : ∀u∈loans88,u≠L.core.sumCarry ∧ u≠FullBTemp.hostR L ∧ u≠FullBTemp.hostP L := by decide +kernel
-
-
-theorem ghost_build : buildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
- L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) =
- buildTriple (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
- L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) :=
- Structural.buildTriple_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
-
-theorem ghost_unbuild : unbuildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
- L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) =
- unbuildTriple (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
- L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) :=
- Structural.unbuildTriple_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
-
-theorem ghost_plain_build : NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) =
- NarrowAcc.build8 (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) :=
- Structural.plain_build_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin
-
-
-theorem ghost_plain_unbuild : SourceAddFourDevelop.unbuild ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) =
- SourceAddFourDevelop.unbuild (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) :=
- Structural.plain_unbuild_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin
-
-
-theorem fresh_all_hosts : ∀u∈hosts88,u∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
-
-theorem specials_nd : (L.core.sumCarry::FullBTemp.hostR L::FullBTemp.hostP L::loans88).Nodup := by decide +kernel
-
-theorem success_literal : (ZeroSetDevelop.compileS? hosts88 BData301.p0).isSome=true := by decide +kernel
-
-attribute [local irreducible] ZeroSetDevelop.compileS?
-
-
-
-
-
-def loopWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
- buildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ++ cm.out ++
- unbuildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
-
-def foldWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
- eAddLo L ++ (loopWith cm ++ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++ eSubK L))
-
-def bodyWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
- measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
-  (foldWith cm ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
-
-
-
-def beforeLoop : Program :=
- measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++ (eAddLo L ++
-  buildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-   L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)))
-
-def afterLoop : Program :=
- unbuildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ++
- (ParkCarryDevelop.program (eU L) L.core.sumCarry ++
-  (eSubK L ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
-
-theorem body_shape (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
- bodyWith cm=beforeLoop++cm.out++afterLoop := by
- simp only [bodyWith,foldWith,loopWith,beforeLoop,afterLoop,List.append_assoc]
-
-theorem layout_widths : L.Widths :=
- Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths
-
-theorem layout_nodup : L.wires.Nodup := by
- have full := Baselines.layout.streamedSquare_control_nodup Baselines.layout_widths Baselines.layout_nodup
- exact (List.nodup_cons.mp (List.nodup_cons.mp full).2).2
-
-
-
-end ECDSAAdd.Entrant.LowAccCarryDevelop
-
+end ECDSAAdd.Entrant.PeakNodup
 end
 
 section
--- Proof source component: LowAccLoop
-namespace ECDSAAdd.Entrant.LowAccCarryDevelop
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-set_option linter.unusedSimpArgs false
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
-open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
-attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots
-attribute [local irreducible] ECDSAAdd.regValue ECDSAAdd.Arithmetic.GatePhysical
-attribute [local irreducible] hasWire
+-- Peak-memory helpers: evaluate a chunked `compileS?` one compile chunk per declaration.
+namespace ECDSAAdd.Entrant.PeakChunkS
+open ECDSAAdd ZeroSetDevelop
 
-theorem layout_control_nodup : (c::L.wires).Nodup := by
- have full:=Baselines.layout.streamedSquare_control_nodup Baselines.layout_widths Baselines.layout_nodup
- exact List.nodup_cons.mpr ⟨(fun h=>(List.nodup_cons.mp full).1 (List.mem_cons_of_mem _ h)),layout_nodup⟩
-theorem control_outside : c∉L.wires := (List.nodup_cons.mp layout_control_nodup).1
-theorem endpoints_support :
- wires (buildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L))⊆wires (ParkCarry10Develop.body L c) ∧
- wires (unbuildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L))⊆wires (ParkCarry10Develop.body L c) := by
- have hw:=layout_widths
- have ready : FullBTemp.Ready L c := FullBReady.actual_ready
- have lens:=acc_lengths L hw
- have bf:=ManyACarryDevelop.buildMany_support 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) (by decide)
- have bi:=ManyACarryDevelop.unbuildMany_support 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [bank_length];omega) (by decide)
- rw [ghost_build] at bf
- rw [ghost_unbuild] at bi
- have tri:=WholePadTriple.support (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) lens.1 src_length (FullFitReady.sound L ready.2.2.2.2.1)
- have dom (x:Wire) (hx:x∈(FullBTemp.hostP L::FullBTemp.hostR L::L.core.sumCarry::L.core.cin::(hiReg L++accReg L++FullBTemp.pad L++accBank L)).toFinset):
-  x∈wires (ParkCarry10Develop.body L c) := by
-  apply (hasWire_iff _ _).mp
-  exact ready.2.2.2.2.2 x (List.mem_toFinset.mp hx)
- have used (x:Wire) (hx:x∈loans88.toFinset):x∈wires (ParkCarry10Develop.body L c) := by
-  have hh:=List.mem_toFinset.mp hx
-  simp only [loans88,List.mem_append] at hh
-  rcases hh with hh|hh
-  · have member : x∈FullBTemp.hosts L :=
-     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hh)
-    exact (hasWire_iff _ _).mp (ready.2.2.1 x member).2.2.2.2
-  · exact dom x (by simp [List.mem_of_mem_take hh])
- constructor
- · intro x hx
-   rcases Finset.mem_union.mp (bf hx) with hx|hx
-   · exact dom x (tri.1 hx)
-   · exact used x hx
- · intro x hx
-   rcases Finset.mem_union.mp (bi hx) with hx|hx
-   · exact dom x (tri.2 hx)
-   · exact used x hx
+theorem some_of_map {α β : Type} {o : Option α} {f : α → β} {b : β} (h : o.map f = some b) :
+    ∃ a, o = some a ∧ f a = b := by
+  cases o with
+  | none => cases h
+  | some a => exact ⟨a, rfl, Option.some.inj h⟩
 
-theorem middle_support : wires (FullBTemp.middle L c)⊆wires (ParkCarry10Develop.body L c) := by
- intro x hx
- simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,FullBTemp.middle,BThreeTemp.middle,wires_append,Finset.mem_union] at hx ⊢
- aesop
+theorem out_sound {Q : List Wire} {p : Program} (o : Option (CheckedS Q p)) (T : Program)
+    (h : o.elim false (fun cm => ParkAProgramBool.programEq cm.out T) = true) :
+    o.map (fun cm => cm.out) = some T := by
+  cases o with
+  | none => cases h
+  | some cm => exact congrArg some (ParkAProgramBool.programEq_sound _ _ h)
 
-theorem prefix_support : wires beforeLoop⊆wires (ParkCarry10Develop.body L c) := by
- have oldShape:=FullBTemp.oldBody_shape L c
- intro x hx
- simp only [beforeLoop,wires_append,Finset.mem_union] at hx
- rcases hx with hx|hx|(hx|hx)
- · rw [oldShape];simp only [FullBTemp.prefixP,wires_append,Finset.mem_union];aesop
- · rw [oldShape];simp only [FullBTemp.prefixP,wires_append,Finset.mem_union];aesop
- · rw [oldShape];simp only [FullBTemp.prefixP,wires_append,Finset.mem_union];aesop
- · exact endpoints_support.1 hx
+theorem split_out (Q : List Wire) (p : Program) (c : Nat) (rest : Unit → Option (CheckedS Q (p.drop c)))
+    (o1 o2 : Program)
+    (h1 : (compileFuelS Q (c+1) (p.take c)).map (fun cm => cm.out) = some o1)
+    (h2 : (rest ()).map (fun cm => cm.out) = some o2) :
+    (splitAt? Q p c rest).map (fun cm => cm.out) = some (o1 ++ o2) := by
+  obtain ⟨a, ha, rfl⟩ := some_of_map h1
+  obtain ⟨b, hb, rfl⟩ := some_of_map h2
+  unfold splitAt?
+  simp only [ha, hb, Option.map_some]
 
-theorem suffix_support : wires afterLoop⊆wires (ParkCarry10Develop.body L c) := by
- intro x hx
- change x∈wires (_ ++ FullBTemp.suffixP L c) at hx
- rw [wires_append,Finset.mem_union] at hx
- rcases hx with hx|hx
- · exact endpoints_support.2 hx
- · rw [FullBTemp.oldBody_shape];simp only [wires_append,Finset.mem_union];exact Or.inr (Or.inr hx)
+theorem step (Q : List Wire) (n : Nat) (p o1 o2 : Program) (hlen : ¬ p.length ≤ 1024)
+    (h1 : (compileFuelS Q (1024+1) (p.take 1024)).map (fun cm => cm.out) = some o1)
+    (h2 : (chunkFuelS Q n (p.drop 1024)).map (fun cm => cm.out) = some o2) :
+    (chunkFuelS Q (n+1) p).map (fun cm => cm.out) = some (o1 ++ o2) := by
+  obtain ⟨x, hx, hxo⟩ :=
+    some_of_map (split_out Q p 1024 (fun _ => chunkFuelS Q n (p.drop 1024)) o1 o2 h1 h2)
+  rw [chunkFuelS, if_neg hlen, hx]
+  simp only [Option.orElse_some, Option.map_some, hxo]
 
-theorem body_support (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
- wires (bodyWith cm)⊆wires (ParkCarry10Develop.body L c) := by
- rw [body_shape]
- simp only [wires_append,Finset.union_subset_iff]
- exact ⟨⟨prefix_support,(cm.proof.support hosts88 (FullBTemp.middle L c) cm.out).1.trans middle_support⟩,suffix_support⟩
+theorem last (Q : List Wire) (n : Nat) (p o : Program) (hlen : p.length ≤ 1024)
+    (h : (compileFuelS Q (p.length+1) p).map (fun cm => cm.out) = some o) :
+    (chunkFuelS Q (n+1) p).map (fun cm => cm.out) = some o := by
+  rw [chunkFuelS, if_pos hlen]
+  exact h
+
+theorem take_drop_app {α : Type} (l r : List α) (n : Nat) : l.take n ++ (l.drop n ++ r) = l ++ r := by
+  rw [← List.append_assoc, List.take_append_drop]
 
 
-theorem loop_physical (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
- (mid : GatePhysical (FullBTemp.middle L c)) : GatePhysical (loopWith cm) := by
- have offQ:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length fit fresh_q
- have offR:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostR L) ga_length src_length fit fresh_r
- have offP:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostP L) ga_length src_length fit fresh_p
- have dualOff:=SeedPadDevelop.dual_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
-  (by rw [pad_length];omega) (by rw [bank_length];omega) offP.1 offP.2 (by decide +kernel) (by decide +kernel)
- have plainF:=(NarrowAcc.build8_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) ga_length (by rw [src_length]) fit).1
- have plainI:=SourceAddFourDevelop.unbuild_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) ga_length src_length fit
- have cachedF:=buildCached_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length
-  (by rw [pad_length];omega) (by rw [bank_length];omega) offQ.1 plainF
- have cachedI:=unbuildConsumed_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length
-  (by rw [bank_length];omega) offQ.2 plainI
- have supportF:=buildCached_support ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
-  ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega)
- have supportI:=unbuildConsumed_support ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
-  ga_length src_length (by rw [bank_length];omega)
- have rne : FullBTemp.hostR L≠L.core.sumCarry := by decide +kernel
- have cachedOffR :
-  FullBTemp.hostR L∉wires (buildCached ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) ∧
-  FullBTemp.hostR L∉wires (unbuildConsumed ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) :=
-  ⟨fun h=>(Finset.mem_insert.mp (supportF h)).elim rne offR.1,
-   fun h=>(Finset.mem_insert.mp (supportI h)).elim rne offR.2⟩
- have dualF:=buildDual_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L)
-  ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) cachedOffR.1 cachedF
- have dualI:=unbuildDual_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L)
-  ga_length src_length (by rw [bank_length];omega) cachedOffR.2 cachedI
- have triF:=buildTriple_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
-  ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) dualOff.1 dualF
- have triI:=unbuildTriple_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
-  ga_length src_length (by rw [bank_length];omega) dualOff.2 dualI
- have bankOff : ∀u∈loans88,u∉accBank L := by
-  intro u hu h
-  exact fresh_hosts u hu (by simp [h])
- have manyF:=ManyACarryDevelop.buildMany_physical 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
-  (by rw [pad_length];omega) (by rw [bank_length];omega) (by decide) bankOff triF
- have manyI:=ManyACarryDevelop.unbuildMany_physical 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
-  (by rw [bank_length];omega) (by decide) bankOff triI
- simp only [loopWith,gatePhysical_append]
- exact ⟨⟨manyF,cm.proof.physical hosts88 (FullBTemp.middle L c) cm.out mid⟩,manyI⟩
+/-- Output-only view of `compileFuelS`. -/
+def O (Q : List Wire) (n : Nat) (p : Program) : Option Program := (compileFuelS Q n p).map (fun cm => cm.out)
 
-theorem body_physical (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : GatePhysical (bodyWith cm) := by
- have old:=ParkCarry10Develop.body_physical L layout_widths c layout_control_nodup
- have oldMid:=old
- simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,gatePhysical_append] at oldMid
- have mid : GatePhysical (FullBTemp.middle L c) := oldMid.2.2.1.2.2.1
- rw [FullBTemp.oldBody_shape] at old
- simp only [gatePhysical_append] at old
- have shape : bodyWith cm=FullBTemp.prefixP L++(loopWith cm++FullBTemp.suffixP L c) := by
-  simp only [bodyWith,foldWith,FullBTemp.prefixP,FullBTemp.suffixP,List.append_assoc]
- rw [shape]
- simp only [gatePhysical_append]
- exact ⟨old.1,loop_physical cm mid,old.2.2⟩
+theorem O_zero (Q : List Wire) (p : Program) : O Q 0 p = none := by
+  simp [O, compileFuelS.eq_1]
+
+theorem O_nil (Q : List Wire) (n : Nat) : O Q (n+1) [] = some [] := by
+  simp [O, compileFuelS.eq_2]
+
+theorem O_normal (Q : List Wire) (n : Nat) (i : Instr) (rest : Program)
+    (h : ∀ (a b c d e f g : Wire) (i3 i4 i5 : Instr) (rest_1 : List Instr),
+      i = Instr.CX a b → rest = Instr.CX c d :: Instr.CCX e f g :: i3 :: i4 :: i5 :: rest_1 → False) :
+    O Q (n+1) (i :: rest) =
+      if ZeroReadDevelop.targetOf i ∉ Q then (O Q n rest).map (fun o => eraseS Q i ++ o) else none := by
+  unfold O
+  rw [compileFuelS.eq_4 Q n i rest h]
+  unfold normalStepS
+  split <;> simp [Option.map_map, Function.comp_def]
+
+theorem O_pat (Q : List Wire) (n : Nat) (a b c d e f g : Wire) (i3 i4 i5 : Instr) (rest : List Instr) :
+    O Q (n+1) (Instr.CX a b :: Instr.CX c d :: Instr.CCX e f g :: i3 :: i4 :: i5 :: rest) =
+    if (List.take 6 (Instr.CX a b :: Instr.CX c d :: Instr.CCX e f g :: i3 :: i4 :: i5 :: rest) =
+          ECDSAAdd.Arithmetic.majority a b d g ∧ b ∈ Q ∧ g ∉ Q ∧ [a, b, d, g].Nodup) then
+      (O Q n rest).map (fun o => eraseS Q (Instr.CCX a d g) ++ o)
+    else if ZeroReadDevelop.targetOf (Instr.CX a b) ∉ Q then
+      (O Q n (Instr.CX c d :: Instr.CCX e f g :: i3 :: i4 :: i5 :: rest)).map (fun o => eraseS Q (Instr.CX a b) ++ o)
+    else none := by
+  unfold O
+  rw [compileFuelS.eq_3]
+  split
+  · cases compileFuelS Q n rest <;> simp
+  · unfold normalStepS
+    split <;> simp [Option.map_map, Function.comp_def]
 
 
-open FourthASavedCarryDevelop
+/-- `p` has the majority-pattern shape at its head. -/
+def IsPat (p : Program) : Prop :=
+  ∃ (a b c d e f g : Wire) (i3 i4 i5 : Instr) (rest : List Instr),
+    p = Instr.CX a b :: Instr.CX c d :: Instr.CCX e f g :: i3 :: i4 :: i5 :: rest
 
-theorem loop_resources (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
- toffoliCount (loopWith cm)+88≤toffoliCount (FullBTemp.oldLoop L c) ∧
- measurementCount (loopWith cm)=measurementCount (FullBTemp.oldLoop L c) ∧
- Challenge.gateSlots (loopWith cm)+264≤Challenge.gateSlots (FullBTemp.oldLoop L c) := by
- have hw:=layout_widths
- have ready : FullBTemp.Ready L c := FullBReady.actual_ready
- have lens:=acc_lengths L hw
- have plen:=FullBTemp.pad_length L hw
- have f1:=buildDual_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) lens.1 (hiReg_length L hw) (by omega) (by omega)
- have f2:=buildTriple_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) lens.1 (hiReg_length L hw) (by omega) (by omega)
- have f3:=ManyACarryDevelop.buildMany_counts 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88 L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) (by decide) loans_length
- have i1:=unbuildDual_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) lens.1 (hiReg_length L hw) (by omega)
- have i2:=unbuildTriple_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) lens.1 (hiReg_length L hw) (by omega)
- have i3:=ManyACarryDevelop.unbuildMany_counts 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88 L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [bank_length];omega) (by decide) loans_length
- rw [ghost_build] at f3
- rw [ghost_unbuild] at i3
- have f4 := ready.2.2.2.1.1
- have i4 := ready.2.2.2.1.2
- change SeedPadDevelop.Counts (buildCached (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
-  (buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) at f4
- change SeedPadDevelop.Counts (unbuildConsumed (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
-  (unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) at i4
- simp only [f4.1,f4.2.1,f4.2.2,i4.1,i4.2.1,i4.2.2] at f1 i1
- have mt:=cm.proof.toffoli hosts88 (FullBTemp.middle L c) cm.out
- have mm:=cm.proof.measurements hosts88 (FullBTemp.middle L c) cm.out
- have ms:=cm.proof.slots hosts88 (FullBTemp.middle L c) cm.out
- simp only [FullBTemp.middle] at mt mm ms
- simp only [loopWith,FullBTemp.oldLoop,BThreeTemp.oldLoop,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
- exact ⟨by omega,by omega,by omega⟩
+theorem not_pat_of (i : Instr) (rest : Program) (h : ¬ IsPat (i :: rest)) :
+    ∀ (a b c d e f g : Wire) (i3 i4 i5 : Instr) (rest_1 : List Instr),
+      i = Instr.CX a b → rest = Instr.CX c d :: Instr.CCX e f g :: i3 :: i4 :: i5 :: rest_1 → False := by
+  intro a b c d e f g i3 i4 i5 rest_1 hi hr
+  exact h ⟨a, b, c, d, e, f, g, i3, i4, i5, rest_1, by rw [hi, hr]⟩
 
+theorem O_fuel (Q : List Wire) : ∀ (n : Nat) (p x : Program), O Q n p = some x →
+    ∀ m, p.length < m → O Q m p = some x := by
+  intro n
+  induction n with
+  | zero => intro p x h; rw [O_zero] at h; cases h
+  | succ k ih =>
+    intro p x h m hm
+    obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+    cases p with
+    | nil => rw [O_nil] at h ⊢; exact h
+    | cons i rest =>
+      by_cases hp : IsPat (i :: rest)
+      · obtain ⟨a, b, c, d, e, f, g, i3, i4, i5, r, hpe⟩ := hp
+        rw [hpe] at h hm ⊢
+        rw [O_pat] at h ⊢
+        simp only [List.length_cons] at hm
+        split at h
+        · rename_i hC
+          rw [if_pos hC]
+          obtain ⟨x', hx', rfl⟩ := some_of_map h
+          rw [ih r x' hx' m (by omega)]; rfl
+        · rename_i hC
+          rw [if_neg hC]
+          split at h
+          · rename_i ht
+            rw [if_pos ht]
+            obtain ⟨x', hx', rfl⟩ := some_of_map h
+            rw [ih _ x' hx' m (by simp only [List.length_cons]; omega)]; rfl
+          · cases h
+      · rw [O_normal Q k i rest (not_pat_of i rest hp)] at h
+        rw [O_normal Q m i rest (not_pat_of i rest hp)]
+        split at h
+        · rename_i ht
+          rw [if_pos ht]
+          obtain ⟨x', hx', rfl⟩ := some_of_map h
+          rw [ih rest x' hx' m (by simp only [List.length_cons] at hm; omega)]; rfl
+        · cases h
 
-theorem body_resource_context (oldBody newBody pre oldMiddle newMiddle post : Program)
- (oldShape : oldBody=pre++(oldMiddle++post))
- (newShape : newBody=pre++(newMiddle++post))
- (h : toffoliCount newMiddle+88≤toffoliCount oldMiddle ∧
-  measurementCount newMiddle=measurementCount oldMiddle ∧
-  Challenge.gateSlots newMiddle+264≤Challenge.gateSlots oldMiddle) :
- toffoliCount newBody+88≤toffoliCount oldBody ∧
- measurementCount newBody=measurementCount oldBody ∧
- Challenge.gateSlots newBody+264≤Challenge.gateSlots oldBody := by
- rw [oldShape,newShape]
- simp only [toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
- exact ⟨by omega,by omega,by omega⟩
-
-theorem body_resources (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
- toffoliCount (bodyWith cm)+88≤toffoliCount (ParkCarry10Develop.body L c) ∧
- measurementCount (bodyWith cm)=measurementCount (ParkCarry10Develop.body L c) ∧
- Challenge.gateSlots (bodyWith cm)+264≤Challenge.gateSlots (ParkCarry10Develop.body L c) := by
- have newShape : bodyWith cm=FullBTemp.prefixP L++(loopWith cm++FullBTemp.suffixP L c) := by
-  simp only [bodyWith,foldWith,FullBTemp.prefixP,FullBTemp.suffixP,List.append_assoc]
- exact body_resource_context (ParkCarry10Develop.body L c) (bodyWith cm) (FullBTemp.prefixP L)
-  (FullBTemp.oldLoop L c) (loopWith cm) (FullBTemp.suffixP L c)
-  (FullBTemp.oldBody_shape L c) newShape (loop_resources cm)
-
-
-
-
-
-theorem ga_bstate_value (base b : BasisState) (clean : L.PairClean base)
- (O E A : Nat) (hs : BState L base O E A b) (hd : A%16=0) : regValue ga b=A := by
- have hv : regValue (reg L) b=16*(A/16) := by
-  change regValue (accReg L) b=16*(A/16)
-  have hh:=hs.2.2.1
-  omega
- have bridge:=ghostAcc_value L layout_widths b (A/16) hv
-  (ghost_zero_bstate L layout_nodup base b clean O E A hs)
- exact bridge.trans hs.2.2.1
-
-theorem initial_hosts_zero (base b : BasisState) (clean : L.PairClean base)
- (O E : Nat) (hs : BState L base O E 0 b) : ∀q∈hosts88,b q=false := by
- have geometry : ∀q∈hosts88,q∈L.core.work ∧ q∉L.core.out ∧ q∉eReg L := by decide +kernel
- intro q hq
- have geo:=geometry q hq
- by_cases ha:q∈accReg L
- · exact (regValue_zero _ _).mp hs.2.2.1 q ha
- · exact (hs.2.2.2 q geo.2.1 geo.2.2 ha).trans ((regValue_zero _ _).mp clean.work q geo.1)
-
-
-theorem loop_eq_plain
- (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
- (s : State) (records : List Bool)
- (hz : ∀w∈FullBTemp.pad L,s.basis w=false)
- (hb : ∀w∈accBank L,s.basis w=false) (hi : s.basis L.core.cin=false)
- (ha : regValue ga s.basis=0) (zeroQ : s.basis L.core.sumCarry=false)
- (zeros : ∀q∈hosts88,s.basis q=false)
- (good : WReady ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  (regValue (hiReg L) s.basis)
-  (middleState (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))
-   (FullBTemp.middle L c) s records)) :
- run (loopWith cm) records s=
- run (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) ++
-  FullBTemp.middle L c ++ SourceAddFourDevelop.unbuild ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) records s := by
- have zeroR : s.basis (FullBTemp.hostR L)=false := zeros _ (by simp [hosts88])
- have zeroP : s.basis (FullBTemp.hostP L)=false := zeros _ (by simp [hosts88])
- have zeroU : ∀u∈loans88,s.basis u=false := fun u hu=>zeros u (by simp [hosts88,hu])
- have offQ:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length fit fresh_q
- have offR:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostR L) ga_length src_length fit fresh_r
- have offP:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostP L) ga_length src_length fit fresh_p
- have pBoth:=SeedPadDevelop.dual_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
-  (by rw [pad_length];omega) (by rw [bank_length];omega) offP.1 offP.2 (by decide +kernel) (by decide +kernel)
- have endpoints : ∀u∈loans88,
-  u∉wires (buildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ∧
-  u∉wires (unbuildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) := by
-  intro u hu
-  exact fresh_off_triple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-   L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) u ga_length src_length fit
-   (fresh_hosts u hu) (host_ne u hu).1 (host_ne u hu).2.1 (host_ne u hu).2.2
- have offOriginal : ∀u∈hosts88,u∉wires (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) := by
-  intro u hu
-  exact (wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) u ga_length src_length fit (fresh_all_hosts u hu)).1
- have midEq:=cm.proof.middle_eq hosts88 (FullBTemp.middle L c) cm.out
-  (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
- have goodNew : WReady ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  (regValue (hiReg L) s.basis)
-  (middleState (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) cm.out s records) := by
-  rw [midEq];exact good
- have support:=cm.proof.support hosts88 (FullBTemp.middle L c) cm.out
- have rawAway : L.core.sumCarry∉wires (FullBTemp.middle L c) :=
-  ParkCarry10Develop.mid_sumCarry_free L layout_widths layout_nodup c control_outside
- have nq : L.core.sumCarry∉wires cm.out := fun h=>rawAway (support.1 h)
- have nr : FullBTemp.hostR L∉wires cm.out := support.2 _ (by simp [hosts88])
- have np : FullBTemp.hostP L∉wires cm.out := support.2 _ (by simp [hosts88])
- have triple:=triple_middle_ready ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) cm.out ga_length src_length fit
-  s records hz hb hi ha zeroQ zeroR zeroP fresh_q fresh_r (by decide +kernel) fresh_p
-  (by decide +kernel) (by decide +kernel) offQ.1 nq offQ.2 offR.1 nr offR.2 pBoth.1 np pBoth.2 goodNew
- have many:=ManyACarryDevelop.cached_wloop_many_eq 86 ga (FullBTemp.pad L) (accBank L) L.core.cin
-  (hiReg L) loans88 L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) cm.out ga_length src_length fit
-  s records hz hb hi ha zeroQ zeroR zeroP zeroU fresh_q fresh_r (by decide +kernel)
-  fresh_p (by decide +kernel) (by decide +kernel) (by decide) loans_nd loans_length fresh_hosts host_ne
-  offQ.1 offQ.2 offR.1 offR.2 pBoth.1 pBoth.2 (fun u hu=>(endpoints u hu).1)
-  (fun u hu=>support.2 u (by simp [hosts88,hu])) (fun u hu=>(endpoints u hu).2)
-  triple.1 triple.2.1 triple.2.2.1 triple.2.2.2
- have tr:=cached_wloop_triple_eq ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) cm.out ga_length src_length fit
-  s records hz hb hi ha zeroQ zeroR zeroP fresh_q fresh_r (by decide +kernel) fresh_p
-  (by decide +kernel) (by decide +kernel) offQ.1 nq offQ.2 offR.1 nr offR.2 pBoth.1 np pBoth.2 goodNew
- have du:=cached_wloop_dual_eq ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  L.core.sumCarry (FullBTemp.hostR L) cm.out ga_length src_length fit
-  s records hz hb hi ha zeroQ zeroR fresh_q fresh_r (by decide +kernel) offQ.1 nq offQ.2 offR.1 nr offR.2 goodNew
- have re:=cm.proof.surround_eq hosts88 (FullBTemp.middle L c) cm.out
-  (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))
-  (SourceAddFourDevelop.unbuild ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
- simpa only [loopWith] using many.trans (tr.trans (du.trans re))
+theorem O_append (Q : List Wire) : ∀ (n : Nat) (a x : Program), O Q n a = some x →
+    ∀ (b y : Program), O Q (b.length + 1) b = some y →
+      O Q ((a ++ b).length + 1) (a ++ b) = some (x ++ y) := by
+  intro n
+  induction n with
+  | zero => intro a x h; rw [O_zero] at h; cases h
+  | succ k ih =>
+    intro a x h b y hb
+    cases a with
+    | nil => rw [O_nil] at h; cases h; simpa using hb
+    | cons i rest =>
+      simp only [List.cons_append, List.length_cons]
+      by_cases hp : IsPat (i :: rest)
+      · obtain ⟨a', b', c, d, e, f, g, i3, i4, i5, r, hpe⟩ := hp
+        injection hpe with hi hrest
+        subst hi hrest
+        rw [O_pat] at h
+        simp only [List.cons_append, List.length_cons]
+        rw [O_pat]
+        simp only [List.take_succ_cons, List.take_zero] at h ⊢
+        split at h
+        · rename_i hC
+          rw [if_pos hC]
+          obtain ⟨x', hx', rfl⟩ := some_of_map h
+          have := ih r x' hx' b y hb
+          rw [O_fuel Q _ _ _ this _ (by omega)]
+          simp [List.append_assoc]
+        · rename_i hC
+          rw [if_neg hC]
+          split at h
+          · rename_i ht
+            rw [if_pos ht]
+            obtain ⟨x', hx', rfl⟩ := some_of_map h
+            have := ih _ x' hx' b y hb
+            simp only [List.cons_append, List.length_cons] at this
+            rw [O_fuel Q _ _ _ this _ (by simp only [List.length_cons]; omega)]
+            simp [List.append_assoc]
+          · cases h
+      · rw [O_normal Q k i rest (not_pat_of i rest hp)] at h
+        split at h
+        · rename_i ht
+          obtain ⟨x', hx', rfl⟩ := some_of_map h
+          have hrb := ih rest x' hx' b y hb
+          by_cases hp2 : IsPat (i :: (rest ++ b))
+          · obtain ⟨a', b', c, d, e, f, g, i3, i4, i5, r, hpe⟩ := hp2
+            injection hpe with hi hrb2
+            subst hi
+            rw [hrb2] at hrb ⊢
+            rw [O_pat]
+            split
+            · rename_i hC
+              exact absurd hC.2.1 ht
+            · try rw [if_pos ht]
+              rw [O_fuel Q _ _ _ hrb _ (by simp only [List.length_cons]; omega)]
+              simp [List.append_assoc]
+          · rw [O_normal _ _ i (rest ++ b) (not_pat_of i (rest ++ b) hp2), if_pos ht,
+              O_fuel Q _ _ _ hrb _ (by omega)]
+            simp [List.append_assoc]
+        · cases h
 
 
-theorem ghost_wready (b : State) (H : Nat)
- (old : WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) H b)
- (hz : ∀q∈ghosts L,b.basis q=false) :
- WReady ga (accZ L) (accBank L) L.core.cin (hiReg L) H b := by
- have hv : regValue (reg L) b.basis=16*(268435517*H) := by
-  change regValue (accReg L) _=_
-  have h:=old.1
-  omega
- have bridge:=ghostAcc_value L layout_widths b.basis _ hv hz
- exact ⟨bridge.trans old.1,old.2⟩
+theorem parts2 (Q : List Wire) (a b x y : Program)
+    (ha : (compileFuelS Q (a.length+1) a).map (fun cm => cm.out) = some x)
+    (hb : (compileFuelS Q (b.length+1) b).map (fun cm => cm.out) = some y) :
+    (compileFuelS Q ((a ++ b).length+1) (a ++ b)).map (fun cm => cm.out) = some (x ++ y) :=
+  O_append Q _ a x ha b y hb
 
+theorem chunk_fuel (Q : List Wire) (X : Program) (n : Nat) (x : Program)
+    (h : (compileFuelS Q (X.length+1) X).map (fun cm => cm.out) = some x) (hn : X.length < n) :
+    (compileFuelS Q n X).map (fun cm => cm.out) = some x :=
+  O_fuel Q _ X x h n hn
 
-theorem middle_state_post (P Q R : BasisState → Prop) (first middle : Program)
- (hf : Triple P first Q) (hm : Triple Q middle R) (s : State) (records : List Bool)
- (hs : P s.basis) : R (middleState first middle s records).basis := by
- exact (hm (run first (records.take (measurementCount first)) s)
-  ((records.drop (measurementCount first)).take (measurementCount middle))
-  (hf s (records.take (measurementCount first)) hs).2).2
+theorem isSome_of_map {α β : Type} {o : Option α} {f : α → β} {b : β} (h : o.map f = some b) :
+    o.isSome = true := by
+  cases o with
+  | none => cases h
+  | some a => rfl
 
-
-theorem loop_bstate_step
- (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
- (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry=false)
- (O E O' : Nat)
- (mid : Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (FullBTemp.middle L c)
-  (BState L base O' E (4294968272*regValue (hiReg L) base))) :
- Triple (BState L base O E 0) (loopWith cm) (BState L base O' E 0) := by
- intro s records hs
- have hw:=layout_widths
- have hn:=layout_nodup
- have lens:=acc_lengths L hw
- obtain ⟨hzFull,hb,hi,_,_⟩:=zero_regs L hn base clean O E 0 s.basis hs
- have hz : ∀q∈FullBTemp.pad L,s.basis q=false := fun q hq=>hzFull q ((FullPadDevelop.pad_sublist L).subset hq)
- have source0 : regValue (hiReg L) s.basis=regValue (hiReg L) base :=
-  regValue_congr _ _ _ (fun q hq=>bstate_other L hn base O E 0 s.basis hs q (Or.inl hq))
- have fullInfo :
-  WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
-   (regValue (hiReg L) s.basis) (middleState (wBuild L) (FullBTemp.middle L c) s records) ∧
-  (∀q∈ghosts L,(middleState (wBuild L) (FullBTemp.middle L c) s records).basis q=false) := by
-  have midGood := middle_state_post (BState L base O E 0)
-   (BState L base O E (4294968272*regValue (hiReg L) base))
-   (BState L base O' E (4294968272*regValue (hiReg L) base))
-   (wBuild L) (FullBTemp.middle L c) (wBuild_step L hw hn base clean O E) mid s records hs
-  obtain ⟨mz,mb,mi,_,_⟩:=zero_regs L hn base clean O' E _ _ midGood
-  have source1:=regValue_congr (hiReg L) _ base (fun q hq=>bstate_other L hn base O' E _ _ midGood q (Or.inl hq))
-  exact ⟨⟨midGood.2.2.1.trans (by rw [source0]),source1.trans source0.symm,mz,mb,mi⟩,
-   ghost_zero_bstate L hn base _ clean O' E _ midGood⟩
- have goodGhost : WReady ga (accZ L) (accBank L) L.core.cin (hiReg L)
-  (regValue (hiReg L) s.basis) (middleState (wBuild L) (FullBTemp.middle L c) s records) :=
-  ghost_wready _ _ fullInfo.1 fullInfo.2
- have midPadEq:=WholePadDevelop.middle_repad (accReg L) (accZ L) (FullBTemp.pad L) (accBank L) L.core.cin
-  (hiReg L) (FullBTemp.middle L c) lens.1 src_length (wTerms_fits L hw hn) (FullBTemp.terms_fits L hw hn)
-  s records hzFull hz hb hi hs.2.2.1
- have goodPad : WReady ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
-  (regValue (hiReg L) s.basis)
-  (middleState (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) (FullBTemp.middle L c) s records) := by
-  rw [ghost_plain_build,←midPadEq]
-  exact ⟨goodGhost.1,goodGhost.2.1,(fun q hq=>goodGhost.2.2.1 q ((FullPadDevelop.pad_sublist L).subset hq)),goodGhost.2.2.2⟩
- have away:=ParkCarryDevelop.sumCarry_off_regs L hn
- have zeroQ : s.basis L.core.sumCarry=false := (hs.2.2.2 _ away.1 away.2.1 away.2.2).trans hsum
- have eqNew:=loop_eq_plain cm s records hz hb hi (ga_bstate_value base s.basis clean O E 0 hs (by decide))
-  zeroQ (initial_hosts_zero base s.basis clean O E hs) goodPad
- have repad:=WholePadDevelop.plain_loop_repad (accReg L) (accZ L) (FullBTemp.pad L) (accBank L) L.core.cin
-  (hiReg L) (FullBTemp.middle L c) lens.1 src_length (wTerms_fits L hw hn) (FullBTemp.terms_fits L hw hn)
-  (FullPadDevelop.pad_sublist L).subset s records hzFull hb hi hs.2.2.1 (regValue (hiReg L) s.basis)
-  (by simpa only [wBuild,middleState,run_take] using fullInfo.1)
- have finalEq : run (loopWith cm) records s=run (wBuild L++FullBTemp.middle L c++wUnbuildKnown L) records s := by
-  rw [eqNew,ghost_plain_build,ghost_plain_unbuild]
-  simpa only [wBuild,wUnbuildKnown] using repad.symm
- rw [finalEq]
- exact (((wBuild_step L hw hn base clean O E).seq mid).seq (wUnbuildKnown_step L hw hn base clean O' E)) s records hs
-
-
-
-end ECDSAAdd.Entrant.LowAccCarryDevelop
-
+end ECDSAAdd.Entrant.PeakChunkS
 end
 
 section
--- Proof source component: LowAccCarry
-namespace ECDSAAdd.Entrant.LowAccCarryDevelop
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
-open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
-def fromLiteral (cm : ZeroSetDevelop.CheckedS hosts88 BData301.p0) :
- ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c) :=
- ⟨cm.out, Eq.mp (congrArg (fun p=>ZeroSetDevelop.SRewrites hosts88 p cm.out)
-  (show BData301.p0=FullBTemp.middle L c from FullBReady.onePass_input_eq)) cm.proof⟩
-
-open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
-open LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
-
-def foldFor (L : CuccaroStreamedSquareWideLayout) (loop : Program) : Program :=
- eAddLo L ++ (loop ++ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++ eSubK L))
-def bodyFor (L : CuccaroStreamedSquareWideLayout) (c : Wire) (loop : Program) : Program :=
- measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
-  (foldFor L loop ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
-
-theorem body_frame_generic
- (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (c : Wire) (hcw : c∉L.wires) (loopProgram : Program)
- (loopSpec : ∀ (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry=false)
-  (O E O' : Nat),
-  Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (FullBTemp.middle L c)
-   (BState L base O' E (4294968272*regValue (hiReg L) base)) →
-  Triple (BState L base O E 0) loopProgram (BState L base O' E 0))
- (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false)
- (O : Nat) (hO : O<SquareReduction.p)
- (hg : base c=false → M=0) (hSource : M=if base c then regValue L.core.high base else 0) :
- Triple (SquareFrame L.core.out base O) (bodyFor L c loopProgram)
-  (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
-
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
-  let P := M^2
-  let b0 := P%2^128
-  let b1 := P/2^128
-  let W := 4294968272*b1
-  let g := base c
-  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
-  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
-  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
-  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
-  have hb1lt : b1<2^128 := by
-    show P/2^128<2^128
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc P<2^256 := hb
-      _ = 2^128*2^128 := by norm_num
-  have hWlt : W<2^163 := by
-    show 4294968272*b1<2^163
-    norm_num at hb1lt ⊢
-    omega
-  have views := accA_views L hw base M hM hP
-  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
-  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
-  have pay1 : measuredFoldPayload base (negP L)=P := by
-    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
-    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
-  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
-    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
-    exact L.rotated128_value hw base (M^2) hP
-  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
-    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
-    rwa [pay1] at h
-  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
-      (SquareFrame L.core.out base O2) := by
-    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
-    rwa [pay2] at h
-  have e0 : regValue (eReg L) base=b0 := eReg_value L hw base P hP hb
-  have a0 : regValue (accReg L) base=0 :=
-    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc.work q (accReg_work L q hq))
-  have hb1 : regValue (hiReg L) base=b1 := by
-    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
-      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
-  have conv1 : ∀s,SquareFrame L.core.out base O2 s → BState L base O2 b0 0 s := by
-    intro s hs
-    refine ⟨hs.1,?_,?_,fun q h1 _ _ => hs.2 q h1⟩
-    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (eReg_away L hn q hq).1)).trans e0
-    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (accReg_out L hn q hq))).trans a0
-
-
-  let u := b1/2^96
-  let d := W/2^128 - u
-  let H := b0/2^32
-  let l' := (b0%2^32 + u)%2^32
-  let K := (b0%2^32 + u)/2^32
-  let O3 := ((u + 4294968273*d) + 4294968272*2^32*K + 2^128*(W%2^128) + (SquareReduction.p-1-O2)) % SquareReduction.p
-  let E1 := (2^32*H + l' + 2^130 - b1) % 2^130
-  let O4 := (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p
-  have hO3 : O3<SquareReduction.p := Nat.mod_lt _ pmod
-  have hb0 : b0<2^128 := Nat.mod_lt _ (by positivity)
-  have hu32 : u < 2^32 := by
-    show b1/2^96 < 2^32
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc b1<2^128 := hb1lt
-      _ = 2^32*2^96 := by norm_num
-  have hH : H < 2^96 := by show b0/2^32 < 2^96; omega
-  have hl' : l' < 2^32 := Nat.mod_lt _ (by positivity)
-  have hK : K ≤ 1 := by show (b0%2^32 + u)/2^32 ≤ 1; omega
-  have hKif : (if l' < u then 1 else 0) = K := by
-    show (if (b0%2^32 + u)%2^32 < u then 1 else 0) = (b0%2^32 + u)/2^32
-    by_cases hc' : (b0%2^32 + u)%2^32 < u
-    · rw [if_pos hc']; omega
-    · rw [if_neg hc']; omega
-  let kap:Bool:=decide (K=1)
-  let baseK:=writeBit base L.core.sumCarry kap
-  have kapNat:kap.toNat=K := by
-    have kk:K=0 ∨ K=1 := by omega
-    rcases kk with kk|kk <;> simp [kap,kk]
-  have hcK:L.PairClean baseK := ParkCarryDevelop.base_clean L hn base hc kap
-  have productOff:L.core.sumCarry∉L.core.product := by
-    intro h;apply ParkCarryDevelop.sumCarry_away L hn;simp [ParkCarryDevelop.restWires,h]
-  have highOff:L.core.sumCarry∉hiReg L := by
-    intro h;exact productOff (List.mem_of_mem_take (List.mem_of_mem_drop h))
-  have hb1K:regValue (hiReg L) baseK=b1 := by
-    dsimp only [baseK]
-    rw [ParkCarryDevelop.reg_update_off _ _ _ _ highOff]
-    exact hb1
-  have cq:c≠L.core.sumCarry := by
-    intro h;apply hcw
-    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]
-  have gc:baseK c=base c := by simp [baseK,writeBit,cq]
-  have resetBase:writeBit baseK L.core.sumCarry false=base := by
-    funext q
-    by_cases hq:q=L.core.sumCarry
-    · subst q;simp [writeBit,Function.update,hsum]
-    · simp [baseK,writeBit,Function.update,hq]
-  -- Park the completed low-window carry instead of recomputing it.
-  have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
-  rw [hb1] at k1
-  have squareBit : (b0%2^32)/2%2=0 := by
-    change ((M^2%2^128)%2^32)/2%2=0
-    rw[Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
-    exact KnownSecondSubDevelop.square_second32 M
-  have loanFact : ((2^32*H+l'+2^128*K)/2%2==1)=
-      ((b1/2^96/2%2==1) ^^ (b1/2^96%2==1) ^^
-        ((b1/2^96%2==1)&&((2^32*H+l'+2^128*K)%2==1))) := by
-    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=by dsimp[l'];omega
-    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=by dsimp[l'];omega
-    rw[low0,low1]
-    exact known_second_loan (b0%2^32) u squareBit
-  let originalM:=regValue L.core.high base
-  have source1:base (bit1 L.core.high)=digit originalM 1:=by
-    simpa only[digit,pow_one]using bit1_parity L.core.high base
-      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
-  have modE:(2^32*H+l'+2^128*K)%16=lowSum (base c) originalM u%16:=by
-    rw[lowSum,←hSource]
-    exact folded_low_mod16 M u H l' K rfl rfl
-  have loanFact2:=loan2_from_mod16 (base c) originalM u (2^32*H+l'+2^128*K) modE
-  rw[←source1]at loanFact2
-  have source0:base (L.core.high.headD 0)=digit originalM 0:=by
-    simpa only[digit,pow_zero,Nat.div_one]using head_parity L.core.high base
-      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
-  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by omega
-  have loanFact0:=LowBitCarryNumbers.loan0_from_mod2 (base c) originalM u (2^32*H+l'+2^128*K)
-    (by simpa only[lowSum]using modE2)
-  rw[←source0]at loanFact0
-  have wm := wMidFullCCC0_step L hw hn c hcw base hc O2 (2^32*H+l'+2^128*K) b1 hb1 hb1lt hO2
-    H l' K hH hl' hK rfl loanFact loanFact2 loanFact0
-  have wmBase : Triple (BState L base O2 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base))
-      (wMidFullCCC0 L c)
-      (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
-    simpa only [hb1] using wm
-  have loop := loopSpec base hc hsum
-    O2 (2^32*H+l'+2^128*K) O3 wmBase
-  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
-  rw [kapNat] at kc
-  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
-  have tw : Triple (BState L base O2 b0 0) (foldFor L loopProgram) (BState L baseK O3 E1 0) :=
-    by simpa only [foldFor,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
-  -- eFoldTq
-  have f1 := eFlip_step L hw hn baseK c hcw O3 E1 0
-  have f2 := eCore_stepTq L hw hn baseK hcK O3 (flipE g E1) hO3
-  have f3 := eFlip_step L hw hn baseK c hcw O4 (flipE g E1) 0
-  rw [gc] at f1 f3
-  rw [flipE_flipE] at f3
-  have tf : Triple (BState L baseK O3 E1 0) (eFoldTq L c) (BState L baseK O4 E1 0) :=
-    f1.seq (f2.seq f3)
-  -- wRestoreT
-  have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
-  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K (by rw [bk]; omega)
-  rw [bk] at r2
-  have bit32:(b0%2^32)/2%2=0 := by
-    change ((M^2%2^128)%2^32)/2%2=0
-    rw [Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
-    exact KnownSecondSubDevelop.square_second32 M
-  have total:l'+2^32*(baseK L.core.sumCarry).toNat=b0%2^32+regValue (hiReg L) baseK/2^96 := by
-    have atq:baseK L.core.sumCarry=kap := by simp [baseK,writeBit]
-    rw [atq,kapNat,hb1K]
-    show ((b0%2^32+u)%2^32)+2^32*((b0%2^32+u)/2^32)=b0%2^32+u
-    exact Nat.mod_add_div _ _
-  have r3:=ParkCarryDevelop.restore_step L hw hn baseK hcK O4 0 H l' (b0%2^32) hH hl'
-    (Nat.mod_lt _ (by positivity)) bit32 total
-  have bb:2^32*H+b0%2^32=b0 := by dsimp [H];omega
-  rw [resetBase,bb] at r3
-  have rp := padM_step L hw hn base hc O4 b0 0 744
-  have tr : Triple (BState L baseK O4 E1 0) (ParkCarry10Develop.rebuild L) (BState L base O4 b0 0) :=
-    r2.seq (r3.seq rp)
-  have conv0 : ∀s,BState L base O4 b0 0 s → SquareFrame L.core.out base O4 s := by
-    intro s hs
-    refine ⟨hs.1,fun q hq => ?_⟩
-    by_cases he : q∈eReg L
-    · exact (regValue_eq_iff _ _ _).mp (hs.2.1.trans e0.symm) q he
-    by_cases ha : q∈accReg L
-    · exact (regValue_eq_iff _ _ _).mp (hs.2.2.1.trans a0.symm) q ha
-    exact hs.2.2.2 q hq he ha
-  have key : O4 = bO4 (M^2) (base c) O := by
-    have hg' : g = false → b1 = 0 ∧ b0 = 0 := by
-      intro h0
-      have : M = 0 := hg h0
-      subst this
-      simp [b1, b0, P]
-    have e3 : O3 = (((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
-        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p := by
-      simp only [O3, u, d, K, W]
-      congr 1; ring
-    have e4 : O4 = (4294968272*flipE g ((2^32*(b0/2^32) + (b0%2^32+b1/2^96)%2^32 + 2^130 - b1) % 2^130) +
-        (SquareReduction.p-1-((((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
-        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p))) % SquareReduction.p := by
-      show (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p = _
-      rw [e3]
-    rw [e4, o4K b0 b1 O2 _ g hb0 hb1lt hO2 hg']
-    exact o4_eq b0 b1 O2 g hb0 hb1lt hO2 hg'
-  have all := t1.seq (t2.seq (Triple.conseq (fun s h => h) ((Triple.conseq conv1 tw (fun s h => h)).seq
-    (tf.seq tr)) conv0))
-  rw [key] at all
-  simpa only [bodyFor] using all
-
-
-
-
-theorem body_frame
- (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
- (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false)
- (O : Nat) (hO : O<SquareReduction.p)
- (hg : base c=false → M=0) (hSource : M=if base c then regValue L.core.high base else 0) :
- Triple (SquareFrame L.core.out base O) (bodyWith cm)
-  (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) :=
- by
-  have hcw : c∉L.wires := control_outside
-  simpa only [bodyWith,foldWith,bodyFor,foldFor] using
-   body_frame_generic L layout_widths layout_nodup c hcw (loopWith cm) (loop_bstate_step cm)
-    base M hM hP hc hsum O hO hg hSource
-
-
-
-end ECDSAAdd.Entrant.LowAccCarryDevelop
-namespace ECDSAAdd.Entrant.FullB88OptTemp
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run ECDSAAdd.Arithmetic.GatePhysical
-attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots ECDSAAdd.regValue
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-
-theorem option_property {α : Type} (P : Program → Prop) (fallback : Program) (body : α → Program)
- (hf : P fallback) (hb : ∀a,P (body a)) (result : Option α) : P (result.elim fallback body) := by
- cases result with
- | none => exact hf
- | some a => exact hb a
-
-theorem option_some_property {α : Type} (P : Program → Prop) (fallback : Program) (body : α → Program)
- (hb : ∀a,P (body a)) (result : Option α) (success : result.isSome=true) : P (result.elim fallback body) := by
- cases result with
- | none => simp only [Option.isSome_none,Bool.false_eq_true] at success
- | some a => exact hb a
-
-theorem option_map_success {α β : Type} (result : Option α) (f : α → β) :
- (result.map f).isSome=result.isSome := by
- cases result <;> rfl
-
-theorem actual_resources :
- toffoliCount (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)+88≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)+264≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
- exact option_some_property (fun p=>
-  toffoliCount p+88≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
-  measurementCount p=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
-  Challenge.gateSlots p+264≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c))
-  (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith LowAccCarryDevelop.body_resources ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
-  ((option_map_success (ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0) LowAccCarryDevelop.fromLiteral).trans LowAccCarryDevelop.success_literal)
-
-theorem actual_subset : wires (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
- exact option_property (fun p=>wires p⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c))
-  (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith (Finset.Subset.refl (wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c))) LowAccCarryDevelop.body_support ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
-
-theorem actual_physical : GatePhysical (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) := by
- exact option_property GatePhysical (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith
-  (ParkCarry10Develop.body_physical LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
-   LowAccCarryDevelop.c LowAccCarryDevelop.layout_control_nodup)
-  LowAccCarryDevelop.body_physical ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
-
-theorem actual_frame (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base LowAccCarryDevelop.c=false → M=0)
- (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) := by
- exact option_property (fun p=>Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) p
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O))) (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith
-  (ParkCarry10Develop.body_frame LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
-   LowAccCarryDevelop.layout_nodup LowAccCarryDevelop.c LowAccCarryDevelop.control_outside
-   base M hM hP hc hsum O hO hg hSource)
-  (fun cm=>LowAccCarryDevelop.body_frame cm base M hM hP hc hsum O hO hg hSource) ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
-
-def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
- match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse _ => ParkCarry10Develop.body K g
- | isTrue _ => if g=LowAccCarryDevelop.c then (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) else ParkCarry10Develop.body K g
-
-
-
-
-
-
-
-
-
-
-theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
- wires (selectedBody K g)⊆wires (ParkCarry10Develop.body K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact Finset.Subset.refl _
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g;exact actual_subset
-  · exact Finset.Subset.refl _
-
-
-
-
-
-theorem selected_physical (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
- (g : Wire) (nd : (g::K.wires).Nodup) : GatePhysical (selectedBody K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact ParkCarry10Develop.body_physical K hw g nd
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g;exact actual_physical
-  · exact ParkCarry10Develop.body_physical K hw g nd
-
-theorem selected_frame (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (hn : K.wires.Nodup)
- (g : Wire) (hcw : g∉K.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue K.core.product base=M^2) (hc : K.PairClean base)
- (hsum : base K.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base g=false → M=0) (hSource : M=if base g then regValue K.core.high base else 0) :
- Triple (SquareFrame K.core.out base O) (selectedBody K g)
-  (SquareFrame K.core.out base (bO4 (M^2) (base g) O)) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hne => exact ParkCarry10Develop.body_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hgc;subst K;subst g;exact actual_frame base M hM hP hc hsum O hO hg hSource
-  · exact ParkCarry10Develop.body_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
-
-theorem selected_resources (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
- toffoliCount (selectedBody K g)≤toffoliCount (ParkCarry10Develop.body K g) ∧
- measurementCount (selectedBody K g)=measurementCount (ParkCarry10Develop.body K g) ∧
- Challenge.gateSlots (selectedBody K g)≤Challenge.gateSlots (ParkCarry10Develop.body K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact ⟨Nat.le_refl _,rfl,Nat.le_refl _⟩
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g
-    have h:=actual_resources
-    exact ⟨by omega,h.2.1,by omega⟩
-  · exact ⟨Nat.le_refl _,rfl,Nat.le_refl _⟩
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-abbrev actualLayout := FullBOptTemp.actualLayout
-abbrev actualControl := FullBOptTemp.actualControl
-abbrev actualExt := FullBOptTemp.actualExt
-abbrev actualFoldPerm := FullBOptTemp.actualFoldPerm
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end ECDSAAdd.Entrant.FullB88OptTemp
-
-end
-
-
-section
--- Proof source component: LowAccMiddleLiteral
+-- Peak memory: the LowAccMiddleLiteral literal (unchanged) is defined first, so that
+-- success_literal and compiler_output_eq share one chunked kernel evaluation.
 namespace ECDSAAdd.Entrant.LowAccMiddleLiteral
 open ECDSAAdd
-set_option Elab.async false
 set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-attribute [local irreducible] ZeroSetDevelop.compileS?
 
 def chunk0 : Program := [
  .measureX 4117 [] [.Z 4341,.CZ 387 4113,.CZ 387 4115,.CZ 387 4339,.CZ 4340 4116,.Z 4340],
@@ -10025,11 +9273,1285 @@ def chunk68 : Program := [
 ]
 
 def output : Program := ((((((chunk0++chunk1)++(chunk2++chunk3))++((chunk4++chunk5)++(chunk6++chunk7)))++(((chunk8++chunk9)++(chunk10++chunk11))++((chunk12++chunk13)++(chunk14++(chunk15++chunk16)))))++((((chunk17++chunk18)++(chunk19++chunk20))++((chunk21++chunk22)++(chunk23++chunk24)))++(((chunk25++chunk26)++(chunk27++chunk28))++((chunk29++chunk30)++(chunk31++(chunk32++chunk33))))))++(((((chunk34++chunk35)++(chunk36++chunk37))++((chunk38++chunk39)++(chunk40++chunk41)))++(((chunk42++chunk43)++(chunk44++chunk45))++((chunk46++chunk47)++(chunk48++(chunk49++chunk50)))))++((((chunk51++chunk52)++(chunk53++chunk54))++((chunk55++chunk56)++(chunk57++(chunk58++chunk59))))++(((chunk60++chunk61)++(chunk62++chunk63))++((chunk64++chunk65)++(chunk66++(chunk67++chunk68)))))))
+end ECDSAAdd.Entrant.LowAccMiddleLiteral
+end
+
+section
+-- Proof source component: LowAccGeometry
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.LowAccCarryDevelop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+
+def ghosts (L : CuccaroStreamedSquareWideLayout) : List Wire :=
+ [L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.normFlag]
+def reg (L : CuccaroStreamedSquareWideLayout) : List Wire := L.core.work.take 163
+def ghostAcc (L : CuccaroStreamedSquareWideLayout) : List Wire := ghosts L ++ (reg L).drop 4
+
+theorem ghostAcc_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (b : BasisState) (K : Nat) (hv : regValue (reg L) b=16*K)
+ (hz : ∀w∈ghosts L,b w=false) : regValue (ghostAcc L) b=regValue (reg L) b := by
+ have len : (reg L).length=163 := by simp [reg,hw.core.work]
+ have low : regValue ((reg L).take 4) b=0 := by
+  rw [regValue_take_mod _ 4 (by omega) b,hv]
+  omega
+ have old : regValue (reg L) b=16*regValue ((reg L).drop 4) b := by
+  calc
+   _=regValue (((reg L).take 4)++(reg L).drop 4) b := by rw [List.take_append_drop]
+   _=_ := by rw [regValue_append,low];simp [len]
+ have gz : regValue (ghosts L) b=0 := (regValue_zero _ _).mpr hz
+ rw [ghostAcc,regValue_append,gz]
+ simpa [ghosts] using old.symm
+
+
+theorem ghostAcc_drop (L : CuccaroStreamedSquareWideLayout) (n : Nat) (hn : 4≤n) :
+ (ghostAcc L).drop n = (reg L).drop n := by
+ have gl : (ghosts L).length=4 := rfl
+ have gd : (ghosts L).drop n=[] := List.drop_eq_nil_of_le (by omega)
+ rw [ghostAcc,List.drop_append,gd,List.nil_append,gl,List.drop_drop]
+ congr 1
+ omega
+
+theorem ghostAcc_take_drop (L : CuccaroStreamedSquareWideLayout) (w n : Nat) (hn : 4≤n) :
+ ((ghostAcc L).take w).drop n = ((reg L).take w).drop n := by
+ rw [List.drop_take,List.drop_take,ghostAcc_drop L n hn]
+
+
+namespace Structural
+open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+open LowAccCarryDevelop InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+
+theorem ty (L : CuccaroStreamedSquareWideLayout) (src : List Wire) (neg : Bool) (n : Nat) (hn : 4≤n) :
+ Acc.ty (ghostAcc L) (Acc.earlyTerm src neg n)=Acc.ty (accReg L) (Acc.earlyTerm src neg n) := by
+ change (ghostAcc L).drop n=(accReg L).drop n
+ exact ghostAcc_drop L n hn
+
+theorem ty_take (L : CuccaroStreamedSquareWideLayout) (src : List Wire) (neg : Bool) (w n : Nat) (hn : 4≤n) :
+ Acc.ty ((ghostAcc L).take w) (Acc.earlyTerm src neg n)=Acc.ty ((accReg L).take w) (Acc.earlyTerm src neg n) := by
+ change ((ghostAcc L).take w).drop n=((accReg L).take w).drop n
+ exact ghostAcc_take_drop L w n hn
+
+theorem buildTriple_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin q r p : Wire) :
+ buildTriple (ghostAcc L) Z bank cin src q r p=buildTriple (accReg L) Z bank cin src q r p := by
+ simp only [buildTriple,buildPre,buildPost,Acc.seedOp,Acc.op]
+ rw [ty L src false 4 (by decide +kernel),ty_take L src false 139 10 (by decide +kernel),
+  ty_take L src true 139 6 (by decide +kernel),ty_take L src false 161 32 (by decide +kernel)]
+
+theorem unbuildTriple_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin q r p : Wire) :
+ unbuildTriple (ghostAcc L) Z bank cin src q r p=unbuildTriple (accReg L) Z bank cin src q r p := by
+ simp only [unbuildTriple,unbuildPre,unbuildPost,CodexKnownOnesTail.accSub,SourceTailDevelop.tail,Acc.seedOp]
+ rw [ty_take L src false 161 32 (by decide +kernel),
+  ghostAcc_take_drop L 139 6 (by decide +kernel),ghostAcc_take_drop L 139 10 (by decide +kernel),
+  ty L src false 4 (by decide +kernel)]
+ simp only [LowAccCarryDevelop.reg,accReg]
+
+theorem plain_build_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin : Wire) :
+ NarrowAcc.build8 (ghostAcc L) Z bank cin src=NarrowAcc.build8 (accReg L) Z bank cin src := by
+ simp only [NarrowAcc.build8,NarrowAcc.pre8,CodexNarrowSub.accSub,Acc.seedOp,Acc.op]
+ rw [ty L src false 4 (by decide +kernel),ty_take L src false 139 10 (by decide +kernel),
+  ty_take L src true 139 6 (by decide +kernel),ty_take L src false 161 32 (by decide +kernel)]
+
+theorem plain_unbuild_eq (L : CuccaroStreamedSquareWideLayout) (Z bank src : List Wire) (cin : Wire) :
+ SourceAddFourDevelop.unbuild (ghostAcc L) Z bank cin src=SourceAddFourDevelop.unbuild (accReg L) Z bank cin src := by
+ simp only [SourceAddFourDevelop.unbuild,CodexKnownOnesTail.accSub,SourceAddFourDevelop.add,SourceTailDevelop.tail,Acc.seedOp]
+ rw [ty_take L src false 161 32 (by decide +kernel),
+  ghostAcc_take_drop L 139 6 (by decide +kernel),ghostAcc_take_drop L 139 10 (by decide +kernel),
+  ty L src false 4 (by decide +kernel)]
+ simp only [LowAccCarryDevelop.reg,accReg]
+end Structural
+
+theorem ghost_zero_bstate (L : CuccaroStreamedSquareWideLayout) (hn : L.wires.Nodup)
+ (base b : BasisState) (clean : L.PairClean base) (O E A : Nat)
+ (hs : ControlLoan1589BFFold.BState L base O E A b) : ∀q∈ghosts L,b q=false := by
+ intro q hq
+ simp only [ghosts,List.mem_cons,List.not_mem_nil,or_false] at hq
+ rcases hq with rfl|rfl|rfl|rfl
+ · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.productHigh
+ · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.outHigh
+ · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.workHigh
+ · exact (ControlLoan1589BFFold.bstate_other L hn base O E A b hs _ (by simp)).trans clean.normFlag
+
+
+open InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+open ManyACarryDevelop FullBTemp ZeroReadDevelop
+
+def L : CuccaroStreamedSquareWideLayout := FullBReady.L
+def c : Wire := FullBReady.c
+def ga : List Wire := ghostAcc L
+def loans88 : List Wire := FullBTemp.loans L ++ (accReg L).take 4
+def hosts88 : List Wire := FullBTemp.hostR L :: FullBTemp.hostP L :: loans88
+
+theorem ga_length : ga.length=163 := by decide +kernel
+theorem src_length : (hiReg L).length=128 := by decide +kernel
+theorem pad_length : (FullBTemp.pad L).length=31 := by decide +kernel
+theorem bank_length : (accBank L).length=160 := by decide +kernel
+theorem loans_length : loans88.length=86 := by decide +kernel
+theorem loans_nd : loans88.Nodup := by decide +kernel
+theorem fit_nodup : (L.core.cin::(hiReg L++ga++(FullBTemp.pad L)++accBank L)).Nodup :=
+ PeakNodup.nodup_of_mask _ (by decide +kernel)
+
+theorem fit : ∀f∈earlyHTerms (hiReg L),Acc.Fits ga (FullBTemp.pad L) (accBank L) L.core.cin 163 f := by
+ intro f hf
+ simp only [earlyHTerms,List.mem_cons,List.not_mem_nil,or_false] at hf
+ rcases hf with rfl|rfl|rfl|rfl
+ all_goals exact {len:=by decide +kernel,zpad:=by decide +kernel,bankLen:=by decide +kernel,nd:=fit_nodup}
+
+theorem fresh_q : L.core.sumCarry∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
+theorem fresh_r : FullBTemp.hostR L∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
+theorem fresh_p : FullBTemp.hostP L∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
+theorem fresh_hosts : ∀u∈loans88,u∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) :=
+ PeakNodup.fresh_of_mask _ _ (by decide +kernel)
+theorem host_ne : ∀u∈loans88,u≠L.core.sumCarry ∧ u≠FullBTemp.hostR L ∧ u≠FullBTemp.hostP L := by decide +kernel
+
+
+theorem ghost_build : buildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+ L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) =
+ buildTriple (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+ L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) :=
+ Structural.buildTriple_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
+
+theorem ghost_unbuild : unbuildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+ L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) =
+ unbuildTriple (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+ L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) :=
+ Structural.unbuildTriple_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
+
+theorem ghost_plain_build : NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) =
+ NarrowAcc.build8 (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) :=
+ Structural.plain_build_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin
+
+
+theorem ghost_plain_unbuild : SourceAddFourDevelop.unbuild ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) =
+ SourceAddFourDevelop.unbuild (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) :=
+ Structural.plain_unbuild_eq L (FullBTemp.pad L) (accBank L) (hiReg L) L.core.cin
+
+
+theorem fresh_all_hosts : ∀u∈hosts88,u∉L.core.cin::(hiReg L++ga++FullBTemp.pad L++accBank L) := by decide +kernel
+
+theorem specials_nd : (L.core.sumCarry::FullBTemp.hostR L::FullBTemp.hostP L::loans88).Nodup := by decide +kernel
+
+-- Peak memory: compileS? hosts88 p0 is evaluated one 256-instruction piece per declaration.
+theorem peak_lac_len : List.length BData301.p0 = 9751 := by decide +kernel
+theorem peak_lac_long0 : ¬ (List.length BData301.p0) ≤ 1024 := by decide +kernel
+theorem peak_lac_long1 : ¬ (List.length (List.drop 1024 BData301.p0)) ≤ 1024 := by decide +kernel
+theorem peak_lac_long2 : ¬ (List.length (List.drop 1024 (List.drop 1024 BData301.p0))) ≤ 1024 := by decide +kernel
+theorem peak_lac_long3 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) ≤ 1024 := by decide +kernel
+theorem peak_lac_long4 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ≤ 1024 := by decide +kernel
+theorem peak_lac_long5 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ≤ 1024 := by decide +kernel
+theorem peak_lac_long6 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ≤ 1024 := by decide +kernel
+theorem peak_lac_long7 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ≤ 1024 := by decide +kernel
+theorem peak_lac_long8 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ≤ 1024 := by decide +kernel
+theorem peak_lac_short9 : (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ≤ 1024 := by decide +kernel
+theorem peak_lac_seg0_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 BData301.p0)))+1) (List.take 256 (List.take 1024 BData301.p0))).map (fun cm => cm.out) =
+  some (LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg0_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 BData301.p0))))+1) (List.take 256 (List.drop 256 (List.take 1024 BData301.p0)))).map (fun cm => cm.out) =
+  some (LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg0_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0)))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0))))).map (fun cm => cm.out) =
+  some (LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg0_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0)))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0))))).map (fun cm => cm.out) =
+  some (LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 BData301.p0)).map (fun cm => cm.out) =
+  some ((LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) ++ ((LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) ++ ((LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) ++ ((LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_2 peak_lac_seg0_3)))
+  rw [show (List.take 256 (List.take 1024 BData301.p0)) ++ ((List.take 256 (List.drop 256 (List.take 1024 BData301.p0))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0)))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0))))))) = (List.take 1024 BData301.p0) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 BData301.p0; omega)
+theorem peak_lac_seg1_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 BData301.p0))))+1) (List.take 256 (List.take 1024 (List.drop 1024 BData301.p0)))).map (fun cm => cm.out) =
+  some (LowAccMiddleLiteral.chunk8 ++ (LowAccMiddleLiteral.chunk9)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg1_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))).map (fun cm => cm.out) =
+  some (LowAccMiddleLiteral.chunk10 ++ (LowAccMiddleLiteral.chunk11)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg1_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
+  some ((List.take 94 LowAccMiddleLiteral.chunk12)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg1_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
+  some ((List.drop 94 LowAccMiddleLiteral.chunk12) ++ ((List.take 9 LowAccMiddleLiteral.chunk13))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 BData301.p0))).map (fun cm => cm.out) =
+  some ((LowAccMiddleLiteral.chunk8 ++ (LowAccMiddleLiteral.chunk9)) ++ ((LowAccMiddleLiteral.chunk10 ++ (LowAccMiddleLiteral.chunk11)) ++ (((List.take 94 LowAccMiddleLiteral.chunk12)) ++ (((List.drop 94 LowAccMiddleLiteral.chunk12) ++ ((List.take 9 LowAccMiddleLiteral.chunk13))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg1_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg1_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg1_2 peak_lac_seg1_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 BData301.p0))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))))) = (List.take 1024 (List.drop 1024 BData301.p0)) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 BData301.p0); omega)
+theorem peak_lac_seg2_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))).map (fun cm => cm.out) =
+  some ((List.drop 9 LowAccMiddleLiteral.chunk13) ++ ((List.take 72 LowAccMiddleLiteral.chunk14))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg2_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
+  some ((List.drop 72 LowAccMiddleLiteral.chunk14) ++ (LowAccMiddleLiteral.chunk15 ++ ((List.take 72 LowAccMiddleLiteral.chunk16)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg2_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
+  some ((List.drop 72 LowAccMiddleLiteral.chunk16) ++ (LowAccMiddleLiteral.chunk17 ++ ((List.take 72 LowAccMiddleLiteral.chunk18)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg2_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
+  some ((List.drop 72 LowAccMiddleLiteral.chunk18) ++ (LowAccMiddleLiteral.chunk19 ++ ((List.take 72 LowAccMiddleLiteral.chunk20)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))).map (fun cm => cm.out) =
+  some (((List.drop 9 LowAccMiddleLiteral.chunk13) ++ ((List.take 72 LowAccMiddleLiteral.chunk14))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk14) ++ (LowAccMiddleLiteral.chunk15 ++ ((List.take 72 LowAccMiddleLiteral.chunk16)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk16) ++ (LowAccMiddleLiteral.chunk17 ++ ((List.take 72 LowAccMiddleLiteral.chunk18)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk18) ++ (LowAccMiddleLiteral.chunk19 ++ ((List.take 72 LowAccMiddleLiteral.chunk20)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg2_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg2_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg2_2 peak_lac_seg2_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 BData301.p0)); omega)
+theorem peak_lac_seg3_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
+  some ((List.drop 72 LowAccMiddleLiteral.chunk20) ++ (LowAccMiddleLiteral.chunk21 ++ ((List.take 44 LowAccMiddleLiteral.chunk22)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg3_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
+  some ((List.drop 44 LowAccMiddleLiteral.chunk22) ++ ((List.take 112 LowAccMiddleLiteral.chunk23))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg3_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk23) ++ (LowAccMiddleLiteral.chunk24 ++ ((List.take 112 LowAccMiddleLiteral.chunk25)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg3_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk25) ++ (LowAccMiddleLiteral.chunk26 ++ ((List.take 112 LowAccMiddleLiteral.chunk27)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))).map (fun cm => cm.out) =
+  some (((List.drop 72 LowAccMiddleLiteral.chunk20) ++ (LowAccMiddleLiteral.chunk21 ++ ((List.take 44 LowAccMiddleLiteral.chunk22)))) ++ (((List.drop 44 LowAccMiddleLiteral.chunk22) ++ ((List.take 112 LowAccMiddleLiteral.chunk23))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk23) ++ (LowAccMiddleLiteral.chunk24 ++ ((List.take 112 LowAccMiddleLiteral.chunk25)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk25) ++ (LowAccMiddleLiteral.chunk26 ++ ((List.take 112 LowAccMiddleLiteral.chunk27)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg3_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg3_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg3_2 peak_lac_seg3_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))); omega)
+theorem peak_lac_seg4_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk27) ++ (LowAccMiddleLiteral.chunk28 ++ ((List.take 112 LowAccMiddleLiteral.chunk29)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg4_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk29) ++ (LowAccMiddleLiteral.chunk30 ++ ((List.take 112 LowAccMiddleLiteral.chunk31)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg4_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk31) ++ (LowAccMiddleLiteral.chunk32 ++ ((List.take 112 LowAccMiddleLiteral.chunk33)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg4_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk33) ++ (LowAccMiddleLiteral.chunk34 ++ ((List.take 112 LowAccMiddleLiteral.chunk35)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg4 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
+  some (((List.drop 112 LowAccMiddleLiteral.chunk27) ++ (LowAccMiddleLiteral.chunk28 ++ ((List.take 112 LowAccMiddleLiteral.chunk29)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk29) ++ (LowAccMiddleLiteral.chunk30 ++ ((List.take 112 LowAccMiddleLiteral.chunk31)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk31) ++ (LowAccMiddleLiteral.chunk32 ++ ((List.take 112 LowAccMiddleLiteral.chunk33)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk33) ++ (LowAccMiddleLiteral.chunk34 ++ ((List.take 112 LowAccMiddleLiteral.chunk35)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg4_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg4_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg4_2 peak_lac_seg4_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))); omega)
+theorem peak_lac_seg5_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk35) ++ (LowAccMiddleLiteral.chunk36 ++ ((List.take 112 LowAccMiddleLiteral.chunk37)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg5_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk37) ++ (LowAccMiddleLiteral.chunk38 ++ ((List.take 112 LowAccMiddleLiteral.chunk39)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg5_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk39) ++ (LowAccMiddleLiteral.chunk40 ++ ((List.take 112 LowAccMiddleLiteral.chunk41)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg5_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk41) ++ (LowAccMiddleLiteral.chunk42 ++ ((List.take 112 LowAccMiddleLiteral.chunk43)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg5 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
+  some (((List.drop 112 LowAccMiddleLiteral.chunk35) ++ (LowAccMiddleLiteral.chunk36 ++ ((List.take 112 LowAccMiddleLiteral.chunk37)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk37) ++ (LowAccMiddleLiteral.chunk38 ++ ((List.take 112 LowAccMiddleLiteral.chunk39)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk39) ++ (LowAccMiddleLiteral.chunk40 ++ ((List.take 112 LowAccMiddleLiteral.chunk41)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk41) ++ (LowAccMiddleLiteral.chunk42 ++ ((List.take 112 LowAccMiddleLiteral.chunk43)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg5_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg5_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg5_2 peak_lac_seg5_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))); omega)
+theorem peak_lac_seg6_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
+  some ((List.drop 112 LowAccMiddleLiteral.chunk43) ++ (LowAccMiddleLiteral.chunk44 ++ ((List.take 17 LowAccMiddleLiteral.chunk45)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg6_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
+  some ((List.take 101 (List.drop 17 LowAccMiddleLiteral.chunk45))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg6_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 101 (List.drop 17 LowAccMiddleLiteral.chunk45)) ++ ((List.take 86 LowAccMiddleLiteral.chunk46))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg6_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 86 LowAccMiddleLiteral.chunk46) ++ (LowAccMiddleLiteral.chunk47 ++ ((List.take 56 LowAccMiddleLiteral.chunk48)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg6 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
+  some (((List.drop 112 LowAccMiddleLiteral.chunk43) ++ (LowAccMiddleLiteral.chunk44 ++ ((List.take 17 LowAccMiddleLiteral.chunk45)))) ++ (((List.take 101 (List.drop 17 LowAccMiddleLiteral.chunk45))) ++ (((List.drop 101 (List.drop 17 LowAccMiddleLiteral.chunk45)) ++ ((List.take 86 LowAccMiddleLiteral.chunk46))) ++ (((List.drop 86 LowAccMiddleLiteral.chunk46) ++ (LowAccMiddleLiteral.chunk47 ++ ((List.take 56 LowAccMiddleLiteral.chunk48)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg6_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg6_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg6_2 peak_lac_seg6_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))); omega)
+theorem peak_lac_seg7_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk48) ++ (LowAccMiddleLiteral.chunk49 ++ ((List.take 56 LowAccMiddleLiteral.chunk50)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg7_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk50) ++ (LowAccMiddleLiteral.chunk51 ++ ((List.take 56 LowAccMiddleLiteral.chunk52)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg7_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk52) ++ (LowAccMiddleLiteral.chunk53 ++ ((List.take 56 LowAccMiddleLiteral.chunk54)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg7_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk54) ++ (LowAccMiddleLiteral.chunk55 ++ ((List.take 56 LowAccMiddleLiteral.chunk56)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg7 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
+  some (((List.drop 56 LowAccMiddleLiteral.chunk48) ++ (LowAccMiddleLiteral.chunk49 ++ ((List.take 56 LowAccMiddleLiteral.chunk50)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk50) ++ (LowAccMiddleLiteral.chunk51 ++ ((List.take 56 LowAccMiddleLiteral.chunk52)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk52) ++ (LowAccMiddleLiteral.chunk53 ++ ((List.take 56 LowAccMiddleLiteral.chunk54)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk54) ++ (LowAccMiddleLiteral.chunk55 ++ ((List.take 56 LowAccMiddleLiteral.chunk56)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg7_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg7_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg7_2 peak_lac_seg7_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))); omega)
+theorem peak_lac_seg8_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk56) ++ (LowAccMiddleLiteral.chunk57 ++ ((List.take 56 LowAccMiddleLiteral.chunk58)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg8_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk58) ++ (LowAccMiddleLiteral.chunk59 ++ ((List.take 56 LowAccMiddleLiteral.chunk60)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg8_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk60) ++ (LowAccMiddleLiteral.chunk61 ++ ((List.take 56 LowAccMiddleLiteral.chunk62)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg8_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk62) ++ (LowAccMiddleLiteral.chunk63 ++ ((List.take 56 LowAccMiddleLiteral.chunk64)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg8 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
+  some (((List.drop 56 LowAccMiddleLiteral.chunk56) ++ (LowAccMiddleLiteral.chunk57 ++ ((List.take 56 LowAccMiddleLiteral.chunk58)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk58) ++ (LowAccMiddleLiteral.chunk59 ++ ((List.take 56 LowAccMiddleLiteral.chunk60)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk60) ++ (LowAccMiddleLiteral.chunk61 ++ ((List.take 56 LowAccMiddleLiteral.chunk62)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk62) ++ (LowAccMiddleLiteral.chunk63 ++ ((List.take 56 LowAccMiddleLiteral.chunk64)))))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg8_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg8_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg8_2 peak_lac_seg8_3)))
+  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) from by simp only [List.take_append_drop]] at h
+  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))); omega)
+theorem peak_lac_seg9_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk64) ++ (LowAccMiddleLiteral.chunk65 ++ ((List.take 56 LowAccMiddleLiteral.chunk66)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg9_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.take 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk66) ++ (LowAccMiddleLiteral.chunk67 ++ ((List.take 56 LowAccMiddleLiteral.chunk68)))) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg9_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
+  some ((List.drop 56 LowAccMiddleLiteral.chunk68)) := by
+  apply PeakChunkS.out_sound
+  decide +kernel
+theorem peak_lac_seg9 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
+  some (((List.drop 56 LowAccMiddleLiteral.chunk64) ++ (LowAccMiddleLiteral.chunk65 ++ ((List.take 56 LowAccMiddleLiteral.chunk66)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk66) ++ (LowAccMiddleLiteral.chunk67 ++ ((List.take 56 LowAccMiddleLiteral.chunk68)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk68))))) := by
+  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg9_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg9_1 peak_lac_seg9_2))
+  rw [show (List.take 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))) = (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) from by simp only [List.take_append_drop]] at h
+  exact h
+theorem peak_lac_map : (ZeroSetDevelop.compileS? hosts88 BData301.p0).map (fun cm => cm.out) =
+  some LowAccMiddleLiteral.output := by
+ have e : (ZeroSetDevelop.compileS? hosts88 BData301.p0).map (fun cm => cm.out) =
+   some (((LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) ++ ((LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) ++ ((LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) ++ ((LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)))))) ++ (((LowAccMiddleLiteral.chunk8 ++ (LowAccMiddleLiteral.chunk9)) ++ ((LowAccMiddleLiteral.chunk10 ++ (LowAccMiddleLiteral.chunk11)) ++ (((List.take 94 LowAccMiddleLiteral.chunk12)) ++ (((List.drop 94 LowAccMiddleLiteral.chunk12) ++ ((List.take 9 LowAccMiddleLiteral.chunk13))))))) ++ ((((List.drop 9 LowAccMiddleLiteral.chunk13) ++ ((List.take 72 LowAccMiddleLiteral.chunk14))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk14) ++ (LowAccMiddleLiteral.chunk15 ++ ((List.take 72 LowAccMiddleLiteral.chunk16)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk16) ++ (LowAccMiddleLiteral.chunk17 ++ ((List.take 72 LowAccMiddleLiteral.chunk18)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk18) ++ (LowAccMiddleLiteral.chunk19 ++ ((List.take 72 LowAccMiddleLiteral.chunk20)))))))) ++ ((((List.drop 72 LowAccMiddleLiteral.chunk20) ++ (LowAccMiddleLiteral.chunk21 ++ ((List.take 44 LowAccMiddleLiteral.chunk22)))) ++ (((List.drop 44 LowAccMiddleLiteral.chunk22) ++ ((List.take 112 LowAccMiddleLiteral.chunk23))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk23) ++ (LowAccMiddleLiteral.chunk24 ++ ((List.take 112 LowAccMiddleLiteral.chunk25)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk25) ++ (LowAccMiddleLiteral.chunk26 ++ ((List.take 112 LowAccMiddleLiteral.chunk27)))))))) ++ ((((List.drop 112 LowAccMiddleLiteral.chunk27) ++ (LowAccMiddleLiteral.chunk28 ++ ((List.take 112 LowAccMiddleLiteral.chunk29)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk29) ++ (LowAccMiddleLiteral.chunk30 ++ ((List.take 112 LowAccMiddleLiteral.chunk31)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk31) ++ (LowAccMiddleLiteral.chunk32 ++ ((List.take 112 LowAccMiddleLiteral.chunk33)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk33) ++ (LowAccMiddleLiteral.chunk34 ++ ((List.take 112 LowAccMiddleLiteral.chunk35)))))))) ++ ((((List.drop 112 LowAccMiddleLiteral.chunk35) ++ (LowAccMiddleLiteral.chunk36 ++ ((List.take 112 LowAccMiddleLiteral.chunk37)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk37) ++ (LowAccMiddleLiteral.chunk38 ++ ((List.take 112 LowAccMiddleLiteral.chunk39)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk39) ++ (LowAccMiddleLiteral.chunk40 ++ ((List.take 112 LowAccMiddleLiteral.chunk41)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk41) ++ (LowAccMiddleLiteral.chunk42 ++ ((List.take 112 LowAccMiddleLiteral.chunk43)))))))) ++ ((((List.drop 112 LowAccMiddleLiteral.chunk43) ++ (LowAccMiddleLiteral.chunk44 ++ ((List.take 17 LowAccMiddleLiteral.chunk45)))) ++ (((List.take 101 (List.drop 17 LowAccMiddleLiteral.chunk45))) ++ (((List.drop 101 (List.drop 17 LowAccMiddleLiteral.chunk45)) ++ ((List.take 86 LowAccMiddleLiteral.chunk46))) ++ (((List.drop 86 LowAccMiddleLiteral.chunk46) ++ (LowAccMiddleLiteral.chunk47 ++ ((List.take 56 LowAccMiddleLiteral.chunk48)))))))) ++ ((((List.drop 56 LowAccMiddleLiteral.chunk48) ++ (LowAccMiddleLiteral.chunk49 ++ ((List.take 56 LowAccMiddleLiteral.chunk50)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk50) ++ (LowAccMiddleLiteral.chunk51 ++ ((List.take 56 LowAccMiddleLiteral.chunk52)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk52) ++ (LowAccMiddleLiteral.chunk53 ++ ((List.take 56 LowAccMiddleLiteral.chunk54)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk54) ++ (LowAccMiddleLiteral.chunk55 ++ ((List.take 56 LowAccMiddleLiteral.chunk56)))))))) ++ ((((List.drop 56 LowAccMiddleLiteral.chunk56) ++ (LowAccMiddleLiteral.chunk57 ++ ((List.take 56 LowAccMiddleLiteral.chunk58)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk58) ++ (LowAccMiddleLiteral.chunk59 ++ ((List.take 56 LowAccMiddleLiteral.chunk60)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk60) ++ (LowAccMiddleLiteral.chunk61 ++ ((List.take 56 LowAccMiddleLiteral.chunk62)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk62) ++ (LowAccMiddleLiteral.chunk63 ++ ((List.take 56 LowAccMiddleLiteral.chunk64)))))))) ++ ((((List.drop 56 LowAccMiddleLiteral.chunk64) ++ (LowAccMiddleLiteral.chunk65 ++ ((List.take 56 LowAccMiddleLiteral.chunk66)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk66) ++ (LowAccMiddleLiteral.chunk67 ++ ((List.take 56 LowAccMiddleLiteral.chunk68)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk68))))))))))))))) := by
+  delta ZeroSetDevelop.compileS?
+  rw [peak_lac_len]
+  exact (PeakChunkS.step _ 9751 _ _ _ peak_lac_long0 peak_lac_seg0
+   (PeakChunkS.step _ 9750 _ _ _ peak_lac_long1 peak_lac_seg1
+   (PeakChunkS.step _ 9749 _ _ _ peak_lac_long2 peak_lac_seg2
+   (PeakChunkS.step _ 9748 _ _ _ peak_lac_long3 peak_lac_seg3
+   (PeakChunkS.step _ 9747 _ _ _ peak_lac_long4 peak_lac_seg4
+   (PeakChunkS.step _ 9746 _ _ _ peak_lac_long5 peak_lac_seg5
+   (PeakChunkS.step _ 9745 _ _ _ peak_lac_long6 peak_lac_seg6
+   (PeakChunkS.step _ 9744 _ _ _ peak_lac_long7 peak_lac_seg7
+   (PeakChunkS.step _ 9743 _ _ _ peak_lac_long8 peak_lac_seg8
+   (PeakChunkS.last _ 9742 _ _ peak_lac_short9 peak_lac_seg9))))))))))
+ rw [e, Option.some.injEq]
+ delta LowAccMiddleLiteral.output
+ simp only [List.append_assoc, PeakChunkS.take_drop_app, List.take_append_drop]
+
+theorem success_literal : (ZeroSetDevelop.compileS? hosts88 BData301.p0).isSome=true :=
+ PeakChunkS.isSome_of_map peak_lac_map
+
+attribute [local irreducible] ZeroSetDevelop.compileS?
+
+
+
+
+
+def loopWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
+ buildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ++ cm.out ++
+ unbuildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
+
+def foldWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
+ eAddLo L ++ (loopWith cm ++ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++ eSubK L))
+
+def bodyWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
+ measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
+  (foldWith cm ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
+
+
+
+def beforeLoop : Program :=
+ measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++ (eAddLo L ++
+  buildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+   L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)))
+
+def afterLoop : Program :=
+ unbuildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ++
+ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++
+  (eSubK L ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
+
+theorem body_shape (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
+ bodyWith cm=beforeLoop++cm.out++afterLoop := by
+ simp only [bodyWith,foldWith,loopWith,beforeLoop,afterLoop,List.append_assoc]
+
+theorem layout_widths : L.Widths :=
+ Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths
+
+theorem layout_nodup : L.wires.Nodup := by
+ have full := Baselines.layout.streamedSquare_control_nodup Baselines.layout_widths Baselines.layout_nodup
+ exact (List.nodup_cons.mp (List.nodup_cons.mp full).2).2
+
+
+
+end ECDSAAdd.Entrant.LowAccCarryDevelop
+
+end
+
+section
+-- Proof source component: LowAccLoop
+namespace ECDSAAdd.Entrant.LowAccCarryDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots
+attribute [local irreducible] ECDSAAdd.regValue ECDSAAdd.Arithmetic.GatePhysical
+attribute [local irreducible] hasWire
+
+theorem layout_control_nodup : (c::L.wires).Nodup := by
+ have full:=Baselines.layout.streamedSquare_control_nodup Baselines.layout_widths Baselines.layout_nodup
+ exact List.nodup_cons.mpr ⟨(fun h=>(List.nodup_cons.mp full).1 (List.mem_cons_of_mem _ h)),layout_nodup⟩
+theorem control_outside : c∉L.wires := (List.nodup_cons.mp layout_control_nodup).1
+theorem endpoints_support :
+ wires (buildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L))⊆wires (ParkCarry10Develop.body L c) ∧
+ wires (unbuildMany 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L))⊆wires (ParkCarry10Develop.body L c) := by
+ have hw:=layout_widths
+ have ready : FullBTemp.Ready L c := FullBReady.actual_ready
+ have lens:=acc_lengths L hw
+ have bf:=ManyACarryDevelop.buildMany_support 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) (by decide)
+ have bi:=ManyACarryDevelop.unbuildMany_support 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [bank_length];omega) (by decide)
+ rw [ghost_build] at bf
+ rw [ghost_unbuild] at bi
+ have tri:=WholePadTriple.support (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) lens.1 src_length (FullFitReady.sound L ready.2.2.2.2.1)
+ have dom (x:Wire) (hx:x∈(FullBTemp.hostP L::FullBTemp.hostR L::L.core.sumCarry::L.core.cin::(hiReg L++accReg L++FullBTemp.pad L++accBank L)).toFinset):
+  x∈wires (ParkCarry10Develop.body L c) := by
+  apply (hasWire_iff _ _).mp
+  exact ready.2.2.2.2.2 x (List.mem_toFinset.mp hx)
+ have used (x:Wire) (hx:x∈loans88.toFinset):x∈wires (ParkCarry10Develop.body L c) := by
+  have hh:=List.mem_toFinset.mp hx
+  simp only [loans88,List.mem_append] at hh
+  rcases hh with hh|hh
+  · have member : x∈FullBTemp.hosts L :=
+     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hh)
+    exact (hasWire_iff _ _).mp (ready.2.2.1 x member).2.2.2.2
+  · exact dom x (by simp [List.mem_of_mem_take hh])
+ constructor
+ · intro x hx
+   rcases Finset.mem_union.mp (bf hx) with hx|hx
+   · exact dom x (tri.1 hx)
+   · exact used x hx
+ · intro x hx
+   rcases Finset.mem_union.mp (bi hx) with hx|hx
+   · exact dom x (tri.2 hx)
+   · exact used x hx
+
+theorem middle_support : wires (FullBTemp.middle L c)⊆wires (ParkCarry10Develop.body L c) := by
+ intro x hx
+ simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,FullBTemp.middle,BThreeTemp.middle,wires_append,Finset.mem_union] at hx ⊢
+ aesop
+
+theorem prefix_support : wires beforeLoop⊆wires (ParkCarry10Develop.body L c) := by
+ have oldShape:=FullBTemp.oldBody_shape L c
+ intro x hx
+ simp only [beforeLoop,wires_append,Finset.mem_union] at hx
+ rcases hx with hx|hx|(hx|hx)
+ · rw [oldShape];simp only [FullBTemp.prefixP,wires_append,Finset.mem_union];aesop
+ · rw [oldShape];simp only [FullBTemp.prefixP,wires_append,Finset.mem_union];aesop
+ · rw [oldShape];simp only [FullBTemp.prefixP,wires_append,Finset.mem_union];aesop
+ · exact endpoints_support.1 hx
+
+theorem suffix_support : wires afterLoop⊆wires (ParkCarry10Develop.body L c) := by
+ intro x hx
+ change x∈wires (_ ++ FullBTemp.suffixP L c) at hx
+ rw [wires_append,Finset.mem_union] at hx
+ rcases hx with hx|hx
+ · exact endpoints_support.2 hx
+ · rw [FullBTemp.oldBody_shape];simp only [wires_append,Finset.mem_union];exact Or.inr (Or.inr hx)
+
+theorem body_support (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
+ wires (bodyWith cm)⊆wires (ParkCarry10Develop.body L c) := by
+ rw [body_shape]
+ simp only [wires_append,Finset.union_subset_iff]
+ exact ⟨⟨prefix_support,(cm.proof.support hosts88 (FullBTemp.middle L c) cm.out).1.trans middle_support⟩,suffix_support⟩
+
+
+theorem loop_physical (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
+ (mid : GatePhysical (FullBTemp.middle L c)) : GatePhysical (loopWith cm) := by
+ have offQ:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length fit fresh_q
+ have offR:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostR L) ga_length src_length fit fresh_r
+ have offP:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostP L) ga_length src_length fit fresh_p
+ have dualOff:=SeedPadDevelop.dual_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
+  (by rw [pad_length];omega) (by rw [bank_length];omega) offP.1 offP.2 (by decide +kernel) (by decide +kernel)
+ have plainF:=(NarrowAcc.build8_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) ga_length (by rw [src_length]) fit).1
+ have plainI:=SourceAddFourDevelop.unbuild_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) ga_length src_length fit
+ have cachedF:=buildCached_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length
+  (by rw [pad_length];omega) (by rw [bank_length];omega) offQ.1 plainF
+ have cachedI:=unbuildConsumed_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length
+  (by rw [bank_length];omega) offQ.2 plainI
+ have supportF:=buildCached_support ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+  ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega)
+ have supportI:=unbuildConsumed_support ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+  ga_length src_length (by rw [bank_length];omega)
+ have rne : FullBTemp.hostR L≠L.core.sumCarry := by decide +kernel
+ have cachedOffR :
+  FullBTemp.hostR L∉wires (buildCached ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) ∧
+  FullBTemp.hostR L∉wires (unbuildConsumed ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) :=
+  ⟨fun h=>(Finset.mem_insert.mp (supportF h)).elim rne offR.1,
+   fun h=>(Finset.mem_insert.mp (supportI h)).elim rne offR.2⟩
+ have dualF:=buildDual_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L)
+  ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) cachedOffR.1 cachedF
+ have dualI:=unbuildDual_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L)
+  ga_length src_length (by rw [bank_length];omega) cachedOffR.2 cachedI
+ have triF:=buildTriple_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
+  ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) dualOff.1 dualF
+ have triI:=unbuildTriple_physical ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)
+  ga_length src_length (by rw [bank_length];omega) dualOff.2 dualI
+ have bankOff : ∀u∈loans88,u∉accBank L := by
+  intro u hu h
+  exact fresh_hosts u hu (by simp [h])
+ have manyF:=ManyACarryDevelop.buildMany_physical 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
+  (by rw [pad_length];omega) (by rw [bank_length];omega) (by decide) bankOff triF
+ have manyI:=ManyACarryDevelop.unbuildMany_physical 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
+  (by rw [bank_length];omega) (by decide) bankOff triI
+ simp only [loopWith,gatePhysical_append]
+ exact ⟨⟨manyF,cm.proof.physical hosts88 (FullBTemp.middle L c) cm.out mid⟩,manyI⟩
+
+theorem body_physical (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : GatePhysical (bodyWith cm) := by
+ have old:=ParkCarry10Develop.body_physical L layout_widths c layout_control_nodup
+ have oldMid:=old
+ simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,gatePhysical_append] at oldMid
+ have mid : GatePhysical (FullBTemp.middle L c) := oldMid.2.2.1.2.2.1
+ rw [FullBTemp.oldBody_shape] at old
+ simp only [gatePhysical_append] at old
+ have shape : bodyWith cm=FullBTemp.prefixP L++(loopWith cm++FullBTemp.suffixP L c) := by
+  simp only [bodyWith,foldWith,FullBTemp.prefixP,FullBTemp.suffixP,List.append_assoc]
+ rw [shape]
+ simp only [gatePhysical_append]
+ exact ⟨old.1,loop_physical cm mid,old.2.2⟩
+
+
+open FourthASavedCarryDevelop
+
+theorem loop_resources (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
+ toffoliCount (loopWith cm)+88≤toffoliCount (FullBTemp.oldLoop L c) ∧
+ measurementCount (loopWith cm)=measurementCount (FullBTemp.oldLoop L c) ∧
+ Challenge.gateSlots (loopWith cm)+264≤Challenge.gateSlots (FullBTemp.oldLoop L c) := by
+ have hw:=layout_widths
+ have ready : FullBTemp.Ready L c := FullBReady.actual_ready
+ have lens:=acc_lengths L hw
+ have plen:=FullBTemp.pad_length L hw
+ have f1:=buildDual_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) lens.1 (hiReg_length L hw) (by omega) (by omega)
+ have f2:=buildTriple_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) lens.1 (hiReg_length L hw) (by omega) (by omega)
+ have f3:=ManyACarryDevelop.buildMany_counts 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88 L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [pad_length];omega) (by rw [bank_length];omega) (by decide) loans_length
+ have i1:=unbuildDual_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) lens.1 (hiReg_length L hw) (by omega)
+ have i2:=unbuildTriple_counts (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) lens.1 (hiReg_length L hw) (by omega)
+ have i3:=ManyACarryDevelop.unbuildMany_counts 86 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) loans88 L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length (by rw [bank_length];omega) (by decide) loans_length
+ rw [ghost_build] at f3
+ rw [ghost_unbuild] at i3
+ have f4 := ready.2.2.2.1.1
+ have i4 := ready.2.2.2.1.2
+ change SeedPadDevelop.Counts (buildCached (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
+  (buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) at f4
+ change SeedPadDevelop.Counts (unbuildConsumed (accReg L) (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
+  (unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) at i4
+ simp only [f4.1,f4.2.1,f4.2.2,i4.1,i4.2.1,i4.2.2] at f1 i1
+ have mt:=cm.proof.toffoli hosts88 (FullBTemp.middle L c) cm.out
+ have mm:=cm.proof.measurements hosts88 (FullBTemp.middle L c) cm.out
+ have ms:=cm.proof.slots hosts88 (FullBTemp.middle L c) cm.out
+ simp only [FullBTemp.middle] at mt mm ms
+ simp only [loopWith,FullBTemp.oldLoop,BThreeTemp.oldLoop,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+
+theorem body_resource_context (oldBody newBody pre oldMiddle newMiddle post : Program)
+ (oldShape : oldBody=pre++(oldMiddle++post))
+ (newShape : newBody=pre++(newMiddle++post))
+ (h : toffoliCount newMiddle+88≤toffoliCount oldMiddle ∧
+  measurementCount newMiddle=measurementCount oldMiddle ∧
+  Challenge.gateSlots newMiddle+264≤Challenge.gateSlots oldMiddle) :
+ toffoliCount newBody+88≤toffoliCount oldBody ∧
+ measurementCount newBody=measurementCount oldBody ∧
+ Challenge.gateSlots newBody+264≤Challenge.gateSlots oldBody := by
+ rw [oldShape,newShape]
+ simp only [toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+theorem body_resources (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) :
+ toffoliCount (bodyWith cm)+88≤toffoliCount (ParkCarry10Develop.body L c) ∧
+ measurementCount (bodyWith cm)=measurementCount (ParkCarry10Develop.body L c) ∧
+ Challenge.gateSlots (bodyWith cm)+264≤Challenge.gateSlots (ParkCarry10Develop.body L c) := by
+ have newShape : bodyWith cm=FullBTemp.prefixP L++(loopWith cm++FullBTemp.suffixP L c) := by
+  simp only [bodyWith,foldWith,FullBTemp.prefixP,FullBTemp.suffixP,List.append_assoc]
+ exact body_resource_context (ParkCarry10Develop.body L c) (bodyWith cm) (FullBTemp.prefixP L)
+  (FullBTemp.oldLoop L c) (loopWith cm) (FullBTemp.suffixP L c)
+  (FullBTemp.oldBody_shape L c) newShape (loop_resources cm)
+
+
+
+
+
+theorem ga_bstate_value (base b : BasisState) (clean : L.PairClean base)
+ (O E A : Nat) (hs : BState L base O E A b) (hd : A%16=0) : regValue ga b=A := by
+ have hv : regValue (reg L) b=16*(A/16) := by
+  change regValue (accReg L) b=16*(A/16)
+  have hh:=hs.2.2.1
+  omega
+ have bridge:=ghostAcc_value L layout_widths b (A/16) hv
+  (ghost_zero_bstate L layout_nodup base b clean O E A hs)
+ exact bridge.trans hs.2.2.1
+
+theorem initial_hosts_zero (base b : BasisState) (clean : L.PairClean base)
+ (O E : Nat) (hs : BState L base O E 0 b) : ∀q∈hosts88,b q=false := by
+ have geometry : ∀q∈hosts88,q∈L.core.work ∧ q∉L.core.out ∧ q∉eReg L := by decide +kernel
+ intro q hq
+ have geo:=geometry q hq
+ by_cases ha:q∈accReg L
+ · exact (regValue_zero _ _).mp hs.2.2.1 q ha
+ · exact (hs.2.2.2 q geo.2.1 geo.2.2 ha).trans ((regValue_zero _ _).mp clean.work q geo.1)
+
+
+theorem loop_eq_plain
+ (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
+ (s : State) (records : List Bool)
+ (hz : ∀w∈FullBTemp.pad L,s.basis w=false)
+ (hb : ∀w∈accBank L,s.basis w=false) (hi : s.basis L.core.cin=false)
+ (ha : regValue ga s.basis=0) (zeroQ : s.basis L.core.sumCarry=false)
+ (zeros : ∀q∈hosts88,s.basis q=false)
+ (good : WReady ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  (regValue (hiReg L) s.basis)
+  (middleState (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))
+   (FullBTemp.middle L c) s records)) :
+ run (loopWith cm) records s=
+ run (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) ++
+  FullBTemp.middle L c ++ SourceAddFourDevelop.unbuild ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) records s := by
+ have zeroR : s.basis (FullBTemp.hostR L)=false := zeros _ (by simp [hosts88])
+ have zeroP : s.basis (FullBTemp.hostP L)=false := zeros _ (by simp [hosts88])
+ have zeroU : ∀u∈loans88,s.basis u=false := fun u hu=>zeros u (by simp [hosts88,hu])
+ have offQ:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ga_length src_length fit fresh_q
+ have offR:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostR L) ga_length src_length fit fresh_r
+ have offP:=wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) (FullBTemp.hostP L) ga_length src_length fit fresh_p
+ have pBoth:=SeedPadDevelop.dual_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) ga_length src_length
+  (by rw [pad_length];omega) (by rw [bank_length];omega) offP.1 offP.2 (by decide +kernel) (by decide +kernel)
+ have endpoints : ∀u∈loans88,
+  u∉wires (buildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ∧
+  u∉wires (unbuildTriple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) := by
+  intro u hu
+  exact fresh_off_triple ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+   L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) u ga_length src_length fit
+   (fresh_hosts u hu) (host_ne u hu).1 (host_ne u hu).2.1 (host_ne u hu).2.2
+ have offOriginal : ∀u∈hosts88,u∉wires (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) := by
+  intro u hu
+  exact (wloop_original_off ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L) u ga_length src_length fit (fresh_all_hosts u hu)).1
+ have midEq:=cm.proof.middle_eq hosts88 (FullBTemp.middle L c) cm.out
+  (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
+ have goodNew : WReady ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  (regValue (hiReg L) s.basis)
+  (middleState (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) cm.out s records) := by
+  rw [midEq];exact good
+ have support:=cm.proof.support hosts88 (FullBTemp.middle L c) cm.out
+ have rawAway : L.core.sumCarry∉wires (FullBTemp.middle L c) :=
+  ParkCarry10Develop.mid_sumCarry_free L layout_widths layout_nodup c control_outside
+ have nq : L.core.sumCarry∉wires cm.out := fun h=>rawAway (support.1 h)
+ have nr : FullBTemp.hostR L∉wires cm.out := support.2 _ (by simp [hosts88])
+ have np : FullBTemp.hostP L∉wires cm.out := support.2 _ (by simp [hosts88])
+ have triple:=triple_middle_ready ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) cm.out ga_length src_length fit
+  s records hz hb hi ha zeroQ zeroR zeroP fresh_q fresh_r (by decide +kernel) fresh_p
+  (by decide +kernel) (by decide +kernel) offQ.1 nq offQ.2 offR.1 nr offR.2 pBoth.1 np pBoth.2 goodNew
+ have many:=ManyACarryDevelop.cached_wloop_many_eq 86 ga (FullBTemp.pad L) (accBank L) L.core.cin
+  (hiReg L) loans88 L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) cm.out ga_length src_length fit
+  s records hz hb hi ha zeroQ zeroR zeroP zeroU fresh_q fresh_r (by decide +kernel)
+  fresh_p (by decide +kernel) (by decide +kernel) (by decide) loans_nd loans_length fresh_hosts host_ne
+  offQ.1 offQ.2 offR.1 offR.2 pBoth.1 pBoth.2 (fun u hu=>(endpoints u hu).1)
+  (fun u hu=>support.2 u (by simp [hosts88,hu])) (fun u hu=>(endpoints u hu).2)
+  triple.1 triple.2.1 triple.2.2.1 triple.2.2.2
+ have tr:=cached_wloop_triple_eq ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L) cm.out ga_length src_length fit
+  s records hz hb hi ha zeroQ zeroR zeroP fresh_q fresh_r (by decide +kernel) fresh_p
+  (by decide +kernel) (by decide +kernel) offQ.1 nq offQ.2 offR.1 nr offR.2 pBoth.1 np pBoth.2 goodNew
+ have du:=cached_wloop_dual_eq ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (FullBTemp.hostR L) cm.out ga_length src_length fit
+  s records hz hb hi ha zeroQ zeroR fresh_q fresh_r (by decide +kernel) offQ.1 nq offQ.2 offR.1 nr offR.2 goodNew
+ have re:=cm.proof.surround_eq hosts88 (FullBTemp.middle L c) cm.out
+  (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))
+  (SourceAddFourDevelop.unbuild ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
+ simpa only [loopWith] using many.trans (tr.trans (du.trans re))
+
+
+theorem ghost_wready (b : State) (H : Nat)
+ (old : WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) H b)
+ (hz : ∀q∈ghosts L,b.basis q=false) :
+ WReady ga (accZ L) (accBank L) L.core.cin (hiReg L) H b := by
+ have hv : regValue (reg L) b.basis=16*(268435517*H) := by
+  change regValue (accReg L) _=_
+  have h:=old.1
+  omega
+ have bridge:=ghostAcc_value L layout_widths b.basis _ hv hz
+ exact ⟨bridge.trans old.1,old.2⟩
+
+
+theorem middle_state_post (P Q R : BasisState → Prop) (first middle : Program)
+ (hf : Triple P first Q) (hm : Triple Q middle R) (s : State) (records : List Bool)
+ (hs : P s.basis) : R (middleState first middle s records).basis := by
+ exact (hm (run first (records.take (measurementCount first)) s)
+  ((records.drop (measurementCount first)).take (measurementCount middle))
+  (hf s (records.take (measurementCount first)) hs).2).2
+
+
+theorem loop_bstate_step
+ (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
+ (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry=false)
+ (O E O' : Nat)
+ (mid : Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (FullBTemp.middle L c)
+  (BState L base O' E (4294968272*regValue (hiReg L) base))) :
+ Triple (BState L base O E 0) (loopWith cm) (BState L base O' E 0) := by
+ intro s records hs
+ have hw:=layout_widths
+ have hn:=layout_nodup
+ have lens:=acc_lengths L hw
+ obtain ⟨hzFull,hb,hi,_,_⟩:=zero_regs L hn base clean O E 0 s.basis hs
+ have hz : ∀q∈FullBTemp.pad L,s.basis q=false := fun q hq=>hzFull q ((FullPadDevelop.pad_sublist L).subset hq)
+ have source0 : regValue (hiReg L) s.basis=regValue (hiReg L) base :=
+  regValue_congr _ _ _ (fun q hq=>bstate_other L hn base O E 0 s.basis hs q (Or.inl hq))
+ have fullInfo :
+  WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
+   (regValue (hiReg L) s.basis) (middleState (wBuild L) (FullBTemp.middle L c) s records) ∧
+  (∀q∈ghosts L,(middleState (wBuild L) (FullBTemp.middle L c) s records).basis q=false) := by
+  have midGood := middle_state_post (BState L base O E 0)
+   (BState L base O E (4294968272*regValue (hiReg L) base))
+   (BState L base O' E (4294968272*regValue (hiReg L) base))
+   (wBuild L) (FullBTemp.middle L c) (wBuild_step L hw hn base clean O E) mid s records hs
+  obtain ⟨mz,mb,mi,_,_⟩:=zero_regs L hn base clean O' E _ _ midGood
+  have source1:=regValue_congr (hiReg L) _ base (fun q hq=>bstate_other L hn base O' E _ _ midGood q (Or.inl hq))
+  exact ⟨⟨midGood.2.2.1.trans (by rw [source0]),source1.trans source0.symm,mz,mb,mi⟩,
+   ghost_zero_bstate L hn base _ clean O' E _ midGood⟩
+ have goodGhost : WReady ga (accZ L) (accBank L) L.core.cin (hiReg L)
+  (regValue (hiReg L) s.basis) (middleState (wBuild L) (FullBTemp.middle L c) s records) :=
+  ghost_wready _ _ fullInfo.1 fullInfo.2
+ have midPadEq:=WholePadDevelop.middle_repad (accReg L) (accZ L) (FullBTemp.pad L) (accBank L) L.core.cin
+  (hiReg L) (FullBTemp.middle L c) lens.1 src_length (wTerms_fits L hw hn) (FullBTemp.terms_fits L hw hn)
+  s records hzFull hz hb hi hs.2.2.1
+ have goodPad : WReady ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)
+  (regValue (hiReg L) s.basis)
+  (middleState (NarrowAcc.build8 ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) (FullBTemp.middle L c) s records) := by
+  rw [ghost_plain_build,←midPadEq]
+  exact ⟨goodGhost.1,goodGhost.2.1,(fun q hq=>goodGhost.2.2.1 q ((FullPadDevelop.pad_sublist L).subset hq)),goodGhost.2.2.2⟩
+ have away:=ParkCarryDevelop.sumCarry_off_regs L hn
+ have zeroQ : s.basis L.core.sumCarry=false := (hs.2.2.2 _ away.1 away.2.1 away.2.2).trans hsum
+ have eqNew:=loop_eq_plain cm s records hz hb hi (ga_bstate_value base s.basis clean O E 0 hs (by decide))
+  zeroQ (initial_hosts_zero base s.basis clean O E hs) goodPad
+ have repad:=WholePadDevelop.plain_loop_repad (accReg L) (accZ L) (FullBTemp.pad L) (accBank L) L.core.cin
+  (hiReg L) (FullBTemp.middle L c) lens.1 src_length (wTerms_fits L hw hn) (FullBTemp.terms_fits L hw hn)
+  (FullPadDevelop.pad_sublist L).subset s records hzFull hb hi hs.2.2.1 (regValue (hiReg L) s.basis)
+  (by simpa only [wBuild,middleState,run_take] using fullInfo.1)
+ have finalEq : run (loopWith cm) records s=run (wBuild L++FullBTemp.middle L c++wUnbuildKnown L) records s := by
+  rw [eqNew,ghost_plain_build,ghost_plain_unbuild]
+  simpa only [wBuild,wUnbuildKnown] using repad.symm
+ rw [finalEq]
+ exact (((wBuild_step L hw hn base clean O E).seq mid).seq (wUnbuildKnown_step L hw hn base clean O' E)) s records hs
+
+
+
+end ECDSAAdd.Entrant.LowAccCarryDevelop
+
+end
+
+section
+-- Proof source component: LowAccCarry
+namespace ECDSAAdd.Entrant.LowAccCarryDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+def fromLiteral (cm : ZeroSetDevelop.CheckedS hosts88 BData301.p0) :
+ ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c) :=
+ ⟨cm.out, Eq.mp (congrArg (fun p=>ZeroSetDevelop.SRewrites hosts88 p cm.out)
+  (show BData301.p0=FullBTemp.middle L c from FullBReady.onePass_input_eq)) cm.proof⟩
+
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
+open LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
+
+def foldFor (L : CuccaroStreamedSquareWideLayout) (loop : Program) : Program :=
+ eAddLo L ++ (loop ++ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++ eSubK L))
+def bodyFor (L : CuccaroStreamedSquareWideLayout) (c : Wire) (loop : Program) : Program :=
+ measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
+  (foldFor L loop ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
+
+theorem body_frame_generic
+ (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (c : Wire) (hcw : c∉L.wires) (loopProgram : Program)
+ (loopSpec : ∀ (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry=false)
+  (O E O' : Nat),
+  Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (FullBTemp.middle L c)
+   (BState L base O' E (4294968272*regValue (hiReg L) base)) →
+  Triple (BState L base O E 0) loopProgram (BState L base O' E 0))
+ (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false)
+ (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base c=false → M=0) (hSource : M=if base c then regValue L.core.high base else 0) :
+ Triple (SquareFrame L.core.out base O) (bodyFor L c loopProgram)
+  (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
+
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  let P := M^2
+  let b0 := P%2^128
+  let b1 := P/2^128
+  let W := 4294968272*b1
+  let g := base c
+  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
+  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
+  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
+  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb1lt : b1<2^128 := by
+    show P/2^128<2^128
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc P<2^256 := hb
+      _ = 2^128*2^128 := by norm_num
+  have hWlt : W<2^163 := by
+    show 4294968272*b1<2^163
+    norm_num at hb1lt ⊢
+    omega
+  have views := accA_views L hw base M hM hP
+  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
+  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
+  have pay1 : measuredFoldPayload base (negP L)=P := by
+    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
+    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
+    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
+    exact L.rotated128_value hw base (M^2) hP
+  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
+    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
+    rwa [pay1] at h
+  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
+      (SquareFrame L.core.out base O2) := by
+    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
+    rwa [pay2] at h
+  have e0 : regValue (eReg L) base=b0 := eReg_value L hw base P hP hb
+  have a0 : regValue (accReg L) base=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc.work q (accReg_work L q hq))
+  have hb1 : regValue (hiReg L) base=b1 := by
+    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
+      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have conv1 : ∀s,SquareFrame L.core.out base O2 s → BState L base O2 b0 0 s := by
+    intro s hs
+    refine ⟨hs.1,?_,?_,fun q h1 _ _ => hs.2 q h1⟩
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (eReg_away L hn q hq).1)).trans e0
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (accReg_out L hn q hq))).trans a0
+
+
+  let u := b1/2^96
+  let d := W/2^128 - u
+  let H := b0/2^32
+  let l' := (b0%2^32 + u)%2^32
+  let K := (b0%2^32 + u)/2^32
+  let O3 := ((u + 4294968273*d) + 4294968272*2^32*K + 2^128*(W%2^128) + (SquareReduction.p-1-O2)) % SquareReduction.p
+  let E1 := (2^32*H + l' + 2^130 - b1) % 2^130
+  let O4 := (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p
+  have hO3 : O3<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb0 : b0<2^128 := Nat.mod_lt _ (by positivity)
+  have hu32 : u < 2^32 := by
+    show b1/2^96 < 2^32
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc b1<2^128 := hb1lt
+      _ = 2^32*2^96 := by norm_num
+  have hH : H < 2^96 := by show b0/2^32 < 2^96; omega
+  have hl' : l' < 2^32 := Nat.mod_lt _ (by positivity)
+  have hK : K ≤ 1 := by show (b0%2^32 + u)/2^32 ≤ 1; omega
+  have hKif : (if l' < u then 1 else 0) = K := by
+    show (if (b0%2^32 + u)%2^32 < u then 1 else 0) = (b0%2^32 + u)/2^32
+    by_cases hc' : (b0%2^32 + u)%2^32 < u
+    · rw [if_pos hc']; omega
+    · rw [if_neg hc']; omega
+  let kap:Bool:=decide (K=1)
+  let baseK:=writeBit base L.core.sumCarry kap
+  have kapNat:kap.toNat=K := by
+    have kk:K=0 ∨ K=1 := by omega
+    rcases kk with kk|kk <;> simp [kap,kk]
+  have hcK:L.PairClean baseK := ParkCarryDevelop.base_clean L hn base hc kap
+  have productOff:L.core.sumCarry∉L.core.product := by
+    intro h;apply ParkCarryDevelop.sumCarry_away L hn;simp [ParkCarryDevelop.restWires,h]
+  have highOff:L.core.sumCarry∉hiReg L := by
+    intro h;exact productOff (List.mem_of_mem_take (List.mem_of_mem_drop h))
+  have hb1K:regValue (hiReg L) baseK=b1 := by
+    dsimp only [baseK]
+    rw [ParkCarryDevelop.reg_update_off _ _ _ _ highOff]
+    exact hb1
+  have cq:c≠L.core.sumCarry := by
+    intro h;apply hcw
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]
+  have gc:baseK c=base c := by simp [baseK,writeBit,cq]
+  have resetBase:writeBit baseK L.core.sumCarry false=base := by
+    funext q
+    by_cases hq:q=L.core.sumCarry
+    · subst q;simp [writeBit,Function.update,hsum]
+    · simp [baseK,writeBit,Function.update,hq]
+  -- Park the completed low-window carry instead of recomputing it.
+  have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
+  rw [hb1] at k1
+  have squareBit : (b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw[Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have loanFact : ((2^32*H+l'+2^128*K)/2%2==1)=
+      ((b1/2^96/2%2==1) ^^ (b1/2^96%2==1) ^^
+        ((b1/2^96%2==1)&&((2^32*H+l'+2^128*K)%2==1))) := by
+    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=by dsimp[l'];omega
+    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=by dsimp[l'];omega
+    rw[low0,low1]
+    exact known_second_loan (b0%2^32) u squareBit
+  let originalM:=regValue L.core.high base
+  have source1:base (bit1 L.core.high)=digit originalM 1:=by
+    simpa only[digit,pow_one]using bit1_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE:(2^32*H+l'+2^128*K)%16=lowSum (base c) originalM u%16:=by
+    rw[lowSum,←hSource]
+    exact folded_low_mod16 M u H l' K rfl rfl
+  have loanFact2:=loan2_from_mod16 (base c) originalM u (2^32*H+l'+2^128*K) modE
+  rw[←source1]at loanFact2
+  have source0:base (L.core.high.headD 0)=digit originalM 0:=by
+    simpa only[digit,pow_zero,Nat.div_one]using head_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by omega
+  have loanFact0:=LowBitCarryNumbers.loan0_from_mod2 (base c) originalM u (2^32*H+l'+2^128*K)
+    (by simpa only[lowSum]using modE2)
+  rw[←source0]at loanFact0
+  have wm := wMidFullCCC0_step L hw hn c hcw base hc O2 (2^32*H+l'+2^128*K) b1 hb1 hb1lt hO2
+    H l' K hH hl' hK rfl loanFact loanFact2 loanFact0
+  have wmBase : Triple (BState L base O2 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base))
+      (wMidFullCCC0 L c)
+      (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
+    simpa only [hb1] using wm
+  have loop := loopSpec base hc hsum
+    O2 (2^32*H+l'+2^128*K) O3 wmBase
+  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
+  rw [kapNat] at kc
+  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
+  have tw : Triple (BState L base O2 b0 0) (foldFor L loopProgram) (BState L baseK O3 E1 0) :=
+    by simpa only [foldFor,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
+  -- eFoldTq
+  have f1 := eFlip_step L hw hn baseK c hcw O3 E1 0
+  have f2 := eCore_stepTq L hw hn baseK hcK O3 (flipE g E1) hO3
+  have f3 := eFlip_step L hw hn baseK c hcw O4 (flipE g E1) 0
+  rw [gc] at f1 f3
+  rw [flipE_flipE] at f3
+  have tf : Triple (BState L baseK O3 E1 0) (eFoldTq L c) (BState L baseK O4 E1 0) :=
+    f1.seq (f2.seq f3)
+  -- wRestoreT
+  have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
+  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K (by rw [bk]; omega)
+  rw [bk] at r2
+  have bit32:(b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw [Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have total:l'+2^32*(baseK L.core.sumCarry).toNat=b0%2^32+regValue (hiReg L) baseK/2^96 := by
+    have atq:baseK L.core.sumCarry=kap := by simp [baseK,writeBit]
+    rw [atq,kapNat,hb1K]
+    show ((b0%2^32+u)%2^32)+2^32*((b0%2^32+u)/2^32)=b0%2^32+u
+    exact Nat.mod_add_div _ _
+  have r3:=ParkCarryDevelop.restore_step L hw hn baseK hcK O4 0 H l' (b0%2^32) hH hl'
+    (Nat.mod_lt _ (by positivity)) bit32 total
+  have bb:2^32*H+b0%2^32=b0 := by dsimp [H];omega
+  rw [resetBase,bb] at r3
+  have rp := padM_step L hw hn base hc O4 b0 0 744
+  have tr : Triple (BState L baseK O4 E1 0) (ParkCarry10Develop.rebuild L) (BState L base O4 b0 0) :=
+    r2.seq (r3.seq rp)
+  have conv0 : ∀s,BState L base O4 b0 0 s → SquareFrame L.core.out base O4 s := by
+    intro s hs
+    refine ⟨hs.1,fun q hq => ?_⟩
+    by_cases he : q∈eReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.1.trans e0.symm) q he
+    by_cases ha : q∈accReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.2.1.trans a0.symm) q ha
+    exact hs.2.2.2 q hq he ha
+  have key : O4 = bO4 (M^2) (base c) O := by
+    have hg' : g = false → b1 = 0 ∧ b0 = 0 := by
+      intro h0
+      have : M = 0 := hg h0
+      subst this
+      simp [b1, b0, P]
+    have e3 : O3 = (((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p := by
+      simp only [O3, u, d, K, W]
+      congr 1; ring
+    have e4 : O4 = (4294968272*flipE g ((2^32*(b0/2^32) + (b0%2^32+b1/2^96)%2^32 + 2^130 - b1) % 2^130) +
+        (SquareReduction.p-1-((((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p))) % SquareReduction.p := by
+      show (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p = _
+      rw [e3]
+    rw [e4, o4K b0 b1 O2 _ g hb0 hb1lt hO2 hg']
+    exact o4_eq b0 b1 O2 g hb0 hb1lt hO2 hg'
+  have all := t1.seq (t2.seq (Triple.conseq (fun s h => h) ((Triple.conseq conv1 tw (fun s h => h)).seq
+    (tf.seq tr)) conv0))
+  rw [key] at all
+  simpa only [bodyFor] using all
+
+
+
+
+theorem body_frame
+ (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c))
+ (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false)
+ (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base c=false → M=0) (hSource : M=if base c then regValue L.core.high base else 0) :
+ Triple (SquareFrame L.core.out base O) (bodyWith cm)
+  (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) :=
+ by
+  have hcw : c∉L.wires := control_outside
+  simpa only [bodyWith,foldWith,bodyFor,foldFor] using
+   body_frame_generic L layout_widths layout_nodup c hcw (loopWith cm) (loop_bstate_step cm)
+    base M hM hP hc hsum O hO hg hSource
+
+
+
+end ECDSAAdd.Entrant.LowAccCarryDevelop
+namespace ECDSAAdd.Entrant.FullB88OptTemp
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run ECDSAAdd.Arithmetic.GatePhysical
+attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots ECDSAAdd.regValue
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+theorem option_property {α : Type} (P : Program → Prop) (fallback : Program) (body : α → Program)
+ (hf : P fallback) (hb : ∀a,P (body a)) (result : Option α) : P (result.elim fallback body) := by
+ cases result with
+ | none => exact hf
+ | some a => exact hb a
+
+theorem option_some_property {α : Type} (P : Program → Prop) (fallback : Program) (body : α → Program)
+ (hb : ∀a,P (body a)) (result : Option α) (success : result.isSome=true) : P (result.elim fallback body) := by
+ cases result with
+ | none => simp only [Option.isSome_none,Bool.false_eq_true] at success
+ | some a => exact hb a
+
+theorem option_map_success {α β : Type} (result : Option α) (f : α → β) :
+ (result.map f).isSome=result.isSome := by
+ cases result <;> rfl
+
+theorem actual_resources :
+ toffoliCount (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)+88≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ measurementCount (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ Challenge.gateSlots (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)+264≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
+ exact option_some_property (fun p=>
+  toffoliCount p+88≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+  measurementCount p=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+  Challenge.gateSlots p+264≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c))
+  (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith LowAccCarryDevelop.body_resources ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
+  ((option_map_success (ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0) LowAccCarryDevelop.fromLiteral).trans LowAccCarryDevelop.success_literal)
+
+theorem actual_subset : wires (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
+ exact option_property (fun p=>wires p⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c))
+  (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith (Finset.Subset.refl (wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c))) LowAccCarryDevelop.body_support ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
+
+theorem actual_physical : GatePhysical (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) := by
+ exact option_property GatePhysical (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith
+  (ParkCarry10Develop.body_physical LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
+   LowAccCarryDevelop.c LowAccCarryDevelop.layout_control_nodup)
+  LowAccCarryDevelop.body_physical ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
+
+theorem actual_frame (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
+ (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base LowAccCarryDevelop.c=false → M=0)
+ (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
+ Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith)
+  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) := by
+ exact option_property (fun p=>Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) p
+  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O))) (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith
+  (ParkCarry10Develop.body_frame LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
+   LowAccCarryDevelop.layout_nodup LowAccCarryDevelop.c LowAccCarryDevelop.control_outside
+   base M hM hP hc hsum O hO hg hSource)
+  (fun cm=>LowAccCarryDevelop.body_frame cm base M hM hP hc hsum O hO hg hSource) ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral)
+
+def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
+ match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse _ => ParkCarry10Develop.body K g
+ | isTrue _ => if g=LowAccCarryDevelop.c then (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) else ParkCarry10Develop.body K g
+
+
+
+
+
+
+
+
+
+
+theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
+ wires (selectedBody K g)⊆wires (ParkCarry10Develop.body K g) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hn => exact Finset.Subset.refl _
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hg;subst K;subst g;exact actual_subset
+  · exact Finset.Subset.refl _
+
+
+
+
+
+theorem selected_physical (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
+ (g : Wire) (nd : (g::K.wires).Nodup) : GatePhysical (selectedBody K g) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hn => exact ParkCarry10Develop.body_physical K hw g nd
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hg;subst K;subst g;exact actual_physical
+  · exact ParkCarry10Develop.body_physical K hw g nd
+
+theorem selected_frame (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (hn : K.wires.Nodup)
+ (g : Wire) (hcw : g∉K.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue K.core.product base=M^2) (hc : K.PairClean base)
+ (hsum : base K.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base g=false → M=0) (hSource : M=if base g then regValue K.core.high base else 0) :
+ Triple (SquareFrame K.core.out base O) (selectedBody K g)
+  (SquareFrame K.core.out base (bO4 (M^2) (base g) O)) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hne => exact ParkCarry10Develop.body_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hgc;subst K;subst g;exact actual_frame base M hM hP hc hsum O hO hg hSource
+  · exact ParkCarry10Develop.body_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
+
+theorem selected_resources (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
+ toffoliCount (selectedBody K g)≤toffoliCount (ParkCarry10Develop.body K g) ∧
+ measurementCount (selectedBody K g)=measurementCount (ParkCarry10Develop.body K g) ∧
+ Challenge.gateSlots (selectedBody K g)≤Challenge.gateSlots (ParkCarry10Develop.body K g) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hn => exact ⟨Nat.le_refl _,rfl,Nat.le_refl _⟩
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hg;subst K;subst g
+    have h:=actual_resources
+    exact ⟨by omega,h.2.1,by omega⟩
+  · exact ⟨Nat.le_refl _,rfl,Nat.le_refl _⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+abbrev actualLayout := FullBOptTemp.actualLayout
+abbrev actualControl := FullBOptTemp.actualControl
+abbrev actualExt := FullBOptTemp.actualExt
+abbrev actualFoldPerm := FullBOptTemp.actualFoldPerm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.FullB88OptTemp
+
+end
+
+
+section
+-- Proof source component: LowAccMiddleLiteral
+namespace ECDSAAdd.Entrant.LowAccMiddleLiteral
+open ECDSAAdd
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ZeroSetDevelop.compileS?
+
 
 theorem compiler_output_eq :
  ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map (fun cm=>cm.out)).getD []=output := by
- apply ParkAProgramBool.programEq_sound
- decide +kernel
+ rw [LowAccCarryDevelop.peak_lac_map, Option.getD_some]
 end ECDSAAdd.Entrant.LowAccMiddleLiteral
 
 end
@@ -10157,11 +10679,48 @@ theorem body_shape : originalBody=FullBTemp.prefixP L++loop := by
 
 def strip : Instr→Instr := SixCarryTrace.stripPhase
 
-theorem literal_anchor : (loop.take 11960).map strip=SixCarryPrefixData.program := by
+-- Peak memory: literal_anchor checked per generated part (buildPre / cachedSubMany / buildPost / output).
+theorem peak_anchor_pre : (ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)).map strip = SixCarryPrefixData.chunk0 ++ (SixCarryPrefixData.chunk1 ++ (SixCarryPrefixData.chunk2 ++ (SixCarryPrefixData.chunk3 ++ (SixCarryPrefixData.chunk4 ++ (SixCarryPrefixData.chunk5 ++ (SixCarryPrefixData.chunk6 ++ (SixCarryPrefixData.chunk7 ++ (SixCarryPrefixData.chunk8 ++ (SixCarryPrefixData.chunk9 ++ ((List.take 33 SixCarryPrefixData.chunk10))))))))))) := by
  apply ParkAProgramBool.programEq_sound
- delta loop output build
- rw [LowAccMiddleLiteral.compiler_output_eq]
  decide +kernel
+theorem peak_anchor_pre_len : List.length (SixCarryPrefixData.chunk0 ++ (SixCarryPrefixData.chunk1 ++ (SixCarryPrefixData.chunk2 ++ (SixCarryPrefixData.chunk3 ++ (SixCarryPrefixData.chunk4 ++ (SixCarryPrefixData.chunk5 ++ (SixCarryPrefixData.chunk6 ++ (SixCarryPrefixData.chunk7 ++ (SixCarryPrefixData.chunk8 ++ (SixCarryPrefixData.chunk9 ++ ((List.take 33 SixCarryPrefixData.chunk10)))))))))))) = 1313 := by decide +kernel
+theorem peak_anchor_mid : (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)).map strip = (List.drop 33 SixCarryPrefixData.chunk10) ++ (SixCarryPrefixData.chunk11 ++ (SixCarryPrefixData.chunk12 ++ (SixCarryPrefixData.chunk13 ++ (SixCarryPrefixData.chunk14 ++ (SixCarryPrefixData.chunk15 ++ (SixCarryPrefixData.chunk16 ++ (SixCarryPrefixData.chunk17 ++ (SixCarryPrefixData.chunk18 ++ (SixCarryPrefixData.chunk19 ++ (SixCarryPrefixData.chunk20 ++ (SixCarryPrefixData.chunk21 ++ ((List.take 39 SixCarryPrefixData.chunk22))))))))))))) := by
+ apply ParkAProgramBool.programEq_sound
+ decide +kernel
+theorem peak_anchor_mid_len : List.length ((List.drop 33 SixCarryPrefixData.chunk10) ++ (SixCarryPrefixData.chunk11 ++ (SixCarryPrefixData.chunk12 ++ (SixCarryPrefixData.chunk13 ++ (SixCarryPrefixData.chunk14 ++ (SixCarryPrefixData.chunk15 ++ (SixCarryPrefixData.chunk16 ++ (SixCarryPrefixData.chunk17 ++ (SixCarryPrefixData.chunk18 ++ (SixCarryPrefixData.chunk19 ++ (SixCarryPrefixData.chunk20 ++ (SixCarryPrefixData.chunk21 ++ ((List.take 39 SixCarryPrefixData.chunk22)))))))))))))) = 1542 := by decide +kernel
+theorem peak_anchor_post : (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)).map strip = (List.drop 39 SixCarryPrefixData.chunk22) ++ (SixCarryPrefixData.chunk23 ++ (SixCarryPrefixData.chunk24 ++ (SixCarryPrefixData.chunk25 ++ (SixCarryPrefixData.chunk26 ++ (SixCarryPrefixData.chunk27 ++ (SixCarryPrefixData.chunk28 ++ (SixCarryPrefixData.chunk29 ++ (SixCarryPrefixData.chunk30 ++ ((List.take 41 SixCarryPrefixData.chunk31)))))))))) := by
+ apply ParkAProgramBool.programEq_sound
+ decide +kernel
+theorem peak_anchor_post_len : List.length ((List.drop 39 SixCarryPrefixData.chunk22) ++ (SixCarryPrefixData.chunk23 ++ (SixCarryPrefixData.chunk24 ++ (SixCarryPrefixData.chunk25 ++ (SixCarryPrefixData.chunk26 ++ (SixCarryPrefixData.chunk27 ++ (SixCarryPrefixData.chunk28 ++ (SixCarryPrefixData.chunk29 ++ (SixCarryPrefixData.chunk30 ++ ((List.take 41 SixCarryPrefixData.chunk31))))))))))) = 1154 := by decide +kernel
+theorem peak_anchor_out : (List.take 7951 LowAccMiddleLiteral.output).map strip = (List.drop 41 SixCarryPrefixData.chunk31) ++ (SixCarryPrefixData.chunk32 ++ (SixCarryPrefixData.chunk33 ++ (SixCarryPrefixData.chunk34 ++ (SixCarryPrefixData.chunk35 ++ (SixCarryPrefixData.chunk36 ++ (SixCarryPrefixData.chunk37 ++ (SixCarryPrefixData.chunk38 ++ (SixCarryPrefixData.chunk39 ++ (SixCarryPrefixData.chunk40 ++ (SixCarryPrefixData.chunk41 ++ (SixCarryPrefixData.chunk42 ++ (SixCarryPrefixData.chunk43 ++ (SixCarryPrefixData.chunk44 ++ (SixCarryPrefixData.chunk45 ++ (SixCarryPrefixData.chunk46 ++ (SixCarryPrefixData.chunk47 ++ (SixCarryPrefixData.chunk48 ++ (SixCarryPrefixData.chunk49 ++ (SixCarryPrefixData.chunk50 ++ (SixCarryPrefixData.chunk51 ++ (SixCarryPrefixData.chunk52 ++ (SixCarryPrefixData.chunk53 ++ (SixCarryPrefixData.chunk54 ++ (SixCarryPrefixData.chunk55 ++ (SixCarryPrefixData.chunk56 ++ (SixCarryPrefixData.chunk57 ++ (SixCarryPrefixData.chunk58 ++ (SixCarryPrefixData.chunk59 ++ (SixCarryPrefixData.chunk60 ++ (SixCarryPrefixData.chunk61 ++ (SixCarryPrefixData.chunk62 ++ (SixCarryPrefixData.chunk63 ++ (SixCarryPrefixData.chunk64 ++ (SixCarryPrefixData.chunk65 ++ (SixCarryPrefixData.chunk66 ++ (SixCarryPrefixData.chunk67 ++ (SixCarryPrefixData.chunk68 ++ (SixCarryPrefixData.chunk69 ++ (SixCarryPrefixData.chunk70 ++ (SixCarryPrefixData.chunk71 ++ (SixCarryPrefixData.chunk72 ++ (SixCarryPrefixData.chunk73 ++ (SixCarryPrefixData.chunk74 ++ (SixCarryPrefixData.chunk75 ++ (SixCarryPrefixData.chunk76 ++ (SixCarryPrefixData.chunk77 ++ (SixCarryPrefixData.chunk78 ++ (SixCarryPrefixData.chunk79 ++ (SixCarryPrefixData.chunk80 ++ (SixCarryPrefixData.chunk81 ++ (SixCarryPrefixData.chunk82 ++ (SixCarryPrefixData.chunk83 ++ (SixCarryPrefixData.chunk84 ++ (SixCarryPrefixData.chunk85 ++ (SixCarryPrefixData.chunk86 ++ (SixCarryPrefixData.chunk87 ++ (SixCarryPrefixData.chunk88 ++ (SixCarryPrefixData.chunk89 ++ (SixCarryPrefixData.chunk90 ++ (SixCarryPrefixData.chunk91 ++ (SixCarryPrefixData.chunk92 ++ (SixCarryPrefixData.chunk93)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))) := by
+ apply ParkAProgramBool.programEq_sound
+ decide +kernel
+theorem peak_anchor_out_len : List.length ((List.drop 41 SixCarryPrefixData.chunk31) ++ (SixCarryPrefixData.chunk32 ++ (SixCarryPrefixData.chunk33 ++ (SixCarryPrefixData.chunk34 ++ (SixCarryPrefixData.chunk35 ++ (SixCarryPrefixData.chunk36 ++ (SixCarryPrefixData.chunk37 ++ (SixCarryPrefixData.chunk38 ++ (SixCarryPrefixData.chunk39 ++ (SixCarryPrefixData.chunk40 ++ (SixCarryPrefixData.chunk41 ++ (SixCarryPrefixData.chunk42 ++ (SixCarryPrefixData.chunk43 ++ (SixCarryPrefixData.chunk44 ++ (SixCarryPrefixData.chunk45 ++ (SixCarryPrefixData.chunk46 ++ (SixCarryPrefixData.chunk47 ++ (SixCarryPrefixData.chunk48 ++ (SixCarryPrefixData.chunk49 ++ (SixCarryPrefixData.chunk50 ++ (SixCarryPrefixData.chunk51 ++ (SixCarryPrefixData.chunk52 ++ (SixCarryPrefixData.chunk53 ++ (SixCarryPrefixData.chunk54 ++ (SixCarryPrefixData.chunk55 ++ (SixCarryPrefixData.chunk56 ++ (SixCarryPrefixData.chunk57 ++ (SixCarryPrefixData.chunk58 ++ (SixCarryPrefixData.chunk59 ++ (SixCarryPrefixData.chunk60 ++ (SixCarryPrefixData.chunk61 ++ (SixCarryPrefixData.chunk62 ++ (SixCarryPrefixData.chunk63 ++ (SixCarryPrefixData.chunk64 ++ (SixCarryPrefixData.chunk65 ++ (SixCarryPrefixData.chunk66 ++ (SixCarryPrefixData.chunk67 ++ (SixCarryPrefixData.chunk68 ++ (SixCarryPrefixData.chunk69 ++ (SixCarryPrefixData.chunk70 ++ (SixCarryPrefixData.chunk71 ++ (SixCarryPrefixData.chunk72 ++ (SixCarryPrefixData.chunk73 ++ (SixCarryPrefixData.chunk74 ++ (SixCarryPrefixData.chunk75 ++ (SixCarryPrefixData.chunk76 ++ (SixCarryPrefixData.chunk77 ++ (SixCarryPrefixData.chunk78 ++ (SixCarryPrefixData.chunk79 ++ (SixCarryPrefixData.chunk80 ++ (SixCarryPrefixData.chunk81 ++ (SixCarryPrefixData.chunk82 ++ (SixCarryPrefixData.chunk83 ++ (SixCarryPrefixData.chunk84 ++ (SixCarryPrefixData.chunk85 ++ (SixCarryPrefixData.chunk86 ++ (SixCarryPrefixData.chunk87 ++ (SixCarryPrefixData.chunk88 ++ (SixCarryPrefixData.chunk89 ++ (SixCarryPrefixData.chunk90 ++ (SixCarryPrefixData.chunk91 ++ (SixCarryPrefixData.chunk92 ++ (SixCarryPrefixData.chunk93))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))) = 7951 := by decide +kernel
+theorem literal_anchor : (loop.take 11960).map strip=SixCarryPrefixData.program := by
+ have hb : build = (ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) ++ (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ++ (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) := rfl
+ have hloop : loop = ((ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) ++ (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ++ (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))) ++ (LowAccMiddleLiteral.output ++ LowAccCarryDevelop.afterLoop) := by
+  rw [← hb]
+  delta loop output
+  rw [LowAccMiddleLiteral.compiler_output_eq]
+ have l1 : List.length (ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) = 1313 := by
+  rw [← peak_anchor_pre_len, ← peak_anchor_pre, List.length_map]
+ have l2 : List.length (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) = 1542 := by
+  rw [← peak_anchor_mid_len, ← peak_anchor_mid, List.length_map]
+ have l3 : List.length (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) = 1154 := by
+  rw [← peak_anchor_post_len, ← peak_anchor_post, List.length_map]
+ have hout : List.length LowAccMiddleLiteral.output = 8783 := by decide +kernel
+ have hB : List.length ((ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) ++ (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ++ (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))) = 4009 := by
+  simp only [List.length_append, l1, l2, l3]
+ have t1 : List.take 11960 ((ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) ++ (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ++ (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L))) = (ECDSAAdd.Entrant.InverseCarryDevelop.buildPre ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) ++ (ManyACarryDevelop.cachedSubMany 86 (ECDSAAdd.Entrant.Acc.tx (FullBTemp.pad L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.ty (List.take 139 ga) (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) (ECDSAAdd.Entrant.Acc.tc (accBank L) 139 (ECDSAAdd.Entrant.Acc.earlyTerm (hiReg L) true 6)) LowAccCarryDevelop.loans88 L.core.cin L.core.sumCarry (FullBTemp.hostR L) (FullBTemp.hostP L)) ++ (ECDSAAdd.Entrant.InverseCarryDevelop.buildPost ga (FullBTemp.pad L) (accBank L) L.core.cin (hiReg L)) :=
+  List.take_of_length_le (by rw [hB]; omega)
+ have t2 : List.take 7951 (LowAccMiddleLiteral.output ++ LowAccCarryDevelop.afterLoop) = List.take 7951 LowAccMiddleLiteral.output :=
+  List.take_append_of_le_length (by rw [hout]; omega)
+ rw [hloop, List.take_append, hB, t1, show 11960 - 4009 = 7951 from rfl, t2]
+ rw [List.map_append, List.map_append, List.map_append, peak_anchor_pre, peak_anchor_mid, peak_anchor_post,
+  peak_anchor_out]
+ delta SixCarryPrefixData.program
+ simp only [List.append_assoc, PeakChunkS.take_drop_app]
+
 end ECDSAAdd.Entrant.SixCarryLoopAnchor
 
 end
@@ -37694,9 +38253,12 @@ def enter1StoredIn : Cols := word1 ++ enter1Trace0In.drop 16
 def leave1StoredOut : Cols := word0 ++ leave1Trace2Out.drop 16
 
 private def load0Block0 : Program := [
-  .CCX 13 10 23,
-  .CCX 6 20 24,
-  .CCX 15 20 25,
+  .CCX 6 20 23,
+  .CCX 3 0 24,
+  .CX 22 20,
+  .CCX 12 20 25,
+  .CX 22 20,
+  .CCX 12 22 26,
   .CX 22 20,
   .CX 3 1,
   .CX 5 1,
@@ -37708,7 +38270,7 @@ private def load0Block0 : Program := [
   .CX 17 1,
   .CX 19 1,
   .CX 21 1,
-  .CCX 20 1 26,
+  .CCX 20 1 27,
   .CX 21 1,
   .CX 19 1,
   .CX 17 1,
@@ -37719,1587 +38281,1583 @@ private def load0Block0 : Program := [
   .CX 7 1,
   .CX 5 1,
   .CX 3 1,
-  .CX 22 20,
-  .CX 22 20,
-  .CCX 20 12 27,
   .CX 22 20,
   .CX 22 20
 ]
 
 private def load0Block1 : Program := [
-  .CCX 20 2 28,
+  .CCX 20 8 28,
   .CX 22 20,
   .CX 22 20,
-  .CX 2 0,
-  .CX 4 0,
-  .CX 6 0,
-  .CX 8 0,
-  .CX 10 0,
-  .CX 12 0,
-  .CX 14 0,
-  .CX 16 0,
-  .CX 18 0,
-  .CX 21 0,
-  .CCX 20 0 29,
-  .CX 21 0,
-  .CX 18 0,
-  .CX 16 0,
-  .CX 14 0,
-  .CX 12 0,
-  .CX 10 0,
-  .CX 8 0,
-  .CX 6 0,
-  .CX 4 0,
-  .CX 2 0,
+  .CX 2 1,
+  .CX 3 1,
+  .CX 5 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 11 1,
+  .CX 13 1,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CCX 20 1 29,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 17 1,
+  .CX 15 1,
+  .CX 13 1,
+  .CX 11 1,
+  .CX 9 1,
+  .CX 7 1,
+  .CX 5 1,
+  .CX 3 1,
+  .CX 2 1,
   .CX 22 20,
   .CX 22 20,
-  .CCX 20 8 30,
-  .CX 22 20,
-  .CX 22 20,
-  .CX 6 4
+  .CX 1 0,
+  .CX 2 0
 ]
 
 private def load0Block2 : Program := [
-  .CCX 20 4 31,
-  .CX 6 4,
-  .CX 22 20,
-  .CX 22 20,
-  .CCX 20 0 32,
-  .CX 22 20,
   .CX 3 0,
+  .CX 4 0,
   .CX 5 0,
+  .CX 6 0,
   .CX 7 0,
+  .CX 8 0,
   .CX 9 0,
+  .CX 10 0,
   .CX 11 0,
   .CX 13 0,
+  .CX 14 0,
   .CX 15 0,
+  .CX 16 0,
   .CX 17 0,
+  .CX 18 0,
   .CX 19 0,
-  .CX 21 20,
-  .CCX 0 20 33,
-  .CX 21 20,
+  .CCX 20 0 30,
   .CX 19 0,
+  .CX 18 0,
   .CX 17 0,
+  .CX 16 0,
   .CX 15 0,
+  .CX 14 0,
   .CX 13 0,
   .CX 11 0,
+  .CX 10 0,
   .CX 9 0,
+  .CX 8 0,
   .CX 7 0,
-  .CX 5 0,
-  .CX 3 0,
-  .CX 3 0,
-  .CX 5 0,
-  .CX 7 0
+  .CX 6 0
 ]
 
 private def load0Block3 : Program := [
-  .CX 9 0,
-  .CX 11 0,
-  .CX 13 0,
-  .CX 15 0,
-  .CX 17 0,
-  .CX 19 0,
-  .CCX 0 20 34,
-  .CX 19 0,
-  .CX 17 0,
-  .CX 15 0,
-  .CX 13 0,
-  .CX 11 0,
-  .CX 9 0,
-  .CX 7 0,
   .CX 5 0,
+  .CX 4 0,
   .CX 3 0,
-  .CCX 1 20 35,
-  .CX 12 11,
-  .CX 13 11,
-  .CCX 11 20 36,
-  .CX 13 11,
-  .CX 12 11,
-  .CX 8 7,
-  .CX 9 7,
-  .CCX 7 20 37,
-  .CX 9 7,
-  .CX 8 7,
-  .CCX 5 20 38,
-  .CX 18 17,
-  .CX 19 17
+  .CX 2 0,
+  .CX 1 0,
+  .CX 22 20,
+  .CX 22 20,
+  .CCX 20 0 31,
+  .CX 22 20,
+  .CX 22 20,
+  .CX 6 4,
+  .CCX 20 4 32,
+  .CX 6 4,
+  .CX 22 20,
+  .CX 2 0,
+  .CX 4 0,
+  .CX 6 0,
+  .CX 8 0,
+  .CX 10 0,
+  .CX 14 0,
+  .CX 16 0,
+  .CX 18 0,
+  .CX 21 0,
+  .CCX 22 0 33,
+  .CX 21 0,
+  .CX 18 0,
+  .CX 16 0,
+  .CX 14 0,
+  .CX 10 0,
+  .CX 8 0
 ]
 
 private def load0Block4 : Program := [
-  .CCX 17 20 39,
-  .CX 19 17,
-  .CX 18 17,
-  .CX 8 3,
-  .CX 10 3,
-  .CCX 20 3 40,
-  .CX 10 3,
-  .CX 8 3,
-  .CX 12 10,
-  .CX 16 10,
-  .CCX 20 10 41,
-  .CX 16 10,
-  .CX 12 10,
-  .CX 14 12,
-  .CCX 20 12 42,
-  .CX 14 12,
-  .CCX 20 14 43,
-  .CCX 20 8 44,
-  .CX 4 3,
-  .CX 10 3,
-  .CX 12 3,
-  .CX 14 3,
-  .CX 16 3,
-  .CCX 20 3 45,
-  .CX 16 3,
-  .CX 14 3,
-  .CX 12 3,
-  .CX 10 3,
-  .CX 4 3,
-  .CCX 20 2 46
+  .CX 6 0,
+  .CX 4 0,
+  .CX 2 0,
+  .CCX 22 8 34,
+  .CX 3 1,
+  .CX 5 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 11 1,
+  .CX 13 1,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CCX 22 1 35,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 17 1,
+  .CX 15 1,
+  .CX 13 1,
+  .CX 11 1,
+  .CX 9 1,
+  .CX 7 1,
+  .CX 5 1,
+  .CX 3 1,
+  .CX 2 0,
+  .CCX 22 0 36,
+  .CX 2 0,
+  .CX 2 1,
+  .CX 3 1
 ]
 
 private def load0Block5 : Program := [
-  .CX 10 4,
-  .CX 14 4,
-  .CX 16 4,
-  .CCX 20 4 47,
-  .CX 16 4,
-  .CX 14 4,
-  .CX 10 4,
-  .X 16,
-  .CX 19 18,
-  .CX 21 18,
-  .CX 25 18,
-  .CX 35 18,
-  .CX 36 18,
-  .CX 37 18,
-  .CX 38 18,
-  .CX 39 18,
-  .CX 40 18,
-  .CX 41 18,
-  .CCX 16 18 48,
-  .CX 41 18,
-  .CX 40 18,
-  .CX 39 18,
-  .CX 38 18,
-  .CX 37 18,
-  .CX 36 18,
-  .CX 35 18,
-  .CX 25 18,
-  .CX 21 18,
-  .CX 19 18,
-  .X 16
+  .CX 5 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 11 1,
+  .CX 13 1,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CCX 22 1 37,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 17 1,
+  .CX 15 1,
+  .CX 13 1,
+  .CX 11 1,
+  .CX 9 1,
+  .CX 7 1,
+  .CX 5 1,
+  .CX 3 1,
+  .CX 2 1,
+  .CX 1 0,
+  .CX 3 0,
+  .CX 4 0,
+  .CX 5 0,
+  .CX 6 0,
+  .CX 7 0,
+  .CX 8 0,
+  .CX 9 0,
+  .CX 11 0
 ]
 
 private def load0Block6 : Program := [
-  .CX 21 12,
-  .CX 35 12,
-  .CX 36 12,
-  .CX 37 12,
-  .CX 38 12,
-  .CX 40 12,
-  .CCX 10 12 49,
-  .CX 40 12,
-  .CX 38 12,
-  .CX 37 12,
-  .CX 36 12,
-  .CX 35 12,
-  .CX 21 12,
-  .X 6,
-  .CX 9 8,
-  .CX 44 8,
-  .CCX 6 8 50,
-  .CX 44 8,
-  .CX 9 8,
-  .X 6,
-  .CX 48 16,
-  .CCX 14 16 51,
-  .CX 48 16,
-  .CCX 3 0 52,
-  .CX 15 14,
-  .CX 18 14,
-  .CX 48 16,
-  .CCX 14 16 53,
-  .CX 48 16,
-  .CX 18 14
+  .CX 13 0,
+  .CX 15 0,
+  .CX 17 0,
+  .CX 19 0,
+  .CX 21 0,
+  .CCX 22 0 38,
+  .CX 21 0,
+  .CX 19 0,
+  .CX 17 0,
+  .CX 15 0,
+  .CX 13 0,
+  .CX 11 0,
+  .CX 9 0,
+  .CX 8 0,
+  .CX 7 0,
+  .CX 6 0,
+  .CX 5 0,
+  .CX 4 0,
+  .CX 3 0,
+  .CX 1 0,
+  .CX 25 12,
+  .CX 26 12,
+  .CCX 10 12 39,
+  .CX 26 12,
+  .CX 25 12,
+  .CX 20 12,
+  .CX 25 12,
+  .CX 26 12,
+  .CCX 10 12 40,
+  .CX 26 12
 ]
 
 private def load0Block7 : Program := [
+  .CX 25 12,
+  .CX 20 12,
+  .CX 20 13,
+  .CCX 10 13 41,
+  .CX 20 13,
+  .CX 12 11,
+  .CX 13 11,
+  .CCX 11 20 42,
+  .CX 13 11,
+  .CX 12 11,
+  .CX 16 14,
+  .CCX 20 14 43,
+  .CX 16 14,
+  .CCX 20 16 44,
   .CX 15 14,
-  .CX 6 4,
-  .CX 4 6,
-  .CX 24 6,
-  .CX 50 6,
-  .CCX 4 6 54,
-  .CX 50 6,
-  .CX 24 6,
-  .CX 4 6,
-  .CX 6 4,
-  .CX 2 1,
+  .CCX 20 14 45,
+  .CX 15 14,
   .CX 3 1,
-  .CX 34 0,
-  .CCX 1 0 55,
-  .CX 34 0,
-  .CX 3 1,
-  .CX 2 1,
-  .CX 5 4,
-  .CX 8 4,
-  .CX 24 6,
-  .CX 50 6,
-  .CCX 4 6 56,
-  .CX 50 6,
-  .CX 24 6,
-  .CX 8 4,
-  .CX 5 4,
-  .CX 21 20,
-  .CX 33 20,
-  .CX 35 20,
-  .CX 42 20
+  .CX 5 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 14 1,
+  .CX 15 1,
+  .CCX 20 1 46,
+  .CX 15 1,
+  .CX 14 1,
+  .CX 9 1,
+  .CX 7 1,
+  .CX 5 1,
+  .CX 3 1
 ]
 
 private def load0Block8 : Program := [
-  .CX 43 20,
-  .CX 45 20,
-  .CX 47 20,
-  .CX 52 20,
-  .CX 55 20,
-  .CX 5 4,
-  .CX 6 4,
-  .CX 56 4,
-  .CCX 20 4 57,
-  .CX 56 4,
-  .CX 6 4,
-  .CX 5 4,
-  .CX 55 20,
-  .CX 52 20,
-  .CX 47 20,
-  .CX 45 20,
-  .CX 43 20,
-  .CX 42 20,
-  .CX 35 20,
-  .CX 33 20,
-  .CX 21 20,
-  .CX 21 20,
-  .CX 33 20,
-  .CX 35 20,
-  .CX 42 20,
-  .CX 43 20,
-  .CX 45 20,
-  .CX 47 20,
-  .CX 52 20,
-  .CX 55 20
+  .CX 9 7,
+  .CCX 20 7 47,
+  .CX 9 7,
+  .CX 3 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 14 1,
+  .CX 15 1,
+  .CCX 20 1 48,
+  .CX 15 1,
+  .CX 14 1,
+  .CX 9 1,
+  .CX 7 1,
+  .CX 3 1,
+  .CX 15 14,
+  .CX 18 14,
+  .CX 21 15,
+  .CX 28 15,
+  .CX 29 15,
+  .CX 30 15,
+  .CX 31 15,
+  .CX 32 15,
+  .CX 33 15,
+  .CX 37 15,
+  .CX 38 15,
+  .CX 39 15,
+  .CX 40 15,
+  .CX 44 15,
+  .CCX 14 15 49,
+  .CX 44 15
 ]
 
 private def load0Block9 : Program := [
-  .CX 54 8,
-  .CCX 20 8 58,
-  .CX 54 8,
-  .CX 55 20,
-  .CX 52 20,
-  .CX 47 20,
-  .CX 45 20,
-  .CX 43 20,
-  .CX 42 20,
-  .CX 35 20,
-  .CX 33 20,
-  .CX 21 20,
-  .CX 21 20,
-  .CX 33 20,
-  .CX 35 20,
-  .CX 42 20,
-  .CX 43 20,
-  .CX 45 20,
-  .CX 47 20,
-  .CX 52 20,
-  .CX 55 20,
-  .CX 5 4,
-  .CX 6 4,
-  .CX 7 4,
-  .CX 9 4,
-  .CX 50 4,
-  .CX 56 4,
-  .CCX 20 4 59,
-  .CX 56 4,
-  .CX 50 4
+  .CX 40 15,
+  .CX 39 15,
+  .CX 38 15,
+  .CX 37 15,
+  .CX 33 15,
+  .CX 32 15,
+  .CX 31 15,
+  .CX 30 15,
+  .CX 29 15,
+  .CX 28 15,
+  .CX 21 15,
+  .CX 18 14,
+  .CX 15 14,
+  .CX 19 18,
+  .CX 21 18,
+  .CX 28 18,
+  .CX 29 18,
+  .CX 30 18,
+  .CX 31 18,
+  .CX 32 18,
+  .CX 33 18,
+  .CX 37 18,
+  .CX 38 18,
+  .CX 39 18,
+  .CX 40 18,
+  .CX 43 18,
+  .CCX 16 18 50,
+  .CX 43 18,
+  .CX 40 18,
+  .CX 39 18
 ]
 
 private def load0Block10 : Program := [
-  .CX 9 4,
-  .CX 7 4,
-  .CX 6 4,
-  .CX 5 4,
-  .CX 55 20,
-  .CX 52 20,
-  .CX 47 20,
-  .CX 45 20,
-  .CX 43 20,
-  .CX 42 20,
-  .CX 35 20,
-  .CX 33 20,
-  .CX 21 20,
-  .CX 24 6,
-  .CX 37 6,
-  .CX 38 6,
-  .CX 52 6,
-  .CX 55 6,
-  .CX 57 6,
-  .CCX 8 6 60,
-  .CX 57 6,
-  .CX 55 6,
-  .CX 52 6,
-  .CX 38 6,
-  .CX 37 6,
-  .CX 24 6,
-  .CX 24 21,
-  .CX 32 21,
-  .CX 33 21,
-  .CX 34 21
+  .CX 38 18,
+  .CX 37 18,
+  .CX 33 18,
+  .CX 32 18,
+  .CX 31 18,
+  .CX 30 18,
+  .CX 29 18,
+  .CX 28 18,
+  .CX 21 18,
+  .CX 19 18,
+  .CX 29 2,
+  .CX 36 2,
+  .CCX 0 2 51,
+  .CX 36 2,
+  .CX 29 2,
+  .CX 18 16,
+  .CX 19 16,
+  .CX 21 16,
+  .CX 28 16,
+  .CX 29 16,
+  .CX 30 16,
+  .CX 31 16,
+  .CX 32 16,
+  .CX 33 16,
+  .CX 37 16,
+  .CX 38 16,
+  .CX 39 16,
+  .CX 40 16,
+  .CX 50 16,
+  .CCX 14 16 52
 ]
 
 private def load0Block11 : Program := [
-  .CX 35 21,
-  .CX 41 21,
-  .CX 42 21,
-  .CX 47 21,
-  .CX 54 21,
-  .CX 56 21,
-  .CX 8 6,
-  .CX 25 6,
-  .CX 36 6,
-  .CX 37 6,
-  .CX 38 6,
-  .CX 39 6,
-  .CX 42 6,
-  .CX 43 6,
-  .CX 44 6,
-  .CX 45 6,
-  .CX 46 6,
-  .CX 57 6,
-  .CCX 21 6 61,
-  .CX 57 6,
-  .CX 46 6,
-  .CX 45 6,
-  .CX 44 6,
-  .CX 43 6,
-  .CX 42 6,
-  .CX 39 6,
-  .CX 38 6,
-  .CX 37 6,
-  .CX 36 6,
-  .CX 25 6
+  .CX 50 16,
+  .CX 40 16,
+  .CX 39 16,
+  .CX 38 16,
+  .CX 37 16,
+  .CX 33 16,
+  .CX 32 16,
+  .CX 31 16,
+  .CX 30 16,
+  .CX 29 16,
+  .CX 28 16,
+  .CX 21 16,
+  .CX 19 16,
+  .CX 18 16,
+  .X 6,
+  .CX 9 8,
+  .CX 28 8,
+  .CX 34 8,
+  .CCX 6 8 53,
+  .CX 34 8,
+  .CX 28 8,
+  .CX 9 8,
+  .X 6,
+  .CX 22 20,
+  .CX 27 20,
+  .CX 31 20,
+  .CX 35 20,
+  .CX 36 20,
+  .CX 37 20,
+  .CX 51 20
 ]
 
 private def load0Block12 : Program := [
-  .CX 8 6,
-  .CX 56 21,
-  .CX 54 21,
-  .CX 47 21,
-  .CX 42 21,
-  .CX 41 21,
-  .CX 35 21,
-  .CX 34 21,
-  .CX 33 21,
-  .CX 32 21,
-  .CX 24 21,
-  .CX 15 14,
-  .CX 16 14,
-  .CX 39 14,
-  .CX 41 14,
-  .CX 53 14,
-  .CCX 49 14 62,
-  .CX 53 14,
-  .CX 41 14,
-  .CX 39 14,
-  .CX 16 14,
-  .CX 15 14,
+  .CX 9 7,
+  .CX 53 7,
+  .CCX 20 7 54,
+  .CX 53 7,
+  .CX 9 7,
+  .CX 51 20,
+  .CX 37 20,
+  .CX 36 20,
+  .CX 35 20,
+  .CX 31 20,
+  .CX 27 20,
+  .CX 22 20,
   .CX 18 14,
-  .CX 39 14,
-  .CX 51 14,
-  .CCX 49 14 63,
-  .CX 51 14,
-  .CX 39 14,
-  .CX 18 14,
-  .CX 15 14
+  .CX 21 14,
+  .CX 28 14,
+  .CX 29 14,
+  .CX 30 14,
+  .CX 31 14,
+  .CX 32 14,
+  .CX 33 14,
+  .CX 37 14,
+  .CX 38 14,
+  .CX 43 14,
+  .CX 52 14,
+  .CCX 40 14 55,
+  .CX 52 14,
+  .CX 43 14,
+  .CX 38 14,
+  .CX 37 14,
+  .CX 33 14
 ]
 
 private def load0Block13 : Program := [
-  .CX 16 14,
-  .CX 17 14,
-  .CX 19 14,
-  .CX 39 14,
-  .CX 48 14,
-  .CX 53 14,
-  .CCX 49 14 64,
-  .CX 53 14,
-  .CX 48 14,
-  .CX 39 14,
-  .CX 19 14,
-  .CX 17 14,
-  .CX 16 14,
-  .CX 15 14,
+  .CX 32 14,
+  .CX 31 14,
+  .CX 30 14,
+  .CX 29 14,
+  .CX 28 14,
+  .CX 21 14,
+  .CX 18 14,
   .CX 18 17,
-  .CX 19 17,
-  .CX 15 14,
-  .CX 16 14,
-  .CX 40 14,
-  .CX 41 14,
-  .CX 44 14,
-  .CX 45 14,
-  .CX 47 14,
-  .CX 53 14,
-  .CX 62 14,
-  .CCX 17 14 65,
-  .CX 62 14,
-  .CX 53 14,
-  .CX 47 14,
-  .CX 45 14
+  .CX 21 17,
+  .CX 28 17,
+  .CX 29 17,
+  .CX 30 17,
+  .CX 31 17,
+  .CX 32 17,
+  .CX 33 17,
+  .CX 37 17,
+  .CX 38 17,
+  .CX 43 17,
+  .CX 50 17,
+  .CCX 40 17 56,
+  .CX 50 17,
+  .CX 43 17,
+  .CX 38 17,
+  .CX 37 17,
+  .CX 33 17,
+  .CX 32 17,
+  .CX 31 17,
+  .CX 30 17,
+  .CX 29 17,
+  .CX 28 17
 ]
 
 private def load0Block14 : Program := [
-  .CX 44 14,
-  .CX 41 14,
-  .CX 40 14,
-  .CX 16 14,
-  .CX 15 14,
-  .CX 19 17,
+  .CX 21 17,
   .CX 18 17,
-  .CX 8 5,
-  .CX 22 5,
-  .CX 26 5,
-  .CX 28 5,
-  .CX 33 5,
-  .CX 38 5,
-  .CX 44 5,
-  .CX 46 5,
-  .CX 50 5,
-  .CX 56 5,
-  .CX 5 6,
-  .CX 22 6,
-  .CX 24 6,
-  .CX 26 6,
-  .CX 28 6,
-  .CX 33 6,
-  .CX 35 6,
-  .CX 46 6,
-  .CX 50 6,
-  .CX 56 6,
-  .CX 61 6,
-  .CCX 5 6 66,
-  .CX 61 6
+  .CX 16 15,
+  .CX 19 15,
+  .CX 21 15,
+  .CX 28 15,
+  .CX 29 15,
+  .CX 30 15,
+  .CX 31 15,
+  .CX 32 15,
+  .CX 33 15,
+  .CX 37 15,
+  .CX 38 15,
+  .CX 39 15,
+  .CX 40 15,
+  .CX 50 15,
+  .CCX 49 15 57,
+  .CX 50 15,
+  .CX 40 15,
+  .CX 39 15,
+  .CX 38 15,
+  .CX 37 15,
+  .CX 33 15,
+  .CX 32 15,
+  .CX 31 15,
+  .CX 30 15,
+  .CX 29 15,
+  .CX 28 15,
+  .CX 21 15,
+  .CX 19 15
 ]
 
 private def load0Block15 : Program := [
-  .CX 56 6,
-  .CX 50 6,
-  .CX 46 6,
-  .CX 35 6,
-  .CX 33 6,
-  .CX 28 6,
-  .CX 26 6,
-  .CX 24 6,
-  .CX 22 6,
-  .CX 5 6,
-  .CX 56 5,
-  .CX 50 5,
-  .CX 46 5,
-  .CX 44 5,
-  .CX 38 5,
-  .CX 33 5,
-  .CX 28 5,
-  .CX 26 5,
-  .CX 22 5,
-  .CX 8 5,
+  .CX 16 15,
+  .CX 23 6,
+  .CX 53 6,
+  .CCX 5 6 58,
+  .CX 53 6,
+  .CX 23 6,
+  .CX 23 6,
+  .CX 53 6,
+  .CCX 4 6 59,
+  .CX 53 6,
+  .CX 23 6,
   .CX 5 4,
   .CX 6 4,
-  .CX 21 4,
-  .CX 25 4,
-  .CX 27 4,
+  .CX 8 4,
   .CX 28 4,
-  .CX 36 4,
-  .CX 37 4,
-  .CX 39 4,
-  .CX 41 4
+  .CX 32 4,
+  .CX 38 4,
+  .CX 58 4,
+  .CX 59 4,
+  .CCX 51 4 60,
+  .CX 59 4,
+  .CX 58 4,
+  .CX 38 4,
+  .CX 32 4,
+  .CX 28 4,
+  .CX 8 4,
+  .CX 6 4,
+  .CX 5 4,
+  .CX 8 4,
+  .CX 23 4
 ]
 
 private def load0Block16 : Program := [
-  .CX 43 4,
-  .CX 52 4,
-  .CX 55 4,
-  .CX 57 4,
-  .CCX 66 4 67,
-  .CX 57 4,
-  .CX 55 4,
-  .CX 52 4,
-  .CX 43 4,
-  .CX 41 4,
-  .CX 39 4,
-  .CX 37 4,
-  .CX 36 4,
   .CX 28 4,
-  .CX 27 4,
-  .CX 25 4,
-  .CX 21 4,
-  .CX 6 4,
-  .CX 5 4,
-  .CX 29 22,
-  .CX 32 22,
-  .CX 66 22,
-  .CX 67 22,
-  .CCX 60 22 68,
-  .CX 67 22,
-  .CX 66 22,
-  .CX 32 22,
-  .CX 29 22,
-  .CX 1 0,
-  .CX 14 0
+  .CX 32 4,
+  .CX 38 4,
+  .CX 59 4,
+  .CCX 51 4 61,
+  .CX 59 4,
+  .CX 38 4,
+  .CX 32 4,
+  .CX 28 4,
+  .CX 23 4,
+  .CX 8 4,
+  .CX 57 16,
+  .CCX 39 16 62,
+  .CX 57 16,
+  .CX 18 17,
+  .CX 19 17,
+  .CX 16 14,
+  .CX 18 14,
+  .CX 39 14,
+  .CX 40 14,
+  .CX 44 14,
+  .CX 45 14,
+  .CX 52 14,
+  .CX 55 14,
+  .CX 57 14,
+  .CX 62 14,
+  .CCX 17 14 63,
+  .CX 62 14,
+  .CX 57 14,
+  .CX 55 14
 ]
 
 private def load0Block17 : Program := [
-  .CX 24 0,
-  .CX 27 0,
-  .CX 31 0,
-  .CX 33 0,
-  .CX 34 0,
-  .CX 35 0,
-  .CX 36 0,
-  .CX 37 0,
-  .CX 38 0,
-  .CX 39 0,
-  .CX 42 0,
-  .CX 44 0,
-  .CX 51 0,
-  .CX 52 0,
-  .CX 53 0,
-  .CX 57 0,
-  .CX 35 21,
-  .CX 37 21,
-  .CX 38 21,
-  .CX 42 21,
-  .CX 43 21,
-  .CX 45 21,
-  .CX 47 21,
-  .CX 68 21,
-  .CCX 0 21 69,
-  .CX 68 21,
-  .CX 47 21,
-  .CX 45 21,
-  .CX 43 21,
-  .CX 42 21
+  .CX 52 14,
+  .CX 45 14,
+  .CX 44 14,
+  .CX 40 14,
+  .CX 39 14,
+  .CX 18 14,
+  .CX 16 14,
+  .CX 19 17,
+  .CX 18 17,
+  .X 6,
+  .CX 21 9,
+  .CX 22 9,
+  .CX 31 9,
+  .CX 36 9,
+  .CX 37 9,
+  .CX 43 9,
+  .CX 44 9,
+  .CX 48 9,
+  .CX 51 9,
+  .CX 60 9,
+  .CCX 6 9 64,
+  .CX 60 9,
+  .CX 51 9,
+  .CX 48 9,
+  .CX 44 9,
+  .CX 43 9,
+  .CX 37 9,
+  .CX 36 9,
+  .CX 31 9,
+  .CX 22 9
 ]
 
 private def load0Block18 : Program := [
-  .CX 38 21,
-  .CX 37 21,
-  .CX 35 21,
-  .CX 57 0,
-  .CX 53 0,
-  .CX 52 0,
-  .CX 51 0,
-  .CX 44 0,
-  .CX 42 0,
-  .CX 39 0,
-  .CX 38 0,
-  .CX 37 0,
-  .CX 36 0,
-  .CX 35 0,
-  .CX 34 0,
-  .CX 33 0,
-  .CX 31 0,
-  .CX 27 0,
-  .CX 24 0,
-  .CX 14 0,
-  .CX 1 0,
-  .CX 36 12,
-  .CX 44 12,
-  .CX 68 12,
-  .CCX 10 12 70,
-  .CX 68 12,
-  .CX 44 12,
-  .CX 36 12,
-  .CX 20 15,
-  .CX 25 15
+  .CX 21 9,
+  .X 6,
+  .CX 5 4,
+  .CX 6 4,
+  .CX 8 4,
+  .CX 22 4,
+  .CX 26 4,
+  .CX 28 4,
+  .CX 32 4,
+  .CX 33 4,
+  .CX 35 4,
+  .CX 36 4,
+  .CX 37 4,
+  .CX 38 4,
+  .CX 58 4,
+  .CX 59 4,
+  .CX 60 4,
+  .X 4,
+  .CX 4 22,
+  .CX 26 22,
+  .CX 28 22,
+  .CX 32 22,
+  .CX 33 22,
+  .CX 35 22,
+  .CX 36 22,
+  .CX 37 22,
+  .CX 46 22,
+  .CX 48 22,
+  .CX 58 22,
+  .CX 59 22
 ]
 
 private def load0Block19 : Program := [
-  .X 15,
-  .CCX 18 15 71,
-  .X 15,
-  .CX 25 15,
-  .CX 20 15,
-  .CX 71 69,
-  .CX 71 66,
-  .CX 71 65,
-  .CX 71 64,
-  .CX 71 63,
-  .CX 71 62,
-  .CX 71 59,
-  .CX 71 54,
-  .CX 71 52,
-  .CX 71 51,
-  .CX 71 49,
-  .CX 71 48,
-  .CX 71 42,
-  .CX 71 39,
-  .CX 71 31,
-  .CX 71 26,
-  .CX 71 25,
-  .CX 71 24,
-  .CX 71 23,
-  .CX 71 19,
-  .CX 71 17,
-  .CX 71 15,
-  .CX 71 13,
-  .CX 71 12,
-  .CX 71 10
+  .CX 60 22,
+  .X 22,
+  .CCX 4 22 65,
+  .X 22,
+  .CX 60 22,
+  .CX 59 22,
+  .CX 58 22,
+  .CX 48 22,
+  .CX 46 22,
+  .CX 37 22,
+  .CX 36 22,
+  .CX 35 22,
+  .CX 33 22,
+  .CX 32 22,
+  .CX 28 22,
+  .CX 26 22,
+  .CX 4 22,
+  .X 4,
+  .CX 60 4,
+  .CX 59 4,
+  .CX 58 4,
+  .CX 38 4,
+  .CX 37 4,
+  .CX 36 4,
+  .CX 35 4,
+  .CX 33 4,
+  .CX 32 4,
+  .CX 28 4,
+  .CX 26 4,
+  .CX 22 4
 ]
 
 private def load0Block20 : Program := [
-  .CX 71 8,
-  .CX 70 71,
-  .CX 70 69,
+  .CX 8 4,
+  .CX 6 4,
+  .CX 5 4,
+  .CX 20 5,
+  .CX 35 5,
+  .CX 37 5,
+  .CX 46 5,
+  .CX 48 5,
+  .CX 53 5,
+  .CX 58 5,
+  .CX 59 5,
+  .CX 8 6,
+  .CX 34 6,
+  .CX 36 6,
+  .CX 51 6,
+  .CX 61 6,
+  .CX 64 6,
+  .CX 65 6,
+  .CCX 5 6 66,
+  .CX 65 6,
+  .CX 64 6,
+  .CX 61 6,
+  .CX 51 6,
+  .CX 36 6,
+  .CX 34 6,
+  .CX 8 6,
+  .CX 59 5,
+  .CX 58 5,
+  .CX 53 5,
+  .CX 48 5
+]
+
+private def load0Block21 : Program := [
+  .CX 46 5,
+  .CX 37 5,
+  .CX 35 5,
+  .CX 20 5,
+  .CX 8 4,
+  .CX 23 4,
+  .CX 26 4,
+  .CX 27 4,
+  .CX 28 4,
+  .CX 31 4,
+  .CX 32 4,
+  .CX 38 4,
+  .CX 51 4,
+  .CX 59 4,
+  .CX 61 4,
+  .CX 4 26,
+  .CX 27 26,
+  .CX 28 26,
+  .CX 31 26,
+  .CX 32 26,
+  .CX 36 26,
+  .CX 51 26,
+  .CX 53 26,
+  .CX 59 26,
+  .CX 61 26,
+  .CX 66 26,
+  .CCX 4 26 67,
+  .CX 66 26,
+  .CX 61 26,
+  .CX 59 26
+]
+
+private def load0Block22 : Program := [
+  .CX 53 26,
+  .CX 51 26,
+  .CX 36 26,
+  .CX 32 26,
+  .CX 31 26,
+  .CX 28 26,
+  .CX 27 26,
+  .CX 4 26,
+  .CX 61 4,
+  .CX 59 4,
+  .CX 51 4,
+  .CX 38 4,
+  .CX 32 4,
+  .CX 31 4,
+  .CX 28 4,
+  .CX 27 4,
+  .CX 26 4,
+  .CX 23 4,
+  .CX 8 4,
+  .CCX 34 67 68,
+  .CCX 55 68 69,
+  .CX 1 0,
+  .CX 20 0,
+  .CX 22 0,
+  .CX 23 0,
+  .CX 24 0,
+  .CX 31 0,
+  .CX 32 0,
+  .CX 36 0,
+  .CX 37 0
+]
+
+private def load0Block23 : Program := [
+  .CX 45 0,
+  .CX 46 0,
+  .CX 47 0,
+  .CX 60 0,
+  .X 0,
+  .CCX 0 68 70,
+  .X 0,
+  .CX 60 0,
+  .CX 47 0,
+  .CX 46 0,
+  .CX 45 0,
+  .CX 37 0,
+  .CX 36 0,
+  .CX 32 0,
+  .CX 31 0,
+  .CX 24 0,
+  .CX 23 0,
+  .CX 22 0,
+  .CX 20 0,
+  .CX 1 0,
+  .CX 70 68,
+  .CX 70 67,
   .CX 70 66,
-  .CX 70 65,
-  .CX 70 64,
-  .CX 70 63,
   .CX 70 62,
-  .CX 70 61,
+  .CX 70 60,
   .CX 70 59,
   .CX 70 58,
   .CX 70 57,
   .CX 70 56,
-  .CX 70 55,
-  .CX 70 52,
-  .CX 70 39,
-  .CX 70 36,
-  .CX 70 26,
-  .CX 70 23,
-  .CX 70 17,
-  .CX 70 13,
-  .CX 71 70,
-  .CX 69 71,
-  .CX 69 66,
-  .CX 69 61,
-  .CX 69 59,
-  .CX 69 58,
-  .CX 69 57,
-  .CX 69 56,
-  .CX 69 55
-]
-
-private def load0Block21 : Program := [
-  .CX 69 52,
-  .CX 69 49,
-  .CX 69 26,
-  .CX 69 19,
-  .CX 69 17,
-  .CX 71 69,
-  .CX 68 71,
-  .CX 68 69,
-  .CX 68 67,
-  .CX 68 63,
-  .CX 68 60,
-  .CX 68 59,
-  .CX 68 57,
-  .CX 68 56,
-  .CX 68 55,
-  .CX 68 54,
-  .CX 68 49,
-  .CX 68 44,
-  .CX 68 41,
-  .CX 68 40,
-  .CX 68 39,
-  .CX 68 37,
-  .CX 68 36,
-  .CX 68 35,
-  .CX 68 32,
-  .CX 68 30,
-  .CX 68 28,
-  .CX 68 26,
-  .CX 68 23,
-  .CX 68 17
-]
-
-private def load0Block22 : Program := [
-  .CX 68 16,
-  .CX 68 13,
-  .CX 68 11,
-  .CX 67 71,
-  .CX 67 69,
-  .CX 67 68,
-  .CX 67 65,
-  .CX 67 64,
-  .CX 67 62,
-  .CX 67 60,
-  .CX 67 59,
-  .CX 67 57,
-  .CX 67 56,
-  .CX 67 55,
-  .CX 67 54,
-  .CX 67 49,
-  .CX 67 44,
-  .CX 67 41,
-  .CX 67 40,
-  .CX 67 37,
-  .CX 67 35,
-  .CX 67 32,
-  .CX 67 28,
-  .CX 67 26,
-  .CX 67 23,
-  .CX 67 19,
-  .CX 67 17,
-  .CX 67 16,
-  .CX 67 13,
-  .CX 68 67
-]
-
-private def load0Block23 : Program := [
-  .CX 66 71,
-  .CX 66 65,
-  .CX 66 63,
-  .CX 66 62,
-  .CX 66 61,
-  .CX 66 60,
-  .CX 66 59,
-  .CX 66 58,
-  .CX 66 57,
-  .CX 66 53,
-  .CX 66 51,
-  .CX 66 50,
-  .CX 66 48,
-  .CX 66 47,
-  .CX 66 45,
-  .CX 66 43,
-  .CX 66 42,
-  .CX 66 41,
-  .CX 66 37,
-  .CX 66 36,
-  .CX 66 32,
-  .CX 66 30,
-  .CX 66 28,
-  .CX 66 27,
-  .CX 66 26,
-  .CX 66 25,
-  .CX 66 22,
-  .CX 66 18,
-  .CX 66 17,
-  .CX 66 14
+  .CX 70 55
 ]
 
 private def load0Block24 : Program := [
-  .CX 66 12,
-  .CX 66 9,
-  .CX 66 3,
-  .CX 66 2,
-  .CX 65 70,
-  .CX 65 63,
-  .CX 65 62,
-  .CX 65 53,
-  .CX 65 39,
-  .CX 65 25,
-  .CX 65 19,
-  .CX 65 15,
-  .CX 70 65,
-  .CX 64 69,
-  .CX 64 66,
-  .CX 64 63,
-  .CX 64 62,
-  .CX 64 61,
-  .CX 64 55,
-  .CX 64 53,
-  .CX 64 52,
-  .CX 64 51,
-  .CX 64 49,
-  .CX 64 40,
-  .CX 64 36,
-  .CX 64 35,
-  .CX 64 23,
-  .CX 64 21,
-  .CX 64 18,
-  .CX 64 14
+  .CX 70 54,
+  .CX 70 52,
+  .CX 70 48,
+  .CX 70 46,
+  .CX 70 45,
+  .CX 70 44,
+  .CX 70 43,
+  .CX 70 42,
+  .CX 70 28,
+  .CX 70 21,
+  .CX 70 19,
+  .CX 70 17,
+  .CX 69 68,
+  .CX 69 67,
+  .CX 69 66,
+  .CX 69 65,
+  .CX 69 63,
+  .CX 69 61,
+  .CX 69 60,
+  .CX 69 59,
+  .CX 69 57,
+  .CX 69 53,
+  .CX 69 50,
+  .CX 69 49,
+  .CX 69 47,
+  .CX 69 46,
+  .CX 69 45,
+  .CX 69 42,
+  .CX 69 37,
+  .CX 69 35
 ]
 
 private def load0Block25 : Program := [
-  .CX 64 13,
-  .CX 64 3,
-  .CX 66 64,
-  .CX 63 69,
-  .CX 63 66,
-  .CX 63 65,
-  .CX 63 62,
-  .CX 63 61,
-  .CX 63 55,
-  .CX 63 53,
-  .CX 63 52,
-  .CX 63 51,
-  .CX 63 49,
-  .CX 63 40,
-  .CX 63 36,
-  .CX 63 35,
-  .CX 63 21,
-  .CX 63 18,
-  .CX 63 14,
-  .CX 63 13,
-  .CX 63 12,
-  .CX 63 10,
-  .CX 63 3,
-  .CX 65 63,
-  .CX 62 70,
-  .CX 62 69,
-  .CX 62 68,
-  .CX 62 66,
-  .CX 62 65,
-  .CX 62 64
+  .CX 69 33,
+  .CX 69 26,
+  .CX 69 19,
+  .CX 69 15,
+  .CX 69 12,
+  .CX 68 70,
+  .CX 68 67,
+  .CX 68 66,
+  .CX 68 64,
+  .CX 68 62,
+  .CX 68 60,
+  .CX 68 59,
+  .CX 68 58,
+  .CX 68 56,
+  .CX 68 55,
+  .CX 68 54,
+  .CX 68 52,
+  .CX 68 48,
+  .CX 68 46,
+  .CX 68 45,
+  .CX 68 42,
+  .CX 68 41,
+  .CX 68 38,
+  .CX 68 28,
+  .CX 68 23,
+  .CX 68 21,
+  .CX 68 17,
+  .CX 68 13,
+  .CX 68 6,
+  .CX 67 69
 ]
 
 private def load0Block26 : Program := [
-  .CX 62 58,
+  .CX 67 68,
+  .CX 67 65,
+  .CX 67 64,
+  .CX 67 63,
+  .CX 67 61,
+  .CX 67 58,
+  .CX 67 57,
+  .CX 67 54,
+  .CX 67 52,
+  .CX 67 49,
+  .CX 67 45,
+  .CX 67 44,
+  .CX 67 41,
+  .CX 67 38,
+  .CX 67 34,
+  .CX 67 33,
+  .CX 67 26,
+  .CX 67 23,
+  .CX 67 22,
+  .CX 67 21,
+  .CX 67 20,
+  .CX 67 19,
+  .CX 67 18,
+  .CX 67 16,
+  .CX 67 15,
+  .CX 67 14,
+  .CX 67 13,
+  .CX 67 11,
+  .CX 67 10,
+  .CX 67 9
+]
+
+private def load0Block27 : Program := [
+  .CX 67 8,
+  .CX 67 7,
+  .CX 67 6,
+  .CX 67 5,
+  .CX 67 2,
+  .CX 67 0,
+  .CX 66 68,
+  .CX 66 67,
+  .CX 66 63,
+  .CX 66 59,
+  .CX 66 58,
+  .CX 66 56,
+  .CX 66 55,
+  .CX 66 53,
+  .CX 66 50,
+  .CX 66 48,
+  .CX 66 47,
+  .CX 66 44,
+  .CX 66 40,
+  .CX 66 37,
+  .CX 66 34,
+  .CX 66 33,
+  .CX 66 26,
+  .CX 66 23,
+  .CX 66 22,
+  .CX 66 20,
+  .CX 66 19,
+  .CX 66 18,
+  .CX 66 16,
+  .CX 66 13
+]
+
+private def load0Block28 : Program := [
+  .CX 66 11,
+  .CX 66 6,
+  .CX 66 5,
+  .CX 67 66,
+  .CX 65 67,
+  .CX 65 64,
+  .CX 65 56,
+  .CX 65 50,
+  .CX 65 42,
+  .CX 65 19,
+  .CX 65 11,
+  .CX 67 65,
+  .CX 64 66,
+  .CX 64 54,
+  .CX 64 48,
+  .CX 64 46,
+  .CX 64 45,
+  .CX 64 44,
+  .CX 64 43,
+  .CX 64 42,
+  .CX 64 38,
+  .CX 64 19,
+  .CX 64 9,
+  .CX 64 8,
+  .CX 66 64,
+  .CX 63 70,
+  .CX 63 69,
+  .CX 63 67,
+  .CX 63 66,
+  .CX 63 64
+]
+
+private def load0Block29 : Program := [
+  .CX 63 62,
+  .CX 63 60,
+  .CX 63 59,
+  .CX 63 58,
+  .CX 63 56,
+  .CX 63 55,
+  .CX 63 54,
+  .CX 63 52,
+  .CX 63 50,
+  .CX 63 49,
+  .CX 63 48,
+  .CX 63 45,
+  .CX 63 38,
+  .CX 63 37,
+  .CX 63 35,
+  .CX 63 33,
+  .CX 63 28,
+  .CX 63 26,
+  .CX 63 21,
+  .CX 63 17,
+  .CX 63 15,
+  .CX 63 12,
+  .CX 63 11,
+  .CX 63 9,
+  .CX 63 8,
+  .CX 63 7,
+  .CX 64 63,
+  .CX 62 70,
+  .CX 62 68,
+  .CX 62 67
+]
+
+private def load0Block30 : Program := [
+  .CX 62 65,
+  .CX 62 63,
+  .CX 62 61,
+  .CX 62 57,
   .CX 62 56,
   .CX 62 55,
   .CX 62 54,
   .CX 62 53,
   .CX 62 51,
-  .CX 62 50,
-  .CX 62 49,
+  .CX 62 48,
   .CX 62 47,
-  .CX 62 45,
   .CX 62 44,
-  .CX 62 43,
   .CX 62 42,
-  .CX 62 40,
-  .CX 62 39,
-  .CX 62 36,
+  .CX 62 37,
   .CX 62 35,
-  .CX 62 32,
+  .CX 62 34,
   .CX 62 28,
+  .CX 62 23,
+  .CX 62 22,
+  .CX 62 20,
   .CX 62 18,
+  .CX 62 17,
   .CX 62 16,
-  .CX 62 15,
   .CX 62 14,
   .CX 62 13,
-  .CX 62 10,
-  .CX 62 9,
-  .CX 62 3,
+  .CX 62 11,
+  .CX 62 6,
+  .CX 62 5,
   .CX 62 2,
-  .CX 64 62,
-  .CX 61 69
-]
-
-private def load0Block27 : Program := [
-  .CX 61 66,
-  .CX 61 55,
-  .CX 61 52,
-  .CX 61 51,
-  .CX 61 48,
-  .CX 61 47,
-  .CX 61 45,
-  .CX 61 41,
-  .CX 61 35,
-  .CX 61 23,
-  .CX 61 21,
-  .CX 61 14,
-  .CX 61 13,
-  .CX 61 3,
-  .CX 66 61,
-  .CX 60 70,
-  .CX 60 69,
-  .CX 60 67,
-  .CX 60 65,
-  .CX 60 64,
-  .CX 60 53,
-  .CX 60 37,
-  .CX 60 30,
-  .CX 60 25,
-  .CX 60 15,
-  .CX 60 13,
-  .CX 60 12,
-  .CX 60 11,
-  .CX 60 10,
-  .CX 60 9
-]
-
-private def load0Block28 : Program := [
-  .CX 64 60,
-  .CX 59 71,
-  .CX 59 70,
-  .CX 59 69,
-  .CX 59 65,
-  .CX 59 64,
-  .CX 59 60,
-  .CX 59 58,
-  .CX 59 57,
-  .CX 59 56,
-  .CX 59 55,
-  .CX 59 54,
-  .CX 59 53,
-  .CX 59 52,
-  .CX 59 48,
-  .CX 59 47,
-  .CX 59 46,
-  .CX 59 44,
-  .CX 59 42,
-  .CX 59 35,
-  .CX 59 34,
-  .CX 59 33,
-  .CX 59 32,
-  .CX 59 30,
-  .CX 59 28,
-  .CX 59 27,
-  .CX 59 26,
-  .CX 59 21,
-  .CX 59 20,
-  .CX 59 19
-]
-
-private def load0Block29 : Program := [
-  .CX 59 17,
-  .CX 59 15,
-  .CX 59 13,
-  .CX 59 10,
-  .CX 59 9,
-  .CX 59 7,
-  .CX 59 6,
-  .CX 59 4,
-  .CX 59 2,
-  .CX 58 70,
-  .CX 58 67,
-  .CX 58 65,
-  .CX 58 64,
-  .CX 58 59,
-  .CX 58 55,
-  .CX 58 49,
-  .CX 58 36,
-  .CX 58 30,
-  .CX 58 25,
-  .CX 58 23,
-  .CX 58 19,
-  .CX 58 15,
-  .CX 58 12,
-  .CX 58 11,
-  .CX 58 10,
-  .CX 58 9,
-  .CX 58 7,
-  .CX 59 58,
-  .CX 57 71,
-  .CX 57 70
-]
-
-private def load0Block30 : Program := [
-  .CX 57 67,
-  .CX 57 64,
-  .CX 57 60,
-  .CX 57 58,
-  .CX 57 56,
-  .CX 57 53,
-  .CX 57 52,
-  .CX 57 49,
-  .CX 57 48,
-  .CX 57 47,
-  .CX 57 46,
-  .CX 57 44,
-  .CX 57 42,
-  .CX 57 41,
-  .CX 57 36,
-  .CX 57 35,
-  .CX 57 34,
-  .CX 57 33,
-  .CX 57 32,
-  .CX 57 28,
-  .CX 57 27,
-  .CX 57 26,
-  .CX 57 25,
-  .CX 57 21,
-  .CX 57 20,
-  .CX 57 19,
-  .CX 57 17,
-  .CX 57 15,
-  .CX 57 12,
-  .CX 57 11
+  .CX 62 0
 ]
 
 private def load0Block31 : Program := [
-  .CX 57 9,
-  .CX 57 6,
-  .CX 57 2,
-  .CX 58 57,
-  .CX 56 69,
-  .CX 56 65,
-  .CX 56 64,
-  .CX 56 62,
-  .CX 56 59,
-  .CX 56 58,
-  .CX 56 57,
-  .CX 56 54,
-  .CX 56 53,
-  .CX 56 50,
-  .CX 56 47,
-  .CX 56 45,
-  .CX 56 44,
-  .CX 56 35,
-  .CX 56 25,
-  .CX 56 22,
-  .CX 56 20,
-  .CX 56 19,
-  .CX 56 13,
-  .CX 56 12,
-  .CX 56 10,
-  .CX 56 9,
-  .CX 56 7,
-  .CX 56 6,
-  .CX 56 4,
-  .CX 56 2
+  .CX 63 62,
+  .CX 61 68,
+  .CX 61 67,
+  .CX 61 65,
+  .CX 61 59,
+  .CX 61 58,
+  .CX 61 57,
+  .CX 61 55,
+  .CX 61 53,
+  .CX 61 51,
+  .CX 61 50,
+  .CX 61 48,
+  .CX 61 47,
+  .CX 61 46,
+  .CX 61 44,
+  .CX 61 40,
+  .CX 61 31,
+  .CX 61 30,
+  .CX 61 29,
+  .CX 61 28,
+  .CX 61 25,
+  .CX 61 23,
+  .CX 61 20,
+  .CX 61 18,
+  .CX 61 16,
+  .CX 61 13,
+  .CX 61 11,
+  .CX 61 6,
+  .CX 65 61,
+  .CX 60 66
 ]
 
 private def load0Block32 : Program := [
-  .CX 56 1,
-  .CX 56 0,
-  .CX 55 70,
-  .CX 55 66,
-  .CX 55 56,
-  .CX 55 52,
-  .CX 55 51,
-  .CX 55 48,
-  .CX 55 19,
-  .CX 55 15,
-  .CX 55 14,
-  .CX 55 3,
-  .CX 55 1,
-  .CX 56 55,
-  .CX 54 69,
-  .CX 54 58,
-  .CX 54 53,
-  .CX 54 47,
-  .CX 54 45,
-  .CX 54 41,
-  .CX 54 24,
-  .CX 54 23,
-  .CX 54 19,
-  .CX 54 13,
-  .CX 54 6,
-  .CX 58 54,
-  .CX 53 63,
-  .CX 53 48,
-  .CX 53 43,
-  .CX 53 42
+  .CX 60 65,
+  .CX 60 59,
+  .CX 60 58,
+  .CX 60 53,
+  .CX 60 48,
+  .CX 60 45,
+  .CX 60 19,
+  .CX 60 16,
+  .CX 60 9,
+  .CX 60 8,
+  .CX 65 60,
+  .CX 59 66,
+  .CX 59 65,
+  .CX 59 61,
+  .CX 59 58,
+  .CX 59 56,
+  .CX 59 53,
+  .CX 59 50,
+  .CX 59 48,
+  .CX 59 46,
+  .CX 59 45,
+  .CX 59 16,
+  .CX 59 9,
+  .CX 59 8,
+  .CX 59 5,
+  .CX 61 59,
+  .CX 58 67,
+  .CX 58 66,
+  .CX 58 65,
+  .CX 58 64
 ]
 
 private def load0Block33 : Program := [
-  .CX 53 41,
-  .CX 53 23,
-  .CX 63 53,
-  .CX 52 71,
-  .CX 52 67,
-  .CX 52 66,
-  .CX 52 64,
-  .CX 52 63,
-  .CX 52 61,
-  .CX 52 60,
-  .CX 52 57,
-  .CX 52 56,
-  .CX 52 55,
-  .CX 52 51,
-  .CX 52 50,
-  .CX 52 49,
-  .CX 52 48,
-  .CX 52 47,
-  .CX 52 43,
-  .CX 52 41,
-  .CX 52 40,
-  .CX 52 39,
-  .CX 52 37,
-  .CX 52 36,
-  .CX 52 35,
-  .CX 52 34,
-  .CX 52 33,
-  .CX 52 30,
-  .CX 52 26,
-  .CX 52 25
+  .CX 58 61,
+  .CX 58 60,
+  .CX 58 57,
+  .CX 58 51,
+  .CX 58 46,
+  .CX 58 41,
+  .CX 58 31,
+  .CX 58 30,
+  .CX 58 29,
+  .CX 58 28,
+  .CX 58 25,
+  .CX 58 20,
+  .CX 58 19,
+  .CX 58 16,
+  .CX 58 11,
+  .CX 58 9,
+  .CX 58 8,
+  .CX 58 7,
+  .CX 58 5,
+  .CX 60 58,
+  .CX 57 69,
+  .CX 57 56,
+  .CX 57 50,
+  .CX 57 49,
+  .CX 57 48,
+  .CX 57 46,
+  .CX 57 45,
+  .CX 57 19,
+  .CX 57 15,
+  .CX 69 57
 ]
 
 private def load0Block34 : Program := [
-  .CX 52 24,
-  .CX 52 23,
-  .CX 52 19,
-  .CX 52 18,
-  .CX 52 17,
-  .CX 52 14,
-  .CX 52 12,
-  .CX 52 11,
-  .CX 52 9,
-  .CX 52 5,
-  .CX 52 4,
-  .CX 52 3,
-  .CX 52 1,
-  .CX 52 0,
-  .CX 51 70,
-  .CX 51 66,
-  .CX 51 48,
-  .CX 51 19,
-  .CX 51 15,
-  .CX 51 14,
-  .CX 66 51,
-  .CX 50 70,
-  .CX 50 65,
-  .CX 50 64,
-  .CX 50 63,
-  .CX 50 62,
-  .CX 50 59,
-  .CX 50 58,
-  .CX 50 55,
-  .CX 50 54
+  .CX 56 68,
+  .CX 56 50,
+  .CX 56 42,
+  .CX 56 41,
+  .CX 56 19,
+  .CX 56 13,
+  .CX 68 56,
+  .CX 55 70,
+  .CX 55 68,
+  .CX 55 67,
+  .CX 55 66,
+  .CX 55 65,
+  .CX 55 64,
+  .CX 55 63,
+  .CX 55 62,
+  .CX 55 60,
+  .CX 55 57,
+  .CX 55 54,
+  .CX 55 52,
+  .CX 55 51,
+  .CX 55 48,
+  .CX 55 47,
+  .CX 55 46,
+  .CX 55 42,
+  .CX 55 41,
+  .CX 55 40,
+  .CX 55 38,
+  .CX 55 37,
+  .CX 55 30,
+  .CX 55 29
 ]
 
 private def load0Block35 : Program := [
-  .CX 50 53,
-  .CX 50 48,
-  .CX 50 44,
-  .CX 50 43,
-  .CX 50 42,
-  .CX 50 25,
-  .CX 50 22,
-  .CX 50 21,
-  .CX 50 20,
-  .CX 50 15,
-  .CX 50 12,
-  .CX 50 10,
-  .CX 50 9,
-  .CX 50 8,
-  .CX 50 7,
-  .CX 50 6,
-  .CX 50 2,
-  .CX 50 0,
-  .CX 53 50,
-  .CX 49 65,
-  .CX 49 60,
-  .CX 49 43,
-  .CX 49 42,
-  .CX 49 41,
-  .CX 49 40,
-  .CX 49 36,
-  .CX 49 25,
-  .CX 49 23,
-  .CX 49 10,
-  .CX 60 49
+  .CX 55 25,
+  .CX 55 24,
+  .CX 55 21,
+  .CX 55 20,
+  .CX 55 17,
+  .CX 55 16,
+  .CX 55 14,
+  .CX 55 13,
+  .CX 55 11,
+  .CX 55 10,
+  .CX 55 9,
+  .CX 55 8,
+  .CX 55 7,
+  .CX 55 4,
+  .CX 55 3,
+  .CX 55 2,
+  .CX 55 1,
+  .CX 55 0,
+  .CX 54 68,
+  .CX 54 55,
+  .CX 54 47,
+  .CX 54 45,
+  .CX 54 44,
+  .CX 54 43,
+  .CX 54 41,
+  .CX 54 38,
+  .CX 54 19,
+  .CX 54 13,
+  .CX 54 4,
+  .CX 55 54
 ]
 
 private def load0Block36 : Program := [
-  .CX 48 70,
-  .CX 48 68,
-  .CX 48 19,
-  .CX 48 16,
-  .CX 48 15,
-  .CX 68 48,
-  .CX 47 71,
-  .CX 47 70,
-  .CX 47 69,
-  .CX 47 68,
-  .CX 47 65,
-  .CX 47 64,
-  .CX 47 62,
-  .CX 47 59,
-  .CX 47 57,
-  .CX 47 53,
-  .CX 47 52,
-  .CX 47 49,
-  .CX 47 43,
-  .CX 47 41,
-  .CX 47 40,
-  .CX 47 37,
-  .CX 47 34,
-  .CX 47 33,
-  .CX 47 32,
-  .CX 47 30,
-  .CX 47 28,
-  .CX 47 27,
-  .CX 47 26,
-  .CX 47 24
+  .CX 53 69,
+  .CX 53 67,
+  .CX 53 66,
+  .CX 53 64,
+  .CX 53 63,
+  .CX 53 60,
+  .CX 53 58,
+  .CX 53 57,
+  .CX 53 56,
+  .CX 53 54,
+  .CX 53 52,
+  .CX 53 49,
+  .CX 53 47,
+  .CX 53 46,
+  .CX 53 45,
+  .CX 53 43,
+  .CX 53 41,
+  .CX 53 37,
+  .CX 53 31,
+  .CX 53 30,
+  .CX 53 29,
+  .CX 53 28,
+  .CX 53 25,
+  .CX 53 24,
+  .CX 53 23,
+  .CX 53 21,
+  .CX 53 20,
+  .CX 53 18,
+  .CX 53 15,
+  .CX 53 14
 ]
 
 private def load0Block37 : Program := [
-  .CX 47 22,
-  .CX 47 21,
-  .CX 47 17,
-  .CX 47 16,
-  .CX 47 15,
-  .CX 47 13,
-  .CX 47 12,
-  .CX 47 10,
-  .CX 47 9,
-  .CX 47 8,
-  .CX 47 7,
-  .CX 47 5,
-  .CX 47 4,
-  .CX 49 47,
-  .CX 46 71,
-  .CX 46 65,
-  .CX 46 63,
-  .CX 46 60,
-  .CX 46 59,
-  .CX 46 58,
-  .CX 46 55,
-  .CX 46 54,
-  .CX 46 49,
-  .CX 46 48,
-  .CX 46 45,
-  .CX 46 44,
-  .CX 46 43,
-  .CX 46 38,
-  .CX 46 37,
-  .CX 46 34
+  .CX 53 12,
+  .CX 53 11,
+  .CX 53 9,
+  .CX 53 8,
+  .CX 53 7,
+  .CX 53 6,
+  .CX 53 3,
+  .CX 53 2,
+  .CX 53 0,
+  .CX 54 53,
+  .CX 52 69,
+  .CX 52 63,
+  .CX 52 49,
+  .CX 52 19,
+  .CX 52 15,
+  .CX 52 14,
+  .CX 63 52,
+  .CX 51 68,
+  .CX 51 66,
+  .CX 51 60,
+  .CX 51 55,
+  .CX 51 54,
+  .CX 51 52,
+  .CX 51 48,
+  .CX 51 47,
+  .CX 51 38,
+  .CX 51 31,
+  .CX 51 30,
+  .CX 51 29,
+  .CX 51 28
 ]
 
 private def load0Block38 : Program := [
-  .CX 46 33,
-  .CX 46 32,
-  .CX 46 30,
-  .CX 46 28,
-  .CX 46 27,
-  .CX 46 26,
-  .CX 46 20,
-  .CX 46 17,
-  .CX 46 10,
-  .CX 46 7,
-  .CX 46 6,
-  .CX 46 2,
-  .CX 46 0,
+  .CX 51 25,
+  .CX 51 23,
+  .CX 51 21,
+  .CX 51 20,
+  .CX 51 13,
+  .CX 51 9,
+  .CX 51 8,
+  .CX 51 4,
+  .CX 51 3,
+  .CX 51 2,
+  .CX 51 0,
+  .CX 50 70,
+  .CX 50 19,
+  .CX 50 17,
+  .CX 70 50,
+  .CX 49 60,
+  .CX 49 48,
+  .CX 49 46,
+  .CX 49 45,
+  .CX 49 44,
+  .CX 49 41,
+  .CX 60 49,
+  .CX 48 68,
+  .CX 48 66,
+  .CX 48 47,
   .CX 48 46,
-  .CX 45 71,
-  .CX 45 70,
-  .CX 45 69,
-  .CX 45 68,
-  .CX 45 57,
-  .CX 45 56,
-  .CX 45 54,
-  .CX 45 52,
-  .CX 45 49,
-  .CX 45 48,
-  .CX 45 47,
-  .CX 45 44,
-  .CX 45 43,
-  .CX 45 40,
-  .CX 45 38,
-  .CX 45 34
+  .CX 48 42,
+  .CX 48 41,
+  .CX 48 13,
+  .CX 48 9
 ]
 
 private def load0Block39 : Program := [
-  .CX 45 33,
-  .CX 45 32,
-  .CX 45 30,
-  .CX 45 28,
-  .CX 45 27,
-  .CX 45 26,
-  .CX 45 25,
-  .CX 45 23,
-  .CX 45 20,
-  .CX 45 17,
-  .CX 45 16,
-  .CX 45 15,
-  .CX 45 13,
-  .CX 45 5,
-  .CX 45 4,
-  .CX 45 1,
+  .CX 66 48,
+  .CX 47 66,
+  .CX 47 65,
   .CX 47 45,
-  .CX 44 70,
-  .CX 44 69,
-  .CX 44 65,
-  .CX 44 61,
-  .CX 44 60,
-  .CX 44 59,
-  .CX 44 56,
-  .CX 44 55,
-  .CX 44 54,
-  .CX 44 53,
-  .CX 44 52,
-  .CX 44 43,
-  .CX 44 42
+  .CX 47 19,
+  .CX 47 16,
+  .CX 47 9,
+  .CX 65 47,
+  .CX 46 68,
+  .CX 46 67,
+  .CX 46 65,
+  .CX 46 61,
+  .CX 46 56,
+  .CX 46 55,
+  .CX 46 54,
+  .CX 46 51,
+  .CX 46 44,
+  .CX 46 43,
+  .CX 46 42,
+  .CX 46 41,
+  .CX 46 38,
+  .CX 46 24,
+  .CX 46 16,
+  .CX 46 13,
+  .CX 46 11,
+  .CX 46 6,
+  .CX 46 5,
+  .CX 46 4,
+  .CX 46 3,
+  .CX 51 46
 ]
 
 private def load0Block40 : Program := [
-  .CX 44 39,
-  .CX 44 35,
-  .CX 44 32,
-  .CX 44 30,
-  .CX 44 28,
-  .CX 44 27,
-  .CX 44 25,
-  .CX 44 20,
+  .CX 45 65,
+  .CX 45 54,
+  .CX 45 24,
+  .CX 45 19,
+  .CX 45 16,
+  .CX 45 3,
+  .CX 54 45,
+  .CX 44 69,
+  .CX 44 60,
+  .CX 44 58,
+  .CX 44 57,
+  .CX 44 43,
+  .CX 44 41,
+  .CX 44 19,
   .CX 44 18,
   .CX 44 15,
-  .CX 44 13,
-  .CX 44 10,
-  .CX 44 8,
-  .CX 44 7,
-  .CX 44 5,
-  .CX 44 2,
-  .CX 44 1,
-  .CX 44 0,
-  .CX 52 44,
-  .CX 43 71,
-  .CX 43 69,
+  .CX 44 12,
+  .CX 57 44,
+  .CX 43 70,
   .CX 43 67,
   .CX 43 64,
-  .CX 43 63,
-  .CX 43 61,
   .CX 43 60,
-  .CX 43 59,
   .CX 43 58,
   .CX 43 57,
-  .CX 43 52
+  .CX 43 55,
+  .CX 43 54,
+  .CX 43 53,
+  .CX 43 50,
+  .CX 43 49,
+  .CX 43 48
 ]
 
 private def load0Block41 : Program := [
-  .CX 43 51,
-  .CX 43 49,
+  .CX 43 47,
+  .CX 43 46,
+  .CX 43 45,
   .CX 43 44,
   .CX 43 41,
-  .CX 43 39,
   .CX 43 38,
-  .CX 43 35,
-  .CX 43 34,
-  .CX 43 33,
+  .CX 43 37,
   .CX 43 30,
-  .CX 43 26,
+  .CX 43 29,
   .CX 43 25,
+  .CX 43 20,
   .CX 43 19,
   .CX 43 18,
   .CX 43 17,
-  .CX 43 13,
   .CX 43 12,
   .CX 43 11,
-  .CX 43 9,
+  .CX 43 8,
   .CX 43 7,
-  .CX 43 6,
-  .CX 43 5,
   .CX 43 4,
   .CX 43 3,
-  .CX 42 71,
+  .CX 43 2,
+  .CX 43 1,
+  .CX 42 70,
   .CX 42 68,
-  .CX 42 65,
-  .CX 42 61,
-  .CX 42 60,
-  .CX 42 59
+  .CX 42 62,
+  .CX 42 17,
+  .CX 42 13,
+  .CX 42 12,
+  .CX 42 10,
+  .CX 62 42
 ]
 
 private def load0Block42 : Program := [
-  .CX 42 58,
-  .CX 42 57,
-  .CX 42 52,
-  .CX 42 51,
-  .CX 42 49,
-  .CX 42 44,
-  .CX 42 43,
-  .CX 42 39,
-  .CX 42 38,
-  .CX 42 37,
-  .CX 42 35,
-  .CX 42 34,
-  .CX 42 33,
-  .CX 42 26,
-  .CX 42 23,
-  .CX 42 18,
-  .CX 42 17,
-  .CX 42 16,
-  .CX 42 10,
-  .CX 42 7,
-  .CX 42 6,
-  .CX 42 5,
-  .CX 42 4,
-  .CX 42 3,
-  .CX 41 69,
   .CX 41 68,
   .CX 41 67,
-  .CX 41 65,
-  .CX 41 63,
-  .CX 41 62
+  .CX 41 13,
+  .CX 41 11,
+  .CX 67 41,
+  .CX 40 69,
+  .CX 40 68,
+  .CX 40 67,
+  .CX 40 64,
+  .CX 40 61,
+  .CX 40 60,
+  .CX 40 57,
+  .CX 40 56,
+  .CX 40 54,
+  .CX 40 53,
+  .CX 40 52,
+  .CX 40 51,
+  .CX 40 50,
+  .CX 40 48,
+  .CX 40 47,
+  .CX 40 46,
+  .CX 40 45,
+  .CX 40 44,
+  .CX 40 41,
+  .CX 40 39,
+  .CX 40 37,
+  .CX 40 36,
+  .CX 40 33,
+  .CX 40 31,
+  .CX 40 30
 ]
 
 private def load0Block43 : Program := [
-  .CX 41 61,
-  .CX 41 60,
-  .CX 41 58,
-  .CX 41 56,
-  .CX 41 53,
-  .CX 41 51,
-  .CX 41 43,
-  .CX 41 39,
-  .CX 41 38,
-  .CX 41 37,
-  .CX 41 35,
-  .CX 41 34,
-  .CX 41 32,
-  .CX 41 28,
-  .CX 41 27,
-  .CX 41 25,
-  .CX 41 24,
-  .CX 41 23,
-  .CX 41 22,
-  .CX 41 18,
-  .CX 41 16,
-  .CX 41 13,
-  .CX 41 11,
-  .CX 41 10,
-  .CX 41 8,
-  .CX 41 6,
-  .CX 41 3,
-  .CX 41 1,
-  .CX 40 65,
-  .CX 40 62
-]
-
-private def load0Block44 : Program := [
-  .CX 40 61,
-  .CX 40 59,
-  .CX 40 58,
-  .CX 40 57,
-  .CX 40 55,
-  .CX 40 52,
-  .CX 40 48,
-  .CX 40 47,
-  .CX 40 45,
-  .CX 40 44,
-  .CX 40 39,
-  .CX 40 38,
-  .CX 40 35,
-  .CX 40 32,
-  .CX 40 30,
   .CX 40 28,
   .CX 40 27,
-  .CX 40 25,
-  .CX 40 23,
-  .CX 40 22,
+  .CX 40 26,
   .CX 40 21,
   .CX 40 19,
-  .CX 40 18,
+  .CX 40 15,
+  .CX 40 13,
   .CX 40 12,
-  .CX 40 10,
+  .CX 40 11,
+  .CX 40 8,
   .CX 40 7,
   .CX 40 6,
   .CX 40 5,
-  .CX 40 4,
-  .CX 40 0
-]
-
-private def load0Block45 : Program := [
-  .CX 44 40,
+  .CX 40 3,
+  .CX 40 2,
+  .CX 40 1,
+  .CX 40 0,
   .CX 39 70,
-  .CX 39 69,
   .CX 39 68,
-  .CX 39 63,
-  .CX 39 62,
+  .CX 39 66,
+  .CX 39 64,
   .CX 39 61,
   .CX 39 60,
-  .CX 39 58,
+  .CX 39 59,
   .CX 39 57,
-  .CX 39 56,
-  .CX 39 50,
+  .CX 39 55,
+  .CX 39 52,
+  .CX 39 48,
+  .CX 39 46,
+  .CX 39 45
+]
+
+private def load0Block44 : Program := [
+  .CX 39 44,
+  .CX 39 42,
+  .CX 39 41,
+  .CX 39 40,
   .CX 39 35,
-  .CX 39 32,
+  .CX 39 34,
+  .CX 39 31,
   .CX 39 30,
+  .CX 39 29,
   .CX 39 28,
   .CX 39 27,
+  .CX 39 25,
+  .CX 39 24,
   .CX 39 22,
   .CX 39 21,
   .CX 39 19,
-  .CX 39 18,
-  .CX 39 16,
-  .CX 39 15,
+  .CX 39 17,
   .CX 39 13,
   .CX 39 12,
-  .CX 39 6,
+  .CX 39 9,
+  .CX 39 8,
+  .CX 39 7,
+  .CX 39 5,
   .CX 39 4,
-  .CX 39 1,
-  .CX 50 39,
-  .CX 38 64
+  .CX 39 2,
+  .CX 39 0,
+  .CX 40 39,
+  .CX 38 70,
+  .CX 38 68,
+  .CX 38 67
+]
+
+private def load0Block45 : Program := [
+  .CX 38 62,
+  .CX 38 55,
+  .CX 38 54,
+  .CX 38 52,
+  .CX 38 45,
+  .CX 38 44,
+  .CX 38 24,
+  .CX 38 21,
+  .CX 38 17,
+  .CX 38 13,
+  .CX 38 12,
+  .CX 38 11,
+  .CX 38 10,
+  .CX 38 4,
+  .CX 38 3,
+  .CX 38 2,
+  .CX 38 0,
+  .CX 44 38,
+  .CX 37 70,
+  .CX 37 68,
+  .CX 37 67,
+  .CX 37 66,
+  .CX 37 65,
+  .CX 37 63,
+  .CX 37 61,
+  .CX 37 60,
+  .CX 37 59,
+  .CX 37 57,
+  .CX 37 56,
+  .CX 37 54
 ]
 
 private def load0Block46 : Program := [
-  .CX 38 52,
-  .CX 38 50,
-  .CX 38 46,
-  .CX 38 37,
-  .CX 38 9,
-  .CX 38 5,
-  .CX 46 38,
-  .CX 37 64,
-  .CX 37 56,
-  .CX 37 55,
   .CX 37 53,
-  .CX 37 52,
-  .CX 37 51,
-  .CX 37 50,
+  .CX 37 49,
   .CX 37 48,
-  .CX 37 47,
-  .CX 37 43,
+  .CX 37 46,
   .CX 37 42,
   .CX 37 41,
   .CX 37 39,
+  .CX 37 35,
   .CX 37 34,
+  .CX 37 31,
+  .CX 37 30,
+  .CX 37 23,
+  .CX 37 22,
   .CX 37 21,
+  .CX 37 20,
+  .CX 37 17,
+  .CX 37 16,
+  .CX 37 14,
+  .CX 37 13,
+  .CX 37 12,
+  .CX 37 11,
   .CX 37 9,
   .CX 37 8,
+  .CX 37 6,
   .CX 37 5,
   .CX 37 3,
-  .CX 37 2,
   .CX 37 1,
-  .CX 37 0,
-  .CX 39 37
+  .CX 39 37,
+  .CX 36 69,
+  .CX 36 67
 ]
 
 private def load0Block47 : Program := [
-  .CX 36 69,
-  .CX 36 68,
+  .CX 36 65,
   .CX 36 63,
-  .CX 36 62,
-  .CX 36 60,
-  .CX 36 56,
-  .CX 36 54,
-  .CX 36 53,
+  .CX 36 59,
+  .CX 36 58,
+  .CX 36 55,
   .CX 36 51,
+  .CX 36 50,
+  .CX 36 49,
+  .CX 36 48,
   .CX 36 47,
-  .CX 36 45,
+  .CX 36 44,
+  .CX 36 42,
   .CX 36 41,
   .CX 36 39,
   .CX 36 38,
+  .CX 36 37,
+  .CX 36 35,
   .CX 36 34,
-  .CX 36 24,
+  .CX 36 30,
+  .CX 36 28,
+  .CX 36 23,
   .CX 36 22,
+  .CX 36 21,
   .CX 36 20,
-  .CX 36 19,
+  .CX 36 18,
   .CX 36 16,
-  .CX 36 13,
-  .CX 36 12,
-  .CX 36 8,
-  .CX 36 3,
-  .CX 36 2,
-  .CX 36 1,
-  .CX 38 36,
-  .CX 35 71,
-  .CX 35 70,
-  .CX 35 68
+  .CX 36 15,
+  .CX 36 14,
+  .CX 36 11,
+  .CX 36 8
 ]
 
 private def load0Block48 : Program := [
-  .CX 35 67,
+  .CX 36 4,
+  .CX 37 36,
+  .CX 35 70,
   .CX 35 65,
-  .CX 35 64,
+  .CX 35 62,
+  .CX 35 61,
   .CX 35 60,
-  .CX 35 58,
   .CX 35 57,
+  .CX 35 56,
   .CX 35 55,
-  .CX 35 54,
+  .CX 35 53,
   .CX 35 52,
   .CX 35 49,
-  .CX 35 45,
+  .CX 35 48,
+  .CX 35 47,
+  .CX 35 46,
   .CX 35 44,
-  .CX 35 42,
-  .CX 35 41,
-  .CX 35 40,
   .CX 35 39,
-  .CX 35 38,
-  .CX 35 33,
+  .CX 35 34,
   .CX 35 32,
-  .CX 35 29,
   .CX 35 28,
-  .CX 35 27,
   .CX 35 26,
   .CX 35 25,
   .CX 35 24,
@@ -39307,837 +39865,780 @@ private def load0Block48 : Program := [
   .CX 35 20,
   .CX 35 17,
   .CX 35 16,
-  .CX 35 15
+  .CX 35 10,
+  .CX 35 8
 ]
 
 private def load0Block49 : Program := [
-  .CX 35 11,
-  .CX 35 10,
-  .CX 35 9,
   .CX 35 6,
   .CX 35 5,
   .CX 35 4,
+  .CX 35 2,
+  .CX 35 1,
   .CX 35 0,
-  .CX 34 68,
+  .CX 34 70,
+  .CX 34 69,
+  .CX 34 67,
+  .CX 34 66,
   .CX 34 65,
-  .CX 34 59,
-  .CX 34 56,
+  .CX 34 62,
+  .CX 34 60,
+  .CX 34 58,
+  .CX 34 57,
   .CX 34 55,
-  .CX 34 53,
+  .CX 34 54,
   .CX 34 52,
-  .CX 34 51,
-  .CX 34 50,
-  .CX 34 47,
+  .CX 34 48,
+  .CX 34 45,
   .CX 34 44,
-  .CX 34 42,
   .CX 34 41,
-  .CX 34 36,
-  .CX 34 25,
-  .CX 34 23,
+  .CX 34 35,
+  .CX 34 24,
   .CX 34 21,
   .CX 34 19,
+  .CX 34 18,
+  .CX 34 17,
   .CX 34 16,
-  .CX 34 12,
-  .CX 34 10,
-  .CX 34 8,
-  .CX 34 7
+  .CX 34 15
 ]
 
 private def load0Block50 : Program := [
-  .CX 34 5,
+  .CX 34 11,
+  .CX 34 10,
+  .CX 34 9,
+  .CX 34 8,
+  .CX 34 4,
   .CX 34 3,
   .CX 34 2,
-  .CX 34 1,
   .CX 34 0,
-  .CX 36 34,
-  .CX 33 71,
-  .CX 33 70,
-  .CX 33 64,
-  .CX 33 63,
-  .CX 33 60,
-  .CX 33 59,
-  .CX 33 57,
-  .CX 33 56,
-  .CX 33 54,
-  .CX 33 52,
+  .CX 35 34,
+  .CX 33 69,
+  .CX 33 67,
+  .CX 33 66,
+  .CX 33 65,
+  .CX 33 61,
+  .CX 33 58,
+  .CX 33 55,
+  .CX 33 49,
   .CX 33 48,
-  .CX 33 44,
-  .CX 33 43,
-  .CX 33 42,
-  .CX 33 41,
-  .CX 33 40,
-  .CX 33 38,
-  .CX 33 37,
-  .CX 33 32,
+  .CX 33 46,
+  .CX 33 36,
+  .CX 33 31,
   .CX 33 30,
+  .CX 33 29,
   .CX 33 28,
-  .CX 33 27,
   .CX 33 26,
-  .CX 33 25
+  .CX 33 25,
+  .CX 33 24,
+  .CX 33 20,
+  .CX 33 19,
+  .CX 33 18
 ]
 
 private def load0Block51 : Program := [
-  .CX 33 23,
-  .CX 33 21,
-  .CX 33 20,
-  .CX 33 19,
-  .CX 33 17,
+  .CX 33 16,
   .CX 33 15,
-  .CX 33 12,
+  .CX 33 11,
   .CX 33 9,
-  .CX 33 7,
+  .CX 33 8,
   .CX 33 5,
   .CX 33 4,
-  .CX 33 1,
-  .CX 37 33,
-  .CX 32 71,
+  .CX 36 33,
+  .CX 32 70,
   .CX 32 67,
+  .CX 32 63,
   .CX 32 62,
   .CX 32 60,
-  .CX 32 57,
+  .CX 32 59,
   .CX 32 56,
-  .CX 32 55,
   .CX 32 54,
+  .CX 32 53,
+  .CX 32 52,
+  .CX 32 49,
+  .CX 32 47,
   .CX 32 46,
-  .CX 32 45,
-  .CX 32 44,
   .CX 32 43,
-  .CX 32 42,
+  .CX 32 41,
   .CX 32 39,
   .CX 32 38,
-  .CX 32 37,
-  .CX 32 35
+  .CX 32 35,
+  .CX 32 34,
+  .CX 32 33,
+  .CX 32 31,
+  .CX 32 30
 ]
 
 private def load0Block52 : Program := [
-  .CX 32 34,
-  .CX 32 30,
   .CX 32 29,
   .CX 32 26,
-  .CX 32 25,
-  .CX 32 24,
+  .CX 32 23,
   .CX 32 22,
   .CX 32 20,
   .CX 32 19,
   .CX 32 17,
+  .CX 32 14,
   .CX 32 12,
   .CX 32 11,
-  .CX 32 4,
+  .CX 32 10,
+  .CX 32 6,
+  .CX 32 3,
   .CX 32 1,
   .CX 32 0,
-  .CX 34 32,
-  .CX 31 69,
+  .CX 33 32,
+  .CX 31 70,
   .CX 31 67,
   .CX 31 66,
-  .CX 31 63,
   .CX 31 62,
+  .CX 31 61,
   .CX 31 60,
-  .CX 31 58,
-  .CX 31 55,
-  .CX 31 54,
-  .CX 31 53,
-  .CX 31 51,
-  .CX 31 50,
+  .CX 31 56,
   .CX 31 49,
-  .CX 31 48
+  .CX 31 48,
+  .CX 31 45,
+  .CX 31 42,
+  .CX 31 41,
+  .CX 31 40,
+  .CX 31 30
 ]
 
 private def load0Block53 : Program := [
-  .CX 31 47,
-  .CX 31 45,
-  .CX 31 44,
-  .CX 31 43,
-  .CX 31 42,
-  .CX 31 38,
-  .CX 31 33,
-  .CX 31 30,
-  .CX 31 24,
-  .CX 31 22,
-  .CX 31 21,
+  .CX 31 29,
+  .CX 31 28,
+  .CX 31 25,
+  .CX 31 23,
   .CX 31 20,
-  .CX 31 14,
-  .CX 31 13,
+  .CX 31 17,
   .CX 31 12,
   .CX 31 11,
+  .CX 31 10,
+  .CX 31 9,
   .CX 31 8,
   .CX 31 6,
-  .CX 31 3,
-  .CX 31 0,
-  .CX 33 31,
+  .CX 31 5,
+  .CX 40 31,
+  .CX 30 70,
   .CX 30 69,
-  .CX 30 68,
-  .CX 30 67,
+  .CX 30 66,
+  .CX 30 65,
   .CX 30 64,
+  .CX 30 63,
   .CX 30 58,
   .CX 30 56,
   .CX 30 55,
-  .CX 30 53,
-  .CX 30 52
+  .CX 30 52,
+  .CX 30 50,
+  .CX 30 48,
+  .CX 30 47,
+  .CX 30 44,
+  .CX 30 42,
+  .CX 30 41
 ]
 
 private def load0Block54 : Program := [
-  .CX 30 51,
-  .CX 30 49,
-  .CX 30 48,
-  .CX 30 43,
   .CX 30 39,
-  .CX 30 35,
+  .CX 30 33,
+  .CX 30 32,
+  .CX 30 28,
   .CX 30 23,
   .CX 30 19,
+  .CX 30 18,
+  .CX 30 17,
   .CX 30 16,
-  .CX 30 13,
-  .CX 30 11,
+  .CX 30 15,
+  .CX 30 14,
   .CX 30 9,
   .CX 30 8,
+  .CX 30 7,
   .CX 30 6,
-  .CX 30 5,
-  .CX 30 3,
+  .CX 30 4,
   .CX 30 2,
-  .CX 30 1,
   .CX 30 0,
-  .CX 35 30,
-  .CX 29 70,
+  .CX 32 30,
   .CX 29 69,
   .CX 29 68,
-  .CX 29 67,
-  .CX 29 64,
+  .CX 29 63,
+  .CX 29 61,
   .CX 29 60,
-  .CX 29 59,
-  .CX 29 57,
-  .CX 29 55,
-  .CX 29 54
-]
-
-private def load0Block55 : Program := [
+  .CX 29 54,
   .CX 29 53,
   .CX 29 52,
   .CX 29 49,
-  .CX 29 47,
   .CX 29 45,
-  .CX 29 44,
+  .CX 29 44
+]
+
+private def load0Block55 : Program := [
+  .CX 29 43,
   .CX 29 42,
+  .CX 29 41,
   .CX 29 39,
-  .CX 29 38,
-  .CX 29 37,
-  .CX 29 36,
-  .CX 29 34,
-  .CX 29 32,
-  .CX 29 30,
+  .CX 29 31,
+  .CX 29 28,
   .CX 29 27,
-  .CX 29 23,
+  .CX 29 25,
+  .CX 29 24,
   .CX 29 20,
   .CX 29 19,
-  .CX 29 16,
   .CX 29 15,
+  .CX 29 14,
   .CX 29 13,
-  .CX 29 12,
-  .CX 29 11,
-  .CX 29 9,
-  .CX 29 8,
-  .CX 29 7,
   .CX 29 5,
-  .CX 29 4,
+  .CX 29 3,
+  .CX 29 1,
   .CX 29 0,
-  .CX 28 69
+  .CX 31 29,
+  .CX 28 70,
+  .CX 28 69,
+  .CX 28 68,
+  .CX 28 66,
+  .CX 28 65,
+  .CX 28 64,
+  .CX 28 60,
+  .CX 28 55,
+  .CX 28 50,
+  .CX 28 47,
+  .CX 28 45
 ]
 
 private def load0Block56 : Program := [
-  .CX 28 68,
-  .CX 28 67,
-  .CX 28 65,
-  .CX 28 63,
-  .CX 28 61,
-  .CX 28 60,
-  .CX 28 58,
-  .CX 28 54,
-  .CX 28 53,
-  .CX 28 50,
-  .CX 28 48,
-  .CX 28 47,
-  .CX 28 43,
-  .CX 28 38,
-  .CX 28 34,
-  .CX 28 32,
-  .CX 28 27,
-  .CX 28 25,
-  .CX 28 24,
-  .CX 28 23,
-  .CX 28 20,
-  .CX 28 18,
+  .CX 28 42,
+  .CX 28 41,
+  .CX 28 33,
+  .CX 28 29,
+  .CX 28 21,
+  .CX 28 17,
   .CX 28 16,
+  .CX 28 15,
   .CX 28 13,
-  .CX 28 11,
-  .CX 28 10,
-  .CX 28 8,
-  .CX 28 6,
-  .CX 32 28,
-  .CX 27 70
-]
-
-private def load0Block57 : Program := [
-  .CX 27 67,
-  .CX 27 65,
+  .CX 28 9,
+  .CX 28 7,
+  .CX 28 4,
+  .CX 29 28,
+  .CX 27 70,
+  .CX 27 68,
+  .CX 27 66,
   .CX 27 64,
   .CX 27 63,
   .CX 27 60,
-  .CX 27 57,
-  .CX 27 54,
-  .CX 27 53,
-  .CX 27 52,
-  .CX 27 50,
-  .CX 27 47,
-  .CX 27 38,
-  .CX 27 35,
-  .CX 27 34,
-  .CX 27 32,
-  .CX 27 29,
+  .CX 27 46,
+  .CX 27 45,
+  .CX 27 44,
+  .CX 27 42,
+  .CX 27 33,
+  .CX 27 31,
+  .CX 27 30,
   .CX 27 28,
   .CX 27 24,
-  .CX 27 20,
-  .CX 27 15,
-  .CX 27 11,
-  .CX 27 10,
+  .CX 27 17,
+  .CX 27 14
+]
+
+private def load0Block57 : Program := [
+  .CX 27 13,
   .CX 27 9,
-  .CX 27 8,
-  .CX 27 5,
-  .CX 27 4,
+  .CX 27 7,
   .CX 28 27,
-  .CX 26 71,
-  .CX 26 64,
-  .CX 26 61
+  .CX 26 69,
+  .CX 26 68,
+  .CX 26 67,
+  .CX 26 66,
+  .CX 26 65,
+  .CX 26 60,
+  .CX 26 58,
+  .CX 26 56,
+  .CX 26 55,
+  .CX 26 52,
+  .CX 26 51,
+  .CX 26 48,
+  .CX 26 46,
+  .CX 26 45,
+  .CX 26 44,
+  .CX 26 42,
+  .CX 26 40,
+  .CX 26 36,
+  .CX 26 34,
+  .CX 26 24,
+  .CX 26 21,
+  .CX 26 19,
+  .CX 26 18,
+  .CX 26 16,
+  .CX 26 15,
+  .CX 26 13
 ]
 
 private def load0Block58 : Program := [
-  .CX 26 56,
-  .CX 26 53,
-  .CX 26 50,
-  .CX 26 49,
-  .CX 26 48,
-  .CX 26 47,
-  .CX 26 46,
-  .CX 26 36,
-  .CX 26 32,
-  .CX 26 24,
-  .CX 26 18,
-  .CX 26 17,
+  .CX 26 11,
   .CX 26 9,
   .CX 26 8,
-  .CX 26 1,
-  .CX 32 26,
+  .CX 26 6,
+  .CX 26 4,
+  .CX 26 2,
+  .CX 26 0,
+  .CX 34 26,
   .CX 25 68,
-  .CX 25 65,
+  .CX 25 66,
   .CX 25 64,
-  .CX 25 57,
-  .CX 25 56,
+  .CX 25 63,
+  .CX 25 62,
+  .CX 25 61,
+  .CX 25 59,
+  .CX 25 58,
   .CX 25 53,
   .CX 25 52,
   .CX 25 51,
-  .CX 25 49,
+  .CX 25 50,
   .CX 25 47,
   .CX 25 45,
+  .CX 25 43,
+  .CX 25 41,
+  .CX 25 39,
+  .CX 25 38,
+  .CX 25 36,
   .CX 25 35,
-  .CX 25 34,
-  .CX 25 24
+  .CX 25 33,
+  .CX 25 30
 ]
 
 private def load0Block59 : Program := [
+  .CX 25 28,
+  .CX 25 26,
   .CX 25 23,
+  .CX 25 22,
   .CX 25 21,
-  .CX 25 19,
-  .CX 25 16,
+  .CX 25 18,
+  .CX 25 14,
+  .CX 25 13,
   .CX 25 12,
   .CX 25 10,
   .CX 25 9,
-  .CX 25 8,
+  .CX 25 7,
   .CX 25 5,
-  .CX 25 4,
-  .CX 25 3,
-  .CX 25 2,
   .CX 25 1,
-  .CX 34 25,
-  .CX 24 68,
-  .CX 24 66,
-  .CX 24 63,
+  .CX 25 0,
+  .CX 26 25,
+  .CX 24 70,
+  .CX 24 69,
+  .CX 24 67,
+  .CX 24 65,
   .CX 24 62,
   .CX 24 60,
-  .CX 24 59,
   .CX 24 58,
-  .CX 24 56,
+  .CX 24 57,
   .CX 24 54,
   .CX 24 53,
-  .CX 24 51,
-  .CX 24 50,
-  .CX 24 49,
-  .CX 24 45,
-  .CX 24 39,
-  .CX 24 38
+  .CX 24 21,
+  .CX 24 19,
+  .CX 24 18,
+  .CX 24 17
 ]
 
 private def load0Block60 : Program := [
-  .CX 24 35,
-  .CX 24 33,
-  .CX 24 23,
-  .CX 24 22,
-  .CX 24 21,
-  .CX 24 20,
-  .CX 24 19,
   .CX 24 16,
-  .CX 24 14,
-  .CX 24 12,
-  .CX 24 8,
-  .CX 24 7,
-  .CX 24 6,
+  .CX 24 15,
+  .CX 24 11,
+  .CX 24 10,
   .CX 24 3,
-  .CX 24 2,
   .CX 24 1,
-  .CX 33 24,
+  .CX 53 24,
+  .CX 23 70,
   .CX 23 69,
   .CX 23 67,
-  .CX 23 13,
+  .CX 23 65,
+  .CX 23 62,
+  .CX 23 60,
+  .CX 23 58,
+  .CX 23 57,
+  .CX 23 56,
+  .CX 23 52,
+  .CX 23 48,
+  .CX 23 45,
+  .CX 23 44,
+  .CX 23 39,
+  .CX 23 21,
+  .CX 23 19,
+  .CX 23 18,
+  .CX 23 17,
+  .CX 23 16,
+  .CX 23 15,
   .CX 23 11,
-  .CX 67 23,
-  .CX 22 70,
-  .CX 22 69,
-  .CX 22 68,
-  .CX 22 65,
-  .CX 22 62,
-  .CX 22 61,
-  .CX 22 60,
-  .CX 22 59
+  .CX 23 10,
+  .CX 23 8
 ]
 
 private def load0Block61 : Program := [
-  .CX 22 57,
+  .CX 23 6,
+  .CX 23 2,
+  .CX 23 0,
+  .CX 39 23,
+  .CX 22 69,
+  .CX 22 68,
+  .CX 22 66,
+  .CX 22 64,
+  .CX 22 62,
+  .CX 22 59,
+  .CX 22 58,
+  .CX 22 56,
+  .CX 22 55,
   .CX 22 54,
   .CX 22 52,
+  .CX 22 51,
   .CX 22 49,
+  .CX 22 48,
   .CX 22 46,
   .CX 22 44,
   .CX 22 43,
-  .CX 22 42,
+  .CX 22 41,
+  .CX 22 40,
   .CX 22 38,
-  .CX 22 37,
   .CX 22 36,
-  .CX 22 32,
-  .CX 22 30,
+  .CX 22 35,
+  .CX 22 26,
   .CX 22 21,
   .CX 22 20,
-  .CX 22 18,
-  .CX 22 16,
-  .CX 22 15,
-  .CX 22 13,
-  .CX 22 10,
-  .CX 22 7,
-  .CX 22 5,
-  .CX 22 4,
-  .CX 30 22,
-  .CX 21 69,
-  .CX 21 68,
-  .CX 21 67,
-  .CX 21 64,
-  .CX 21 63,
-  .CX 21 59
+  .CX 22 19
 ]
 
 private def load0Block62 : Program := [
+  .CX 22 18,
+  .CX 22 15,
+  .CX 22 13,
+  .CX 22 12,
+  .CX 22 10,
+  .CX 22 9,
+  .CX 22 8,
+  .CX 22 7,
+  .CX 22 6,
+  .CX 22 4,
+  .CX 22 3,
+  .CX 22 0,
+  .CX 26 22,
+  .CX 21 70,
+  .CX 21 69,
+  .CX 21 67,
+  .CX 21 65,
+  .CX 21 62,
+  .CX 21 60,
   .CX 21 58,
-  .CX 21 56,
-  .CX 21 55,
-  .CX 21 53,
-  .CX 21 52,
-  .CX 21 51,
-  .CX 21 47,
-  .CX 21 44,
-  .CX 21 42,
-  .CX 21 39,
-  .CX 21 37,
-  .CX 21 36,
-  .CX 21 35,
-  .CX 21 34,
-  .CX 21 32,
-  .CX 21 30,
-  .CX 21 29,
-  .CX 21 28,
+  .CX 21 57,
+  .CX 21 50,
+  .CX 21 19,
+  .CX 21 18,
+  .CX 21 17,
   .CX 21 16,
-  .CX 21 13,
+  .CX 21 15,
   .CX 21 11,
-  .CX 21 9,
-  .CX 21 8,
-  .CX 21 7,
-  .CX 21 6,
-  .CX 21 5,
-  .CX 21 3,
-  .CX 21 2,
-  .CX 21 1,
-  .CX 21 0
+  .CX 21 10,
+  .CX 50 21
 ]
 
 private def load0Block63 : Program := [
-  .CX 28 21,
-  .CX 20 66,
-  .CX 20 64,
+  .CX 20 68,
+  .CX 20 67,
   .CX 20 61,
   .CX 20 60,
-  .CX 20 56,
+  .CX 20 58,
+  .CX 20 57,
   .CX 20 55,
   .CX 20 54,
   .CX 20 53,
   .CX 20 52,
+  .CX 20 49,
+  .CX 20 47,
   .CX 20 46,
   .CX 20 45,
-  .CX 20 43,
   .CX 20 39,
-  .CX 20 38,
-  .CX 20 37,
-  .CX 20 36,
-  .CX 20 34,
   .CX 20 33,
-  .CX 20 30,
   .CX 20 29,
   .CX 20 28,
-  .CX 20 26,
-  .CX 20 25,
+  .CX 20 24,
   .CX 20 23,
+  .CX 20 22,
   .CX 20 21,
-  .CX 20 19,
   .CX 20 18,
-  .CX 20 14,
-  .CX 20 12
+  .CX 20 13,
+  .CX 20 12,
+  .CX 20 11,
+  .CX 20 5,
+  .CX 20 4,
+  .CX 20 3,
+  .CX 20 2
 ]
 
 private def load0Block64 : Program := [
-  .CX 20 9,
-  .CX 20 8,
-  .CX 20 5,
   .CX 20 1,
   .CX 20 0,
-  .CX 19 71,
+  .CX 19 70,
+  .CX 19 63,
+  .CX 19 58,
+  .CX 19 32,
+  .CX 19 31,
+  .CX 19 18,
   .CX 19 17,
-  .CX 71 19,
+  .CX 19 14,
+  .CX 31 19,
   .CX 18 70,
-  .CX 18 66,
-  .CX 18 64,
-  .CX 18 61,
-  .CX 18 59,
+  .CX 18 69,
+  .CX 18 68,
+  .CX 18 67,
+  .CX 18 65,
+  .CX 18 60,
   .CX 18 58,
-  .CX 18 56,
-  .CX 18 55,
-  .CX 18 53,
-  .CX 18 52,
-  .CX 18 51,
-  .CX 18 49,
-  .CX 18 46,
-  .CX 18 43,
-  .CX 18 36,
-  .CX 18 35,
-  .CX 18 33,
-  .CX 18 32,
+  .CX 18 57,
+  .CX 18 45,
+  .CX 18 40,
+  .CX 18 39,
+  .CX 18 30,
+  .CX 18 29,
+  .CX 18 17,
+  .CX 18 16,
   .CX 18 15,
-  .CX 18 14,
-  .CX 18 9,
-  .CX 18 8
+  .CX 18 13,
+  .CX 18 12,
+  .CX 18 11
 ]
 
 private def load0Block65 : Program := [
-  .CX 18 7,
-  .CX 18 6,
-  .CX 18 5,
-  .CX 18 3,
-  .CX 18 2,
-  .CX 18 1,
-  .CX 18 0,
-  .CX 32 18,
-  .CX 17 71,
+  .CX 17 70,
   .CX 17 67,
-  .CX 17 65,
-  .CX 17 63,
-  .CX 17 37,
-  .CX 17 36,
-  .CX 17 35,
+  .CX 17 62,
+  .CX 17 60,
+  .CX 17 45,
+  .CX 17 40,
+  .CX 17 39,
+  .CX 17 31,
   .CX 17 30,
+  .CX 17 28,
   .CX 17 12,
   .CX 17 11,
   .CX 17 10,
-  .CX 30 17,
-  .CX 16 68,
+  .CX 28 17,
+  .CX 16 69,
   .CX 16 67,
+  .CX 16 66,
   .CX 16 65,
-  .CX 16 63,
-  .CX 16 58,
-  .CX 16 56,
+  .CX 16 64,
+  .CX 16 62,
+  .CX 16 60,
   .CX 16 55,
-  .CX 16 53,
-  .CX 16 52,
-  .CX 16 51
+  .CX 16 48,
+  .CX 16 45,
+  .CX 16 41,
+  .CX 16 40,
+  .CX 16 39,
+  .CX 16 30,
+  .CX 16 28,
+  .CX 16 15
 ]
 
 private def load0Block66 : Program := [
-  .CX 16 49,
-  .CX 16 44,
-  .CX 16 42,
-  .CX 16 37,
-  .CX 16 30,
-  .CX 16 27,
   .CX 16 12,
   .CX 16 11,
   .CX 16 10,
+  .CX 16 9,
   .CX 16 8,
-  .CX 16 6,
-  .CX 16 5,
-  .CX 16 3,
-  .CX 16 2,
-  .CX 16 1,
-  .CX 16 0,
-  .CX 27 16,
-  .CX 15 70,
+  .CX 16 7,
+  .CX 16 4,
   .CX 15 69,
-  .CX 15 67,
   .CX 15 66,
   .CX 15 64,
-  .CX 15 63,
-  .CX 15 60,
-  .CX 15 59,
-  .CX 15 46,
-  .CX 15 44,
-  .CX 15 43,
-  .CX 15 42,
-  .CX 15 39
+  .CX 15 45,
+  .CX 15 40,
+  .CX 15 39,
+  .CX 15 31,
+  .CX 15 18,
+  .CX 15 9,
+  .CX 15 7,
+  .CX 18 15,
+  .CX 14 68,
+  .CX 14 67,
+  .CX 14 66,
+  .CX 14 64,
+  .CX 14 63,
+  .CX 14 62,
+  .CX 14 57,
+  .CX 14 55,
+  .CX 14 48,
+  .CX 14 41,
+  .CX 14 32,
+  .CX 14 31
 ]
 
 private def load0Block67 : Program := [
-  .CX 15 36,
-  .CX 15 33,
-  .CX 15 29,
-  .CX 15 28,
-  .CX 15 14,
-  .CX 15 13,
-  .CX 15 12,
-  .CX 15 11,
-  .CX 15 9,
-  .CX 15 7,
-  .CX 14 69,
-  .CX 14 67,
-  .CX 14 66,
-  .CX 14 65,
-  .CX 14 64,
-  .CX 14 60,
-  .CX 14 59,
-  .CX 14 37,
-  .CX 14 36,
-  .CX 14 35,
-  .CX 14 33,
-  .CX 14 30,
-  .CX 14 28,
-  .CX 14 27,
+  .CX 14 29,
+  .CX 14 16,
   .CX 14 15,
   .CX 14 13,
   .CX 14 11,
   .CX 14 10,
   .CX 14 9,
-  .CX 14 7
-]
-
-private def load0Block68 : Program := [
+  .CX 14 8,
+  .CX 14 7,
+  .CX 14 4,
   .CX 15 14,
-  .CX 13 69,
+  .CX 13 68,
   .CX 13 67,
-  .CX 13 65,
+  .CX 13 62,
   .CX 13 12,
   .CX 13 11,
   .CX 13 10,
-  .CX 65 13,
+  .CX 62 13,
   .CX 12 67,
-  .CX 12 65,
-  .CX 12 63,
-  .CX 12 37,
-  .CX 12 36,
-  .CX 12 35,
+  .CX 12 62,
+  .CX 12 60,
+  .CX 12 45,
+  .CX 12 40,
+  .CX 12 39,
+  .CX 12 31,
   .CX 12 30,
+  .CX 12 28,
   .CX 12 13,
   .CX 12 11,
-  .CX 12 10,
+  .CX 12 10
+]
+
+private def load0Block68 : Program := [
   .CX 13 12,
   .CX 11 67,
-  .CX 11 65,
-  .CX 11 63,
+  .CX 11 62,
   .CX 11 60,
-  .CX 11 58,
-  .CX 11 56,
-  .CX 11 55,
-  .CX 11 53,
-  .CX 11 52,
-  .CX 11 51,
-  .CX 11 49
+  .CX 11 57,
+  .CX 11 32,
+  .CX 11 30,
+  .CX 11 29,
+  .CX 11 28,
+  .CX 11 18,
+  .CX 11 15,
+  .CX 11 10,
+  .CX 15 11,
+  .CX 10 62,
+  .CX 10 60,
+  .CX 10 57,
+  .CX 10 32,
+  .CX 10 30,
+  .CX 10 29,
+  .CX 10 15,
+  .CX 10 14,
+  .CX 14 10,
+  .CX 9 66,
+  .CX 9 64,
+  .CX 9 7,
+  .CX 64 9,
+  .CX 8 55,
+  .CX 8 48,
+  .CX 8 41,
+  .CX 8 16
 ]
 
 private def load0Block69 : Program := [
-  .CX 11 44,
-  .CX 11 42,
-  .CX 11 36,
-  .CX 11 35,
-  .CX 11 28,
-  .CX 11 15,
-  .CX 11 10,
-  .CX 11 8,
-  .CX 11 6,
-  .CX 11 5,
-  .CX 11 3,
-  .CX 11 2,
-  .CX 11 1,
-  .CX 11 0,
-  .CX 15 11,
-  .CX 10 65,
-  .CX 10 63,
-  .CX 10 60,
-  .CX 10 58,
-  .CX 10 56,
-  .CX 10 55,
-  .CX 10 53,
-  .CX 10 52,
-  .CX 10 51,
-  .CX 10 49,
-  .CX 10 44,
-  .CX 10 42,
-  .CX 10 29,
-  .CX 10 28,
-  .CX 10 15
-]
-
-private def load0Block70 : Program := [
-  .CX 10 14,
-  .CX 10 8,
-  .CX 10 6,
-  .CX 10 5,
-  .CX 10 3,
-  .CX 10 2,
-  .CX 10 1,
-  .CX 10 0,
-  .CX 14 10,
-  .CX 9 64,
-  .CX 9 59,
-  .CX 9 7,
-  .CX 59 9,
-  .CX 8 58,
-  .CX 8 56,
-  .CX 8 55,
-  .CX 8 53,
-  .CX 8 52,
-  .CX 8 51,
-  .CX 8 49,
-  .CX 8 46,
-  .CX 8 43,
-  .CX 8 39,
-  .CX 8 36,
-  .CX 8 27,
-  .CX 8 6,
-  .CX 8 5,
-  .CX 8 3,
-  .CX 8 2,
-  .CX 8 1
-]
-
-private def load0Block71 : Program := [
-  .CX 8 0,
-  .CX 27 8,
-  .CX 7 59,
-  .CX 7 57,
+  .CX 8 4,
+  .CX 16 8,
+  .CX 7 64,
   .CX 7 55,
-  .CX 7 51,
+  .CX 7 54,
+  .CX 7 53,
+  .CX 7 50,
   .CX 7 47,
-  .CX 7 18,
+  .CX 7 46,
+  .CX 7 45,
+  .CX 7 44,
+  .CX 7 43,
+  .CX 7 41,
+  .CX 7 40,
   .CX 7 17,
   .CX 7 4,
   .CX 7 3,
   .CX 7 2,
-  .CX 7 0,
-  .CX 17 7,
-  .CX 6 58,
-  .CX 6 57,
-  .CX 6 50,
-  .CX 6 18,
+  .CX 7 1,
+  .CX 6 56,
+  .CX 6 55,
+  .CX 6 54,
+  .CX 6 51,
+  .CX 6 47,
+  .CX 6 46,
+  .CX 6 44,
+  .CX 6 43,
+  .CX 6 40,
   .CX 6 17,
-  .CX 6 4,
-  .CX 17 6,
-  .CX 5 57,
-  .CX 5 56,
-  .CX 5 55,
-  .CX 5 52,
-  .CX 5 50,
-  .CX 5 48,
-  .CX 5 47,
-  .CX 5 46,
-  .CX 5 44
+  .CX 6 7
 ]
 
-private def load0Block72 : Program := [
-  .CX 5 42,
+private def load0Block70 : Program := [
+  .CX 6 4,
+  .CX 6 3,
+  .CX 6 2,
+  .CX 7 6,
+  .CX 5 61,
+  .CX 5 55,
+  .CX 5 54,
+  .CX 5 53,
+  .CX 5 52,
+  .CX 5 47,
+  .CX 5 46,
+  .CX 5 45,
+  .CX 5 43,
+  .CX 5 41,
+  .CX 5 40,
   .CX 5 16,
+  .CX 5 7,
   .CX 5 4,
-  .CX 5 2,
+  .CX 5 3,
   .CX 5 1,
   .CX 5 0,
-  .CX 4 57,
   .CX 4 55,
-  .CX 4 51,
-  .CX 4 48,
+  .CX 4 54,
+  .CX 4 53,
+  .CX 4 50,
   .CX 4 47,
+  .CX 4 46,
   .CX 4 44,
   .CX 4 43,
-  .CX 4 42,
-  .CX 4 39,
-  .CX 4 36,
-  .CX 4 27,
-  .CX 4 18,
+  .CX 4 42
+]
+
+private def load0Block71 : Program := [
+  .CX 4 41,
+  .CX 4 33,
   .CX 4 17,
+  .CX 4 7,
   .CX 4 6,
   .CX 4 3,
   .CX 4 2,
-  .CX 4 0,
-  .CX 3 56,
-  .CX 3 55,
-  .CX 3 51,
-  .CX 3 49,
+  .CX 4 1,
+  .CX 3 54,
+  .CX 3 53,
+  .CX 3 52,
+  .CX 3 46,
   .CX 3 2,
   .CX 3 1,
-  .CX 3 0
-]
-
-private def load0Block73 : Program := [
-  .CX 49 3,
-  .CX 2 56,
-  .CX 2 55,
-  .CX 2 47,
-  .CX 2 46,
+  .CX 3 0,
+  .CX 46 3,
+  .CX 2 53,
+  .CX 2 52,
   .CX 2 44,
-  .CX 2 43,
   .CX 2 42,
-  .CX 2 39,
-  .CX 2 36,
-  .CX 2 27,
+  .CX 2 40,
+  .CX 2 33,
   .CX 2 5,
   .CX 2 1,
   .CX 2 0,
   .CX 5 2,
-  .CX 1 56,
-  .CX 1 55,
-  .CX 1 47,
-  .CX 1 46,
-  .CX 1 45,
-  .CX 1 43,
-  .CX 1 39,
-  .CX 1 36,
-  .CX 1 27,
+  .CX 1 53,
+  .CX 1 52,
+  .CX 1 44,
+  .CX 1 43
+]
+
+private def load0Block72 : Program := [
+  .CX 1 40,
   .CX 1 7,
   .CX 1 0,
   .CX 7 1,
-  .CX 0 55,
-  .CX 0 49,
-  .CX 0 45
-]
-
-private def load0Block74 : Program := [
+  .CX 0 52,
+  .CX 0 50,
+  .CX 0 45,
   .CX 0 44,
-  .CX 0 42,
+  .CX 0 43,
+  .CX 0 18,
   .CX 0 7,
   .CX 0 6,
   .CX 6 0,
@@ -40145,107 +40646,105 @@ private def load0Block74 : Program := [
   .X 5,
   .X 8,
   .X 13,
-  .X 71,
-  .measureX 71 [] [.Z 0, .Z 1, .Z 8, .Z 9, .Z 10, .Z 11, .Z 13, .Z 14, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 13, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 13, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 13, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 9, .CZ 3 10, .CZ 3 13, .CZ 3 16, .CZ 3 17, .CZ 3 34, .CZ 4 9, .CZ 4 10, .CZ 4 13, .CZ 4 16, .CZ 4 34, .CZ 5 9, .CZ 5 10, .CZ 5 13, .CZ 5 16, .CZ 5 19, .CZ 5 34, .CZ 6 9, .CZ 6 10, .CZ 6 13, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 34, .CZ 7 9, .CZ 7 10, .CZ 7 13, .CZ 7 16, .CZ 7 34, .CZ 8 9, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 22, .CZ 8 54, .CZ 8 66, .CZ 9 13, .CZ 9 14, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 27, .CZ 9 28, .CZ 9 29, .CZ 10 16, .CZ 10 20, .CZ 10 21, .CZ 10 26, .CZ 10 27, .CZ 10 28, .CZ 10 29, .CZ 10 46, .CZ 10 50, .CZ 10 51, .CZ 10 53, .CZ 10 54, .CZ 10 56, .CZ 10 57, .CZ 10 60, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 20, .CZ 11 26, .CZ 11 41, .CZ 12 20, .CZ 12 21, .CZ 12 54, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 23, .CZ 13 29, .CZ 13 34, .CZ 13 36, .CZ 13 46, .CZ 13 51, .CZ 13 52, .CZ 13 53, .CZ 13 54, .CZ 13 56, .CZ 13 57, .CZ 13 58, .CZ 13 61, .CZ 13 68, .CZ 14 17, .CZ 14 18, .CZ 14 19, .CZ 14 21, .CZ 14 23, .CZ 14 27, .CZ 14 33, .CZ 14 34, .CZ 14 51, .CZ 14 52, .CZ 14 54, .CZ 14 56, .CZ 14 59, .CZ 14 64, .CZ 14 66, .CZ 14 67, .CZ 14 68, .CZ 14 69, .CZ 14 70, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46, .CZ 26 66, .CZ 30 68],
-  .measureX 70 [] [.Z 6, .Z 11, .Z 13, .CZ 0 6, .CZ 0 9, .CZ 0 10, .CZ 1 6, .CZ 1 9, .CZ 1 10, .CZ 2 6, .CZ 2 9, .CZ 2 10, .CZ 3 6, .CZ 3 9, .CZ 3 10, .CZ 4 6, .CZ 4 9, .CZ 4 10, .CZ 5 6, .CZ 5 9, .CZ 5 10, .CZ 5 25, .CZ 6 7, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 7 9, .CZ 7 10, .CZ 8 9, .CZ 8 10, .CZ 8 13, .CZ 9 10, .CZ 9 14, .CZ 9 27, .CZ 9 28, .CZ 9 29, .CZ 9 54, .CZ 10 13, .CZ 10 14, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 22, .CZ 10 27, .CZ 10 28, .CZ 10 29, .CZ 10 32, .CZ 10 50, .CZ 10 52, .CZ 10 58, .CZ 10 66, .CZ 11 12, .CZ 11 13, .CZ 11 20, .CZ 11 26, .CZ 12 20, .CZ 12 21, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 21, .CZ 13 23, .CZ 13 27, .CZ 13 29, .CZ 13 32, .CZ 13 33, .CZ 13 35, .CZ 13 37, .CZ 13 50, .CZ 13 51, .CZ 13 56, .CZ 13 58, .CZ 13 59, .CZ 13 64, .CZ 13 67, .CZ 13 69, .CZ 14 15, .CZ 14 28],
-  .X 69,
-  .measureX 69 [] [.Z 0, .Z 1, .Z 3, .Z 4, .Z 6, .Z 8, .Z 9, .Z 14, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 13, .CZ 0 15, .CZ 0 28, .CZ 0 30, .CZ 0 32, .CZ 0 33, .CZ 0 35, .CZ 0 38, .CZ 0 46, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 13, .CZ 1 15, .CZ 1 28, .CZ 1 29, .CZ 1 33, .CZ 1 47, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 9, .CZ 2 13, .CZ 2 15, .CZ 2 27, .CZ 2 35, .CZ 2 37, .CZ 2 41, .CZ 2 42, .CZ 2 47, .CZ 2 50, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 17, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 3 34, .CZ 3 46, .CZ 3 59, .CZ 3 64, .CZ 4 5, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 18, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 4 50, .CZ 4 52, .CZ 4 53, .CZ 4 59, .CZ 5 6, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 18, .CZ 5 22, .CZ 5 23, .CZ 5 25, .CZ 5 27, .CZ 5 28, .CZ 5 30, .CZ 5 33, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 43, .CZ 5 46, .CZ 5 54, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 34, .CZ 6 43, .CZ 6 44, .CZ 6 45, .CZ 6 46, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 18, .CZ 7 19, .CZ 7 20, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 7 46, .CZ 8 9, .CZ 8 10, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 17, .CZ 8 18, .CZ 8 21, .CZ 8 22, .CZ 8 46, .CZ 8 50, .CZ 8 52, .CZ 8 67, .CZ 9 13, .CZ 9 16, .CZ 9 17, .CZ 9 28, .CZ 9 29, .CZ 9 46, .CZ 9 50, .CZ 9 52, .CZ 9 53, .CZ 9 57, .CZ 9 59, .CZ 9 64, .CZ 9 67, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 18, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 29, .CZ 10 32, .CZ 10 50, .CZ 10 51, .CZ 10 53, .CZ 10 56, .CZ 10 57, .CZ 10 58, .CZ 10 60, .CZ 11 19, .CZ 11 20, .CZ 11 41, .CZ 11 67, .CZ 12 20, .CZ 12 21, .CZ 13 14, .CZ 13 21, .CZ 13 22, .CZ 13 28, .CZ 13 29, .CZ 13 33, .CZ 13 35, .CZ 13 36, .CZ 13 37, .CZ 13 54, .CZ 13 60, .CZ 13 61, .CZ 13 67, .CZ 14 15, .CZ 14 17, .CZ 14 18, .CZ 14 21, .CZ 14 22, .CZ 14 28, .CZ 14 32, .CZ 14 33, .CZ 14 35, .CZ 14 36, .CZ 14 46, .CZ 14 50, .CZ 14 52, .CZ 14 54, .CZ 14 65, .CZ 14 67, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 27, .CZ 15 35, .CZ 15 54, .CZ 15 67, .CZ 16 27, .CZ 16 28, .CZ 16 30, .CZ 16 32, .CZ 16 33, .CZ 16 37, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 27, .CZ 18 29, .CZ 18 32, .CZ 18 46, .CZ 19 67, .CZ 20 67, .CZ 22 46, .CZ 23 46, .CZ 23 59, .CZ 24 43, .CZ 27 46, .CZ 27 50, .CZ 27 52, .CZ 29 50, .CZ 29 52, .CZ 30 46, .CZ 32 50, .CZ 32 52, .CZ 35 46, .CZ 35 67, .CZ 46 50, .CZ 46 52],
-  .measureX 67 [] [.Z 1, .Z 3, .Z 13, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 28, .CZ 0 29, .CZ 0 32, .CZ 0 33, .CZ 0 35, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 14, .CZ 2 29, .CZ 2 34, .CZ 2 36, .CZ 2 37, .CZ 3 5, .CZ 3 8, .CZ 3 16, .CZ 3 17, .CZ 3 27, .CZ 3 29, .CZ 3 34, .CZ 3 35, .CZ 3 36, .CZ 4 5, .CZ 4 10, .CZ 4 14, .CZ 4 16, .CZ 4 34, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 16, .CZ 5 19, .CZ 5 21, .CZ 5 22, .CZ 5 28, .CZ 5 29, .CZ 5 32, .CZ 5 33, .CZ 5 35, .CZ 5 36, .CZ 5 40, .CZ 5 45, .CZ 5 54, .CZ 6 10, .CZ 6 14, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 21, .CZ 6 45, .CZ 7 10, .CZ 7 14, .CZ 7 16, .CZ 7 20, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 29, .CZ 7 30, .CZ 7 32, .CZ 7 35, .CZ 7 43, .CZ 7 52, .CZ 7 59, .CZ 7 64, .CZ 8 10, .CZ 8 13, .CZ 8 14, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 9 14, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 10 13, .CZ 10 14, .CZ 10 16, .CZ 10 21, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 29, .CZ 10 32, .CZ 10 46, .CZ 10 51, .CZ 10 52, .CZ 10 53, .CZ 10 56, .CZ 10 57, .CZ 10 58, .CZ 10 60, .CZ 11 13, .CZ 11 41, .CZ 12 19, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 21, .CZ 13 23, .CZ 13 27, .CZ 13 29, .CZ 13 33, .CZ 13 34, .CZ 13 35, .CZ 13 36, .CZ 13 37, .CZ 13 60, .CZ 13 61, .CZ 14 17, .CZ 14 18, .CZ 14 21, .CZ 14 22, .CZ 14 28, .CZ 14 32, .CZ 14 33, .CZ 14 34, .CZ 14 35, .CZ 14 36, .CZ 14 65, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46],
-  .X 68,
-  .measureX 68 [] [.Z 8, .Z 10, .Z 11, .Z 13, .Z 15, .CZ 0 14, .CZ 0 15, .CZ 1 14, .CZ 1 15, .CZ 2 14, .CZ 2 15, .CZ 3 14, .CZ 3 15, .CZ 4 14, .CZ 4 15, .CZ 5 14, .CZ 5 15, .CZ 6 14, .CZ 6 15, .CZ 7 14, .CZ 7 15, .CZ 8 10, .CZ 8 13, .CZ 8 54, .CZ 9 14, .CZ 9 15, .CZ 10 13, .CZ 10 15, .CZ 10 23, .CZ 10 29, .CZ 10 32, .CZ 10 66, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 19, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 21, .CZ 13 23, .CZ 13 27, .CZ 13 29, .CZ 13 33, .CZ 13 35, .CZ 13 36, .CZ 13 37, .CZ 13 60, .CZ 13 61, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 14 54, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
+  .X 70,
+  .measureX 70 [] [.Z 1, .Z 2, .Z 3, .Z 9, .Z 10, .Z 13, .Z 14, .Z 15, .CZ 0 1, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 13, .CZ 0 14, .CZ 0 33, .CZ 1 2, .CZ 1 6, .CZ 1 13, .CZ 1 14, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 4, .CZ 2 5, .CZ 2 13, .CZ 2 16, .CZ 2 33, .CZ 2 34, .CZ 2 47, .CZ 3 13, .CZ 3 14, .CZ 3 34, .CZ 4 13, .CZ 4 16, .CZ 4 17, .CZ 5 13, .CZ 5 16, .CZ 5 17, .CZ 5 21, .CZ 5 22, .CZ 5 25, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 13, .CZ 6 15, .CZ 6 18, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 36, .CZ 6 37, .CZ 7 13, .CZ 7 14, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 15, .CZ 8 18, .CZ 8 19, .CZ 8 49, .CZ 8 63, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 18, .CZ 9 19, .CZ 9 27, .CZ 9 28, .CZ 9 29, .CZ 9 30, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 23, .CZ 10 26, .CZ 10 27, .CZ 10 44, .CZ 10 46, .CZ 10 47, .CZ 10 48, .CZ 10 49, .CZ 10 50, .CZ 10 53, .CZ 10 55, .CZ 10 57, .CZ 11 12, .CZ 11 13, .CZ 11 15, .CZ 11 18, .CZ 11 26, .CZ 12 19, .CZ 12 20, .CZ 12 21, .CZ 12 22, .CZ 12 49, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 21, .CZ 13 23, .CZ 13 28, .CZ 13 32, .CZ 13 34, .CZ 13 38, .CZ 13 40, .CZ 13 44, .CZ 13 46, .CZ 13 47, .CZ 13 48, .CZ 13 50, .CZ 13 51, .CZ 13 53, .CZ 13 55, .CZ 13 56, .CZ 13 58, .CZ 13 65, .CZ 14 18, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 32, .CZ 14 33, .CZ 14 39, .CZ 14 49, .CZ 14 53, .CZ 14 54, .CZ 14 61, .CZ 14 63, .CZ 14 64, .CZ 14 66, .CZ 14 67, .CZ 14 68, .CZ 14 69, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 15 65, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39, .CZ 26 63, .CZ 28 65],
+  .measureX 69 [] [.Z 6, .Z 9, .Z 10, .Z 11, .CZ 0 13, .CZ 1 13, .CZ 2 6, .CZ 3 13, .CZ 4 6, .CZ 5 6, .CZ 5 19, .CZ 5 20, .CZ 5 24, .CZ 5 25, .CZ 6 13, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 33, .CZ 7 13, .CZ 8 9, .CZ 8 10, .CZ 8 13, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 27, .CZ 9 28, .CZ 9 29, .CZ 9 30, .CZ 9 49, .CZ 10 11, .CZ 10 14, .CZ 10 15, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 28, .CZ 10 30, .CZ 10 32, .CZ 10 49, .CZ 10 51, .CZ 10 56, .CZ 10 63, .CZ 11 12, .CZ 11 13, .CZ 11 19, .CZ 11 26, .CZ 12 19, .CZ 12 20, .CZ 12 22, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 28, .CZ 13 29, .CZ 13 33, .CZ 13 34, .CZ 13 36, .CZ 13 38, .CZ 13 39, .CZ 13 49, .CZ 13 51, .CZ 13 53, .CZ 13 54, .CZ 13 56, .CZ 13 61, .CZ 13 64, .CZ 13 66, .CZ 13 67, .CZ 13 68, .CZ 14 15, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 28],
+  .measureX 68 [] [.Z 2, .Z 6, .Z 11, .Z 13, .Z 14, .CZ 0 1, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 33, .CZ 1 6, .CZ 1 11, .CZ 1 13, .CZ 1 15, .CZ 1 28, .CZ 1 36, .CZ 1 44, .CZ 1 45, .CZ 1 61, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 11, .CZ 2 34, .CZ 2 36, .CZ 2 41, .CZ 2 42, .CZ 2 43, .CZ 2 47, .CZ 3 4, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 13, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 33, .CZ 3 34, .CZ 3 46, .CZ 3 47, .CZ 3 50, .CZ 3 54, .CZ 3 61, .CZ 3 64, .CZ 3 66, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 18, .CZ 4 33, .CZ 4 34, .CZ 4 41, .CZ 4 46, .CZ 4 47, .CZ 4 48, .CZ 4 50, .CZ 4 51, .CZ 4 54, .CZ 4 61, .CZ 4 64, .CZ 5 6, .CZ 5 7, .CZ 5 11, .CZ 5 16, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 25, .CZ 5 28, .CZ 5 33, .CZ 5 36, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 5 47, .CZ 5 50, .CZ 5 54, .CZ 5 61, .CZ 6 11, .CZ 6 13, .CZ 6 15, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 24, .CZ 6 34, .CZ 6 35, .CZ 6 36, .CZ 6 37, .CZ 6 38, .CZ 6 43, .CZ 6 46, .CZ 6 47, .CZ 6 50, .CZ 6 51, .CZ 6 54, .CZ 6 61, .CZ 7 8, .CZ 7 9, .CZ 7 13, .CZ 7 14, .CZ 7 20, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 34, .CZ 7 35, .CZ 7 37, .CZ 7 38, .CZ 7 42, .CZ 7 50, .CZ 7 51, .CZ 7 54, .CZ 7 61, .CZ 7 64, .CZ 7 66, .CZ 8 11, .CZ 8 13, .CZ 8 15, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 42, .CZ 8 43, .CZ 8 46, .CZ 8 47, .CZ 8 49, .CZ 8 50, .CZ 8 51, .CZ 8 54, .CZ 8 61, .CZ 9 13, .CZ 9 15, .CZ 9 18, .CZ 9 44, .CZ 9 46, .CZ 9 47, .CZ 9 48, .CZ 9 50, .CZ 9 54, .CZ 9 55, .CZ 9 61, .CZ 9 64, .CZ 9 66, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 29, .CZ 10 44, .CZ 10 46, .CZ 10 47, .CZ 10 48, .CZ 10 49, .CZ 10 50, .CZ 10 51, .CZ 10 53, .CZ 10 55, .CZ 10 56, .CZ 10 57, .CZ 11 12, .CZ 11 13, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 11 20, .CZ 11 21, .CZ 11 26, .CZ 12 19, .CZ 12 22, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 27, .CZ 13 32, .CZ 13 33, .CZ 13 36, .CZ 13 40, .CZ 13 49, .CZ 13 57, .CZ 13 58, .CZ 13 67, .CZ 14 15, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 34, .CZ 14 38, .CZ 14 39, .CZ 14 40, .CZ 14 44, .CZ 14 46, .CZ 14 47, .CZ 14 48, .CZ 14 50, .CZ 14 51, .CZ 14 53, .CZ 14 55, .CZ 14 56, .CZ 14 67, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 33, .CZ 15 39, .CZ 15 49, .CZ 15 67, .CZ 16 33, .CZ 16 36, .CZ 17 47, .CZ 18 28, .CZ 18 33, .CZ 18 39, .CZ 19 67, .CZ 20 67, .CZ 21 64, .CZ 22 50, .CZ 23 67, .CZ 34 67, .CZ 44 51],
+  .measureX 67 [] [.Z 1, .Z 2, .Z 3, .Z 6, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 1, .CZ 0 2, .CZ 0 6, .CZ 0 7, .CZ 0 13, .CZ 0 14, .CZ 0 33, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 13, .CZ 1 14, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 16, .CZ 2 33, .CZ 2 34, .CZ 2 47, .CZ 3 5, .CZ 3 7, .CZ 3 13, .CZ 3 14, .CZ 3 17, .CZ 3 34, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 21, .CZ 5 28, .CZ 5 33, .CZ 5 37, .CZ 5 40, .CZ 5 43, .CZ 5 49, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 13, .CZ 6 15, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 13, .CZ 7 15, .CZ 7 19, .CZ 7 20, .CZ 7 21, .CZ 7 22, .CZ 7 25, .CZ 7 28, .CZ 7 33, .CZ 7 35, .CZ 7 36, .CZ 7 39, .CZ 7 42, .CZ 7 50, .CZ 7 54, .CZ 7 61, .CZ 7 64, .CZ 7 66, .CZ 8 13, .CZ 8 15, .CZ 8 18, .CZ 8 19, .CZ 9 13, .CZ 9 15, .CZ 9 18, .CZ 9 19, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 29, .CZ 10 32, .CZ 10 44, .CZ 10 46, .CZ 10 47, .CZ 10 48, .CZ 10 49, .CZ 10 50, .CZ 10 51, .CZ 10 53, .CZ 10 55, .CZ 10 56, .CZ 10 57, .CZ 11 13, .CZ 11 15, .CZ 11 18, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 32, .CZ 13 33, .CZ 13 36, .CZ 13 40, .CZ 13 57, .CZ 13 58, .CZ 14 15, .CZ 14 18, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 28, .CZ 14 33, .CZ 14 39, .CZ 14 40, .CZ 14 62, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .X 66,
+  .measureX 66 [] [.Z 1, .Z 4, .Z 7, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 8, .CZ 0 33, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 7, .CZ 1 8, .CZ 1 36, .CZ 1 42, .CZ 1 43, .CZ 1 61, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 16, .CZ 2 42, .CZ 2 43, .CZ 3 4, .CZ 3 8, .CZ 3 34, .CZ 3 35, .CZ 4 8, .CZ 4 16, .CZ 4 46, .CZ 4 47, .CZ 4 48, .CZ 4 50, .CZ 4 54, .CZ 4 61, .CZ 4 64, .CZ 5 6, .CZ 5 8, .CZ 5 16, .CZ 5 19, .CZ 5 25, .CZ 5 49, .CZ 5 50, .CZ 5 54, .CZ 6 7, .CZ 6 8, .CZ 6 19, .CZ 6 22, .CZ 6 24, .CZ 6 33, .CZ 6 35, .CZ 6 36, .CZ 6 44, .CZ 7 9, .CZ 7 11, .CZ 7 14, .CZ 7 15, .CZ 7 20, .CZ 7 22, .CZ 7 25, .CZ 7 28, .CZ 7 34, .CZ 7 36, .CZ 7 39, .CZ 8 19, .CZ 8 42, .CZ 8 43, .CZ 8 46, .CZ 8 47, .CZ 8 49, .CZ 8 50, .CZ 8 51, .CZ 8 54, .CZ 8 61, .CZ 10 19, .CZ 11 19, .CZ 13 37, .CZ 13 38, .CZ 14 37, .CZ 14 38, .CZ 15 37, .CZ 15 38, .CZ 16 33, .CZ 21 64, .CZ 25 50, .CZ 25 54, .CZ 37 50],
   .X 64,
-  .measureX 64 [] [.Z 0, .Z 1, .Z 3, .Z 5, .Z 10, .CZ 0 3, .CZ 0 5, .CZ 0 10, .CZ 0 30, .CZ 0 37, .CZ 0 38, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 44, .CZ 1 45, .CZ 1 46, .CZ 1 47, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 8, .CZ 2 14, .CZ 2 16, .CZ 2 27, .CZ 2 30, .CZ 2 32, .CZ 2 34, .CZ 2 36, .CZ 2 44, .CZ 2 45, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 34, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 16, .CZ 4 27, .CZ 4 28, .CZ 4 30, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 36, .CZ 4 37, .CZ 4 46, .CZ 4 50, .CZ 4 52, .CZ 4 53, .CZ 4 59, .CZ 5 6, .CZ 5 7, .CZ 5 9, .CZ 5 16, .CZ 5 21, .CZ 5 22, .CZ 5 23, .CZ 5 25, .CZ 5 27, .CZ 5 28, .CZ 5 32, .CZ 5 33, .CZ 5 38, .CZ 5 54, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 21, .CZ 6 45, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 14, .CZ 7 16, .CZ 7 21, .CZ 7 23, .CZ 7 24, .CZ 7 28, .CZ 7 30, .CZ 7 32, .CZ 7 33, .CZ 7 34, .CZ 7 35, .CZ 7 43, .CZ 7 44, .CZ 8 21, .CZ 8 22, .CZ 9 10, .CZ 9 16, .CZ 10 16, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 24, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 15 23, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 23 46, .CZ 23 59],
-  .measureX 65 [] [.Z 0, .Z 1, .Z 7, .Z 10, .Z 11, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 9, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 17, .CZ 3 34, .CZ 4 7, .CZ 4 10, .CZ 4 16, .CZ 4 34, .CZ 5 7, .CZ 5 10, .CZ 5 16, .CZ 5 19, .CZ 5 34, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 34, .CZ 7 9, .CZ 7 16, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 7 34, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 21, .CZ 9 10, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 10 16, .CZ 10 20, .CZ 10 21, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 10 54, .CZ 11 12, .CZ 11 26, .CZ 11 41, .CZ 12 19, .CZ 12 21, .CZ 13 28, .CZ 13 32, .CZ 13 34, .CZ 13 54, .CZ 13 61, .CZ 14 17, .CZ 14 18, .CZ 14 34, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46],
-  .measureX 66 [] [.Z 0, .Z 1, .Z 6, .Z 11, .Z 15, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 15, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 15, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 15, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 6, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 34, .CZ 4 6, .CZ 4 15, .CZ 4 16, .CZ 4 34, .CZ 5 6, .CZ 5 15, .CZ 5 16, .CZ 5 19, .CZ 5 25, .CZ 5 34, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 21, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 6 34, .CZ 7 15, .CZ 7 16, .CZ 7 34, .CZ 8 9, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 9 10, .CZ 9 14, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 29, .CZ 9 31, .CZ 10 15, .CZ 10 16, .CZ 10 22, .CZ 10 23, .CZ 10 32, .CZ 10 50, .CZ 10 52, .CZ 10 58, .CZ 11 15, .CZ 11 19, .CZ 11 41, .CZ 12 19, .CZ 13 34, .CZ 13 54, .CZ 14 15, .CZ 14 17, .CZ 14 18, .CZ 14 28, .CZ 14 34, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46],
-  .measureX 55 [] [.Z 1, .Z 10, .CZ 0 1, .CZ 0 4, .CZ 0 10, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 10, .CZ 3 10, .CZ 3 17, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 14, .CZ 4 17, .CZ 4 18, .CZ 4 28, .CZ 4 29, .CZ 4 33, .CZ 4 42, .CZ 5 10, .CZ 5 34, .CZ 5 40, .CZ 5 45, .CZ 6 10, .CZ 7 10, .CZ 8 19, .CZ 9 10, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 19, .CZ 12 54],
+  .measureX 64 [] [.Z 8, .Z 9, .Z 11, .CZ 0 1, .CZ 0 3, .CZ 0 6, .CZ 1 2, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 33, .CZ 1 35, .CZ 1 37, .CZ 1 42, .CZ 1 43, .CZ 1 47, .CZ 2 6, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 28, .CZ 2 33, .CZ 2 41, .CZ 2 44, .CZ 2 45, .CZ 2 47, .CZ 3 6, .CZ 3 16, .CZ 3 34, .CZ 3 47, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 17, .CZ 4 33, .CZ 4 34, .CZ 4 41, .CZ 4 51, .CZ 5 6, .CZ 5 7, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 25, .CZ 5 33, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 47, .CZ 5 50, .CZ 5 54, .CZ 5 61, .CZ 6 7, .CZ 6 20, .CZ 6 24, .CZ 6 34, .CZ 6 38, .CZ 6 42, .CZ 6 43, .CZ 6 46, .CZ 6 47, .CZ 6 50, .CZ 6 51, .CZ 6 54, .CZ 6 61, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 14, .CZ 7 15, .CZ 7 19, .CZ 7 20, .CZ 7 24, .CZ 7 28, .CZ 7 33, .CZ 7 34, .CZ 7 36, .CZ 7 37, .CZ 7 38, .CZ 7 39, .CZ 7 51, .CZ 8 19, .CZ 8 20, .CZ 9 19, .CZ 10 20, .CZ 10 21, .CZ 10 22, .CZ 11 20, .CZ 14 33, .CZ 15 33, .CZ 16 36, .CZ 17 33, .CZ 18 33, .CZ 44 51],
+  .X 65,
+  .measureX 65 [] [.Z 8, .Z 10, .Z 11, .CZ 0 13, .CZ 1 13, .CZ 3 13, .CZ 5 24, .CZ 6 13, .CZ 6 24, .CZ 7 13, .CZ 8 10, .CZ 8 13, .CZ 8 49, .CZ 9 13, .CZ 10 14, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 29, .CZ 10 30, .CZ 10 32, .CZ 10 63, .CZ 11 13, .CZ 11 19, .CZ 13 14, .CZ 13 15, .CZ 13 19, .CZ 13 20, .CZ 13 27, .CZ 13 28, .CZ 13 32, .CZ 13 33, .CZ 13 36, .CZ 13 40, .CZ 13 57, .CZ 13 58, .CZ 14 27, .CZ 14 49, .CZ 15 27],
+  .measureX 61 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 1 3, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 11, .CZ 1 14, .CZ 1 15, .CZ 1 28, .CZ 1 33, .CZ 1 35, .CZ 1 36, .CZ 1 37, .CZ 1 44, .CZ 1 45, .CZ 1 47, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 9, .CZ 2 11, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 28, .CZ 2 33, .CZ 2 34, .CZ 2 35, .CZ 2 44, .CZ 2 45, .CZ 4 6, .CZ 4 7, .CZ 4 16, .CZ 4 17, .CZ 4 34, .CZ 4 41, .CZ 5 6, .CZ 5 7, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 33, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 42, .CZ 5 50, .CZ 5 54, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 38, .CZ 6 44, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 14, .CZ 7 15, .CZ 7 19, .CZ 7 20, .CZ 7 24, .CZ 7 28, .CZ 7 33, .CZ 7 34, .CZ 7 36, .CZ 7 37, .CZ 7 38, .CZ 7 39, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 9 19, .CZ 10 19, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39, .CZ 25 50, .CZ 25 54],
+  .measureX 62 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 7, .Z 8, .Z 9, .Z 14, .Z 15, .CZ 0 1, .CZ 0 6, .CZ 1 2, .CZ 1 6, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 3, .CZ 2 6, .CZ 2 7, .CZ 2 16, .CZ 2 34, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 6, .CZ 4 7, .CZ 4 16, .CZ 4 17, .CZ 5 6, .CZ 5 7, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 33, .CZ 8 11, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 9 19, .CZ 10 19, .CZ 10 49, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 21, .CZ 11 26, .CZ 12 19, .CZ 12 22, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 28, .CZ 13 32, .CZ 13 49, .CZ 13 58, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39]
+]
+
+private def load0Block73 : Program := [
+  .measureX 63 [] [.Z 0, .Z 1, .Z 2, .Z 8, .Z 9, .Z 14, .Z 15, .CZ 0 1, .CZ 0 6, .CZ 1 2, .CZ 1 6, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 3, .CZ 2 16, .CZ 2 34, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 16, .CZ 4 17, .CZ 5 16, .CZ 5 17, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 25, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 36, .CZ 6 37, .CZ 8 9, .CZ 8 11, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 20, .CZ 9 10, .CZ 9 15, .CZ 9 18, .CZ 9 28, .CZ 9 29, .CZ 9 31, .CZ 10 11, .CZ 10 15, .CZ 10 21, .CZ 10 23, .CZ 10 27, .CZ 10 29, .CZ 10 49, .CZ 10 51, .CZ 10 56, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 21, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 29, .CZ 13 49, .CZ 14 15, .CZ 14 18, .CZ 14 28, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .measureX 52 [] [.Z 1, .Z 4, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 33, .CZ 1 35, .CZ 2 3, .CZ 2 4, .CZ 2 35, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 4 34, .CZ 4 41, .CZ 5 22, .CZ 5 24, .CZ 5 37, .CZ 5 43, .CZ 6 19, .CZ 8 19, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 19, .CZ 12 19, .CZ 12 49],
+  .measureX 53 [] [.Z 0, .Z 6, .Z 7, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 4, .CZ 0 6, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 35, .CZ 1 47, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 33, .CZ 2 34, .CZ 2 47, .CZ 3 17, .CZ 3 34, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 18, .CZ 5 7, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 25, .CZ 5 37, .CZ 5 38, .CZ 5 49, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 37, .CZ 6 44, .CZ 6 46, .CZ 7 19, .CZ 7 21, .CZ 7 22, .CZ 7 25, .CZ 7 33, .CZ 7 37, .CZ 7 38, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 19, .CZ 8 49, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 9 49, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 21, .CZ 10 23, .CZ 10 32, .CZ 10 49, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 12 19, .CZ 12 49, .CZ 13 19, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 13 37, .CZ 13 38, .CZ 13 49, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 25, .CZ 14 27, .CZ 14 37, .CZ 14 38, .CZ 14 39, .CZ 14 49, .CZ 15 18, .CZ 15 19, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 25, .CZ 15 27, .CZ 15 37, .CZ 15 38, .CZ 15 39, .CZ 15 49, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .X 54,
+  .measureX 54 [] [.Z 4, .Z 5, .Z 7, .CZ 1 3, .CZ 1 4, .CZ 1 35, .CZ 1 37, .CZ 2 3, .CZ 2 4, .CZ 2 35, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 4 34, .CZ 4 41, .CZ 5 33, .CZ 5 36, .CZ 5 42, .CZ 6 24, .CZ 6 33, .CZ 6 37, .CZ 6 38, .CZ 6 42, .CZ 6 44, .CZ 6 46, .CZ 7 33, .CZ 7 36, .CZ 7 42, .CZ 8 19, .CZ 9 19, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 32, .CZ 11 19, .CZ 12 19, .CZ 13 19, .CZ 13 24, .CZ 14 19, .CZ 14 24, .CZ 15 19, .CZ 15 24, .CZ 22 50, .CZ 37 50],
+  .measureX 55 [] [.Z 3, .Z 7, .CZ 0 3, .CZ 1 3, .CZ 1 7, .CZ 1 33, .CZ 1 42, .CZ 1 43, .CZ 1 47, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 42, .CZ 2 43, .CZ 3 34, .CZ 5 19, .CZ 5 49, .CZ 6 7, .CZ 6 22, .CZ 6 24, .CZ 6 37, .CZ 6 43, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 14, .CZ 7 15, .CZ 7 20, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 28, .CZ 7 33, .CZ 7 34, .CZ 7 37, .CZ 7 38, .CZ 7 39, .CZ 7 42, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 19],
   .X 56,
-  .measureX 56 [] [.Z 7, .Z 8, .Z 10, .Z 11, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 28, .CZ 0 30, .CZ 0 32, .CZ 0 33, .CZ 0 35, .CZ 0 46, .CZ 1 2, .CZ 1 3, .CZ 1 14, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 46, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 16, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 2 35, .CZ 2 37, .CZ 2 41, .CZ 2 46, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 27, .CZ 3 29, .CZ 3 32, .CZ 3 34, .CZ 4 5, .CZ 4 8, .CZ 4 9, .CZ 4 17, .CZ 4 18, .CZ 4 27, .CZ 4 35, .CZ 4 37, .CZ 4 46, .CZ 5 14, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 25, .CZ 5 27, .CZ 5 28, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 37, .CZ 5 38, .CZ 5 40, .CZ 5 43, .CZ 5 54, .CZ 6 9, .CZ 6 10, .CZ 6 14, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 34, .CZ 6 44, .CZ 6 45, .CZ 6 49, .CZ 7 8, .CZ 7 9, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 27, .CZ 7 30, .CZ 7 35, .CZ 7 46, .CZ 8 11, .CZ 8 15, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 8 46, .CZ 8 54, .CZ 9 14, .CZ 9 15, .CZ 9 19, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 9 54, .CZ 10 14, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 10 46, .CZ 10 54, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 20, .CZ 11 26, .CZ 12 20, .CZ 12 54, .CZ 13 28, .CZ 13 54, .CZ 14 17, .CZ 14 18, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 14 46, .CZ 14 54, .CZ 15 19, .CZ 15 23, .CZ 15 24, .CZ 15 35, .CZ 15 54, .CZ 17 27, .CZ 17 29, .CZ 17 35, .CZ 17 36, .CZ 17 50, .CZ 18 27, .CZ 18 29, .CZ 18 35, .CZ 18 36, .CZ 22 46, .CZ 24 43, .CZ 27 46, .CZ 30 46, .CZ 35 46],
-  .measureX 57 [] [.Z 0, .Z 1, .Z 3, .Z 4, .Z 10, .CZ 0 1, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 27, .CZ 0 28, .CZ 0 30, .CZ 0 32, .CZ 0 33, .CZ 0 37, .CZ 1 2, .CZ 1 4, .CZ 1 7, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 44, .CZ 1 45, .CZ 1 46, .CZ 1 47, .CZ 1 50, .CZ 2 4, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 14, .CZ 2 16, .CZ 2 28, .CZ 2 30, .CZ 2 33, .CZ 2 34, .CZ 2 36, .CZ 2 38, .CZ 2 44, .CZ 2 45, .CZ 3 4, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 34, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 16, .CZ 4 27, .CZ 4 28, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 5 10, .CZ 5 16, .CZ 5 19, .CZ 5 25, .CZ 5 54, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 19, .CZ 6 21, .CZ 6 45, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 14, .CZ 7 16, .CZ 7 21, .CZ 7 23, .CZ 7 24, .CZ 7 28, .CZ 7 30, .CZ 7 32, .CZ 7 33, .CZ 7 34, .CZ 7 35, .CZ 7 43, .CZ 7 44, .CZ 8 19, .CZ 9 10, .CZ 9 16, .CZ 10 16, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33],
-  .X 58,
-  .measureX 58 [] [.Z 3, .Z 7, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 10, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 27, .CZ 2 28, .CZ 2 30, .CZ 2 33, .CZ 2 35, .CZ 2 36, .CZ 2 37, .CZ 2 38, .CZ 2 44, .CZ 2 45, .CZ 2 50, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 14, .CZ 3 27, .CZ 3 30, .CZ 3 35, .CZ 4 7, .CZ 5 7, .CZ 5 19, .CZ 5 25, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 21, .CZ 6 43, .CZ 6 44, .CZ 7 8, .CZ 7 10, .CZ 7 14, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 30, .CZ 7 35, .CZ 7 43, .CZ 7 44, .CZ 8 19, .CZ 8 54, .CZ 9 17, .CZ 9 18, .CZ 9 54, .CZ 10 17, .CZ 10 18, .CZ 10 24, .CZ 12 19, .CZ 12 54, .CZ 17 27, .CZ 17 28, .CZ 17 33, .CZ 17 35, .CZ 17 36, .CZ 17 46, .CZ 18 27, .CZ 18 28, .CZ 18 33, .CZ 18 35, .CZ 18 36, .CZ 18 46],
-  .measureX 59 [] [.Z 0, .Z 2, .Z 5, .Z 7, .Z 8, .Z 10, .Z 11, .CZ 0 1, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 0 36, .CZ 0 37, .CZ 0 39, .CZ 0 46, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 28, .CZ 1 29, .CZ 1 33, .CZ 1 44, .CZ 1 45, .CZ 1 46, .CZ 1 50, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 9, .CZ 2 16, .CZ 2 27, .CZ 2 29, .CZ 2 30, .CZ 2 34, .CZ 2 35, .CZ 2 36, .CZ 2 37, .CZ 2 38, .CZ 2 44, .CZ 2 45, .CZ 2 47, .CZ 2 50, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 32, .CZ 3 34, .CZ 3 35, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 27, .CZ 4 29, .CZ 4 32, .CZ 4 42, .CZ 4 46, .CZ 5 8, .CZ 5 10, .CZ 5 16, .CZ 5 25, .CZ 5 28, .CZ 5 29, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 43, .CZ 5 44, .CZ 5 46, .CZ 6 14, .CZ 6 16, .CZ 6 19, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 6 43, .CZ 6 44, .CZ 6 46, .CZ 7 8, .CZ 7 10, .CZ 7 16, .CZ 7 21, .CZ 7 23, .CZ 7 24, .CZ 7 28, .CZ 7 30, .CZ 7 32, .CZ 7 33, .CZ 7 35, .CZ 7 43, .CZ 7 44, .CZ 7 46, .CZ 8 11, .CZ 8 15, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 8 46, .CZ 8 50, .CZ 8 52, .CZ 9 14, .CZ 9 15, .CZ 9 16, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 14, .CZ 10 16, .CZ 10 20, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 10 46, .CZ 10 50, .CZ 10 52, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 20, .CZ 11 26, .CZ 11 41, .CZ 12 20, .CZ 13 28, .CZ 13 34, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 14 34, .CZ 14 46, .CZ 14 50, .CZ 14 52, .CZ 15 19, .CZ 15 23, .CZ 15 34, .CZ 15 35, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 22 46, .CZ 27 46, .CZ 27 50, .CZ 27 52, .CZ 29 50, .CZ 29 52, .CZ 30 46, .CZ 32 50, .CZ 32 52, .CZ 35 46, .CZ 46 50, .CZ 46 52],
-  .measureX 60 [] [.Z 3, .Z 7, .Z 10, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 15, .CZ 1 3, .CZ 1 7, .CZ 1 10, .CZ 1 15, .CZ 2 3, .CZ 2 7, .CZ 2 10, .CZ 2 15, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 9, .CZ 3 15, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 7, .CZ 4 10, .CZ 4 15, .CZ 5 7, .CZ 5 10, .CZ 5 15, .CZ 6 7, .CZ 6 10, .CZ 6 15, .CZ 7 9, .CZ 7 15, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 8 19, .CZ 9 10, .CZ 9 15, .CZ 9 19, .CZ 10 15, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 10 54, .CZ 11 15, .CZ 11 19, .CZ 12 54, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27, .CZ 15 54],
-  .measureX 61 [] [.Z 0, .Z 1, .Z 9, .Z 15, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 10, .CZ 0 15, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 15, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 15, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 9, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 34, .CZ 4 9, .CZ 4 15, .CZ 4 16, .CZ 4 34, .CZ 5 9, .CZ 5 15, .CZ 5 16, .CZ 5 19, .CZ 5 34, .CZ 6 9, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 34, .CZ 7 9, .CZ 7 15, .CZ 7 16, .CZ 7 34, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 9 10, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 11 12, .CZ 11 15, .CZ 11 19, .CZ 11 20, .CZ 11 26, .CZ 11 41, .CZ 12 19, .CZ 12 20, .CZ 12 21, .CZ 13 34, .CZ 14 17, .CZ 14 18, .CZ 14 34, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27, .CZ 15 34, .CZ 15 54, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46]
+  .measureX 56 [] [.Z 7, .CZ 0 5, .CZ 0 33, .CZ 1 3, .CZ 1 4, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 11, .CZ 2 14, .CZ 2 15, .CZ 2 28, .CZ 2 33, .CZ 2 42, .CZ 2 43, .CZ 2 44, .CZ 2 45, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 17, .CZ 3 33, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 7, .CZ 6 19, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 42, .CZ 7 19, .CZ 7 21, .CZ 7 22, .CZ 7 25, .CZ 7 36, .CZ 7 42, .CZ 8 49, .CZ 9 49, .CZ 12 19, .CZ 12 49],
+  .measureX 57 [] [.Z 3, .Z 7, .Z 15, .CZ 2 3, .CZ 2 7, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 4 7, .CZ 5 7, .CZ 5 19, .CZ 6 19, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 33, .CZ 8 19, .CZ 9 19, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 10 49, .CZ 11 19, .CZ 12 19, .CZ 12 49, .CZ 15 27, .CZ 15 49],
+  .measureX 58 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 1, .CZ 0 6, .CZ 1 2, .CZ 1 6, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 3, .CZ 2 6, .CZ 2 16, .CZ 2 34, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 6, .CZ 4 16, .CZ 4 17, .CZ 5 6, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 21, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 8 11, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 20, .CZ 9 11, .CZ 9 14, .CZ 9 18, .CZ 9 27, .CZ 9 30, .CZ 9 31, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 22, .CZ 10 32, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 11 21, .CZ 11 26, .CZ 12 19, .CZ 12 20, .CZ 12 22, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 39, .CZ 15 49, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .measureX 59 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 1, .CZ 0 4, .CZ 0 6, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 6, .CZ 2 16, .CZ 2 34, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 17, .CZ 3 33, .CZ 3 34, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 5 6, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 19, .CZ 8 49, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 9 19, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .X 60,
+  .measureX 60 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 8, .Z 9, .Z 11, .Z 13, .Z 14, .CZ 0 1, .CZ 0 6, .CZ 1 2, .CZ 1 6, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 3, .CZ 2 6, .CZ 2 16, .CZ 2 34, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 6, .CZ 4 16, .CZ 4 17, .CZ 5 6, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 9 19, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 28, .CZ 13 49, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 39, .CZ 15 49, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .measureX 48 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 4, .CZ 0 6, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 8, .CZ 1 9, .CZ 1 11, .CZ 1 14, .CZ 1 15, .CZ 1 28, .CZ 1 33, .CZ 1 35, .CZ 1 36, .CZ 1 37, .CZ 1 42, .CZ 1 43, .CZ 1 44, .CZ 1 45, .CZ 2 6, .CZ 2 7, .CZ 2 16, .CZ 2 34, .CZ 2 35, .CZ 2 47, .CZ 3 34, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 16, .CZ 4 17, .CZ 4 33, .CZ 4 34, .CZ 4 41, .CZ 5 6, .CZ 5 7, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 7 19, .CZ 7 21, .CZ 7 22, .CZ 7 25, .CZ 7 36, .CZ 7 42, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 19, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .measureX 49 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 0 1, .CZ 0 6, .CZ 1 2, .CZ 1 6, .CZ 1 36, .CZ 1 37, .CZ 1 47, .CZ 2 3, .CZ 2 6, .CZ 2 16, .CZ 2 34, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 6, .CZ 4 16, .CZ 4 17, .CZ 5 6, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 33, .CZ 6 36, .CZ 6 37, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 9 14, .CZ 9 15, .CZ 9 18, .CZ 9 19, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 25, .CZ 13 27, .CZ 13 28, .CZ 14 18, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 39, .CZ 15 18, .CZ 15 20, .CZ 15 21, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 25, .CZ 15 27, .CZ 15 39, .CZ 16 33, .CZ 17 33, .CZ 17 47, .CZ 18 28, .CZ 18 39],
+  .measureX 50 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 6, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 33, .CZ 1 36, .CZ 1 37, .CZ 2 16, .CZ 2 35, .CZ 4 5, .CZ 4 16, .CZ 4 33, .CZ 4 34, .CZ 4 41, .CZ 5 16, .CZ 5 19, .CZ 5 22, .CZ 5 38, .CZ 5 43, .CZ 6 36, .CZ 6 44, .CZ 6 46, .CZ 7 19, .CZ 7 24, .CZ 7 37, .CZ 7 38, .CZ 9 19, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 12 19, .CZ 13 19, .CZ 13 24, .CZ 13 37, .CZ 13 38, .CZ 14 19, .CZ 14 24, .CZ 14 37, .CZ 14 38, .CZ 15 19, .CZ 15 24, .CZ 15 37, .CZ 15 38, .CZ 16 33],
+  .X 51,
+  .measureX 51 [] [.Z 6, .Z 7, .CZ 0 4, .CZ 0 5, .CZ 0 33, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 11, .CZ 2 14, .CZ 2 15, .CZ 2 28, .CZ 2 33, .CZ 2 42, .CZ 2 43, .CZ 2 44, .CZ 2 45, .CZ 2 47, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 4 6, .CZ 4 7, .CZ 5 6, .CZ 5 7, .CZ 5 25, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 36, .CZ 6 42, .CZ 7 19, .CZ 7 21, .CZ 7 22, .CZ 7 25, .CZ 7 36, .CZ 7 42, .CZ 8 19, .CZ 9 19, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 32],
+  .X 46,
+  .measureX 46 [] [.Z 4, .Z 5, .Z 7, .CZ 1 3, .CZ 1 4, .CZ 1 35, .CZ 2 3, .CZ 2 4, .CZ 2 35, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 4 34, .CZ 4 41, .CZ 5 22, .CZ 5 33, .CZ 5 36, .CZ 5 37, .CZ 5 42, .CZ 5 43, .CZ 7 19, .CZ 7 24, .CZ 7 33, .CZ 7 36, .CZ 7 42, .CZ 10 11, .CZ 10 15, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 32],
+  .measureX 47 [] [.Z 1, .Z 3, .Z 4, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 11, .CZ 1 14, .CZ 1 15, .CZ 1 28, .CZ 1 33, .CZ 1 35, .CZ 1 44, .CZ 1 45, .CZ 2 5, .CZ 2 35, .CZ 2 42, .CZ 2 43, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 7, .CZ 4 34, .CZ 4 41, .CZ 5 7, .CZ 6 7, .CZ 6 19, .CZ 6 22, .CZ 6 24, .CZ 6 37, .CZ 6 43, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 14, .CZ 7 15, .CZ 7 19, .CZ 7 20, .CZ 7 24, .CZ 7 28, .CZ 7 33, .CZ 7 34, .CZ 7 36, .CZ 7 37, .CZ 7 38, .CZ 7 39, .CZ 9 19, .CZ 10 19, .CZ 11 19],
+  .measureX 43 [] [.Z 1, .Z 7, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 33, .CZ 2 4, .CZ 2 5, .CZ 2 33, .CZ 7 19, .CZ 7 24, .CZ 7 33, .CZ 7 36, .CZ 7 42, .CZ 10 19, .CZ 11 19],
+  .X 44,
+  .measureX 44 [] [.Z 1, .Z 3, .Z 5, .Z 7, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 33, .CZ 2 3, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 5 19, .CZ 5 24, .CZ 5 33, .CZ 5 36, .CZ 5 42, .CZ 7 19, .CZ 7 24, .CZ 7 33, .CZ 7 36, .CZ 7 42, .CZ 10 19],
+  .measureX 45 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 8, .Z 9, .Z 11, .Z 13, .CZ 0 2, .CZ 0 5, .CZ 0 33, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 33, .CZ 2 3, .CZ 2 6, .CZ 3 17, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 6, .CZ 5 19, .CZ 5 24, .CZ 5 25, .CZ 5 33, .CZ 5 36, .CZ 5 42, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 36, .CZ 6 42, .CZ 8 19, .CZ 9 19, .CZ 12 19, .CZ 13 27, .CZ 14 27, .CZ 15 27],
+  .X 42,
+  .measureX 42 [] [.Z 2, .Z 3, .Z 5, .CZ 0 4, .CZ 1 35, .CZ 2 3, .CZ 2 4, .CZ 2 35, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 4 34, .CZ 4 41, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32],
+  .X 41,
+  .measureX 41 [] [.Z 1, .Z 2, .Z 3, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 33, .CZ 2 3, .CZ 2 5, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 3 34, .CZ 4 5, .CZ 4 33, .CZ 5 19, .CZ 6 19],
+  .measureX 34 [] [.Z 0, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 0 33, .CZ 5 19, .CZ 6 19, .CZ 8 19, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 19]
+]
+
+private def load0Block74 : Program := [
+  .measureX 35 [] [.CZ 2 4, .CZ 4 5, .CZ 4 33],
+  .measureX 36 [] [.Z 3, .CZ 2 3, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 5 19, .CZ 6 19, .CZ 8 19, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 19],
+  .measureX 37 [] [.Z 1, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 33, .CZ 2 4, .CZ 2 5, .CZ 2 33],
+  .measureX 38 [] [.CZ 2 4, .CZ 2 5, .CZ 2 33, .CZ 5 19, .CZ 6 19, .CZ 8 19, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 19],
+  .measureX 39 [] [.Z 0, .Z 3, .Z 6, .Z 8, .Z 9, .Z 11, .Z 13, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 0 33, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 33, .CZ 4 6, .CZ 5 6, .CZ 5 25, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 33, .CZ 8 19, .CZ 9 19, .CZ 11 19, .CZ 12 19, .CZ 13 27, .CZ 14 27, .CZ 15 27],
+  .measureX 40 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 13, .CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 2 7, .CZ 3 17, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 7, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 33, .CZ 9 19, .CZ 10 19, .CZ 12 19, .CZ 13 27, .CZ 14 27, .CZ 15 27],
+  .X 33,
+  .measureX 33 [] [.Z 2, .Z 4, .Z 5, .CZ 5 19, .CZ 6 19, .CZ 8 19, .CZ 10 11, .CZ 10 15, .CZ 10 20, .CZ 10 22, .CZ 10 32, .CZ 11 19],
+  .measureX 32 [] [.Z 11, .Z 15, .CZ 5 20, .CZ 6 20, .CZ 8 20, .CZ 9 11, .CZ 9 15, .CZ 9 27, .CZ 9 30, .CZ 9 31, .CZ 10 20, .CZ 11 19, .CZ 12 20],
+  .X 31,
+  .measureX 31 [] [.Z 13, .CZ 5 20, .CZ 5 24, .CZ 6 20, .CZ 6 24, .CZ 8 20, .CZ 9 11, .CZ 9 15, .CZ 9 27, .CZ 9 29, .CZ 10 11, .CZ 10 15, .CZ 10 21, .CZ 10 23, .CZ 10 27, .CZ 10 29, .CZ 11 12, .CZ 11 26, .CZ 12 19, .CZ 12 20, .CZ 12 22, .CZ 13 28, .CZ 13 29, .CZ 14 15, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 25, .CZ 14 27, .CZ 14 28, .CZ 15 27],
+  .X 28,
+  .measureX 28 [] [.Z 13, .Z 14, .Z 15, .CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 19, .CZ 6 19, .CZ 8 19, .CZ 10 19, .CZ 11 19, .CZ 12 19, .CZ 13 27, .CZ 14 27, .CZ 15 27],
+  .measureX 29 [] [.Z 15, .CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 19, .CZ 6 19, .CZ 8 19, .CZ 10 19, .CZ 11 19, .CZ 12 19, .CZ 15 27],
+  .X 30,
+  .measureX 30 [] [.Z 11, .Z 13, .Z 15, .CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 19, .CZ 6 19, .CZ 8 11, .CZ 8 19, .CZ 9 19, .CZ 10 19, .CZ 11 12, .CZ 11 21, .CZ 11 26, .CZ 12 22, .CZ 13 27, .CZ 15 27],
+  .measureX 27 [] [.Z 11, .CZ 8 11, .CZ 11 12, .CZ 11 19, .CZ 11 21, .CZ 11 26, .CZ 12 19, .CZ 12 22],
+  .X 26,
+  .measureX 26 [] [.Z 8, .Z 12, .CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 8 12, .CZ 8 19, .CZ 12 19, .CZ 12 21],
+  .measureX 20 [] [.CZ 9 19],
+  .measureX 21 [] [.CZ 8 19],
+  .measureX 22 [] [.CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 11 19],
+  .measureX 23 [] [.CZ 9 19, .CZ 12 19],
+  .measureX 24 [] [.CZ 10 19],
+  .measureX 25 [] [.CZ 5 19, .CZ 6 19],
+  .measureX 19 [] [.CZ 0 4, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 3 17, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 14, .CZ 4 15, .CZ 4 18],
+  .measureX 18 [] [.Z 0, .Z 1, .Z 6, .Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .CZ 1 3, .CZ 2 3, .CZ 3 17],
+  .measureX 17 [] [.Z 1, .CZ 1 2, .CZ 2 3, .CZ 2 16],
+  .measureX 16 [] [.Z 1, .Z 2, .Z 3, .CZ 0 1],
+  .measureX 71 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99]
 ]
 
 private def load0Block75 : Program := [
-  .measureX 62 [] [.Z 0, .Z 1, .Z 10, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 10, .CZ 3 16, .CZ 3 34, .CZ 4 10, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 34, .CZ 5 10, .CZ 5 16, .CZ 5 19, .CZ 5 34, .CZ 6 10, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 34, .CZ 7 10, .CZ 7 16, .CZ 7 34, .CZ 8 17, .CZ 8 18, .CZ 8 54, .CZ 9 10, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 10 16, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 41, .CZ 12 19, .CZ 13 34, .CZ 14 17, .CZ 14 18, .CZ 14 34, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46],
-  .X 63,
-  .measureX 63 [] [.Z 7, .Z 10, .Z 13, .CZ 0 7, .CZ 0 10, .CZ 0 13, .CZ 0 15, .CZ 1 7, .CZ 1 10, .CZ 1 13, .CZ 1 15, .CZ 2 7, .CZ 2 10, .CZ 2 13, .CZ 2 15, .CZ 3 7, .CZ 3 10, .CZ 3 13, .CZ 3 15, .CZ 4 7, .CZ 4 10, .CZ 4 13, .CZ 4 15, .CZ 5 7, .CZ 5 10, .CZ 5 13, .CZ 5 15, .CZ 6 7, .CZ 6 10, .CZ 6 13, .CZ 6 15, .CZ 7 9, .CZ 7 13, .CZ 7 15, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 9 10, .CZ 9 13, .CZ 9 15, .CZ 10 13, .CZ 10 15, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 10 54, .CZ 11 13, .CZ 11 15, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 23, .CZ 13 27, .CZ 13 54, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27, .CZ 15 54],
-  .measureX 51 [] [.Z 1, .Z 2, .Z 4, .Z 5, .Z 7, .Z 8, .Z 10, .Z 11, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 28, .CZ 0 30, .CZ 0 32, .CZ 0 33, .CZ 0 35, .CZ 0 46, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 14, .CZ 1 46, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 16, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 2 35, .CZ 2 37, .CZ 2 46, .CZ 3 9, .CZ 3 10, .CZ 3 14, .CZ 3 16, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 35, .CZ 4 6, .CZ 4 9, .CZ 4 10, .CZ 4 14, .CZ 4 16, .CZ 4 29, .CZ 4 32, .CZ 4 34, .CZ 4 35, .CZ 4 37, .CZ 4 42, .CZ 4 46, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 16, .CZ 5 21, .CZ 5 27, .CZ 5 29, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 38, .CZ 5 40, .CZ 5 44, .CZ 6 7, .CZ 6 14, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 21, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 6 43, .CZ 6 45, .CZ 6 49, .CZ 7 9, .CZ 7 10, .CZ 7 14, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 21, .CZ 7 25, .CZ 7 34, .CZ 7 43, .CZ 7 44, .CZ 7 46, .CZ 8 11, .CZ 8 15, .CZ 8 20, .CZ 8 21, .CZ 8 46, .CZ 9 14, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 14, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 10 46, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 19, .CZ 11 20, .CZ 11 26, .CZ 12 20, .CZ 13 28, .CZ 13 34, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 14 34, .CZ 14 46, .CZ 15 19, .CZ 15 23, .CZ 15 24, .CZ 15 34, .CZ 15 35, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 27, .CZ 17 28, .CZ 17 33, .CZ 17 35, .CZ 17 36, .CZ 17 46, .CZ 18 27, .CZ 18 28, .CZ 18 33, .CZ 18 35, .CZ 18 36, .CZ 18 46, .CZ 22 46, .CZ 24 43, .CZ 27 46, .CZ 30 46, .CZ 35 46],
-  .measureX 52 [] [.Z 3, .Z 10, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 10, .CZ 0 30, .CZ 0 37, .CZ 1 3, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 14, .CZ 1 28, .CZ 1 29, .CZ 1 33, .CZ 1 46, .CZ 1 47, .CZ 1 50, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 14, .CZ 2 16, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 35, .CZ 2 37, .CZ 2 50, .CZ 3 7, .CZ 3 8, .CZ 3 14, .CZ 3 17, .CZ 3 27, .CZ 3 29, .CZ 3 34, .CZ 3 35, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 14, .CZ 4 28, .CZ 4 29, .CZ 4 33, .CZ 4 34, .CZ 4 42, .CZ 5 7, .CZ 5 10, .CZ 5 21, .CZ 5 22, .CZ 5 25, .CZ 5 30, .CZ 5 32, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 43, .CZ 6 10, .CZ 6 17, .CZ 6 18, .CZ 6 22, .CZ 6 34, .CZ 6 45, .CZ 7 8, .CZ 7 14, .CZ 7 19, .CZ 7 21, .CZ 7 22, .CZ 7 24, .CZ 7 27, .CZ 7 30, .CZ 7 34, .CZ 7 35, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 9 10, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 10 20, .CZ 10 21, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 41, .CZ 12 19, .CZ 13 34, .CZ 14 17, .CZ 14 18, .CZ 14 34, .CZ 15 24, .CZ 15 34, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46, .CZ 24 43],
-  .measureX 53 [] [.Z 0, .Z 1, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 10, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 14, .CZ 1 28, .CZ 1 29, .CZ 1 33, .CZ 1 44, .CZ 1 45, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 8, .CZ 3 10, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 27, .CZ 3 29, .CZ 3 35, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 28, .CZ 4 29, .CZ 4 33, .CZ 4 42, .CZ 5 7, .CZ 5 16, .CZ 5 34, .CZ 6 7, .CZ 6 16, .CZ 6 34, .CZ 7 9, .CZ 7 10, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 7 43, .CZ 7 44, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 9 16, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 11 19, .CZ 11 41, .CZ 13 34, .CZ 14 17, .CZ 14 18, .CZ 14 34, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 27, .CZ 17 29, .CZ 17 35, .CZ 17 36, .CZ 17 50, .CZ 18 27, .CZ 18 29, .CZ 18 35, .CZ 18 36],
-  .measureX 54 [] [.Z 0, .Z 1, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 16, .CZ 3 17, .CZ 3 34, .CZ 4 16, .CZ 4 34, .CZ 5 16, .CZ 5 19, .CZ 5 34, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 34, .CZ 7 16, .CZ 7 34, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 11 41, .CZ 12 19, .CZ 13 34, .CZ 14 17, .CZ 14 18, .CZ 14 34, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 28, .CZ 17 29, .CZ 17 33, .CZ 17 46, .CZ 17 50, .CZ 18 28, .CZ 18 29, .CZ 18 33, .CZ 18 46],
-  .X 49,
-  .measureX 49 [] [.Z 3, .Z 5, .Z 6, .Z 7, .CZ 0 5, .CZ 1 6, .CZ 1 7, .CZ 2 6, .CZ 2 7, .CZ 2 34, .CZ 2 41, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 14, .CZ 3 28, .CZ 3 30, .CZ 3 32, .CZ 3 33, .CZ 3 35, .CZ 4 5, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 14, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 25, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 40, .CZ 5 43, .CZ 5 44, .CZ 5 45, .CZ 6 7, .CZ 6 19, .CZ 6 21, .CZ 6 43, .CZ 6 44, .CZ 7 8, .CZ 7 9, .CZ 7 14, .CZ 7 19, .CZ 7 21, .CZ 7 23, .CZ 7 24, .CZ 7 25, .CZ 7 28, .CZ 7 30, .CZ 7 32, .CZ 7 33, .CZ 7 35, .CZ 7 43, .CZ 7 44, .CZ 8 19, .CZ 10 19, .CZ 10 21, .CZ 10 24, .CZ 11 19, .CZ 11 41],
-  .X 50,
-  .measureX 50 [] [.Z 0, .Z 1, .Z 6, .Z 7, .CZ 0 1, .CZ 0 2, .CZ 0 4, .CZ 0 6, .CZ 0 30, .CZ 0 37, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 14, .CZ 1 27, .CZ 1 29, .CZ 1 32, .CZ 1 46, .CZ 1 47, .CZ 2 3, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 28, .CZ 2 30, .CZ 2 33, .CZ 2 34, .CZ 2 36, .CZ 2 38, .CZ 2 44, .CZ 2 45, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 16, .CZ 3 17, .CZ 3 29, .CZ 3 30, .CZ 3 36, .CZ 4 5, .CZ 4 8, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 28, .CZ 4 29, .CZ 4 33, .CZ 4 42, .CZ 5 6, .CZ 5 16, .CZ 5 19, .CZ 5 21, .CZ 5 22, .CZ 5 30, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 43, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 6 43, .CZ 6 44, .CZ 6 45, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 21, .CZ 7 25, .CZ 7 43, .CZ 7 44, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 24, .CZ 15 24, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33, .CZ 17 27, .CZ 17 28, .CZ 17 33, .CZ 17 35, .CZ 17 36, .CZ 17 46, .CZ 18 27, .CZ 18 28, .CZ 18 33, .CZ 18 35, .CZ 18 36, .CZ 18 46, .CZ 24 43],
-  .measureX 45 [] [.Z 1, .Z 2, .Z 3, .Z 7, .CZ 0 1, .CZ 0 2, .CZ 0 7, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 3 8, .CZ 3 10, .CZ 3 14, .CZ 3 17, .CZ 3 27, .CZ 3 29, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 17, .CZ 4 18, .CZ 5 7, .CZ 6 7, .CZ 7 9, .CZ 7 10, .CZ 7 22, .CZ 7 23, .CZ 7 25, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 7 43, .CZ 7 44, .CZ 8 19, .CZ 11 19],
-  .X 46,
-  .measureX 46 [] [.Z 0, .Z 2, .Z 5, .Z 6, .Z 8, .Z 10, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 14, .CZ 0 15, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 14, .CZ 1 15, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 14, .CZ 2 15, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 2 41, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 14, .CZ 3 15, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 15, .CZ 4 28, .CZ 4 29, .CZ 4 33, .CZ 4 42, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 15, .CZ 5 20, .CZ 5 21, .CZ 5 28, .CZ 5 29, .CZ 5 33, .CZ 5 38, .CZ 5 44, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 14, .CZ 6 15, .CZ 6 21, .CZ 6 22, .CZ 7 14, .CZ 7 15, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 8 11, .CZ 8 20, .CZ 8 21, .CZ 9 14, .CZ 9 15, .CZ 9 19, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 19, .CZ 11 20, .CZ 11 26, .CZ 11 41, .CZ 12 20, .CZ 12 21, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 24, .CZ 15 27, .CZ 24 43],
-  .X 47,
-  .measureX 47 [] [.Z 1, .Z 3, .Z 5, .Z 6, .Z 7, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 9, .CZ 1 10, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 6, .CZ 2 7, .CZ 2 34, .CZ 2 41, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 14, .CZ 3 28, .CZ 3 30, .CZ 3 32, .CZ 3 33, .CZ 3 35, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 14, .CZ 4 28, .CZ 4 29, .CZ 4 33, .CZ 4 42, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 14, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 25, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 43, .CZ 5 44, .CZ 6 7, .CZ 6 19, .CZ 6 21, .CZ 6 43, .CZ 6 44, .CZ 7 8, .CZ 7 9, .CZ 7 14, .CZ 7 19, .CZ 7 21, .CZ 7 23, .CZ 7 24, .CZ 7 25, .CZ 7 28, .CZ 7 30, .CZ 7 32, .CZ 7 33, .CZ 7 35, .CZ 7 43, .CZ 7 44, .CZ 10 21, .CZ 10 24, .CZ 11 41, .CZ 12 19],
-  .measureX 48 [] [.Z 10, .CZ 0 2, .CZ 0 5, .CZ 0 10, .CZ 1 2, .CZ 1 4, .CZ 1 10, .CZ 2 3, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 3 4, .CZ 3 10, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 14, .CZ 4 27, .CZ 4 29, .CZ 4 32, .CZ 4 42, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 14, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 43, .CZ 5 44, .CZ 6 10, .CZ 6 19, .CZ 7 10, .CZ 8 19, .CZ 9 10, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 19, .CZ 12 19],
-  .X 43,
-  .measureX 43 [] [.Z 0, .Z 2, .Z 5, .Z 6, .Z 8, .Z 11, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 15, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 10, .CZ 1 14, .CZ 1 15, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 15, .CZ 2 34, .CZ 2 41, .CZ 3 5, .CZ 3 6, .CZ 3 10, .CZ 3 14, .CZ 3 15, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 5, .CZ 4 6, .CZ 4 10, .CZ 4 14, .CZ 4 15, .CZ 4 27, .CZ 4 28, .CZ 4 32, .CZ 4 33, .CZ 5 7, .CZ 5 9, .CZ 5 14, .CZ 5 15, .CZ 6 7, .CZ 6 9, .CZ 6 14, .CZ 6 15, .CZ 7 10, .CZ 7 14, .CZ 7 15, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 8 11, .CZ 8 19, .CZ 8 20, .CZ 8 21, .CZ 9 10, .CZ 9 14, .CZ 9 15, .CZ 9 19, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 14, .CZ 10 15, .CZ 10 19, .CZ 10 21, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 20, .CZ 11 26, .CZ 11 41, .CZ 12 19, .CZ 12 20, .CZ 12 21, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
-  .X 44,
-  .measureX 44 [] [.Z 0, .Z 1, .Z 5, .Z 6, .Z 8, .Z 10, .Z 11, .CZ 0 1, .CZ 0 9, .CZ 0 10, .CZ 0 14, .CZ 0 15, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 14, .CZ 1 15, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 4, .CZ 2 9, .CZ 2 10, .CZ 2 14, .CZ 2 15, .CZ 2 34, .CZ 2 41, .CZ 3 4, .CZ 3 9, .CZ 3 10, .CZ 3 14, .CZ 3 15, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 15, .CZ 4 27, .CZ 4 29, .CZ 4 32, .CZ 4 42, .CZ 5 9, .CZ 5 10, .CZ 5 14, .CZ 5 15, .CZ 6 9, .CZ 6 10, .CZ 6 14, .CZ 6 15, .CZ 7 9, .CZ 7 10, .CZ 7 14, .CZ 7 15, .CZ 8 11, .CZ 8 20, .CZ 8 21, .CZ 9 14, .CZ 9 15, .CZ 9 19, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 14, .CZ 10 15, .CZ 10 19, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 20, .CZ 11 26, .CZ 11 41, .CZ 12 20, .CZ 12 21, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
-  .measureX 41 [] [.Z 0, .Z 1, .Z 2, .Z 10, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 16, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 2 34, .CZ 3 10, .CZ 3 16, .CZ 3 17, .CZ 3 34, .CZ 4 10, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 34, .CZ 5 10, .CZ 5 16, .CZ 5 34, .CZ 6 10, .CZ 6 16, .CZ 6 34, .CZ 7 10, .CZ 7 16, .CZ 7 34, .CZ 9 10, .CZ 9 16, .CZ 9 19, .CZ 10 16, .CZ 10 19, .CZ 10 20, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 13 34, .CZ 14 34, .CZ 15 34, .CZ 16 27, .CZ 16 28, .CZ 16 32, .CZ 16 33],
-  .X 42,
-  .measureX 42 [] [.Z 5, .Z 6, .Z 8, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 10, .CZ 0 14, .CZ 0 15, .CZ 0 27, .CZ 0 28, .CZ 0 30, .CZ 0 32, .CZ 0 33, .CZ 0 37, .CZ 1 4, .CZ 1 9, .CZ 1 14, .CZ 1 15, .CZ 2 4, .CZ 2 9, .CZ 2 14, .CZ 2 15, .CZ 3 4, .CZ 3 9, .CZ 3 14, .CZ 3 15, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 14, .CZ 4 15, .CZ 4 27, .CZ 4 28, .CZ 4 32, .CZ 4 33, .CZ 5 9, .CZ 5 14, .CZ 5 15, .CZ 6 9, .CZ 6 14, .CZ 6 15, .CZ 7 9, .CZ 7 14, .CZ 7 15, .CZ 8 11, .CZ 8 20, .CZ 8 21, .CZ 9 10, .CZ 9 14, .CZ 9 15, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 14, .CZ 10 15, .CZ 11 12, .CZ 11 14, .CZ 11 15, .CZ 11 19, .CZ 11 20, .CZ 11 26, .CZ 12 20, .CZ 12 21, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
-  .measureX 34 [] [.Z 1, .Z 10, .CZ 0 1, .CZ 0 10, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 10, .CZ 3 10, .CZ 3 17, .CZ 4 10, .CZ 4 17, .CZ 4 18, .CZ 5 10, .CZ 6 10, .CZ 7 10, .CZ 8 19, .CZ 9 10, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 19, .CZ 12 19],
-  .measureX 35 [] [.Z 3, .Z 6, .Z 8, .Z 9, .Z 13, .Z 14, .Z 15, .CZ 0 3, .CZ 0 6, .CZ 0 13, .CZ 1 6, .CZ 1 13, .CZ 2 3, .CZ 2 6, .CZ 2 13, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 13, .CZ 3 17, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 6, .CZ 4 13, .CZ 4 17, .CZ 4 18, .CZ 5 6, .CZ 5 13, .CZ 5 19, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 13, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 7 13, .CZ 8 11, .CZ 8 21, .CZ 9 13, .CZ 10 13, .CZ 11 12, .CZ 11 13, .CZ 11 26, .CZ 12 19, .CZ 12 21, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 23, .CZ 13 27],
-  .X 36,
-  .measureX 36 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 11, .Z 13, .Z 14, .CZ 0 3, .CZ 0 6, .CZ 0 7, .CZ 0 13, .CZ 0 14, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 13, .CZ 1 14, .CZ 2 3, .CZ 2 6, .CZ 2 7, .CZ 2 13, .CZ 2 14, .CZ 3 4, .CZ 3 5, .CZ 3 9, .CZ 3 10, .CZ 3 13, .CZ 3 14, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 6, .CZ 4 7, .CZ 4 13, .CZ 4 14, .CZ 5 6, .CZ 5 7, .CZ 5 13, .CZ 5 14, .CZ 5 19, .CZ 6 9, .CZ 6 10, .CZ 6 13, .CZ 6 14, .CZ 6 19, .CZ 6 21, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 28, .CZ 6 32, .CZ 6 33, .CZ 7 9, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 8 11, .CZ 8 21, .CZ 9 13, .CZ 9 14, .CZ 10 13, .CZ 10 14, .CZ 10 19, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 26, .CZ 12 21, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 23, .CZ 13 27, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27],
-  .X 37,
-  .measureX 37 [] [.Z 3, .Z 10, .Z 13, .CZ 0 3, .CZ 0 10, .CZ 0 13, .CZ 1 10, .CZ 1 13, .CZ 2 3, .CZ 2 10, .CZ 2 13, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 9, .CZ 3 13, .CZ 3 17, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 10, .CZ 4 13, .CZ 4 17, .CZ 4 18, .CZ 5 10, .CZ 5 13, .CZ 6 10, .CZ 6 13, .CZ 7 10, .CZ 7 13, .CZ 8 19, .CZ 9 10, .CZ 9 13, .CZ 9 19, .CZ 10 13, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 13, .CZ 11 19, .CZ 12 19, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 23, .CZ 13 27]
-]
-
-private def load0Block76 : Program := [
-  .measureX 38 [] [.Z 4, .CZ 0 4, .CZ 1 4, .CZ 2 4, .CZ 3 4, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 27, .CZ 4 28, .CZ 4 32, .CZ 4 33, .CZ 8 19],
-  .X 39,
-  .measureX 39 [] [.Z 1, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 10, .Z 11, .Z 15, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 14, .CZ 0 27, .CZ 0 28, .CZ 0 32, .CZ 0 33, .CZ 1 2, .CZ 1 3, .CZ 1 7, .CZ 1 10, .CZ 1 14, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 9, .CZ 2 14, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 9, .CZ 3 14, .CZ 3 27, .CZ 3 28, .CZ 3 32, .CZ 3 33, .CZ 4 7, .CZ 4 10, .CZ 4 14, .CZ 5 7, .CZ 5 10, .CZ 5 14, .CZ 6 7, .CZ 6 10, .CZ 6 14, .CZ 7 9, .CZ 7 14, .CZ 7 21, .CZ 7 22, .CZ 7 23, .CZ 7 27, .CZ 7 28, .CZ 7 32, .CZ 7 33, .CZ 8 19, .CZ 9 10, .CZ 9 14, .CZ 9 19, .CZ 10 14, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 14, .CZ 12 19, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27],
-  .measureX 40 [] [.Z 2, .Z 10, .CZ 0 2, .CZ 0 10, .CZ 1 2, .CZ 1 3, .CZ 1 10, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 27, .CZ 2 28, .CZ 2 32, .CZ 2 33, .CZ 3 10, .CZ 3 17, .CZ 4 10, .CZ 4 17, .CZ 4 18, .CZ 5 10, .CZ 6 10, .CZ 7 10, .CZ 8 19, .CZ 9 10, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 12 19],
-  .measureX 33 [] [.Z 9, .Z 10, .CZ 0 9, .CZ 0 10, .CZ 1 9, .CZ 1 10, .CZ 2 9, .CZ 2 10, .CZ 3 9, .CZ 3 10, .CZ 4 9, .CZ 4 10, .CZ 5 9, .CZ 5 10, .CZ 6 9, .CZ 6 10, .CZ 7 9, .CZ 7 10, .CZ 8 20, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 10 32, .CZ 11 20, .CZ 12 20],
-  .measureX 32 [] [.Z 9, .Z 15, .CZ 0 9, .CZ 0 15, .CZ 1 9, .CZ 1 15, .CZ 2 9, .CZ 2 15, .CZ 3 9, .CZ 3 15, .CZ 4 9, .CZ 4 15, .CZ 5 9, .CZ 5 15, .CZ 6 9, .CZ 6 15, .CZ 7 9, .CZ 7 15, .CZ 8 11, .CZ 8 20, .CZ 8 21, .CZ 9 10, .CZ 9 15, .CZ 9 27, .CZ 9 28, .CZ 9 31, .CZ 10 15, .CZ 11 12, .CZ 11 15, .CZ 11 19, .CZ 11 20, .CZ 11 26, .CZ 12 20, .CZ 12 21, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
-  .measureX 31 [] [.Z 9, .Z 10, .Z 11, .Z 15, .CZ 0 9, .CZ 0 10, .CZ 0 15, .CZ 1 9, .CZ 1 10, .CZ 1 15, .CZ 2 9, .CZ 2 10, .CZ 2 15, .CZ 3 9, .CZ 3 10, .CZ 3 15, .CZ 4 9, .CZ 4 10, .CZ 4 15, .CZ 5 9, .CZ 5 10, .CZ 5 15, .CZ 6 9, .CZ 6 10, .CZ 6 15, .CZ 7 9, .CZ 7 10, .CZ 7 15, .CZ 8 11, .CZ 8 20, .CZ 8 21, .CZ 9 15, .CZ 9 27, .CZ 9 28, .CZ 10 15, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 23, .CZ 10 27, .CZ 10 28, .CZ 11 15, .CZ 11 19, .CZ 11 20, .CZ 12 20, .CZ 14 15, .CZ 14 28, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
-  .measureX 28 [] [.CZ 0 15, .CZ 1 15, .CZ 2 15, .CZ 3 15, .CZ 4 15, .CZ 5 15, .CZ 6 15, .CZ 7 15, .CZ 9 15, .CZ 10 15, .CZ 11 15, .CZ 15 19, .CZ 15 22, .CZ 15 23, .CZ 15 27],
-  .measureX 29 [] [.Z 11, .Z 14, .CZ 0 14, .CZ 1 14, .CZ 2 14, .CZ 3 14, .CZ 4 14, .CZ 5 14, .CZ 6 14, .CZ 7 14, .CZ 8 11, .CZ 8 21, .CZ 9 14, .CZ 10 14, .CZ 11 12, .CZ 11 14, .CZ 11 26, .CZ 12 21, .CZ 14 15, .CZ 14 19, .CZ 14 22, .CZ 14 23, .CZ 14 27],
-  .X 30,
-  .measureX 30 [] [.Z 13, .CZ 0 13, .CZ 1 13, .CZ 2 13, .CZ 3 13, .CZ 4 13, .CZ 5 13, .CZ 6 13, .CZ 7 13, .CZ 9 13, .CZ 10 13, .CZ 11 13, .CZ 13 15, .CZ 13 19, .CZ 13 22, .CZ 13 23, .CZ 13 27],
-  .measureX 27 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 9, .Z 10, .Z 15, .CZ 8 11, .CZ 8 19, .CZ 8 21, .CZ 11 12, .CZ 11 26, .CZ 12 19, .CZ 12 21],
-  .X 26,
-  .measureX 26 [] [.Z 8, .Z 12, .CZ 8 12, .CZ 8 22, .CZ 12 19],
-  .measureX 20 [] [.CZ 9 19],
-  .measureX 21 [] [.CZ 11 19],
-  .measureX 22 [] [.CZ 1 3, .CZ 3 17, .CZ 4 17, .CZ 4 18, .CZ 12 19],
-  .measureX 23 [] [.CZ 8 19],
-  .measureX 24 [] [.CZ 5 19, .CZ 6 19],
-  .measureX 25 [] [.CZ 10 19],
-  .measureX 19 [] [.CZ 1 3, .CZ 3 17, .CZ 4 17, .CZ 4 18],
-  .measureX 18 [] [.Z 1, .Z 2, .CZ 1 3, .CZ 2 16, .CZ 3 17],
-  .measureX 17 [] [.Z 1, .Z 2, .CZ 2 16],
-  .measureX 16 [] [.Z 2, .CZ 0 1],
   .measureX 72 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 73 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 74 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 75 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 76 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
-  .measureX 77 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99]
-]
-
-private def load0Block77 : Program := [
+  .measureX 77 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 78 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 79 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 80 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 81 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 82 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 83 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
-  .measureX 84 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
-  .measureX 85 [] [],
-  .measureX 86 [] [],
-  .measureX 87 [] [],
-  .measureX 88 [] [],
+  .measureX 84 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
+  .measureX 85 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
+  .measureX 86 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
+  .measureX 87 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
+  .measureX 88 [] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
   .measureX 89 [] [],
   .measureX 90 [] [],
   .measureX 91 [] [],
@@ -40258,16 +40757,10 @@ private def load0Block77 : Program := [
   .measureX 98 [] [],
   .measureX 99 [] [],
   .measureX 100 [] [],
-  .measureX 100 [] [],
-  .measureX 100 [] [],
-  .measureX 100 [] [],
-  .measureX 100 [] [],
-  .measureX 100 [] [],
-  .measureX 100 [] [],
   .measureX 100 [] []
 ]
 
-private def load0Block78 : Program := [
+private def load0Block76 : Program := [
   .measureX 100 [] [],
   .measureX 100 [] [],
   .measureX 100 [] [],
@@ -40300,7 +40793,13 @@ private def load0Block78 : Program := [
   .measureX 100 [] []
 ]
 
-private def load0Block79 : Program := [
+private def load0Block77 : Program := [
+  .measureX 100 [] [],
+  .measureX 100 [] [],
+  .measureX 100 [] [],
+  .measureX 100 [] [],
+  .measureX 100 [] [],
+  .measureX 100 [] [],
   .measureX 100 [] [],
   .measureX 100 [] [],
   .measureX 100 [] [],
@@ -40317,12 +40816,12 @@ private def load0Block79 : Program := [
   .measureX 100 [] []
 ]
 
-def load0 : Program := WSlimTree.joinL load0Block0 [load0Block1, load0Block2, load0Block3, load0Block4, load0Block5, load0Block6, load0Block7, load0Block8, load0Block9, load0Block10, load0Block11, load0Block12, load0Block13, load0Block14, load0Block15, load0Block16, load0Block17, load0Block18, load0Block19, load0Block20, load0Block21, load0Block22, load0Block23, load0Block24, load0Block25, load0Block26, load0Block27, load0Block28, load0Block29, load0Block30, load0Block31, load0Block32, load0Block33, load0Block34, load0Block35, load0Block36, load0Block37, load0Block38, load0Block39, load0Block40, load0Block41, load0Block42, load0Block43, load0Block44, load0Block45, load0Block46, load0Block47, load0Block48, load0Block49, load0Block50, load0Block51, load0Block52, load0Block53, load0Block54, load0Block55, load0Block56, load0Block57, load0Block58, load0Block59, load0Block60, load0Block61, load0Block62, load0Block63, load0Block64, load0Block65, load0Block66, load0Block67, load0Block68, load0Block69, load0Block70, load0Block71, load0Block72, load0Block73, load0Block74, load0Block75, load0Block76, load0Block77, load0Block78, load0Block79]
+def load0 : Program := WSlimTree.joinL load0Block0 [load0Block1, load0Block2, load0Block3, load0Block4, load0Block5, load0Block6, load0Block7, load0Block8, load0Block9, load0Block10, load0Block11, load0Block12, load0Block13, load0Block14, load0Block15, load0Block16, load0Block17, load0Block18, load0Block19, load0Block20, load0Block21, load0Block22, load0Block23, load0Block24, load0Block25, load0Block26, load0Block27, load0Block28, load0Block29, load0Block30, load0Block31, load0Block32, load0Block33, load0Block34, load0Block35, load0Block36, load0Block37, load0Block38, load0Block39, load0Block40, load0Block41, load0Block42, load0Block43, load0Block44, load0Block45, load0Block46, load0Block47, load0Block48, load0Block49, load0Block50, load0Block51, load0Block52, load0Block53, load0Block54, load0Block55, load0Block56, load0Block57, load0Block58, load0Block59, load0Block60, load0Block61, load0Block62, load0Block63, load0Block64, load0Block65, load0Block66, load0Block67, load0Block68, load0Block69, load0Block70, load0Block71, load0Block72, load0Block73, load0Block74, load0Block75, load0Block76, load0Block77]
 
 theorem load0_checked : eval StairArchiveIntegerColumns.col263 load0 integer_load0Trace0In = (true, load0StoredOut) :=
-  WSlimTree.eval_of_checkSeq _ load0Block0 [load0Block1, load0Block2, load0Block3, load0Block4, load0Block5, load0Block6, load0Block7, load0Block8, load0Block9, load0Block10, load0Block11, load0Block12, load0Block13, load0Block14, load0Block15, load0Block16, load0Block17, load0Block18, load0Block19, load0Block20, load0Block21, load0Block22, load0Block23, load0Block24, load0Block25, load0Block26, load0Block27, load0Block28, load0Block29, load0Block30, load0Block31, load0Block32, load0Block33, load0Block34, load0Block35, load0Block36, load0Block37, load0Block38, load0Block39, load0Block40, load0Block41, load0Block42, load0Block43, load0Block44, load0Block45, load0Block46, load0Block47, load0Block48, load0Block49, load0Block50, load0Block51, load0Block52, load0Block53, load0Block54, load0Block55, load0Block56, load0Block57, load0Block58, load0Block59, load0Block60, load0Block61, load0Block62, load0Block63, load0Block64, load0Block65, load0Block66, load0Block67, load0Block68, load0Block69, load0Block70, load0Block71, load0Block72, load0Block73, load0Block74, load0Block75, load0Block76, load0Block77, load0Block78, load0Block79] _ _ (by decide +kernel)
+  WSlimTree.eval_of_checkSeq _ load0Block0 [load0Block1, load0Block2, load0Block3, load0Block4, load0Block5, load0Block6, load0Block7, load0Block8, load0Block9, load0Block10, load0Block11, load0Block12, load0Block13, load0Block14, load0Block15, load0Block16, load0Block17, load0Block18, load0Block19, load0Block20, load0Block21, load0Block22, load0Block23, load0Block24, load0Block25, load0Block26, load0Block27, load0Block28, load0Block29, load0Block30, load0Block31, load0Block32, load0Block33, load0Block34, load0Block35, load0Block36, load0Block37, load0Block38, load0Block39, load0Block40, load0Block41, load0Block42, load0Block43, load0Block44, load0Block45, load0Block46, load0Block47, load0Block48, load0Block49, load0Block50, load0Block51, load0Block52, load0Block53, load0Block54, load0Block55, load0Block56, load0Block57, load0Block58, load0Block59, load0Block60, load0Block61, load0Block62, load0Block63, load0Block64, load0Block65, load0Block66, load0Block67, load0Block68, load0Block69, load0Block70, load0Block71, load0Block72, load0Block73, load0Block74, load0Block75, load0Block76, load0Block77] _ _ (by decide +kernel)
 
-theorem load0_counts : GatePhysical load0 ∧ toffoliCount load0 = 49 ∧
+theorem load0_counts : GatePhysical load0 ∧ toffoliCount load0 = 48 ∧
     measurementCount load0 = 136 ∧ gateSlots load0 = 9380 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
@@ -42703,2697 +43202,2451 @@ private def restore0Block0 : Program := [
   .CCX 1 0 16,
   .CCX 16 2 17,
   .CCX 3 17 18,
+  .X 4,
   .CCX 4 18 19,
-  .X 8,
-  .CX 19 18,
-  .CCX 8 18 20,
-  .CX 19 18,
-  .X 8,
-  .CX 19 18,
-  .CCX 11 18 21,
-  .CX 19 18,
-  .X 12,
-  .CX 19 18,
-  .CCX 12 18 22,
-  .CX 19 18,
-  .X 12,
-  .X 12,
-  .CX 20 8,
-  .CCX 12 8 23,
-  .CX 20 8,
-  .X 12,
-  .X 11,
-  .CX 20 8,
-  .CX 22 8,
+  .X 4,
+  .CCX 12 19 20,
+  .CCX 8 19 21,
+  .CX 19 12,
+  .CX 20 12,
+  .CCX 8 12 22,
+  .CX 20 12,
+  .CX 19 12,
+  .CCX 10 19 23,
+  .CCX 19 9 24,
+  .CCX 19 11 25,
+  .CX 6 5,
+  .CCX 19 5 26,
+  .CX 6 5,
+  .CX 22 21,
+  .CCX 11 21 27,
+  .CX 22 21,
+  .CCX 14 27 28,
+  .CCX 15 27 29,
+  .CCX 13 27 30,
+  .CX 9 8,
+  .CX 10 8,
+  .CX 21 8,
   .CX 23 8,
-  .CCX 11 8 24,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 20 8
+  .CX 24 8
 ]
 
 private def restore0Block1 : Program := [
-  .X 11,
-  .CX 20 8,
+  .CX 28 8,
+  .CX 19 11,
+  .CX 20 11,
+  .CX 21 11,
+  .CX 27 11,
+  .CX 29 11,
+  .CCX 8 11 31,
+  .CX 29 11,
+  .CX 27 11,
+  .CX 21 11,
+  .CX 20 11,
+  .CX 19 11,
+  .CX 28 8,
+  .CX 24 8,
+  .CX 23 8,
   .CX 21 8,
-  .CX 22 8,
-  .CX 23 8,
-  .CX 24 8,
-  .CCX 14 8 25,
-  .CX 24 8,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 21 8,
-  .CX 20 8,
-  .CX 19 18,
-  .CCX 10 18 26,
-  .CX 19 18,
-  .CX 19 18,
-  .X 18,
-  .CCX 18 9 27,
-  .X 18,
-  .CX 19 18,
-  .CX 19 18,
-  .X 18,
-  .CX 6 5,
-  .CCX 18 5 28,
-  .CX 6 5,
-  .X 18,
-  .CX 19 18,
-  .CX 20 8,
-  .CX 21 8,
-  .CX 22 8
-]
-
-private def restore0Block2 : Program := [
-  .CX 23 8,
-  .CX 24 8,
-  .CCX 15 8 29,
-  .CX 24 8,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 21 8,
-  .CX 20 8,
-  .CX 20 8,
-  .CX 21 8,
-  .CX 22 8,
-  .CX 23 8,
-  .CX 24 8,
-  .CCX 13 8 30,
-  .CX 24 8,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 21 8,
-  .CX 20 8,
-  .CX 11 8,
-  .CX 20 8,
-  .CX 21 8,
-  .CX 22 8,
-  .CX 23 8,
-  .CX 24 8,
-  .CX 29 8,
-  .X 8,
-  .CX 8 10,
-  .CX 11 10,
-  .CX 18 10
-]
-
-private def restore0Block3 : Program := [
-  .CX 19 10,
-  .CX 21 10,
-  .CX 22 10,
-  .CX 23 10,
-  .CX 24 10,
-  .CX 25 10,
-  .CX 26 10,
-  .CX 27 10,
-  .CX 29 10,
-  .X 10,
-  .CCX 8 10 31,
-  .X 10,
-  .CX 29 10,
-  .CX 27 10,
-  .CX 26 10,
-  .CX 25 10,
-  .CX 24 10,
-  .CX 23 10,
-  .CX 22 10,
-  .CX 21 10,
-  .CX 19 10,
-  .CX 18 10,
-  .CX 11 10,
-  .CX 8 10,
-  .X 8,
-  .CX 29 8,
-  .CX 24 8,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 21 8
-]
-
-private def restore0Block4 : Program := [
-  .CX 20 8,
-  .CX 11 8,
   .CX 10 8,
-  .CX 20 8,
-  .CX 25 8,
-  .CX 26 8,
-  .CX 29 8,
-  .CX 31 8,
-  .CCX 9 8 32,
-  .CX 31 8,
-  .CX 29 8,
-  .CX 26 8,
-  .CX 25 8,
-  .CX 20 8,
-  .CX 10 8,
-  .CX 32 9,
-  .CCX 10 9 33,
-  .CX 32 9,
+  .CX 9 8,
+  .CX 31 29,
+  .CCX 9 29 32,
+  .CX 31 29,
+  .CCX 10 32 33,
   .CCX 3 33 34,
   .CCX 0 33 35,
+  .CX 33 3,
   .CX 34 3,
   .CCX 0 3 36,
   .CX 34 3,
-  .CX 19 18,
-  .CX 33 18,
-  .CCX 6 18 37,
-  .CX 33 18,
-  .CX 19 18,
-  .CCX 2 33 38,
-  .CCX 4 33 39
+  .CX 33 3,
+  .CX 9 6
 ]
 
-private def restore0Block5 : Program := [
-  .CCX 4 36 40,
-  .CX 19 18,
-  .CX 33 18,
-  .CX 40 18,
-  .CCX 5 18 41,
-  .CX 40 18,
-  .CX 33 18,
-  .CX 19 18,
-  .CX 40 33,
-  .CCX 28 33 42,
-  .CX 40 33,
-  .CCX 1 33 43,
+private def restore0Block2 : Program := [
+  .CX 33 19,
+  .CCX 6 19 37,
+  .CX 33 19,
+  .CX 9 6,
   .CX 10 7,
-  .CX 19 18,
-  .CX 33 18,
-  .CCX 7 18 44,
-  .CX 33 18,
-  .CX 19 18,
+  .CX 33 19,
+  .CCX 7 19 38,
+  .CX 33 19,
   .CX 10 7,
-  .CCX 7 40 45,
-  .CX 41 5,
-  .CCX 7 5 46,
-  .CX 41 5,
-  .CCX 6 46 47,
-  .CX 19 18,
-  .X 18,
-  .CX 6 5,
-  .CX 7 5,
-  .CX 10 5,
-  .CX 13 5
+  .CCX 1 33 39,
+  .CCX 4 33 40,
+  .CX 36 35,
+  .CCX 4 35 41,
+  .CX 36 35,
+  .CCX 2 33 42,
+  .CCX 6 41 43,
+  .CCX 7 41 44,
+  .CX 19 7,
+  .CX 23 7,
+  .CX 38 7,
+  .CX 41 7,
+  .CX 44 7,
+  .CCX 5 7 45,
+  .CX 44 7,
+  .CX 41 7,
+  .CX 38 7,
+  .CX 23 7,
+  .CX 19 7,
+  .CX 23 7,
+  .CX 33 7
 ]
 
-private def restore0Block6 : Program := [
-  .CX 14 5,
-  .CX 15 5,
-  .CCX 18 5 48,
-  .CX 15 5,
-  .CX 14 5,
-  .CX 13 5,
-  .CX 10 5,
-  .CX 7 5,
-  .CX 6 5,
-  .X 18,
-  .CX 19 18,
-  .CX 33 26,
-  .CX 43 26,
-  .CX 2 0,
-  .CX 3 0,
-  .CX 4 0,
-  .CX 5 0,
-  .CX 6 0,
-  .CX 7 0,
-  .CX 8 0,
-  .CX 9 0,
-  .CX 11 0,
-  .CX 12 0,
-  .CX 13 0,
-  .CX 14 0,
-  .CX 15 0,
-  .CCX 26 0 49,
-  .CX 15 0,
-  .CX 14 0,
-  .CX 13 0
-]
-
-private def restore0Block7 : Program := [
-  .CX 12 0,
-  .CX 11 0,
-  .CX 9 0,
-  .CX 8 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 4 0,
-  .CX 3 0,
-  .CX 2 0,
-  .CX 43 26,
-  .CX 33 26,
-  .CX 11 2,
-  .CX 6 5,
-  .CX 7 5,
-  .CX 9 5,
-  .CX 10 5,
-  .CX 13 5,
-  .CX 14 5,
-  .CX 15 5,
-  .CX 20 5,
-  .CX 22 5,
-  .CX 27 5,
-  .CX 43 5,
-  .CX 48 5,
-  .CX 49 5,
-  .CCX 2 5 50,
-  .CX 49 5,
-  .CX 48 5,
-  .CX 43 5
-]
-
-private def restore0Block8 : Program := [
-  .CX 27 5,
-  .CX 22 5,
-  .CX 20 5,
-  .CX 15 5,
-  .CX 14 5,
-  .CX 13 5,
-  .CX 10 5,
-  .CX 9 5,
-  .CX 7 5,
-  .CX 6 5,
-  .CX 11 2,
-  .CX 28 6,
-  .CX 38 33,
-  .CX 50 33,
-  .CCX 6 33 51,
-  .CX 50 33,
-  .CX 38 33,
-  .CX 28 6,
-  .CX 19 18,
-  .CX 21 18,
-  .CX 22 18,
-  .CX 23 18,
-  .CX 24 18,
-  .CX 25 18,
-  .CCX 9 18 52,
-  .CX 25 18,
-  .CX 24 18,
-  .CX 23 18,
-  .CX 22 18,
-  .CX 21 18
-]
-
-private def restore0Block9 : Program := [
-  .CX 19 18,
-  .CX 20 8,
-  .CX 21 8,
-  .CX 22 8,
-  .CX 23 8,
-  .CX 24 8,
-  .CX 27 8,
-  .CX 29 8,
-  .CX 31 8,
-  .CX 52 8,
-  .CCX 10 8 53,
-  .CX 52 8,
-  .CX 31 8,
-  .CX 29 8,
-  .CX 27 8,
-  .CX 24 8,
-  .CX 23 8,
-  .CX 22 8,
-  .CX 21 8,
-  .CX 20 8,
+private def restore0Block3 : Program := [
+  .CX 38 7,
+  .CX 44 7,
+  .CCX 5 7 46,
+  .CX 44 7,
+  .CX 38 7,
+  .CX 33 7,
+  .CX 23 7,
   .CX 1 0,
   .CX 2 0,
-  .CX 4 0,
-  .CX 5 0,
-  .CX 6 0,
-  .CX 7 0,
-  .CX 13 0,
-  .CX 14 0,
-  .CX 15 0,
-  .CCX 34 0 54
-]
-
-private def restore0Block10 : Program := [
-  .CX 15 0,
-  .CX 14 0,
-  .CX 13 0,
-  .CX 7 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 4 0,
-  .CX 2 0,
-  .CX 1 0,
-  .CX 26 10,
-  .CX 27 10,
-  .CX 48 10,
-  .CCX 10 33 55,
-  .CX 48 10,
-  .CX 27 10,
-  .CX 26 10,
-  .CX 3 1,
-  .CX 34 1,
-  .CX 35 1,
-  .CX 38 1,
-  .CX 39 1,
-  .CX 40 1,
-  .CX 43 1,
-  .CX 45 1,
-  .CX 54 1,
-  .CX 55 1,
-  .CX 1 0,
-  .CX 2 0,
-  .CX 3 0,
-  .CX 34 0
-]
-
-private def restore0Block11 : Program := [
-  .CX 37 0,
+  .CX 35 0,
   .CX 39 0,
   .CX 41 0,
   .CX 42 0,
-  .CX 45 0,
-  .CX 54 0,
-  .CX 55 0,
-  .CCX 1 0 56,
-  .CX 55 0,
-  .CX 54 0,
-  .CX 45 0,
+  .CX 43 0,
+  .CX 3 1,
+  .CX 41 1,
+  .CX 44 1,
+  .CCX 0 1 47,
+  .CX 44 1,
+  .CX 41 1,
+  .CX 3 1,
+  .CX 43 0,
   .CX 42 0,
   .CX 41 0,
   .CX 39 0,
-  .CX 37 0,
-  .CX 34 0,
-  .CX 3 0,
+  .CX 35 0,
   .CX 2 0,
   .CX 1 0,
-  .CX 55 1,
-  .CX 54 1,
-  .CX 45 1,
-  .CX 43 1,
-  .CX 40 1,
-  .CX 39 1,
-  .CX 38 1,
-  .CX 35 1,
-  .CX 34 1,
-  .CX 3 1,
+  .CX 33 6,
   .CX 37 6
 ]
 
-private def restore0Block12 : Program := [
-  .CX 56 6,
-  .CCX 19 6 57,
-  .CX 56 6,
+private def restore0Block4 : Program := [
+  .CX 47 6,
+  .CCX 18 6 48,
+  .CX 47 6,
   .CX 37 6,
-  .CX 19 18,
-  .CX 33 18,
-  .CX 57 18,
-  .CCX 13 18 58,
-  .CX 57 18,
-  .CX 33 18,
-  .CX 19 18,
-  .CX 19 18,
-  .CX 33 18,
-  .CX 57 18,
-  .CCX 41 18 59,
-  .CX 57 18,
-  .CX 33 18,
-  .CX 19 18,
-  .X 12,
-  .CCX 12 57 60,
-  .X 12,
-  .CX 60 57,
-  .CCX 32 57 61,
-  .CX 60 57,
-  .CCX 32 57 62,
+  .CX 33 6,
+  .CX 48 24,
+  .CCX 12 24 49,
+  .CX 48 24,
   .CX 35 2,
-  .CX 37 2,
-  .CX 38 2,
+  .CX 41 2,
+  .CX 42 2,
+  .CX 43 2,
+  .CX 47 2,
+  .CCX 1 2 50,
+  .CX 47 2,
+  .CX 43 2,
+  .CX 42 2,
+  .CX 41 2,
+  .CX 35 2,
+  .X 8,
+  .CX 48 24,
+  .CCX 8 24 51,
+  .CX 48 24,
+  .X 8,
+  .CX 9 6,
+  .CX 48 24,
+  .CCX 6 24 52,
+  .CX 48 24,
+  .CX 9 6,
+  .CX 24 19
+]
+
+private def restore0Block5 : Program := [
+  .CX 33 19,
+  .CX 48 19,
+  .CCX 5 19 53,
+  .CX 48 19,
+  .CX 33 19,
+  .CX 24 19,
+  .CX 24 19,
+  .CX 33 19,
+  .CX 48 19,
+  .CCX 14 19 54,
+  .CX 48 19,
+  .CX 33 19,
+  .CX 24 19,
+  .CX 1 0,
+  .CX 35 0,
+  .CX 39 0,
+  .CX 41 0,
+  .CX 43 0,
+  .CX 47 0,
+  .CCX 2 0 55,
+  .CX 47 0,
+  .CX 43 0,
+  .CX 41 0,
+  .CX 39 0,
+  .CX 35 0,
+  .CX 1 0,
+  .CX 24 19,
+  .CX 33 19,
+  .CX 48 19,
+  .CCX 13 19 56
+]
+
+private def restore0Block6 : Program := [
+  .CX 48 19,
+  .CX 33 19,
+  .CX 24 19,
+  .CX 10 7,
+  .CX 48 24,
+  .CCX 7 24 57,
+  .CX 48 24,
+  .CX 10 7,
+  .CX 30 13,
+  .CX 56 13,
+  .CCX 15 13 58,
+  .CX 56 13,
+  .CX 30 13,
+  .CX 19 13,
+  .CX 24 13,
+  .CX 30 13,
+  .CX 33 13,
+  .CX 48 13,
+  .CX 56 13,
+  .CCX 15 13 59,
+  .CX 56 13,
+  .CX 48 13,
+  .CX 33 13,
+  .CX 30 13,
+  .CX 24 13,
+  .CX 19 13,
+  .CX 10 8,
+  .CX 21 8,
+  .CX 23 8,
+  .CX 27 8
+]
+
+private def restore0Block7 : Program := [
+  .CX 28 8,
+  .CX 57 8,
+  .CCX 9 8 60,
+  .CX 57 8,
+  .CX 28 8,
+  .CX 27 8,
+  .CX 23 8,
+  .CX 21 8,
+  .CX 10 8,
+  .CX 21 8,
+  .CX 27 8,
+  .CX 28 8,
+  .CX 29 8,
+  .CX 31 8,
+  .CX 52 8,
+  .CX 60 8,
+  .CCX 10 8 61,
+  .CX 60 8,
+  .CX 52 8,
+  .CX 31 8,
+  .CX 29 8,
+  .CX 28 8,
+  .CX 27 8,
+  .CX 21 8,
+  .CX 23 19,
+  .CX 33 19,
+  .CX 39 19,
+  .CX 41 19,
+  .CX 46 19,
+  .CX 49 19
+]
+
+private def restore0Block8 : Program := [
+  .CX 6 5,
+  .CX 7 5,
+  .CX 20 5,
+  .CX 21 5,
+  .CX 24 5,
+  .CX 25 5,
+  .CX 34 5,
+  .CX 35 5,
+  .CX 40 5,
+  .CX 42 5,
+  .CX 54 5,
+  .CX 56 5,
+  .CX 58 5,
+  .CX 59 5,
+  .CCX 19 5 62,
+  .CX 59 5,
+  .CX 58 5,
+  .CX 56 5,
+  .CX 54 5,
+  .CX 42 5,
+  .CX 40 5,
+  .CX 35 5,
+  .CX 34 5,
+  .CX 25 5,
+  .CX 24 5,
+  .CX 21 5,
+  .CX 20 5,
+  .CX 7 5,
+  .CX 6 5,
+  .CX 49 19
+]
+
+private def restore0Block9 : Program := [
+  .CX 46 19,
+  .CX 41 19,
+  .CX 39 19,
+  .CX 33 19,
+  .CX 23 19,
+  .CX 19 7,
+  .CX 23 7,
+  .CX 25 7,
+  .CX 38 7,
+  .CX 41 7,
+  .CX 42 7,
+  .CX 44 7,
+  .CX 46 7,
+  .CX 49 7,
+  .CCX 7 62 63,
+  .CX 49 7,
+  .CX 46 7,
+  .CX 44 7,
+  .CX 42 7,
+  .CX 41 7,
+  .CX 38 7,
+  .CX 25 7,
+  .CX 23 7,
+  .CX 19 7,
+  .CX 16 3,
+  .CX 26 3,
+  .CX 33 3,
+  .CX 34 3,
+  .CX 41 3,
+  .CX 44 3
+]
+
+private def restore0Block10 : Program := [
+  .CX 47 3,
+  .CX 50 3,
+  .CX 53 3,
+  .CX 2 0,
+  .CX 3 0,
+  .CX 16 0,
+  .CX 35 0,
+  .CX 41 0,
+  .CX 42 0,
+  .CX 44 0,
+  .CX 45 0,
+  .CX 46 0,
+  .CX 47 0,
+  .CX 50 0,
+  .CX 53 0,
+  .CX 63 0,
+  .CCX 3 0 64,
+  .CX 63 0,
+  .CX 53 0,
+  .CX 50 0,
+  .CX 47 0,
+  .CX 46 0,
+  .CX 45 0,
+  .CX 44 0,
+  .CX 42 0,
+  .CX 41 0,
+  .CX 35 0,
+  .CX 16 0,
+  .CX 3 0,
+  .CX 2 0
+]
+
+private def restore0Block11 : Program := [
+  .CX 53 3,
+  .CX 50 3,
+  .CX 47 3,
+  .CX 44 3,
+  .CX 41 3,
+  .CX 34 3,
+  .CX 33 3,
+  .CX 26 3,
+  .CX 16 3,
+  .CX 2 0,
+  .CX 3 0,
+  .CX 19 0,
+  .CX 24 0,
+  .CX 26 0,
+  .CX 33 0,
+  .CX 34 0,
+  .CX 35 0,
+  .CX 37 0,
+  .CX 42 0,
+  .CX 43 0,
+  .CX 44 0,
+  .CX 49 0,
+  .CX 51 0,
+  .CX 52 0,
+  .CX 55 0,
+  .CX 3 2,
+  .CX 4 2,
+  .CX 26 2,
+  .CX 34 2,
+  .CX 40 2
+]
+
+private def restore0Block12 : Program := [
+  .CX 42 2,
+  .CX 45 2,
+  .CX 46 2,
+  .CX 64 2,
+  .CCX 0 2 65,
+  .CX 64 2,
+  .CX 46 2,
+  .CX 45 2,
+  .CX 42 2,
   .CX 40 2,
-  .CX 41 2
+  .CX 34 2,
+  .CX 26 2,
+  .CX 4 2,
+  .CX 3 2,
+  .CX 55 0,
+  .CX 52 0,
+  .CX 51 0,
+  .CX 49 0,
+  .CX 44 0,
+  .CX 43 0,
+  .CX 42 0,
+  .CX 37 0,
+  .CX 35 0,
+  .CX 34 0,
+  .CX 33 0,
+  .CX 26 0,
+  .CX 24 0,
+  .CX 19 0,
+  .CX 3 0,
+  .CX 2 0
 ]
 
 private def restore0Block13 : Program := [
-  .CX 42 2,
-  .CX 56 2,
-  .CCX 1 2 63,
-  .CX 56 2,
-  .CX 42 2,
-  .CX 41 2,
-  .CX 40 2,
-  .CX 38 2,
+  .CX 3 1,
+  .CX 16 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CX 24 1,
+  .CX 33 1,
+  .CX 34 1,
+  .CX 39 1,
+  .CX 40 1,
+  .CX 41 1,
+  .CX 44 1,
+  .CX 48 1,
+  .CX 50 1,
+  .CX 4 2,
+  .CX 24 2,
   .CX 37 2,
-  .CX 35 2,
-  .CX 18 13,
-  .CX 19 13,
-  .CX 30 13,
-  .CX 33 13,
-  .CX 57 13,
-  .CX 58 13,
-  .CCX 15 13 64,
-  .CX 58 13,
-  .CX 57 13,
-  .CX 33 13,
-  .CX 30 13,
-  .CX 19 13,
-  .CX 18 13,
-  .CX 19 18,
-  .CX 33 18,
-  .CX 57 18,
-  .CCX 15 18 65,
-  .CX 57 18,
-  .CX 33 18,
-  .CX 19 18
+  .CX 42 2,
+  .CX 45 2,
+  .CX 46 2,
+  .CX 64 2,
+  .CX 65 2,
+  .CCX 1 2 66,
+  .CX 65 2,
+  .CX 64 2,
+  .CX 46 2,
+  .CX 45 2,
+  .CX 42 2,
+  .CX 37 2,
+  .CX 24 2,
+  .CX 4 2
 ]
 
 private def restore0Block14 : Program := [
-  .CCX 53 57 66,
-  .CX 61 9,
-  .CCX 53 9 67,
-  .CX 61 9,
-  .CX 19 18,
-  .CX 33 18,
-  .CX 57 18,
-  .CCX 14 18 68,
-  .CX 57 18,
-  .CX 33 18,
-  .CX 19 18,
-  .CX 1 0,
-  .CX 35 0,
-  .CX 37 0,
-  .CX 40 0,
-  .CX 41 0,
-  .CX 42 0,
-  .CX 43 0,
-  .CX 56 0,
-  .CCX 2 0 69,
-  .CX 56 0,
-  .CX 43 0,
-  .CX 42 0,
-  .CX 41 0,
-  .CX 40 0,
-  .CX 37 0,
-  .CX 35 0,
-  .CX 1 0,
-  .CX 2 0,
-  .CX 3 0
+  .CX 50 1,
+  .CX 48 1,
+  .CX 44 1,
+  .CX 41 1,
+  .CX 40 1,
+  .CX 39 1,
+  .CX 34 1,
+  .CX 33 1,
+  .CX 24 1,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 16 1,
+  .CX 3 1,
+  .CX 23 19,
+  .CX 27 19,
+  .CX 38 19,
+  .CX 57 19,
+  .CX 58 19,
+  .CX 3 1,
+  .CX 14 1,
+  .CX 16 1,
+  .CX 19 1,
+  .CX 23 1,
+  .CX 27 1,
+  .CX 34 1,
+  .CX 35 1,
+  .CX 36 1,
+  .CX 38 1,
+  .CX 39 1,
+  .CX 44 1
 ]
 
 private def restore0Block15 : Program := [
-  .CX 5 0,
-  .CX 6 0,
-  .CX 18 0,
-  .CX 19 0,
-  .CX 28 0,
-  .CX 34 0,
-  .CX 35 0,
-  .CX 38 0,
-  .CX 41 0,
-  .CX 42 0,
-  .CX 45 0,
-  .CX 57 0,
-  .CX 61 0,
-  .CX 69 0,
-  .X 0,
-  .CX 4 3,
-  .CX 34 3,
-  .CX 38 3,
-  .CX 39 3,
-  .CX 41 3,
-  .CX 50 3,
-  .CX 51 3,
-  .CX 59 3,
-  .CCX 0 3 70,
-  .CX 59 3,
-  .CX 51 3,
-  .CX 50 3,
-  .CX 41 3,
-  .CX 39 3,
-  .CX 38 3
+  .CX 50 1,
+  .CX 54 1,
+  .CX 57 1,
+  .CX 58 1,
+  .CX 66 1,
+  .CCX 19 1 67,
+  .CX 66 1,
+  .CX 58 1,
+  .CX 57 1,
+  .CX 54 1,
+  .CX 50 1,
+  .CX 44 1,
+  .CX 39 1,
+  .CX 38 1,
+  .CX 36 1,
+  .CX 35 1,
+  .CX 34 1,
+  .CX 27 1,
+  .CX 23 1,
+  .CX 19 1,
+  .CX 16 1,
+  .CX 14 1,
+  .CX 3 1,
+  .CX 58 19,
+  .CX 57 19,
+  .CX 38 19,
+  .CX 27 19,
+  .CX 23 19,
+  .CX 24 19,
+  .CX 33 19
 ]
 
 private def restore0Block16 : Program := [
-  .CX 34 3,
-  .CX 4 3,
-  .X 0,
-  .CX 69 0,
-  .CX 61 0,
-  .CX 57 0,
-  .CX 45 0,
-  .CX 42 0,
-  .CX 41 0,
-  .CX 38 0,
-  .CX 35 0,
-  .CX 34 0,
-  .CX 28 0,
-  .CX 19 0,
-  .CX 18 0,
-  .CX 6 0,
-  .CX 5 0,
-  .CX 3 0,
-  .CX 2 0,
-  .CX 3 1,
-  .CX 5 1,
-  .CX 6 1,
-  .CX 16 1,
-  .CX 20 1,
-  .CX 28 1,
-  .CX 33 1,
-  .CX 34 1,
-  .CX 39 1,
-  .CX 40 1,
-  .CX 43 1
-]
-
-private def restore0Block17 : Program := [
-  .CX 45 1,
-  .CX 57 1,
-  .CX 63 1,
-  .CX 6 5,
-  .CX 28 5,
-  .CX 37 5,
-  .CX 70 5,
-  .CCX 1 5 71,
-  .CX 70 5,
-  .CX 37 5,
-  .CX 28 5,
-  .CX 6 5,
-  .CX 63 1,
-  .CX 57 1,
-  .CX 45 1,
-  .CX 43 1,
-  .CX 40 1,
-  .CX 39 1,
-  .CX 34 1,
-  .CX 33 1,
-  .CX 28 1,
-  .CX 20 1,
-  .CX 16 1,
-  .CX 6 1,
-  .CX 5 1,
-  .CX 3 1,
-  .CX 18 8,
-  .CX 19 8,
-  .CX 20 8,
-  .CX 21 8
-]
-
-private def restore0Block18 : Program := [
-  .CX 22 8,
+  .CX 34 19,
+  .CCX 67 19 68,
+  .CX 34 19,
+  .CX 33 19,
+  .CX 24 19,
+  .CX 19 11,
+  .CX 25 11,
+  .CX 27 11,
+  .CX 31 11,
+  .CX 32 11,
+  .CX 52 11,
+  .CX 56 11,
+  .CX 60 11,
+  .CCX 11 68 69,
+  .CX 60 11,
+  .CX 56 11,
+  .CX 52 11,
+  .CX 32 11,
+  .CX 31 11,
+  .CX 27 11,
+  .CX 25 11,
+  .CX 19 11,
+  .CX 10 8,
+  .CX 11 8,
+  .CX 21 8,
   .CX 23 8,
   .CX 24 8,
-  .CX 26 8,
-  .CX 44 8,
-  .CX 57 8,
-  .CX 64 8,
-  .CX 65 8,
-  .CX 66 8,
-  .CX 20 14,
-  .CX 36 14,
-  .CX 39 14,
-  .CX 40 14,
-  .CX 68 14,
-  .CX 71 14,
-  .CCX 8 14 72,
-  .CX 71 14,
-  .CX 68 14,
-  .CX 40 14,
-  .CX 39 14,
-  .CX 36 14,
-  .CX 20 14,
-  .CX 66 8,
-  .CX 65 8,
-  .CX 64 8,
-  .CX 57 8,
-  .CX 44 8,
-  .CX 26 8,
-  .CX 24 8,
-  .CX 23 8
-]
-
-private def restore0Block19 : Program := [
-  .CX 22 8,
-  .CX 21 8,
-  .CX 20 8,
-  .CX 19 8,
-  .CX 18 8,
-  .CX 9 8,
-  .CX 15 8,
-  .CX 18 8,
-  .CX 19 8,
-  .CX 20 8,
-  .CX 21 8,
-  .CX 22 8,
-  .CX 23 8,
-  .CX 24 8,
-  .CX 27 8,
-  .CX 29 8,
-  .CX 33 8,
-  .CX 34 8,
-  .CX 60 8,
-  .CX 64 8,
-  .CX 44 26,
-  .CX 72 26,
-  .CCX 8 26 73,
-  .CX 72 26,
-  .CX 44 26,
-  .CX 64 8,
-  .CX 60 8,
-  .CX 34 8,
-  .CX 33 8,
+  .CX 25 8,
+  .CX 28 8,
   .CX 29 8
 ]
 
-private def restore0Block20 : Program := [
-  .CX 27 8,
+private def restore0Block17 : Program := [
+  .CX 33 8,
+  .CX 48 8,
+  .CX 51 8,
+  .CX 54 8,
+  .CX 61 8,
+  .X 8,
+  .CX 19 12,
+  .CX 20 12,
+  .CX 21 12,
+  .CX 22 12,
+  .CX 30 12,
+  .CX 32 12,
+  .CX 69 12,
+  .CCX 8 12 70,
+  .CX 69 12,
+  .CX 32 12,
+  .CX 30 12,
+  .CX 22 12,
+  .CX 21 12,
+  .CX 20 12,
+  .CX 19 12,
+  .X 8,
+  .CX 61 8,
+  .CX 54 8,
+  .CX 51 8,
+  .CX 48 8,
+  .CX 33 8,
+  .CX 29 8,
+  .CX 28 8,
+  .CX 25 8
+]
+
+private def restore0Block18 : Program := [
   .CX 24 8,
   .CX 23 8,
-  .CX 22 8,
   .CX 21 8,
-  .CX 20 8,
-  .CX 19 8,
-  .CX 18 8,
-  .CX 15 8,
-  .CX 9 8,
-  .CX 18 9,
-  .CX 19 9,
-  .CX 27 9,
-  .CX 73 9,
-  .CCX 58 9 74,
-  .CX 73 9,
-  .CX 27 9,
-  .CX 19 9,
-  .CX 18 9,
   .CX 11 8,
-  .CX 18 8,
-  .CX 19 8,
-  .CX 20 8,
-  .CX 21 8,
-  .CX 25 8,
-  .CX 29 8,
-  .CX 53 8,
-  .CX 60 8,
-  .CX 61 8,
-  .CX 62 8
-]
-
-private def restore0Block21 : Program := [
-  .CX 66 8,
-  .CX 67 8,
-  .CX 68 8,
-  .X 8,
-  .CX 8 11,
-  .CX 12 11,
-  .CX 18 11,
-  .CX 19 11,
-  .CX 21 11,
-  .CX 23 11,
-  .CX 27 11,
-  .CX 29 11,
-  .CX 30 11,
-  .CX 32 11,
-  .CX 53 11,
-  .CX 60 11,
-  .CX 61 11,
-  .CX 62 11,
-  .CX 66 11,
-  .CX 67 11,
-  .CX 68 11,
-  .CX 73 11,
-  .CX 74 11,
-  .X 11,
-  .CCX 8 11 75,
-  .X 11,
-  .CX 74 11,
-  .CX 73 11,
-  .CX 68 11,
-  .CX 67 11
-]
-
-private def restore0Block22 : Program := [
-  .CX 66 11,
-  .CX 62 11,
-  .CX 61 11,
-  .CX 60 11,
-  .CX 53 11,
-  .CX 32 11,
-  .CX 30 11,
-  .CX 29 11,
-  .CX 27 11,
-  .CX 23 11,
-  .CX 21 11,
-  .CX 19 11,
-  .CX 18 11,
-  .CX 12 11,
-  .CX 8 11,
-  .X 8,
-  .CX 68 8,
-  .CX 67 8,
-  .CX 66 8,
-  .CX 62 8,
-  .CX 61 8,
-  .CX 60 8,
-  .CX 53 8,
-  .CX 29 8,
-  .CX 25 8,
-  .CX 21 8,
-  .CX 20 8,
-  .CX 19 8,
-  .CX 18 8,
-  .CX 11 8
-]
-
-private def restore0Block23 : Program := [
-  .CX 75 74,
-  .CX 75 73,
-  .CX 75 72,
-  .CX 75 71,
-  .CX 75 68,
-  .CX 75 67,
-  .CX 75 64,
-  .CX 75 61,
-  .CX 75 60,
-  .CX 75 55,
-  .CX 75 54,
-  .CX 75 53,
-  .CX 75 52,
-  .CX 75 49,
-  .CX 75 48,
-  .CX 75 45,
-  .CX 75 42,
-  .CX 75 37,
-  .CX 75 32,
-  .CX 75 30,
-  .CX 75 28,
-  .CX 75 27,
-  .CX 75 17,
-  .CX 75 15,
-  .CX 75 9,
-  .CX 75 6,
-  .CX 74 73,
-  .CX 74 71,
-  .CX 74 68,
-  .CX 74 65
-]
-
-private def restore0Block24 : Program := [
-  .CX 74 64,
-  .CX 74 62,
-  .CX 74 61,
-  .CX 74 57,
-  .CX 74 53,
-  .CX 74 52,
-  .CX 74 49,
-  .CX 74 45,
-  .CX 74 44,
-  .CX 74 43,
-  .CX 74 40,
-  .CX 74 38,
-  .CX 74 37,
-  .CX 74 36,
-  .CX 74 35,
-  .CX 74 34,
-  .CX 74 33,
-  .CX 74 32,
-  .CX 74 31,
-  .CX 74 23,
-  .CX 74 19,
-  .CX 74 18,
-  .CX 74 15,
-  .CX 74 12,
-  .CX 74 11,
-  .CX 74 10,
-  .CX 74 8,
-  .CX 74 7,
-  .CX 74 4,
-  .CX 73 75
-]
-
-private def restore0Block25 : Program := [
-  .CX 73 55,
-  .CX 73 54,
-  .CX 73 52,
-  .CX 73 31,
-  .CX 73 30,
-  .CX 75 73,
-  .CX 72 74,
-  .CX 72 66,
-  .CX 72 53,
-  .CX 72 44,
-  .CX 72 31,
-  .CX 72 10,
-  .CX 72 7,
-  .CX 74 72,
-  .CX 71 72,
-  .CX 71 66,
-  .CX 71 62,
-  .CX 71 61,
-  .CX 71 57,
-  .CX 71 53,
-  .CX 71 52,
-  .CX 71 45,
-  .CX 71 43,
-  .CX 71 40,
-  .CX 71 38,
-  .CX 71 37,
-  .CX 71 36,
-  .CX 71 35,
-  .CX 71 34,
-  .CX 71 33
-]
-
-private def restore0Block26 : Program := [
-  .CX 71 32,
-  .CX 71 23,
-  .CX 71 12,
-  .CX 71 11,
-  .CX 71 8,
-  .CX 71 4,
-  .CX 72 71,
-  .CX 70 73,
-  .CX 70 62,
+  .CX 10 8,
+  .CX 70 69,
+  .CX 70 68,
   .CX 70 61,
-  .CX 70 48,
-  .CX 70 42,
-  .CX 70 37,
-  .CX 70 32,
-  .CX 70 31,
-  .CX 70 28,
-  .CX 70 27,
-  .CX 70 9,
-  .CX 70 6,
-  .CX 73 70,
-  .CX 69 73,
-  .CX 69 72,
-  .CX 69 71,
-  .CX 69 70,
-  .CX 69 68,
-  .CX 69 65,
+  .CX 70 58,
+  .CX 70 38,
+  .CX 70 18,
+  .CX 70 10,
+  .CX 70 7,
   .CX 69 64,
+  .CX 69 63,
   .CX 69 62,
   .CX 69 61,
-  .CX 69 60
-]
-
-private def restore0Block27 : Program := [
-  .CX 69 59,
-  .CX 69 57,
-  .CX 69 56,
+  .CX 69 60,
+  .CX 69 55,
   .CX 69 53,
   .CX 69 52,
+  .CX 69 49,
   .CX 69 48,
   .CX 69 44,
-  .CX 69 42,
-  .CX 69 41,
+  .CX 69 38,
+  .CX 69 37,
+  .CX 69 36,
   .CX 69 32,
-  .CX 69 31,
-  .CX 69 25,
-  .CX 69 20,
-  .CX 69 18,
-  .CX 69 17,
+  .CX 69 30,
+  .CX 69 27
+]
+
+private def restore0Block19 : Program := [
+  .CX 69 24,
   .CX 69 16,
   .CX 69 15,
+  .CX 69 13,
   .CX 69 10,
   .CX 69 9,
   .CX 69 8,
   .CX 69 6,
-  .CX 69 5,
-  .CX 69 4,
-  .CX 69 0,
-  .CX 68 74,
-  .CX 68 73,
-  .CX 68 70,
+  .CX 69 3,
   .CX 68 69,
   .CX 68 66,
-  .CX 68 63
-]
-
-private def restore0Block28 : Program := [
-  .CX 68 60,
-  .CX 68 48,
-  .CX 68 44,
+  .CX 68 65,
+  .CX 68 64,
+  .CX 68 63,
+  .CX 68 62,
+  .CX 68 59,
+  .CX 68 58,
+  .CX 68 55,
+  .CX 68 53,
+  .CX 68 52,
+  .CX 68 51,
   .CX 68 43,
   .CX 68 42,
   .CX 68 41,
-  .CX 68 40,
+  .CX 68 39,
   .CX 68 38,
   .CX 68 37,
+  .CX 68 36,
   .CX 68 35,
-  .CX 68 34,
+  .CX 68 34
+]
+
+private def restore0Block20 : Program := [
   .CX 68 33,
   .CX 68 31,
-  .CX 68 29,
-  .CX 68 25,
-  .CX 68 23,
-  .CX 68 20,
-  .CX 68 19,
+  .CX 68 30,
+  .CX 68 27,
+  .CX 68 24,
   .CX 68 17,
   .CX 68 16,
-  .CX 68 15,
+  .CX 68 13,
   .CX 68 12,
+  .CX 68 11,
+  .CX 68 10,
   .CX 68 9,
-  .CX 68 7,
   .CX 68 6,
-  .CX 68 5,
-  .CX 68 0,
-  .CX 69 68,
-  .CX 67 75,
-  .CX 67 72
-]
-
-private def restore0Block29 : Program := [
-  .CX 67 71,
+  .CX 68 4,
+  .CX 68 3,
   .CX 67 70,
-  .CX 67 69,
-  .CX 67 66,
-  .CX 67 64,
-  .CX 67 63,
-  .CX 67 62,
-  .CX 67 60,
-  .CX 67 55,
-  .CX 67 54,
-  .CX 67 53,
-  .CX 67 50,
-  .CX 67 45,
-  .CX 67 41,
-  .CX 67 37,
-  .CX 67 36,
-  .CX 67 30,
-  .CX 67 29,
-  .CX 67 28,
-  .CX 67 27,
-  .CX 67 25,
-  .CX 67 24,
-  .CX 67 23,
-  .CX 67 19,
-  .CX 67 18,
-  .CX 67 17,
-  .CX 67 16,
-  .CX 67 11,
+  .CX 67 61,
+  .CX 67 57,
+  .CX 67 38,
   .CX 67 10,
-  .CX 67 8
+  .CX 67 7,
+  .CX 70 67,
+  .CX 66 68,
+  .CX 66 65,
+  .CX 66 61,
+  .CX 66 60,
+  .CX 66 51,
+  .CX 66 49,
+  .CX 66 48,
+  .CX 66 44
 ]
 
-private def restore0Block30 : Program := [
-  .CX 67 5,
-  .CX 67 4,
-  .CX 67 0,
-  .CX 69 67,
-  .CX 66 73,
-  .CX 66 72,
-  .CX 66 68,
-  .CX 66 57,
-  .CX 66 53,
-  .CX 66 52,
-  .CX 66 48,
-  .CX 66 45,
+private def restore0Block21 : Program := [
   .CX 66 43,
   .CX 66 42,
-  .CX 66 40,
-  .CX 66 38,
+  .CX 66 41,
+  .CX 66 39,
   .CX 66 35,
   .CX 66 34,
   .CX 66 33,
+  .CX 66 32,
   .CX 66 31,
-  .CX 66 28,
-  .CX 66 27,
-  .CX 66 23,
   .CX 66 12,
   .CX 66 11,
-  .CX 66 9,
   .CX 66 8,
-  .CX 66 6,
   .CX 66 4,
-  .CX 68 66
-]
-
-private def restore0Block31 : Program := [
-  .CX 65 75,
-  .CX 65 72,
-  .CX 65 70,
-  .CX 65 67,
-  .CX 65 64,
-  .CX 65 62,
-  .CX 65 61,
+  .CX 68 66,
+  .CX 65 69,
   .CX 65 60,
-  .CX 65 57,
-  .CX 65 56,
-  .CX 65 54,
   .CX 65 52,
-  .CX 65 51,
-  .CX 65 50,
-  .CX 65 48,
-  .CX 65 47,
-  .CX 65 46,
-  .CX 65 45,
-  .CX 65 42,
-  .CX 65 40,
-  .CX 65 36,
-  .CX 65 30,
-  .CX 65 29,
-  .CX 65 20,
-  .CX 65 19,
-  .CX 65 17,
-  .CX 65 11,
-  .CX 65 4,
-  .CX 65 1,
-  .CX 64 75
-]
-
-private def restore0Block32 : Program := [
-  .CX 64 74,
-  .CX 64 71,
-  .CX 64 68,
+  .CX 65 37,
+  .CX 65 9,
+  .CX 65 6,
+  .CX 69 65,
+  .CX 64 70,
+  .CX 64 69,
   .CX 64 67,
+  .CX 64 65,
+  .CX 64 63,
   .CX 64 62,
-  .CX 64 58,
-  .CX 64 57,
-  .CX 64 55,
-  .CX 64 54,
-  .CX 64 53,
-  .CX 64 52,
-  .CX 64 50,
-  .CX 64 49,
-  .CX 64 48,
-  .CX 64 47,
-  .CX 64 45,
-  .CX 64 36,
-  .CX 64 31,
-  .CX 64 30,
-  .CX 64 24,
-  .CX 64 23,
-  .CX 64 20,
-  .CX 64 18,
-  .CX 64 15,
-  .CX 64 7,
-  .CX 64 3,
-  .CX 63 69,
-  .CX 63 16,
-  .CX 69 63,
-  .CX 62 75
+  .CX 64 59,
+  .CX 64 56,
+  .CX 64 53
 ]
 
-private def restore0Block33 : Program := [
-  .CX 62 74,
-  .CX 62 73,
-  .CX 62 72,
-  .CX 62 65,
-  .CX 62 63,
-  .CX 62 61,
+private def restore0Block22 : Program := [
+  .CX 64 52,
+  .CX 64 49,
+  .CX 64 38,
+  .CX 64 37,
+  .CX 64 32,
+  .CX 64 30,
+  .CX 64 27,
+  .CX 64 18,
+  .CX 64 16,
+  .CX 64 15,
+  .CX 64 14,
+  .CX 64 13,
+  .CX 64 10,
+  .CX 64 9,
+  .CX 64 7,
+  .CX 64 6,
+  .CX 65 64,
+  .CX 63 70,
+  .CX 63 67,
+  .CX 63 66,
+  .CX 63 65,
+  .CX 63 62,
+  .CX 63 61,
+  .CX 63 58,
+  .CX 63 55,
+  .CX 63 53,
+  .CX 63 51,
+  .CX 63 49,
+  .CX 63 38,
+  .CX 63 32
+]
+
+private def restore0Block23 : Program := [
+  .CX 63 30,
+  .CX 63 27,
+  .CX 63 22,
+  .CX 63 18,
+  .CX 63 17,
+  .CX 63 16,
+  .CX 63 14,
+  .CX 63 13,
+  .CX 63 10,
+  .CX 63 7,
+  .CX 62 69,
+  .CX 62 68,
+  .CX 62 66,
+  .CX 62 60,
+  .CX 62 59,
   .CX 62 57,
   .CX 62 56,
-  .CX 62 54,
+  .CX 62 53,
+  .CX 62 52,
   .CX 62 51,
-  .CX 62 50,
   .CX 62 49,
-  .CX 62 47,
-  .CX 62 46,
-  .CX 62 45,
+  .CX 62 48,
   .CX 62 44,
   .CX 62 43,
+  .CX 62 42,
   .CX 62 41,
-  .CX 62 38,
+  .CX 62 39,
   .CX 62 37,
-  .CX 62 36,
   .CX 62 35,
-  .CX 62 34,
-  .CX 62 33,
-  .CX 62 32,
-  .CX 62 25,
-  .CX 62 24,
-  .CX 62 23,
-  .CX 62 14,
-  .CX 62 13
+  .CX 62 34
 ]
 
-private def restore0Block34 : Program := [
-  .CX 62 11,
-  .CX 62 10,
-  .CX 62 7,
+private def restore0Block24 : Program := [
+  .CX 62 33,
+  .CX 62 32,
+  .CX 62 17,
+  .CX 62 15,
+  .CX 62 12,
+  .CX 62 9,
+  .CX 62 8,
   .CX 62 6,
-  .CX 62 5,
   .CX 62 4,
-  .CX 62 1,
-  .CX 62 0,
-  .CX 63 62,
-  .CX 61 73,
-  .CX 61 71,
-  .CX 61 70,
-  .CX 61 65,
-  .CX 61 62,
+  .CX 61 68,
+  .CX 61 64,
   .CX 61 60,
-  .CX 61 57,
-  .CX 61 56,
-  .CX 61 55,
-  .CX 61 52,
   .CX 61 51,
   .CX 61 49,
   .CX 61 48,
-  .CX 61 47,
-  .CX 61 46,
+  .CX 61 44,
   .CX 61 43,
-  .CX 61 38,
+  .CX 61 42,
+  .CX 61 41,
+  .CX 61 39,
+  .CX 61 36,
   .CX 61 35,
   .CX 61 34,
   .CX 61 33,
-  .CX 61 30
+  .CX 61 32,
+  .CX 61 31,
+  .CX 61 12,
+  .CX 61 11,
+  .CX 61 8,
+  .CX 61 4
 ]
 
-private def restore0Block35 : Program := [
-  .CX 61 28,
-  .CX 61 24,
-  .CX 61 19,
-  .CX 61 18,
-  .CX 61 17,
-  .CX 61 15,
-  .CX 61 13,
-  .CX 61 9,
-  .CX 61 8,
-  .CX 61 6,
-  .CX 61 1,
-  .CX 62 61,
-  .CX 60 74,
-  .CX 60 73,
+private def restore0Block25 : Program := [
+  .CX 64 61,
   .CX 60 70,
-  .CX 60 67,
+  .CX 60 68,
   .CX 60 64,
-  .CX 60 63,
-  .CX 60 62,
   .CX 60 61,
-  .CX 60 58,
-  .CX 60 53,
+  .CX 60 57,
+  .CX 60 51,
   .CX 60 49,
   .CX 60 48,
-  .CX 60 47,
-  .CX 60 45,
+  .CX 60 44,
   .CX 60 43,
   .CX 60 42,
   .CX 60 41,
-  .CX 60 40
-]
-
-private def restore0Block36 : Program := [
+  .CX 60 39,
   .CX 60 38,
-  .CX 60 37,
+  .CX 60 36,
   .CX 60 35,
   .CX 60 34,
   .CX 60 33,
+  .CX 60 32,
   .CX 60 31,
-  .CX 60 27,
-  .CX 60 25,
-  .CX 60 23,
-  .CX 60 20,
-  .CX 60 19,
-  .CX 60 17,
-  .CX 60 12,
+  .CX 60 30,
+  .CX 60 28,
+  .CX 60 14,
+  .CX 60 13,
+  .CX 60 11,
   .CX 60 10,
   .CX 60 7,
-  .CX 60 6,
-  .CX 60 5,
-  .CX 60 3,
-  .CX 60 0,
-  .CX 61 60,
-  .CX 59 75,
-  .CX 59 70,
-  .CX 59 60,
-  .CX 59 57,
-  .CX 59 55,
-  .CX 59 54,
-  .CX 59 49,
-  .CX 59 48,
-  .CX 59 45,
-  .CX 59 42
+  .CX 60 4,
+  .CX 61 60
 ]
 
-private def restore0Block37 : Program := [
-  .CX 59 41,
-  .CX 59 40,
-  .CX 59 38,
+private def restore0Block26 : Program := [
+  .CX 59 70,
+  .CX 59 68,
+  .CX 59 67,
+  .CX 59 66,
+  .CX 59 65,
+  .CX 59 61,
+  .CX 59 60,
+  .CX 59 56,
+  .CX 59 55,
+  .CX 59 52,
+  .CX 59 49,
+  .CX 59 48,
+  .CX 59 47,
+  .CX 59 45,
+  .CX 59 44,
+  .CX 59 43,
   .CX 59 37,
-  .CX 59 35,
-  .CX 59 34,
-  .CX 59 33,
   .CX 59 32,
   .CX 59 31,
+  .CX 59 29,
   .CX 59 28,
   .CX 59 27,
-  .CX 59 25,
+  .CX 59 24,
+  .CX 59 18,
   .CX 59 17,
+  .CX 59 16,
   .CX 59 15,
   .CX 59 14,
-  .CX 59 13,
+  .CX 59 12,
+  .CX 59 11
+]
+
+private def restore0Block27 : Program := [
   .CX 59 9,
+  .CX 59 7,
   .CX 59 5,
-  .CX 58 74,
-  .CX 58 73,
-  .CX 58 71,
-  .CX 58 70,
+  .CX 59 4,
+  .CX 59 3,
+  .CX 59 0,
+  .CX 58 69,
   .CX 58 68,
+  .CX 58 67,
   .CX 58 66,
   .CX 58 65,
   .CX 58 64,
   .CX 58 63,
-  .CX 58 62,
-  .CX 58 61,
-  .CX 58 59
-]
-
-private def restore0Block38 : Program := [
+  .CX 58 60,
   .CX 58 55,
   .CX 58 53,
-  .CX 58 51,
-  .CX 58 50,
+  .CX 58 52,
   .CX 58 48,
-  .CX 58 46,
-  .CX 58 45,
   .CX 58 43,
   .CX 58 42,
-  .CX 58 40,
+  .CX 58 41,
+  .CX 58 39,
+  .CX 58 38,
   .CX 58 37,
   .CX 58 36,
-  .CX 58 32,
-  .CX 58 30,
-  .CX 58 28,
+  .CX 58 35,
+  .CX 58 34,
+  .CX 58 33,
+  .CX 58 31,
+  .CX 58 30
+]
+
+private def restore0Block28 : Program := [
   .CX 58 27,
-  .CX 58 19,
+  .CX 58 22,
   .CX 58 18,
   .CX 58 17,
-  .CX 58 15,
+  .CX 58 16,
   .CX 58 14,
   .CX 58 13,
+  .CX 58 12,
   .CX 58 11,
   .CX 58 10,
+  .CX 58 9,
   .CX 58 8,
-  .CX 58 7,
   .CX 58 6,
+  .CX 58 4,
   .CX 58 3,
-  .CX 58 2,
-  .CX 58 1
-]
-
-private def restore0Block39 : Program := [
-  .CX 58 0,
-  .CX 57 75,
-  .CX 57 74,
-  .CX 57 73,
-  .CX 57 72,
-  .CX 57 68,
-  .CX 57 65,
-  .CX 57 55,
-  .CX 57 54,
-  .CX 57 48,
-  .CX 57 45,
-  .CX 57 44,
-  .CX 57 43,
-  .CX 57 42,
-  .CX 57 40,
+  .CX 60 58,
+  .CX 57 70,
   .CX 57 38,
-  .CX 57 35,
-  .CX 57 34,
-  .CX 57 33,
+  .CX 57 32,
   .CX 57 31,
+  .CX 57 30,
+  .CX 57 29,
   .CX 57 28,
-  .CX 57 27,
-  .CX 57 25,
-  .CX 57 24,
-  .CX 57 23,
+  .CX 57 15,
   .CX 57 14,
   .CX 57 13,
-  .CX 57 11,
-  .CX 57 10,
-  .CX 57 9
+  .CX 57 7,
+  .CX 56 70,
+  .CX 56 65,
+  .CX 56 59
 ]
 
-private def restore0Block40 : Program := [
-  .CX 57 7,
-  .CX 57 6,
-  .CX 57 4,
-  .CX 65 57,
-  .CX 56 73,
-  .CX 56 72,
-  .CX 56 69,
-  .CX 56 68,
-  .CX 56 65,
-  .CX 56 60,
-  .CX 56 58,
-  .CX 56 57,
+private def restore0Block29 : Program := [
+  .CX 56 52,
+  .CX 56 51,
+  .CX 56 48,
+  .CX 56 47,
+  .CX 56 45,
+  .CX 56 44,
   .CX 56 42,
-  .CX 56 31,
-  .CX 56 29,
+  .CX 56 41,
+  .CX 56 39,
+  .CX 56 38,
+  .CX 56 37,
+  .CX 56 35,
+  .CX 56 34,
+  .CX 56 33,
+  .CX 56 32,
   .CX 56 28,
-  .CX 56 24,
-  .CX 56 23,
+  .CX 56 27,
   .CX 56 16,
   .CX 56 15,
-  .CX 56 11,
-  .CX 56 6,
-  .CX 56 4,
-  .CX 56 2,
-  .CX 56 1,
-  .CX 57 56,
-  .CX 55 75,
-  .CX 55 54,
-  .CX 75 55,
-  .CX 54 75
+  .CX 56 10,
+  .CX 56 7,
+  .CX 56 5,
+  .CX 56 0,
+  .CX 55 69,
+  .CX 55 67,
+  .CX 55 65,
+  .CX 55 64,
+  .CX 55 62,
+  .CX 55 61,
+  .CX 55 59
 ]
 
-private def restore0Block41 : Program := [
+private def restore0Block30 : Program := [
+  .CX 55 58,
+  .CX 55 53,
+  .CX 55 51,
+  .CX 55 47,
+  .CX 55 46,
+  .CX 55 45,
+  .CX 55 43,
+  .CX 55 42,
+  .CX 55 39,
+  .CX 55 38,
+  .CX 55 36,
+  .CX 55 35,
+  .CX 55 34,
+  .CX 55 33,
+  .CX 55 32,
+  .CX 55 31,
+  .CX 55 30,
+  .CX 55 27,
+  .CX 55 24,
+  .CX 55 18,
+  .CX 55 16,
+  .CX 55 15,
+  .CX 55 13,
+  .CX 55 11,
+  .CX 55 8,
+  .CX 55 6,
+  .CX 55 0,
+  .CX 54 65,
+  .CX 54 64,
+  .CX 54 61
+]
+
+private def restore0Block31 : Program := [
+  .CX 54 60,
+  .CX 54 59,
+  .CX 54 57,
   .CX 54 56,
-  .CX 56 54,
-  .CX 53 60,
+  .CX 54 50,
+  .CX 54 49,
+  .CX 54 45,
+  .CX 54 44,
+  .CX 54 38,
+  .CX 54 36,
+  .CX 54 31,
+  .CX 54 30,
+  .CX 54 29,
+  .CX 54 27,
+  .CX 54 16,
+  .CX 54 14,
+  .CX 54 13,
+  .CX 54 12,
+  .CX 54 8,
+  .CX 54 5,
+  .CX 54 3,
+  .CX 54 2,
+  .CX 54 1,
+  .CX 54 0,
+  .CX 53 70,
+  .CX 53 68,
+  .CX 53 67,
+  .CX 53 65,
+  .CX 53 64,
+  .CX 53 62
+]
+
+private def restore0Block32 : Program := [
+  .CX 53 61,
+  .CX 53 59,
+  .CX 53 58,
   .CX 53 55,
-  .CX 53 52,
-  .CX 53 48,
-  .CX 53 31,
+  .CX 53 54,
+  .CX 53 51,
+  .CX 53 50,
+  .CX 53 47,
+  .CX 53 46,
+  .CX 53 45,
+  .CX 53 44,
+  .CX 53 42,
+  .CX 53 39,
+  .CX 53 38,
+  .CX 53 36,
+  .CX 53 35,
+  .CX 53 34,
+  .CX 53 33,
+  .CX 53 32,
+  .CX 53 30,
   .CX 53 29,
   .CX 53 27,
-  .CX 53 15,
+  .CX 53 24,
+  .CX 53 18,
+  .CX 53 16,
+  .CX 53 13,
+  .CX 53 12,
+  .CX 53 10,
   .CX 53 9,
-  .CX 55 53,
-  .CX 52 65,
-  .CX 52 61,
-  .CX 52 32,
-  .CX 52 29,
-  .CX 52 24,
-  .CX 52 15,
-  .CX 52 12,
-  .CX 52 10,
-  .CX 52 8,
-  .CX 61 52,
-  .CX 51 73,
-  .CX 51 72,
-  .CX 51 71,
-  .CX 51 70,
-  .CX 51 66,
-  .CX 51 62,
-  .CX 51 60,
-  .CX 51 59
+  .CX 53 7
 ]
 
-private def restore0Block42 : Program := [
-  .CX 51 58,
+private def restore0Block33 : Program := [
+  .CX 53 4,
+  .CX 53 2,
+  .CX 53 0,
+  .CX 54 53,
+  .CX 52 70,
+  .CX 52 69,
+  .CX 52 64,
+  .CX 52 60,
+  .CX 52 57,
+  .CX 52 55,
+  .CX 52 51,
+  .CX 52 49,
+  .CX 52 48,
+  .CX 52 45,
+  .CX 52 43,
+  .CX 52 42,
+  .CX 52 41,
+  .CX 52 39,
+  .CX 52 37,
+  .CX 52 36,
+  .CX 52 35,
+  .CX 52 34,
+  .CX 52 33,
+  .CX 52 31,
+  .CX 52 10,
+  .CX 52 9,
+  .CX 52 7,
+  .CX 52 6,
+  .CX 52 5,
+  .CX 52 3
+]
+
+private def restore0Block34 : Program := [
+  .CX 55 52,
+  .CX 51 68,
+  .CX 51 64,
+  .CX 51 61,
   .CX 51 57,
-  .CX 51 55,
-  .CX 51 54,
-  .CX 51 53,
-  .CX 51 52,
+  .CX 51 49,
   .CX 51 48,
-  .CX 51 47,
-  .CX 51 46,
+  .CX 51 44,
   .CX 51 43,
   .CX 51 42,
   .CX 51 41,
-  .CX 51 40,
+  .CX 51 39,
   .CX 51 36,
-  .CX 51 30,
-  .CX 51 27,
-  .CX 51 24,
-  .CX 51 23,
-  .CX 51 19,
-  .CX 51 18,
-  .CX 51 17,
+  .CX 51 35,
+  .CX 51 34,
+  .CX 51 33,
+  .CX 51 31,
+  .CX 51 29,
   .CX 51 15,
-  .CX 51 14,
-  .CX 51 8,
-  .CX 51 6,
-  .CX 51 5,
+  .CX 51 11,
+  .CX 51 10,
   .CX 51 4,
-  .CX 51 2,
-  .CX 51 1,
-  .CX 50 74
-]
-
-private def restore0Block43 : Program := [
-  .CX 50 71,
-  .CX 50 70,
-  .CX 50 66,
-  .CX 50 63,
-  .CX 50 62,
-  .CX 50 60,
-  .CX 50 59,
-  .CX 50 57,
-  .CX 50 55,
-  .CX 50 53,
-  .CX 50 52,
-  .CX 50 49,
-  .CX 50 48,
-  .CX 50 45,
-  .CX 50 43,
-  .CX 50 42,
-  .CX 50 32,
-  .CX 50 30,
-  .CX 50 27,
-  .CX 50 24,
-  .CX 50 19,
-  .CX 50 18,
-  .CX 50 17,
-  .CX 50 15,
-  .CX 50 14,
-  .CX 50 12,
-  .CX 50 11,
-  .CX 50 10,
-  .CX 50 7,
-  .CX 50 1
-]
-
-private def restore0Block44 : Program := [
-  .CX 50 0,
-  .CX 52 50,
-  .CX 49 74,
+  .CX 57 51,
+  .CX 50 65,
+  .CX 50 16,
+  .CX 65 50,
+  .CX 49 67,
+  .CX 49 65,
   .CX 49 64,
-  .CX 49 48,
+  .CX 49 63
+]
+
+private def restore0Block35 : Program := [
+  .CX 49 62,
+  .CX 49 61,
+  .CX 49 60,
+  .CX 49 59,
+  .CX 49 58,
+  .CX 49 55,
+  .CX 49 52,
+  .CX 49 50,
   .CX 49 47,
+  .CX 49 46,
   .CX 49 45,
-  .CX 49 7,
+  .CX 49 42,
+  .CX 49 39,
+  .CX 49 38,
+  .CX 49 36,
+  .CX 49 35,
+  .CX 49 34,
+  .CX 49 33,
+  .CX 49 32,
+  .CX 49 31,
+  .CX 49 28,
+  .CX 49 27,
+  .CX 49 24,
+  .CX 49 22,
+  .CX 49 18,
+  .CX 49 16,
+  .CX 49 14,
+  .CX 49 11,
+  .CX 49 10,
+  .CX 49 9
+]
+
+private def restore0Block36 : Program := [
+  .CX 49 8,
   .CX 49 3,
-  .CX 64 49,
-  .CX 48 66,
+  .CX 49 0,
+  .CX 50 49,
+  .CX 48 69,
+  .CX 48 68,
+  .CX 48 65,
+  .CX 48 64,
+  .CX 48 60,
+  .CX 48 58,
+  .CX 48 56,
+  .CX 48 54,
+  .CX 48 49,
+  .CX 48 43,
+  .CX 48 36,
   .CX 48 31,
+  .CX 48 30,
   .CX 48 29,
+  .CX 48 24,
+  .CX 48 16,
   .CX 48 15,
+  .CX 48 14,
+  .CX 48 13,
   .CX 48 11,
-  .CX 66 48,
-  .CX 47 74,
-  .CX 47 72,
+  .CX 48 10,
+  .CX 48 8,
+  .CX 48 6,
+  .CX 48 4,
+  .CX 48 3,
+  .CX 48 2
+]
+
+private def restore0Block37 : Program := [
+  .CX 49 48,
+  .CX 47 69,
   .CX 47 65,
   .CX 47 61,
+  .CX 47 57,
+  .CX 47 55,
   .CX 47 54,
-  .CX 47 46,
+  .CX 47 53,
   .CX 47 45,
-  .CX 47 42,
-  .CX 47 40,
-  .CX 47 36,
-  .CX 47 31,
-  .CX 47 29,
-  .CX 47 24,
-  .CX 47 23
-]
-
-private def restore0Block45 : Program := [
-  .CX 47 15,
-  .CX 47 11,
-  .CX 47 7,
-  .CX 47 4,
-  .CX 54 47,
-  .CX 46 74,
-  .CX 46 71,
+  .CX 47 43,
+  .CX 47 16,
+  .CX 47 12,
+  .CX 47 10,
+  .CX 47 9,
+  .CX 47 8,
+  .CX 47 6,
+  .CX 47 5,
+  .CX 47 2,
+  .CX 47 1,
+  .CX 53 47,
   .CX 46 70,
-  .CX 46 66,
+  .CX 46 69,
+  .CX 46 68,
+  .CX 46 67,
   .CX 46 65,
   .CX 46 64,
   .CX 46 62,
-  .CX 46 61,
+  .CX 46 60,
   .CX 46 59,
-  .CX 46 57,
+  .CX 46 57
+]
+
+private def restore0Block38 : Program := [
+  .CX 46 56,
   .CX 46 55,
-  .CX 46 54,
   .CX 46 53,
   .CX 46 52,
   .CX 46 50,
-  .CX 46 48,
   .CX 46 45,
   .CX 46 43,
   .CX 46 41,
-  .CX 46 40,
+  .CX 46 38,
+  .CX 46 37,
+  .CX 46 36,
   .CX 46 32,
-  .CX 46 30,
+  .CX 46 29,
   .CX 46 28,
   .CX 46 27,
-  .CX 46 25
-]
-
-private def restore0Block46 : Program := [
-  .CX 46 19,
   .CX 46 18,
-  .CX 46 17,
+  .CX 46 16,
   .CX 46 15,
-  .CX 46 11,
+  .CX 46 12,
   .CX 46 10,
+  .CX 46 9,
   .CX 46 8,
   .CX 46 7,
-  .CX 46 5,
+  .CX 46 6,
+  .CX 46 4,
   .CX 46 3,
   .CX 46 1,
-  .CX 48 46,
-  .CX 45 74,
-  .CX 45 66,
-  .CX 45 64,
+  .CX 46 0,
+  .CX 45 69,
+  .CX 45 68
+]
+
+private def restore0Block39 : Program := [
+  .CX 45 61,
+  .CX 45 59,
+  .CX 45 43,
   .CX 45 31,
   .CX 45 29,
   .CX 45 15,
   .CX 45 11,
-  .CX 45 7,
-  .CX 45 3,
-  .CX 64 45,
-  .CX 44 70,
+  .CX 45 6,
+  .CX 45 5,
+  .CX 45 4,
+  .CX 45 0,
+  .CX 59 45,
+  .CX 44 69,
   .CX 44 68,
-  .CX 44 66,
-  .CX 44 63,
-  .CX 44 61,
-  .CX 44 60,
+  .CX 44 64,
+  .CX 44 59,
   .CX 44 54,
-  .CX 44 45
-]
-
-private def restore0Block47 : Program := [
-  .CX 44 42,
+  .CX 44 53,
+  .CX 44 52,
+  .CX 44 50,
+  .CX 44 49,
+  .CX 44 48,
+  .CX 44 46,
+  .CX 44 45,
+  .CX 44 43,
   .CX 44 41,
-  .CX 44 40,
+  .CX 44 38,
   .CX 44 37,
   .CX 44 36,
-  .CX 44 32,
-  .CX 44 28,
-  .CX 44 17,
-  .CX 44 15,
+  .CX 44 32
+]
+
+private def restore0Block40 : Program := [
+  .CX 44 31,
+  .CX 44 30,
+  .CX 44 29,
+  .CX 44 27,
+  .CX 44 14,
+  .CX 44 13,
+  .CX 44 12,
   .CX 44 11,
-  .CX 44 10,
+  .CX 44 8,
+  .CX 44 6,
   .CX 44 5,
+  .CX 44 4,
+  .CX 44 2,
+  .CX 44 1,
   .CX 44 0,
-  .CX 43 72,
-  .CX 43 71,
   .CX 43 70,
+  .CX 43 69,
+  .CX 43 68,
+  .CX 43 67,
+  .CX 43 66,
   .CX 43 64,
+  .CX 43 63,
   .CX 43 62,
+  .CX 43 61,
   .CX 43 59,
-  .CX 43 57,
-  .CX 43 55,
-  .CX 43 53,
-  .CX 43 52,
+  .CX 43 58,
+  .CX 43 56,
+  .CX 43 54,
   .CX 43 50,
+  .CX 43 49
+]
+
+private def restore0Block41 : Program := [
   .CX 43 48,
   .CX 43 46,
   .CX 43 42,
   .CX 43 41,
+  .CX 43 39,
+  .CX 43 37,
   .CX 43 36,
-  .CX 43 32
-]
-
-private def restore0Block48 : Program := [
-  .CX 43 30,
+  .CX 43 35,
+  .CX 43 34,
+  .CX 43 33,
+  .CX 43 32,
+  .CX 43 29,
   .CX 43 28,
   .CX 43 27,
-  .CX 43 25,
   .CX 43 24,
-  .CX 43 23,
-  .CX 43 19,
+  .CX 43 22,
   .CX 43 18,
   .CX 43 17,
   .CX 43 15,
-  .CX 43 11,
+  .CX 43 14,
+  .CX 43 12,
   .CX 43 10,
-  .CX 43 8,
+  .CX 43 9,
+  .CX 43 7,
+  .CX 43 6,
   .CX 43 5,
   .CX 43 4,
-  .CX 43 3,
-  .CX 43 1,
-  .CX 46 43,
-  .CX 42 72,
-  .CX 42 68,
-  .CX 42 65,
-  .CX 42 59,
-  .CX 42 41,
-  .CX 42 31,
-  .CX 42 29,
-  .CX 42 28,
-  .CX 42 24,
-  .CX 42 23,
-  .CX 42 15,
-  .CX 42 11
+  .CX 43 2,
+  .CX 43 0,
+  .CX 42 70
 ]
 
-private def restore0Block49 : Program := [
+private def restore0Block42 : Program := [
+  .CX 42 69,
+  .CX 42 67,
+  .CX 42 66,
+  .CX 42 65,
+  .CX 42 64,
+  .CX 42 63,
+  .CX 42 62,
+  .CX 42 61,
+  .CX 42 60,
+  .CX 42 58,
+  .CX 42 56,
+  .CX 42 55,
+  .CX 42 50,
+  .CX 42 49,
+  .CX 42 48,
+  .CX 42 46,
+  .CX 42 43,
+  .CX 42 41,
+  .CX 42 39,
+  .CX 42 37,
+  .CX 42 36,
+  .CX 42 35,
+  .CX 42 34,
+  .CX 42 33,
+  .CX 42 32,
+  .CX 42 31,
+  .CX 42 28,
+  .CX 42 27,
+  .CX 42 24,
+  .CX 42 22
+]
+
+private def restore0Block43 : Program := [
+  .CX 42 18,
+  .CX 42 17,
+  .CX 42 16,
+  .CX 42 14,
+  .CX 42 11,
+  .CX 42 8,
+  .CX 42 7,
+  .CX 42 6,
   .CX 42 5,
-  .CX 42 4,
-  .CX 59 42,
-  .CX 41 73,
-  .CX 41 72,
-  .CX 41 68,
+  .CX 42 3,
+  .CX 41 69,
+  .CX 41 67,
   .CX 41 66,
-  .CX 41 65,
   .CX 41 63,
+  .CX 41 62,
+  .CX 41 59,
+  .CX 41 58,
+  .CX 41 57,
+  .CX 41 56,
+  .CX 41 55,
+  .CX 41 54,
+  .CX 41 53,
+  .CX 41 50,
+  .CX 41 49,
+  .CX 41 48,
+  .CX 41 46,
+  .CX 41 45,
+  .CX 41 42,
+  .CX 41 40,
+  .CX 41 39
+]
+
+private def restore0Block44 : Program := [
+  .CX 41 37,
+  .CX 41 35,
+  .CX 41 34,
+  .CX 41 33,
+  .CX 41 32,
+  .CX 41 31,
+  .CX 41 28,
+  .CX 41 27,
   .CX 41 24,
-  .CX 41 23,
+  .CX 41 22,
+  .CX 41 18,
+  .CX 41 17,
+  .CX 41 14,
+  .CX 41 12,
+  .CX 41 11,
+  .CX 41 10,
+  .CX 41 9,
   .CX 41 6,
-  .CX 41 5,
-  .CX 41 4,
+  .CX 41 2,
+  .CX 41 1,
   .CX 41 0,
-  .CX 63 41,
-  .CX 40 74,
-  .CX 40 73,
-  .CX 40 71,
   .CX 40 70,
   .CX 40 66,
   .CX 40 65,
+  .CX 40 64,
   .CX 40 63,
-  .CX 40 62,
+  .CX 40 60,
+  .CX 40 58,
+  .CX 40 57,
+  .CX 40 56
+]
+
+private def restore0Block45 : Program := [
   .CX 40 55,
-  .CX 40 54,
   .CX 40 53,
-  .CX 40 52,
+  .CX 40 51,
   .CX 40 50,
-  .CX 40 46
-]
-
-private def restore0Block50 : Program := [
+  .CX 40 48,
   .CX 40 45,
-  .CX 40 44,
+  .CX 40 43,
+  .CX 40 42,
   .CX 40 41,
-  .CX 40 37,
-  .CX 40 32,
+  .CX 40 36,
+  .CX 40 35,
+  .CX 40 34,
+  .CX 40 33,
+  .CX 40 31,
   .CX 40 30,
+  .CX 40 29,
+  .CX 40 28,
   .CX 40 27,
-  .CX 40 25,
-  .CX 40 19,
-  .CX 40 18,
+  .CX 40 24,
+  .CX 40 22,
   .CX 40 17,
+  .CX 40 16,
   .CX 40 15,
-  .CX 40 11,
+  .CX 40 14,
+  .CX 40 13,
+  .CX 40 12,
   .CX 40 10,
-  .CX 40 8,
+  .CX 40 9,
   .CX 40 7,
-  .CX 40 6,
-  .CX 40 5,
-  .CX 40 0,
-  .CX 39 73,
-  .CX 39 72,
-  .CX 39 71,
-  .CX 39 70,
-  .CX 39 69,
-  .CX 39 68,
-  .CX 39 67,
-  .CX 39 66,
-  .CX 39 65,
-  .CX 39 62,
-  .CX 39 57
+  .CX 40 5
 ]
 
-private def restore0Block51 : Program := [
-  .CX 39 53,
+private def restore0Block46 : Program := [
+  .CX 40 3,
+  .CX 40 1,
+  .CX 39 70,
+  .CX 39 68,
+  .CX 39 65,
+  .CX 39 64,
+  .CX 39 63,
+  .CX 39 60,
+  .CX 39 59,
+  .CX 39 58,
+  .CX 39 56,
+  .CX 39 55,
+  .CX 39 54,
   .CX 39 52,
-  .CX 39 51,
   .CX 39 50,
-  .CX 39 48,
+  .CX 39 49,
+  .CX 39 46,
+  .CX 39 44,
   .CX 39 43,
   .CX 39 42,
   .CX 39 41,
   .CX 39 38,
+  .CX 39 37,
+  .CX 39 36,
   .CX 39 35,
   .CX 39 34,
   .CX 39 33,
-  .CX 39 30,
+  .CX 39 32,
+  .CX 39 31,
+  .CX 39 30
+]
+
+private def restore0Block47 : Program := [
   .CX 39 29,
-  .CX 39 26,
+  .CX 39 28,
+  .CX 39 27,
   .CX 39 24,
   .CX 39 22,
-  .CX 39 20,
-  .CX 39 18,
-  .CX 39 17,
   .CX 39 16,
   .CX 39 15,
   .CX 39 14,
-  .CX 39 12,
-  .CX 39 9,
-  .CX 39 6,
+  .CX 39 13,
+  .CX 39 11,
+  .CX 39 8,
+  .CX 39 7,
   .CX 39 4,
-  .CX 39 1,
-  .CX 38 71,
-  .CX 38 70
-]
-
-private def restore0Block52 : Program := [
+  .CX 39 3,
+  .CX 39 2,
+  .CX 39 0,
+  .CX 41 39,
+  .CX 38 70,
+  .CX 38 69,
   .CX 38 68,
   .CX 38 67,
-  .CX 38 66,
-  .CX 38 64,
-  .CX 38 63,
+  .CX 38 65,
   .CX 38 62,
   .CX 38 61,
+  .CX 38 57,
+  .CX 38 56,
+  .CX 38 55,
+  .CX 38 54,
   .CX 38 53,
-  .CX 38 52,
-  .CX 38 51,
-  .CX 38 50,
-  .CX 38 46,
-  .CX 38 43,
-  .CX 38 42,
-  .CX 38 41,
-  .CX 38 40,
-  .CX 38 39,
-  .CX 38 37,
-  .CX 38 36,
-  .CX 38 35,
-  .CX 38 34,
-  .CX 38 33,
-  .CX 38 31,
-  .CX 38 30,
-  .CX 38 26,
-  .CX 38 23,
-  .CX 38 22,
-  .CX 38 20,
-  .CX 38 18,
-  .CX 38 17
+  .CX 38 52
 ]
 
-private def restore0Block53 : Program := [
-  .CX 38 14,
-  .CX 38 12,
-  .CX 38 11,
-  .CX 38 9,
+private def restore0Block48 : Program := [
+  .CX 38 50,
+  .CX 38 46,
+  .CX 38 45,
+  .CX 38 44,
+  .CX 38 42,
+  .CX 38 40,
+  .CX 38 37,
+  .CX 38 32,
+  .CX 38 29,
+  .CX 38 28,
+  .CX 38 27,
+  .CX 38 18,
+  .CX 38 16,
+  .CX 38 15,
+  .CX 38 7,
+  .CX 38 6,
   .CX 38 5,
-  .CX 38 3,
-  .CX 38 0,
-  .CX 39 38,
-  .CX 37 74,
-  .CX 37 72,
-  .CX 37 71,
+  .CX 38 4,
+  .CX 38 2,
+  .CX 38 1,
+  .CX 40 38,
   .CX 37 70,
+  .CX 37 69,
+  .CX 37 68,
   .CX 37 67,
   .CX 37 66,
   .CX 37 65,
-  .CX 37 64,
+  .CX 37 63,
   .CX 37 62,
-  .CX 37 60,
+  .CX 37 61
+]
+
+private def restore0Block49 : Program := [
   .CX 37 59,
   .CX 37 58,
+  .CX 37 56,
+  .CX 37 55,
+  .CX 37 54,
   .CX 37 53,
   .CX 37 52,
-  .CX 37 51,
   .CX 37 50,
+  .CX 37 49,
+  .CX 37 48,
   .CX 37 46,
+  .CX 37 45,
+  .CX 37 44,
   .CX 37 43,
-  .CX 37 42,
   .CX 37 41,
-  .CX 37 40,
-  .CX 37 39
+  .CX 37 38,
+  .CX 37 35,
+  .CX 37 34,
+  .CX 37 33,
+  .CX 37 32,
+  .CX 37 29,
+  .CX 37 28,
+  .CX 37 27,
+  .CX 37 24,
+  .CX 37 22,
+  .CX 37 18,
+  .CX 37 17,
+  .CX 37 16,
+  .CX 37 15,
+  .CX 37 14
+]
+
+private def restore0Block50 : Program := [
+  .CX 37 12,
+  .CX 37 10,
+  .CX 37 9,
+  .CX 37 7,
+  .CX 37 6,
+  .CX 37 4,
+  .CX 37 2,
+  .CX 37 1,
+  .CX 37 0,
+  .CX 38 37,
+  .CX 36 68,
+  .CX 36 67,
+  .CX 36 66,
+  .CX 36 65,
+  .CX 36 64,
+  .CX 36 62,
+  .CX 36 61,
+  .CX 36 59,
+  .CX 36 57,
+  .CX 36 54,
+  .CX 36 53,
+  .CX 36 52,
+  .CX 36 50,
+  .CX 36 49,
+  .CX 36 46,
+  .CX 36 45,
+  .CX 36 44,
+  .CX 36 40,
+  .CX 36 32,
+  .CX 36 29
+]
+
+private def restore0Block51 : Program := [
+  .CX 36 27,
+  .CX 36 18,
+  .CX 36 17,
+  .CX 36 16,
+  .CX 36 14,
+  .CX 36 10,
+  .CX 36 9,
+  .CX 36 5,
+  .CX 36 4,
+  .CX 36 2,
+  .CX 36 1,
+  .CX 36 0,
+  .CX 35 68,
+  .CX 35 67,
+  .CX 35 66,
+  .CX 35 62,
+  .CX 35 59,
+  .CX 35 56,
+  .CX 35 54,
+  .CX 35 53,
+  .CX 35 52,
+  .CX 35 50,
+  .CX 35 49,
+  .CX 35 46,
+  .CX 35 45,
+  .CX 35 44,
+  .CX 35 40,
+  .CX 35 36,
+  .CX 35 34,
+  .CX 35 32
+]
+
+private def restore0Block52 : Program := [
+  .CX 35 29,
+  .CX 35 27,
+  .CX 35 18,
+  .CX 35 17,
+  .CX 35 14,
+  .CX 35 12,
+  .CX 35 8,
+  .CX 35 5,
+  .CX 35 4,
+  .CX 35 2,
+  .CX 35 1,
+  .CX 35 0,
+  .CX 34 70,
+  .CX 34 68,
+  .CX 34 67,
+  .CX 34 65,
+  .CX 34 63,
+  .CX 34 62,
+  .CX 34 61,
+  .CX 34 59,
+  .CX 34 58,
+  .CX 34 57,
+  .CX 34 56,
+  .CX 34 55,
+  .CX 34 54,
+  .CX 34 53,
+  .CX 34 52,
+  .CX 34 51,
+  .CX 34 49,
+  .CX 34 48
+]
+
+private def restore0Block53 : Program := [
+  .CX 34 46,
+  .CX 34 45,
+  .CX 34 44,
+  .CX 34 43,
+  .CX 34 42,
+  .CX 34 41,
+  .CX 34 38,
+  .CX 34 37,
+  .CX 34 36,
+  .CX 34 35,
+  .CX 34 33,
+  .CX 34 32,
+  .CX 34 31,
+  .CX 34 30,
+  .CX 34 28,
+  .CX 34 24,
+  .CX 34 22,
+  .CX 34 18,
+  .CX 34 16,
+  .CX 34 15,
+  .CX 34 13,
+  .CX 34 12,
+  .CX 34 7,
+  .CX 34 4,
+  .CX 34 2,
+  .CX 34 1,
+  .CX 34 0,
+  .CX 35 34,
+  .CX 33 68,
+  .CX 33 67
 ]
 
 private def restore0Block54 : Program := [
-  .CX 37 36,
-  .CX 37 34,
-  .CX 37 33,
-  .CX 37 30,
-  .CX 37 29,
-  .CX 37 26,
-  .CX 37 24,
-  .CX 37 22,
-  .CX 37 20,
-  .CX 37 18,
-  .CX 37 17,
-  .CX 37 15,
-  .CX 37 14,
-  .CX 37 12,
-  .CX 37 9,
-  .CX 37 7,
-  .CX 37 5,
-  .CX 37 4,
-  .CX 37 3,
-  .CX 37 2,
-  .CX 36 73,
-  .CX 36 72,
-  .CX 36 66,
-  .CX 36 60,
-  .CX 36 59,
-  .CX 36 50,
-  .CX 36 46,
-  .CX 36 43,
-  .CX 36 40,
-  .CX 36 25
-]
-
-private def restore0Block55 : Program := [
-  .CX 36 23,
-  .CX 36 14,
-  .CX 36 12,
-  .CX 36 8,
-  .CX 36 6,
-  .CX 36 5,
-  .CX 36 4,
-  .CX 40 36,
-  .CX 35 74,
-  .CX 35 72,
-  .CX 35 71,
-  .CX 35 70,
-  .CX 35 68,
-  .CX 35 67,
-  .CX 35 64,
-  .CX 35 63,
-  .CX 35 62,
-  .CX 35 58,
-  .CX 35 53,
-  .CX 35 52,
-  .CX 35 51,
-  .CX 35 46,
-  .CX 35 42,
-  .CX 35 41,
-  .CX 35 40,
-  .CX 35 39,
-  .CX 35 37,
-  .CX 35 34,
-  .CX 35 33,
-  .CX 35 31
-]
-
-private def restore0Block56 : Program := [
-  .CX 35 30,
-  .CX 35 26,
-  .CX 35 25,
-  .CX 35 22,
-  .CX 35 20,
-  .CX 35 18,
-  .CX 35 17,
-  .CX 35 11,
-  .CX 35 9,
-  .CX 35 8,
-  .CX 35 7,
-  .CX 35 5,
-  .CX 35 4,
-  .CX 35 3,
-  .CX 35 2,
-  .CX 35 0,
-  .CX 37 35,
-  .CX 34 71,
-  .CX 34 65,
-  .CX 34 64,
-  .CX 34 62,
-  .CX 34 61,
-  .CX 34 55,
-  .CX 34 53,
-  .CX 34 50,
-  .CX 34 36,
-  .CX 34 30,
-  .CX 34 29,
-  .CX 34 27,
-  .CX 34 24
-]
-
-private def restore0Block57 : Program := [
-  .CX 34 19,
-  .CX 34 18,
-  .CX 34 15,
-  .CX 34 8,
-  .CX 34 3,
-  .CX 33 74,
-  .CX 33 72,
-  .CX 33 70,
-  .CX 33 68,
-  .CX 33 67,
+  .CX 33 66,
+  .CX 33 65,
+  .CX 33 63,
   .CX 33 62,
+  .CX 33 60,
   .CX 33 59,
   .CX 33 58,
-  .CX 33 52,
+  .CX 33 54,
+  .CX 33 53,
   .CX 33 51,
+  .CX 33 50,
+  .CX 33 48,
+  .CX 33 45,
   .CX 33 43,
   .CX 33 42,
   .CX 33 41,
   .CX 33 40,
-  .CX 33 39,
+  .CX 33 38,
   .CX 33 37,
-  .CX 33 36,
   .CX 33 35,
   .CX 33 34,
+  .CX 33 32,
+  .CX 33 31,
+  .CX 33 30,
   .CX 33 27,
-  .CX 33 26,
   .CX 33 25,
+  .CX 33 24,
   .CX 33 22,
-  .CX 33 20,
-  .CX 33 19
+  .CX 33 18,
+  .CX 33 17
 ]
 
-private def restore0Block58 : Program := [
-  .CX 33 17,
-  .CX 33 15,
-  .CX 33 11,
+private def restore0Block55 : Program := [
+  .CX 33 16,
   .CX 33 10,
+  .CX 33 9,
   .CX 33 8,
-  .CX 33 7,
   .CX 33 5,
   .CX 33 4,
+  .CX 33 3,
   .CX 33 2,
+  .CX 33 1,
+  .CX 33 0,
+  .CX 32 67,
   .CX 32 65,
-  .CX 32 61,
+  .CX 32 60,
+  .CX 32 59,
+  .CX 32 57,
   .CX 32 55,
-  .CX 32 53,
+  .CX 32 51,
+  .CX 32 49,
+  .CX 32 46,
+  .CX 32 42,
+  .CX 32 37,
+  .CX 32 36,
+  .CX 32 33,
   .CX 32 31,
-  .CX 32 29,
-  .CX 32 24,
-  .CX 32 15,
-  .CX 32 12,
-  .CX 32 10,
-  .CX 32 8,
-  .CX 53 32,
-  .CX 31 66,
+  .CX 32 30,
+  .CX 32 18,
+  .CX 32 16,
+  .CX 32 13,
+  .CX 32 9,
+  .CX 32 3
+]
+
+private def restore0Block56 : Program := [
+  .CX 32 0,
+  .CX 33 32,
   .CX 31 62,
-  .CX 31 30,
   .CX 31 29,
   .CX 31 15,
-  .CX 31 13,
-  .CX 31 12,
   .CX 31 11,
-  .CX 62 31
-]
-
-private def restore0Block59 : Program := [
-  .CX 30 73,
-  .CX 30 62,
-  .CX 30 60,
-  .CX 30 59,
-  .CX 30 55,
-  .CX 30 54,
-  .CX 30 53,
-  .CX 30 51,
-  .CX 30 50,
-  .CX 30 46,
-  .CX 30 45,
-  .CX 30 44,
-  .CX 30 41,
-  .CX 30 40,
-  .CX 30 39,
+  .CX 62 31,
+  .CX 30 58,
   .CX 30 13,
   .CX 30 12,
-  .CX 30 6,
-  .CX 30 5,
-  .CX 39 30,
-  .CX 29 71,
-  .CX 29 66,
-  .CX 29 62,
-  .CX 29 61,
+  .CX 58 30,
+  .CX 29 69,
+  .CX 29 68,
+  .CX 29 67,
   .CX 29 60,
   .CX 29 55,
+  .CX 29 54,
+  .CX 29 52,
   .CX 29 51,
-  .CX 29 46,
-  .CX 29 31,
-  .CX 29 27
+  .CX 29 50,
+  .CX 29 48,
+  .CX 29 44,
+  .CX 29 40,
+  .CX 29 37,
+  .CX 29 33,
+  .CX 29 27,
+  .CX 29 26,
+  .CX 29 23,
+  .CX 29 18,
+  .CX 29 14
 ]
 
-private def restore0Block60 : Program := [
-  .CX 29 19,
-  .CX 29 18,
-  .CX 29 15,
+private def restore0Block57 : Program := [
   .CX 29 12,
   .CX 29 11,
   .CX 29 10,
   .CX 29 9,
-  .CX 31 29,
-  .CX 28 74,
-  .CX 28 63,
+  .CX 29 8,
+  .CX 29 6,
+  .CX 29 5,
+  .CX 29 4,
+  .CX 29 3,
+  .CX 29 2,
+  .CX 28 66,
+  .CX 28 65,
+  .CX 28 62,
   .CX 28 61,
   .CX 28 60,
   .CX 28 59,
-  .CX 28 57,
-  .CX 28 48,
-  .CX 28 36,
-  .CX 28 33,
-  .CX 28 31,
-  .CX 28 30,
-  .CX 28 7,
-  .CX 28 1,
+  .CX 28 55,
+  .CX 28 51,
+  .CX 28 50,
+  .CX 28 49,
+  .CX 28 32,
+  .CX 28 27,
+  .CX 28 17,
+  .CX 28 16,
+  .CX 28 15,
+  .CX 28 13,
+  .CX 28 12,
+  .CX 28 11,
+  .CX 28 10,
+  .CX 28 9
+]
+
+private def restore0Block58 : Program := [
+  .CX 28 8,
+  .CX 28 3,
   .CX 28 0,
-  .CX 30 28,
-  .CX 27 74,
-  .CX 27 71,
-  .CX 27 70,
-  .CX 27 69,
-  .CX 27 67,
-  .CX 27 65,
-  .CX 27 62
+  .CX 32 28,
+  .CX 27 66,
+  .CX 27 62,
+  .CX 27 61,
+  .CX 27 58,
+  .CX 27 51,
+  .CX 27 50,
+  .CX 27 49,
+  .CX 27 46,
+  .CX 27 42,
+  .CX 27 37,
+  .CX 27 36,
+  .CX 27 30,
+  .CX 27 17,
+  .CX 27 15,
+  .CX 27 11,
+  .CX 27 8,
+  .CX 30 27,
+  .CX 26 60,
+  .CX 26 57,
+  .CX 26 53,
+  .CX 26 45,
+  .CX 26 29,
+  .CX 26 3,
+  .CX 26 1,
+  .CX 29 26,
+  .CX 25 70
+]
+
+private def restore0Block59 : Program := [
+  .CX 25 62,
+  .CX 25 60,
+  .CX 25 58,
+  .CX 25 57,
+  .CX 25 54,
+  .CX 25 52,
+  .CX 25 51,
+  .CX 25 46,
+  .CX 25 44,
+  .CX 25 43,
+  .CX 25 40,
+  .CX 25 36,
+  .CX 25 31,
+  .CX 25 30,
+  .CX 25 28,
+  .CX 25 21,
+  .CX 25 14,
+  .CX 25 12,
+  .CX 25 11,
+  .CX 25 10,
+  .CX 25 7,
+  .CX 25 3,
+  .CX 25 2,
+  .CX 24 69,
+  .CX 24 67,
+  .CX 24 66,
+  .CX 24 57,
+  .CX 24 55,
+  .CX 24 52,
+  .CX 24 49
+]
+
+private def restore0Block60 : Program := [
+  .CX 24 48,
+  .CX 24 44,
+  .CX 24 40,
+  .CX 24 32,
+  .CX 24 30,
+  .CX 24 27,
+  .CX 24 26,
+  .CX 24 23,
+  .CX 24 20,
+  .CX 24 18,
+  .CX 24 17,
+  .CX 24 14,
+  .CX 24 13,
+  .CX 24 10,
+  .CX 24 9,
+  .CX 24 6,
+  .CX 24 5,
+  .CX 23 68,
+  .CX 23 65,
+  .CX 23 61,
+  .CX 23 60,
+  .CX 23 59,
+  .CX 23 56,
+  .CX 23 55,
+  .CX 23 54,
+  .CX 23 51,
+  .CX 23 33,
+  .CX 23 32,
+  .CX 23 30,
+  .CX 23 26
 ]
 
 private def restore0Block61 : Program := [
-  .CX 27 60,
-  .CX 27 59,
-  .CX 27 58,
-  .CX 27 55,
-  .CX 27 53,
-  .CX 27 46,
-  .CX 27 41,
-  .CX 27 40,
-  .CX 27 36,
-  .CX 27 32,
-  .CX 27 31,
-  .CX 27 30,
-  .CX 27 25,
-  .CX 27 23,
-  .CX 27 21,
-  .CX 27 20,
-  .CX 27 18,
-  .CX 27 17,
-  .CX 27 16,
-  .CX 27 13,
-  .CX 27 10,
-  .CX 27 9,
-  .CX 27 8,
-  .CX 27 7,
-  .CX 27 5,
-  .CX 27 2,
-  .CX 26 74,
-  .CX 26 72,
-  .CX 26 70,
-  .CX 26 68
+  .CX 23 25,
+  .CX 23 24,
+  .CX 23 21,
+  .CX 23 20,
+  .CX 23 19,
+  .CX 23 16,
+  .CX 23 14,
+  .CX 23 13,
+  .CX 23 11,
+  .CX 23 10,
+  .CX 23 4,
+  .CX 23 3,
+  .CX 23 2,
+  .CX 23 0,
+  .CX 22 63,
+  .CX 63 22,
+  .CX 21 65,
+  .CX 21 61,
+  .CX 21 59,
+  .CX 21 54,
+  .CX 21 49,
+  .CX 21 43,
+  .CX 21 37,
+  .CX 21 33,
+  .CX 21 31,
+  .CX 21 30,
+  .CX 21 25,
+  .CX 21 24,
+  .CX 21 20,
+  .CX 21 16
 ]
 
 private def restore0Block62 : Program := [
-  .CX 26 66,
-  .CX 26 64,
-  .CX 26 61,
-  .CX 26 54,
-  .CX 26 53,
-  .CX 26 51,
-  .CX 26 50,
-  .CX 26 45,
-  .CX 26 44,
-  .CX 26 41,
-  .CX 26 39,
-  .CX 26 36,
-  .CX 26 28,
-  .CX 26 23,
-  .CX 26 17,
-  .CX 26 15,
-  .CX 26 12,
-  .CX 26 10,
-  .CX 26 8,
-  .CX 26 7,
-  .CX 26 4,
-  .CX 26 3,
-  .CX 28 26,
-  .CX 25 65,
-  .CX 25 51,
-  .CX 25 50,
-  .CX 25 43,
-  .CX 25 36,
-  .CX 25 27,
-  .CX 25 24
-]
-
-private def restore0Block63 : Program := [
-  .CX 25 12,
-  .CX 25 8,
-  .CX 27 25,
-  .CX 24 67,
-  .CX 24 23,
-  .CX 67 24,
-  .CX 23 73,
-  .CX 23 69,
-  .CX 23 67,
-  .CX 23 66,
-  .CX 23 64,
-  .CX 23 63,
-  .CX 23 60,
-  .CX 23 57,
-  .CX 23 54,
-  .CX 23 53,
-  .CX 23 52,
-  .CX 23 51,
-  .CX 23 48,
-  .CX 23 46,
-  .CX 23 45,
-  .CX 23 44,
-  .CX 23 41,
-  .CX 23 40,
-  .CX 23 39,
-  .CX 23 36,
-  .CX 23 31,
-  .CX 23 29,
-  .CX 23 24,
-  .CX 23 20
-]
-
-private def restore0Block64 : Program := [
-  .CX 23 16,
-  .CX 23 15,
-  .CX 23 14,
-  .CX 23 11,
-  .CX 23 10,
-  .CX 23 9,
-  .CX 23 6,
-  .CX 23 5,
-  .CX 23 3,
-  .CX 23 1,
-  .CX 23 0,
-  .CX 24 23,
-  .CX 22 66,
-  .CX 22 65,
-  .CX 22 61,
-  .CX 22 60,
-  .CX 22 55,
-  .CX 22 52,
-  .CX 22 43,
-  .CX 22 36,
-  .CX 22 31,
-  .CX 22 29,
-  .CX 22 27,
-  .CX 22 26,
-  .CX 22 15,
-  .CX 22 12,
-  .CX 22 11,
-  .CX 22 10,
-  .CX 22 9,
-  .CX 22 8
-]
-
-private def restore0Block65 : Program := [
-  .CX 26 22,
-  .CX 21 65,
-  .CX 21 63,
-  .CX 21 62,
-  .CX 21 61,
-  .CX 21 57,
-  .CX 21 55,
-  .CX 21 54,
-  .CX 21 53,
-  .CX 21 52,
-  .CX 21 50,
-  .CX 21 48,
-  .CX 21 45,
-  .CX 21 44,
-  .CX 21 40,
-  .CX 21 39,
-  .CX 21 36,
-  .CX 21 30,
-  .CX 21 29,
-  .CX 21 27,
-  .CX 21 25,
-  .CX 21 15,
-  .CX 21 10,
+  .CX 21 14,
+  .CX 21 12,
   .CX 21 9,
   .CX 21 8,
   .CX 21 5,
-  .CX 21 1,
+  .CX 21 2,
   .CX 21 0,
-  .CX 25 21,
-  .CX 20 74
-]
-
-private def restore0Block66 : Program := [
+  .CX 24 21,
   .CX 20 69,
   .CX 20 65,
-  .CX 20 64,
-  .CX 20 62,
+  .CX 20 60,
   .CX 20 59,
+  .CX 20 58,
+  .CX 20 57,
   .CX 20 55,
-  .CX 20 54,
-  .CX 20 53,
-  .CX 20 52,
-  .CX 20 51,
-  .CX 20 50,
-  .CX 20 45,
-  .CX 20 44,
-  .CX 20 43,
-  .CX 20 40,
-  .CX 20 39,
-  .CX 20 31,
-  .CX 20 30,
+  .CX 20 49,
+  .CX 20 42,
+  .CX 20 37,
   .CX 20 24,
   .CX 20 21,
   .CX 20 16,
-  .CX 20 14,
-  .CX 20 8,
-  .CX 20 7,
-  .CX 20 5,
+  .CX 20 12,
+  .CX 20 6,
   .CX 20 3,
+  .CX 20 0,
   .CX 21 20,
-  .CX 19 71,
-  .CX 19 18,
-  .CX 71 19
+  .CX 19 69,
+  .CX 19 66,
+  .CX 19 65,
+  .CX 19 62
 ]
 
-private def restore0Block67 : Program := [
-  .CX 18 71,
-  .CX 18 70,
-  .CX 18 64,
-  .CX 18 63,
-  .CX 18 61,
-  .CX 18 58,
-  .CX 18 57,
-  .CX 18 55,
-  .CX 18 48,
-  .CX 18 46,
-  .CX 18 43,
-  .CX 18 41,
-  .CX 18 40,
-  .CX 18 33,
-  .CX 18 32,
-  .CX 18 30,
-  .CX 18 29,
-  .CX 18 27,
-  .CX 18 23,
-  .CX 18 20,
-  .CX 18 19,
-  .CX 18 17,
-  .CX 18 15,
-  .CX 18 14,
-  .CX 18 13,
-  .CX 18 9,
-  .CX 18 5,
-  .CX 18 3,
-  .CX 18 2,
-  .CX 18 1
+private def restore0Block63 : Program := [
+  .CX 19 61,
+  .CX 19 59,
+  .CX 19 57,
+  .CX 19 55,
+  .CX 19 54,
+  .CX 19 53,
+  .CX 19 52,
+  .CX 19 51,
+  .CX 19 48,
+  .CX 19 45,
+  .CX 19 44,
+  .CX 19 43,
+  .CX 19 40,
+  .CX 19 31,
+  .CX 19 30,
+  .CX 19 23,
+  .CX 19 21,
+  .CX 19 20,
+  .CX 19 17,
+  .CX 19 16,
+  .CX 19 15,
+  .CX 19 14,
+  .CX 19 12,
+  .CX 19 11,
+  .CX 19 10,
+  .CX 19 8,
+  .CX 19 6,
+  .CX 19 2,
+  .CX 19 1,
+  .CX 19 0
 ]
 
-private def restore0Block68 : Program := [
-  .CX 18 0,
-  .CX 19 18,
-  .CX 17 70,
-  .CX 70 17,
-  .CX 16 72,
-  .CX 16 69,
-  .CX 16 68,
-  .CX 16 67,
-  .CX 16 66,
+private def restore0Block64 : Program := [
+  .CX 18 67,
+  .CX 67 18,
+  .CX 17 66,
+  .CX 66 17,
   .CX 16 65,
-  .CX 16 64,
-  .CX 16 63,
-  .CX 16 62,
   .CX 16 61,
   .CX 16 60,
   .CX 16 59,
-  .CX 16 54,
-  .CX 16 45,
-  .CX 16 44,
-  .CX 16 41,
-  .CX 16 39,
-  .CX 16 36,
-  .CX 16 33,
-  .CX 16 32,
-  .CX 16 31,
-  .CX 16 17,
-  .CX 16 15,
-  .CX 16 13,
+  .CX 16 55,
+  .CX 16 49,
+  .CX 16 48,
   .CX 16 12,
-  .CX 16 4
-]
-
-private def restore0Block69 : Program := [
+  .CX 16 10,
+  .CX 16 9,
+  .CX 16 8,
   .CX 16 3,
   .CX 16 0,
-  .CX 17 16,
-  .CX 15 74,
-  .CX 15 66,
-  .CX 15 63,
+  .CX 48 16,
   .CX 15 61,
   .CX 15 57,
-  .CX 15 55,
-  .CX 15 54,
-  .CX 15 53,
-  .CX 15 51,
-  .CX 15 50,
+  .CX 15 56,
   .CX 15 48,
-  .CX 15 45,
-  .CX 15 44,
-  .CX 15 40,
-  .CX 15 39,
-  .CX 15 30,
-  .CX 15 29,
-  .CX 15 21,
-  .CX 15 16,
-  .CX 15 11,
+  .CX 15 46,
+  .CX 15 42,
+  .CX 15 37,
+  .CX 15 36,
+  .CX 15 33,
+  .CX 15 32,
+  .CX 15 31,
+  .CX 15 13
+]
+
+private def restore0Block65 : Program := [
+  .CX 15 12,
+  .CX 15 10,
   .CX 15 9,
-  .CX 15 7,
-  .CX 15 5,
-  .CX 15 1,
-  .CX 15 0,
-  .CX 16 15,
-  .CX 14 66
-]
-
-private def restore0Block70 : Program := [
+  .CX 15 8,
+  .CX 31 15,
+  .CX 14 62,
   .CX 14 61,
-  .CX 14 55,
-  .CX 14 53,
-  .CX 14 50,
-  .CX 14 46,
-  .CX 14 43,
-  .CX 14 36,
+  .CX 14 58,
+  .CX 14 51,
   .CX 14 31,
-  .CX 14 27,
-  .CX 14 19,
+  .CX 14 30,
   .CX 14 18,
-  .CX 14 16,
-  .CX 14 15,
   .CX 14 11,
-  .CX 14 10,
-  .CX 15 14,
-  .CX 13 73,
-  .CX 13 60,
-  .CX 13 59,
-  .CX 13 55,
-  .CX 13 54,
-  .CX 13 53,
-  .CX 13 51,
-  .CX 13 45,
-  .CX 13 44,
-  .CX 13 43,
-  .CX 13 41,
-  .CX 13 40,
-  .CX 13 39,
-  .CX 13 36
-]
-
-private def restore0Block71 : Program := [
+  .CX 14 8,
+  .CX 13 48,
+  .CX 13 46,
+  .CX 13 42,
+  .CX 13 37,
+  .CX 13 36,
   .CX 13 33,
   .CX 13 32,
   .CX 13 31,
-  .CX 13 6,
-  .CX 13 5,
-  .CX 12 62,
-  .CX 12 50,
-  .CX 12 46,
-  .CX 12 43,
-  .CX 12 36,
-  .CX 12 33,
-  .CX 12 31,
-  .CX 12 17,
-  .CX 17 12,
-  .CX 11 73,
-  .CX 11 66,
-  .CX 11 61,
-  .CX 11 60,
-  .CX 11 59,
-  .CX 11 54,
-  .CX 11 46,
-  .CX 11 45,
-  .CX 11 44,
-  .CX 11 43,
-  .CX 11 41,
-  .CX 11 40,
-  .CX 11 39,
-  .CX 11 36,
-  .CX 11 33,
-  .CX 11 19
+  .CX 12 61,
+  .CX 12 57,
+  .CX 12 56,
+  .CX 12 10,
+  .CX 12 9,
+  .CX 12 8,
+  .CX 56 12,
+  .CX 11 62
 ]
 
-private def restore0Block72 : Program := [
+private def restore0Block66 : Program := [
+  .CX 11 61,
+  .CX 11 58,
+  .CX 11 51,
+  .CX 11 49,
+  .CX 11 33,
   .CX 11 18,
-  .CX 11 16,
-  .CX 11 15,
-  .CX 11 10,
-  .CX 11 6,
-  .CX 11 5,
-  .CX 15 11,
-  .CX 10 73,
+  .CX 11 14,
+  .CX 11 8,
+  .CX 14 11,
   .CX 10 61,
-  .CX 10 60,
-  .CX 10 59,
-  .CX 10 54,
-  .CX 10 53,
-  .CX 10 45,
-  .CX 10 44,
-  .CX 10 43,
-  .CX 10 41,
-  .CX 10 40,
-  .CX 10 39,
+  .CX 10 58,
+  .CX 10 57,
+  .CX 10 56,
+  .CX 10 48,
+  .CX 10 46,
+  .CX 10 42,
+  .CX 10 37,
   .CX 10 36,
   .CX 10 33,
   .CX 10 31,
-  .CX 10 15,
-  .CX 10 14,
-  .CX 10 6,
-  .CX 10 5,
-  .CX 14 10,
-  .CX 9 74,
-  .CX 9 73,
-  .CX 9 63
-]
-
-private def restore0Block73 : Program := [
-  .CX 9 61,
-  .CX 9 60,
-  .CX 9 59,
-  .CX 9 57,
-  .CX 9 53,
-  .CX 9 48,
-  .CX 9 46,
-  .CX 9 41,
-  .CX 9 31,
-  .CX 9 30,
-  .CX 9 29,
-  .CX 9 21,
-  .CX 9 19,
-  .CX 9 18,
-  .CX 9 14,
-  .CX 9 13,
-  .CX 9 12,
-  .CX 9 7,
-  .CX 9 6,
-  .CX 9 1,
-  .CX 9 0,
-  .CX 12 9,
-  .CX 8 65,
-  .CX 8 62,
-  .CX 8 52,
-  .CX 8 51,
-  .CX 8 46,
-  .CX 8 43,
-  .CX 8 36,
-  .CX 8 31
-]
-
-private def restore0Block74 : Program := [
-  .CX 8 27,
-  .CX 8 18,
-  .CX 8 17,
-  .CX 8 16,
-  .CX 8 15,
-  .CX 8 13,
-  .CX 8 12,
-  .CX 8 10,
+  .CX 10 17,
+  .CX 10 9,
   .CX 10 8,
-  .CX 7 74,
-  .CX 7 73,
-  .CX 7 64,
-  .CX 7 60,
-  .CX 7 57,
-  .CX 7 55,
-  .CX 7 53,
-  .CX 7 51,
-  .CX 7 50,
-  .CX 7 48,
-  .CX 7 41,
-  .CX 7 30,
-  .CX 7 8,
-  .CX 7 6,
-  .CX 7 3,
-  .CX 7 1,
-  .CX 8 7,
-  .CX 6 73,
-  .CX 6 72,
-  .CX 6 68,
-  .CX 6 67
+  .CX 17 10,
+  .CX 9 56,
+  .CX 9 33,
+  .CX 9 31,
+  .CX 9 15,
+  .CX 15 9,
+  .CX 8 61
 ]
 
-private def restore0Block75 : Program := [
-  .CX 6 66,
-  .CX 6 65,
-  .CX 6 64,
-  .CX 6 63,
+private def restore0Block67 : Program := [
+  .CX 8 58,
+  .CX 8 49,
+  .CX 8 33,
+  .CX 8 31,
+  .CX 8 19,
+  .CX 8 16,
+  .CX 16 8,
+  .CX 7 70,
+  .CX 7 68,
+  .CX 7 62,
+  .CX 7 61,
+  .CX 7 60,
+  .CX 7 59,
+  .CX 7 56,
+  .CX 7 55,
+  .CX 7 52,
+  .CX 7 49,
+  .CX 7 48,
+  .CX 7 44,
+  .CX 7 43,
+  .CX 7 42,
+  .CX 7 40,
+  .CX 7 11,
+  .CX 7 9,
+  .CX 7 8,
+  .CX 7 4,
+  .CX 7 3,
+  .CX 7 0,
+  .CX 8 7,
+  .CX 6 69
+]
+
+private def restore0Block68 : Program := [
+  .CX 6 68,
+  .CX 6 62,
   .CX 6 61,
+  .CX 6 60,
+  .CX 6 57,
+  .CX 6 56,
   .CX 6 55,
+  .CX 6 54,
   .CX 6 53,
-  .CX 6 51,
-  .CX 6 50,
-  .CX 6 46,
+  .CX 6 52,
+  .CX 6 45,
+  .CX 6 44,
   .CX 6 40,
-  .CX 6 36,
-  .CX 6 33,
-  .CX 6 31,
-  .CX 6 8,
+  .CX 6 9,
   .CX 6 7,
   .CX 6 5,
   .CX 6 4,
   .CX 6 3,
-  .CX 6 0,
+  .CX 6 2,
+  .CX 6 1,
   .CX 7 6,
-  .CX 5 72,
-  .CX 5 68,
-  .CX 5 67,
-  .CX 5 66,
-  .CX 5 65,
-  .CX 5 59,
-  .CX 5 58,
+  .CX 5 60,
   .CX 5 57,
-  .CX 5 55
-]
-
-private def restore0Block76 : Program := [
+  .CX 5 55,
   .CX 5 54,
-  .CX 5 53,
-  .CX 5 51,
-  .CX 5 50,
-  .CX 5 48,
   .CX 5 46,
-  .CX 5 45,
-  .CX 5 44,
-  .CX 5 40,
-  .CX 5 39,
-  .CX 5 30,
-  .CX 5 4,
-  .CX 5 2,
-  .CX 5 1,
-  .CX 30 5,
-  .CX 4 72,
-  .CX 4 68,
-  .CX 4 67,
-  .CX 4 66,
-  .CX 4 65,
-  .CX 4 57,
-  .CX 4 54,
-  .CX 4 48,
-  .CX 4 45,
-  .CX 4 44,
-  .CX 4 41,
-  .CX 4 39,
-  .CX 4 8,
-  .CX 4 1,
-  .CX 8 4
+  .CX 5 43,
+  .CX 5 42,
+  .CX 5 36,
+  .CX 5 33
 ]
 
-private def restore0Block77 : Program := [
-  .CX 3 64,
-  .CX 3 63,
-  .CX 3 61,
+private def restore0Block69 : Program := [
+  .CX 5 31,
+  .CX 5 11,
+  .CX 5 9,
+  .CX 5 8,
+  .CX 5 3,
+  .CX 5 2,
+  .CX 8 5,
+  .CX 4 68,
+  .CX 4 62,
+  .CX 4 61,
+  .CX 4 52,
+  .CX 4 49,
+  .CX 4 48,
+  .CX 4 46,
+  .CX 4 44,
+  .CX 4 43,
+  .CX 4 40,
+  .CX 4 36,
+  .CX 4 33,
+  .CX 4 31,
+  .CX 4 9,
+  .CX 9 4,
   .CX 3 60,
-  .CX 3 59,
-  .CX 3 55,
-  .CX 3 53,
-  .CX 3 51,
-  .CX 3 50,
+  .CX 3 57,
+  .CX 3 54,
+  .CX 3 52,
+  .CX 3 49,
+  .CX 3 48,
+  .CX 3 44,
+  .CX 3 43
+]
+
+private def restore0Block70 : Program := [
+  .CX 3 42,
+  .CX 3 40,
+  .CX 3 11,
+  .CX 3 9,
   .CX 3 8,
   .CX 3 4,
-  .CX 3 0,
+  .CX 3 2,
   .CX 4 3,
-  .CX 2 63,
-  .CX 2 60,
   .CX 2 59,
-  .CX 2 58,
-  .CX 2 57,
+  .CX 2 56,
   .CX 2 55,
   .CX 2 54,
-  .CX 2 53,
-  .CX 2 51,
-  .CX 2 50,
-  .CX 2 48,
-  .CX 2 46,
-  .CX 2 45,
+  .CX 2 52,
   .CX 2 44,
-  .CX 2 41,
-  .CX 2 39,
-  .CX 2 36
-]
-
-private def restore0Block78 : Program := [
-  .CX 2 33,
-  .CX 2 31,
-  .CX 2 8,
+  .CX 2 43,
+  .CX 2 42,
+  .CX 2 40,
+  .CX 2 9,
   .CX 2 5,
-  .CX 2 1,
   .CX 2 0,
   .CX 5 2,
-  .CX 1 57,
-  .CX 1 55,
   .CX 1 53,
-  .CX 1 51,
-  .CX 1 50,
+  .CX 1 49,
   .CX 1 48,
   .CX 1 46,
+  .CX 1 45,
+  .CX 1 42,
   .CX 1 36,
   .CX 1 33,
-  .CX 1 31,
+  .CX 1 31
+]
+
+private def restore0Block71 : Program := [
+  .CX 1 11,
+  .CX 1 9,
   .CX 1 8,
   .CX 1 7,
   .CX 7 1,
-  .CX 0 63,
-  .CX 0 60,
   .CX 0 59,
+  .CX 0 56,
+  .CX 0 55,
   .CX 0 46,
+  .CX 0 42,
   .CX 0 36,
   .CX 0 33,
   .CX 0 31,
   .CX 0 9,
   .CX 0 6,
-  .CX 6 0
-]
-
-private def restore0Block79 : Program := [
+  .CX 6 0,
   .X 3,
   .X 6,
   .X 9,
   .X 13,
   .X 16,
   .X 19,
-  .measureX 73 [] [.Z 0, .Z 1, .Z 6, .Z 20, .CZ 0 3, .CZ 0 20, .CZ 1 20, .CZ 1 22, .CZ 2 22, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 39, .CZ 4 54, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 20, .CZ 6 22, .CZ 6 24, .CZ 6 39, .CZ 6 54, .CZ 6 72, .CZ 7 22, .CZ 9 20, .CZ 9 39, .CZ 9 54, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22, .CZ 39 58, .CZ 54 58],
-  .measureX 74 [] [.Z 0, .Z 2, .Z 21, .Z 22, .CZ 0 2, .CZ 0 22, .CZ 0 25, .CZ 0 37, .CZ 1 20, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 3 22, .CZ 4 39, .CZ 4 54, .CZ 5 20, .CZ 5 22, .CZ 6 22, .CZ 6 39, .CZ 6 54, .CZ 7 20, .CZ 7 39, .CZ 7 54, .CZ 8 39, .CZ 8 54, .CZ 9 20, .CZ 9 39, .CZ 9 54, .CZ 10 20, .CZ 10 22, .CZ 10 39, .CZ 10 58, .CZ 10 59, .CZ 10 63, .CZ 10 72, .CZ 11 20, .CZ 11 39, .CZ 11 54, .CZ 12 39, .CZ 12 54, .CZ 13 20, .CZ 13 39, .CZ 13 54, .CZ 14 39, .CZ 14 54, .CZ 15 20, .CZ 15 22, .CZ 16 39, .CZ 16 54, .CZ 17 20, .CZ 17 39, .CZ 17 54, .CZ 18 22, .CZ 18 39, .CZ 18 54, .CZ 19 20, .CZ 19 39, .CZ 19 54, .CZ 21 22, .CZ 27 39, .CZ 27 54, .CZ 39 50, .CZ 39 52, .CZ 39 57, .CZ 39 58, .CZ 50 54, .CZ 52 54, .CZ 54 57, .CZ 54 58],
-  .measureX 75 [] [.Z 0, .Z 3, .Z 5, .Z 22, .CZ 0 4, .CZ 0 5, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 18, .CZ 0 22, .CZ 0 24, .CZ 0 26, .CZ 0 27, .CZ 0 31, .CZ 0 32, .CZ 0 33, .CZ 0 35, .CZ 0 37, .CZ 0 38, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 22, .CZ 1 27, .CZ 1 30, .CZ 1 31, .CZ 1 33, .CZ 1 35, .CZ 1 36, .CZ 1 38, .CZ 1 58, .CZ 1 72, .CZ 2 4, .CZ 2 5, .CZ 2 20, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 26, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 20, .CZ 4 21, .CZ 4 24, .CZ 4 25, .CZ 4 30, .CZ 4 36, .CZ 4 37, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 4 63, .CZ 4 70, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 24, .CZ 5 27, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 50, .CZ 5 52, .CZ 5 59, .CZ 5 63, .CZ 5 64, .CZ 5 68, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 39, .CZ 6 59, .CZ 6 70, .CZ 7 20, .CZ 7 22, .CZ 7 29, .CZ 8 22, .CZ 8 39, .CZ 8 54, .CZ 8 70, .CZ 8 71, .CZ 9 20, .CZ 9 29, .CZ 9 39, .CZ 9 54, .CZ 10 20, .CZ 10 22, .CZ 10 70, .CZ 11 29, .CZ 11 70, .CZ 12 21, .CZ 12 70, .CZ 13 20, .CZ 13 22, .CZ 13 70, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 18 70, .CZ 19 20, .CZ 19 22, .CZ 21 70, .CZ 27 70, .CZ 31 70, .CZ 32 70, .CZ 33 70, .CZ 39 57, .CZ 39 58, .CZ 54 57, .CZ 54 58],
-  .measureX 72 [] [.Z 0, .Z 7, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 19, .CZ 0 22, .CZ 0 24, .CZ 0 27, .CZ 0 31, .CZ 0 33, .CZ 0 35, .CZ 0 36, .CZ 0 38, .CZ 1 2, .CZ 1 4, .CZ 1 22, .CZ 1 25, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 22, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 21, .CZ 4 22, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 36, .CZ 4 37, .CZ 4 39, .CZ 4 54, .CZ 4 63, .CZ 4 70, .CZ 5 22, .CZ 5 34, .CZ 5 39, .CZ 5 59, .CZ 5 63, .CZ 5 64, .CZ 5 68, .CZ 6 8, .CZ 6 20, .CZ 6 22, .CZ 6 24, .CZ 6 25, .CZ 6 28, .CZ 6 35, .CZ 6 54, .CZ 6 59, .CZ 6 70, .CZ 7 39, .CZ 7 54, .CZ 8 22, .CZ 8 70, .CZ 8 71, .CZ 9 20, .CZ 9 22, .CZ 10 25, .CZ 10 70, .CZ 11 20, .CZ 11 70, .CZ 12 28, .CZ 12 70, .CZ 13 20, .CZ 13 70, .CZ 14 25, .CZ 15 22, .CZ 16 25, .CZ 17 20, .CZ 17 22, .CZ 18 25, .CZ 18 70, .CZ 19 20, .CZ 19 22, .CZ 21 22, .CZ 21 70, .CZ 27 70, .CZ 31 70, .CZ 32 70, .CZ 33 70, .CZ 39 57, .CZ 54 57],
-  .measureX 71 [] [.Z 0, .Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 19, .CZ 0 20, .CZ 0 24, .CZ 0 25, .CZ 0 27, .CZ 0 31, .CZ 0 33, .CZ 0 35, .CZ 0 36, .CZ 0 37, .CZ 0 38, .CZ 1 2, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 22, .CZ 1 25, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 35, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 8, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 21, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 28, .CZ 4 29, .CZ 4 32, .CZ 4 34, .CZ 4 35, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 4 59, .CZ 4 63, .CZ 4 64, .CZ 4 68, .CZ 4 69, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 18, .CZ 5 20, .CZ 5 26, .CZ 5 27, .CZ 5 31, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 39, .CZ 5 54, .CZ 5 63, .CZ 5 64, .CZ 6 8, .CZ 6 9, .CZ 6 20, .CZ 6 21, .CZ 6 24, .CZ 6 25, .CZ 6 28, .CZ 6 35, .CZ 6 39, .CZ 6 59, .CZ 6 69, .CZ 7 22, .CZ 8 20, .CZ 8 39, .CZ 8 54, .CZ 8 69, .CZ 9 39, .CZ 9 54, .CZ 10 25, .CZ 10 69, .CZ 11 20, .CZ 11 69, .CZ 12 28, .CZ 12 69, .CZ 13 20, .CZ 13 69, .CZ 14 25, .CZ 15 20, .CZ 15 22, .CZ 16 25, .CZ 17 22, .CZ 18 25, .CZ 18 69, .CZ 19 22, .CZ 27 69, .CZ 31 69, .CZ 32 69, .CZ 33 69, .CZ 34 70, .CZ 39 57, .CZ 39 58, .CZ 54 57, .CZ 54 58],
-  .measureX 70 [] [.Z 0, .Z 4, .Z 6, .Z 20, .Z 21, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 19, .CZ 0 20, .CZ 0 24, .CZ 0 25, .CZ 0 27, .CZ 0 31, .CZ 0 33, .CZ 0 35, .CZ 0 36, .CZ 0 37, .CZ 0 38, .CZ 1 2, .CZ 1 25, .CZ 1 35, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 4 6, .CZ 4 8, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 21, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 28, .CZ 4 29, .CZ 4 32, .CZ 4 34, .CZ 4 35, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 4 59, .CZ 4 63, .CZ 4 64, .CZ 4 68, .CZ 4 69, .CZ 5 6, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 18, .CZ 5 22, .CZ 5 26, .CZ 5 27, .CZ 5 31, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 39, .CZ 5 59, .CZ 5 63, .CZ 5 64, .CZ 5 68, .CZ 6 8, .CZ 6 9, .CZ 6 24, .CZ 6 25, .CZ 6 28, .CZ 6 35, .CZ 6 39, .CZ 6 59, .CZ 6 69, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 39, .CZ 8 54, .CZ 8 69, .CZ 9 39, .CZ 9 54, .CZ 10 25, .CZ 10 69, .CZ 11 20, .CZ 11 69, .CZ 12 28, .CZ 12 69, .CZ 13 20, .CZ 13 69, .CZ 14 25, .CZ 15 20, .CZ 15 22, .CZ 16 25, .CZ 17 22, .CZ 18 25, .CZ 18 69, .CZ 19 22, .CZ 27 69, .CZ 31 69, .CZ 32 69, .CZ 33 69, .CZ 39 57, .CZ 39 58, .CZ 54 57, .CZ 54 58],
-  .measureX 69 [] [.Z 6, .Z 20, .CZ 0 2, .CZ 0 35, .CZ 0 37, .CZ 1 2, .CZ 1 4, .CZ 1 20, .CZ 1 25, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 22, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 22, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 22, .CZ 4 26, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 4 63, .CZ 5 35, .CZ 5 63, .CZ 6 8, .CZ 6 9, .CZ 6 24, .CZ 6 25, .CZ 6 35, .CZ 6 54, .CZ 6 59, .CZ 7 20, .CZ 7 22, .CZ 7 39, .CZ 7 54, .CZ 10 20, .CZ 10 25, .CZ 10 39, .CZ 10 54, .CZ 11 20, .CZ 11 22, .CZ 11 39, .CZ 11 54, .CZ 12 22, .CZ 12 39, .CZ 12 54, .CZ 13 20, .CZ 13 22, .CZ 13 39, .CZ 13 54, .CZ 14 20, .CZ 14 25, .CZ 14 39, .CZ 14 54, .CZ 15 20, .CZ 16 20, .CZ 16 25, .CZ 16 39, .CZ 16 54, .CZ 17 20, .CZ 17 22, .CZ 17 39, .CZ 17 54, .CZ 18 20, .CZ 18 22, .CZ 18 25, .CZ 18 39, .CZ 18 54, .CZ 19 20, .CZ 19 22, .CZ 19 39, .CZ 19 54, .CZ 27 39, .CZ 27 54, .CZ 39 50, .CZ 39 52, .CZ 39 57, .CZ 50 54, .CZ 52 54, .CZ 54 57],
-  .X 63,
-  .measureX 63 [] [.Z 1, .Z 3, .Z 5, .Z 6, .Z 8, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 37, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 50, .CZ 5 52, .CZ 5 54, .CZ 6 21, .CZ 6 22, .CZ 7 39, .CZ 7 54, .CZ 8 20, .CZ 9 20, .CZ 9 39, .CZ 9 54, .CZ 10 22, .CZ 10 39, .CZ 10 54, .CZ 11 20, .CZ 11 39, .CZ 11 54, .CZ 12 22, .CZ 12 39, .CZ 12 54, .CZ 13 20, .CZ 13 39, .CZ 13 54, .CZ 14 22, .CZ 14 39, .CZ 14 54, .CZ 15 22, .CZ 16 22, .CZ 16 39, .CZ 16 54, .CZ 17 39, .CZ 17 54, .CZ 18 39, .CZ 18 54, .CZ 19 39, .CZ 19 54, .CZ 27 39, .CZ 27 54, .CZ 39 50, .CZ 39 52, .CZ 39 58, .CZ 50 54, .CZ 52 54, .CZ 54 58],
-  .measureX 64 [] [.Z 8, .Z 21, .CZ 0 4, .CZ 1 4, .CZ 1 20, .CZ 2 4, .CZ 2 22, .CZ 3 4, .CZ 3 20, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 5 20, .CZ 6 22, .CZ 6 39, .CZ 6 54, .CZ 7 20, .CZ 7 22, .CZ 7 39, .CZ 7 54, .CZ 8 20, .CZ 8 39, .CZ 8 54, .CZ 9 20, .CZ 9 22, .CZ 9 39, .CZ 9 54, .CZ 10 39, .CZ 10 54, .CZ 11 20, .CZ 11 22, .CZ 11 39, .CZ 11 54, .CZ 12 22, .CZ 12 39, .CZ 12 54, .CZ 13 20, .CZ 13 22, .CZ 13 39, .CZ 13 54, .CZ 14 39, .CZ 14 54, .CZ 16 39, .CZ 16 54, .CZ 17 22, .CZ 17 39, .CZ 17 54, .CZ 18 22, .CZ 18 39, .CZ 18 54, .CZ 19 22, .CZ 19 39, .CZ 19 54, .CZ 27 39, .CZ 27 54, .CZ 39 50, .CZ 39 52, .CZ 39 57, .CZ 39 58, .CZ 50 54, .CZ 52 54, .CZ 54 57, .CZ 54 58],
-  .X 65,
-  .measureX 65 [] [.Z 0, .Z 1, .Z 4, .Z 15, .Z 18, .Z 19, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 0 24, .CZ 0 37, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 14, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 24, .CZ 1 25, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 20, .CZ 2 24, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 14, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 3 24, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 26, .CZ 4 27, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 5 6, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 17, .CZ 5 19, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 39, .CZ 5 50, .CZ 5 52, .CZ 6 21, .CZ 6 24, .CZ 6 25, .CZ 6 39, .CZ 6 54, .CZ 7 10, .CZ 7 16, .CZ 7 24, .CZ 7 39, .CZ 7 54, .CZ 8 20, .CZ 8 39, .CZ 8 54, .CZ 9 10, .CZ 9 16, .CZ 9 20, .CZ 9 39, .CZ 9 54, .CZ 10 14, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 24, .CZ 10 25, .CZ 10 26, .CZ 10 32, .CZ 10 33, .CZ 10 51, .CZ 10 54, .CZ 10 57, .CZ 10 58, .CZ 10 61, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 22, .CZ 11 26, .CZ 11 27, .CZ 11 32, .CZ 11 51, .CZ 11 54, .CZ 11 57, .CZ 11 58, .CZ 11 61, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 20, .CZ 12 25, .CZ 12 32, .CZ 12 51, .CZ 12 54, .CZ 12 57, .CZ 12 58, .CZ 12 61, .CZ 13 14, .CZ 13 15, .CZ 13 16, .CZ 13 20, .CZ 13 22, .CZ 13 26, .CZ 13 27, .CZ 13 32, .CZ 13 51, .CZ 13 54, .CZ 13 57, .CZ 13 58, .CZ 13 61, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 14 24, .CZ 14 25, .CZ 14 26, .CZ 14 50, .CZ 14 51, .CZ 14 52, .CZ 15 17, .CZ 15 19, .CZ 15 22, .CZ 15 50, .CZ 15 51, .CZ 15 52, .CZ 16 18, .CZ 16 20, .CZ 16 22, .CZ 16 24, .CZ 16 26, .CZ 16 31, .CZ 17 20, .CZ 17 22, .CZ 17 26, .CZ 17 27, .CZ 17 51, .CZ 17 54, .CZ 17 57, .CZ 17 58, .CZ 17 61, .CZ 18 20, .CZ 18 24, .CZ 18 25, .CZ 21 22, .CZ 27 50, .CZ 27 51, .CZ 39 58, .CZ 50 51, .CZ 50 54, .CZ 50 57, .CZ 50 58, .CZ 50 61, .CZ 51 54, .CZ 51 57, .CZ 51 58, .CZ 51 61, .CZ 54 58],
-  .measureX 66 [] [.Z 9, .Z 10, .Z 12, .Z 13, .Z 14, .Z 17, .Z 18, .Z 20, .Z 21, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 24, .CZ 0 25, .CZ 0 32, .CZ 0 36, .CZ 0 37, .CZ 1 2, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 15, .CZ 1 17, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 33, .CZ 1 36, .CZ 1 50, .CZ 1 51, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 22, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 15, .CZ 3 17, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 33, .CZ 3 36, .CZ 3 50, .CZ 3 51, .CZ 4 6, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 20, .CZ 4 22, .CZ 4 26, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 31, .CZ 4 33, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 5 6, .CZ 5 10, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 39, .CZ 5 51, .CZ 5 52, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 20, .CZ 6 24, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 6 39, .CZ 6 54, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 18, .CZ 7 19, .CZ 7 33, .CZ 7 39, .CZ 7 50, .CZ 7 51, .CZ 7 54, .CZ 8 39, .CZ 8 54, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 16, .CZ 9 18, .CZ 9 19, .CZ 9 20, .CZ 9 33, .CZ 9 39, .CZ 9 50, .CZ 9 51, .CZ 9 54, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 24, .CZ 10 25, .CZ 10 26, .CZ 10 31, .CZ 10 32, .CZ 10 33, .CZ 10 54, .CZ 10 57, .CZ 10 60, .CZ 10 61, .CZ 11 12, .CZ 11 13, .CZ 11 16, .CZ 11 20, .CZ 11 26, .CZ 11 31, .CZ 11 32, .CZ 11 54, .CZ 11 57, .CZ 11 60, .CZ 11 61, .CZ 12 16, .CZ 12 21, .CZ 12 28, .CZ 12 31, .CZ 12 32, .CZ 12 54, .CZ 12 57, .CZ 12 60, .CZ 12 61, .CZ 13 16, .CZ 13 26, .CZ 13 31, .CZ 13 32, .CZ 13 54, .CZ 13 57, .CZ 13 60, .CZ 13 61, .CZ 14 16, .CZ 14 25, .CZ 14 31, .CZ 14 50, .CZ 14 51, .CZ 14 52, .CZ 15 16, .CZ 15 17, .CZ 15 26, .CZ 15 50, .CZ 15 51, .CZ 16 22, .CZ 16 31, .CZ 17 18, .CZ 17 19, .CZ 17 20, .CZ 17 50, .CZ 17 51, .CZ 17 54, .CZ 17 57, .CZ 17 60, .CZ 17 61, .CZ 19 22, .CZ 19 50, .CZ 19 51, .CZ 39 58, .CZ 50 52, .CZ 50 54, .CZ 50 57, .CZ 50 60, .CZ 50 61, .CZ 51 52, .CZ 51 54, .CZ 51 57, .CZ 51 60, .CZ 51 61, .CZ 54 58],
-  .measureX 67 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 11, .Z 14, .Z 20, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 24, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 0 37, .CZ 1 2, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 24, .CZ 1 25, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 32, .CZ 2 36, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 24, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 31, .CZ 4 33, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 5 6, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 39, .CZ 5 50, .CZ 5 52, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 22, .CZ 6 24, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 6 39, .CZ 6 54, .CZ 7 10, .CZ 7 20, .CZ 7 22, .CZ 7 24, .CZ 7 39, .CZ 7 54, .CZ 8 39, .CZ 8 54, .CZ 9 10, .CZ 9 22, .CZ 9 39, .CZ 9 54, .CZ 10 14, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 22, .CZ 10 26, .CZ 10 27, .CZ 10 33, .CZ 10 50, .CZ 10 51, .CZ 11 14, .CZ 11 27, .CZ 11 50, .CZ 11 51, .CZ 12 14, .CZ 12 20, .CZ 12 22, .CZ 12 24, .CZ 12 25, .CZ 12 27, .CZ 12 28, .CZ 12 50, .CZ 12 51, .CZ 13 14, .CZ 13 27, .CZ 13 50, .CZ 13 51, .CZ 14 20, .CZ 14 22, .CZ 14 24, .CZ 14 27, .CZ 14 32, .CZ 15 22, .CZ 16 22, .CZ 16 25, .CZ 16 26, .CZ 17 20, .CZ 17 22, .CZ 18 24, .CZ 18 25, .CZ 19 20, .CZ 19 22, .CZ 27 50, .CZ 27 51, .CZ 39 58, .CZ 50 52, .CZ 50 62, .CZ 51 52, .CZ 54 58, .CZ 54 62, .CZ 57 62, .CZ 58 62, .CZ 61 62],
-  .measureX 68 [] [.Z 1, .Z 3, .Z 5, .Z 6, .Z 7, .Z 21, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 25, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 0 37, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 22, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 22, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 28, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 50, .CZ 5 52, .CZ 5 54, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 20, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 39, .CZ 6 59, .CZ 8 22, .CZ 8 39, .CZ 8 54, .CZ 9 22, .CZ 9 39, .CZ 9 54, .CZ 10 39, .CZ 10 54, .CZ 11 22, .CZ 11 39, .CZ 11 54, .CZ 12 20, .CZ 12 22, .CZ 12 28, .CZ 12 39, .CZ 12 54, .CZ 13 22, .CZ 13 39, .CZ 13 54, .CZ 14 39, .CZ 14 54, .CZ 16 39, .CZ 16 54, .CZ 17 20, .CZ 17 22, .CZ 17 39, .CZ 17 54, .CZ 18 22, .CZ 18 39, .CZ 18 54, .CZ 19 20, .CZ 19 22, .CZ 19 39, .CZ 19 54, .CZ 27 39, .CZ 27 54, .CZ 39 50, .CZ 39 52, .CZ 39 58, .CZ 50 54, .CZ 52 54, .CZ 54 58],
-  .measureX 57 [] [.Z 1, .Z 3, .Z 4, .Z 8, .Z 21, .Z 22, .CZ 0 5, .CZ 0 22, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 5, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 20, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 39, .CZ 5 50, .CZ 5 52, .CZ 6 20, .CZ 6 21, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
-  .measureX 58 [] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 20, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 25, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 22, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 31, .CZ 4 33, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 39, .CZ 5 50, .CZ 5 52, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 22, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 9 22, .CZ 10 20, .CZ 10 22, .CZ 10 25, .CZ 11 22, .CZ 12 20, .CZ 12 22, .CZ 12 28, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 14 25, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 16 25, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 18 25, .CZ 19 20, .CZ 19 22],
-  .measureX 59 [] [.Z 1, .Z 2, .Z 5, .Z 6, .Z 8, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 37, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 20, .CZ 2 22, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 50, .CZ 4 52, .CZ 4 54, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 50, .CZ 5 52, .CZ 5 54, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 39, .CZ 6 54, .CZ 8 20, .CZ 8 22, .CZ 8 39, .CZ 8 54, .CZ 9 20, .CZ 10 22, .CZ 10 39, .CZ 10 54, .CZ 11 20, .CZ 11 22, .CZ 11 39, .CZ 11 54, .CZ 12 22, .CZ 12 39, .CZ 12 54, .CZ 13 20, .CZ 13 22, .CZ 13 39, .CZ 13 54, .CZ 14 22, .CZ 14 39, .CZ 14 54, .CZ 16 22, .CZ 16 39, .CZ 16 54, .CZ 17 22, .CZ 17 39, .CZ 17 54, .CZ 18 39, .CZ 18 54, .CZ 19 22, .CZ 19 39, .CZ 19 54, .CZ 21 22, .CZ 27 39, .CZ 27 54, .CZ 39 50, .CZ 39 52, .CZ 50 54, .CZ 52 54],
-  .X 60,
-  .measureX 60 [] [.Z 0, .Z 3, .Z 5, .Z 6, .Z 8, .Z 14, .Z 18, .Z 20, .Z 21, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 26, .CZ 1 29, .CZ 1 30, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 22, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 26, .CZ 3 29, .CZ 3 30, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 33, .CZ 5 39, .CZ 5 50, .CZ 5 52, .CZ 6 21, .CZ 7 20, .CZ 8 20, .CZ 8 22, .CZ 10 15, .CZ 10 22, .CZ 11 15, .CZ 12 15, .CZ 12 20, .CZ 13 15, .CZ 14 20, .CZ 14 22, .CZ 15 16, .CZ 15 17, .CZ 15 19, .CZ 15 20, .CZ 15 22, .CZ 15 50, .CZ 15 51, .CZ 15 52, .CZ 16 22, .CZ 17 20, .CZ 18 20, .CZ 18 22, .CZ 19 20, .CZ 21 22],
-  .measureX 61 [] [.Z 0, .Z 2, .Z 8, .Z 11, .Z 15, .Z 18, .Z 19, .Z 21, .Z 22, .CZ 0 2, .CZ 0 4, .CZ 0 20, .CZ 0 25, .CZ 0 37, .CZ 1 4, .CZ 1 16, .CZ 1 20, .CZ 1 22, .CZ 2 4, .CZ 2 20, .CZ 3 4, .CZ 3 16, .CZ 3 20, .CZ 3 22, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 39, .CZ 4 50, .CZ 4 52, .CZ 5 16, .CZ 5 20, .CZ 5 22, .CZ 7 16, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 9 16, .CZ 9 20, .CZ 9 22, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 24, .CZ 10 25, .CZ 10 26, .CZ 10 27, .CZ 10 32, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 20, .CZ 11 22, .CZ 11 32, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 25, .CZ 12 26, .CZ 12 27, .CZ 12 32, .CZ 13 14, .CZ 13 15, .CZ 13 16, .CZ 13 22, .CZ 13 32, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 14 20, .CZ 14 22, .CZ 14 25, .CZ 14 50, .CZ 14 51, .CZ 14 52, .CZ 15 17, .CZ 15 19, .CZ 15 20, .CZ 15 50, .CZ 15 51, .CZ 15 52, .CZ 16 18, .CZ 16 20, .CZ 16 31, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 19 20, .CZ 19 22, .CZ 21 22],
-  .X 62,
-  .measureX 62 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 17, .Z 18, .Z 20, .Z 21, .CZ 0 25, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 24, .CZ 1 25, .CZ 1 26, .CZ 1 33, .CZ 2 20, .CZ 2 22, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 24, .CZ 3 26, .CZ 3 33, .CZ 4 25, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 24, .CZ 5 26, .CZ 5 33, .CZ 6 25, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 24, .CZ 7 26, .CZ 7 33, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 26, .CZ 9 33, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 27, .CZ 10 33, .CZ 11 12, .CZ 11 16, .CZ 11 20, .CZ 12 16, .CZ 12 21, .CZ 12 24, .CZ 12 26, .CZ 12 27, .CZ 13 16, .CZ 13 20, .CZ 14 24, .CZ 14 26, .CZ 15 16, .CZ 15 20, .CZ 16 18, .CZ 16 20, .CZ 16 24, .CZ 16 26, .CZ 16 31, .CZ 18 20, .CZ 18 25, .CZ 50 52, .CZ 51 52],
-  .measureX 50 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 7, .Z 10, .Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 22, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 25, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 10, .CZ 1 25, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 22, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 10, .CZ 3 20, .CZ 3 22, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 26, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 36, .CZ 5 10, .CZ 5 20, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 21, .CZ 6 22, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 10, .CZ 7 20, .CZ 8 20, .CZ 9 10, .CZ 9 20, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 24, .CZ 10 25, .CZ 10 26, .CZ 10 33, .CZ 12 20, .CZ 12 22, .CZ 12 28, .CZ 14 25, .CZ 15 20, .CZ 16 20, .CZ 16 25, .CZ 17 20, .CZ 18 20, .CZ 18 25, .CZ 19 20]
+  .measureX 69 [] [.Z 0, .Z 1, .Z 6, .Z 21, .Z 22, .CZ 0 3, .CZ 0 20, .CZ 2 22, .CZ 4 20, .CZ 4 40, .CZ 4 52, .CZ 5 20, .CZ 6 8, .CZ 6 9, .CZ 6 25, .CZ 6 40, .CZ 6 52, .CZ 6 68, .CZ 7 20, .CZ 9 22, .CZ 9 40, .CZ 9 52, .CZ 11 20, .CZ 13 20, .CZ 15 20, .CZ 17 20, .CZ 19 20, .CZ 40 54, .CZ 52 54],
+  .measureX 70 [] [.Z 0, .Z 2, .Z 21, .Z 22, .CZ 0 2, .CZ 0 20, .CZ 1 20, .CZ 1 22, .CZ 2 26, .CZ 2 38, .CZ 3 20, .CZ 3 22, .CZ 4 40, .CZ 4 52, .CZ 5 20, .CZ 5 22, .CZ 6 22, .CZ 6 40, .CZ 6 52, .CZ 7 20, .CZ 7 40, .CZ 7 52, .CZ 8 40, .CZ 8 52, .CZ 9 20, .CZ 9 40, .CZ 9 52, .CZ 10 20, .CZ 10 22, .CZ 10 40, .CZ 10 54, .CZ 10 55, .CZ 10 59, .CZ 10 68, .CZ 11 20, .CZ 11 40, .CZ 11 52, .CZ 12 40, .CZ 12 52, .CZ 13 20, .CZ 13 40, .CZ 13 52, .CZ 14 40, .CZ 14 52, .CZ 15 20, .CZ 15 22, .CZ 16 40, .CZ 16 52, .CZ 17 20, .CZ 17 40, .CZ 17 52, .CZ 18 22, .CZ 18 40, .CZ 18 52, .CZ 19 20, .CZ 19 40, .CZ 19 52, .CZ 21 22, .CZ 30 40, .CZ 30 52, .CZ 40 48, .CZ 40 50, .CZ 40 53, .CZ 40 54, .CZ 48 52, .CZ 50 52, .CZ 52 53, .CZ 52 54],
+  .measureX 68 [] [.Z 1, .Z 2, .Z 3, .Z 5, .Z 7, .Z 20, .Z 21, .CZ 0 2, .CZ 0 22, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 22, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 18, .CZ 2 20, .CZ 2 21, .CZ 2 24, .CZ 2 25, .CZ 2 30, .CZ 2 31, .CZ 2 32, .CZ 2 33, .CZ 2 35, .CZ 2 39, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 20, .CZ 4 21, .CZ 4 24, .CZ 4 25, .CZ 4 26, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 36, .CZ 4 38, .CZ 4 40, .CZ 4 52, .CZ 4 59, .CZ 4 66, .CZ 5 6, .CZ 5 20, .CZ 5 34, .CZ 5 35, .CZ 5 40, .CZ 5 52, .CZ 5 60, .CZ 5 64, .CZ 6 8, .CZ 6 21, .CZ 6 22, .CZ 6 25, .CZ 6 28, .CZ 6 35, .CZ 6 52, .CZ 6 55, .CZ 6 66, .CZ 7 20, .CZ 7 40, .CZ 7 52, .CZ 8 22, .CZ 8 66, .CZ 8 67, .CZ 9 20, .CZ 9 22, .CZ 10 20, .CZ 10 22, .CZ 10 66, .CZ 11 20, .CZ 11 66, .CZ 12 20, .CZ 12 22, .CZ 12 66, .CZ 13 20, .CZ 13 66, .CZ 14 20, .CZ 14 22, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 18 66, .CZ 19 20, .CZ 19 22, .CZ 21 66, .CZ 30 66, .CZ 31 66, .CZ 32 66, .CZ 33 66, .CZ 40 53, .CZ 52 53],
+  .measureX 67 [] [.Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 20, .Z 21, .Z 22, .CZ 0 4, .CZ 0 22, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 35, .CZ 1 36, .CZ 2 4, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 18, .CZ 2 21, .CZ 2 24, .CZ 2 25, .CZ 2 26, .CZ 2 30, .CZ 2 31, .CZ 2 32, .CZ 2 33, .CZ 2 35, .CZ 2 38, .CZ 2 39, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 21, .CZ 4 22, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 29, .CZ 4 34, .CZ 4 36, .CZ 4 38, .CZ 4 40, .CZ 4 48, .CZ 4 50, .CZ 4 60, .CZ 4 64, .CZ 4 65, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 18, .CZ 5 20, .CZ 5 22, .CZ 5 24, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 40, .CZ 5 52, .CZ 5 59, .CZ 5 60, .CZ 6 8, .CZ 6 9, .CZ 6 20, .CZ 6 21, .CZ 6 25, .CZ 6 28, .CZ 6 35, .CZ 6 40, .CZ 6 55, .CZ 6 65, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 40, .CZ 8 52, .CZ 8 65, .CZ 9 20, .CZ 9 40, .CZ 9 52, .CZ 10 20, .CZ 10 22, .CZ 10 65, .CZ 11 20, .CZ 11 65, .CZ 12 20, .CZ 12 22, .CZ 12 65, .CZ 13 20, .CZ 13 65, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 18 65, .CZ 19 20, .CZ 19 22, .CZ 21 22, .CZ 30 65, .CZ 31 65, .CZ 32 65, .CZ 33 65, .CZ 34 66, .CZ 40 53, .CZ 40 54, .CZ 52 53, .CZ 52 54],
+  .measureX 66 [] [.Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 20, .Z 21, .Z 22, .CZ 0 4, .CZ 0 22, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 35, .CZ 1 36, .CZ 2 4, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 18, .CZ 2 21, .CZ 2 24, .CZ 2 25, .CZ 2 26, .CZ 2 30, .CZ 2 31, .CZ 2 32, .CZ 2 33, .CZ 2 35, .CZ 2 38, .CZ 2 39, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 21, .CZ 4 22, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 29, .CZ 4 34, .CZ 4 36, .CZ 4 38, .CZ 4 40, .CZ 4 48, .CZ 4 50, .CZ 4 60, .CZ 4 64, .CZ 4 65, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 18, .CZ 5 20, .CZ 5 22, .CZ 5 24, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 40, .CZ 5 52, .CZ 5 60, .CZ 5 64, .CZ 6 8, .CZ 6 9, .CZ 6 20, .CZ 6 21, .CZ 6 25, .CZ 6 28, .CZ 6 35, .CZ 6 40, .CZ 6 55, .CZ 6 65, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 40, .CZ 8 52, .CZ 8 65, .CZ 9 20, .CZ 9 40, .CZ 9 52, .CZ 10 20, .CZ 10 22, .CZ 10 65, .CZ 11 20, .CZ 11 65, .CZ 12 20, .CZ 12 22, .CZ 12 65, .CZ 13 20, .CZ 13 65, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 18 65, .CZ 19 20, .CZ 19 22, .CZ 21 22, .CZ 30 65, .CZ 31 65, .CZ 32 65, .CZ 33 65, .CZ 40 53, .CZ 40 54, .CZ 52 53, .CZ 52 54],
+  .measureX 65 [] [.Z 6, .Z 21, .Z 22, .CZ 0 2, .CZ 0 35, .CZ 1 2, .CZ 1 4, .CZ 1 20, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 25, .CZ 2 26, .CZ 2 32, .CZ 2 36, .CZ 2 38, .CZ 3 4, .CZ 3 20, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 22, .CZ 4 25, .CZ 4 29, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 4 59, .CZ 5 35, .CZ 5 59, .CZ 6 8, .CZ 6 9, .CZ 6 25, .CZ 6 35, .CZ 6 52, .CZ 6 55, .CZ 7 20, .CZ 7 22, .CZ 7 40, .CZ 7 52, .CZ 10 22, .CZ 10 40, .CZ 10 52, .CZ 11 20, .CZ 11 22, .CZ 11 40, .CZ 11 52, .CZ 12 22, .CZ 12 40, .CZ 12 52, .CZ 13 20, .CZ 13 22, .CZ 13 40, .CZ 13 52, .CZ 14 22, .CZ 14 40, .CZ 14 52, .CZ 15 20, .CZ 16 22, .CZ 16 40, .CZ 16 52, .CZ 17 20, .CZ 17 22, .CZ 17 40, .CZ 17 52, .CZ 18 40, .CZ 18 52, .CZ 19 20, .CZ 19 22, .CZ 19 40, .CZ 19 52, .CZ 21 22, .CZ 30 40, .CZ 30 52, .CZ 40 48, .CZ 40 50, .CZ 40 53, .CZ 48 52, .CZ 50 52, .CZ 52 53],
+  .X 59,
+  .measureX 59 [] [.Z 1, .Z 3, .Z 5, .Z 6, .Z 8, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 22, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 20, .CZ 2 22, .CZ 2 26, .CZ 2 38, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 40, .CZ 4 48, .CZ 4 50, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 24, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 48, .CZ 5 50, .CZ 5 52, .CZ 6 21, .CZ 6 22, .CZ 7 40, .CZ 7 52, .CZ 8 20, .CZ 9 20, .CZ 9 40, .CZ 9 52, .CZ 10 22, .CZ 10 40, .CZ 10 52, .CZ 11 20, .CZ 11 40, .CZ 11 52, .CZ 12 22, .CZ 12 40, .CZ 12 52, .CZ 13 20, .CZ 13 40, .CZ 13 52, .CZ 14 22, .CZ 14 40, .CZ 14 52, .CZ 15 22, .CZ 16 22, .CZ 16 40, .CZ 16 52, .CZ 17 40, .CZ 17 52, .CZ 18 40, .CZ 18 52, .CZ 19 40, .CZ 19 52, .CZ 30 40, .CZ 30 52, .CZ 40 48, .CZ 40 50, .CZ 40 54, .CZ 48 52, .CZ 50 52, .CZ 52 54]
 ]
 
-private def restore0Block80 : Program := [
-  .measureX 51 [] [.Z 0, .Z 1, .Z 4, .Z 9, .Z 10, .Z 11, .Z 14, .Z 16, .Z 19, .Z 21, .Z 22, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 24, .CZ 1 25, .CZ 1 26, .CZ 1 33, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 24, .CZ 3 26, .CZ 3 33, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 4 22, .CZ 4 26, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 36, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 33, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 22, .CZ 7 24, .CZ 7 26, .CZ 7 33, .CZ 8 20, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 22, .CZ 9 26, .CZ 9 33, .CZ 10 13, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 27, .CZ 10 33, .CZ 11 12, .CZ 11 16, .CZ 11 20, .CZ 11 22, .CZ 12 16, .CZ 12 20, .CZ 12 21, .CZ 12 24, .CZ 12 25, .CZ 12 26, .CZ 12 27, .CZ 12 28, .CZ 13 16, .CZ 13 20, .CZ 13 22, .CZ 14 22, .CZ 14 25, .CZ 15 16, .CZ 15 20, .CZ 15 22, .CZ 16 18, .CZ 16 22, .CZ 16 25, .CZ 16 31, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 18 25, .CZ 19 22],
-  .measureX 52 [] [.Z 10, .CZ 0 20, .CZ 0 22, .CZ 1 10, .CZ 1 20, .CZ 1 22, .CZ 3 10, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 10, .CZ 5 20, .CZ 5 22, .CZ 6 20, .CZ 6 22, .CZ 7 10, .CZ 7 20, .CZ 7 22, .CZ 9 10, .CZ 9 20, .CZ 9 22, .CZ 10 13, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 24, .CZ 10 26, .CZ 10 33, .CZ 11 20, .CZ 11 22, .CZ 12 20, .CZ 12 22, .CZ 13 20, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 19 20, .CZ 19 22],
-  .measureX 53 [] [.Z 0, .Z 1, .Z 4, .Z 9, .Z 14, .Z 15, .Z 16, .Z 18, .Z 19, .Z 20, .Z 21, .Z 22, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 25, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 24, .CZ 1 25, .CZ 1 26, .CZ 1 33, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 22, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 24, .CZ 3 26, .CZ 3 33, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 4 22, .CZ 4 26, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 36, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 33, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 22, .CZ 7 24, .CZ 7 26, .CZ 7 33, .CZ 8 22, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 22, .CZ 9 26, .CZ 9 33, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 22, .CZ 10 27, .CZ 10 33, .CZ 11 12, .CZ 11 15, .CZ 11 16, .CZ 11 22, .CZ 12 15, .CZ 12 16, .CZ 12 21, .CZ 12 22, .CZ 12 24, .CZ 12 25, .CZ 12 26, .CZ 12 27, .CZ 12 28, .CZ 13 15, .CZ 13 16, .CZ 13 22, .CZ 14 22, .CZ 14 25, .CZ 15 16, .CZ 15 17, .CZ 15 18, .CZ 15 19, .CZ 15 22, .CZ 15 31, .CZ 16 18, .CZ 16 20, .CZ 16 22, .CZ 16 25, .CZ 16 31, .CZ 17 22, .CZ 18 22, .CZ 18 25, .CZ 19 22],
-  .X 54,
-  .measureX 54 [] [.Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 21, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 37, .CZ 1 20, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 5 22, .CZ 6 22, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 22, .CZ 11 20, .CZ 11 22, .CZ 13 20, .CZ 13 22, .CZ 15 20, .CZ 15 22, .CZ 17 20, .CZ 17 22, .CZ 19 20, .CZ 19 22, .CZ 21 22],
-  .X 55,
-  .measureX 55 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 7, .Z 11, .Z 14, .Z 18, .Z 19, .Z 22, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 26, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 14, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 27, .CZ 1 32, .CZ 1 33, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 24, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 14, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 27, .CZ 3 32, .CZ 3 33, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 4 22, .CZ 4 26, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 36, .CZ 5 14, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 27, .CZ 5 32, .CZ 5 33, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 28, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 14, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 27, .CZ 7 32, .CZ 7 33, .CZ 8 22, .CZ 9 14, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 27, .CZ 9 32, .CZ 9 33, .CZ 10 15, .CZ 10 22, .CZ 10 25, .CZ 11 13, .CZ 11 15, .CZ 11 22, .CZ 11 26, .CZ 11 27, .CZ 12 15, .CZ 12 20, .CZ 12 28, .CZ 13 15, .CZ 13 20, .CZ 13 22, .CZ 13 26, .CZ 13 27, .CZ 14 16, .CZ 14 17, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 24, .CZ 14 26, .CZ 14 27, .CZ 14 31, .CZ 14 32, .CZ 15 16, .CZ 15 17, .CZ 15 18, .CZ 15 19, .CZ 15 31, .CZ 16 19, .CZ 16 21, .CZ 16 22, .CZ 16 25, .CZ 18 22, .CZ 18 25, .CZ 19 20, .CZ 21 22],
-  .measureX 56 [] [.Z 20, .Z 21, .Z 22, .CZ 1 22, .CZ 1 29, .CZ 3 22, .CZ 3 29, .CZ 4 22, .CZ 5 22, .CZ 5 29, .CZ 6 22, .CZ 7 22, .CZ 7 29, .CZ 9 22, .CZ 9 29, .CZ 10 22, .CZ 11 22, .CZ 11 29, .CZ 12 20, .CZ 12 21, .CZ 12 22, .CZ 13 20, .CZ 14 22, .CZ 15 22, .CZ 16 22, .CZ 17 22, .CZ 18 22, .CZ 19 22, .CZ 21 22],
+private def restore0Block72 : Program := [
+  .measureX 60 [] [.Z 8, .Z 21, .CZ 0 4, .CZ 1 4, .CZ 1 20, .CZ 2 4, .CZ 2 22, .CZ 3 4, .CZ 3 20, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 48, .CZ 4 50, .CZ 4 52, .CZ 5 20, .CZ 6 22, .CZ 6 40, .CZ 6 52, .CZ 7 20, .CZ 7 22, .CZ 7 40, .CZ 7 52, .CZ 8 20, .CZ 8 40, .CZ 8 52, .CZ 9 20, .CZ 9 22, .CZ 9 40, .CZ 9 52, .CZ 10 40, .CZ 10 52, .CZ 11 20, .CZ 11 22, .CZ 11 40, .CZ 11 52, .CZ 12 22, .CZ 12 40, .CZ 12 52, .CZ 13 20, .CZ 13 22, .CZ 13 40, .CZ 13 52, .CZ 14 40, .CZ 14 52, .CZ 16 40, .CZ 16 52, .CZ 17 22, .CZ 17 40, .CZ 17 52, .CZ 18 22, .CZ 18 40, .CZ 18 52, .CZ 19 22, .CZ 19 40, .CZ 19 52, .CZ 30 40, .CZ 30 52, .CZ 40 48, .CZ 40 50, .CZ 40 53, .CZ 40 54, .CZ 48 52, .CZ 50 52, .CZ 52 53, .CZ 52 54],
+  .X 61,
+  .measureX 61 [] [.Z 0, .Z 1, .Z 4, .Z 15, .Z 18, .Z 19, .Z 20, .Z 21, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 14, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 22, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 22, .CZ 2 26, .CZ 2 38, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 14, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 22, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 48, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 40, .CZ 5 48, .CZ 5 50, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 40, .CZ 6 52, .CZ 7 10, .CZ 7 16, .CZ 7 40, .CZ 7 52, .CZ 8 22, .CZ 8 24, .CZ 8 40, .CZ 8 52, .CZ 9 10, .CZ 9 16, .CZ 9 20, .CZ 9 40, .CZ 9 52, .CZ 10 14, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 22, .CZ 10 25, .CZ 10 28, .CZ 10 32, .CZ 10 33, .CZ 10 49, .CZ 10 52, .CZ 10 53, .CZ 10 54, .CZ 10 57, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 22, .CZ 11 30, .CZ 11 32, .CZ 11 49, .CZ 11 52, .CZ 11 53, .CZ 11 54, .CZ 11 57, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 20, .CZ 12 25, .CZ 12 32, .CZ 12 49, .CZ 12 52, .CZ 12 53, .CZ 12 54, .CZ 12 57, .CZ 13 14, .CZ 13 15, .CZ 13 16, .CZ 13 20, .CZ 13 22, .CZ 13 30, .CZ 13 32, .CZ 13 49, .CZ 13 52, .CZ 13 53, .CZ 13 54, .CZ 13 57, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 14 24, .CZ 14 48, .CZ 14 49, .CZ 14 50, .CZ 15 17, .CZ 15 19, .CZ 15 20, .CZ 15 24, .CZ 15 48, .CZ 15 49, .CZ 15 50, .CZ 16 18, .CZ 16 20, .CZ 16 22, .CZ 16 25, .CZ 16 31, .CZ 17 20, .CZ 17 22, .CZ 17 30, .CZ 17 49, .CZ 17 52, .CZ 17 53, .CZ 17 54, .CZ 17 57, .CZ 18 22, .CZ 19 20, .CZ 19 22, .CZ 30 48, .CZ 30 49, .CZ 40 54, .CZ 48 49, .CZ 48 52, .CZ 48 53, .CZ 48 54, .CZ 48 57, .CZ 49 52, .CZ 49 53, .CZ 49 54, .CZ 49 57, .CZ 52 54],
+  .measureX 62 [] [.Z 9, .Z 10, .Z 12, .Z 13, .Z 14, .Z 17, .Z 18, .Z 20, .Z 21, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 24, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 15, .CZ 1 17, .CZ 1 20, .CZ 1 22, .CZ 1 24, .CZ 1 29, .CZ 1 32, .CZ 1 33, .CZ 1 36, .CZ 1 48, .CZ 1 49, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 25, .CZ 2 27, .CZ 2 32, .CZ 2 36, .CZ 2 38, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 15, .CZ 3 17, .CZ 3 20, .CZ 3 22, .CZ 3 24, .CZ 3 29, .CZ 3 32, .CZ 3 33, .CZ 3 36, .CZ 3 48, .CZ 3 49, .CZ 4 6, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 25, .CZ 4 26, .CZ 4 27, .CZ 4 28, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 48, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 10, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 20, .CZ 5 22, .CZ 5 25, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 40, .CZ 5 49, .CZ 5 50, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 22, .CZ 6 25, .CZ 6 26, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 6 40, .CZ 6 52, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 18, .CZ 7 19, .CZ 7 24, .CZ 7 25, .CZ 7 33, .CZ 7 40, .CZ 7 48, .CZ 7 49, .CZ 7 52, .CZ 8 40, .CZ 8 52, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 16, .CZ 9 18, .CZ 9 19, .CZ 9 22, .CZ 9 24, .CZ 9 33, .CZ 9 40, .CZ 9 48, .CZ 9 49, .CZ 9 52, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 31, .CZ 10 32, .CZ 10 33, .CZ 10 52, .CZ 10 53, .CZ 10 56, .CZ 10 57, .CZ 11 12, .CZ 11 13, .CZ 11 16, .CZ 11 22, .CZ 11 24, .CZ 11 31, .CZ 11 32, .CZ 11 52, .CZ 11 53, .CZ 11 56, .CZ 11 57, .CZ 12 16, .CZ 12 20, .CZ 12 21, .CZ 12 22, .CZ 12 31, .CZ 12 32, .CZ 12 52, .CZ 12 53, .CZ 12 56, .CZ 12 57, .CZ 13 16, .CZ 13 20, .CZ 13 22, .CZ 13 24, .CZ 13 31, .CZ 13 32, .CZ 13 52, .CZ 13 53, .CZ 13 56, .CZ 13 57, .CZ 14 16, .CZ 14 28, .CZ 14 31, .CZ 14 48, .CZ 14 49, .CZ 14 50, .CZ 15 16, .CZ 15 17, .CZ 15 20, .CZ 15 22, .CZ 15 24, .CZ 15 48, .CZ 15 49, .CZ 16 22, .CZ 16 24, .CZ 16 25, .CZ 16 28, .CZ 16 31, .CZ 17 18, .CZ 17 19, .CZ 17 20, .CZ 17 48, .CZ 17 49, .CZ 17 52, .CZ 17 53, .CZ 17 56, .CZ 17 57, .CZ 19 22, .CZ 19 48, .CZ 19 49, .CZ 40 54, .CZ 48 50, .CZ 48 52, .CZ 48 53, .CZ 48 56, .CZ 48 57, .CZ 49 50, .CZ 49 52, .CZ 49 53, .CZ 49 56, .CZ 49 57, .CZ 52 54],
+  .X 63,
+  .measureX 63 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 7, .Z 11, .Z 14, .Z 15, .Z 18, .Z 19, .Z 20, .Z 21, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 25, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 16, .CZ 1 22, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 25, .CZ 2 26, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 16, .CZ 3 22, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 25, .CZ 4 26, .CZ 4 29, .CZ 4 32, .CZ 4 36, .CZ 5 16, .CZ 5 20, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 16, .CZ 7 20, .CZ 7 22, .CZ 8 22, .CZ 9 16, .CZ 9 20, .CZ 9 22, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 24, .CZ 10 30, .CZ 10 32, .CZ 10 48, .CZ 10 52, .CZ 10 53, .CZ 10 54, .CZ 10 57, .CZ 11 13, .CZ 11 15, .CZ 11 16, .CZ 11 20, .CZ 11 24, .CZ 11 32, .CZ 11 48, .CZ 11 52, .CZ 11 53, .CZ 11 54, .CZ 11 57, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 12 32, .CZ 12 48, .CZ 12 52, .CZ 12 53, .CZ 12 54, .CZ 12 57, .CZ 13 15, .CZ 13 16, .CZ 13 24, .CZ 13 32, .CZ 13 48, .CZ 13 52, .CZ 13 53, .CZ 13 54, .CZ 13 57, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 14 20, .CZ 14 22, .CZ 14 25, .CZ 14 30, .CZ 14 32, .CZ 14 48, .CZ 14 49, .CZ 14 50, .CZ 15 17, .CZ 15 19, .CZ 15 24, .CZ 15 48, .CZ 15 49, .CZ 15 50, .CZ 16 18, .CZ 16 20, .CZ 16 24, .CZ 16 31, .CZ 17 20, .CZ 17 22, .CZ 17 30, .CZ 17 49, .CZ 17 52, .CZ 17 53, .CZ 17 54, .CZ 17 57, .CZ 18 22, .CZ 19 20, .CZ 19 22, .CZ 48 49, .CZ 48 50, .CZ 48 52, .CZ 48 53, .CZ 48 54, .CZ 48 57, .CZ 48 58, .CZ 49 50, .CZ 49 52, .CZ 49 53, .CZ 49 54, .CZ 49 57, .CZ 52 58, .CZ 53 58, .CZ 54 58, .CZ 57 58],
+  .measureX 64 [] [.Z 6, .Z 21, .Z 22, .CZ 1 2, .CZ 1 4, .CZ 1 20, .CZ 1 22, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 22, .CZ 2 25, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 20, .CZ 3 22, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 4 25, .CZ 4 29, .CZ 4 32, .CZ 4 36, .CZ 4 40, .CZ 4 52, .CZ 5 20, .CZ 5 40, .CZ 5 52, .CZ 6 8, .CZ 6 9, .CZ 6 25, .CZ 6 35, .CZ 6 52, .CZ 6 55, .CZ 7 20, .CZ 7 40, .CZ 7 52, .CZ 9 22, .CZ 10 22, .CZ 10 40, .CZ 10 52, .CZ 11 20, .CZ 11 40, .CZ 11 52, .CZ 12 22, .CZ 12 40, .CZ 12 52, .CZ 13 20, .CZ 13 40, .CZ 13 52, .CZ 14 22, .CZ 14 40, .CZ 14 52, .CZ 15 20, .CZ 15 22, .CZ 16 22, .CZ 16 40, .CZ 16 52, .CZ 17 20, .CZ 17 40, .CZ 17 52, .CZ 18 40, .CZ 18 52, .CZ 19 20, .CZ 19 40, .CZ 19 52, .CZ 30 40, .CZ 30 52, .CZ 40 48, .CZ 40 50, .CZ 48 52, .CZ 50 52],
+  .measureX 53 [] [.Z 1, .Z 3, .Z 4, .Z 8, .Z 21, .Z 22, .CZ 0 5, .CZ 0 22, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 5, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 20, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 40, .CZ 5 48, .CZ 5 50, .CZ 6 20, .CZ 6 21, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
+  .measureX 54 [] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 20, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 25, .CZ 2 26, .CZ 2 32, .CZ 2 36, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 24, .CZ 4 26, .CZ 4 27, .CZ 4 28, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 40, .CZ 4 48, .CZ 4 50, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 24, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 40, .CZ 5 48, .CZ 5 50, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 8 20, .CZ 9 20, .CZ 11 20, .CZ 13 20, .CZ 15 20],
+  .measureX 55 [] [.Z 1, .Z 2, .Z 5, .Z 6, .Z 8, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 26, .CZ 2 38, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 48, .CZ 4 50, .CZ 4 52, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 48, .CZ 5 50, .CZ 5 52, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 40, .CZ 6 52, .CZ 8 20, .CZ 8 22, .CZ 8 40, .CZ 8 52, .CZ 9 20, .CZ 10 22, .CZ 10 40, .CZ 10 52, .CZ 11 20, .CZ 11 22, .CZ 11 40, .CZ 11 52, .CZ 12 22, .CZ 12 40, .CZ 12 52, .CZ 13 20, .CZ 13 22, .CZ 13 40, .CZ 13 52, .CZ 14 22, .CZ 14 40, .CZ 14 52, .CZ 16 22, .CZ 16 40, .CZ 16 52, .CZ 17 22, .CZ 17 40, .CZ 17 52, .CZ 18 40, .CZ 18 52, .CZ 19 22, .CZ 19 40, .CZ 19 52, .CZ 21 22, .CZ 30 40, .CZ 30 52, .CZ 40 48, .CZ 40 50, .CZ 48 52, .CZ 50 52],
+  .X 56,
+  .measureX 56 [] [.Z 0, .Z 3, .Z 5, .Z 6, .Z 8, .Z 14, .Z 18, .Z 20, .Z 21, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 20, .CZ 0 22, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 25, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 4, .CZ 2 5, .CZ 2 22, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 25, .CZ 3 29, .CZ 3 32, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 40, .CZ 4 48, .CZ 4 50, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 24, .CZ 5 27, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 40, .CZ 5 48, .CZ 5 50, .CZ 6 21, .CZ 7 20, .CZ 8 20, .CZ 8 22, .CZ 10 15, .CZ 10 22, .CZ 11 15, .CZ 12 15, .CZ 12 20, .CZ 13 15, .CZ 14 20, .CZ 14 22, .CZ 15 16, .CZ 15 17, .CZ 15 19, .CZ 15 20, .CZ 15 22, .CZ 15 24, .CZ 15 48, .CZ 15 49, .CZ 15 50, .CZ 16 22, .CZ 17 20, .CZ 18 20, .CZ 18 22, .CZ 19 20, .CZ 21 22],
+  .measureX 57 [] [.Z 0, .Z 2, .Z 8, .Z 11, .Z 15, .Z 18, .Z 19, .Z 21, .Z 22, .CZ 0 2, .CZ 0 4, .CZ 0 22, .CZ 1 4, .CZ 1 16, .CZ 1 20, .CZ 1 22, .CZ 2 4, .CZ 2 22, .CZ 2 26, .CZ 2 38, .CZ 3 4, .CZ 3 16, .CZ 3 20, .CZ 3 22, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 18, .CZ 4 20, .CZ 4 24, .CZ 4 25, .CZ 4 27, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 36, .CZ 4 40, .CZ 4 48, .CZ 4 50, .CZ 5 16, .CZ 5 20, .CZ 5 22, .CZ 7 16, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 9 16, .CZ 9 20, .CZ 9 22, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 30, .CZ 10 32, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 20, .CZ 11 22, .CZ 11 32, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 30, .CZ 12 32, .CZ 13 14, .CZ 13 15, .CZ 13 16, .CZ 13 22, .CZ 13 32, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 14 20, .CZ 14 22, .CZ 14 24, .CZ 14 25, .CZ 14 48, .CZ 14 49, .CZ 14 50, .CZ 15 17, .CZ 15 19, .CZ 15 20, .CZ 15 24, .CZ 15 48, .CZ 15 49, .CZ 15 50, .CZ 16 18, .CZ 16 20, .CZ 16 31, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 19 20, .CZ 19 22, .CZ 21 22],
+  .X 58,
+  .measureX 58 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 17, .Z 18, .Z 20, .Z 21, .CZ 0 20, .CZ 0 22, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 22, .CZ 1 28, .CZ 1 33, .CZ 2 20, .CZ 2 22, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 33, .CZ 4 20, .CZ 4 22, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 33, .CZ 6 20, .CZ 6 22, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 20, .CZ 7 22, .CZ 7 33, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 20, .CZ 9 22, .CZ 9 33, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 28, .CZ 10 30, .CZ 10 33, .CZ 11 12, .CZ 11 16, .CZ 11 22, .CZ 12 16, .CZ 12 20, .CZ 12 21, .CZ 12 22, .CZ 12 30, .CZ 13 16, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 15 16, .CZ 15 22, .CZ 16 18, .CZ 16 22, .CZ 16 31, .CZ 17 20, .CZ 17 22, .CZ 18 22, .CZ 19 20, .CZ 19 22, .CZ 48 50, .CZ 49 50],
+  .measureX 48 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 7, .Z 10, .Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 22, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 25, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 10, .CZ 1 20, .CZ 1 22, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 25, .CZ 2 26, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 10, .CZ 3 20, .CZ 3 22, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 25, .CZ 4 26, .CZ 4 29, .CZ 4 32, .CZ 4 36, .CZ 5 10, .CZ 5 22, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 21, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 10, .CZ 7 22, .CZ 8 20, .CZ 9 10, .CZ 9 22, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 22, .CZ 10 28, .CZ 10 33, .CZ 11 20, .CZ 11 22, .CZ 13 20, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 15 22, .CZ 16 22, .CZ 17 22, .CZ 18 22, .CZ 19 22],
+  .measureX 49 [] [.Z 0, .Z 1, .Z 4, .Z 9, .Z 10, .Z 11, .Z 14, .Z 16, .Z 19, .Z 21, .Z 22, .CZ 0 5, .CZ 0 7, .CZ 0 9, .CZ 0 14, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 22, .CZ 0 25, .CZ 0 32, .CZ 0 36, .CZ 1 2, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 28, .CZ 1 33, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 22, .CZ 2 25, .CZ 2 26, .CZ 2 32, .CZ 2 36, .CZ 3 4, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 33, .CZ 4 7, .CZ 4 9, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 4 22, .CZ 4 25, .CZ 4 26, .CZ 4 29, .CZ 4 32, .CZ 4 36, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 33, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 24, .CZ 6 26, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 35, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 18, .CZ 7 19, .CZ 7 20, .CZ 7 33, .CZ 8 20, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 15, .CZ 9 16, .CZ 9 17, .CZ 9 18, .CZ 9 19, .CZ 9 20, .CZ 9 33, .CZ 10 13, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 21, .CZ 10 28, .CZ 10 30, .CZ 10 33, .CZ 11 12, .CZ 11 16, .CZ 12 16, .CZ 12 21, .CZ 12 22, .CZ 12 30, .CZ 13 16, .CZ 14 20, .CZ 15 16, .CZ 16 18, .CZ 16 20, .CZ 16 31, .CZ 17 20, .CZ 19 20],
+  .measureX 50 [] [.Z 10, .CZ 1 10, .CZ 3 10, .CZ 5 10, .CZ 7 10, .CZ 9 10, .CZ 10 13, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 28, .CZ 10 33],
+  .measureX 51 [] [.Z 10, .Z 15, .Z 18, .Z 20, .Z 22, .CZ 1 10, .CZ 1 15, .CZ 2 20, .CZ 2 22, .CZ 3 10, .CZ 3 15, .CZ 5 10, .CZ 5 15, .CZ 7 10, .CZ 7 15, .CZ 9 10, .CZ 9 15, .CZ 10 13, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 28, .CZ 10 33, .CZ 11 15, .CZ 12 15, .CZ 13 15, .CZ 15 17, .CZ 15 18, .CZ 15 19, .CZ 15 20, .CZ 15 31, .CZ 18 20],
+  .X 52,
+  .measureX 52 [] [.Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 21, .Z 22, .CZ 0 2, .CZ 0 3, .CZ 1 20, .CZ 1 22, .CZ 2 26, .CZ 2 38, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 5 22, .CZ 6 22, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 22, .CZ 11 20, .CZ 11 22, .CZ 13 20, .CZ 13 22, .CZ 15 20, .CZ 15 22, .CZ 17 20, .CZ 17 22, .CZ 19 20, .CZ 19 22, .CZ 21 22],
   .measureX 23 [] [.Z 21, .CZ 1 20, .CZ 1 22, .CZ 3 20, .CZ 3 22, .CZ 5 20, .CZ 5 22, .CZ 7 20, .CZ 7 22, .CZ 9 20, .CZ 9 22, .CZ 11 20, .CZ 11 22, .CZ 13 20, .CZ 13 22, .CZ 15 20, .CZ 15 22, .CZ 17 20, .CZ 17 22, .CZ 19 20, .CZ 19 22, .CZ 21 22],
-  .measureX 24 [] [.Z 20, .Z 21, .Z 22, .CZ 1 20, .CZ 1 22, .CZ 3 20, .CZ 3 22, .CZ 5 20, .CZ 5 22, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 20, .CZ 9 22, .CZ 11 20, .CZ 11 22, .CZ 13 20, .CZ 13 22, .CZ 15 20, .CZ 15 22, .CZ 17 20, .CZ 17 22, .CZ 19 20, .CZ 19 22, .CZ 21 22],
-  .measureX 25 [] [.Z 20, .Z 22, .CZ 2 20, .CZ 2 22],
-  .measureX 26 [] [.Z 21, .CZ 0 20, .CZ 0 22, .CZ 2 20, .CZ 2 22, .CZ 4 20, .CZ 4 22, .CZ 6 20, .CZ 6 22, .CZ 8 20, .CZ 8 22, .CZ 10 20, .CZ 10 22, .CZ 12 20, .CZ 12 22, .CZ 14 20, .CZ 14 22, .CZ 16 20, .CZ 16 22, .CZ 18 20, .CZ 18 22, .CZ 21 22],
-  .measureX 27 [] [.Z 10, .Z 11, .Z 20, .CZ 0 20, .CZ 0 22, .CZ 1 20, .CZ 1 22, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 5 22, .CZ 6 20, .CZ 6 22, .CZ 7 20, .CZ 7 22, .CZ 9 20, .CZ 9 22, .CZ 10 13, .CZ 10 22, .CZ 11 22, .CZ 12 20, .CZ 12 22, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 19 20, .CZ 19 22],
-  .measureX 28 [] [.Z 20, .Z 22, .CZ 0 20, .CZ 0 22],
-  .measureX 29 [] [.Z 20, .Z 22, .CZ 12 20, .CZ 12 22],
-  .measureX 30 [] [.CZ 4 20, .CZ 4 22, .CZ 6 20, .CZ 6 22],
-  .measureX 31 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 10, .Z 11, .Z 12, .Z 13, .Z 15, .Z 17, .Z 19, .Z 20, .CZ 10 20, .CZ 12 20, .CZ 18 20],
+  .measureX 24 [] [.CZ 0 20, .CZ 0 22, .CZ 1 20, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 5 22, .CZ 6 20, .CZ 6 22, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 20, .CZ 9 22, .CZ 10 20, .CZ 10 22, .CZ 11 20, .CZ 11 22, .CZ 12 20, .CZ 12 22, .CZ 13 20, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 19 20, .CZ 19 22],
+  .measureX 25 [] [.Z 20, .Z 22, .CZ 8 20, .CZ 8 22],
+  .measureX 26 [] [.Z 20, .Z 22, .CZ 0 20, .CZ 0 22],
+  .measureX 27 [] [.Z 20, .Z 22, .CZ 12 20, .CZ 12 22],
+  .measureX 28 [] [.Z 20, .Z 22, .CZ 2 20, .CZ 2 22],
+  .measureX 29 [] [.CZ 4 20, .CZ 4 22, .CZ 6 20, .CZ 6 22],
+  .measureX 30 [] [.Z 10, .Z 11, .Z 20, .CZ 10 13, .CZ 10 20, .CZ 11 20, .CZ 13 20, .CZ 16 20],
+  .measureX 31 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 10, .Z 11, .Z 12, .Z 13, .Z 15, .Z 17, .Z 19, .Z 20, .CZ 10 20, .CZ 12 20, .CZ 18 20]
+]
+
+private def restore0Block73 : Program := [
   .X 32,
   .measureX 32 [] [.Z 12, .Z 13, .CZ 10 13, .CZ 12 20, .CZ 14 20],
-  .measureX 33 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 10, .Z 11, .Z 12, .Z 13, .Z 15, .Z 17, .Z 18, .Z 19, .Z 22, .CZ 0 20, .CZ 0 22, .CZ 1 20, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 5 22, .CZ 6 20, .CZ 6 22, .CZ 7 20, .CZ 7 22, .CZ 9 20, .CZ 9 22, .CZ 10 22, .CZ 11 20, .CZ 11 22, .CZ 12 22, .CZ 13 20, .CZ 13 22, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 19 20, .CZ 19 22],
+  .measureX 33 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 10, .Z 11, .Z 12, .Z 13, .Z 15, .Z 17, .Z 18, .Z 19, .Z 22, .CZ 2 20, .CZ 2 22, .CZ 10 20, .CZ 12 20],
   .measureX 34 [] [.Z 22, .CZ 1 22, .CZ 3 22, .CZ 5 22, .CZ 7 22, .CZ 9 22, .CZ 11 22, .CZ 12 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
   .measureX 35 [] [.CZ 0 22, .CZ 2 22, .CZ 4 22, .CZ 6 22, .CZ 8 22, .CZ 10 22, .CZ 12 22, .CZ 14 22, .CZ 16 22, .CZ 18 22, .CZ 21 22],
   .X 36,
-  .measureX 36 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 21, .Z 22, .CZ 0 20, .CZ 0 22, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 22, .CZ 5 22, .CZ 6 20, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 22, .CZ 10 13, .CZ 10 20, .CZ 10 22, .CZ 11 20, .CZ 11 22, .CZ 12 20, .CZ 13 20, .CZ 13 22, .CZ 14 22, .CZ 15 20, .CZ 15 22, .CZ 16 20, .CZ 16 22, .CZ 17 22, .CZ 18 20, .CZ 18 22, .CZ 19 22],
-  .measureX 37 [] [.Z 22, .CZ 1 22, .CZ 2 22, .CZ 3 22, .CZ 5 22, .CZ 7 22, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
-  .measureX 38 [] [.Z 22, .CZ 8 22],
-  .X 39,
-  .measureX 39 [] [.Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 20, .CZ 0 3, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 22, .CZ 6 22, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 20, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
+  .measureX 36 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 20, .Z 21, .CZ 1 20, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 6 22, .CZ 7 20, .CZ 8 20, .CZ 8 22, .CZ 9 20, .CZ 10 13, .CZ 12 20, .CZ 14 20, .CZ 17 20, .CZ 19 20],
+  .X 37,
+  .measureX 37 [] [.Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 20, .CZ 0 20, .CZ 0 22, .CZ 1 20, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 6 20, .CZ 6 22, .CZ 7 20, .CZ 8 20, .CZ 8 22, .CZ 9 20, .CZ 10 13, .CZ 10 22, .CZ 11 20, .CZ 12 22, .CZ 13 20, .CZ 14 20, .CZ 14 22, .CZ 15 20, .CZ 16 22, .CZ 18 22, .CZ 21 22],
+  .measureX 38 [] [.Z 22, .CZ 0 22, .CZ 1 22, .CZ 3 22, .CZ 5 22, .CZ 7 22, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
+  .measureX 39 [] [.Z 22, .CZ 8 22],
   .X 40,
-  .measureX 40 [] [.Z 2, .Z 3, .Z 20, .CZ 0 3, .CZ 2 20]
-]
-
-private def restore0Block81 : Program := [
-  .measureX 41 [] [.Z 0, .Z 1, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 20, .Z 21, .CZ 0 3, .CZ 0 20, .CZ 2 22, .CZ 5 20, .CZ 6 20, .CZ 8 20, .CZ 8 22, .CZ 11 20, .CZ 13 20, .CZ 15 20, .CZ 17 20, .CZ 19 20],
-  .measureX 42 [] [.Z 22, .CZ 0 22, .CZ 1 22, .CZ 3 22, .CZ 5 22, .CZ 7 22, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
-  .X 43,
-  .measureX 43 [] [.Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 20, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 22, .CZ 5 22, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 22, .CZ 10 13, .CZ 10 20, .CZ 11 22, .CZ 12 20, .CZ 13 22, .CZ 15 22, .CZ 16 20, .CZ 17 20, .CZ 17 22, .CZ 18 20, .CZ 19 20, .CZ 19 22, .CZ 21 22],
+  .measureX 40 [] [.Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 20, .CZ 0 3, .CZ 1 22, .CZ 2 20, .CZ 2 22, .CZ 3 22, .CZ 4 20, .CZ 4 22, .CZ 5 22, .CZ 6 22, .CZ 7 20, .CZ 7 22, .CZ 8 20, .CZ 8 22, .CZ 9 20, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
+  .measureX 41 [] [.Z 22, .CZ 1 22, .CZ 2 22, .CZ 3 22, .CZ 5 22, .CZ 7 22, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
+  .measureX 42 [] [.Z 0, .Z 2, .Z 4, .Z 5, .Z 6, .Z 8, .Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .Z 22, .CZ 0 20, .CZ 1 20, .CZ 3 20, .CZ 7 20, .CZ 9 20, .CZ 10 13, .CZ 11 20, .CZ 12 22, .CZ 13 20, .CZ 14 20, .CZ 15 20],
+  .measureX 43 [] [.Z 0, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 20, .Z 21, .CZ 0 20, .CZ 1 20, .CZ 2 22, .CZ 3 20, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 6 22, .CZ 8 20, .CZ 8 22, .CZ 11 20, .CZ 13 20, .CZ 15 20, .CZ 17 20, .CZ 19 20],
   .X 44,
   .measureX 44 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 21, .CZ 0 3, .CZ 0 20, .CZ 1 20, .CZ 2 20, .CZ 2 22, .CZ 3 20, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 6 22, .CZ 8 20, .CZ 8 22, .CZ 11 20, .CZ 13 20, .CZ 15 20, .CZ 17 20, .CZ 19 20],
-  .X 45,
-  .measureX 45 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .Z 21, .CZ 0 20, .CZ 1 20, .CZ 2 20, .CZ 2 22, .CZ 4 20, .CZ 4 22, .CZ 5 20, .CZ 6 22, .CZ 8 20, .CZ 8 22, .CZ 11 20, .CZ 13 20, .CZ 15 20, .CZ 17 20, .CZ 19 20],
-  .measureX 46 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 11, .Z 13, .Z 15, .Z 17, .Z 19, .Z 20, .Z 22, .CZ 0 20, .CZ 0 22, .CZ 4 20, .CZ 4 22, .CZ 6 20, .CZ 6 22, .CZ 10 20, .CZ 10 22, .CZ 14 20, .CZ 14 22, .CZ 16 20, .CZ 16 22, .CZ 18 20, .CZ 18 22],
-  .measureX 47 [] [.CZ 5 20],
-  .measureX 48 [] [.Z 4, .Z 8, .Z 20, .Z 22, .CZ 0 22, .CZ 1 22, .CZ 3 22, .CZ 4 20, .CZ 5 22, .CZ 7 22, .CZ 8 20, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
-  .measureX 49 [] [.Z 20, .CZ 14 20],
+  .measureX 45 [] [.Z 4, .Z 8, .Z 20, .Z 22, .CZ 0 22, .CZ 1 22, .CZ 3 22, .CZ 4 20, .CZ 5 22, .CZ 7 22, .CZ 8 20, .CZ 9 22, .CZ 11 22, .CZ 13 22, .CZ 15 22, .CZ 17 22, .CZ 19 22, .CZ 21 22],
+  .X 46,
+  .measureX 46 [] [.Z 1, .Z 3, .Z 5, .Z 7, .Z 9, .Z 12, .Z 13, .Z 14, .Z 16, .Z 17, .Z 18, .Z 19, .CZ 2 20, .CZ 2 22, .CZ 8 20, .CZ 8 22, .CZ 10 13, .CZ 11 20, .CZ 12 22, .CZ 13 20, .CZ 14 20, .CZ 15 20],
+  .measureX 47 [] [.Z 20, .CZ 16 20],
+  .measureX 71 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 72 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 73 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 74 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 75 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
   .measureX 76 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
   .measureX 77 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
-  .measureX 78 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 78 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96]
+]
+
+private def restore0Block74 : Program := [
   .measureX 79 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
   .measureX 80 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
   .measureX 81 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
   .measureX 82 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
-  .measureX 83 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
-  .measureX 84 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 83 [] [.Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96, .Z 96],
+  .measureX 84 [] [],
   .measureX 85 [] [],
   .measureX 86 [] [],
   .measureX 87 [] [],
@@ -45402,10 +45655,7 @@ private def restore0Block81 : Program := [
   .measureX 90 [] [],
   .measureX 91 [] [],
   .measureX 92 [] [],
-  .measureX 93 [] []
-]
-
-private def restore0Block82 : Program := [
+  .measureX 93 [] [],
   .measureX 94 [] [],
   .measureX 95 [] [],
   .measureX 96 [] [],
@@ -45420,25 +45670,17 @@ private def restore0Block82 : Program := [
   .measureX 97 [] [],
   .measureX 97 [] [],
   .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
-  .measureX 97 [] [],
   .measureX 97 [] []
 ]
 
-private def restore0Block83 : Program := [
+private def restore0Block75 : Program := [
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
   .measureX 97 [] [],
   .measureX 97 [] [],
   .measureX 97 [] [],
@@ -45464,12 +45706,23 @@ private def restore0Block83 : Program := [
   .measureX 97 [] []
 ]
 
-def restore0 : Program := WSlimTree.joinL restore0Block0 [restore0Block1, restore0Block2, restore0Block3, restore0Block4, restore0Block5, restore0Block6, restore0Block7, restore0Block8, restore0Block9, restore0Block10, restore0Block11, restore0Block12, restore0Block13, restore0Block14, restore0Block15, restore0Block16, restore0Block17, restore0Block18, restore0Block19, restore0Block20, restore0Block21, restore0Block22, restore0Block23, restore0Block24, restore0Block25, restore0Block26, restore0Block27, restore0Block28, restore0Block29, restore0Block30, restore0Block31, restore0Block32, restore0Block33, restore0Block34, restore0Block35, restore0Block36, restore0Block37, restore0Block38, restore0Block39, restore0Block40, restore0Block41, restore0Block42, restore0Block43, restore0Block44, restore0Block45, restore0Block46, restore0Block47, restore0Block48, restore0Block49, restore0Block50, restore0Block51, restore0Block52, restore0Block53, restore0Block54, restore0Block55, restore0Block56, restore0Block57, restore0Block58, restore0Block59, restore0Block60, restore0Block61, restore0Block62, restore0Block63, restore0Block64, restore0Block65, restore0Block66, restore0Block67, restore0Block68, restore0Block69, restore0Block70, restore0Block71, restore0Block72, restore0Block73, restore0Block74, restore0Block75, restore0Block76, restore0Block77, restore0Block78, restore0Block79, restore0Block80, restore0Block81, restore0Block82, restore0Block83]
+private def restore0Block76 : Program := [
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] [],
+  .measureX 97 [] []
+]
+
+def restore0 : Program := WSlimTree.joinL restore0Block0 [restore0Block1, restore0Block2, restore0Block3, restore0Block4, restore0Block5, restore0Block6, restore0Block7, restore0Block8, restore0Block9, restore0Block10, restore0Block11, restore0Block12, restore0Block13, restore0Block14, restore0Block15, restore0Block16, restore0Block17, restore0Block18, restore0Block19, restore0Block20, restore0Block21, restore0Block22, restore0Block23, restore0Block24, restore0Block25, restore0Block26, restore0Block27, restore0Block28, restore0Block29, restore0Block30, restore0Block31, restore0Block32, restore0Block33, restore0Block34, restore0Block35, restore0Block36, restore0Block37, restore0Block38, restore0Block39, restore0Block40, restore0Block41, restore0Block42, restore0Block43, restore0Block44, restore0Block45, restore0Block46, restore0Block47, restore0Block48, restore0Block49, restore0Block50, restore0Block51, restore0Block52, restore0Block53, restore0Block54, restore0Block55, restore0Block56, restore0Block57, restore0Block58, restore0Block59, restore0Block60, restore0Block61, restore0Block62, restore0Block63, restore0Block64, restore0Block65, restore0Block66, restore0Block67, restore0Block68, restore0Block69, restore0Block70, restore0Block71, restore0Block72, restore0Block73, restore0Block74, restore0Block75, restore0Block76]
 
 theorem restore0_checked : eval StairArchiveIntegerColumns.col263 restore0 restore0StoredIn = (true, integer_restore0Trace6Out) :=
-  WSlimTree.eval_of_checkSeq _ restore0Block0 [restore0Block1, restore0Block2, restore0Block3, restore0Block4, restore0Block5, restore0Block6, restore0Block7, restore0Block8, restore0Block9, restore0Block10, restore0Block11, restore0Block12, restore0Block13, restore0Block14, restore0Block15, restore0Block16, restore0Block17, restore0Block18, restore0Block19, restore0Block20, restore0Block21, restore0Block22, restore0Block23, restore0Block24, restore0Block25, restore0Block26, restore0Block27, restore0Block28, restore0Block29, restore0Block30, restore0Block31, restore0Block32, restore0Block33, restore0Block34, restore0Block35, restore0Block36, restore0Block37, restore0Block38, restore0Block39, restore0Block40, restore0Block41, restore0Block42, restore0Block43, restore0Block44, restore0Block45, restore0Block46, restore0Block47, restore0Block48, restore0Block49, restore0Block50, restore0Block51, restore0Block52, restore0Block53, restore0Block54, restore0Block55, restore0Block56, restore0Block57, restore0Block58, restore0Block59, restore0Block60, restore0Block61, restore0Block62, restore0Block63, restore0Block64, restore0Block65, restore0Block66, restore0Block67, restore0Block68, restore0Block69, restore0Block70, restore0Block71, restore0Block72, restore0Block73, restore0Block74, restore0Block75, restore0Block76, restore0Block77, restore0Block78, restore0Block79, restore0Block80, restore0Block81, restore0Block82, restore0Block83] _ _ (by decide +kernel)
+  WSlimTree.eval_of_checkSeq _ restore0Block0 [restore0Block1, restore0Block2, restore0Block3, restore0Block4, restore0Block5, restore0Block6, restore0Block7, restore0Block8, restore0Block9, restore0Block10, restore0Block11, restore0Block12, restore0Block13, restore0Block14, restore0Block15, restore0Block16, restore0Block17, restore0Block18, restore0Block19, restore0Block20, restore0Block21, restore0Block22, restore0Block23, restore0Block24, restore0Block25, restore0Block26, restore0Block27, restore0Block28, restore0Block29, restore0Block30, restore0Block31, restore0Block32, restore0Block33, restore0Block34, restore0Block35, restore0Block36, restore0Block37, restore0Block38, restore0Block39, restore0Block40, restore0Block41, restore0Block42, restore0Block43, restore0Block44, restore0Block45, restore0Block46, restore0Block47, restore0Block48, restore0Block49, restore0Block50, restore0Block51, restore0Block52, restore0Block53, restore0Block54, restore0Block55, restore0Block56, restore0Block57, restore0Block58, restore0Block59, restore0Block60, restore0Block61, restore0Block62, restore0Block63, restore0Block64, restore0Block65, restore0Block66, restore0Block67, restore0Block68, restore0Block69, restore0Block70, restore0Block71, restore0Block72, restore0Block73, restore0Block74, restore0Block75, restore0Block76] _ _ (by decide +kernel)
 
-theorem restore0_counts : GatePhysical restore0 ∧ toffoliCount restore0 = 60 ∧
+theorem restore0_counts : GatePhysical restore0 ∧ toffoliCount restore0 = 55 ∧
     measurementCount restore0 = 124 ∧ gateSlots restore0 = 8288 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
@@ -47939,1953 +48192,1964 @@ theorem restore1_run (row x : Nat) (m : List Bool) (s : State)
     (WSlimBlock.targets_sound _ _ (by decide +kernel)) input restore1_checked state
 
 private def enter0Block0 : Program := [
-  .CCX 0 1 16,
-  .X 8,
-  .CCX 8 9 17,
-  .X 8,
-  .CCX 2 16 18,
-  .CCX 3 18 19,
-  .X 4,
-  .CCX 4 19 20,
-  .X 4,
-  .CCX 12 20 21,
-  .CCX 20 10 22,
-  .CX 11 10,
-  .CCX 20 10 23,
-  .CX 11 10,
-  .CX 10 9,
-  .CCX 20 9 24,
-  .CX 10 9,
-  .CX 6 5,
-  .CX 7 5,
-  .CX 8 5,
-  .CX 9 5,
-  .CX 13 5,
-  .CX 14 5,
-  .CX 15 5,
-  .CCX 20 5 25,
-  .CX 15 5,
-  .CX 14 5,
-  .CX 13 5,
-  .CX 9 5,
-  .CX 8 5
+  .CCX 1 0 16,
+  .CCX 9 8 17,
+  .CCX 10 17 18,
+  .CCX 11 18 19,
+  .CCX 16 2 20,
+  .CCX 3 20 21,
+  .CCX 4 21 22,
+  .CX 11 2,
+  .X 2,
+  .CX 22 21,
+  .CCX 2 21 23,
+  .CX 22 21,
+  .X 2,
+  .CX 11 2,
+  .CX 22 21,
+  .CCX 12 21 24,
+  .CX 22 21,
+  .CX 22 21,
+  .CCX 10 21 25,
+  .CX 22 21,
+  .CX 2 0,
+  .CX 3 0,
+  .CX 4 0,
+  .CX 5 0,
+  .CX 6 0,
+  .CX 7 0,
+  .CX 8 0,
+  .CX 9 0,
+  .CX 11 0,
+  .CX 12 0
 ]
 
 private def enter0Block1 : Program := [
-  .CX 7 5,
+  .CX 13 0,
+  .CX 14 0,
+  .CX 15 0,
+  .CX 22 21,
+  .CCX 0 21 26,
+  .CX 22 21,
+  .CX 15 0,
+  .CX 14 0,
+  .CX 13 0,
+  .CX 12 0,
+  .CX 11 0,
+  .CX 9 0,
+  .CX 8 0,
+  .CX 7 0,
+  .CX 6 0,
+  .CX 5 0,
+  .CX 4 0,
+  .CX 3 0,
+  .CX 2 0,
   .CX 6 5,
-  .CX 8 7,
-  .CX 9 7,
-  .CX 10 7,
-  .CX 11 7,
-  .CX 13 7,
-  .CX 14 7,
-  .CX 15 7,
-  .CCX 20 7 26,
-  .CX 15 7,
-  .CX 14 7,
-  .CX 13 7,
-  .CX 11 7,
-  .CX 10 7,
-  .CX 9 7,
-  .CX 8 7,
-  .CX 17 9,
-  .CCX 9 10 27,
-  .CX 17 9,
-  .X 11,
-  .CCX 11 27 28,
-  .X 11,
-  .CX 8 4,
-  .CX 23 6,
-  .CX 25 6,
-  .CX 26 6,
-  .CCX 4 6 29,
-  .CX 26 6,
-  .CX 25 6
+  .CX 7 5,
+  .CX 8 5,
+  .CX 12 5,
+  .CX 13 5,
+  .CX 14 5,
+  .CX 15 5,
+  .CX 22 21,
+  .CCX 5 21 27,
+  .CX 22 21,
+  .CX 15 5
 ]
 
 private def enter0Block2 : Program := [
-  .CX 23 6,
-  .CX 8 4,
-  .CX 28 27,
-  .CX 20 12,
+  .CX 14 5,
+  .CX 13 5,
+  .CX 12 5,
+  .CX 8 5,
+  .CX 7 5,
+  .CX 6 5,
+  .CX 8 7,
+  .CX 13 7,
+  .CX 14 7,
+  .CX 15 7,
+  .CX 22 21,
+  .CCX 7 21 28,
+  .CX 22 21,
+  .CX 15 7,
+  .CX 14 7,
+  .CX 13 7,
+  .CX 8 7,
   .CX 21 12,
-  .CCX 27 12 30,
+  .CX 22 12,
+  .CX 24 12,
+  .CCX 19 12 29,
+  .CX 24 12,
+  .CX 22 12,
   .CX 21 12,
-  .CX 20 12,
-  .CX 28 27,
-  .CX 2 1,
-  .CX 23 1,
-  .CX 28 27,
-  .CX 30 27,
-  .CCX 1 27 31,
-  .CX 30 27,
-  .CX 28 27,
-  .CX 23 1,
-  .CX 2 1,
-  .CX 2 1,
-  .CX 23 1,
-  .CX 1 2,
-  .CX 22 2,
-  .CX 23 2,
-  .CX 27 2,
-  .CX 28 2,
-  .CX 30 2,
-  .CCX 1 2 32,
-  .CX 30 2,
-  .CX 28 2,
-  .CX 27 2
+  .CX 21 19,
+  .CX 22 19,
+  .CX 29 19,
+  .CCX 7 19 30,
+  .CX 29 19,
+  .CX 22 19
 ]
 
 private def enter0Block3 : Program := [
-  .CX 23 2,
-  .CX 22 2,
-  .CX 1 2,
+  .CX 21 19,
+  .CX 24 6,
+  .CX 27 6,
+  .CX 28 6,
+  .CX 8 4,
+  .CX 19 4,
+  .CX 29 4,
+  .CCX 6 4 31,
+  .CX 29 4,
+  .CX 19 4,
+  .CX 8 4,
+  .CX 28 6,
+  .CX 27 6,
+  .CX 24 6,
+  .CX 2 1,
+  .CX 23 1,
+  .CX 25 1,
+  .CX 29 19,
+  .CCX 1 19 32,
+  .CX 29 19,
+  .CX 25 1,
   .CX 23 1,
   .CX 2 1,
-  .CX 27 1,
-  .CX 28 1,
-  .CX 30 1,
-  .CX 31 1,
-  .CCX 2 1 33,
-  .CX 31 1,
-  .CX 30 1,
-  .CX 28 1,
-  .CX 27 1,
-  .CX 27 20,
-  .CX 28 20,
-  .CX 30 20,
-  .CCX 29 20 34,
-  .CX 30 20,
-  .CX 28 20,
-  .CX 27 20,
-  .CX 28 27,
-  .CX 30 27,
-  .CCX 0 27 35,
-  .CX 30 27,
-  .CX 28 27,
-  .CX 9 6,
-  .CX 28 27,
-  .CX 30 27,
-  .CCX 6 27 36
+  .CX 2 1,
+  .CX 23 1,
+  .CX 25 1,
+  .CX 1 2,
+  .CX 19 2,
+  .CX 25 2,
+  .CX 29 2
 ]
 
 private def enter0Block4 : Program := [
-  .CX 30 27,
-  .CX 28 27,
-  .CX 9 6,
-  .CX 10 7,
-  .CX 27 20,
-  .CX 28 20,
-  .CX 30 20,
-  .CCX 7 20 37,
-  .CX 30 20,
-  .CX 28 20,
-  .CX 27 20,
-  .CX 10 7,
-  .CX 20 19,
-  .CX 36 6,
-  .CCX 19 6 38,
-  .CX 36 6,
-  .CX 20 19,
-  .CX 27 7,
-  .CX 28 7,
-  .CX 30 7,
-  .CX 37 7,
-  .CCX 38 7 39,
-  .CX 37 7,
-  .CX 30 7,
-  .CX 28 7,
-  .CX 27 7,
-  .CCX 17 39 40,
-  .CX 10 7,
-  .CCX 7 39 41,
-  .CX 10 7
+  .CCX 1 2 33,
+  .CX 29 2,
+  .CX 25 2,
+  .CX 19 2,
+  .CX 1 2,
+  .CX 25 1,
+  .CX 23 1,
+  .CX 2 1,
+  .CX 29 19,
+  .CCX 0 19 34,
+  .CX 29 19,
+  .CX 19 2,
+  .CX 29 2,
+  .CX 32 2,
+  .CCX 2 1 35,
+  .CX 32 2,
+  .CX 29 2,
+  .CX 19 2,
+  .CX 8 4,
+  .CX 21 4,
+  .CX 22 4,
+  .CCX 31 4 36,
+  .CX 22 4,
+  .CX 21 4,
+  .CX 8 4,
+  .CX 8 3,
+  .X 3,
+  .CX 21 19,
+  .CX 22 19,
+  .CX 29 19
 ]
 
 private def enter0Block5 : Program := [
-  .CX 23 5,
-  .CX 25 5,
-  .CX 26 5,
-  .CX 28 27,
-  .CX 29 27,
-  .CX 30 27,
-  .CX 36 27,
-  .CX 39 27,
-  .CCX 5 27 42,
-  .CX 39 27,
-  .CX 36 27,
-  .CX 30 27,
-  .CX 29 27,
-  .CX 28 27,
-  .CX 26 5,
-  .CX 25 5,
-  .CX 23 5,
-  .CCX 8 39 43,
-  .X 12,
-  .CCX 12 39 44,
-  .X 12,
-  .CX 2 1,
-  .CX 3 1,
-  .CX 4 1,
-  .CX 5 1,
-  .CX 6 1,
-  .CX 7 1,
-  .CX 8 1,
-  .CX 9 1,
-  .CX 10 1
+  .CCX 3 19 37,
+  .CX 29 19,
+  .CX 22 19,
+  .CX 21 19,
+  .X 3,
+  .CX 8 3,
+  .CX 19 6,
+  .CX 29 6,
+  .CX 31 6,
+  .CX 36 6,
+  .CCX 22 6 38,
+  .CX 36 6,
+  .CX 31 6,
+  .CX 29 6,
+  .CX 19 6,
+  .CX 30 7,
+  .CCX 7 38 39,
+  .CX 30 7,
+  .CCX 12 39 40,
+  .CX 40 39,
+  .CCX 9 39 41,
+  .CX 40 39,
+  .CCX 9 39 42,
+  .CX 1 0,
+  .CX 2 0,
+  .CX 4 0,
+  .CX 5 0,
+  .CX 6 0,
+  .CX 7 0,
+  .CX 13 0
 ]
 
 private def enter0Block6 : Program := [
-  .CX 11 1,
-  .CX 12 1,
-  .CX 13 1,
-  .CX 14 1,
-  .CX 15 1,
-  .CX 44 1,
-  .X 1,
-  .CX 28 27,
-  .CX 30 27,
-  .CX 39 27,
-  .CCX 1 27 45,
-  .CX 39 27,
-  .CX 30 27,
-  .CX 28 27,
-  .X 1,
-  .CX 44 1,
-  .CX 15 1,
-  .CX 14 1,
-  .CX 13 1,
-  .CX 12 1,
-  .CX 11 1,
-  .CX 10 1,
-  .CX 9 1,
-  .CX 8 1,
-  .CX 7 1,
-  .CX 6 1,
-  .CX 5 1,
-  .CX 4 1,
-  .CX 3 1,
-  .CX 2 1
+  .CX 14 0,
+  .CX 15 0,
+  .CX 21 19,
+  .CX 22 19,
+  .CX 29 19,
+  .CX 39 19,
+  .CCX 0 19 43,
+  .CX 39 19,
+  .CX 29 19,
+  .CX 22 19,
+  .CX 21 19,
+  .CX 15 0,
+  .CX 14 0,
+  .CX 13 0,
+  .CX 7 0,
+  .CX 6 0,
+  .CX 5 0,
+  .CX 4 0,
+  .CX 2 0,
+  .CX 1 0,
+  .CX 24 5,
+  .CX 27 5,
+  .CX 28 5,
+  .CX 39 31,
+  .CCX 5 31 44,
+  .CX 39 31,
+  .CX 28 5,
+  .CX 27 5,
+  .CX 24 5,
+  .CX 8 7
 ]
 
 private def enter0Block7 : Program := [
-  .CX 23 5,
-  .CX 25 5,
-  .CX 26 5,
-  .CX 28 27,
-  .CX 29 27,
-  .CX 30 27,
-  .CX 35 27,
-  .CX 36 27,
-  .CX 45 27,
-  .CCX 5 27 46,
-  .CX 45 27,
-  .CX 36 27,
-  .CX 35 27,
-  .CX 30 27,
-  .CX 29 27,
-  .CX 28 27,
-  .CX 26 5,
-  .CX 25 5,
-  .CX 23 5,
-  .CX 27 20,
-  .CX 28 20,
-  .CX 30 20,
-  .CX 39 20,
-  .CX 4 3,
-  .CX 8 3,
-  .CX 42 3,
-  .CCX 20 3 47,
-  .CX 42 3,
-  .CX 8 3,
-  .CX 4 3
+  .CX 13 7,
+  .CX 14 7,
+  .CX 15 7,
+  .CX 29 19,
+  .CX 39 19,
+  .CCX 7 19 45,
+  .CX 39 19,
+  .CX 29 19,
+  .CX 15 7,
+  .CX 14 7,
+  .CX 13 7,
+  .CX 8 7,
+  .CX 19 1,
+  .CX 21 1,
+  .CX 22 1,
+  .CX 23 1,
+  .CX 29 1,
+  .CX 33 1,
+  .CX 35 1,
+  .CX 1 4,
+  .CX 8 4,
+  .CX 19 4,
+  .CX 21 4,
+  .CX 22 4,
+  .CX 23 4,
+  .CX 29 4,
+  .CX 31 4,
+  .CX 33 4,
+  .CX 35 4,
+  .CX 44 4
 ]
 
 private def enter0Block8 : Program := [
-  .CX 39 20,
-  .CX 30 20,
-  .CX 28 20,
-  .CX 27 20,
-  .CX 27 20,
-  .CX 28 20,
-  .CX 30 20,
-  .CX 39 20,
-  .CX 8 3,
-  .CCX 20 3 48,
-  .CX 8 3,
-  .CX 39 20,
-  .CX 30 20,
-  .CX 28 20,
-  .CX 27 20,
-  .CX 27 20,
-  .CX 28 20,
-  .CX 30 20,
-  .CX 39 20,
-  .CX 5 4,
-  .CX 6 4,
+  .CCX 1 4 46,
+  .CX 44 4,
+  .CX 35 4,
+  .CX 33 4,
+  .CX 31 4,
+  .CX 29 4,
+  .CX 23 4,
+  .CX 22 4,
+  .CX 21 4,
+  .CX 19 4,
   .CX 8 4,
-  .CCX 20 4 49,
-  .CX 8 4,
-  .CX 6 4,
-  .CX 5 4,
-  .CX 39 20,
-  .CX 30 20,
-  .CX 28 20,
-  .CX 27 20
+  .CX 1 4,
+  .CX 35 1,
+  .CX 33 1,
+  .CX 29 1,
+  .CX 23 1,
+  .CX 22 1,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CX 22 1,
+  .CX 23 1,
+  .CX 29 1,
+  .CX 33 1,
+  .CX 35 1,
+  .CX 3 0,
+  .CX 4 0,
+  .CX 5 0,
+  .CX 6 0
 ]
 
 private def enter0Block9 : Program := [
-  .CX 41 7,
-  .X 7,
-  .CX 35 5,
-  .CX 42 5,
-  .CX 45 5,
-  .CX 46 5,
-  .CCX 7 5 50,
-  .CX 46 5,
-  .CX 45 5,
-  .CX 42 5,
-  .CX 35 5,
-  .X 7,
-  .CX 41 7,
-  .CX 2 1,
-  .CX 4 1,
-  .CX 8 1,
-  .CX 23 1,
+  .CX 7 0,
+  .CX 8 0,
+  .CX 9 0,
+  .CX 12 0,
+  .CX 13 0,
+  .CX 14 0,
+  .CX 15 0,
+  .CCX 1 0 47,
+  .CX 15 0,
+  .CX 14 0,
+  .CX 13 0,
+  .CX 12 0,
+  .CX 9 0,
+  .CX 8 0,
+  .CX 7 0,
+  .CX 6 0,
+  .CX 5 0,
+  .CX 4 0,
+  .CX 3 0,
+  .CX 35 1,
+  .CX 33 1,
   .CX 29 1,
-  .CX 36 1,
-  .CX 42 1,
-  .CX 1 2,
-  .CX 4 2,
-  .CX 8 2,
-  .CX 20 2,
-  .CX 22 2,
-  .CX 23 2,
-  .CX 27 2,
-  .CX 28 2,
-  .CX 29 2,
-  .CX 30 2
+  .CX 23 1,
+  .CX 22 1,
+  .CX 21 1,
+  .CX 19 1,
+  .CCX 10 39 48,
+  .CX 19 4,
+  .CX 24 4,
+  .CX 28 4
 ]
 
 private def enter0Block10 : Program := [
-  .CX 32 2,
-  .CX 33 2,
-  .CX 36 2,
-  .CX 42 2,
-  .CCX 1 2 51,
-  .CX 42 2,
-  .CX 36 2,
-  .CX 33 2,
-  .CX 32 2,
-  .CX 30 2,
-  .CX 29 2,
-  .CX 28 2,
-  .CX 27 2,
-  .CX 23 2,
-  .CX 22 2,
-  .CX 20 2,
-  .CX 8 2,
-  .CX 4 2,
-  .CX 1 2,
-  .CX 42 1,
-  .CX 36 1,
-  .CX 29 1,
-  .CX 23 1,
-  .CX 8 1,
-  .CX 4 1,
-  .CX 2 1,
-  .CX 20 2,
-  .CX 22 2,
-  .CX 31 2,
-  .CX 32 2
+  .CX 29 4,
+  .CX 32 4,
+  .CX 34 4,
+  .CX 37 4,
+  .CX 39 4,
+  .CX 40 4,
+  .CX 42 4,
+  .CX 43 4,
+  .CX 44 4,
+  .CX 45 4,
+  .CX 21 19,
+  .CX 22 19,
+  .CX 29 19,
+  .CX 39 19,
+  .CCX 4 19 49,
+  .CX 39 19,
+  .CX 29 19,
+  .CX 22 19,
+  .CX 21 19,
+  .CX 45 4,
+  .CX 44 4,
+  .CX 43 4,
+  .CX 42 4,
+  .CX 40 4,
+  .CX 39 4,
+  .CX 37 4,
+  .CX 34 4,
+  .CX 32 4,
+  .CX 29 4,
+  .CX 28 4
 ]
 
 private def enter0Block11 : Program := [
-  .CX 44 2,
-  .CX 21 1,
-  .CX 25 1,
-  .CX 35 1,
-  .CX 45 1,
-  .CCX 2 1 52,
-  .CX 45 1,
-  .CX 35 1,
-  .CX 25 1,
-  .CX 21 1,
-  .CX 44 2,
-  .CX 32 2,
-  .CX 31 2,
-  .CX 22 2,
-  .CX 20 2,
-  .CX 50 7,
-  .CCX 13 7 53,
-  .CX 50 7,
-  .CX 23 5,
-  .CX 25 5,
-  .CX 26 5,
-  .CX 22 21,
-  .CX 25 21,
-  .CX 27 21,
-  .CX 28 21,
-  .CX 30 21,
-  .CX 32 21,
-  .CX 33 21,
-  .CX 34 21,
-  .CX 36 21
+  .CX 24 4,
+  .CX 19 4,
+  .X 5,
+  .CX 21 19,
+  .CX 22 19,
+  .CX 24 19,
+  .CX 27 19,
+  .CX 29 19,
+  .CX 37 19,
+  .CX 39 19,
+  .CX 42 19,
+  .CX 43 19,
+  .CX 48 19,
+  .CCX 5 19 50,
+  .CX 48 19,
+  .CX 43 19,
+  .CX 42 19,
+  .CX 39 19,
+  .CX 37 19,
+  .CX 29 19,
+  .CX 27 19,
+  .CX 24 19,
+  .CX 22 19,
+  .CX 21 19,
+  .X 5,
+  .CX 24 5,
+  .CX 27 5,
+  .CX 28 5,
+  .CX 21 19,
+  .CX 22 19
 ]
 
 private def enter0Block12 : Program := [
-  .CX 52 21,
-  .CCX 5 21 54,
-  .CX 52 21,
-  .CX 36 21,
-  .CX 34 21,
-  .CX 33 21,
-  .CX 32 21,
-  .CX 30 21,
-  .CX 28 21,
-  .CX 27 21,
-  .CX 25 21,
-  .CX 22 21,
-  .CX 26 5,
-  .CX 25 5,
-  .CX 23 5,
-  .X 14,
-  .CX 13 7,
-  .CX 50 7,
-  .CX 53 7,
-  .CCX 14 7 55,
-  .CX 53 7,
-  .CX 50 7,
-  .CX 13 7,
-  .X 14,
-  .CX 2 1,
-  .CX 20 1,
+  .CX 29 19,
+  .CX 36 19,
+  .CX 47 19,
+  .CCX 5 19 51,
+  .CX 47 19,
+  .CX 36 19,
+  .CX 29 19,
+  .CX 22 19,
+  .CX 21 19,
+  .CX 28 5,
+  .CX 27 5,
+  .CX 24 5,
+  .CX 19 1,
   .CX 21 1,
   .CX 22 1,
-  .CX 25 1,
-  .CX 31 1
+  .CX 23 1,
+  .CX 29 1,
+  .CX 33 1,
+  .CX 35 1,
+  .CX 6 5,
+  .CX 51 5,
+  .CCX 1 5 52,
+  .CX 51 5,
+  .CX 6 5,
+  .CX 35 1,
+  .CX 33 1,
+  .CX 29 1,
+  .CX 23 1,
+  .CX 22 1,
+  .CX 21 1
 ]
 
 private def enter0Block13 : Program := [
-  .CX 32 1,
-  .CX 35 1,
-  .CX 44 1,
-  .CX 45 1,
-  .CX 52 1,
-  .CX 1 2,
-  .CX 4 2,
-  .CX 6 2,
-  .CX 8 2,
-  .CX 20 2,
-  .CX 22 2,
-  .CX 25 2,
-  .CX 26 2,
-  .CX 29 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 34 2,
-  .CX 35 2,
-  .CX 44 2,
-  .CX 45 2,
-  .CX 49 2,
-  .CX 52 2,
-  .CX 54 2,
-  .CCX 1 2 56,
-  .CX 54 2,
-  .CX 52 2,
-  .CX 49 2,
-  .CX 45 2,
-  .CX 44 2,
-  .CX 35 2
-]
+  .CX 19 1,
+  .CX 39 7,
+  .CX 48 7,
+  .CX 50 5,
+  .CX 50 5,
+  .CX 48 7,
+  .CX 39 7,
+  .CX 7 5,
+  .CX 39 5,
+  .CX 48 5,
+  .CX 50 5,
+  .CX 53 5,
+  .CCX 13 5 54,
+  .CX 53 5,
+  .CX 50 5,
+  .CX 48 5,
+  .CX 39 5,
+  .CX 7 5,
+  .CX 8 4,
+  .CX 19 4,
+  .CX 29 4,
+  .CX 40 4,
+  .CX 41 4,
+  .CX 21 6,
+  .CX 22 6,
+  .CX 24 6,
+  .CX 27 6,
+  .CX 32 6,
+  .CX 34 6]
 
 private def enter0Block14 : Program := [
-  .CX 34 2,
-  .CX 32 2,
-  .CX 31 2,
-  .CX 29 2,
-  .CX 26 2,
-  .CX 25 2,
-  .CX 22 2,
-  .CX 20 2,
-  .CX 8 2,
-  .CX 6 2,
-  .CX 4 2,
-  .CX 1 2,
-  .CX 52 1,
-  .CX 45 1,
-  .CX 44 1,
-  .CX 35 1,
-  .CX 32 1,
-  .CX 31 1,
-  .CX 25 1,
-  .CX 22 1,
+  .CX 43 6,
+  .CX 45 6,
+  .CX 51 6,
+  .CX 52 6,
+  .CCX 4 6 55,
+  .CX 52 6,
+  .CX 51 6,
+  .CX 45 6,
+  .CX 43 6,
+  .CX 34 6,
+  .CX 32 6,
+  .CX 27 6,
+  .CX 24 6,
+  .CX 22 6,
+  .CX 21 6,
+  .CX 41 4,
+  .CX 40 4,
+  .CX 29 4,
+  .CX 19 4,
+  .CX 8 4,
+  .CX 5 1,
+  .CX 19 1,
   .CX 21 1,
-  .CX 20 1,
-  .CX 2 1,
-  .CX 55 14,
-  .CCX 15 14 57,
-  .CX 55 14,
-  .CX 27 20,
-  .CX 28 20,
-  .CX 30 20,
-  .CX 39 20
+  .CX 22 1,
+  .CX 23 1,
+  .CX 29 1,
+  .CX 33 1,
+  .CX 35 1,
+  .CX 39 1,
+  .CX 40 1
 ]
 
 private def enter0Block15 : Program := [
-  .CX 4 3,
-  .CX 56 3,
-  .CCX 20 3 58,
-  .CX 56 3,
-  .CX 4 3,
-  .CX 39 20,
-  .CX 30 20,
-  .CX 28 20,
-  .CX 27 20,
-  .CX 20 2,
-  .CX 22 2,
-  .CX 31 2,
-  .CX 32 2,
-  .CX 44 2,
-  .CX 36 34,
-  .CX 42 34,
-  .CX 46 34,
-  .CX 49 34,
-  .CX 54 34,
-  .CCX 2 34 59,
-  .CX 54 34,
-  .CX 49 34,
-  .CX 46 34,
-  .CX 42 34,
-  .CX 36 34,
-  .CX 44 2,
-  .CX 32 2,
-  .CX 31 2,
-  .CX 22 2,
-  .CX 20 2
+  .CX 41 1,
+  .CX 46 1,
+  .CX 50 1,
+  .X 1,
+  .CX 47 44,
+  .CX 52 44,
+  .CCX 1 44 56,
+  .CX 52 44,
+  .CX 47 44,
+  .X 1,
+  .CX 50 1,
+  .CX 46 1,
+  .CX 41 1,
+  .CX 40 1,
+  .CX 39 1,
+  .CX 35 1,
+  .CX 33 1,
+  .CX 29 1,
+  .CX 23 1,
+  .CX 22 1,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 5 1,
+  .X 14,
+  .CX 7 5,
+  .CX 13 5,
+  .CX 39 5,
+  .CX 48 5,
+  .CX 50 5,
+  .CX 53 5
 ]
 
 private def enter0Block16 : Program := [
-  .CX 8 4,
-  .CX 27 4,
-  .CX 28 4,
-  .CX 30 4,
-  .CX 39 4,
-  .CX 43 4,
-  .CX 4 27,
-  .CX 28 27,
-  .CX 30 27,
-  .CX 39 27,
-  .CX 43 27,
-  .CX 59 27,
-  .CCX 4 27 60,
-  .CX 59 27,
-  .CX 43 27,
-  .CX 39 27,
-  .CX 30 27,
-  .CX 28 27,
-  .CX 4 27,
-  .CX 43 4,
-  .CX 39 4,
-  .CX 30 4,
-  .CX 28 4,
-  .CX 27 4,
-  .CX 8 4,
-  .CX 15 14,
-  .CX 55 14,
-  .CX 57 14,
+  .CX 54 5,
+  .CCX 14 5 57,
+  .CX 54 5,
+  .CX 53 5,
+  .CX 50 5,
+  .CX 48 5,
+  .CX 39 5,
+  .CX 13 5,
+  .CX 7 5,
   .X 14,
-  .CX 20 4
+  .CX 4 1,
+  .CX 6 1,
+  .CX 8 1,
+  .CX 19 1,
+  .CX 21 1,
+  .CX 22 1,
+  .CX 23 1,
+  .CX 24 1,
+  .CX 26 1,
+  .CX 27 1,
+  .CX 29 1,
+  .CX 32 1,
+  .CX 34 1,
+  .CX 36 1,
+  .CX 39 1,
+  .CX 43 1,
+  .CX 44 1,
+  .CX 45 1,
+  .CX 51 1,
+  .CX 1 2
 ]
 
 private def enter0Block17 : Program := [
-  .CX 21 4,
-  .CX 23 4,
-  .CX 25 4,
-  .CX 26 4,
-  .CX 27 4,
-  .CX 28 4,
-  .CX 30 4,
-  .CX 31 4,
-  .CX 35 4,
-  .CCX 14 4 61,
-  .CX 35 4,
-  .CX 31 4,
-  .CX 30 4,
-  .CX 28 4,
-  .CX 27 4,
-  .CX 26 4,
-  .CX 25 4,
-  .CX 23 4,
-  .CX 21 4,
-  .CX 20 4,
-  .X 14,
-  .CX 57 14,
-  .CX 55 14,
-  .CX 15 14,
-  .CX 23 6,
-  .CX 25 6,
-  .CX 26 6,
-  .CX 39 6,
-  .CX 40 6,
-  .CX 43 6
+  .CX 4 2,
+  .CX 6 2,
+  .CX 8 2,
+  .CX 21 2,
+  .CX 22 2,
+  .CX 23 2,
+  .CX 24 2,
+  .CX 26 2,
+  .CX 27 2,
+  .CX 34 2,
+  .CX 35 2,
+  .CX 36 2,
+  .CX 39 2,
+  .CX 43 2,
+  .CX 44 2,
+  .CX 45 2,
+  .CX 47 2,
+  .CX 51 2,
+  .CCX 1 2 58,
+  .CX 51 2,
+  .CX 47 2,
+  .CX 45 2,
+  .CX 44 2,
+  .CX 43 2,
+  .CX 39 2,
+  .CX 36 2,
+  .CX 35 2,
+  .CX 34 2,
+  .CX 27 2,
+  .CX 26 2
 ]
 
 private def enter0Block18 : Program := [
-  .CX 44 6,
-  .CX 51 6,
-  .CX 2 1,
-  .CX 6 1,
+  .CX 24 2,
+  .CX 23 2,
+  .CX 22 2,
+  .CX 21 2,
+  .CX 8 2,
+  .CX 6 2,
+  .CX 4 2,
+  .CX 1 2,
+  .CX 51 1,
+  .CX 45 1,
+  .CX 44 1,
+  .CX 43 1,
+  .CX 39 1,
+  .CX 36 1,
+  .CX 34 1,
+  .CX 32 1,
+  .CX 29 1,
+  .CX 27 1,
+  .CX 26 1,
+  .CX 24 1,
   .CX 23 1,
-  .CX 31 1,
-  .CX 33 1,
-  .CX 35 1,
-  .CX 39 1,
-  .CX 40 1,
-  .CX 43 1,
-  .CX 44 1,
-  .CX 45 1,
-  .CX 49 1,
-  .CX 51 1,
-  .CX 52 1,
-  .CX 54 1,
-  .CX 56 1,
-  .CCX 6 1 62,
-  .CX 56 1,
-  .CX 54 1,
-  .CX 52 1,
-  .CX 51 1,
-  .CX 49 1,
-  .CX 45 1,
-  .CX 44 1,
-  .CX 43 1,
-  .CX 40 1,
-  .CX 39 1,
-  .CX 35 1
+  .CX 22 1,
+  .CX 21 1,
+  .CX 19 1,
+  .CX 8 1,
+  .CX 6 1,
+  .CX 4 1,
+  .X 15,
+  .CX 57 14,
+  .CCX 15 14 59
 ]
 
 private def enter0Block19 : Program := [
-  .CX 33 1,
-  .CX 31 1,
-  .CX 23 1,
-  .CX 6 1,
-  .CX 2 1,
-  .CX 51 6,
-  .CX 44 6,
-  .CX 43 6,
-  .CX 40 6,
-  .CX 39 6,
-  .CX 26 6,
-  .CX 25 6,
-  .CX 23 6,
-  .CX 62 60,
-  .CX 62 59,
-  .CX 62 58,
-  .CX 62 54,
-  .CX 62 51,
-  .CX 62 48,
-  .CX 62 47,
-  .CX 62 45,
-  .CX 62 41,
-  .CX 62 40,
-  .CX 62 39,
-  .CX 62 36,
-  .CX 62 35,
-  .CX 62 33,
-  .CX 62 29,
-  .CX 62 27,
-  .CX 62 21
+  .CX 57 14,
+  .X 15,
+  .CX 19 4,
+  .CX 24 4,
+  .CX 28 4,
+  .CX 29 4,
+  .CX 32 4,
+  .CX 34 4,
+  .CX 37 4,
+  .CX 39 4,
+  .CX 40 4,
+  .CX 42 4,
+  .CX 43 4,
+  .CX 44 4,
+  .CX 45 4,
+  .CX 59 15,
+  .CCX 4 15 60,
+  .CX 59 15,
+  .CX 45 4,
+  .CX 44 4,
+  .CX 43 4,
+  .CX 42 4,
+  .CX 40 4,
+  .CX 39 4,
+  .CX 37 4,
+  .CX 34 4,
+  .CX 32 4,
+  .CX 29 4,
+  .CX 28 4,
+  .CX 24 4
 ]
 
 private def enter0Block20 : Program := [
-  .CX 62 20,
-  .CX 62 19,
-  .CX 62 18,
-  .CX 62 17,
-  .CX 62 12,
-  .CX 62 11,
-  .CX 62 7,
-  .CX 62 3,
-  .CX 62 2,
-  .CX 62 1,
+  .CX 19 4,
+  .CX 21 19,
+  .CX 22 19,
+  .CX 29 19,
+  .CX 4 3,
+  .CX 58 3,
+  .CCX 19 3 61,
+  .CX 58 3,
+  .CX 4 3,
+  .CX 29 19,
+  .CX 22 19,
+  .CX 21 19,
+  .CX 61 59,
   .CX 61 58,
+  .CX 61 57,
   .CX 61 50,
-  .CX 61 49,
-  .CX 61 48,
-  .CX 61 45,
-  .CX 61 44,
-  .CX 61 43,
+  .CX 61 42,
   .CX 61 41,
-  .CX 61 39,
-  .CX 61 38,
+  .CX 61 36,
+  .CX 61 35,
+  .CX 61 34,
+  .CX 61 31,
+  .CX 61 27,
+  .CX 61 24,
   .CX 61 21,
   .CX 61 20,
-  .CX 61 12,
-  .CX 61 8,
-  .CX 61 7,
-  .CX 61 6,
-  .CX 61 4,
-  .CX 60 61,
-  .CX 60 59,
-  .CX 60 57
+  .CX 61 19,
+  .CX 61 18,
+  .CX 61 17,
+  .CX 61 16
 ]
 
 private def enter0Block21 : Program := [
-  .CX 60 56,
-  .CX 60 55,
-  .CX 60 54,
-  .CX 60 51,
+  .CX 61 12,
+  .CX 61 11,
+  .CX 61 10,
+  .CX 61 3,
+  .CX 61 2,
+  .CX 61 1,
+  .CX 60 61,
+  .CX 60 59,
+  .CX 60 58,
+  .CX 60 57,
+  .CX 60 53,
   .CX 60 50,
   .CX 60 49,
-  .CX 60 47,
+  .CX 60 48,
+  .CX 60 45,
+  .CX 60 42,
   .CX 60 41,
   .CX 60 40,
   .CX 60 39,
   .CX 60 38,
   .CX 60 37,
-  .CX 60 36,
-  .CX 60 35,
   .CX 60 30,
   .CX 60 29,
-  .CX 60 28,
   .CX 60 27,
   .CX 60 24,
+  .CX 60 21,
+  .CX 60 20,
   .CX 60 19,
-  .CX 60 12,
-  .CX 60 11,
-  .CX 60 10,
-  .CX 60 9,
-  .CX 60 8,
-  .CX 60 7,
-  .CX 60 6,
-  .CX 60 4,
-  .CX 59 61,
-  .CX 59 60
+  .CX 60 16,
+  .CX 60 10
 ]
 
 private def enter0Block22 : Program := [
+  .CX 60 9,
+  .CX 60 8,
+  .CX 60 6,
+  .CX 60 4,
+  .CX 60 3,
+  .CX 60 2,
+  .CX 60 1,
+  .CX 59 61,
+  .CX 59 60,
   .CX 59 58,
-  .CX 59 54,
+  .CX 59 57,
+  .CX 59 53,
   .CX 59 50,
   .CX 59 49,
+  .CX 59 48,
   .CX 59 45,
-  .CX 59 44,
-  .CX 59 43,
+  .CX 59 42,
   .CX 59 41,
   .CX 59 40,
   .CX 59 39,
   .CX 59 38,
+  .CX 59 37,
+  .CX 59 30,
+  .CX 59 29,
+  .CX 59 27,
   .CX 59 24,
   .CX 59 21,
   .CX 59 20,
   .CX 59 19,
-  .CX 59 12,
-  .CX 59 8,
-  .CX 59 7,
-  .CX 59 6,
-  .CX 59 4,
-  .CX 60 59,
-  .CX 58 62,
-  .CX 58 48,
-  .CX 58 47,
-  .CX 58 45,
-  .CX 58 43,
-  .CX 58 40,
-  .CX 58 37,
-  .CX 58 36,
-  .CX 58 35
+  .CX 59 16
 ]
 
 private def enter0Block23 : Program := [
-  .CX 58 33,
+  .CX 59 10,
+  .CX 59 9,
+  .CX 59 8,
+  .CX 59 6,
+  .CX 59 4,
+  .CX 59 3,
+  .CX 59 2,
+  .CX 59 1,
+  .CX 60 59,
+  .CX 58 61,
+  .CX 58 60,
+  .CX 58 57,
+  .CX 58 53,
+  .CX 58 50,
+  .CX 58 49,
+  .CX 58 48,
+  .CX 58 45,
+  .CX 58 42,
+  .CX 58 41,
+  .CX 58 40,
+  .CX 58 39,
+  .CX 58 38,
+  .CX 58 37,
+  .CX 58 30,
   .CX 58 29,
   .CX 58 27,
+  .CX 58 24,
   .CX 58 21,
   .CX 58 20,
-  .CX 58 19,
-  .CX 58 18,
-  .CX 58 17,
-  .CX 58 16,
-  .CX 58 12,
-  .CX 58 11,
-  .CX 58 10,
-  .CX 58 3,
-  .CX 58 2,
-  .CX 58 1,
-  .CX 62 58,
-  .CX 57 59,
-  .CX 59 57,
-  .CX 56 62,
-  .CX 56 61,
-  .CX 56 60,
-  .CX 56 58,
-  .CX 56 57,
-  .CX 56 55,
-  .CX 56 54,
-  .CX 56 52,
-  .CX 56 51,
-  .CX 56 50,
-  .CX 56 49,
-  .CX 56 48
+  .CX 58 19
 ]
 
 private def enter0Block24 : Program := [
-  .CX 56 44,
+  .CX 58 16,
+  .CX 58 10,
+  .CX 58 9,
+  .CX 58 8,
+  .CX 58 6,
+  .CX 58 4,
+  .CX 58 3,
+  .CX 58 2,
+  .CX 58 1,
+  .CX 60 58,
+  .CX 57 61,
+  .CX 57 60,
+  .CX 57 56,
+  .CX 57 47,
+  .CX 57 46,
+  .CX 57 43,
+  .CX 57 42,
+  .CX 57 41,
+  .CX 57 39,
+  .CX 57 38,
+  .CX 57 36,
+  .CX 57 35,
+  .CX 57 34,
+  .CX 57 31,
+  .CX 57 22,
+  .CX 57 21,
+  .CX 57 20,
+  .CX 57 19,
+  .CX 57 18,
+  .CX 57 17
+]
+
+private def enter0Block25 : Program := [
+  .CX 57 16,
+  .CX 57 11,
+  .CX 57 10,
+  .CX 57 8,
+  .CX 57 7,
+  .CX 57 6,
+  .CX 57 4,
+  .CX 57 3,
+  .CX 57 2,
+  .CX 57 1,
+  .CX 60 57,
+  .CX 56 61,
+  .CX 56 60,
+  .CX 56 47,
+  .CX 56 46,
   .CX 56 43,
+  .CX 56 42,
+  .CX 56 41,
   .CX 56 39,
-  .CX 56 37,
+  .CX 56 38,
+  .CX 56 36,
+  .CX 56 35,
   .CX 56 34,
-  .CX 56 33,
-  .CX 56 30,
-  .CX 56 28,
-  .CX 56 26,
-  .CX 56 25,
+  .CX 56 31,
   .CX 56 22,
   .CX 56 21,
+  .CX 56 20,
+  .CX 56 19,
   .CX 56 18,
-  .CX 56 17,
+  .CX 56 17
+]
+
+private def enter0Block26 : Program := [
+  .CX 56 16,
   .CX 56 11,
   .CX 56 10,
-  .CX 56 9,
   .CX 56 8,
+  .CX 56 7,
   .CX 56 6,
   .CX 56 4,
   .CX 56 3,
   .CX 56 2,
   .CX 56 1,
-  .CX 55 57,
-  .CX 57 55,
-  .CX 54 61,
+  .CX 60 56,
+  .CX 55 38,
+  .CX 55 36,
+  .CX 55 31,
   .CX 54 60,
   .CX 54 58,
   .CX 54 56,
-  .CX 54 55
-]
-
-private def enter0Block25 : Program := [
+  .CX 54 55,
   .CX 54 51,
   .CX 54 50,
   .CX 54 49,
-  .CX 54 47,
-  .CX 54 43,
+  .CX 54 46,
+  .CX 54 42,
   .CX 54 40,
   .CX 54 39,
   .CX 54 37,
-  .CX 54 34,
+  .CX 54 35,
   .CX 54 33,
-  .CX 54 30,
-  .CX 54 28,
-  .CX 54 26,
-  .CX 54 25,
-  .CX 54 22,
+  .CX 54 32,
+  .CX 54 22
+]
+
+private def enter0Block27 : Program := [
   .CX 54 21,
   .CX 54 19,
-  .CX 54 16,
+  .CX 54 18,
+  .CX 54 17,
   .CX 54 12,
   .CX 54 11,
   .CX 54 10,
   .CX 54 8,
-  .CX 54 6,
+  .CX 54 7,
   .CX 54 4,
-  .CX 55 54,
-  .CX 53 62,
-  .CX 53 61,
-  .CX 53 60,
-  .CX 53 58,
-  .CX 53 55
-]
-
-private def enter0Block26 : Program := [
-  .CX 53 54,
-  .CX 53 52,
-  .CX 53 51,
-  .CX 53 50,
-  .CX 53 49,
+  .CX 53 57,
+  .CX 53 48,
   .CX 53 45,
-  .CX 53 41,
-  .CX 53 40,
-  .CX 53 38,
-  .CX 53 35,
-  .CX 53 34,
-  .CX 53 31,
+  .CX 53 43,
   .CX 53 30,
-  .CX 53 28,
-  .CX 53 26,
-  .CX 53 25,
-  .CX 53 24,
-  .CX 53 22,
-  .CX 53 20,
-  .CX 53 18,
-  .CX 53 11,
-  .CX 53 9,
-  .CX 53 8,
-  .CX 53 4,
-  .CX 53 3,
-  .CX 53 2,
-  .CX 53 1,
-  .CX 52 62,
-  .CX 52 61,
-  .CX 52 60
-]
-
-private def enter0Block27 : Program := [
-  .CX 52 58,
-  .CX 52 55,
+  .CX 53 10,
+  .CX 53 7,
+  .CX 57 53,
   .CX 52 54,
-  .CX 52 53,
-  .CX 52 51,
-  .CX 52 50,
   .CX 52 49,
-  .CX 52 45,
-  .CX 52 41,
-  .CX 52 40,
-  .CX 52 38,
-  .CX 52 35,
-  .CX 52 34,
-  .CX 52 31,
-  .CX 52 30,
-  .CX 52 28,
-  .CX 52 26,
-  .CX 52 25,
-  .CX 52 24,
-  .CX 52 22,
-  .CX 52 20,
-  .CX 52 18,
-  .CX 52 11,
-  .CX 52 9,
-  .CX 52 8,
-  .CX 52 4,
-  .CX 52 3,
-  .CX 52 2,
-  .CX 52 1,
-  .CX 53 52
-]
-
-private def enter0Block28 : Program := [
-  .CX 51 62,
+  .CX 52 33,
+  .CX 52 29,
+  .CX 52 19,
+  .CX 54 52,
+  .CX 51 60,
   .CX 51 58,
   .CX 51 56,
   .CX 51 55,
   .CX 51 54,
-  .CX 51 53,
+  .CX 51 52
+]
+
+private def enter0Block28 : Program := [
+  .CX 51 50,
   .CX 51 49,
-  .CX 51 48,
-  .CX 51 44,
-  .CX 51 43,
-  .CX 51 41,
-  .CX 51 38,
+  .CX 51 46,
+  .CX 51 42,
+  .CX 51 40,
+  .CX 51 39,
+  .CX 51 37,
   .CX 51 35,
-  .CX 51 30,
-  .CX 51 28,
-  .CX 51 27,
-  .CX 51 26,
-  .CX 51 25,
-  .CX 51 24,
+  .CX 51 33,
+  .CX 51 32,
   .CX 51 22,
   .CX 51 21,
   .CX 51 19,
   .CX 51 18,
+  .CX 51 17,
   .CX 51 12,
-  .CX 51 9,
+  .CX 51 11,
+  .CX 51 10,
+  .CX 51 8,
   .CX 51 7,
-  .CX 51 6,
-  .CX 51 3,
-  .CX 51 2,
-  .CX 51 1
+  .CX 51 4,
+  .CX 52 51,
+  .CX 50 53,
+  .CX 50 52,
+  .CX 50 43,
+  .CX 50 42,
+  .CX 50 9,
+  .CX 50 6,
+  .CX 52 50,
+  .CX 49 61
 ]
 
 private def enter0Block29 : Program := [
-  .CX 53 51,
-  .CX 50 62,
-  .CX 50 61,
-  .CX 50 60,
-  .CX 50 49,
-  .CX 50 47,
-  .CX 50 44,
-  .CX 50 41,
-  .CX 50 40,
-  .CX 50 39,
-  .CX 50 38,
-  .CX 50 37,
-  .CX 50 36,
-  .CX 50 35,
-  .CX 50 33,
-  .CX 50 29,
-  .CX 50 27,
-  .CX 50 19,
-  .CX 50 18,
-  .CX 50 17,
-  .CX 50 16,
-  .CX 50 11,
-  .CX 50 10,
-  .CX 50 8,
-  .CX 50 7,
-  .CX 50 6,
-  .CX 50 4,
-  .CX 50 3,
-  .CX 50 2,
-  .CX 50 1
-]
-
-private def enter0Block30 : Program := [
-  .CX 60 50,
-  .CX 49 62,
-  .CX 49 61,
-  .CX 49 60,
   .CX 49 58,
-  .CX 49 47,
-  .CX 49 44,
+  .CX 49 56,
+  .CX 49 53,
+  .CX 49 48,
+  .CX 49 46,
+  .CX 49 42,
+  .CX 49 41,
   .CX 49 40,
-  .CX 49 39,
-  .CX 49 38,
-  .CX 49 36,
-  .CX 49 35,
-  .CX 49 33,
+  .CX 49 37,
+  .CX 49 30,
   .CX 49 29,
-  .CX 49 27,
+  .CX 49 25,
+  .CX 49 22,
+  .CX 49 21,
+  .CX 49 20,
   .CX 49 19,
   .CX 49 18,
-  .CX 49 17,
   .CX 49 16,
-  .CX 49 11,
-  .CX 49 8,
-  .CX 49 6,
-  .CX 49 4,
+  .CX 49 12,
+  .CX 49 9,
   .CX 49 3,
   .CX 49 2,
   .CX 49 1,
-  .CX 58 49,
-  .CX 48 62,
-  .CX 48 58,
-  .CX 48 56
-]
-
-private def enter0Block31 : Program := [
-  .CX 48 54,
-  .CX 48 53,
-  .CX 48 51,
-  .CX 48 49,
-  .CX 48 46,
-  .CX 48 44,
+  .CX 48 57,
+  .CX 48 45,
   .CX 48 43,
-  .CX 48 42,
-  .CX 48 40,
-  .CX 48 39,
-  .CX 48 38,
-  .CX 48 37,
-  .CX 48 36,
-  .CX 48 34,
-  .CX 48 33,
-  .CX 48 25,
-  .CX 48 24,
-  .CX 48 22,
-  .CX 48 19,
-  .CX 48 17,
-  .CX 48 11,
+  .CX 48 30,
   .CX 48 10,
-  .CX 48 9,
   .CX 48 7,
-  .CX 48 6,
-  .CX 48 3,
-  .CX 48 1,
-  .CX 48 0,
-  .CX 47 61,
-  .CX 47 60
+  .CX 57 48
 ]
 
-private def enter0Block32 : Program := [
-  .CX 47 58,
-  .CX 47 56,
+private def enter0Block30 : Program := [
+  .CX 47 61,
+  .CX 47 60,
+  .CX 47 57,
   .CX 47 55,
   .CX 47 54,
-  .CX 47 51,
-  .CX 47 48,
-  .CX 47 46,
+  .CX 47 49,
   .CX 47 45,
-  .CX 47 43,
   .CX 47 41,
-  .CX 47 36,
   .CX 47 35,
   .CX 47 34,
-  .CX 47 31,
+  .CX 47 33,
   .CX 47 30,
-  .CX 47 29,
-  .CX 47 28,
-  .CX 47 24,
-  .CX 47 23,
-  .CX 47 18,
-  .CX 47 12,
-  .CX 47 9,
+  .CX 47 25,
+  .CX 47 22,
+  .CX 47 21,
+  .CX 47 17,
+  .CX 47 16,
+  .CX 47 11,
   .CX 47 8,
   .CX 47 6,
   .CX 47 4,
-  .CX 48 47,
+  .CX 47 3,
+  .CX 47 2,
+  .CX 47 1,
   .CX 46 61,
   .CX 46 60,
-  .CX 46 58,
-  .CX 46 55
+  .CX 46 52,
+  .CX 46 50,
+  .CX 46 47,
+  .CX 46 45
 ]
 
-private def enter0Block33 : Program := [
-  .CX 46 53,
-  .CX 46 48,
-  .CX 46 47,
-  .CX 46 45,
-  .CX 46 39,
+private def enter0Block31 : Program := [
+  .CX 46 44,
+  .CX 46 43,
+  .CX 46 40,
   .CX 46 38,
+  .CX 46 37,
+  .CX 46 36,
   .CX 46 35,
   .CX 46 34,
-  .CX 46 30,
+  .CX 46 32,
+  .CX 46 31,
+  .CX 46 29,
   .CX 46 28,
   .CX 46 27,
-  .CX 46 23,
+  .CX 46 24,
   .CX 46 22,
-  .CX 46 18,
-  .CX 46 12,
+  .CX 46 19,
+  .CX 46 17,
   .CX 46 11,
   .CX 46 8,
+  .CX 46 7,
   .CX 46 4,
-  .CX 47 46,
-  .CX 45 62,
-  .CX 45 61,
+  .CX 46 3,
+  .CX 46 2,
+  .CX 46 1,
+  .CX 46 0,
   .CX 45 60,
   .CX 45 58,
-  .CX 45 55,
-  .CX 45 54,
-  .CX 45 53,
-  .CX 45 48,
-  .CX 45 44,
-  .CX 45 43,
-  .CX 45 39
+  .CX 45 57,
+  .CX 45 56,
+  .CX 45 55
 ]
 
-private def enter0Block34 : Program := [
-  .CX 45 38,
+private def enter0Block32 : Program := [
+  .CX 45 54,
+  .CX 45 53,
+  .CX 45 47,
+  .CX 45 46,
+  .CX 45 42,
+  .CX 45 41,
+  .CX 45 39,
+  .CX 45 37,
   .CX 45 35,
   .CX 45 34,
-  .CX 45 30,
-  .CX 45 28,
-  .CX 45 27,
-  .CX 45 23,
+  .CX 45 33,
+  .CX 45 29,
+  .CX 45 24,
+  .CX 45 20,
   .CX 45 19,
+  .CX 45 18,
   .CX 45 16,
+  .CX 45 12,
   .CX 45 11,
   .CX 45 9,
   .CX 45 8,
+  .CX 45 6,
   .CX 45 4,
-  .CX 45 3,
-  .CX 45 2,
-  .CX 45 1,
-  .CX 48 45,
-  .CX 44 55,
-  .CX 44 54,
-  .CX 44 50,
-  .CX 44 48,
+  .CX 46 45,
+  .CX 44 61,
+  .CX 44 58,
+  .CX 44 57,
+  .CX 44 56,
+  .CX 44 53,
+  .CX 44 50
+]
+
+private def enter0Block33 : Program := [
+  .CX 44 49,
   .CX 44 47,
+  .CX 44 46,
   .CX 44 45,
-  .CX 44 43,
+  .CX 44 42,
+  .CX 44 40,
+  .CX 44 39,
   .CX 44 37,
   .CX 44 36,
   .CX 44 35,
-  .CX 44 30,
+  .CX 44 34,
+  .CX 44 32,
+  .CX 44 31,
   .CX 44 29,
-  .CX 44 28
-]
-
-private def enter0Block35 : Program := [
-  .CX 44 27,
-  .CX 44 24,
-  .CX 44 23,
-  .CX 44 22,
-  .CX 44 21,
-  .CX 44 20,
+  .CX 44 28,
+  .CX 44 25,
   .CX 44 19,
   .CX 44 18,
   .CX 44 17,
+  .CX 44 12,
   .CX 44 11,
   .CX 44 10,
   .CX 44 9,
+  .CX 44 7,
+  .CX 44 3,
+  .CX 44 2,
+  .CX 44 1,
+  .CX 44 0,
   .CX 45 44,
-  .CX 43 58,
-  .CX 43 56,
-  .CX 43 55,
-  .CX 43 54,
-  .CX 43 50,
-  .CX 43 49,
-  .CX 43 48,
-  .CX 43 47,
-  .CX 43 46,
-  .CX 43 41,
-  .CX 43 40,
-  .CX 43 39,
-  .CX 43 38,
-  .CX 43 35,
-  .CX 43 34,
-  .CX 43 33,
-  .CX 43 28
+  .CX 43 53
+]
+
+private def enter0Block34 : Program := [
+  .CX 43 52,
+  .CX 43 42,
+  .CX 43 9,
+  .CX 43 6,
+  .CX 52 43,
+  .CX 42 57,
+  .CX 42 55,
+  .CX 42 45,
+  .CX 42 40,
+  .CX 42 39,
+  .CX 42 38,
+  .CX 42 35,
+  .CX 42 29,
+  .CX 42 28,
+  .CX 42 24,
+  .CX 42 11,
+  .CX 42 10,
+  .CX 42 7,
+  .CX 42 0,
+  .CX 45 42,
+  .CX 41 61,
+  .CX 41 58,
+  .CX 41 56,
+  .CX 41 55,
+  .CX 41 54,
+  .CX 41 53,
+  .CX 41 47,
+  .CX 41 46,
+  .CX 41 40,
+  .CX 41 39
+]
+
+private def enter0Block35 : Program := [
+  .CX 41 38,
+  .CX 41 37,
+  .CX 41 36,
+  .CX 41 33,
+  .CX 41 31,
+  .CX 41 30,
+  .CX 41 29,
+  .CX 41 24,
+  .CX 41 22,
+  .CX 41 21,
+  .CX 41 17,
+  .CX 41 16,
+  .CX 41 12,
+  .CX 41 9,
+  .CX 41 3,
+  .CX 41 2,
+  .CX 41 1,
+  .CX 46 41,
+  .CX 40 61,
+  .CX 40 60,
+  .CX 40 57,
+  .CX 40 54,
+  .CX 40 53,
+  .CX 40 50,
+  .CX 40 49,
+  .CX 40 44,
+  .CX 40 43,
+  .CX 40 41,
+  .CX 40 39,
+  .CX 40 38
 ]
 
 private def enter0Block36 : Program := [
-  .CX 43 27,
-  .CX 43 23,
-  .CX 43 19,
-  .CX 43 18,
-  .CX 43 17,
-  .CX 43 16,
-  .CX 43 11,
-  .CX 43 9,
-  .CX 43 7,
-  .CX 43 0,
-  .CX 46 43,
-  .CX 42 62,
-  .CX 42 55,
-  .CX 42 50,
-  .CX 42 48,
-  .CX 42 43,
-  .CX 42 37,
-  .CX 42 36,
-  .CX 42 35,
-  .CX 42 30,
-  .CX 42 29,
-  .CX 42 28,
-  .CX 42 27,
-  .CX 42 24,
-  .CX 42 23,
-  .CX 42 21,
-  .CX 42 20,
-  .CX 42 17,
-  .CX 42 16,
-  .CX 42 12
-]
-
-private def enter0Block37 : Program := [
-  .CX 42 11,
-  .CX 42 10,
-  .CX 42 3,
-  .CX 42 2,
-  .CX 42 1,
-  .CX 43 42,
-  .CX 41 58,
-  .CX 41 49,
-  .CX 41 37,
-  .CX 41 10,
-  .CX 41 7,
-  .CX 49 41,
-  .CX 40 62,
-  .CX 40 58,
-  .CX 40 56,
-  .CX 40 51,
-  .CX 40 49,
-  .CX 40 48,
-  .CX 40 47,
-  .CX 40 41,
-  .CX 40 39,
-  .CX 40 38,
   .CX 40 36,
+  .CX 40 35,
+  .CX 40 33,
+  .CX 40 32,
   .CX 40 31,
   .CX 40 30,
   .CX 40 29,
+  .CX 40 27,
   .CX 40 25,
-  .CX 40 24,
-  .CX 40 23,
-  .CX 40 22
-]
-
-private def enter0Block38 : Program := [
+  .CX 40 22,
   .CX 40 20,
-  .CX 40 19,
-  .CX 40 12,
+  .CX 40 18,
   .CX 40 11,
-  .CX 40 8,
-  .CX 40 7,
+  .CX 40 10,
+  .CX 40 9,
+  .CX 40 6,
+  .CX 40 4,
   .CX 40 3,
   .CX 40 2,
   .CX 40 1,
-  .CX 39 62,
-  .CX 39 61,
-  .CX 39 60,
-  .CX 39 58,
+  .CX 39 54,
+  .CX 39 53,
   .CX 39 50,
   .CX 39 47,
-  .CX 39 46,
-  .CX 39 45,
-  .CX 39 38,
+  .CX 39 44,
+  .CX 39 43,
+  .CX 39 40,
   .CX 39 37,
   .CX 39 35,
-  .CX 39 30,
-  .CX 39 27,
-  .CX 39 25,
-  .CX 39 24,
-  .CX 39 22,
-  .CX 39 20,
-  .CX 39 18,
-  .CX 39 16,
-  .CX 39 12,
-  .CX 39 10
+  .CX 39 34
 ]
 
-private def enter0Block39 : Program := [
+private def enter0Block37 : Program := [
+  .CX 39 30,
+  .CX 39 28,
+  .CX 39 27,
+  .CX 39 24,
+  .CX 39 23,
+  .CX 39 22,
+  .CX 39 21,
+  .CX 39 20,
+  .CX 39 19,
+  .CX 39 18,
+  .CX 39 17,
+  .CX 39 12,
+  .CX 39 11,
+  .CX 39 9,
   .CX 39 8,
-  .CX 39 6,
   .CX 39 5,
-  .CX 39 4,
-  .CX 39 3,
   .CX 39 2,
-  .CX 39 1,
-  .CX 39 0,
-  .CX 38 56,
-  .CX 56 38,
+  .CX 38 55,
+  .CX 55 38,
+  .CX 37 61,
+  .CX 37 60,
+  .CX 37 57,
   .CX 37 55,
+  .CX 37 54,
+  .CX 37 53,
   .CX 37 50,
-  .CX 37 48,
+  .CX 37 49,
+  .CX 37 47,
   .CX 37 46,
-  .CX 37 45,
+  .CX 37 44
+]
+
+private def enter0Block38 : Program := [
+  .CX 37 43,
   .CX 37 41,
   .CX 37 40,
   .CX 37 39,
-  .CX 37 38,
   .CX 37 36,
+  .CX 37 35,
+  .CX 37 34,
+  .CX 37 31,
   .CX 37 29,
-  .CX 37 28,
+  .CX 37 27,
   .CX 37 25,
   .CX 37 23,
-  .CX 37 22,
-  .CX 37 21,
-  .CX 37 19,
   .CX 37 18,
-  .CX 37 16,
-  .CX 37 10
+  .CX 37 17,
+  .CX 37 11,
+  .CX 37 9,
+  .CX 37 6,
+  .CX 37 5,
+  .CX 37 4,
+  .CX 37 3,
+  .CX 37 1,
+  .CX 39 37,
+  .CX 36 61,
+  .CX 36 60,
+  .CX 36 57,
+  .CX 36 55,
+  .CX 36 53,
+  .CX 36 50,
+  .CX 36 49,
+  .CX 36 47
+]
+
+private def enter0Block39 : Program := [
+  .CX 36 46,
+  .CX 36 44,
+  .CX 36 43,
+  .CX 36 41,
+  .CX 36 38,
+  .CX 36 34,
+  .CX 36 32,
+  .CX 36 31,
+  .CX 36 28,
+  .CX 36 25,
+  .CX 36 19,
+  .CX 36 18,
+  .CX 36 17,
+  .CX 36 9,
+  .CX 36 8,
+  .CX 36 6,
+  .CX 36 4,
+  .CX 36 3,
+  .CX 36 2,
+  .CX 36 1,
+  .CX 35 61,
+  .CX 35 58,
+  .CX 35 57,
+  .CX 35 56,
+  .CX 35 53,
+  .CX 35 47,
+  .CX 35 46,
+  .CX 35 45,
+  .CX 35 40,
+  .CX 35 39
 ]
 
 private def enter0Block40 : Program := [
-  .CX 37 8,
-  .CX 37 5,
-  .CX 37 0,
-  .CX 38 37,
-  .CX 36 42,
-  .CX 36 34,
-  .CX 36 29,
-  .CX 42 36,
-  .CX 35 62,
-  .CX 35 53,
-  .CX 35 47,
-  .CX 35 45,
-  .CX 35 41,
-  .CX 35 40,
-  .CX 35 38,
+  .CX 35 36,
   .CX 35 34,
   .CX 35 33,
+  .CX 35 32,
   .CX 35 30,
-  .CX 35 29,
-  .CX 35 22,
+  .CX 35 26,
+  .CX 35 25,
+  .CX 35 24,
+  .CX 35 21,
   .CX 35 19,
-  .CX 35 18,
   .CX 35 17,
-  .CX 35 12,
-  .CX 35 11,
+  .CX 35 16,
+  .CX 35 10,
+  .CX 35 9,
   .CX 35 8,
-  .CX 35 6,
-  .CX 35 2,
+  .CX 35 7,
+  .CX 35 5,
   .CX 35 1,
-  .CX 34 54
+  .CX 35 0,
+  .CX 34 61,
+  .CX 34 58,
+  .CX 34 56,
+  .CX 34 53,
+  .CX 34 52,
+  .CX 34 50,
+  .CX 34 49,
+  .CX 34 47,
+  .CX 34 46,
+  .CX 34 44,
+  .CX 34 43
 ]
 
 private def enter0Block41 : Program := [
-  .CX 34 53,
-  .CX 34 48,
-  .CX 34 46,
-  .CX 34 45,
   .CX 34 41,
+  .CX 34 40,
   .CX 34 39,
-  .CX 34 36,
-  .CX 34 33,
-  .CX 34 30,
-  .CX 34 26,
-  .CX 34 23,
-  .CX 34 18,
-  .CX 34 17,
-  .CX 34 16,
-  .CX 34 12,
-  .CX 34 11,
+  .CX 34 32,
+  .CX 34 28,
+  .CX 34 25,
+  .CX 34 19,
   .CX 34 9,
+  .CX 34 8,
   .CX 34 6,
   .CX 34 5,
-  .CX 34 0,
-  .CX 36 34,
-  .CX 33 55,
-  .CX 33 42,
-  .CX 33 38,
-  .CX 33 32,
-  .CX 33 30,
+  .CX 34 3,
+  .CX 34 2,
+  .CX 34 1,
+  .CX 39 34,
+  .CX 33 54,
+  .CX 33 52,
+  .CX 33 44,
+  .CX 33 43,
+  .CX 33 39,
+  .CX 33 37,
+  .CX 33 31,
   .CX 33 29,
-  .CX 33 28,
-  .CX 38 33,
+  .CX 33 19,
+  .CX 33 18,
+  .CX 33 17,
+  .CX 33 6,
+  .CX 33 5,
+  .CX 37 33,
   .CX 32 61
 ]
 
 private def enter0Block42 : Program := [
-  .CX 32 60,
   .CX 32 58,
   .CX 32 56,
-  .CX 32 53,
+  .CX 32 54,
+  .CX 32 50,
   .CX 32 45,
-  .CX 32 42,
-  .CX 32 40,
+  .CX 32 44,
+  .CX 32 43,
   .CX 32 39,
   .CX 32 38,
-  .CX 32 37,
   .CX 32 36,
-  .CX 32 30,
-  .CX 32 29,
+  .CX 32 35,
+  .CX 32 33,
+  .CX 32 31,
   .CX 32 27,
   .CX 32 26,
-  .CX 32 23,
-  .CX 32 21,
+  .CX 32 25,
+  .CX 32 24,
+  .CX 32 20,
+  .CX 32 18,
   .CX 32 17,
+  .CX 32 16,
   .CX 32 12,
-  .CX 32 11,
+  .CX 32 10,
   .CX 32 5,
-  .CX 32 4,
-  .CX 31 37,
-  .CX 31 34,
-  .CX 31 33,
-  .CX 31 26,
-  .CX 31 25,
-  .CX 31 23,
-  .CX 31 11,
-  .CX 31 2
+  .CX 32 2,
+  .CX 32 1,
+  .CX 32 0,
+  .CX 31 54,
+  .CX 31 38,
+  .CX 31 37
 ]
 
 private def enter0Block43 : Program := [
-  .CX 33 31,
-  .CX 30 55,
+  .CX 31 36,
+  .CX 31 32,
+  .CX 31 29,
+  .CX 31 26,
+  .CX 31 25,
+  .CX 31 23,
+  .CX 31 19,
+  .CX 31 11,
+  .CX 31 10,
+  .CX 30 57,
+  .CX 30 54,
+  .CX 30 52,
+  .CX 30 50,
+  .CX 30 49,
+  .CX 30 45,
+  .CX 30 44,
+  .CX 30 43,
+  .CX 30 41,
+  .CX 30 36,
+  .CX 30 35,
+  .CX 30 34,
+  .CX 30 29,
   .CX 30 28,
-  .CX 55 30,
-  .CX 29 42,
-  .CX 29 38,
-  .CX 38 29,
-  .CX 28 55,
-  .CX 28 51,
-  .CX 28 27,
-  .CX 51 28,
-  .CX 27 54,
-  .CX 27 47,
-  .CX 27 46,
-  .CX 27 41,
-  .CX 27 37,
-  .CX 27 36,
-  .CX 27 35,
-  .CX 27 33,
-  .CX 27 28,
-  .CX 27 24,
-  .CX 27 22,
-  .CX 27 21,
-  .CX 27 17,
-  .CX 27 16,
-  .CX 27 11,
-  .CX 27 9,
-  .CX 27 3,
-  .CX 27 0,
-  .CX 28 27
+  .CX 30 26,
+  .CX 30 24,
+  .CX 30 21,
+  .CX 30 19,
+  .CX 30 17,
+  .CX 30 16,
+  .CX 30 10
 ]
 
 private def enter0Block44 : Program := [
+  .CX 30 7,
+  .CX 30 6,
+  .CX 30 3,
+  .CX 30 2,
+  .CX 30 0,
+  .CX 34 30,
+  .CX 29 54,
+  .CX 29 19,
+  .CX 54 29,
+  .CX 28 61,
+  .CX 28 58,
+  .CX 28 56,
+  .CX 28 54,
+  .CX 28 52,
+  .CX 28 50,
+  .CX 28 46,
+  .CX 28 45,
+  .CX 28 39,
+  .CX 28 38,
+  .CX 28 35,
+  .CX 28 34,
+  .CX 28 32,
+  .CX 28 27,
+  .CX 28 25,
+  .CX 28 24,
+  .CX 28 23,
+  .CX 28 20,
+  .CX 28 17,
+  .CX 28 16,
+  .CX 28 11
+]
+
+private def enter0Block45 : Program := [
+  .CX 28 10,
+  .CX 28 6,
+  .CX 28 5,
+  .CX 28 1,
+  .CX 28 0,
+  .CX 27 57,
+  .CX 27 54,
+  .CX 27 53,
+  .CX 27 47,
+  .CX 27 44,
+  .CX 27 43,
+  .CX 27 41,
+  .CX 27 40,
+  .CX 27 39,
+  .CX 27 37,
+  .CX 27 35,
+  .CX 27 33,
+  .CX 27 31,
+  .CX 27 28,
+  .CX 27 24,
+  .CX 27 23,
+  .CX 27 20,
+  .CX 27 19,
+  .CX 27 18,
+  .CX 27 17,
+  .CX 27 16,
+  .CX 27 11,
+  .CX 27 10,
+  .CX 27 9,
+  .CX 27 8
+]
+
+private def enter0Block46 : Program := [
+  .CX 27 7,
+  .CX 27 5,
+  .CX 27 3,
+  .CX 28 27,
+  .CX 26 61,
+  .CX 26 58,
+  .CX 26 57,
+  .CX 26 56,
+  .CX 26 54,
   .CX 26 53,
-  .CX 26 51,
-  .CX 26 45,
-  .CX 26 39,
+  .CX 26 41,
+  .CX 26 40,
   .CX 26 38,
-  .CX 26 37,
-  .CX 26 33,
+  .CX 26 36,
+  .CX 26 35,
   .CX 26 28,
-  .CX 26 17,
-  .CX 26 6,
-  .CX 26 5,
-  .CX 28 26,
+  .CX 26 24,
+  .CX 26 23,
+  .CX 26 21,
+  .CX 26 20,
+  .CX 26 11,
+  .CX 26 9,
+  .CX 26 8,
+  .CX 26 7,
+  .CX 26 2,
+  .CX 26 1,
   .CX 25 61,
-  .CX 25 60,
   .CX 25 58,
-  .CX 25 56,
-  .CX 25 50,
-  .CX 25 48,
+  .CX 25 57,
+  .CX 25 56
+]
+
+private def enter0Block47 : Program := [
+  .CX 25 53,
+  .CX 25 52,
   .CX 25 47,
+  .CX 25 44,
+  .CX 25 43,
+  .CX 25 41,
   .CX 25 40,
-  .CX 25 38,
-  .CX 25 36,
-  .CX 25 33,
-  .CX 25 32,
+  .CX 25 31,
   .CX 25 28,
   .CX 25 27,
   .CX 25 24,
   .CX 25 22,
   .CX 25 21,
-  .CX 25 19
-]
-
-private def enter0Block45 : Program := [
+  .CX 25 19,
   .CX 25 18,
   .CX 25 17,
-  .CX 25 12,
-  .CX 25 11,
+  .CX 25 9,
+  .CX 25 8,
+  .CX 25 7,
   .CX 25 6,
-  .CX 25 4,
+  .CX 25 3,
+  .CX 25 2,
+  .CX 25 1,
   .CX 27 25,
+  .CX 24 61,
+  .CX 24 58,
+  .CX 24 57,
+  .CX 24 56,
   .CX 24 54,
-  .CX 24 51,
-  .CX 24 50,
-  .CX 24 45,
-  .CX 24 42,
-  .CX 24 40,
-  .CX 24 36,
-  .CX 24 28,
-  .CX 24 25,
-  .CX 24 19,
-  .CX 24 9,
-  .CX 24 8,
-  .CX 25 24,
-  .CX 23 62,
-  .CX 23 61,
-  .CX 23 60,
-  .CX 23 58,
-  .CX 23 56,
-  .CX 23 51,
-  .CX 23 50,
-  .CX 23 42,
-  .CX 23 40,
-  .CX 23 39
-]
-
-private def enter0Block46 : Program := [
-  .CX 23 37,
-  .CX 23 36,
-  .CX 23 35,
-  .CX 23 33,
-  .CX 23 32,
-  .CX 23 30,
-  .CX 23 28,
-  .CX 23 26,
-  .CX 23 25,
-  .CX 23 24,
-  .CX 23 18,
-  .CX 23 17,
-  .CX 23 16,
-  .CX 23 12,
-  .CX 23 11,
-  .CX 23 6,
-  .CX 23 5,
-  .CX 23 4,
-  .CX 23 2,
-  .CX 23 1,
-  .CX 24 23,
-  .CX 22 58,
-  .CX 22 54,
-  .CX 22 53,
-  .CX 22 49,
-  .CX 22 48,
-  .CX 22 47,
-  .CX 22 42,
-  .CX 22 41,
-  .CX 22 39
-]
-
-private def enter0Block47 : Program := [
-  .CX 22 37,
-  .CX 22 35,
-  .CX 22 34,
-  .CX 22 31,
-  .CX 22 29,
-  .CX 22 23,
-  .CX 22 20,
-  .CX 22 18,
-  .CX 22 16,
-  .CX 22 12,
-  .CX 22 11,
-  .CX 22 9,
-  .CX 22 7,
-  .CX 22 6,
-  .CX 22 5,
-  .CX 22 3,
-  .CX 22 2,
-  .CX 23 22,
-  .CX 21 62,
-  .CX 21 61,
-  .CX 21 60,
-  .CX 21 56,
-  .CX 21 51,
-  .CX 21 49,
-  .CX 21 48,
-  .CX 21 47,
-  .CX 21 42,
-  .CX 21 40,
-  .CX 21 36,
-  .CX 21 35
+  .CX 24 53
 ]
 
 private def enter0Block48 : Program := [
-  .CX 21 33,
-  .CX 21 32,
-  .CX 21 31,
-  .CX 21 30,
-  .CX 21 29,
-  .CX 21 28,
-  .CX 21 27,
-  .CX 21 26,
-  .CX 21 24,
-  .CX 21 23,
-  .CX 21 19,
-  .CX 21 16,
-  .CX 21 7,
-  .CX 21 6,
-  .CX 21 4,
-  .CX 21 2,
-  .CX 21 1,
-  .CX 23 21,
-  .CX 20 61,
-  .CX 20 60,
-  .CX 20 56,
-  .CX 20 50,
-  .CX 20 49,
-  .CX 20 48,
-  .CX 20 41,
-  .CX 20 35,
-  .CX 20 34,
-  .CX 20 27,
-  .CX 20 26,
-  .CX 20 25
+  .CX 24 52,
+  .CX 24 49,
+  .CX 24 46,
+  .CX 24 44,
+  .CX 24 43,
+  .CX 24 40,
+  .CX 24 37,
+  .CX 24 33,
+  .CX 24 32,
+  .CX 24 29,
+  .CX 24 26,
+  .CX 24 23,
+  .CX 24 22,
+  .CX 24 21,
+  .CX 24 20,
+  .CX 24 16,
+  .CX 24 11,
+  .CX 24 9,
+  .CX 24 8,
+  .CX 24 7,
+  .CX 24 6,
+  .CX 24 3,
+  .CX 24 2,
+  .CX 24 1,
+  .CX 26 24,
+  .CX 23 61,
+  .CX 23 58,
+  .CX 23 57,
+  .CX 23 56,
+  .CX 23 54
 ]
 
 private def enter0Block49 : Program := [
-  .CX 20 24,
-  .CX 20 23,
-  .CX 20 22,
-  .CX 20 21,
-  .CX 20 19,
-  .CX 20 18,
-  .CX 20 16,
-  .CX 20 12,
-  .CX 20 8,
-  .CX 20 7,
-  .CX 20 6,
-  .CX 20 4,
-  .CX 20 3,
-  .CX 20 2,
-  .CX 19 50,
-  .CX 50 19,
-  .CX 18 48,
-  .CX 48 18,
-  .CX 17 47,
-  .CX 47 17,
-  .CX 16 41,
-  .CX 41 16,
-  .CX 12 31,
-  .CX 12 30,
-  .CX 12 29,
-  .CX 12 27,
-  .CX 12 26,
-  .CX 12 24,
-  .CX 12 19,
-  .CX 11 37
+  .CX 23 53,
+  .CX 23 52,
+  .CX 23 49,
+  .CX 23 46,
+  .CX 23 44,
+  .CX 23 43,
+  .CX 23 40,
+  .CX 23 37,
+  .CX 23 35,
+  .CX 23 33,
+  .CX 23 31,
+  .CX 23 26,
+  .CX 23 22,
+  .CX 23 21,
+  .CX 23 20,
+  .CX 23 16,
+  .CX 23 11,
+  .CX 23 9,
+  .CX 23 8,
+  .CX 23 7,
+  .CX 23 6,
+  .CX 23 2,
+  .CX 23 1,
+  .CX 22 50,
+  .CX 22 21,
+  .CX 50 22,
+  .CX 21 61,
+  .CX 21 58,
+  .CX 21 56,
+  .CX 21 54
 ]
 
 private def enter0Block50 : Program := [
-  .CX 11 31,
-  .CX 11 29,
-  .CX 11 28,
-  .CX 11 27,
-  .CX 11 26,
-  .CX 11 24,
-  .CX 11 22,
-  .CX 11 20,
-  .CX 11 19,
-  .CX 10 61,
-  .CX 10 60,
-  .CX 10 58,
-  .CX 10 56,
-  .CX 10 53,
-  .CX 10 51,
-  .CX 10 47,
-  .CX 10 45,
-  .CX 10 40,
-  .CX 10 39,
-  .CX 10 28,
-  .CX 10 27,
-  .CX 10 26,
-  .CX 10 24,
-  .CX 10 22,
-  .CX 10 20,
-  .CX 10 17,
-  .CX 10 5,
-  .CX 10 4,
-  .CX 9 61,
-  .CX 9 60
+  .CX 21 53,
+  .CX 21 49,
+  .CX 21 45,
+  .CX 21 41,
+  .CX 21 40,
+  .CX 21 35,
+  .CX 21 32,
+  .CX 21 31,
+  .CX 21 29,
+  .CX 21 28,
+  .CX 21 26,
+  .CX 21 25,
+  .CX 21 24,
+  .CX 21 22,
+  .CX 21 20,
+  .CX 21 18,
+  .CX 21 12,
+  .CX 21 9,
+  .CX 21 8,
+  .CX 21 2,
+  .CX 21 1,
+  .CX 21 0,
+  .CX 22 21,
+  .CX 20 47,
+  .CX 47 20,
+  .CX 19 61,
+  .CX 19 58,
+  .CX 19 56,
+  .CX 19 53,
+  .CX 19 52
 ]
 
 private def enter0Block51 : Program := [
-  .CX 9 58,
-  .CX 9 56,
-  .CX 9 54,
-  .CX 9 53,
-  .CX 9 47,
-  .CX 9 42,
-  .CX 9 40,
-  .CX 9 39,
-  .CX 9 38,
-  .CX 9 37,
-  .CX 9 33,
-  .CX 9 32,
-  .CX 9 31,
-  .CX 9 29,
-  .CX 9 26,
-  .CX 9 24,
-  .CX 9 22,
-  .CX 9 20,
-  .CX 9 19,
-  .CX 9 18,
-  .CX 9 5,
-  .CX 9 4,
-  .CX 8 61,
-  .CX 8 60,
-  .CX 8 58,
-  .CX 8 56,
-  .CX 8 53,
-  .CX 8 51,
-  .CX 8 47,
-  .CX 8 45
+  .CX 19 50,
+  .CX 19 49,
+  .CX 19 47,
+  .CX 19 44,
+  .CX 19 43,
+  .CX 19 41,
+  .CX 19 40,
+  .CX 19 35,
+  .CX 19 32,
+  .CX 19 31,
+  .CX 19 29,
+  .CX 19 26,
+  .CX 19 25,
+  .CX 19 24,
+  .CX 19 23,
+  .CX 19 20,
+  .CX 19 17,
+  .CX 19 12,
+  .CX 19 10,
+  .CX 19 9,
+  .CX 19 8,
+  .CX 19 6,
+  .CX 19 2,
+  .CX 19 1,
+  .CX 18 49,
+  .CX 49 18,
+  .CX 17 46,
+  .CX 46 17,
+  .CX 16 41,
+  .CX 41 16
 ]
 
 private def enter0Block52 : Program := [
-  .CX 8 39,
-  .CX 8 38,
-  .CX 8 37,
-  .CX 8 36,
-  .CX 8 33,
-  .CX 8 32,
-  .CX 8 31,
-  .CX 8 29,
-  .CX 8 28,
-  .CX 8 26,
-  .CX 8 25,
-  .CX 8 24,
-  .CX 8 22,
-  .CX 8 20,
-  .CX 8 19,
-  .CX 8 18,
-  .CX 8 5,
-  .CX 8 4,
-  .CX 7 61,
-  .CX 7 60,
-  .CX 7 56,
-  .CX 7 53,
-  .CX 7 51,
-  .CX 7 49,
-  .CX 7 47,
-  .CX 7 45,
-  .CX 7 40,
-  .CX 7 39,
-  .CX 7 28,
-  .CX 7 27
+  .CX 12 31,
+  .CX 12 28,
+  .CX 12 27,
+  .CX 12 26,
+  .CX 12 19,
+  .CX 11 37,
+  .CX 11 33,
+  .CX 11 31,
+  .CX 11 30,
+  .CX 11 27,
+  .CX 11 26,
+  .CX 11 22,
+  .CX 11 20,
+  .CX 11 19,
+  .CX 10 36,
+  .CX 10 28,
+  .CX 10 26,
+  .CX 10 19,
+  .CX 10 18,
+  .CX 10 17,
+  .CX 9 53,
+  .CX 9 49,
+  .CX 9 46,
+  .CX 9 44,
+  .CX 9 43,
+  .CX 9 38,
+  .CX 9 37,
+  .CX 9 36,
+  .CX 9 33,
+  .CX 9 31
 ]
 
 private def enter0Block53 : Program := [
+  .CX 9 28,
+  .CX 9 27,
+  .CX 9 26,
+  .CX 9 19,
+  .CX 9 17,
+  .CX 8 40,
+  .CX 8 38,
+  .CX 8 37,
+  .CX 8 33,
+  .CX 8 31,
+  .CX 8 27,
+  .CX 8 26,
+  .CX 8 25,
+  .CX 8 23,
+  .CX 8 19,
+  .CX 8 17,
+  .CX 7 57,
+  .CX 7 36,
+  .CX 7 28,
   .CX 7 26,
+  .CX 7 25,
   .CX 7 24,
-  .CX 7 23,
-  .CX 7 22,
-  .CX 7 20,
+  .CX 7 19,
+  .CX 7 18,
   .CX 7 17,
-  .CX 7 5,
-  .CX 7 4,
-  .CX 6 53,
-  .CX 6 51,
-  .CX 6 47,
-  .CX 6 45,
-  .CX 6 39,
-  .CX 6 38,
-  .CX 6 37,
-  .CX 6 33,
-  .CX 6 5,
-  .CX 5 61,
-  .CX 5 60,
-  .CX 5 58,
-  .CX 5 56,
-  .CX 5 53,
-  .CX 5 51,
-  .CX 5 47,
-  .CX 5 45,
-  .CX 5 40,
-  .CX 5 39,
-  .CX 5 36,
-  .CX 5 4,
-  .CX 36 5
+  .CX 6 52,
+  .CX 6 49,
+  .CX 6 46,
+  .CX 6 44,
+  .CX 6 43
 ]
 
 private def enter0Block54 : Program := [
-  .CX 4 61,
+  .CX 6 38,
+  .CX 6 37,
+  .CX 6 36,
+  .CX 6 33,
+  .CX 6 31,
+  .CX 6 28,
+  .CX 6 27,
+  .CX 6 26,
+  .CX 6 24,
+  .CX 6 19,
+  .CX 6 17,
+  .CX 5 39,
+  .CX 5 36,
+  .CX 5 31,
+  .CX 5 28,
+  .CX 5 27,
+  .CX 5 26,
+  .CX 5 24,
+  .CX 5 19,
+  .CX 5 17,
   .CX 4 60,
   .CX 4 58,
+  .CX 4 57,
   .CX 4 56,
-  .CX 4 53,
-  .CX 4 51,
-  .CX 4 47,
-  .CX 4 45,
+  .CX 4 55,
+  .CX 4 52,
+  .CX 4 49,
+  .CX 4 46,
   .CX 4 40,
-  .CX 4 32,
-  .CX 4 31,
-  .CX 4 29,
-  .CX 4 26,
-  .CX 4 25,
-  .CX 4 24,
-  .CX 4 22,
-  .CX 4 20,
-  .CX 4 19,
-  .CX 4 18,
-  .CX 4 5,
-  .CX 5 4,
-  .CX 3 35,
-  .CX 3 33,
-  .CX 3 32,
-  .CX 3 31,
-  .CX 3 30,
-  .CX 3 29,
-  .CX 3 27,
-  .CX 3 24,
-  .CX 3 22
+  .CX 4 31
 ]
 
 private def enter0Block55 : Program := [
-  .CX 3 20,
-  .CX 3 18,
+  .CX 4 28,
+  .CX 4 27,
+  .CX 4 26,
+  .CX 4 24,
+  .CX 4 19,
+  .CX 4 17,
+  .CX 3 35,
+  .CX 3 32,
+  .CX 3 31,
+  .CX 3 29,
+  .CX 3 23,
+  .CX 3 17,
   .CX 2 34,
-  .CX 2 33,
+  .CX 2 32,
   .CX 2 31,
-  .CX 2 29,
+  .CX 2 28,
+  .CX 2 27,
   .CX 2 26,
   .CX 2 24,
-  .CX 2 22,
   .CX 2 21,
-  .CX 2 20,
   .CX 2 19,
-  .CX 2 18,
-  .CX 1 62,
-  .CX 1 51,
+  .CX 2 17,
+  .CX 1 61,
+  .CX 1 58,
+  .CX 1 56,
+  .CX 1 54,
   .CX 1 50,
-  .CX 1 48,
+  .CX 1 49,
   .CX 1 47,
-  .CX 1 42,
-  .CX 1 41,
-  .CX 1 38,
-  .CX 1 37,
-  .CX 1 36,
-  .CX 1 35,
-  .CX 1 34,
-  .CX 1 33,
-  .CX 1 26,
-  .CX 1 24,
-  .CX 1 22,
-  .CX 1 21
+  .CX 1 46
 ]
 
 private def enter0Block56 : Program := [
-  .CX 1 20,
-  .CX 1 19,
-  .CX 1 18,
-  .CX 1 7,
-  .CX 1 4,
-  .CX 0 46,
+  .CX 1 45,
+  .CX 1 44,
+  .CX 1 43,
+  .CX 1 41,
+  .CX 1 36,
+  .CX 1 35,
+  .CX 1 34,
+  .CX 1 31,
+  .CX 1 29,
+  .CX 1 22,
+  .CX 1 21,
+  .CX 1 6,
+  .CX 1 5,
+  .CX 1 3,
+  .CX 1 0,
   .CX 0 45,
-  .CX 0 42,
   .CX 0 38,
   .CX 0 37,
   .CX 0 33,
-  .CX 0 32,
   .CX 0 31,
-  .CX 0 29,
+  .CX 0 28,
+  .CX 0 27,
   .CX 0 26,
   .CX 0 24,
-  .CX 0 20,
+  .CX 0 22,
   .CX 0 19,
-  .CX 0 18,
-  .measureX 62 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 7, .Z 8, .Z 11, .Z 12, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 16, .CZ 0 20, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 10, .CZ 1 16, .CZ 1 20, .CZ 1 21, .CZ 1 24, .CZ 1 26, .CZ 1 31, .CZ 1 35, .CZ 2 6, .CZ 2 9, .CZ 2 10, .CZ 2 20, .CZ 2 31, .CZ 2 48, .CZ 3 9, .CZ 3 10, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 18, .CZ 3 24, .CZ 3 26, .CZ 3 35, .CZ 4 9, .CZ 4 10, .CZ 4 12, .CZ 4 17, .CZ 4 48, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 36, .CZ 5 48, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 26, .CZ 6 36, .CZ 6 48, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 26, .CZ 7 36, .CZ 7 50, .CZ 8 9, .CZ 8 12, .CZ 8 48, .CZ 8 50, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 48, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 35, .CZ 10 50, .CZ 11 12, .CZ 11 16, .CZ 11 18, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 11 48, .CZ 11 61, .CZ 12 16, .CZ 12 18, .CZ 12 29, .CZ 12 48, .CZ 13 16, .CZ 13 17, .CZ 13 26, .CZ 13 31, .CZ 13 36, .CZ 14 16, .CZ 14 17, .CZ 14 26, .CZ 14 31, .CZ 14 36, .CZ 15 16, .CZ 15 17, .CZ 15 26, .CZ 15 31, .CZ 15 36, .CZ 18 50, .CZ 19 48, .CZ 20 29, .CZ 24 29, .CZ 26 31, .CZ 26 36, .CZ 35 36, .CZ 36 50],
-  .measureX 61 [] [.Z 1, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 11, .Z 12, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 13, .CZ 0 18, .CZ 0 19, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 0 57, .CZ 0 59, .CZ 0 60, .CZ 1 2, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 13, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 24, .CZ 1 26, .CZ 1 31, .CZ 1 35, .CZ 1 57, .CZ 1 59, .CZ 1 60, .CZ 2 3, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 13, .CZ 2 16, .CZ 2 18, .CZ 2 19, .CZ 2 31, .CZ 2 48, .CZ 2 57, .CZ 2 59, .CZ 2 60, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 12, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 20, .CZ 3 24, .CZ 3 26, .CZ 3 35, .CZ 3 57, .CZ 3 59, .CZ 3 60, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 12, .CZ 4 13, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 23, .CZ 4 48, .CZ 4 57, .CZ 4 59, .CZ 4 60, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 14, .CZ 5 15, .CZ 5 20, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 36, .CZ 5 48, .CZ 5 57, .CZ 5 59, .CZ 5 60, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 21, .CZ 6 22, .CZ 6 23, .CZ 6 26, .CZ 6 36, .CZ 6 48, .CZ 6 57, .CZ 6 59, .CZ 6 60, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 26, .CZ 7 36, .CZ 7 50, .CZ 7 57, .CZ 7 59, .CZ 7 60, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 23, .CZ 8 48, .CZ 8 50, .CZ 8 57, .CZ 8 59, .CZ 8 60, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 48, .CZ 10 12, .CZ 10 13, .CZ 10 16, .CZ 10 19, .CZ 10 21, .CZ 10 22, .CZ 10 35, .CZ 10 50, .CZ 10 57, .CZ 10 59, .CZ 10 60, .CZ 11 12, .CZ 11 18, .CZ 11 19, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 11 48, .CZ 12 13, .CZ 12 29, .CZ 12 48, .CZ 12 57, .CZ 12 59, .CZ 12 60, .CZ 13 16, .CZ 13 19, .CZ 13 21, .CZ 13 22, .CZ 13 25, .CZ 13 26, .CZ 13 31, .CZ 13 36, .CZ 14 16, .CZ 14 26, .CZ 14 31, .CZ 14 36, .CZ 15 16, .CZ 15 26, .CZ 15 31, .CZ 15 36, .CZ 18 50, .CZ 19 48, .CZ 19 57, .CZ 19 59, .CZ 19 60, .CZ 20 29, .CZ 21 57, .CZ 21 59, .CZ 21 60, .CZ 22 57, .CZ 22 59, .CZ 22 60, .CZ 24 29, .CZ 25 57, .CZ 25 59, .CZ 25 60, .CZ 26 31, .CZ 26 36, .CZ 35 36, .CZ 36 50],
-  .measureX 60 [] [.Z 1, .Z 6, .Z 8, .Z 9, .Z 10, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 17, .CZ 0 19, .CZ 0 34, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 18, .CZ 1 19, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 31, .CZ 1 32, .CZ 1 34, .CZ 1 35, .CZ 1 37, .CZ 1 50, .CZ 2 3, .CZ 2 6, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 26, .CZ 2 31, .CZ 2 35, .CZ 2 50, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 13, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 26, .CZ 3 34, .CZ 3 35, .CZ 3 39, .CZ 3 50, .CZ 3 59, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 16, .CZ 4 19, .CZ 4 23, .CZ 4 24, .CZ 4 39, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 5 16, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 7, .CZ 6 10, .CZ 6 12, .CZ 6 20, .CZ 6 22, .CZ 6 23, .CZ 7 15, .CZ 7 48, .CZ 7 50, .CZ 7 59, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 15, .CZ 8 17, .CZ 8 29, .CZ 8 32, .CZ 8 36, .CZ 8 37, .CZ 8 50, .CZ 8 57, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 59, .CZ 10 11, .CZ 10 14, .CZ 10 15, .CZ 10 17, .CZ 10 18, .CZ 10 19, .CZ 10 22, .CZ 10 26, .CZ 10 27, .CZ 10 28, .CZ 10 29, .CZ 10 31, .CZ 10 33, .CZ 10 34, .CZ 10 36, .CZ 10 37, .CZ 10 38, .CZ 10 39, .CZ 10 40, .CZ 10 42, .CZ 10 48, .CZ 10 50, .CZ 10 57, .CZ 10 59, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 12 15, .CZ 12 16, .CZ 12 18, .CZ 12 59, .CZ 13 16, .CZ 13 17, .CZ 13 21, .CZ 13 27, .CZ 13 29, .CZ 13 30, .CZ 13 31, .CZ 13 32, .CZ 13 33, .CZ 13 34, .CZ 13 35, .CZ 13 37, .CZ 13 38, .CZ 13 39, .CZ 13 40, .CZ 13 42, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 14 20, .CZ 14 21, .CZ 14 25, .CZ 14 27, .CZ 14 29, .CZ 14 30, .CZ 14 32, .CZ 14 33, .CZ 14 35, .CZ 14 38, .CZ 14 39, .CZ 14 40, .CZ 14 42, .CZ 14 53, .CZ 15 16, .CZ 15 17, .CZ 15 27, .CZ 15 32, .CZ 15 33, .CZ 15 35, .CZ 15 36, .CZ 15 37, .CZ 15 39, .CZ 17 29, .CZ 18 50, .CZ 19 48, .CZ 19 57, .CZ 20 29, .CZ 20 57, .CZ 21 59, .CZ 23 29, .CZ 24 48, .CZ 25 57, .CZ 26 29, .CZ 26 31, .CZ 26 32, .CZ 26 37, .CZ 27 29, .CZ 27 31, .CZ 27 32, .CZ 28 29, .CZ 28 32, .CZ 28 36, .CZ 28 37, .CZ 29 59, .CZ 30 59, .CZ 31 57, .CZ 31 59, .CZ 34 57, .CZ 34 59, .CZ 35 36, .CZ 36 50, .CZ 36 59, .CZ 37 57, .CZ 38 59, .CZ 40 59, .CZ 42 59, .CZ 53 57],
-  .measureX 58 [] [.Z 4, .Z 7, .Z 11, .CZ 3 16, .CZ 3 17, .CZ 3 23, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 20, .CZ 7 16, .CZ 8 10, .CZ 8 16, .CZ 8 17, .CZ 8 23, .CZ 10 17, .CZ 10 19, .CZ 10 20, .CZ 10 31, .CZ 10 32, .CZ 10 34, .CZ 10 37, .CZ 10 40, .CZ 10 46, .CZ 10 53, .CZ 10 54, .CZ 11 19, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 11 39],
-  .measureX 59 [] [.CZ 14 15, .CZ 15 57],
-  .measureX 53 [] [.Z 0, .Z 5, .Z 9, .Z 10, .CZ 0 1, .CZ 0 3, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 26, .CZ 0 29, .CZ 0 34, .CZ 0 35, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 18, .CZ 1 24, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 31, .CZ 1 32, .CZ 1 34, .CZ 1 37, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 9, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 26, .CZ 2 35, .CZ 2 48, .CZ 2 50, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 16, .CZ 3 18, .CZ 3 22, .CZ 3 34, .CZ 3 39, .CZ 3 50, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 19, .CZ 4 20, .CZ 4 29, .CZ 4 39, .CZ 4 48, .CZ 5 7, .CZ 5 8, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 24, .CZ 5 26, .CZ 5 30, .CZ 5 31, .CZ 5 48, .CZ 6 7, .CZ 6 8, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 19, .CZ 6 22, .CZ 6 29, .CZ 6 48, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 7 48, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 16, .CZ 8 18, .CZ 8 32, .CZ 8 48, .CZ 9 10, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 29, .CZ 9 48, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 17, .CZ 10 26, .CZ 10 27, .CZ 10 29, .CZ 10 31, .CZ 10 32, .CZ 10 35, .CZ 10 48, .CZ 11 12, .CZ 11 18, .CZ 11 19, .CZ 11 31, .CZ 11 32, .CZ 11 36, .CZ 11 37, .CZ 11 39, .CZ 11 48, .CZ 12 16, .CZ 12 18, .CZ 12 26, .CZ 12 29, .CZ 12 48, .CZ 13 17, .CZ 13 26, .CZ 13 27, .CZ 13 35, .CZ 14 17, .CZ 14 26, .CZ 14 27, .CZ 14 35, .CZ 15 17, .CZ 15 26, .CZ 15 27, .CZ 15 35, .CZ 18 29, .CZ 19 29, .CZ 24 48, .CZ 26 29, .CZ 26 32, .CZ 27 29, .CZ 27 31, .CZ 27 32, .CZ 28 29, .CZ 28 32],
-  .measureX 54 [] [.Z 1, .Z 2, .Z 5, .Z 6, .Z 7, .Z 8, .Z 10, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 18, .CZ 0 19, .CZ 0 21, .CZ 0 29, .CZ 0 34, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 1 19, .CZ 1 26, .CZ 1 29, .CZ 1 31, .CZ 1 34, .CZ 1 35, .CZ 1 50, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 26, .CZ 2 35, .CZ 2 50, .CZ 3 5, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 19, .CZ 3 22, .CZ 3 26, .CZ 3 34, .CZ 3 35, .CZ 3 39, .CZ 3 50, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 18, .CZ 4 19, .CZ 4 29, .CZ 4 39, .CZ 5 7, .CZ 5 8, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 17, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 31, .CZ 5 36, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 17, .CZ 6 26, .CZ 6 29, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 26, .CZ 7 29, .CZ 7 36, .CZ 7 48, .CZ 7 50, .CZ 8 10, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 19, .CZ 8 32, .CZ 8 50, .CZ 9 29, .CZ 10 11, .CZ 10 12, .CZ 10 26, .CZ 10 27, .CZ 10 29, .CZ 10 31, .CZ 10 32, .CZ 10 48, .CZ 10 50, .CZ 11 17, .CZ 11 19, .CZ 12 18, .CZ 12 26, .CZ 12 29, .CZ 13 27, .CZ 13 31, .CZ 13 35, .CZ 13 36, .CZ 14 27, .CZ 14 31, .CZ 14 35, .CZ 14 36, .CZ 15 27, .CZ 15 31, .CZ 15 35, .CZ 15 36, .CZ 18 29, .CZ 18 50, .CZ 19 29, .CZ 19 48, .CZ 24 48, .CZ 26 29, .CZ 26 31, .CZ 26 32, .CZ 26 36, .CZ 27 29, .CZ 27 31, .CZ 27 32, .CZ 28 29, .CZ 28 32, .CZ 35 36, .CZ 36 50],
-  .measureX 55 [] [.Z 8, .Z 11, .Z 12, .Z 16, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 18, .CZ 0 19, .CZ 0 26, .CZ 0 34, .CZ 0 35, .CZ 0 39, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 21, .CZ 1 23, .CZ 1 24, .CZ 1 26, .CZ 1 29, .CZ 1 33, .CZ 1 34, .CZ 1 37, .CZ 1 39, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 20, .CZ 2 31, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 17, .CZ 3 18, .CZ 3 26, .CZ 3 31, .CZ 3 34, .CZ 3 35, .CZ 4 8, .CZ 4 10, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 19, .CZ 4 23, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 18, .CZ 5 20, .CZ 5 30, .CZ 5 36, .CZ 5 39, .CZ 6 16, .CZ 6 17, .CZ 6 21, .CZ 6 23, .CZ 6 39, .CZ 7 47, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 17, .CZ 8 19, .CZ 8 31, .CZ 8 32, .CZ 8 36, .CZ 8 39, .CZ 9 10, .CZ 10 27, .CZ 10 31, .CZ 10 34, .CZ 10 36, .CZ 10 39, .CZ 10 47, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 29, .CZ 11 31, .CZ 11 32, .CZ 11 36, .CZ 11 39, .CZ 11 51, .CZ 12 29, .CZ 13 26, .CZ 13 31, .CZ 13 32, .CZ 13 35, .CZ 13 36, .CZ 14 26, .CZ 14 31, .CZ 14 32, .CZ 14 35, .CZ 14 36, .CZ 15 26, .CZ 15 31, .CZ 15 32, .CZ 15 35, .CZ 15 36, .CZ 18 29, .CZ 19 29, .CZ 19 47, .CZ 23 47, .CZ 24 29, .CZ 26 29, .CZ 26 32, .CZ 26 36, .CZ 26 39, .CZ 27 31, .CZ 27 36, .CZ 28 31, .CZ 29 39, .CZ 31 47, .CZ 34 36, .CZ 35 36, .CZ 35 47],
-  .measureX 56 [] [.Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 9, .Z 10, .Z 11, .Z 12, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 12, .CZ 0 16, .CZ 0 20, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 0 50, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 26, .CZ 1 29, .CZ 1 35, .CZ 1 50, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 20, .CZ 2 31, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 16, .CZ 3 18, .CZ 3 19, .CZ 3 24, .CZ 3 26, .CZ 3 35, .CZ 3 50, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 16, .CZ 4 18, .CZ 4 20, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 5 50, .CZ 6 7, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 26, .CZ 6 36, .CZ 7 8, .CZ 7 11, .CZ 7 12, .CZ 7 16, .CZ 7 26, .CZ 7 29, .CZ 7 36, .CZ 7 50, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 19, .CZ 8 20, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 50, .CZ 10 11, .CZ 10 12, .CZ 10 17, .CZ 10 26, .CZ 10 29, .CZ 10 35, .CZ 10 50, .CZ 11 12, .CZ 11 17, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 12 18, .CZ 12 26, .CZ 13 17, .CZ 13 36, .CZ 14 17, .CZ 14 36, .CZ 15 17, .CZ 15 36, .CZ 17 29, .CZ 26 36, .CZ 35 36, .CZ 36 50],
-  .measureX 57 [] [.Z 1, .Z 5, .Z 7, .Z 13, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 10, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 18, .CZ 0 21, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 24, .CZ 1 26, .CZ 1 28, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 7, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 26, .CZ 2 27, .CZ 2 31, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 3 24, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 26, .CZ 4 27, .CZ 5 16, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 6 7, .CZ 6 12, .CZ 6 17, .CZ 6 18, .CZ 6 22, .CZ 7 9, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 23, .CZ 9 11, .CZ 9 12, .CZ 10 12, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 32, .CZ 10 36, .CZ 10 39, .CZ 10 43, .CZ 10 44, .CZ 11 17, .CZ 11 19, .CZ 11 31, .CZ 11 36, .CZ 12 18, .CZ 13 14, .CZ 13 17, .CZ 13 32, .CZ 13 36, .CZ 13 49, .CZ 14 17, .CZ 14 32, .CZ 14 36, .CZ 14 49, .CZ 14 52, .CZ 15 17, .CZ 15 32, .CZ 15 36, .CZ 18 29, .CZ 26 29, .CZ 26 32, .CZ 26 36, .CZ 27 29, .CZ 27 32, .CZ 27 36],
-  .measureX 50 [] [.Z 0, .Z 1, .Z 4, .Z 5, .Z 6, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 17, .CZ 0 19, .CZ 0 21, .CZ 0 29, .CZ 0 34, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 1 21, .CZ 1 29, .CZ 1 34, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 17, .CZ 2 20, .CZ 2 31, .CZ 3 5, .CZ 3 7, .CZ 3 11, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 20, .CZ 3 34, .CZ 3 39, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 12, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 29, .CZ 4 39, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 30, .CZ 5 31, .CZ 6 8, .CZ 6 9, .CZ 6 12, .CZ 6 19, .CZ 6 29, .CZ 7 16, .CZ 7 48, .CZ 8 11, .CZ 8 32, .CZ 9 11, .CZ 9 29, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 17, .CZ 10 26, .CZ 10 32, .CZ 10 48, .CZ 11 17, .CZ 11 29, .CZ 11 31, .CZ 11 32, .CZ 12 16, .CZ 12 18, .CZ 12 26, .CZ 13 16, .CZ 13 17, .CZ 13 26, .CZ 13 31, .CZ 14 16, .CZ 14 17, .CZ 14 26, .CZ 14 31, .CZ 15 16, .CZ 15 17, .CZ 15 26, .CZ 15 31, .CZ 19 29, .CZ 19 48, .CZ 24 29, .CZ 24 48, .CZ 26 29, .CZ 26 31, .CZ 26 32, .CZ 27 29, .CZ 27 32, .CZ 28 29, .CZ 28 32]
-]
+  .CX 0 17,
+  .measureX 61 [.Z 0, .Z 0] [.Z 1, .Z 5, .Z 6, .Z 10, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 7, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 23, .CZ 1 26, .CZ 1 29, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 31, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 18, .CZ 4 20, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 18, .CZ 5 19, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 36, .CZ 6 7, .CZ 6 9, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 26, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 16, .CZ 7 17, .CZ 7 26, .CZ 7 36, .CZ 8 10, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 17, .CZ 8 18, .CZ 8 50, .CZ 9 12, .CZ 10 12, .CZ 10 16, .CZ 10 27, .CZ 10 31, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 11 60, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 13 16, .CZ 13 26, .CZ 13 27, .CZ 13 31, .CZ 13 35, .CZ 13 36, .CZ 14 16, .CZ 14 26, .CZ 14 27, .CZ 14 31, .CZ 14 35, .CZ 14 36, .CZ 15 16, .CZ 15 26, .CZ 15 27, .CZ 15 31, .CZ 15 35, .CZ 15 36, .CZ 17 50, .CZ 26 36, .CZ 27 31, .CZ 35 36, .CZ 36 50],
+  .measureX 60 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 10, .Z 18, .Z 20, .Z 23, .Z 24, .Z 25, .Z 26, .Z 28, .Z 29, .Z 31, .Z 32, .Z 33, .Z 34, .Z 35, .Z 38, .Z 39, .Z 40, .Z 52, .Z 53, .CZ 0 1, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 19, .CZ 0 23, .CZ 0 24, .CZ 0 28, .CZ 0 36, .CZ 0 40, .CZ 0 58, .CZ 0 59, .CZ 1 3, .CZ 1 8, .CZ 1 13, .CZ 1 14, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 24, .CZ 1 26, .CZ 1 28, .CZ 1 31, .CZ 1 58, .CZ 1 59, .CZ 2 3, .CZ 2 8, .CZ 2 13, .CZ 2 14, .CZ 2 17, .CZ 2 18, .CZ 2 24, .CZ 2 26, .CZ 2 28, .CZ 2 31, .CZ 2 58, .CZ 2 59, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 18, .CZ 3 19, .CZ 3 26, .CZ 3 28, .CZ 3 58, .CZ 3 59, .CZ 4 6, .CZ 4 8, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 20, .CZ 4 24, .CZ 4 26, .CZ 4 28, .CZ 4 58, .CZ 4 59, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 28, .CZ 5 58, .CZ 5 59, .CZ 6 13, .CZ 6 14, .CZ 6 17, .CZ 6 19, .CZ 6 24, .CZ 6 26, .CZ 6 28, .CZ 6 58, .CZ 6 59, .CZ 7 13, .CZ 7 14, .CZ 7 17, .CZ 7 19, .CZ 7 24, .CZ 7 26, .CZ 7 28, .CZ 7 58, .CZ 7 59, .CZ 8 9, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 24, .CZ 8 27, .CZ 8 58, .CZ 8 59, .CZ 9 12, .CZ 10 13, .CZ 10 14, .CZ 10 17, .CZ 10 19, .CZ 10 20, .CZ 10 58, .CZ 10 59, .CZ 12 13, .CZ 12 14, .CZ 12 28, .CZ 12 58, .CZ 12 59, .CZ 13 16, .CZ 13 17, .CZ 13 18, .CZ 13 19, .CZ 13 20, .CZ 13 24, .CZ 13 25, .CZ 14 16, .CZ 14 17, .CZ 14 18, .CZ 14 19, .CZ 14 20, .CZ 14 24, .CZ 14 25, .CZ 16 58, .CZ 16 59, .CZ 17 58, .CZ 17 59, .CZ 18 58, .CZ 18 59, .CZ 19 58, .CZ 19 59, .CZ 20 58, .CZ 20 59, .CZ 24 58, .CZ 24 59, .CZ 25 58, .CZ 25 59],
+  .measureX 59 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 3, .Z 4, .Z 5, .Z 7, .Z 8, .Z 10, .Z 11, .Z 12, .Z 16, .Z 18, .Z 19, .Z 20, .Z 21, .Z 24, .Z 27, .Z 29, .Z 31, .Z 35, .Z 36, .Z 37, .Z 38, .Z 39, .Z 45, .Z 46, .Z 52, .Z 53, .Z 57, .CZ 0 3, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 26, .CZ 0 28, .CZ 0 31, .CZ 0 34, .CZ 0 35, .CZ 0 45, .CZ 1 2, .CZ 1 8, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 34, .CZ 1 38, .CZ 1 39, .CZ 1 40, .CZ 1 42, .CZ 1 44, .CZ 1 45, .CZ 2 3, .CZ 2 4, .CZ 2 9, .CZ 2 11, .CZ 2 12, .CZ 2 17, .CZ 2 18, .CZ 2 23, .CZ 2 26, .CZ 2 28, .CZ 2 29, .CZ 2 38, .CZ 2 44, .CZ 3 5, .CZ 3 9, .CZ 3 10, .CZ 3 11, .CZ 3 23, .CZ 3 24, .CZ 3 27, .CZ 3 35, .CZ 4 7, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 24, .CZ 4 42, .CZ 5 6, .CZ 5 10, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 6 7, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 34, .CZ 6 36, .CZ 6 52, .CZ 6 53, .CZ 7 8, .CZ 7 11, .CZ 7 17, .CZ 7 19, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 17, .CZ 8 35, .CZ 8 40, .CZ 8 58, .CZ 9 12, .CZ 9 15, .CZ 9 58, .CZ 10 17, .CZ 10 19, .CZ 10 20, .CZ 11 15, .CZ 11 58, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 17, .CZ 13 17, .CZ 13 20, .CZ 13 21, .CZ 13 22, .CZ 13 24, .CZ 13 25, .CZ 13 26, .CZ 13 32, .CZ 13 34, .CZ 13 37, .CZ 13 40, .CZ 13 45, .CZ 13 52, .CZ 13 53, .CZ 14 17, .CZ 14 20, .CZ 14 21, .CZ 14 22, .CZ 14 24, .CZ 14 25, .CZ 14 26, .CZ 14 32, .CZ 14 34, .CZ 14 37, .CZ 14 40, .CZ 14 45, .CZ 14 52, .CZ 14 53, .CZ 15 31, .CZ 15 32, .CZ 15 40, .CZ 15 42, .CZ 15 45, .CZ 17 58, .CZ 20 58, .CZ 21 58, .CZ 22 58, .CZ 24 58, .CZ 25 58, .CZ 26 58, .CZ 31 58, .CZ 34 58, .CZ 37 58, .CZ 42 58, .CZ 52 58, .CZ 53 58]]
 
 private def enter0Block57 : Program := [
-  .measureX 51 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 8, .Z 9, .CZ 0 1, .CZ 0 3, .CZ 0 6, .CZ 0 9, .CZ 0 12, .CZ 0 16, .CZ 0 20, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 1 17, .CZ 1 23, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 17, .CZ 3 18, .CZ 3 22, .CZ 3 26, .CZ 3 31, .CZ 3 35, .CZ 4 9, .CZ 4 12, .CZ 4 16, .CZ 4 17, .CZ 4 20, .CZ 4 23, .CZ 4 24, .CZ 5 6, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 18, .CZ 5 19, .CZ 5 21, .CZ 5 24, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 23, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 26, .CZ 7 29, .CZ 7 36, .CZ 8 10, .CZ 8 36, .CZ 8 39, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 10 31, .CZ 10 35, .CZ 10 36, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 19, .CZ 11 31, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 18, .CZ 13 16, .CZ 13 17, .CZ 13 26, .CZ 13 27, .CZ 13 31, .CZ 13 36, .CZ 13 39, .CZ 14 16, .CZ 14 17, .CZ 14 26, .CZ 14 27, .CZ 14 31, .CZ 14 36, .CZ 14 39, .CZ 15 16, .CZ 15 17, .CZ 15 26, .CZ 15 27, .CZ 15 31, .CZ 15 36, .CZ 15 39, .CZ 17 29, .CZ 17 47, .CZ 19 47, .CZ 23 47, .CZ 26 31, .CZ 26 36, .CZ 26 39, .CZ 27 31, .CZ 27 36, .CZ 31 47, .CZ 35 36, .CZ 35 47],
-  .measureX 52 [] [.CZ 13 49],
-  .measureX 46 [] [.Z 0, .Z 11, .Z 16, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 8 17, .CZ 8 18, .CZ 8 20, .CZ 11 17, .CZ 11 36, .CZ 11 37, .CZ 11 39],
-  .measureX 47 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 7, .Z 11, .Z 16, .CZ 0 3, .CZ 0 7, .CZ 0 8, .CZ 0 12, .CZ 0 17, .CZ 0 19, .CZ 0 20, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 11, .CZ 1 16, .CZ 1 18, .CZ 1 20, .CZ 1 21, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 33, .CZ 2 5, .CZ 2 8, .CZ 2 10, .CZ 2 17, .CZ 2 19, .CZ 2 31, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 12, .CZ 3 16, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 24, .CZ 4 7, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 5 7, .CZ 5 9, .CZ 5 11, .CZ 5 16, .CZ 5 17, .CZ 5 19, .CZ 5 21, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 6 7, .CZ 6 9, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 19, .CZ 6 26, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 26, .CZ 7 36, .CZ 8 9, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 32, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 11, .CZ 9 12, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 26, .CZ 10 27, .CZ 10 31, .CZ 10 36, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 19, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 12 16, .CZ 12 18, .CZ 12 29, .CZ 13 16, .CZ 13 26, .CZ 13 31, .CZ 13 32, .CZ 13 37, .CZ 13 39, .CZ 14 16, .CZ 14 26, .CZ 14 31, .CZ 14 32, .CZ 14 37, .CZ 14 39, .CZ 15 16, .CZ 15 26, .CZ 15 31, .CZ 15 32, .CZ 15 37, .CZ 15 39, .CZ 20 29, .CZ 24 29, .CZ 26 31, .CZ 26 32, .CZ 26 37, .CZ 26 39, .CZ 27 31, .CZ 27 36],
-  .measureX 48 [] [.Z 2, .Z 8, .Z 9, .Z 16, .CZ 0 3, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 34, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 17, .CZ 1 18, .CZ 1 31, .CZ 1 34, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 16, .CZ 2 20, .CZ 2 31, .CZ 3 5, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 17, .CZ 3 19, .CZ 3 22, .CZ 3 34, .CZ 3 39, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 20, .CZ 4 29, .CZ 4 39, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 29, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 18, .CZ 6 19, .CZ 6 22, .CZ 6 29, .CZ 7 9, .CZ 7 16, .CZ 8 10, .CZ 8 19, .CZ 8 20, .CZ 8 32, .CZ 9 12, .CZ 9 29, .CZ 10 32, .CZ 11 16, .CZ 11 18, .CZ 11 19, .CZ 11 31, .CZ 12 16, .CZ 12 18, .CZ 12 29, .CZ 17 29, .CZ 18 29, .CZ 19 29, .CZ 26 29, .CZ 26 32, .CZ 27 29, .CZ 27 32, .CZ 28 29, .CZ 28 32],
-  .measureX 49 [] [.Z 1, .Z 5, .Z 7, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 10, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 18, .CZ 0 21, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 24, .CZ 1 26, .CZ 1 28, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 7, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 26, .CZ 2 27, .CZ 2 31, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 17, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 3 24, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 26, .CZ 4 27, .CZ 5 16, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 6 7, .CZ 6 12, .CZ 6 17, .CZ 6 18, .CZ 6 22, .CZ 7 9, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 23, .CZ 9 11, .CZ 9 12, .CZ 10 12, .CZ 10 18, .CZ 10 19, .CZ 10 20, .CZ 10 32, .CZ 10 36, .CZ 10 39, .CZ 10 43, .CZ 10 44, .CZ 11 17, .CZ 11 19, .CZ 11 31, .CZ 11 36, .CZ 12 18, .CZ 13 17, .CZ 13 32, .CZ 13 36, .CZ 14 17, .CZ 14 32, .CZ 14 36, .CZ 15 17, .CZ 15 32, .CZ 15 36, .CZ 18 29, .CZ 26 29, .CZ 26 32, .CZ 26 36, .CZ 27 29, .CZ 27 32, .CZ 27 36],
-  .measureX 39 [] [.Z 1, .Z 3, .Z 5, .Z 10, .Z 16, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 12, .CZ 0 17, .CZ 1 3, .CZ 1 4, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 7, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 12, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 3 24, .CZ 4 7, .CZ 4 10, .CZ 4 12, .CZ 4 16, .CZ 4 17, .CZ 5 12, .CZ 5 17, .CZ 5 18, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 6 12, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 8 11, .CZ 8 18, .CZ 8 19, .CZ 9 11, .CZ 9 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 11 16, .CZ 11 17, .CZ 11 19, .CZ 11 31, .CZ 11 36, .CZ 12 16, .CZ 12 18, .CZ 12 29, .CZ 13 16, .CZ 13 17, .CZ 14 16, .CZ 14 17, .CZ 15 16, .CZ 15 17, .CZ 17 29, .CZ 20 29, .CZ 24 29],
-  .measureX 40 [] [.Z 4, .Z 8, .Z 10, .Z 16, .CZ 0 7, .CZ 0 10, .CZ 0 17, .CZ 1 7, .CZ 1 10, .CZ 1 17, .CZ 1 20, .CZ 1 26, .CZ 1 31, .CZ 1 32, .CZ 1 33, .CZ 1 37, .CZ 2 7, .CZ 2 10, .CZ 2 17, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 17, .CZ 4 7, .CZ 4 10, .CZ 4 16, .CZ 4 17, .CZ 5 7, .CZ 5 10, .CZ 5 17, .CZ 6 7, .CZ 6 10, .CZ 6 17, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 8 16, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 17, .CZ 10 29, .CZ 11 16, .CZ 13 17, .CZ 14 17, .CZ 15 17, .CZ 17 29],
-  .measureX 41 [] [.Z 1, .Z 9, .Z 10, .Z 12, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 24, .CZ 1 26, .CZ 1 35, .CZ 2 3, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 20, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 10, .CZ 3 12, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 24, .CZ 3 26, .CZ 3 35, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 18, .CZ 6 20, .CZ 6 22, .CZ 7 9, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 29, .CZ 8 9, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 20, .CZ 8 31, .CZ 9 10, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 26, .CZ 10 29, .CZ 10 31, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 19, .CZ 11 29, .CZ 11 32, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 18, .CZ 12 26, .CZ 13 26, .CZ 14 26, .CZ 15 26, .CZ 18 29, .CZ 20 29, .CZ 26 31, .CZ 27 31, .CZ 28 31],
-  .measureX 42 [] [.Z 0, .Z 9, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 6, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 31, .CZ 1 33, .CZ 2 6, .CZ 3 6, .CZ 3 20, .CZ 3 22, .CZ 4 6, .CZ 4 16, .CZ 5 12, .CZ 5 20, .CZ 5 24, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 8 11, .CZ 8 16, .CZ 9 11, .CZ 11 16, .CZ 11 37, .CZ 12 16],
-  .measureX 43 [] [.Z 5, .Z 10, .CZ 0 3, .CZ 0 5, .CZ 0 7, .CZ 0 10, .CZ 0 16, .CZ 0 17, .CZ 1 5, .CZ 1 21, .CZ 1 29, .CZ 1 31, .CZ 2 5, .CZ 2 7, .CZ 2 10, .CZ 2 18, .CZ 2 20, .CZ 3 5, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 18, .CZ 3 22, .CZ 4 5, .CZ 4 7, .CZ 4 10, .CZ 4 17, .CZ 5 8, .CZ 5 16, .CZ 5 18, .CZ 5 19, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 28, .CZ 5 31, .CZ 5 38, .CZ 6 7, .CZ 6 10, .CZ 6 17, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 20, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 17, .CZ 10 29, .CZ 11 18, .CZ 11 19, .CZ 11 31, .CZ 11 32, .CZ 13 17, .CZ 14 17, .CZ 15 17, .CZ 17 29],
-  .measureX 44 [] [.Z 3, .Z 5, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 6, .CZ 0 7, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 18, .CZ 0 21, .CZ 1 5, .CZ 1 7, .CZ 1 10, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 21, .CZ 1 24, .CZ 1 26, .CZ 1 27, .CZ 1 31, .CZ 2 7, .CZ 2 12, .CZ 2 26, .CZ 2 27, .CZ 2 31, .CZ 3 5, .CZ 3 8, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 4 5, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 26, .CZ 4 27, .CZ 5 8, .CZ 5 10, .CZ 5 12, .CZ 5 17, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 38, .CZ 6 10, .CZ 6 16, .CZ 6 17, .CZ 6 20, .CZ 6 22, .CZ 7 9, .CZ 7 16, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 16, .CZ 8 17, .CZ 8 19, .CZ 10 16, .CZ 10 17, .CZ 10 26, .CZ 10 27, .CZ 10 32, .CZ 10 36, .CZ 11 12, .CZ 11 16, .CZ 11 31, .CZ 11 32, .CZ 12 16, .CZ 12 29, .CZ 13 16, .CZ 13 17, .CZ 13 32, .CZ 13 36, .CZ 14 16, .CZ 14 17, .CZ 14 32, .CZ 14 36, .CZ 15 16, .CZ 15 17, .CZ 15 32, .CZ 15 36, .CZ 18 29, .CZ 20 29, .CZ 24 29, .CZ 26 29, .CZ 26 32, .CZ 26 36, .CZ 27 29, .CZ 27 32, .CZ 27 36],
-  .measureX 45 [] [.Z 0, .Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .Z 9, .Z 11, .Z 16, .CZ 0 2, .CZ 0 4, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 16, .CZ 0 18, .CZ 0 19, .CZ 0 21, .CZ 0 26, .CZ 0 27, .CZ 0 28, .CZ 0 34, .CZ 0 35, .CZ 0 38, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 18, .CZ 1 19, .CZ 1 21, .CZ 1 22, .CZ 1 24, .CZ 1 26, .CZ 1 27, .CZ 1 29, .CZ 1 31, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 26, .CZ 2 27, .CZ 2 31, .CZ 3 4, .CZ 3 8, .CZ 3 9, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 16, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 26, .CZ 3 27, .CZ 3 28, .CZ 3 31, .CZ 3 34, .CZ 3 35, .CZ 3 38, .CZ 4 5, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 18, .CZ 4 20, .CZ 4 26, .CZ 4 27, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 16, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 22, .CZ 5 24, .CZ 5 28, .CZ 5 30, .CZ 5 38, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 18, .CZ 6 22, .CZ 6 29, .CZ 7 9, .CZ 7 16, .CZ 8 10, .CZ 8 20, .CZ 8 32, .CZ 9 10, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 38, .CZ 10 11, .CZ 10 16, .CZ 10 26, .CZ 10 31, .CZ 10 35, .CZ 10 36, .CZ 10 37, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 19, .CZ 11 31, .CZ 11 37, .CZ 11 38, .CZ 12 16, .CZ 12 18, .CZ 12 38, .CZ 13 16, .CZ 13 27, .CZ 13 31, .CZ 13 35, .CZ 13 36, .CZ 13 37, .CZ 14 16, .CZ 14 27, .CZ 14 31, .CZ 14 35, .CZ 14 36, .CZ 14 37, .CZ 15 16, .CZ 15 27, .CZ 15 31, .CZ 15 35, .CZ 15 36, .CZ 15 37, .CZ 20 29, .CZ 24 29, .CZ 26 29, .CZ 26 36, .CZ 27 32, .CZ 27 36, .CZ 28 29, .CZ 28 32, .CZ 29 38],
-  .measureX 34 [] [.Z 1, .Z 2, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 11 18, .CZ 11 32],
-  .measureX 35 [] [.Z 1, .Z 3, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 20, .CZ 11 19, .CZ 11 31],
-  .measureX 36 [] [.Z 1, .Z 5, .Z 6, .Z 7, .Z 9, .Z 10, .CZ 0 1, .CZ 0 2, .CZ 0 16, .CZ 0 21, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 20, .CZ 1 29, .CZ 2 6, .CZ 2 12, .CZ 2 17, .CZ 2 20, .CZ 2 31, .CZ 5 7, .CZ 5 10, .CZ 5 16, .CZ 5 17, .CZ 5 20, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 6 21, .CZ 7 16, .CZ 8 11, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 20, .CZ 11 16, .CZ 12 16],
-  .measureX 37 [] [.Z 0, .Z 3, .Z 6, .Z 8, .Z 9, .Z 10, .Z 11, .CZ 0 7, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 18, .CZ 0 20, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 11, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 21, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 33, .CZ 2 6, .CZ 2 7, .CZ 2 10, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 31, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 12, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 24, .CZ 4 7, .CZ 4 10, .CZ 4 12, .CZ 4 18, .CZ 4 20, .CZ 5 7, .CZ 5 10, .CZ 5 12, .CZ 5 16, .CZ 5 18, .CZ 5 20, .CZ 6 12, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 29, .CZ 8 18, .CZ 8 19, .CZ 9 11, .CZ 9 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 11 18, .CZ 12 18, .CZ 12 29, .CZ 13 16, .CZ 13 17, .CZ 14 16, .CZ 14 17, .CZ 15 16, .CZ 15 17, .CZ 17 29, .CZ 20 29, .CZ 24 29],
-  .measureX 38 [] [.Z 0, .Z 3, .Z 6, .Z 8, .Z 9, .Z 10, .Z 16, .CZ 0 6, .CZ 0 12, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 31, .CZ 1 33, .CZ 2 6, .CZ 2 12, .CZ 3 6, .CZ 3 8, .CZ 3 12, .CZ 3 16, .CZ 3 17, .CZ 3 19, .CZ 3 24, .CZ 4 6, .CZ 4 12, .CZ 4 17, .CZ 4 18, .CZ 4 20, .CZ 5 16, .CZ 5 18, .CZ 5 20, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 8 11, .CZ 8 17, .CZ 8 19, .CZ 8 20, .CZ 9 11, .CZ 9 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 11 19, .CZ 11 31, .CZ 11 32, .CZ 12 18, .CZ 12 29, .CZ 13 16, .CZ 13 17, .CZ 14 16, .CZ 14 17, .CZ 15 16, .CZ 15 17, .CZ 17 29, .CZ 20 29, .CZ 24 29],
-  .measureX 31 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 17, .CZ 0 21, .CZ 1 7, .CZ 1 10, .CZ 1 16, .CZ 1 17, .CZ 2 7, .CZ 2 10, .CZ 2 17, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 17, .CZ 3 20, .CZ 3 22, .CZ 4 7, .CZ 4 10, .CZ 4 17, .CZ 5 7, .CZ 5 10, .CZ 5 20, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 17, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 29, .CZ 8 16, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 11 16, .CZ 13 16, .CZ 13 17, .CZ 14 16, .CZ 14 17, .CZ 15 16, .CZ 15 17, .CZ 17 29],
-  .measureX 32 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 10, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 17, .CZ 0 21, .CZ 1 7, .CZ 1 10, .CZ 1 16, .CZ 1 17, .CZ 2 7, .CZ 2 10, .CZ 2 16, .CZ 2 17, .CZ 3 7, .CZ 3 10, .CZ 3 16, .CZ 3 17, .CZ 3 20, .CZ 3 22, .CZ 4 7, .CZ 4 10, .CZ 4 17, .CZ 5 7, .CZ 5 10, .CZ 5 16, .CZ 5 17, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 17, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 29, .CZ 8 16, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 12 16, .CZ 13 16, .CZ 13 17, .CZ 14 16, .CZ 14 17, .CZ 15 16, .CZ 15 17, .CZ 17 29],
-  .measureX 33 [] [.Z 0, .Z 1, .Z 2, .Z 6, .Z 8, .Z 9, .Z 10, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 12, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 1 12, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 3 24, .CZ 4 12, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 20, .CZ 5 12, .CZ 5 16, .CZ 5 18, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 12, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 7 10, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 8 11, .CZ 8 17, .CZ 8 19, .CZ 8 20, .CZ 9 11, .CZ 9 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 29, .CZ 11 16, .CZ 11 18, .CZ 12 16, .CZ 12 18, .CZ 12 29, .CZ 13 16, .CZ 13 17, .CZ 14 16, .CZ 14 17, .CZ 15 16, .CZ 15 17, .CZ 17 29, .CZ 20 29, .CZ 24 29],
-  .measureX 26 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 16, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 8 11, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 20, .CZ 10 16, .CZ 11 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 27 [] [.Z 3, .Z 7, .Z 10, .Z 12, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 20, .CZ 7 16, .CZ 11 12, .CZ 11 16, .CZ 11 18, .CZ 11 19],
-  .measureX 28 [] [.Z 7, .Z 8, .Z 10, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 4 17, .CZ 4 18, .CZ 4 20, .CZ 5 17, .CZ 5 18, .CZ 5 20, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 7 16, .CZ 8 17, .CZ 8 18, .CZ 8 20, .CZ 9 11, .CZ 10 16, .CZ 11 12, .CZ 11 16, .CZ 11 19, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 29 [] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 21, .CZ 1 16, .CZ 1 21, .CZ 3 16, .CZ 3 20, .CZ 3 22, .CZ 5 16, .CZ 6 16, .CZ 8 16, .CZ 10 16, .CZ 11 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 30 [] [.Z 1, .Z 3, .Z 12, .CZ 1 16, .CZ 1 21, .CZ 3 16, .CZ 8 11, .CZ 8 17, .CZ 8 18, .CZ 8 20, .CZ 12 16],
-  .measureX 17 [] [.Z 7, .Z 10, .Z 16, .CZ 7 16],
-  .measureX 18 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 16, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 3 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 8 16, .CZ 10 16, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 19 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 10 16, .CZ 11 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 20 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 3 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 8 16, .CZ 10 16, .CZ 11 16, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16]
-]
+  .measureX 57 [.Z 0, .Z 0] [.Z 4, .Z 7, .Z 11, .CZ 4 16, .CZ 4 20, .CZ 7 16, .CZ 8 10, .CZ 10 11, .CZ 10 19, .CZ 10 23, .CZ 10 26, .CZ 10 32, .CZ 10 34, .CZ 10 37, .CZ 10 40, .CZ 10 45, .CZ 10 52, .CZ 10 53, .CZ 11 17, .CZ 11 18, .CZ 11 32, .CZ 11 37, .CZ 11 39],
+  .measureX 58 [.Z 0, .Z 0] [.Z 2, .Z 5, .Z 6, .Z 7, .Z 9, .Z 14, .Z 17, .Z 22, .Z 23, .Z 25, .Z 26, .Z 31, .Z 36, .Z 37, .Z 40, .Z 41, .Z 52, .Z 56, .CZ 0 1, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 26, .CZ 0 27, .CZ 0 31, .CZ 0 39, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 19, .CZ 1 28, .CZ 1 31, .CZ 1 33, .CZ 1 40, .CZ 1 52, .CZ 1 53, .CZ 2 3, .CZ 2 7, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 26, .CZ 2 33, .CZ 2 34, .CZ 2 45, .CZ 3 8, .CZ 3 12, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 26, .CZ 3 27, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 19, .CZ 5 6, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 23, .CZ 5 26, .CZ 5 27, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 27, .CZ 6 34, .CZ 6 35, .CZ 6 36, .CZ 6 52, .CZ 6 53, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 19, .CZ 8 10, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 19, .CZ 8 28, .CZ 8 35, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 20, .CZ 10 26, .CZ 10 32, .CZ 10 34, .CZ 10 35, .CZ 10 37, .CZ 10 40, .CZ 10 45, .CZ 10 52, .CZ 10 53, .CZ 11 13, .CZ 11 14, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 13 16, .CZ 13 20, .CZ 13 26, .CZ 13 32, .CZ 13 34, .CZ 13 35, .CZ 13 37, .CZ 13 40, .CZ 13 45, .CZ 13 52, .CZ 13 53, .CZ 14 15, .CZ 14 16, .CZ 14 20, .CZ 14 26, .CZ 14 32, .CZ 14 34, .CZ 14 35, .CZ 14 37, .CZ 14 40, .CZ 14 45, .CZ 14 52, .CZ 14 53, .CZ 15 31, .CZ 15 32, .CZ 15 34, .CZ 15 36, .CZ 15 37, .CZ 15 39, .CZ 15 40, .CZ 15 45, .CZ 15 56],
+  .measureX 52 [.Z 0, .Z 0] [.Z 3, .Z 4, .Z 6, .Z 7, .Z 9, .Z 10, .Z 12, .CZ 0 1, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 37, .CZ 1 50, .CZ 2 5, .CZ 2 9, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 26, .CZ 2 31, .CZ 2 35, .CZ 2 47, .CZ 2 50, .CZ 3 7, .CZ 3 9, .CZ 3 11, .CZ 3 12, .CZ 3 16, .CZ 3 23, .CZ 3 50, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 47, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 22, .CZ 5 23, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 5 47, .CZ 6 9, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 20, .CZ 6 22, .CZ 6 47, .CZ 7 9, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 47, .CZ 8 9, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 19, .CZ 8 29, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 47, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 26, .CZ 10 27, .CZ 10 31, .CZ 10 35, .CZ 10 47, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 19, .CZ 11 29, .CZ 11 31, .CZ 11 32, .CZ 11 36, .CZ 11 37, .CZ 11 39, .CZ 11 47, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 29, .CZ 12 47, .CZ 13 16, .CZ 13 26, .CZ 13 27, .CZ 13 31, .CZ 13 35, .CZ 14 16, .CZ 14 26, .CZ 14 27, .CZ 14 31, .CZ 14 35, .CZ 15 16, .CZ 15 26, .CZ 15 27, .CZ 15 31, .CZ 15 35, .CZ 17 29, .CZ 19 29, .CZ 19 47, .CZ 23 29, .CZ 23 47, .CZ 27 31],
+  .measureX 53 [.Z 0, .Z 0] [.Z 1, .Z 3, .Z 5, .Z 6, .Z 7, .Z 12, .Z 16, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 12, .CZ 0 16, .CZ 0 17, .CZ 0 20, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 23, .CZ 1 26, .CZ 1 29, .CZ 1 50, .CZ 2 5, .CZ 2 9, .CZ 2 18, .CZ 2 26, .CZ 2 31, .CZ 2 35, .CZ 2 47, .CZ 2 50, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 16, .CZ 3 17, .CZ 3 19, .CZ 3 20, .CZ 3 50, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 18, .CZ 4 47, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 21, .CZ 5 22, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 36, .CZ 5 47, .CZ 6 7, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 20, .CZ 6 22, .CZ 6 26, .CZ 6 36, .CZ 6 47, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 26, .CZ 7 36, .CZ 7 47, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 50, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 47, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 26, .CZ 10 35, .CZ 10 47, .CZ 11 12, .CZ 11 16, .CZ 11 18, .CZ 11 47, .CZ 12 16, .CZ 12 17, .CZ 12 26, .CZ 12 47, .CZ 13 36, .CZ 14 36, .CZ 15 36, .CZ 17 50, .CZ 19 47, .CZ 23 47, .CZ 26 36, .CZ 35 36, .CZ 36 50],
+  .measureX 54 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 9, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 18, .CZ 0 19, .CZ 0 20, .CZ 0 34, .CZ 0 39, .CZ 1 2, .CZ 1 4, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 23, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 31, .CZ 1 33, .CZ 1 34, .CZ 1 39, .CZ 2 6, .CZ 2 9, .CZ 2 10, .CZ 2 16, .CZ 2 17, .CZ 2 20, .CZ 2 31, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 16, .CZ 3 17, .CZ 3 19, .CZ 3 22, .CZ 3 23, .CZ 3 34, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 20, .CZ 4 23, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 20, .CZ 5 21, .CZ 5 26, .CZ 5 30, .CZ 5 31, .CZ 5 36, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 16, .CZ 6 17, .CZ 6 20, .CZ 6 22, .CZ 6 26, .CZ 6 36, .CZ 6 39, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 26, .CZ 7 29, .CZ 7 46, .CZ 8 9, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 18, .CZ 8 20, .CZ 8 31, .CZ 8 32, .CZ 8 50, .CZ 9 12, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 26, .CZ 10 29, .CZ 10 34, .CZ 10 35, .CZ 10 46, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 29, .CZ 11 31, .CZ 11 37, .CZ 11 49, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 13 31, .CZ 13 32, .CZ 13 36, .CZ 13 39, .CZ 14 31, .CZ 14 32, .CZ 14 36, .CZ 14 39, .CZ 15 31, .CZ 15 32, .CZ 15 36, .CZ 15 39, .CZ 17 50, .CZ 18 29, .CZ 18 46, .CZ 19 29, .CZ 20 29, .CZ 26 29, .CZ 26 32, .CZ 26 36, .CZ 26 39, .CZ 27 31, .CZ 28 31, .CZ 29 39, .CZ 34 36, .CZ 35 36, .CZ 36 50],
+  .measureX 55 [.Z 0, .Z 0] [.Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 9, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 0 50, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 29, .CZ 1 35, .CZ 1 50, .CZ 2 6, .CZ 2 9, .CZ 2 12, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 31, .CZ 3 9, .CZ 3 11, .CZ 3 17, .CZ 3 20, .CZ 3 23, .CZ 3 26, .CZ 3 35, .CZ 3 50, .CZ 4 9, .CZ 4 16, .CZ 4 20, .CZ 5 7, .CZ 5 8, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 18, .CZ 5 20, .CZ 5 22, .CZ 5 23, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 5 50, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 19, .CZ 6 20, .CZ 6 21, .CZ 6 22, .CZ 6 26, .CZ 6 36, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 29, .CZ 7 36, .CZ 7 50, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 50, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 26, .CZ 10 29, .CZ 10 35, .CZ 10 50, .CZ 11 12, .CZ 11 16, .CZ 11 17, .CZ 11 19, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 12 16, .CZ 12 17, .CZ 12 26, .CZ 13 36, .CZ 14 36, .CZ 15 36, .CZ 18 29, .CZ 26 36, .CZ 35 36, .CZ 36 50],
+  .measureX 56 [.Z 0, .Z 0] [.Z 12, .Z 13, .Z 16, .Z 17, .Z 20, .Z 21, .Z 22, .Z 23, .Z 25, .Z 26, .Z 28, .Z 30, .Z 31, .Z 32, .Z 36, .Z 37, .Z 38, .Z 39, .Z 40, .Z 41, .Z 43, .Z 45, .Z 51, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 9, .CZ 0 11, .CZ 0 19, .CZ 0 20, .CZ 0 23, .CZ 0 26, .CZ 0 27, .CZ 0 31, .CZ 0 34, .CZ 0 35, .CZ 0 39, .CZ 0 40, .CZ 0 43, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 27, .CZ 1 29, .CZ 1 31, .CZ 1 34, .CZ 1 35, .CZ 1 39, .CZ 1 43, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 17, .CZ 2 19, .CZ 2 28, .CZ 2 33, .CZ 2 34, .CZ 2 38, .CZ 2 43, .CZ 2 44, .CZ 2 45, .CZ 3 5, .CZ 3 6, .CZ 3 12, .CZ 3 17, .CZ 3 18, .CZ 3 20, .CZ 3 31, .CZ 3 34, .CZ 3 39, .CZ 4 5, .CZ 4 6, .CZ 4 11, .CZ 4 20, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 20, .CZ 5 28, .CZ 5 45, .CZ 6 8, .CZ 6 19, .CZ 6 26, .CZ 6 34, .CZ 6 35, .CZ 6 39, .CZ 8 14, .CZ 8 50, .CZ 9 14, .CZ 11 14, .CZ 12 14, .CZ 13 14, .CZ 14 16, .CZ 14 18, .CZ 14 19, .CZ 14 24, .CZ 14 26, .CZ 14 31, .CZ 14 35, .CZ 14 36, .CZ 14 43, .CZ 14 51, .CZ 17 50, .CZ 36 50],
+  .measureX 49 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 9, .Z 10, .Z 11, .Z 16, .CZ 0 1, .CZ 0 6, .CZ 0 8, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 19, .CZ 0 20, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 9, .CZ 1 12, .CZ 1 16, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 23, .CZ 1 24, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 19, .CZ 2 20, .CZ 2 31, .CZ 3 9, .CZ 3 11, .CZ 3 18, .CZ 3 20, .CZ 3 23, .CZ 3 26, .CZ 3 31, .CZ 3 35, .CZ 4 8, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 23, .CZ 4 24, .CZ 5 6, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 18, .CZ 5 20, .CZ 5 21, .CZ 5 23, .CZ 5 26, .CZ 5 36, .CZ 6 7, .CZ 6 10, .CZ 6 12, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 6 22, .CZ 6 24, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 26, .CZ 7 36, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 16, .CZ 8 19, .CZ 8 29, .CZ 8 32, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 10, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 31, .CZ 10 35, .CZ 10 36, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 19, .CZ 11 29, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 11 46, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 29, .CZ 12 46, .CZ 13 27, .CZ 13 36, .CZ 13 39, .CZ 14 27, .CZ 14 36, .CZ 14 39, .CZ 15 27, .CZ 15 36, .CZ 15 39, .CZ 17 29, .CZ 18 46, .CZ 19 29, .CZ 23 29, .CZ 24 46, .CZ 26 31, .CZ 26 39, .CZ 27 31, .CZ 27 36, .CZ 31 46, .CZ 35 36, .CZ 35 46],
+  .measureX 50 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 4, .Z 5, .Z 6, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 5, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 17, .CZ 0 19, .CZ 0 21, .CZ 0 26, .CZ 0 29, .CZ 0 34, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 26, .CZ 1 29, .CZ 1 34, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 19, .CZ 2 31, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 17, .CZ 3 18, .CZ 3 23, .CZ 3 34, .CZ 3 39, .CZ 4 5, .CZ 4 8, .CZ 4 9, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 19, .CZ 4 26, .CZ 4 29, .CZ 4 39, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 18, .CZ 5 22, .CZ 5 23, .CZ 5 30, .CZ 5 31, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 17, .CZ 6 18, .CZ 6 19, .CZ 6 26, .CZ 6 29, .CZ 7 9, .CZ 7 12, .CZ 7 16, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 17, .CZ 8 29, .CZ 8 47, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 29, .CZ 10 12, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 29, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 13 31, .CZ 14 31, .CZ 15 31, .CZ 17 29, .CZ 19 29, .CZ 23 29, .CZ 23 47, .CZ 26 29, .CZ 26 32, .CZ 27 29, .CZ 27 31, .CZ 27 32, .CZ 28 29, .CZ 28 31, .CZ 28 32],
+  .measureX 51 [.Z 0, .Z 0] [.CZ 8 13, .CZ 9 13, .CZ 11 13, .CZ 12 13, .CZ 13 16, .CZ 13 18, .CZ 13 19, .CZ 13 24, .CZ 13 26, .CZ 13 31, .CZ 13 35, .CZ 13 36, .CZ 13 43, .CZ 13 48],
+  .measureX 45 [.Z 0, .Z 0] [.Z 0, .Z 11, .Z 16, .CZ 0 16, .CZ 0 20, .CZ 8 20, .CZ 11 18, .CZ 11 36, .CZ 11 37, .CZ 11 39],
+  .measureX 46 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 5, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 19, .CZ 0 20, .CZ 0 21, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 23, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 31, .CZ 1 32, .CZ 1 33, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 19, .CZ 2 31, .CZ 3 11, .CZ 3 12, .CZ 3 23, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 23, .CZ 5 7, .CZ 5 10, .CZ 5 12, .CZ 5 16, .CZ 5 20, .CZ 5 22, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 6 12, .CZ 6 21, .CZ 6 22, .CZ 7 12, .CZ 7 16, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 31, .CZ 8 32, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 11, .CZ 9 12, .CZ 10 12, .CZ 10 26, .CZ 10 27, .CZ 10 29, .CZ 10 31, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 19, .CZ 11 31, .CZ 11 32, .CZ 11 37, .CZ 11 39, .CZ 12 17, .CZ 13 26, .CZ 13 31, .CZ 13 32, .CZ 13 36, .CZ 13 37, .CZ 13 39, .CZ 14 26, .CZ 14 31, .CZ 14 32, .CZ 14 36, .CZ 14 37, .CZ 14 39, .CZ 15 26, .CZ 15 31, .CZ 15 32, .CZ 15 36, .CZ 15 37, .CZ 15 39, .CZ 18 29, .CZ 26 32, .CZ 26 37, .CZ 26 39, .CZ 27 31, .CZ 27 36],
+  .measureX 47 [.Z 0, .Z 0] [.Z 2, .Z 3, .Z 7, .Z 8, .Z 9, .Z 10, .Z 12, .Z 16, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 19, .CZ 0 20, .CZ 0 34, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 31, .CZ 1 34, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 19, .CZ 2 31, .CZ 3 4, .CZ 3 6, .CZ 3 10, .CZ 3 18, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 3 34, .CZ 3 39, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 17, .CZ 4 18, .CZ 4 19, .CZ 4 26, .CZ 4 29, .CZ 4 39, .CZ 5 8, .CZ 5 9, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 17, .CZ 5 19, .CZ 5 26, .CZ 5 29, .CZ 6 8, .CZ 6 9, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 17, .CZ 6 19, .CZ 6 20, .CZ 6 22, .CZ 6 26, .CZ 6 29, .CZ 7 9, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 16, .CZ 8 17, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 29, .CZ 10 11, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 26, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 19, .CZ 11 31, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 29, .CZ 13 16, .CZ 13 26, .CZ 14 16, .CZ 14 26, .CZ 15 16, .CZ 15 26, .CZ 26 29, .CZ 26 31, .CZ 26 32, .CZ 27 29, .CZ 27 31, .CZ 27 32, .CZ 28 29, .CZ 28 31, .CZ 28 32],
+  .measureX 48 [.Z 0, .Z 0] [],
+  .measureX 39 [.Z 0, .Z 0] [.Z 1, .Z 5, .Z 11, .Z 12, .CZ 0 3, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 11, .CZ 1 17, .CZ 1 20, .CZ 1 21, .CZ 1 27, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 37, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 16, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 4 16, .CZ 5 7, .CZ 5 10, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 18, .CZ 6 20, .CZ 7 12, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 29, .CZ 9 11, .CZ 10 11, .CZ 10 29, .CZ 11 17, .CZ 11 18, .CZ 11 29, .CZ 11 31, .CZ 11 36, .CZ 12 16, .CZ 12 17, .CZ 12 26, .CZ 12 29, .CZ 17 29, .CZ 18 29, .CZ 19 29, .CZ 23 29],
+  .measureX 40 [.Z 0, .Z 0] [.Z 4, .Z 8, .Z 16, .CZ 0 7, .CZ 0 10, .CZ 0 18, .CZ 1 7, .CZ 1 10, .CZ 1 18, .CZ 1 33, .CZ 1 37, .CZ 2 7, .CZ 2 10, .CZ 2 18, .CZ 3 7, .CZ 4 7, .CZ 4 10, .CZ 4 16, .CZ 4 18, .CZ 5 7, .CZ 5 10, .CZ 5 18, .CZ 6 7, .CZ 6 10, .CZ 6 18, .CZ 7 12, .CZ 7 16, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 11, .CZ 8 16, .CZ 8 20, .CZ 10 11, .CZ 10 29, .CZ 11 18, .CZ 12 16, .CZ 18 29],
+  .measureX 41 [.Z 0, .Z 0] [.Z 1, .Z 3, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 16, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 17, .CZ 0 18, .CZ 0 19, .CZ 0 21, .CZ 0 26, .CZ 0 35, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 18, .CZ 1 20, .CZ 1 23, .CZ 1 26, .CZ 1 35, .CZ 2 3, .CZ 2 8, .CZ 2 9, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 19, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 17, .CZ 3 18, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 3 26, .CZ 3 35, .CZ 4 8, .CZ 4 9, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 19, .CZ 4 20, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 22, .CZ 5 23, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 8, .CZ 6 9, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 19, .CZ 6 22, .CZ 7 9, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 26, .CZ 7 29, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 16, .CZ 8 17, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 26, .CZ 10 29, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 18, .CZ 11 29, .CZ 11 31, .CZ 11 32, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 17, .CZ 12 26, .CZ 13 16, .CZ 13 26, .CZ 14 16, .CZ 14 26, .CZ 15 16, .CZ 15 26, .CZ 18 29, .CZ 20 29, .CZ 26 31, .CZ 27 31, .CZ 28 31],
+  .measureX 42 [.Z 0, .Z 0] [.Z 1, .Z 5, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 16, .CZ 0 21, .CZ 1 3, .CZ 1 4, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 16, .CZ 1 17, .CZ 1 20, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 31, .CZ 1 32, .CZ 1 37, .CZ 2 16, .CZ 2 20, .CZ 3 5, .CZ 3 16, .CZ 3 22, .CZ 4 5, .CZ 5 7, .CZ 5 10, .CZ 5 11, .CZ 5 17, .CZ 5 18, .CZ 5 19, .CZ 5 20, .CZ 5 21, .CZ 5 23, .CZ 5 26, .CZ 5 27, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 38, .CZ 7 16, .CZ 8 11, .CZ 8 20, .CZ 11 32],
+  .measureX 43 [.Z 0, .Z 0] [.Z 3, .Z 5, .Z 7, .Z 9, .Z 11, .Z 16, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 16, .CZ 0 18, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 10, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 23, .CZ 1 28, .CZ 1 32, .CZ 1 37, .CZ 2 5, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 26, .CZ 2 27, .CZ 2 31, .CZ 3 7, .CZ 3 11, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 4 23, .CZ 4 26, .CZ 4 27, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 12, .CZ 5 17, .CZ 5 18, .CZ 5 21, .CZ 5 23, .CZ 5 27, .CZ 5 36, .CZ 6 7, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 16, .CZ 6 19, .CZ 6 26, .CZ 6 36, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 17, .CZ 7 29, .CZ 7 36, .CZ 8 10, .CZ 8 12, .CZ 8 16, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 20, .CZ 8 29, .CZ 9 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 29, .CZ 10 31, .CZ 10 32, .CZ 10 36, .CZ 11 12, .CZ 11 17, .CZ 11 18, .CZ 11 19, .CZ 11 29, .CZ 11 36, .CZ 12 16, .CZ 12 29, .CZ 13 26, .CZ 13 27, .CZ 14 26, .CZ 14 27, .CZ 15 26, .CZ 15 27, .CZ 17 29, .CZ 19 29, .CZ 23 29, .CZ 26 29, .CZ 26 31, .CZ 26 32, .CZ 26 36, .CZ 27 29, .CZ 27 31, .CZ 27 32, .CZ 27 36],
+  .measureX 44 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 8, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 10, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 19, .CZ 1 20, .CZ 1 21, .CZ 1 26, .CZ 1 29, .CZ 1 31, .CZ 1 32, .CZ 1 34, .CZ 1 35, .CZ 1 37, .CZ 1 38, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 18, .CZ 2 19, .CZ 2 20, .CZ 2 26, .CZ 2 27, .CZ 2 28, .CZ 2 34, .CZ 2 35, .CZ 2 38, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 3 26, .CZ 3 27, .CZ 3 28, .CZ 3 31, .CZ 3 34, .CZ 3 35, .CZ 3 38, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 18, .CZ 4 19, .CZ 4 23, .CZ 5 10, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 17, .CZ 5 18, .CZ 5 21, .CZ 5 30, .CZ 6 10, .CZ 6 12, .CZ 6 17, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 6 26, .CZ 6 29, .CZ 7 9, .CZ 7 12, .CZ 8 10, .CZ 8 12, .CZ 8 17, .CZ 8 18, .CZ 8 19, .CZ 8 29, .CZ 10 11, .CZ 10 16, .CZ 10 27, .CZ 11 17, .CZ 11 18, .CZ 11 29, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 26, .CZ 13 16, .CZ 13 27, .CZ 13 33, .CZ 14 16, .CZ 14 27, .CZ 14 33, .CZ 15 16, .CZ 15 27, .CZ 15 33, .CZ 17 29, .CZ 23 29, .CZ 26 33, .CZ 27 29, .CZ 28 29, .CZ 29 38],
+  .measureX 34 [.Z 0, .Z 0] [.Z 1, .Z 2, .CZ 1 16, .CZ 1 20, .CZ 2 16, .CZ 2 20, .CZ 11 18, .CZ 11 19, .CZ 11 31, .CZ 11 32],
+  .measureX 35 [.Z 0, .Z 0] [.Z 1, .Z 3, .CZ 1 16, .CZ 1 20, .CZ 3 16, .CZ 3 20, .CZ 11 18, .CZ 11 19, .CZ 11 31],
+  .measureX 36 [.Z 0, .Z 0] [.Z 1, .Z 5, .Z 6, .Z 7, .Z 9, .Z 10, .CZ 0 1, .CZ 0 2, .CZ 0 16, .CZ 0 21, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 17, .CZ 1 18, .CZ 1 20, .CZ 1 26, .CZ 1 29, .CZ 2 6, .CZ 2 12, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 31, .CZ 5 7, .CZ 5 10, .CZ 5 16, .CZ 5 20, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 6 21, .CZ 7 16, .CZ 8 11, .CZ 8 16, .CZ 8 20, .CZ 11 16, .CZ 12 16],
+  .measureX 37 [.Z 0, .Z 0] [.Z 0, .Z 6, .Z 8, .Z 9, .Z 12, .Z 16, .CZ 0 16, .CZ 0 20, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 18, .CZ 1 20, .CZ 1 21, .CZ 1 26, .CZ 1 27, .CZ 1 28, .CZ 1 32, .CZ 1 33, .CZ 2 6, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 31, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 23, .CZ 4 20, .CZ 5 16, .CZ 5 20, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 18, .CZ 6 20, .CZ 6 21, .CZ 7 12, .CZ 7 16, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 11, .CZ 8 29, .CZ 9 11, .CZ 10 11, .CZ 10 29, .CZ 11 16, .CZ 11 19, .CZ 11 29, .CZ 12 17, .CZ 12 26, .CZ 12 29, .CZ 17 29, .CZ 18 29, .CZ 19 29, .CZ 23 29],
+  .measureX 38 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 6, .CZ 0 16, .CZ 0 20, .CZ 0 21, .CZ 1 12, .CZ 1 16, .CZ 1 17, .CZ 1 18, .CZ 1 21, .CZ 1 31, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 18, .CZ 2 20, .CZ 2 31, .CZ 3 6, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 17, .CZ 3 18, .CZ 3 19, .CZ 3 22, .CZ 3 23, .CZ 4 6, .CZ 4 16, .CZ 4 20, .CZ 5 12, .CZ 5 17, .CZ 5 20, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 8, .CZ 6 12, .CZ 6 16, .CZ 6 17, .CZ 6 19, .CZ 6 20, .CZ 6 22, .CZ 7 12, .CZ 7 16, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 20, .CZ 8 29, .CZ 9 11, .CZ 10 11, .CZ 10 29, .CZ 11 16, .CZ 11 19, .CZ 11 29, .CZ 11 32, .CZ 12 16, .CZ 12 17, .CZ 12 26, .CZ 12 29, .CZ 17 29, .CZ 18 29, .CZ 19 29, .CZ 23 29],
+  .measureX 31 [.Z 0, .Z 0] [.Z 0, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .Z 16, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 18, .CZ 0 21, .CZ 1 7, .CZ 1 10, .CZ 1 16, .CZ 1 18, .CZ 2 7, .CZ 2 10, .CZ 2 18, .CZ 3 7, .CZ 3 20, .CZ 3 22, .CZ 4 7, .CZ 4 10, .CZ 4 18, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 18, .CZ 5 19, .CZ 5 23, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 6 7, .CZ 6 10, .CZ 6 16, .CZ 6 18, .CZ 7 12, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 11, .CZ 8 16, .CZ 8 20, .CZ 10 11, .CZ 10 16, .CZ 10 29, .CZ 11 18, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16, .CZ 18 29],
+  .measureX 32 [.Z 0, .Z 0] [.Z 2, .Z 3, .CZ 2 16, .CZ 3 16, .CZ 5 8, .CZ 5 11, .CZ 5 16, .CZ 5 19, .CZ 5 23, .CZ 5 26, .CZ 5 29, .CZ 5 30, .CZ 8 11, .CZ 8 20],
+  .measureX 33 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 7, .CZ 0 10, .CZ 0 16, .CZ 0 18, .CZ 0 20, .CZ 0 21, .CZ 1 7, .CZ 1 10, .CZ 1 18, .CZ 1 20, .CZ 2 7, .CZ 2 10, .CZ 2 18, .CZ 2 20, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 17, .CZ 3 19, .CZ 3 20, .CZ 3 22, .CZ 3 23, .CZ 4 7, .CZ 4 10, .CZ 4 16, .CZ 4 18, .CZ 4 20, .CZ 5 7, .CZ 5 10, .CZ 5 18, .CZ 5 20, .CZ 6 7, .CZ 6 10, .CZ 6 18, .CZ 6 20, .CZ 7 12, .CZ 7 17, .CZ 7 26, .CZ 7 29, .CZ 8 11, .CZ 8 29, .CZ 9 11, .CZ 10 11, .CZ 10 29, .CZ 11 16, .CZ 11 19, .CZ 11 29, .CZ 12 16, .CZ 12 17, .CZ 12 26, .CZ 12 29, .CZ 17 29, .CZ 18 29, .CZ 19 29, .CZ 23 29],
+  .measureX 26 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 16, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 8 11, .CZ 8 16, .CZ 8 20, .CZ 10 16, .CZ 11 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
+  .measureX 27 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 3 20, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 8 16, .CZ 10 16, .CZ 11 12, .CZ 11 16, .CZ 11 17, .CZ 11 19, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16]]
 
 private def enter0Block58 : Program := [
-  .measureX 21 [] [.Z 1, .Z 2, .CZ 1 16, .CZ 2 16],
-  .measureX 22 [] [.Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 16, .CZ 1 16, .CZ 2 16, .CZ 3 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 8 16, .CZ 10 16, .CZ 11 16, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 23 [] [.Z 7, .CZ 7 16, .CZ 10 16],
-  .measureX 24 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 16, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 3 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 8 16, .CZ 10 16, .CZ 11 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
-  .measureX 25 [] [.Z 4, .Z 5, .Z 6, .Z 8, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 8 16],
-  .measureX 63 [] [.Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77],
-  .measureX 64 [] [.Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77],
-  .measureX 65 [] [],
-  .measureX 66 [] [],
-  .measureX 67 [] [],
-  .measureX 68 [] [],
-  .measureX 69 [] [],
-  .measureX 70 [] [],
-  .measureX 71 [] [],
-  .measureX 72 [] [],
-  .measureX 73 [] [],
-  .measureX 74 [] [],
-  .measureX 75 [] [],
-  .measureX 76 [] [],
-  .measureX 77 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] []
-]
+  .measureX 28 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 16, .CZ 0 20, .CZ 1 16, .CZ 1 20, .CZ 2 16, .CZ 2 20, .CZ 4 16, .CZ 4 20, .CZ 5 16, .CZ 5 20, .CZ 6 16, .CZ 6 20, .CZ 7 16, .CZ 8 20, .CZ 9 11, .CZ 11 12, .CZ 11 18, .CZ 11 19],
+  .measureX 29 [.Z 0, .Z 0] [.Z 1, .Z 3, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 16, .CZ 0 21, .CZ 1 21, .CZ 2 16, .CZ 3 16, .CZ 3 20, .CZ 3 22, .CZ 4 16, .CZ 8 11, .CZ 8 20],
+  .measureX 30 [.Z 0, .Z 0] [.Z 1, .Z 11, .Z 16, .CZ 1 16, .CZ 1 21, .CZ 11 16],
+  .measureX 17 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 3 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 8 16, .CZ 10 16, .CZ 12 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
+  .measureX 18 [.Z 0, .Z 0] [.Z 7, .Z 10, .Z 16, .CZ 7 16],
+  .measureX 19 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 16, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 10 16, .CZ 11 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
+  .measureX 20 [.Z 0, .Z 0] [.Z 11, .CZ 11 16],
+  .measureX 21 [.Z 0, .Z 0] [.Z 1, .Z 2, .CZ 1 16, .CZ 2 16],
+  .measureX 22 [.Z 0, .Z 0] [.Z 0, .Z 11, .Z 16, .CZ 0 16, .CZ 11 16],
+  .measureX 23 [.Z 0, .Z 0] [.Z 3, .Z 8, .CZ 3 16, .CZ 8 16, .CZ 11 16],
+  .measureX 24 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .CZ 0 16, .CZ 1 16, .CZ 2 16, .CZ 4 16, .CZ 5 16, .CZ 6 16, .CZ 7 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
+  .measureX 25 [.Z 0, .Z 0] [.Z 7, .Z 8, .CZ 7 16, .CZ 8 16, .CZ 13 16, .CZ 14 16, .CZ 15 16],
+  .measureX 62 [.Z 0, .Z 0] [.Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77],
+  .measureX 63 [.Z 0, .Z 0] [.Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77],
+  .measureX 64 [.Z 0, .Z 0] [.Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77, .Z 77],
+  .measureX 65 [.Z 0, .Z 0] [],
+  .measureX 66 [.Z 0, .Z 0] [],
+  .measureX 67 [.Z 0, .Z 0] [],
+  .measureX 68 [.Z 0, .Z 0] [],
+  .measureX 69 [.Z 0, .Z 0] [],
+  .measureX 70 [.Z 0, .Z 0] [],
+  .measureX 71 [.Z 0, .Z 0] [],
+  .measureX 72 [.Z 0, .Z 0] [],
+  .measureX 73 [.Z 0, .Z 0] [],
+  .measureX 74 [.Z 0, .Z 0] [],
+  .measureX 75 [.Z 0, .Z 0] [],
+  .measureX 76 [.Z 0, .Z 0] [],
+  .measureX 77 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] []]
 
 private def enter0Block59 : Program := [
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
   .measureX 78 [] [],
   .measureX 78 [] [],
   .measureX 78 [] [],
@@ -49899,23 +50163,14 @@ private def enter0Block59 : Program := [
   .measureX 78 [] [],
   .measureX 78 [] [],
   .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] [],
-  .measureX 78 [] []
-]
+  .measureX 78 [] []]
 
 def enter0 : Program := WSlimTree.joinL enter0Block0 [enter0Block1, enter0Block2, enter0Block3, enter0Block4, enter0Block5, enter0Block6, enter0Block7, enter0Block8, enter0Block9, enter0Block10, enter0Block11, enter0Block12, enter0Block13, enter0Block14, enter0Block15, enter0Block16, enter0Block17, enter0Block18, enter0Block19, enter0Block20, enter0Block21, enter0Block22, enter0Block23, enter0Block24, enter0Block25, enter0Block26, enter0Block27, enter0Block28, enter0Block29, enter0Block30, enter0Block31, enter0Block32, enter0Block33, enter0Block34, enter0Block35, enter0Block36, enter0Block37, enter0Block38, enter0Block39, enter0Block40, enter0Block41, enter0Block42, enter0Block43, enter0Block44, enter0Block45, enter0Block46, enter0Block47, enter0Block48, enter0Block49, enter0Block50, enter0Block51, enter0Block52, enter0Block53, enter0Block54, enter0Block55, enter0Block56, enter0Block57, enter0Block58, enter0Block59]
 
 theorem enter0_checked : eval StairArchiveColumns.col312 enter0 enter0StoredIn = (true, enter0Trace3Out) :=
   WSlimTree.eval_of_checkSeq _ enter0Block0 [enter0Block1, enter0Block2, enter0Block3, enter0Block4, enter0Block5, enter0Block6, enter0Block7, enter0Block8, enter0Block9, enter0Block10, enter0Block11, enter0Block12, enter0Block13, enter0Block14, enter0Block15, enter0Block16, enter0Block17, enter0Block18, enter0Block19, enter0Block20, enter0Block21, enter0Block22, enter0Block23, enter0Block24, enter0Block25, enter0Block26, enter0Block27, enter0Block28, enter0Block29, enter0Block30, enter0Block31, enter0Block32, enter0Block33, enter0Block34, enter0Block35, enter0Block36, enter0Block37, enter0Block38, enter0Block39, enter0Block40, enter0Block41, enter0Block42, enter0Block43, enter0Block44, enter0Block45, enter0Block46, enter0Block47, enter0Block48, enter0Block49, enter0Block50, enter0Block51, enter0Block52, enter0Block53, enter0Block54, enter0Block55, enter0Block56, enter0Block57, enter0Block58, enter0Block59] _ _ (by decide +kernel)
 
-theorem enter0_counts : GatePhysical enter0 ∧ toffoliCount enter0 = 47 ∧
+theorem enter0_counts : GatePhysical enter0 ∧ toffoliCount enter0 = 45 ∧
     measurementCount enter0 = 93 ∧ gateSlots enter0 = 5623 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
@@ -55364,7 +55619,6 @@ private def leave1Block7 : Program := [
   .CX 27 1,
   .CX 30 1,
   .CX 39 1,
-  .CCX 19 1 42,
   .CX 39 1,
   .CX 30 1,
   .CX 27 1,
@@ -55372,11 +55626,11 @@ private def leave1Block7 : Program := [
   .CX 16 9,
   .CX 18 9,
   .CX 26 9,
-  .CX 30 9
+  .CX 30 9,
+  .CX 31 9
 ]
 
 private def leave1Block8 : Program := [
-  .CX 31 9,
   .CX 33 9,
   .CX 41 9,
   .CCX 8 9 43,
@@ -55405,11 +55659,11 @@ private def leave1Block8 : Program := [
   .CX 27 16,
   .CX 32 16,
   .CX 34 16,
-  .CCX 2 16 44
+  .CCX 2 16 44,
+  .CX 34 16
 ]
 
 private def leave1Block9 : Program := [
-  .CX 34 16,
   .CX 32 16,
   .CX 27 16,
   .CX 17 16,
@@ -55438,11 +55692,11 @@ private def leave1Block9 : Program := [
   .CX 36 0,
   .CX 27 0,
   .CX 4 0,
-  .CX 2 0
+  .CX 2 0,
+  .CX 20 16
 ]
 
 private def leave1Block10 : Program := [
-  .CX 20 16,
   .CX 18 7,
   .CX 22 7,
   .X 7,
@@ -55461,7 +55715,8 @@ private def leave1Block10 : Program := [
   .CX 40 2,
   .CX 42 2,
   .CX 45 2,
-  .CCX 7 2 46,
+  .CX 16 46,
+  .CX 18 46,
   .CX 45 2,
   .CX 42 2,
   .CX 40 2,
@@ -56720,109 +56975,109 @@ private def leave1Block48 : Program := [
   .CX 0 22,
   .CX 0 19,
   .CX 0 16,
-  .measureX 61 [] [.Z 1, .Z 6, .Z 7, .Z 9, .Z 10, .Z 11, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 29, .CZ 0 57, .CZ 0 58, .CZ 0 59, .CZ 0 60, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 15, .CZ 1 31, .CZ 1 36, .CZ 1 42, .CZ 1 57, .CZ 1 60, .CZ 2 6, .CZ 2 7, .CZ 2 9, .CZ 2 11, .CZ 2 12, .CZ 2 15, .CZ 2 17, .CZ 2 29, .CZ 2 31, .CZ 2 33, .CZ 2 57, .CZ 2 60, .CZ 3 4, .CZ 3 7, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 18, .CZ 3 30, .CZ 3 36, .CZ 3 39, .CZ 3 57, .CZ 3 58, .CZ 3 59, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 4 30, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 4 57, .CZ 4 58, .CZ 4 59, .CZ 4 60, .CZ 5 9, .CZ 5 11, .CZ 5 12, .CZ 5 22, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 45, .CZ 5 48, .CZ 6 7, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 22, .CZ 6 23, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 6 57, .CZ 6 58, .CZ 6 59, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 23, .CZ 7 25, .CZ 7 26, .CZ 7 28, .CZ 7 30, .CZ 7 37, .CZ 7 39, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 7 56, .CZ 8 9, .CZ 8 11, .CZ 8 12, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 30, .CZ 8 39, .CZ 8 57, .CZ 8 58, .CZ 8 59, .CZ 8 60, .CZ 9 10, .CZ 9 22, .CZ 9 23, .CZ 9 30, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 20, .CZ 10 24, .CZ 10 42, .CZ 10 51, .CZ 10 56, .CZ 10 57, .CZ 10 60, .CZ 11 12, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 11 36, .CZ 11 57, .CZ 11 60, .CZ 12 15, .CZ 12 23, .CZ 12 39, .CZ 12 57, .CZ 12 58, .CZ 12 59, .CZ 13 23, .CZ 13 26, .CZ 13 27, .CZ 13 28, .CZ 13 35, .CZ 13 38, .CZ 13 43, .CZ 13 50, .CZ 14 23, .CZ 14 26, .CZ 14 27, .CZ 14 28, .CZ 14 35, .CZ 14 38, .CZ 14 43, .CZ 14 50, .CZ 15 29, .CZ 15 32, .CZ 15 33, .CZ 15 34, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 22 57, .CZ 22 58, .CZ 22 59, .CZ 22 60, .CZ 23 30, .CZ 23 36, .CZ 23 37, .CZ 23 38, .CZ 23 42, .CZ 23 43, .CZ 23 60, .CZ 24 36, .CZ 24 42, .CZ 24 57, .CZ 24 58, .CZ 24 59, .CZ 24 60, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 26 57, .CZ 26 58, .CZ 26 59, .CZ 27 58, .CZ 27 59, .CZ 28 39, .CZ 28 60, .CZ 29 58, .CZ 29 59, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 32 57, .CZ 32 58, .CZ 32 59, .CZ 33 60, .CZ 34 60, .CZ 35 36, .CZ 36 39, .CZ 38 57, .CZ 38 58, .CZ 38 59, .CZ 39 42, .CZ 43 57, .CZ 43 58, .CZ 43 59, .CZ 50 57, .CZ 50 58, .CZ 50 59],
-  .measureX 60 [] [.Z 1, .Z 4, .Z 5, .Z 8, .Z 9, .Z 10, .Z 11, .Z 13, .Z 14, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 16, .CZ 1 2, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 1 29, .CZ 1 31, .CZ 1 36, .CZ 1 42, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 31, .CZ 2 33, .CZ 3 4, .CZ 3 9, .CZ 3 30, .CZ 3 36, .CZ 3 39, .CZ 4 5, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 16, .CZ 4 30, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 5 8, .CZ 5 11, .CZ 5 16, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 27, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 45, .CZ 5 48, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 22, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 24, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 30, .CZ 7 37, .CZ 7 39, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 7 56, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 22, .CZ 8 26, .CZ 8 28, .CZ 8 30, .CZ 8 39, .CZ 9 23, .CZ 9 30, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 42, .CZ 10 51, .CZ 10 56, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 24, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 39, .CZ 13 14, .CZ 13 15, .CZ 13 29, .CZ 13 31, .CZ 13 32, .CZ 13 35, .CZ 13 57, .CZ 14 15, .CZ 14 29, .CZ 14 31, .CZ 14 32, .CZ 14 35, .CZ 14 57, .CZ 14 58, .CZ 15 29, .CZ 15 31, .CZ 15 32, .CZ 15 35, .CZ 15 57, .CZ 15 58, .CZ 15 59, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 23 30, .CZ 23 36, .CZ 23 37, .CZ 23 38, .CZ 23 42, .CZ 23 43, .CZ 24 36, .CZ 24 42, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 28 39, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 35 36, .CZ 36 39, .CZ 39 42],
-  .measureX 59 [] [.CZ 13 14, .CZ 14 25, .CZ 14 31, .CZ 14 57, .CZ 14 58],
-  .measureX 58 [] [.CZ 13 25, .CZ 13 31, .CZ 13 57],
-  .measureX 57 [] [.Z 1, .Z 4, .Z 6, .Z 9, .Z 10, .Z 11, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 7, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 29, .CZ 1 31, .CZ 1 36, .CZ 1 42, .CZ 2 5, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 31, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 3 36, .CZ 3 39, .CZ 4 6, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 20, .CZ 4 30, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 45, .CZ 5 48, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 22, .CZ 6 25, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 24, .CZ 7 25, .CZ 7 26, .CZ 7 30, .CZ 7 37, .CZ 7 39, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 7 56, .CZ 8 10, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 25, .CZ 8 28, .CZ 8 30, .CZ 8 39, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 23, .CZ 9 30, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 20, .CZ 10 24, .CZ 10 42, .CZ 10 51, .CZ 10 56, .CZ 11 12, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 25, .CZ 11 26, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 25, .CZ 12 39, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 31, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 30, .CZ 23 36, .CZ 23 37, .CZ 23 38, .CZ 23 42, .CZ 23 43, .CZ 24 36, .CZ 24 42, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 28 39, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 35 36, .CZ 36 39, .CZ 39 42],
-  .measureX 56 [] [.Z 1, .Z 5, .Z 7, .Z 8, .Z 9, .Z 11, .Z 12, .CZ 0 2, .CZ 0 4, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 36, .CZ 0 37, .CZ 0 38, .CZ 0 43, .CZ 0 45, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 16, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 11, .CZ 2 16, .CZ 2 17, .CZ 2 32, .CZ 2 33, .CZ 2 36, .CZ 3 5, .CZ 3 8, .CZ 3 9, .CZ 3 10, .CZ 3 11, .CZ 3 29, .CZ 3 30, .CZ 3 31, .CZ 3 36, .CZ 3 37, .CZ 3 38, .CZ 3 43, .CZ 3 45, .CZ 4 5, .CZ 4 7, .CZ 4 9, .CZ 4 16, .CZ 4 29, .CZ 4 30, .CZ 4 34, .CZ 4 35, .CZ 4 36, .CZ 4 38, .CZ 4 39, .CZ 4 45, .CZ 5 6, .CZ 5 7, .CZ 5 10, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 28, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 34, .CZ 5 35, .CZ 5 38, .CZ 5 39, .CZ 5 42, .CZ 5 43, .CZ 5 48, .CZ 5 50, .CZ 6 7, .CZ 6 8, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 23, .CZ 6 25, .CZ 6 27, .CZ 6 30, .CZ 6 31, .CZ 6 35, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 6 43, .CZ 6 45, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 16, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 30, .CZ 7 38, .CZ 7 39, .CZ 7 43, .CZ 7 47, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 23, .CZ 8 26, .CZ 8 27, .CZ 8 28, .CZ 8 36, .CZ 8 39, .CZ 8 48, .CZ 9 10, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 23, .CZ 9 30, .CZ 9 36, .CZ 9 37, .CZ 9 39, .CZ 9 48, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 24, .CZ 10 30, .CZ 10 51, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 20, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 30, .CZ 12 36, .CZ 12 37, .CZ 12 38, .CZ 12 39, .CZ 12 43, .CZ 12 45, .CZ 13 22, .CZ 13 31, .CZ 13 33, .CZ 13 38, .CZ 13 39, .CZ 13 43, .CZ 13 46, .CZ 13 51, .CZ 14 22, .CZ 14 31, .CZ 14 33, .CZ 14 38, .CZ 14 39, .CZ 14 43, .CZ 14 46, .CZ 14 51, .CZ 15 22, .CZ 15 31, .CZ 15 33, .CZ 15 38, .CZ 15 39, .CZ 15 43, .CZ 15 46, .CZ 15 51, .CZ 16 22, .CZ 17 29, .CZ 20 29, .CZ 20 31, .CZ 23 36, .CZ 23 37, .CZ 23 38, .CZ 23 42, .CZ 23 43, .CZ 25 36, .CZ 26 30, .CZ 26 36, .CZ 28 39, .CZ 29 30, .CZ 30 32, .CZ 32 36, .CZ 35 36]
+  .measureX 61 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 2, .Z 5, .Z 8, .Z 11, .Z 22, .Z 23, .Z 29, .Z 30, .Z 33, .Z 35, .Z 36, .Z 38, .Z 40, .Z 44, .Z 45, .Z 48, .Z 49, .Z 50, .Z 53, .CZ 0 2, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 15, .CZ 0 35, .CZ 0 37, .CZ 0 43, .CZ 0 45, .CZ 0 51, .CZ 0 53, .CZ 0 60, .CZ 1 3, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 32, .CZ 1 36, .CZ 1 37, .CZ 1 38, .CZ 1 39, .CZ 1 41, .CZ 1 43, .CZ 1 45, .CZ 1 51, .CZ 1 53, .CZ 2 3, .CZ 2 7, .CZ 2 9, .CZ 2 12, .CZ 2 15, .CZ 2 31, .CZ 2 37, .CZ 2 39, .CZ 2 51, .CZ 2 53, .CZ 2 60, .CZ 3 11, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 31, .CZ 3 35, .CZ 3 37, .CZ 3 38, .CZ 3 39, .CZ 3 60, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 32, .CZ 4 35, .CZ 4 39, .CZ 4 43, .CZ 4 51, .CZ 4 53, .CZ 5 6, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 15, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 25, .CZ 5 26, .CZ 5 28, .CZ 5 29, .CZ 5 31, .CZ 5 32, .CZ 5 33, .CZ 5 35, .CZ 5 36, .CZ 5 39, .CZ 5 42, .CZ 5 43, .CZ 5 45, .CZ 5 50, .CZ 5 60, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 25, .CZ 6 27, .CZ 6 31, .CZ 6 35, .CZ 6 37, .CZ 6 38, .CZ 6 45, .CZ 7 8, .CZ 7 12, .CZ 7 22, .CZ 7 23, .CZ 7 25, .CZ 7 28, .CZ 7 35, .CZ 7 39, .CZ 7 43, .CZ 7 46, .CZ 7 53, .CZ 8 11, .CZ 8 12, .CZ 8 15, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 27, .CZ 8 45, .CZ 8 60, .CZ 9 25, .CZ 9 35, .CZ 9 39, .CZ 9 43, .CZ 9 46, .CZ 9 53, .CZ 9 55, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 26, .CZ 10 60, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 23, .CZ 11 26, .CZ 12 13, .CZ 12 14, .CZ 12 23, .CZ 12 35, .CZ 12 37, .CZ 12 38, .CZ 12 39, .CZ 12 60, .CZ 13 22, .CZ 13 23, .CZ 13 24, .CZ 13 28, .CZ 13 29, .CZ 13 32, .CZ 13 33, .CZ 13 34, .CZ 13 35, .CZ 13 37, .CZ 13 39, .CZ 13 43, .CZ 13 50, .CZ 14 22, .CZ 14 23, .CZ 14 24, .CZ 14 28, .CZ 14 29, .CZ 14 32, .CZ 14 33, .CZ 14 34, .CZ 14 35, .CZ 14 37, .CZ 14 39, .CZ 14 43, .CZ 14 50, .CZ 15 36, .CZ 15 37, .CZ 15 42, .CZ 22 60, .CZ 23 60, .CZ 24 60, .CZ 28 60, .CZ 29 60, .CZ 32 60, .CZ 33 60, .CZ 34 60, .CZ 35 60, .CZ 36 60, .CZ 39 60, .CZ 42 60, .CZ 43 60, .CZ 50 60],
+  .measureX 60 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 2, .Z 3, .Z 5, .Z 7, .Z 13, .Z 14, .Z 18, .Z 22, .Z 24, .Z 26, .Z 27, .Z 28, .Z 29, .Z 30, .Z 32, .Z 33, .Z 34, .Z 36, .Z 38, .Z 42, .Z 43, .Z 45, .Z 46, .Z 50, .Z 51, .Z 52, .Z 53, .Z 59, .CZ 0 2, .CZ 0 7, .CZ 0 12, .CZ 0 30, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 31, .CZ 1 36, .CZ 1 38, .CZ 1 39, .CZ 1 41, .CZ 1 44, .CZ 1 46, .CZ 2 5, .CZ 2 7, .CZ 3 4, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 12, .CZ 4 29, .CZ 4 32, .CZ 4 43, .CZ 5 7, .CZ 5 10, .CZ 5 12, .CZ 5 22, .CZ 5 23, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 28, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 5 55, .CZ 6 25, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 24, .CZ 9 55, .CZ 10 23, .CZ 10 53, .CZ 13 15, .CZ 14 15, .CZ 14 25, .CZ 14 31, .CZ 14 38, .CZ 14 43, .CZ 14 45, .CZ 14 48, .CZ 14 55, .CZ 15 58, .CZ 15 59],
+  .measureX 59 [.Z 0, .Z 0, .Z 0, .Z 0] [.CZ 13 14, .CZ 14 25, .CZ 14 31, .CZ 14 57, .CZ 14 58],
+  .measureX 58 [.Z 0, .Z 0, .Z 0, .Z 0] [.CZ 13 25, .CZ 13 31, .CZ 13 57],
+  .measureX 57 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 38, .Z 43, .Z 45, .Z 48, .Z 55],
+  .measureX 56 [.Z 0, .Z 0, .Z 0, .Z 0] []
 ]
 
 private def leave1Block49 : Program := [
-  .measureX 50 [] [.Z 0, .Z 1, .Z 7, .Z 9, .Z 10, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 29, .CZ 1 31, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 16, .CZ 2 17, .CZ 2 31, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 31, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 9, .CZ 4 16, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 16, .CZ 5 22, .CZ 5 26, .CZ 5 27, .CZ 5 30, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 16, .CZ 6 22, .CZ 6 26, .CZ 6 27, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 16, .CZ 7 24, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 30, .CZ 7 37, .CZ 7 45, .CZ 7 47, .CZ 8 11, .CZ 8 12, .CZ 8 25, .CZ 8 27, .CZ 8 30, .CZ 8 31, .CZ 8 36, .CZ 8 37, .CZ 8 45, .CZ 8 48, .CZ 9 10, .CZ 9 12, .CZ 9 30, .CZ 9 36, .CZ 9 38, .CZ 9 43, .CZ 9 45, .CZ 9 48, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 30, .CZ 11 12, .CZ 11 16, .CZ 11 20, .CZ 11 22, .CZ 11 25, .CZ 11 26, .CZ 12 16, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48, .CZ 16 22, .CZ 20 29, .CZ 20 31, .CZ 24 30, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 32 36, .CZ 35 36],
-  .measureX 51 [] [.Z 6, .Z 7, .Z 8, .Z 9, .Z 12, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 29, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 31, .CZ 1 42, .CZ 2 6, .CZ 2 9, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 31, .CZ 2 33, .CZ 2 36, .CZ 3 5, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 3 39, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 34, .CZ 4 36, .CZ 4 38, .CZ 4 39, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 45, .CZ 5 48, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 24, .CZ 6 27, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 37, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 8 9, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 27, .CZ 8 28, .CZ 8 30, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 20, .CZ 10 30, .CZ 10 42, .CZ 11 12, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 23, .CZ 11 24, .CZ 11 25, .CZ 11 36, .CZ 12 22, .CZ 12 23, .CZ 12 24, .CZ 12 30, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 31, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 30, .CZ 24 36, .CZ 24 42, .CZ 25 36, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 30 31, .CZ 30 32, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 35 36, .CZ 36 39, .CZ 39 42],
-  .measureX 52 [] [.Z 1, .Z 4, .Z 8, .CZ 0 1, .CZ 0 2, .CZ 0 6, .CZ 0 8, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 0 36, .CZ 1 2, .CZ 1 8, .CZ 1 12, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 17, .CZ 2 29, .CZ 3 6, .CZ 3 8, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 4 5, .CZ 4 8, .CZ 4 11, .CZ 4 29, .CZ 4 30, .CZ 4 36, .CZ 5 11, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 12, .CZ 6 24, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 33, .CZ 6 34, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 11, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 36, .CZ 9 30, .CZ 9 36, .CZ 10 11, .CZ 11 25, .CZ 12 36, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48, .CZ 23 30, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 32 36, .CZ 35 36],
-  .measureX 53 [] [.Z 1, .Z 4, .Z 7, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 12, .CZ 0 16, .CZ 0 29, .CZ 0 38, .CZ 0 39, .CZ 0 43, .CZ 0 45, .CZ 1 5, .CZ 1 8, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 31, .CZ 1 36, .CZ 1 39, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 32, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 30, .CZ 3 36, .CZ 3 38, .CZ 3 43, .CZ 3 45, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 20, .CZ 4 30, .CZ 4 33, .CZ 4 34, .CZ 4 38, .CZ 4 39, .CZ 4 45, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 22, .CZ 5 28, .CZ 5 30, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 5 48, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 16, .CZ 6 22, .CZ 6 24, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 6 43, .CZ 6 45, .CZ 7 10, .CZ 7 16, .CZ 7 24, .CZ 7 26, .CZ 7 30, .CZ 7 37, .CZ 7 38, .CZ 7 43, .CZ 7 47, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 23, .CZ 8 26, .CZ 8 27, .CZ 8 30, .CZ 8 48, .CZ 9 10, .CZ 9 11, .CZ 9 30, .CZ 9 39, .CZ 9 48, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 24, .CZ 10 48, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 24, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 24, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 13 22, .CZ 13 29, .CZ 13 31, .CZ 13 33, .CZ 13 34, .CZ 13 35, .CZ 13 39, .CZ 13 48, .CZ 14 22, .CZ 14 29, .CZ 14 31, .CZ 14 33, .CZ 14 34, .CZ 14 35, .CZ 14 39, .CZ 14 48, .CZ 15 22, .CZ 15 29, .CZ 15 31, .CZ 15 33, .CZ 15 34, .CZ 15 35, .CZ 15 39, .CZ 15 48, .CZ 16 22, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 23 36, .CZ 23 38, .CZ 24 36, .CZ 26 30, .CZ 26 36, .CZ 28 39, .CZ 30 31, .CZ 31 36, .CZ 35 36, .CZ 36 39],
-  .measureX 54 [] [.Z 1, .Z 5, .Z 6, .Z 8, .Z 10, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 8, .CZ 0 10, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 16, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 29, .CZ 3 6, .CZ 3 11, .CZ 3 29, .CZ 3 36, .CZ 4 6, .CZ 4 10, .CZ 4 12, .CZ 4 16, .CZ 4 29, .CZ 4 30, .CZ 4 36, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 16, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 6 7, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 33, .CZ 6 34, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 16, .CZ 8 9, .CZ 8 27, .CZ 8 30, .CZ 8 36, .CZ 8 37, .CZ 8 45, .CZ 8 48, .CZ 9 12, .CZ 9 22, .CZ 9 30, .CZ 9 36, .CZ 10 16, .CZ 10 22, .CZ 11 16, .CZ 11 22, .CZ 12 16, .CZ 12 22, .CZ 12 36, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48, .CZ 16 22, .CZ 23 30, .CZ 24 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 30 32, .CZ 32 36, .CZ 35 36],
-  .measureX 55 [] [.Z 1, .Z 4, .Z 8, .Z 9, .Z 10, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 36, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 36, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 6, .CZ 5 7, .CZ 5 10, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 5 24, .CZ 5 25, .CZ 5 26, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 42, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 33, .CZ 6 34, .CZ 6 36, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 27, .CZ 7 29, .CZ 7 30, .CZ 8 10, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 23, .CZ 8 25, .CZ 8 28, .CZ 8 30, .CZ 8 31, .CZ 8 36, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 23, .CZ 9 30, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 24, .CZ 10 30, .CZ 10 48, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 30, .CZ 13 22, .CZ 14 22, .CZ 15 22, .CZ 22 36, .CZ 23 38, .CZ 24 30, .CZ 25 36, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 32 36, .CZ 35 36],
-  .measureX 48 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 9, .Z 12, .CZ 0 2, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 36, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 31, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 29, .CZ 2 31, .CZ 2 33, .CZ 3 4, .CZ 3 7, .CZ 3 10, .CZ 3 30, .CZ 3 31, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 35, .CZ 5 7, .CZ 5 12, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 27, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 37, .CZ 5 42, .CZ 6 7, .CZ 6 10, .CZ 6 22, .CZ 6 23, .CZ 6 24, .CZ 6 33, .CZ 6 34, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 12, .CZ 7 25, .CZ 7 26, .CZ 7 30, .CZ 7 36, .CZ 7 37, .CZ 7 39, .CZ 7 45, .CZ 7 47, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 39, .CZ 9 10, .CZ 9 11, .CZ 9 36, .CZ 9 39, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 30, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 22, .CZ 12 25, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 30, .CZ 27 36, .CZ 28 30, .CZ 28 39, .CZ 30 31, .CZ 30 32],
-  .measureX 49 [] [.Z 1, .Z 4, .Z 5, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 1, .CZ 0 4, .CZ 0 6, .CZ 0 9, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 32, .CZ 1 36, .CZ 1 39, .CZ 1 42, .CZ 2 3, .CZ 2 5, .CZ 2 6, .CZ 2 9, .CZ 2 10, .CZ 2 31, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 31, .CZ 4 6, .CZ 4 9, .CZ 4 10, .CZ 4 20, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 39, .CZ 4 45, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 27, .CZ 5 32, .CZ 5 34, .CZ 5 42, .CZ 5 45, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 23, .CZ 6 25, .CZ 6 26, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 6 42, .CZ 6 45, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 25, .CZ 7 36, .CZ 7 37, .CZ 7 39, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 23, .CZ 8 26, .CZ 8 45, .CZ 9 23, .CZ 9 39, .CZ 10 11, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 36, .CZ 10 42, .CZ 11 20, .CZ 11 23, .CZ 11 24, .CZ 11 25, .CZ 11 30, .CZ 12 23, .CZ 12 24, .CZ 12 39, .CZ 20 29, .CZ 20 31, .CZ 23 36, .CZ 23 38, .CZ 24 42, .CZ 25 42, .CZ 27 36, .CZ 28 39, .CZ 29 30, .CZ 31 42, .CZ 32 42, .CZ 39 42],
-  .measureX 43 [] [.Z 3, .Z 6, .Z 9, .Z 11, .Z 12, .CZ 0 9, .CZ 0 11, .CZ 0 12, .CZ 1 5, .CZ 1 6, .CZ 1 9, .CZ 2 9, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 4 5, .CZ 4 6, .CZ 4 9, .CZ 4 11, .CZ 4 32, .CZ 4 35, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 24, .CZ 5 29, .CZ 5 33, .CZ 5 34, .CZ 5 36, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 24, .CZ 6 29, .CZ 6 33, .CZ 6 34, .CZ 6 36, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 9, .CZ 8 9, .CZ 8 22, .CZ 8 26, .CZ 8 30, .CZ 9 10, .CZ 9 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 24 30, .CZ 26 30, .CZ 30 32],
-  .measureX 44 [] [.Z 1, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 29, .CZ 1 2, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 29, .CZ 1 36, .CZ 2 5, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 36, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 5 24, .CZ 5 25, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 24, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 23, .CZ 8 28, .CZ 8 31, .CZ 8 36, .CZ 9 10, .CZ 9 22, .CZ 9 30, .CZ 10 12, .CZ 10 36, .CZ 11 22, .CZ 11 25, .CZ 11 36, .CZ 12 22, .CZ 22 36, .CZ 23 30, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 32 36, .CZ 35 36],
-  .measureX 45 [] [.Z 1, .Z 2, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 0 36, .CZ 1 3, .CZ 1 5, .CZ 1 9, .CZ 1 29, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 10, .CZ 2 12, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 3 30, .CZ 3 35, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 20, .CZ 4 29, .CZ 4 31, .CZ 5 7, .CZ 5 12, .CZ 5 22, .CZ 5 23, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 35, .CZ 5 36, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 29, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 39, .CZ 8 9, .CZ 8 10, .CZ 8 23, .CZ 8 26, .CZ 8 31, .CZ 8 39, .CZ 9 11, .CZ 9 22, .CZ 9 36, .CZ 9 39, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 30, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 22 36, .CZ 23 30, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 30, .CZ 27 36, .CZ 28 39, .CZ 30 31],
-  .measureX 46 [] [.Z 4, .Z 6, .Z 7, .Z 8, .Z 11, .Z 12, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 0 36, .CZ 1 4, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 36, .CZ 1 42, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 9, .CZ 2 10, .CZ 2 16, .CZ 2 33, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 10, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 31, .CZ 3 35, .CZ 3 39, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 33, .CZ 5 34, .CZ 5 37, .CZ 5 40, .CZ 6 10, .CZ 6 16, .CZ 6 23, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 31, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 6 36, .CZ 6 39, .CZ 6 42, .CZ 7 9, .CZ 7 11, .CZ 7 16, .CZ 7 25, .CZ 7 30, .CZ 7 39, .CZ 7 42, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 28, .CZ 8 30, .CZ 8 31, .CZ 8 37, .CZ 9 12, .CZ 9 22, .CZ 9 36, .CZ 10 12, .CZ 10 16, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 42, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 36, .CZ 24 42, .CZ 25 42, .CZ 27 36, .CZ 28 30, .CZ 28 39, .CZ 29 30, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 36, .CZ 32 42, .CZ 36 39, .CZ 39 42],
-  .measureX 47 [] [.Z 0, .Z 2, .Z 5, .Z 7, .Z 8, .Z 10, .Z 12, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 1 2, .CZ 1 6, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 35, .CZ 4 36, .CZ 4 38, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 16, .CZ 5 23, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 20, .CZ 6 22, .CZ 6 23, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 16, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 38, .CZ 7 39, .CZ 8 9, .CZ 8 10, .CZ 8 20, .CZ 8 22, .CZ 8 23, .CZ 8 25, .CZ 8 31, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 20, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 24, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 12 38, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 38, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 36, .CZ 28 30, .CZ 28 39, .CZ 30 31, .CZ 32 36, .CZ 35 36],
-  .measureX 37 [] [.Z 0, .Z 1, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 10, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 17, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 30, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 26, .CZ 5 27, .CZ 5 30, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 26, .CZ 6 27, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 30, .CZ 8 9, .CZ 8 22, .CZ 8 36, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 30, .CZ 9 36, .CZ 10 22, .CZ 10 30, .CZ 11 22, .CZ 12 22, .CZ 12 30, .CZ 12 36, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 30 32, .CZ 32 36, .CZ 35 36],
-  .measureX 38 [] [.Z 0, .Z 3, .Z 5, .Z 9, .Z 10, .Z 12, .CZ 0 5, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 3 5, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 4 5, .CZ 4 8, .CZ 4 10, .CZ 4 12, .CZ 5 6, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 26, .CZ 6 7, .CZ 6 8, .CZ 6 27, .CZ 6 32, .CZ 6 35, .CZ 7 8, .CZ 7 10, .CZ 7 30, .CZ 8 9, .CZ 8 12, .CZ 8 26, .CZ 8 30, .CZ 9 10, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 10 22, .CZ 10 30, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 23 30, .CZ 24 30, .CZ 26 30, .CZ 28 30],
-  .measureX 39 [] [.Z 0, .Z 2, .Z 4, .Z 5, .Z 9, .Z 10, .Z 11, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 36, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 29, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 31, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 26, .CZ 5 29, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 26, .CZ 8 27, .CZ 8 31, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 22, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 23, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 24 30, .CZ 26 30, .CZ 30 31],
-  .measureX 40 [] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 8, .Z 9, .Z 12, .CZ 0 1, .CZ 0 5, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 36, .CZ 1 2, .CZ 1 8, .CZ 1 9, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 33, .CZ 3 6, .CZ 3 7, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 36, .CZ 4 5, .CZ 4 8, .CZ 4 9, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 30, .CZ 4 36, .CZ 5 6, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 6 8, .CZ 6 9, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 26, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 36, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 30, .CZ 9 36, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 30, .CZ 11 17, .CZ 11 18, .CZ 11 23, .CZ 11 26, .CZ 11 30, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 23 30, .CZ 24 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 30 31, .CZ 32 36, .CZ 35 36],
-  .measureX 41 [] [.Z 0, .Z 6, .Z 9, .CZ 0 1, .CZ 0 6, .CZ 0 7, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 8, .CZ 1 9, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 36, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 18, .CZ 4 5, .CZ 4 7, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 29, .CZ 5 36, .CZ 6 7, .CZ 6 9, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 27, .CZ 7 30, .CZ 7 36, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 27, .CZ 8 31, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 30, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 36, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 23, .CZ 11 24, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 24, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 22 36, .CZ 23 30, .CZ 26 30, .CZ 28 30, .CZ 29 30, .CZ 30 36, .CZ 32 36, .CZ 35 36],
-  .measureX 42 [] [.Z 2, .Z 3, .Z 4, .Z 6, .Z 8, .Z 10, .Z 12, .CZ 0 2, .CZ 0 5, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 4, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 29, .CZ 1 36, .CZ 2 5, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 35, .CZ 4 5, .CZ 4 7, .CZ 4 9, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 29, .CZ 4 31, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 31, .CZ 6 7, .CZ 6 9, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 22, .CZ 6 24, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 7 8, .CZ 7 10, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 26, .CZ 7 30, .CZ 7 36, .CZ 8 9, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 26, .CZ 8 27, .CZ 8 30, .CZ 8 31, .CZ 9 10, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 22, .CZ 10 36, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 23, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 30, .CZ 28 30, .CZ 30 31],
-  .measureX 31 [] [.Z 7, .Z 11, .Z 12, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 1 7, .CZ 1 10, .CZ 2 7, .CZ 2 10, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 5 10, .CZ 5 22, .CZ 5 26, .CZ 6 10, .CZ 6 22, .CZ 6 26, .CZ 7 11, .CZ 7 27, .CZ 7 29, .CZ 8 10, .CZ 8 22, .CZ 8 26, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 10 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
-  .measureX 32 [] [.Z 9, .Z 11, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 9, .CZ 1 12, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 9, .CZ 2 12, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 20, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 6 8, .CZ 6 9, .CZ 6 12, .CZ 7 8, .CZ 7 9, .CZ 7 12, .CZ 8 10, .CZ 8 11, .CZ 8 22, .CZ 9 10, .CZ 9 11, .CZ 9 22, .CZ 10 12, .CZ 11 12, .CZ 12 22],
-  .measureX 33 [] [.Z 0, .Z 12, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 1 11, .CZ 2 11, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 12, .CZ 5 11, .CZ 5 22, .CZ 5 26, .CZ 6 11, .CZ 6 22, .CZ 6 26, .CZ 7 11, .CZ 8 11, .CZ 8 22, .CZ 8 26, .CZ 9 12, .CZ 10 11, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
-  .measureX 34 [] [.Z 1, .Z 2, .CZ 1 11, .CZ 1 29, .CZ 2 11, .CZ 2 29],
-  .measureX 35 [] [.Z 9, .Z 10, .Z 12, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 20, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 22, .CZ 5 26, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 22, .CZ 6 26, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 8 11, .CZ 8 12, .CZ 8 26, .CZ 9 22, .CZ 10 12, .CZ 10 22, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 29 30],
-  .measureX 36 [] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .Z 9, .Z 11, .CZ 0 6, .CZ 0 9, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 1 7, .CZ 1 16, .CZ 2 7, .CZ 2 16, .CZ 3 5, .CZ 3 6, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 9, .CZ 4 11, .CZ 4 12, .CZ 4 16, .CZ 5 6, .CZ 5 9, .CZ 5 16, .CZ 5 22, .CZ 5 26, .CZ 6 12, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 7 8, .CZ 7 10, .CZ 7 16, .CZ 7 27, .CZ 7 29, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 23, .CZ 8 27, .CZ 8 28, .CZ 9 11, .CZ 10 11, .CZ 10 16, .CZ 11 16, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 16 22, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 29 30],
-  .measureX 29 [] [.Z 11, .Z 12, .CZ 0 12, .CZ 1 11, .CZ 2 11, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 12, .CZ 5 11, .CZ 5 22, .CZ 5 26, .CZ 6 11, .CZ 6 22, .CZ 6 26, .CZ 7 11, .CZ 8 11, .CZ 8 22, .CZ 8 26, .CZ 9 12, .CZ 10 11, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
-  .measureX 30 [] [.Z 1, .Z 2, .Z 10, .Z 11, .Z 12, .CZ 0 10, .CZ 0 11, .CZ 1 2, .CZ 1 10, .CZ 1 12, .CZ 2 10, .CZ 2 12, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 10, .CZ 4 11, .CZ 5 10, .CZ 5 12, .CZ 5 22, .CZ 5 26, .CZ 6 10, .CZ 6 12, .CZ 6 22, .CZ 6 26, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 8 10, .CZ 8 12, .CZ 8 22, .CZ 8 26, .CZ 9 10, .CZ 9 11, .CZ 10 22, .CZ 11 12, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
-  .measureX 23 [] [.Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 22, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 22, .CZ 13 22, .CZ 14 22, .CZ 15 22],
-  .measureX 24 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 10, .Z 11, .Z 12, .CZ 0 9, .CZ 1 3, .CZ 1 4, .CZ 1 9, .CZ 2 3, .CZ 2 4, .CZ 2 9, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 5 9, .CZ 6 9, .CZ 7 9, .CZ 8 9, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 22],
-  .measureX 25 [] [.Z 7, .CZ 0 10, .CZ 1 3, .CZ 1 4, .CZ 1 10, .CZ 2 3, .CZ 2 4, .CZ 2 10, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 5 10, .CZ 6 10, .CZ 7 10, .CZ 8 10, .CZ 9 10, .CZ 10 11, .CZ 10 12, .CZ 10 22]
+  .measureX 50 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 1, .Z 7, .Z 9, .Z 10, .Z 11, .CZ 0 1, .CZ 0 2, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 12, .CZ 0 16, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 29, .CZ 1 31, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 16, .CZ 2 17, .CZ 2 31, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 31, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 9, .CZ 4 16, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 16, .CZ 5 22, .CZ 5 26, .CZ 5 27, .CZ 5 30, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 16, .CZ 6 22, .CZ 6 26, .CZ 6 27, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 16, .CZ 7 24, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 30, .CZ 7 37, .CZ 7 45, .CZ 7 47, .CZ 8 11, .CZ 8 12, .CZ 8 25, .CZ 8 27, .CZ 8 30, .CZ 8 31, .CZ 8 36, .CZ 8 37, .CZ 8 45, .CZ 8 48, .CZ 9 10, .CZ 9 12, .CZ 9 30, .CZ 9 36, .CZ 9 38, .CZ 9 43, .CZ 9 45, .CZ 9 48, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 30, .CZ 11 12, .CZ 11 16, .CZ 11 20, .CZ 11 22, .CZ 11 25, .CZ 11 26, .CZ 12 16, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48, .CZ 16 22, .CZ 20 29, .CZ 20 31, .CZ 24 30, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 32 36, .CZ 35 36],
+  .measureX 51 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 6, .Z 7, .Z 8, .Z 9, .Z 12, .CZ 0 1, .CZ 0 3, .CZ 0 4, .CZ 0 5, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 29, .CZ 1 2, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 31, .CZ 1 42, .CZ 2 6, .CZ 2 9, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 31, .CZ 2 33, .CZ 2 36, .CZ 3 5, .CZ 3 9, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 3 39, .CZ 4 6, .CZ 4 7, .CZ 4 9, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 4 33, .CZ 4 34, .CZ 4 36, .CZ 4 38, .CZ 4 39, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 5 43, .CZ 5 45, .CZ 5 48, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 24, .CZ 6 27, .CZ 6 30, .CZ 6 31, .CZ 6 34, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 37, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 8 9, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 27, .CZ 8 28, .CZ 8 30, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 20, .CZ 10 30, .CZ 10 42, .CZ 11 12, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 23, .CZ 11 24, .CZ 11 25, .CZ 11 36, .CZ 12 22, .CZ 12 23, .CZ 12 24, .CZ 12 30, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 31, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 30, .CZ 24 36, .CZ 24 42, .CZ 25 36, .CZ 25 42, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 30 31, .CZ 30 32, .CZ 31 36, .CZ 31 42, .CZ 32 42, .CZ 35 36, .CZ 36 39, .CZ 39 42],
+  .measureX 52 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 4, .Z 8, .CZ 0 1, .CZ 0 2, .CZ 0 6, .CZ 0 8, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 0 36, .CZ 1 2, .CZ 1 8, .CZ 1 12, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 17, .CZ 2 29, .CZ 3 6, .CZ 3 8, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 4 5, .CZ 4 8, .CZ 4 11, .CZ 4 29, .CZ 4 30, .CZ 4 36, .CZ 5 11, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 6 8, .CZ 6 9, .CZ 6 11, .CZ 6 12, .CZ 6 24, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 33, .CZ 6 34, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 11, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 36, .CZ 9 30, .CZ 9 36, .CZ 10 11, .CZ 11 25, .CZ 12 36, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48, .CZ 23 30, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 32 36, .CZ 35 36],
+  .measureX 53 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 4, .Z 7, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 12, .CZ 0 16, .CZ 0 29, .CZ 0 38, .CZ 0 39, .CZ 0 43, .CZ 0 45, .CZ 1 5, .CZ 1 8, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 31, .CZ 1 36, .CZ 1 39, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 32, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 30, .CZ 3 36, .CZ 3 38, .CZ 3 43, .CZ 3 45, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 20, .CZ 4 30, .CZ 4 33, .CZ 4 34, .CZ 4 38, .CZ 4 39, .CZ 4 45, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 22, .CZ 5 28, .CZ 5 30, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 5 48, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 16, .CZ 6 22, .CZ 6 24, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 37, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 6 43, .CZ 6 45, .CZ 7 10, .CZ 7 16, .CZ 7 24, .CZ 7 26, .CZ 7 30, .CZ 7 37, .CZ 7 38, .CZ 7 43, .CZ 7 47, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 23, .CZ 8 26, .CZ 8 27, .CZ 8 30, .CZ 8 48, .CZ 9 10, .CZ 9 11, .CZ 9 30, .CZ 9 39, .CZ 9 48, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 20, .CZ 10 22, .CZ 10 24, .CZ 10 48, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 24, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 24, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 13 22, .CZ 13 29, .CZ 13 31, .CZ 13 33, .CZ 13 34, .CZ 13 35, .CZ 13 39, .CZ 13 48, .CZ 14 22, .CZ 14 29, .CZ 14 31, .CZ 14 33, .CZ 14 34, .CZ 14 35, .CZ 14 39, .CZ 14 48, .CZ 15 22, .CZ 15 29, .CZ 15 31, .CZ 15 33, .CZ 15 34, .CZ 15 35, .CZ 15 39, .CZ 15 48, .CZ 16 22, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 23 36, .CZ 23 38, .CZ 24 36, .CZ 26 30, .CZ 26 36, .CZ 28 39, .CZ 30 31, .CZ 31 36, .CZ 35 36, .CZ 36 39],
+  .measureX 54 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 5, .Z 6, .Z 8, .Z 10, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 8, .CZ 0 10, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 2, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 16, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 29, .CZ 3 6, .CZ 3 11, .CZ 3 29, .CZ 3 36, .CZ 4 6, .CZ 4 10, .CZ 4 12, .CZ 4 16, .CZ 4 29, .CZ 4 30, .CZ 4 36, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 11, .CZ 5 16, .CZ 5 22, .CZ 5 24, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 32, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 6 7, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 22, .CZ 6 24, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 33, .CZ 6 34, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 16, .CZ 8 9, .CZ 8 27, .CZ 8 30, .CZ 8 36, .CZ 8 37, .CZ 8 45, .CZ 8 48, .CZ 9 12, .CZ 9 22, .CZ 9 30, .CZ 9 36, .CZ 10 16, .CZ 10 22, .CZ 11 16, .CZ 11 22, .CZ 12 16, .CZ 12 22, .CZ 12 36, .CZ 12 38, .CZ 12 43, .CZ 12 45, .CZ 12 48, .CZ 16 22, .CZ 23 30, .CZ 24 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 30 32, .CZ 32 36, .CZ 35 36],
+  .measureX 55 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 4, .Z 8, .Z 9, .Z 10, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 36, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 36, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 6, .CZ 5 7, .CZ 5 10, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 5 24, .CZ 5 25, .CZ 5 26, .CZ 5 28, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 36, .CZ 5 37, .CZ 5 42, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 6 25, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 33, .CZ 6 34, .CZ 6 36, .CZ 6 38, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 27, .CZ 7 29, .CZ 7 30, .CZ 8 10, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 23, .CZ 8 25, .CZ 8 28, .CZ 8 30, .CZ 8 31, .CZ 8 36, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 23, .CZ 9 30, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 24, .CZ 10 30, .CZ 10 48, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 30, .CZ 13 22, .CZ 14 22, .CZ 15 22, .CZ 22 36, .CZ 23 38, .CZ 24 30, .CZ 25 36, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 32 36, .CZ 35 36],
+  .measureX 48 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 9, .Z 12, .CZ 0 2, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 36, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 10, .CZ 1 12, .CZ 1 31, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 29, .CZ 2 31, .CZ 2 33, .CZ 3 4, .CZ 3 7, .CZ 3 10, .CZ 3 30, .CZ 3 31, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 35, .CZ 5 7, .CZ 5 12, .CZ 5 22, .CZ 5 23, .CZ 5 24, .CZ 5 27, .CZ 5 31, .CZ 5 33, .CZ 5 34, .CZ 5 35, .CZ 5 37, .CZ 5 42, .CZ 6 7, .CZ 6 10, .CZ 6 22, .CZ 6 23, .CZ 6 24, .CZ 6 33, .CZ 6 34, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 8, .CZ 7 10, .CZ 7 12, .CZ 7 25, .CZ 7 26, .CZ 7 30, .CZ 7 36, .CZ 7 37, .CZ 7 39, .CZ 7 45, .CZ 7 47, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 23, .CZ 8 25, .CZ 8 26, .CZ 8 39, .CZ 9 10, .CZ 9 11, .CZ 9 36, .CZ 9 39, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 20, .CZ 11 30, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 22, .CZ 12 25, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 20 29, .CZ 20 31, .CZ 22 36, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 30, .CZ 27 36, .CZ 28 30, .CZ 28 39, .CZ 30 31, .CZ 30 32],
+  .measureX 49 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 4, .Z 5, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 1, .CZ 0 4, .CZ 0 6, .CZ 0 9, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 7, .CZ 1 9, .CZ 1 10, .CZ 1 32, .CZ 1 36, .CZ 1 39, .CZ 1 42, .CZ 2 3, .CZ 2 5, .CZ 2 6, .CZ 2 9, .CZ 2 10, .CZ 2 31, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 31, .CZ 4 6, .CZ 4 9, .CZ 4 10, .CZ 4 20, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 39, .CZ 4 45, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 27, .CZ 5 32, .CZ 5 34, .CZ 5 42, .CZ 5 45, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 12, .CZ 6 23, .CZ 6 25, .CZ 6 26, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 6 42, .CZ 6 45, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 25, .CZ 7 36, .CZ 7 37, .CZ 7 39, .CZ 7 42, .CZ 7 45, .CZ 7 47, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 23, .CZ 8 26, .CZ 8 45, .CZ 9 23, .CZ 9 39, .CZ 10 11, .CZ 10 20, .CZ 10 22, .CZ 10 23, .CZ 10 36, .CZ 10 42, .CZ 11 20, .CZ 11 23, .CZ 11 24, .CZ 11 25, .CZ 11 30, .CZ 12 23, .CZ 12 24, .CZ 12 39, .CZ 20 29, .CZ 20 31, .CZ 23 36, .CZ 23 38, .CZ 24 42, .CZ 25 42, .CZ 27 36, .CZ 28 39, .CZ 29 30, .CZ 31 42, .CZ 32 42, .CZ 39 42],
+  .measureX 43 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 3, .Z 6, .Z 9, .Z 11, .Z 12, .CZ 0 9, .CZ 0 11, .CZ 0 12, .CZ 1 5, .CZ 1 6, .CZ 1 9, .CZ 2 9, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 4 5, .CZ 4 6, .CZ 4 9, .CZ 4 11, .CZ 4 32, .CZ 4 35, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 24, .CZ 5 29, .CZ 5 33, .CZ 5 34, .CZ 5 36, .CZ 5 37, .CZ 5 39, .CZ 5 42, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 24, .CZ 6 29, .CZ 6 33, .CZ 6 34, .CZ 6 36, .CZ 6 37, .CZ 6 39, .CZ 6 42, .CZ 7 9, .CZ 8 9, .CZ 8 22, .CZ 8 26, .CZ 8 30, .CZ 9 10, .CZ 9 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 24 30, .CZ 26 30, .CZ 30 32],
+  .measureX 44 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 5, .Z 6, .Z 8, .Z 9, .Z 11, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 0 29, .CZ 1 2, .CZ 1 4, .CZ 1 6, .CZ 1 7, .CZ 1 9, .CZ 1 29, .CZ 1 36, .CZ 2 5, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 17, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 3 36, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 36, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 5 24, .CZ 5 25, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 37, .CZ 5 38, .CZ 5 39, .CZ 5 40, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 24, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 23, .CZ 8 28, .CZ 8 31, .CZ 8 36, .CZ 9 10, .CZ 9 22, .CZ 9 30, .CZ 10 12, .CZ 10 36, .CZ 11 22, .CZ 11 25, .CZ 11 36, .CZ 12 22, .CZ 22 36, .CZ 23 30, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 32 36, .CZ 35 36],
+  .measureX 45 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 2, .Z 4, .Z 6, .Z 7, .Z 8, .Z 9, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 0 36, .CZ 1 3, .CZ 1 5, .CZ 1 9, .CZ 1 29, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 10, .CZ 2 12, .CZ 2 33, .CZ 3 4, .CZ 3 5, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 3 30, .CZ 3 35, .CZ 4 5, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 11, .CZ 4 20, .CZ 4 29, .CZ 4 31, .CZ 5 7, .CZ 5 12, .CZ 5 22, .CZ 5 23, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 31, .CZ 5 35, .CZ 5 36, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 12, .CZ 6 22, .CZ 6 23, .CZ 6 27, .CZ 6 29, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 39, .CZ 8 9, .CZ 8 10, .CZ 8 23, .CZ 8 26, .CZ 8 31, .CZ 8 39, .CZ 9 11, .CZ 9 22, .CZ 9 36, .CZ 9 39, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 17, .CZ 11 18, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 30, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 22 36, .CZ 23 30, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 30, .CZ 27 36, .CZ 28 39, .CZ 30 31],
+  .measureX 46 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 4, .Z 6, .Z 7, .Z 8, .Z 11, .Z 12, .CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 0 36, .CZ 1 4, .CZ 1 9, .CZ 1 11, .CZ 1 12, .CZ 1 16, .CZ 1 36, .CZ 1 42, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 9, .CZ 2 10, .CZ 2 16, .CZ 2 33, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 9, .CZ 3 10, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 31, .CZ 3 35, .CZ 3 39, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 34, .CZ 4 35, .CZ 4 38, .CZ 4 39, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 16, .CZ 5 23, .CZ 5 24, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 33, .CZ 5 34, .CZ 5 37, .CZ 5 40, .CZ 6 10, .CZ 6 16, .CZ 6 23, .CZ 6 24, .CZ 6 26, .CZ 6 27, .CZ 6 31, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 6 36, .CZ 6 39, .CZ 6 42, .CZ 7 9, .CZ 7 11, .CZ 7 16, .CZ 7 25, .CZ 7 30, .CZ 7 39, .CZ 7 42, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 28, .CZ 8 30, .CZ 8 31, .CZ 8 37, .CZ 9 12, .CZ 9 22, .CZ 9 36, .CZ 10 12, .CZ 10 16, .CZ 10 22, .CZ 10 23, .CZ 10 24, .CZ 10 42, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 25, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 36, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 36, .CZ 24 42, .CZ 25 42, .CZ 27 36, .CZ 28 30, .CZ 28 39, .CZ 29 30, .CZ 30 31, .CZ 31 36, .CZ 31 42, .CZ 32 36, .CZ 32 42, .CZ 36 39, .CZ 39 42],
+  .measureX 47 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 2, .Z 5, .Z 7, .Z 8, .Z 10, .Z 12, .CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 1 2, .CZ 1 6, .CZ 1 10, .CZ 1 12, .CZ 1 16, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 16, .CZ 2 17, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 36, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 16, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 35, .CZ 4 36, .CZ 4 38, .CZ 5 7, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 16, .CZ 5 23, .CZ 5 25, .CZ 5 26, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 39, .CZ 6 7, .CZ 6 8, .CZ 6 11, .CZ 6 12, .CZ 6 16, .CZ 6 20, .CZ 6 22, .CZ 6 23, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 30, .CZ 6 32, .CZ 6 34, .CZ 6 35, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 7 16, .CZ 7 24, .CZ 7 25, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 7 38, .CZ 7 39, .CZ 8 9, .CZ 8 10, .CZ 8 20, .CZ 8 22, .CZ 8 23, .CZ 8 25, .CZ 8 31, .CZ 8 36, .CZ 8 37, .CZ 8 39, .CZ 9 20, .CZ 9 30, .CZ 9 39, .CZ 10 11, .CZ 10 12, .CZ 10 16, .CZ 10 23, .CZ 10 24, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 16, .CZ 11 18, .CZ 11 20, .CZ 11 22, .CZ 11 24, .CZ 11 36, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 12 38, .CZ 12 39, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 20 29, .CZ 20 38, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 36, .CZ 24 30, .CZ 25 36, .CZ 26 36, .CZ 28 30, .CZ 28 39, .CZ 30 31, .CZ 32 36, .CZ 35 36],
+  .measureX 37 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 1, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 10, .Z 12, .CZ 0 1, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 8, .CZ 2 11, .CZ 2 12, .CZ 2 17, .CZ 2 29, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 3 30, .CZ 3 36, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 35, .CZ 4 36, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 26, .CZ 5 27, .CZ 5 30, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 26, .CZ 6 27, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 7 30, .CZ 8 9, .CZ 8 22, .CZ 8 36, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 30, .CZ 9 36, .CZ 10 22, .CZ 10 30, .CZ 11 22, .CZ 12 22, .CZ 12 30, .CZ 12 36, .CZ 26 30, .CZ 26 36, .CZ 27 36, .CZ 29 30, .CZ 30 32, .CZ 32 36, .CZ 35 36],
+  .measureX 38 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 3, .Z 5, .Z 9, .Z 10, .Z 12, .CZ 0 5, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 2 5, .CZ 2 6, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 3 5, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 30, .CZ 4 5, .CZ 4 8, .CZ 4 10, .CZ 4 12, .CZ 5 6, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 26, .CZ 6 7, .CZ 6 8, .CZ 6 27, .CZ 6 32, .CZ 6 35, .CZ 7 8, .CZ 7 10, .CZ 7 30, .CZ 8 9, .CZ 8 12, .CZ 8 26, .CZ 8 30, .CZ 9 10, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 10 22, .CZ 10 30, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 12 30, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 23 30, .CZ 24 30, .CZ 26 30, .CZ 28 30],
+  .measureX 39 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 2, .Z 4, .Z 5, .Z 9, .Z 10, .Z 11, .CZ 0 2, .CZ 0 5, .CZ 0 6, .CZ 0 10, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 4, .CZ 1 5, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 36, .CZ 2 5, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 29, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 30, .CZ 3 35, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 31, .CZ 5 7, .CZ 5 9, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 26, .CZ 5 29, .CZ 5 32, .CZ 5 35, .CZ 5 36, .CZ 6 9, .CZ 6 10, .CZ 6 11, .CZ 6 12, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 26, .CZ 7 27, .CZ 7 29, .CZ 7 36, .CZ 8 11, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 26, .CZ 8 27, .CZ 8 31, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 22, .CZ 10 30, .CZ 10 36, .CZ 11 12, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 23, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 24 30, .CZ 26 30, .CZ 30 31],
+  .measureX 40 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 8, .Z 9, .Z 12, .CZ 0 1, .CZ 0 5, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 36, .CZ 1 2, .CZ 1 8, .CZ 1 9, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 33, .CZ 3 6, .CZ 3 7, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 36, .CZ 4 5, .CZ 4 8, .CZ 4 9, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 30, .CZ 4 36, .CZ 5 6, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 5 27, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 6 8, .CZ 6 9, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 6 26, .CZ 6 29, .CZ 6 30, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 8, .CZ 7 9, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 7 26, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 36, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 30, .CZ 9 36, .CZ 10 11, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 30, .CZ 11 17, .CZ 11 18, .CZ 11 23, .CZ 11 26, .CZ 11 30, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 23 30, .CZ 24 30, .CZ 26 36, .CZ 27 36, .CZ 28 30, .CZ 29 30, .CZ 30 31, .CZ 32 36, .CZ 35 36],
+  .measureX 41 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 6, .Z 9, .CZ 0 1, .CZ 0 6, .CZ 0 7, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 2, .CZ 1 3, .CZ 1 8, .CZ 1 9, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 36, .CZ 2 3, .CZ 2 4, .CZ 2 7, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 18, .CZ 4 5, .CZ 4 7, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 20, .CZ 4 30, .CZ 4 31, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 29, .CZ 5 36, .CZ 6 7, .CZ 6 9, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 6 32, .CZ 6 35, .CZ 6 36, .CZ 7 11, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 27, .CZ 7 30, .CZ 7 36, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 8 27, .CZ 8 31, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 9 30, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 36, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 22, .CZ 11 23, .CZ 11 24, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 24, .CZ 12 25, .CZ 12 30, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 22 36, .CZ 23 30, .CZ 26 30, .CZ 28 30, .CZ 29 30, .CZ 30 36, .CZ 32 36, .CZ 35 36],
+  .measureX 42 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 2, .Z 3, .Z 4, .Z 6, .Z 8, .Z 10, .Z 12, .CZ 0 2, .CZ 0 5, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 0 16, .CZ 0 29, .CZ 0 36, .CZ 1 4, .CZ 1 6, .CZ 1 8, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 29, .CZ 1 36, .CZ 2 5, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 16, .CZ 2 33, .CZ 2 36, .CZ 3 4, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 3 35, .CZ 4 5, .CZ 4 7, .CZ 4 9, .CZ 4 11, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 16, .CZ 4 29, .CZ 4 31, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 16, .CZ 5 22, .CZ 5 24, .CZ 5 26, .CZ 5 29, .CZ 5 31, .CZ 6 7, .CZ 6 9, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 16, .CZ 6 22, .CZ 6 24, .CZ 6 31, .CZ 6 32, .CZ 6 35, .CZ 7 8, .CZ 7 10, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 16, .CZ 7 22, .CZ 7 26, .CZ 7 30, .CZ 7 36, .CZ 8 9, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 26, .CZ 8 27, .CZ 8 30, .CZ 8 31, .CZ 9 10, .CZ 9 12, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 36, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 22, .CZ 10 36, .CZ 11 16, .CZ 11 17, .CZ 11 18, .CZ 11 23, .CZ 11 26, .CZ 11 30, .CZ 11 36, .CZ 12 16, .CZ 12 22, .CZ 12 23, .CZ 12 25, .CZ 12 36, .CZ 13 22, .CZ 13 29, .CZ 13 32, .CZ 13 35, .CZ 14 22, .CZ 14 29, .CZ 14 32, .CZ 14 35, .CZ 15 22, .CZ 15 29, .CZ 15 32, .CZ 15 35, .CZ 16 22, .CZ 17 29, .CZ 18 29, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 22 36, .CZ 23 30, .CZ 28 30, .CZ 30 31],
+  .measureX 31 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 7, .Z 11, .Z 12, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 1 7, .CZ 1 10, .CZ 2 7, .CZ 2 10, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 5 10, .CZ 5 22, .CZ 5 26, .CZ 6 10, .CZ 6 22, .CZ 6 26, .CZ 7 11, .CZ 7 27, .CZ 7 29, .CZ 8 10, .CZ 8 22, .CZ 8 26, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 10 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
+  .measureX 32 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 9, .Z 11, .CZ 0 8, .CZ 0 9, .CZ 0 12, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 9, .CZ 1 12, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 9, .CZ 2 12, .CZ 3 7, .CZ 3 10, .CZ 3 12, .CZ 3 18, .CZ 3 29, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 20, .CZ 5 8, .CZ 5 9, .CZ 5 12, .CZ 6 8, .CZ 6 9, .CZ 6 12, .CZ 7 8, .CZ 7 9, .CZ 7 12, .CZ 8 10, .CZ 8 11, .CZ 8 22, .CZ 9 10, .CZ 9 11, .CZ 9 22, .CZ 10 12, .CZ 11 12, .CZ 12 22],
+  .measureX 33 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 0, .Z 12, .CZ 0 11, .CZ 0 12, .CZ 0 29, .CZ 1 11, .CZ 2 11, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 12, .CZ 5 11, .CZ 5 22, .CZ 5 26, .CZ 6 11, .CZ 6 22, .CZ 6 26, .CZ 7 11, .CZ 8 11, .CZ 8 22, .CZ 8 26, .CZ 9 12, .CZ 10 11, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
+  .measureX 34 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 2, .CZ 1 11, .CZ 1 29, .CZ 2 11, .CZ 2 29],
+  .measureX 35 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 9, .Z 10, .Z 12, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 1 3, .CZ 1 4, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 2 3, .CZ 2 4, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 3 5, .CZ 3 6, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 3 19, .CZ 3 21, .CZ 3 29, .CZ 4 7, .CZ 4 8, .CZ 4 9, .CZ 4 20, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 22, .CZ 5 26, .CZ 6 8, .CZ 6 9, .CZ 6 10, .CZ 6 22, .CZ 6 26, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 11, .CZ 8 11, .CZ 8 12, .CZ 8 26, .CZ 9 22, .CZ 10 12, .CZ 10 22, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 29 30],
+  .measureX 36 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .Z 9, .Z 11, .CZ 0 6, .CZ 0 9, .CZ 0 11, .CZ 0 12, .CZ 0 16, .CZ 1 7, .CZ 1 16, .CZ 2 7, .CZ 2 16, .CZ 3 5, .CZ 3 6, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 9, .CZ 4 11, .CZ 4 12, .CZ 4 16, .CZ 5 6, .CZ 5 9, .CZ 5 16, .CZ 5 22, .CZ 5 26, .CZ 6 12, .CZ 6 16, .CZ 6 26, .CZ 6 27, .CZ 6 29, .CZ 7 8, .CZ 7 10, .CZ 7 16, .CZ 7 27, .CZ 7 29, .CZ 8 9, .CZ 8 10, .CZ 8 11, .CZ 8 12, .CZ 8 22, .CZ 8 23, .CZ 8 27, .CZ 8 28, .CZ 9 11, .CZ 10 11, .CZ 10 16, .CZ 11 16, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 11 30, .CZ 12 16, .CZ 12 22, .CZ 12 24, .CZ 16 22, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26, .CZ 29 30],
+  .measureX 29 [.Z 0, .Z 0, .Z 0, .Z 0] [.Z 11, .Z 12, .CZ 0 12, .CZ 1 11, .CZ 2 11, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 12, .CZ 5 11, .CZ 5 22, .CZ 5 26, .CZ 6 11, .CZ 6 22, .CZ 6 26, .CZ 7 11, .CZ 8 11, .CZ 8 22, .CZ 8 26, .CZ 9 12, .CZ 10 11, .CZ 11 12, .CZ 11 22, .CZ 11 24, .CZ 11 26, .CZ 12 22, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
+  .measureX 30 [.Z 0, .Z 0] [.Z 1, .Z 2, .Z 10, .Z 11, .Z 12, .CZ 0 10, .CZ 0 11, .CZ 1 2, .CZ 1 10, .CZ 1 12, .CZ 2 10, .CZ 2 12, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 11, .CZ 3 19, .CZ 3 21, .CZ 4 10, .CZ 4 11, .CZ 5 10, .CZ 5 12, .CZ 5 22, .CZ 5 26, .CZ 6 10, .CZ 6 12, .CZ 6 22, .CZ 6 26, .CZ 7 10, .CZ 7 11, .CZ 7 12, .CZ 8 10, .CZ 8 12, .CZ 8 22, .CZ 8 26, .CZ 9 10, .CZ 9 11, .CZ 10 22, .CZ 11 12, .CZ 11 24, .CZ 11 25, .CZ 11 26, .CZ 12 24, .CZ 19 22, .CZ 19 26, .CZ 21 22, .CZ 21 26],
+  .measureX 23 [.Z 0, .Z 0] [.Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 8, .CZ 0 9, .CZ 0 10, .CZ 0 11, .CZ 0 12, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 3, .CZ 1 4, .CZ 1 5, .CZ 1 6, .CZ 1 7, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 11, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 9, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 20, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 22, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 6 22, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 9 22, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 22, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 12 22, .CZ 13 22, .CZ 14 22, .CZ 15 22],
+  .measureX 24 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 10, .Z 11, .Z 12, .CZ 0 9, .CZ 1 3, .CZ 1 4, .CZ 1 9, .CZ 2 3, .CZ 2 4, .CZ 2 9, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 5 9, .CZ 6 9, .CZ 7 9, .CZ 8 9, .CZ 9 10, .CZ 9 11, .CZ 9 12, .CZ 9 22],
+  .measureX 25 [.Z 0, .Z 0] [.Z 7, .CZ 0 10, .CZ 1 3, .CZ 1 4, .CZ 1 10, .CZ 2 3, .CZ 2 4, .CZ 2 10, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 11, .CZ 4 12, .CZ 4 20, .CZ 5 10, .CZ 6 10, .CZ 7 10, .CZ 8 10, .CZ 9 10, .CZ 10 11, .CZ 10 12, .CZ 10 22]
 ]
 
 private def leave1Block50 : Program := [
-  .measureX 26 [] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 11, .CZ 0 12, .CZ 1 3, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 2 3, .CZ 2 4, .CZ 2 11, .CZ 2 12, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 20, .CZ 5 11, .CZ 5 12, .CZ 6 11, .CZ 6 12, .CZ 7 11, .CZ 7 12, .CZ 8 11, .CZ 8 12, .CZ 9 11, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 11 22, .CZ 12 22],
-  .measureX 27 [] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .CZ 0 11, .CZ 1 3, .CZ 1 4, .CZ 1 11, .CZ 2 3, .CZ 2 4, .CZ 2 11, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 12, .CZ 4 20, .CZ 5 11, .CZ 6 11, .CZ 7 11, .CZ 8 11, .CZ 9 11, .CZ 10 11, .CZ 11 12, .CZ 11 22],
-  .measureX 28 [] [.CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 7 9, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 8 9, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 22, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 13 22, .CZ 14 22, .CZ 15 22],
-  .measureX 22 [] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 2 4, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 20],
-  .measureX 20 [] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 1 3, .CZ 2 3, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18],
-  .measureX 21 [] [.CZ 0 10, .CZ 0 11, .CZ 4 10, .CZ 4 11, .CZ 5 10, .CZ 5 11, .CZ 6 10, .CZ 6 11, .CZ 8 10, .CZ 8 11, .CZ 9 10, .CZ 9 11, .CZ 10 12, .CZ 10 16, .CZ 11 12, .CZ 11 19],
-  .measureX 18 [] [.Z 1, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 1 2, .CZ 2 7, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 17],
-  .measureX 19 [] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 0 10, .CZ 4 10, .CZ 5 10, .CZ 6 10, .CZ 8 10, .CZ 9 10, .CZ 10 12, .CZ 10 16],
-  .measureX 16 [] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 8 9],
-  .measureX 17 [] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 0 1],
-  .measureX 62 [] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
-  .measureX 63 [] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
-  .measureX 64 [] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
-  .measureX 65 [] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
-  .measureX 66 [] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
-  .measureX 67 [] [],
-  .measureX 68 [] [],
-  .measureX 69 [] [],
-  .measureX 70 [] [],
-  .measureX 71 [] [],
-  .measureX 72 [] [],
-  .measureX 73 [] [],
-  .measureX 74 [] [],
-  .measureX 75 [] [],
-  .measureX 76 [] [],
-  .measureX 77 [] [],
-  .measureX 78 [] [],
-  .measureX 79 [] [],
-  .measureX 80 [] [],
-  .measureX 81 [] []
+  .measureX 26 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 0 11, .CZ 0 12, .CZ 1 3, .CZ 1 4, .CZ 1 11, .CZ 1 12, .CZ 2 3, .CZ 2 4, .CZ 2 11, .CZ 2 12, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 20, .CZ 5 11, .CZ 5 12, .CZ 6 11, .CZ 6 12, .CZ 7 11, .CZ 7 12, .CZ 8 11, .CZ 8 12, .CZ 9 11, .CZ 9 12, .CZ 10 11, .CZ 10 12, .CZ 11 22, .CZ 12 22],
+  .measureX 27 [.Z 0, .Z 0] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .CZ 0 11, .CZ 1 3, .CZ 1 4, .CZ 1 11, .CZ 2 3, .CZ 2 4, .CZ 2 11, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 12, .CZ 4 20, .CZ 5 11, .CZ 6 11, .CZ 7 11, .CZ 8 11, .CZ 9 11, .CZ 10 11, .CZ 11 12, .CZ 11 22],
+  .measureX 28 [.Z 0, .Z 0] [.CZ 0 7, .CZ 0 8, .CZ 0 10, .CZ 0 11, .CZ 0 13, .CZ 0 14, .CZ 0 15, .CZ 1 7, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 4 11, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 5 7, .CZ 5 8, .CZ 5 10, .CZ 5 11, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 6 7, .CZ 6 8, .CZ 6 10, .CZ 6 11, .CZ 6 13, .CZ 6 14, .CZ 6 15, .CZ 7 9, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 22, .CZ 8 9, .CZ 8 12, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 22, .CZ 9 10, .CZ 9 11, .CZ 9 13, .CZ 9 14, .CZ 9 15, .CZ 10 12, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 22, .CZ 11 12, .CZ 11 13, .CZ 11 14, .CZ 11 15, .CZ 11 22, .CZ 12 13, .CZ 12 14, .CZ 12 15, .CZ 13 22, .CZ 14 22, .CZ 15 22],
+  .measureX 22 [.Z 0, .Z 0] [.Z 0, .Z 1, .Z 2, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .CZ 1 3, .CZ 1 4, .CZ 2 3, .CZ 2 4, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18, .CZ 4 7, .CZ 4 10, .CZ 4 11, .CZ 4 12, .CZ 4 20],
+  .measureX 20 [.Z 0, .Z 0] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 1 3, .CZ 2 3, .CZ 3 7, .CZ 3 10, .CZ 3 11, .CZ 3 12, .CZ 3 18],
+  .measureX 21 [.Z 0, .Z 0] [.CZ 0 10, .CZ 0 11, .CZ 4 10, .CZ 4 11, .CZ 5 10, .CZ 5 11, .CZ 6 10, .CZ 6 11, .CZ 8 10, .CZ 8 11, .CZ 9 10, .CZ 9 11, .CZ 10 12, .CZ 10 16, .CZ 11 12, .CZ 11 19],
+  .measureX 18 [.Z 0, .Z 0] [.Z 1, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 1 2, .CZ 2 7, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 17],
+  .measureX 19 [.Z 0, .Z 0] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 0 10, .CZ 4 10, .CZ 5 10, .CZ 6 10, .CZ 8 10, .CZ 9 10, .CZ 10 12, .CZ 10 16],
+  .measureX 16 [.Z 0, .Z 0] [.Z 0, .Z 4, .Z 5, .Z 6, .Z 8, .Z 9, .Z 12, .CZ 8 9],
+  .measureX 17 [.Z 0, .Z 0] [.Z 1, .Z 2, .Z 7, .Z 10, .Z 11, .Z 12, .CZ 0 1],
+  .measureX 62 [.Z 0, .Z 0] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
+  .measureX 63 [.Z 0, .Z 0] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
+  .measureX 64 [.Z 0, .Z 0] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
+  .measureX 65 [.Z 0, .Z 0] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
+  .measureX 66 [.Z 0, .Z 0] [.Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98, .Z 98],
+  .measureX 67 [.Z 0, .Z 0] [],
+  .measureX 68 [.Z 0, .Z 0] [],
+  .measureX 69 [.Z 0, .Z 0] [],
+  .measureX 70 [.Z 0, .Z 0] [],
+  .measureX 71 [.Z 0, .Z 0] [],
+  .measureX 72 [.Z 0, .Z 0] [],
+  .measureX 73 [.Z 0, .Z 0] [],
+  .measureX 74 [.Z 0, .Z 0] [],
+  .measureX 75 [.Z 0, .Z 0] [],
+  .measureX 76 [.Z 0, .Z 0] [],
+  .measureX 77 [.Z 0, .Z 0] [],
+  .measureX 78 [.Z 0, .Z 0] [],
+  .measureX 79 [.Z 0, .Z 0] [],
+  .measureX 80 [.Z 0, .Z 0] [],
+  .measureX 81 [.Z 0, .Z 0] []
 ]
 
 private def leave1Block51 : Program := [
-  .measureX 82 [] [],
-  .measureX 83 [] [],
-  .measureX 84 [] [],
-  .measureX 85 [] [],
-  .measureX 86 [] [],
-  .measureX 87 [] [],
-  .measureX 88 [] [],
-  .measureX 89 [] [],
-  .measureX 90 [] [],
-  .measureX 91 [] [],
-  .measureX 92 [] [],
-  .measureX 93 [] [],
-  .measureX 94 [] [],
-  .measureX 95 [] [],
-  .measureX 96 [] [],
-  .measureX 97 [] [],
-  .measureX 98 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] [],
-  .measureX 99 [] []
+  .measureX 82 [.Z 0, .Z 0] [],
+  .measureX 83 [.Z 0, .Z 0] [],
+  .measureX 84 [.Z 0, .Z 0] [],
+  .measureX 85 [.Z 0, .Z 0] [],
+  .measureX 86 [.Z 0, .Z 0] [],
+  .measureX 87 [.Z 0, .Z 0] [],
+  .measureX 88 [.Z 0, .Z 0] [],
+  .measureX 89 [.Z 0, .Z 0] [],
+  .measureX 90 [.Z 0, .Z 0] [],
+  .measureX 91 [.Z 0, .Z 0] [],
+  .measureX 92 [.Z 0, .Z 0] [],
+  .measureX 93 [.Z 0, .Z 0] [],
+  .measureX 94 [.Z 0, .Z 0] [],
+  .measureX 95 [.Z 0, .Z 0] [],
+  .measureX 96 [.Z 0, .Z 0] [],
+  .measureX 97 [.Z 0, .Z 0] [],
+  .measureX 98 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [],
+  .measureX 99 [.Z 0, .Z 0] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99],
+  .measureX 99 [.Z 0, .Z 0] [.Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99, .Z 99]
 ]
 
 def leave1 : Program := WSlimTree.joinL leave1Block0 [leave1Block1, leave1Block2, leave1Block3, leave1Block4, leave1Block5, leave1Block6, leave1Block7, leave1Block8, leave1Block9, leave1Block10, leave1Block11, leave1Block12, leave1Block13, leave1Block14, leave1Block15, leave1Block16, leave1Block17, leave1Block18, leave1Block19, leave1Block20, leave1Block21, leave1Block22, leave1Block23, leave1Block24, leave1Block25, leave1Block26, leave1Block27, leave1Block28, leave1Block29, leave1Block30, leave1Block31, leave1Block32, leave1Block33, leave1Block34, leave1Block35, leave1Block36, leave1Block37, leave1Block38, leave1Block39, leave1Block40, leave1Block41, leave1Block42, leave1Block43, leave1Block44, leave1Block45, leave1Block46, leave1Block47, leave1Block48, leave1Block49, leave1Block50, leave1Block51]
@@ -56830,7 +57085,7 @@ def leave1 : Program := WSlimTree.joinL leave1Block0 [leave1Block1, leave1Block2
 theorem leave1_checked : eval StairArchiveColumns.col312 leave1 leave1Trace0In = (true, leave1StoredOut) :=
   WSlimTree.eval_of_checkSeq _ leave1Block0 [leave1Block1, leave1Block2, leave1Block3, leave1Block4, leave1Block5, leave1Block6, leave1Block7, leave1Block8, leave1Block9, leave1Block10, leave1Block11, leave1Block12, leave1Block13, leave1Block14, leave1Block15, leave1Block16, leave1Block17, leave1Block18, leave1Block19, leave1Block20, leave1Block21, leave1Block22, leave1Block23, leave1Block24, leave1Block25, leave1Block26, leave1Block27, leave1Block28, leave1Block29, leave1Block30, leave1Block31, leave1Block32, leave1Block33, leave1Block34, leave1Block35, leave1Block36, leave1Block37, leave1Block38, leave1Block39, leave1Block40, leave1Block41, leave1Block42, leave1Block43, leave1Block44, leave1Block45, leave1Block46, leave1Block47, leave1Block48, leave1Block49, leave1Block50, leave1Block51] _ _ (by decide +kernel)
 
-theorem leave1_counts : GatePhysical leave1 ∧ toffoliCount leave1 = 45 ∧
+theorem leave1_counts : GatePhysical leave1 ∧ toffoliCount leave1 = 43 ∧
     measurementCount leave1 = 94 ∧ gateSlots leave1 = 6865 :=
   WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
