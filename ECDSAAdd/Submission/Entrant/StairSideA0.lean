@@ -1,5 +1,5 @@
-import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Decoder87
+import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Math.SkywalkTerminationBudget
@@ -21,10 +21,8 @@ import ECDSAAdd.Framework.WireRenameComposition
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Challenge.Contract
 import ECDSAAdd.Submission.Entrant.DeadCarry
-import ECDSAAdd.Submission.Entrant.NumericCarryTrace
 import ECDSAAdd.Framework.CleanWireRebind
 import ECDSAAdd.Framework.WireRenamePool
-import ECDSAAdd.Submission.Entrant.MainPart07Core
 import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Arithmetic.MappedSubtract
 import ECDSAAdd.Arithmetic.SkywalkIntegerTick
@@ -38,6 +36,8 @@ import ECDSAAdd.Arithmetic.Registers
 import ECDSAAdd.Arithmetic.Rotate
 import ECDSAAdd.Arithmetic.Shift
 import ECDSAAdd.Framework.GateInverse
+import ECDSAAdd.Framework.FiniteUnitary
+
 
 -- StairSideA = StairSideA ++ PrizeStairArchiveEnter09fd522f ++ PrizeStair44PointMap486a9e3 ++ PrizeHighBankJoin5ab3264 ++ PrizeHighBankFirstHit91f0292
 -- ==== begin StairSideA ====
@@ -2403,26 +2403,27 @@ def unpackCutTable (B : Nat) : List Nat :=
   if B = 87 then
     [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
      1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 4, 3, 3, 3, 3, 3]
+     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 5, 1, 4, 3, 3, 3, 3, 3]
   else if B = 62 then
     [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-     1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 1, 4, 3, 3, 3, 3]
+     1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 3, 1, 4, 3, 3, 3, 3]
   else if B = 47 then
     [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-     1, 0, 0, 0, 0, 0, 0, 0, 1, 4, 3, 3, 3, 3, 3]
+     1, 0, 0, 0, 0, 0, 0, 5, 1, 4, 3, 3, 3, 3, 3]
   else if B = 32 then
     [0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 3]
   else if B = 22 then
-    [0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3, 1, 4]
+    [0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 3, 1, 4]
   else if B = 12 then
     [0, 0, 2, 0, 0, 0, 1, 4, 3, 3]
   else []
 
 /-- Value written into `t` by the front of a cut position (`h`, `l`: the position's two decoder
 outputs). Kind `0` (and any unknown kind) is the generated decoder product. -/
-def unpackCutEval (kind : Nat) (h l z : Bool) : Bool :=
+def unpackCutEval (kind : Nat) (h l z loNext loLast : Bool) : Bool :=
   if kind = 1 then h else if kind = 2 then (h ^^ z) else if kind = 3 then l
-  else if kind = 4 then (l ^^ z) else (h && l)
+  else if kind = 4 then (l ^^ z) else if kind = 5 then (h ^^ loNext)
+  else if kind = 6 then (h ^^ loNext ^^ loLast) else (h && l)
 
 /-- Exhaustive check of a cut kind on the reachable states of position `j`: `A = 0` (then `z = 1`)
 or `j + 1 ≤ A < B` (then `z = 0`). -/
@@ -2431,7 +2432,9 @@ def unpackCutOK (B j kind : Nat) : Bool :=
     (a != 0 && !decide (j + 1 ≤ a)) ||
       (unpackCutEval kind (decide ((j + 1) / 2 ^ (bitWidth B / 2) = a / 2 ^ (bitWidth B / 2)))
         (decide ((j + 1) % 2 ^ (bitWidth B / 2) = a % 2 ^ (bitWidth B / 2)))
-        (decide (a = 0)) == decide (j + 1 = a)))
+        (decide (a = 0))
+        (decide ((j + 2) % 2 ^ (bitWidth B / 2) = a % 2 ^ (bitWidth B / 2)))
+        (decide ((j + 3) % 2 ^ (bitWidth B / 2) = a % 2 ^ (bitWidth B / 2))) == decide (j + 1 = a)))
 
 /-- The table entry, kept only when it passes the exhaustive check (self-validating). -/
 def unpackCutKind (B j : Nat) : Nat :=
@@ -2446,6 +2449,10 @@ def unpackCutFront (L : Layout) (B j kind : Nat) : Program :=
   else if kind = 3 then [.CX (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z) L.t]
   else if kind = 4 then
     [.CX (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z) L.t, .CX L.z L.t]
+  else if kind = 5 then
+    [.CX (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z) L.t, .CX (outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z) L.t]
+  else if kind = 6 then
+    [.CX (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z) L.t, .CX (outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z) L.t, .CX (outAt (lowDecoder L B) ((j + 3) % 2 ^ (bitWidth B / 2)) L.z) L.t]
   else [.CCX (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z)
     (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z) L.t]
 
@@ -2455,11 +2462,11 @@ def unpackStepX (L : Layout) (B j : Nat) : Program :=
 
 /-- Toffoli gates saved by a cut kind. -/
 def unpackCutSaves (kind : Nat) : Nat :=
-  if kind = 1 then 1 else if kind = 2 then 1 else if kind = 3 then 1 else if kind = 4 then 1 else 0
+  if kind = 1 then 1 else if kind = 2 then 1 else if kind = 3 then 1 else if kind = 4 then 1 else if kind = 5 then 1 else if kind = 6 then 1 else 0
 
 /-- Extra gate slots of a cut kind (the `z` fan-in). -/
 def unpackCutSlot (kind : Nat) : Nat :=
-  if kind = 1 then 0 else if kind = 2 then 1 else if kind = 3 then 0 else if kind = 4 then 1 else 0
+  if kind = 1 then 0 else if kind = 2 then 1 else if kind = 3 then 0 else if kind = 4 then 1 else if kind = 5 then 1 else if kind = 6 then 2 else 0
 
 /-- Toffoli gates saved by the cut positions of budget `B`. -/
 def unpackCutCount (B : Nat) : Nat :=
@@ -2501,23 +2508,24 @@ theorem unpackCutKind_ok (B j : Nat) (h : unpackCutKind B j ≠ 0) :
     exact absurd rfl h
 
 theorem unpackCutFront_run (L : Layout) (B j kind : Nat) (rest : Program) (m : List Bool)
-    (s : State) (hzt : L.z ≠ L.t) :
+    (s : State) (hzt : L.z ≠ L.t) (hn : outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z ≠ L.t)
+    (hl : outAt (lowDecoder L B) ((j + 3) % 2 ^ (bitWidth B / 2)) L.z ≠ L.t) :
     run (unpackCutFront L B j kind ++ rest) m s =
       run rest m ⟨s.phase, writeBit s.basis L.t (s.basis L.t ^^
         unpackCutEval kind
           (s.basis (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z))
           (s.basis (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z))
-          (s.basis L.z))⟩ := by
+          (s.basis L.z) (s.basis (outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z)) (s.basis (outAt (lowDecoder L B) ((j + 3) % 2 ^ (bitWidth B / 2)) L.z)))⟩ := by
   unfold unpackCutFront unpackCutEval
   split_ifs <;> simp only [List.cons_append, List.nil_append, run] <;>
     congr 2 <;> funext q <;> by_cases hq : q = L.t <;>
-    simp [writeBit, Function.update, hq, hzt, Bool.xor_assoc]
+    simp [writeBit, Function.update, hq, hzt, hn, hl, Bool.xor_assoc]
 
 theorem unpackCutFront_wires (L : Layout) (B j kind : Nat) (rest : Program) :
     wires (unpackCutFront L B j kind ++ .CX L.t L.z :: rest) ⊆
-      wires (.CCX (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z)
+      insert (outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z) (insert (outAt (lowDecoder L B) ((j + 3) % 2 ^ (bitWidth B / 2)) L.z) (wires (.CCX (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z)
         (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z) L.t ::
-        .CX L.t L.z :: rest) := by
+        .CX L.t L.z :: rest))) := by
   intro q hq
   unfold unpackCutFront at hq
   split_ifs at hq <;>
@@ -2525,7 +2533,7 @@ theorem unpackCutFront_wires (L : Layout) (B j kind : Nat) (rest : Program) :
       Finset.mem_insert, Finset.mem_singleton] at hq ⊢ <;> tauto
 
 theorem unpackStepX_wires (L : Layout) (B j : Nat) :
-    wires (unpackStepX L B j) ⊆ wires (unpackStep L B j) := by
+    wires (unpackStepX L B j) ⊆ insert (outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z) (insert (outAt (lowDecoder L B) ((j + 3) % 2 ^ (bitWidth B / 2)) L.z) (wires (unpackStep L B j))) := by
   have ht : (unpackStep L B j).tail = .CX L.t L.z :: (unpackStep L B j).tail.tail := rfl
   intro q hq
   rw [unpackStepX, ht] at hq
@@ -3315,10 +3323,13 @@ theorem unpackSweepPrefix_support_active (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   have hsteps : wires ((List.range (B - 2)).flatMap (unpackStepX L B)) ⊆
       (unpackSweepSites L B).toFinset := by
     apply wires_flatMap_subset
-    intro j hj
-    exact fun q hq => unpackStep_support_active L B j (by
-      have := List.mem_range.mp hj
-      omega) (unpackStepX_wires L B j hq)
+    intro j hj q hq
+    have H := unpackStepX_wires L B j hq
+    simp only [Finset.mem_insert] at H
+    rcases H with h | h | h
+    · rw [h]; exact unpackSweep_active_outLow L B _
+    · rw [h]; exact unpackSweep_active_outLow L B _
+    · exact unpackStep_support_active L B j (by have := List.mem_range.mp hj; omega) h
   have htop0 := unpackStep_support_active L B (B - 2) (by omega)
   have htop : wires (unpackLastStep L B) ⊆ (unpackSweepSites L B).toFinset :=
     fun q hq => htop0 (unpackLastStep_wires L B hq)
@@ -3877,6 +3888,13 @@ theorem unpackLastStep_physical (L : Layout) (B : Nat) (hn : L.Nodup B)
   · exact hp i (List.mem_of_mem_tail hi)
 
 
+theorem unpack_neighbor_ne (L : Layout) (B x : Nat) (hn : L.Nodup B) :
+    outAt (lowDecoder L B) (x % 2 ^ (bitWidth B / 2)) L.z ≠ L.t :=
+  low_output_ne_t L B _ hn (by
+    simpa only [lowDecoder, oneHot_outputs_length, lowBits, reg, List.length_take, List.length_map,
+      List.length_range, Nat.min_eq_left (Nat.div_le_self (bitWidth B) 2)] using
+        Nat.mod_lt x (Nat.two_pow_pos (bitWidth B / 2)))
+
 theorem unpackStepX_physical (L : Layout) (B j : Nat) (hn : L.Nodup B)
     (hp : GatePhysical (unpackStep L B j)) : GatePhysical (unpackStepX L B j) := by
   have hhead : RecordedQuantum.PhysicalInstr (.gate (.CCX
@@ -3886,9 +3904,11 @@ theorem unpackStepX_physical (L : Layout) (B j : Nat) (hn : L.Nodup B)
   obtain ⟨hht, hlt⟩ : outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z ≠ L.t ∧
       outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z ≠ L.t := hhead
   have hzt := sep_z_t L B hn
+  have hn2 := unpack_neighbor_ne L B (j+2) hn
+  have hn3 := unpack_neighbor_ne L B (j+3) hn
   have hfront : GatePhysical (unpackCutFront L B j (unpackCutKind B j)) := by
     unfold unpackCutFront
-    split_ifs <;> simp [GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate, hht, hlt, hzt]
+    split_ifs <;> simp [GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate, hht, hlt, hzt, hn2, hn3]
   intro i hi
   rcases List.mem_append.mp hi with hi | hi
   · exact hfront i hi
@@ -3981,10 +4001,13 @@ theorem unpackFull_support (L : Layout) (B : Nat) (hB : 3 ≤ B) :
   have hu3 : wires ((List.range (B - 2)).flatMap (unpackStepX L B)) ⊆
       (declaredSites L B).toFinset := by
     apply wires_flatMap_subset
-    intro j hj
-    refine fun q hq => unpackStep_support L B j ?_ (unpackStepX_wires L B j hq)
-    have hj' := List.mem_range.mp hj
-    omega
+    intro j hj q hq
+    have H := unpackStepX_wires L B j hq
+    simp only [Finset.mem_insert] at H
+    rcases H with h | h | h
+    · rw [h]; exact outAt_declared_low L B _
+    · rw [h]; exact outAt_declared_low L B _
+    · exact unpackStep_support L B j (by have := List.mem_range.mp hj; omega) h
   have hu40 := unpackStep_support L B (B - 2) (by omega)
   have hu4 : wires (unpackLastStep L B) ⊆ (declaredSites L B).toFinset :=
     fun q hq => hu40 (unpackLastStep_wires L B hq)
@@ -22944,7 +22967,7 @@ theorem k5_dh (L : StairCodec.Layout) (B x : Nat) :
 
 theorem codecPair87 :
     gateSlots (StairPhysicalPrimitives.pack 87) +
-      gateSlots (StairPhysicalPrimitives.unpack 87) = 5759 := by
+      gateSlots (StairPhysicalPrimitives.unpack 87) = 5744 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_87, StairCodec.high87Program,
     Baselines.rename_gateSlots, gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
@@ -22953,7 +22976,7 @@ theorem codecPair87 :
 
 theorem codecPair62 :
     gateSlots (StairPhysicalPrimitives.pack 62) +
-      gateSlots (StairPhysicalPrimitives.unpack 62) = 3905 := by
+      gateSlots (StairPhysicalPrimitives.unpack 62) = 3907 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_62,
     gateSlots_append, k5_flatMap_slots, k5_packFirstStep_slots, k5_packStep_slots,
@@ -22962,7 +22985,7 @@ theorem codecPair62 :
 
 theorem codecPair47 :
     gateSlots (StairPhysicalPrimitives.pack 47) +
-      gateSlots (StairPhysicalPrimitives.unpack 47) = 2914 := by
+      gateSlots (StairPhysicalPrimitives.unpack 47) = 2908 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_47, StairCodec.high47Program,
     Baselines.rename_gateSlots,
@@ -22981,7 +23004,7 @@ theorem codecPair32 :
 
 theorem codecPair22 :
     gateSlots (StairPhysicalPrimitives.pack 22) +
-      gateSlots (StairPhysicalPrimitives.unpack 22) = 1262 := by
+      gateSlots (StairPhysicalPrimitives.unpack 22) = 1257 := by
   simp only [StairPhysicalPrimitives.pack, StairPhysicalPrimitives.unpack, StairCodec.pack,
     StairCodec.unpack, StairCodec.unpackWithHigh, StairCodec.highProgram_22, StairCodec.high22Program,
     Baselines.rename_gateSlots,
@@ -39541,15 +39564,25 @@ theorem unpackStepX_run (L : Layout) (B u v j : Nat) (sigma : Bool)
   have hpre : (st.a != 0 && !decide (j + 1 ≤ st.a)) = false := by
     rcases hreach with h0 | h0 <;> simp [h0]
   rw [hpre, Bool.false_or, beq_iff_eq] at hok
+  have neighbor (x : Nat) :
+      s.basis (outAt (lowDecoder L B) (x % 2 ^ (bitWidth B / 2)) L.z) =
+      decide (x % 2 ^ (bitWidth B / 2) = st.a % 2 ^ (bitWidth B / 2)) := by
+    let radix := 2 ^ (bitWidth B / 2)
+    have small : x % radix < 2 ^ bitWidth B :=
+      lt_of_lt_of_le (Nat.mod_lt x (Nat.two_pow_pos _))
+        (Nat.pow_le_pow_right (by decide) (Nat.div_le_self _ _))
+    simpa only [radix,Nat.mod_mod] using
+      (pairDecoder_parts_of_sites L B st.a (x % radix) hn s.basis ha haBound small hlow hhigh).2
   have hkey : unpackCutEval (unpackCutKind B j)
       (s.basis (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z))
       (s.basis (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z))
-      (s.basis L.z) =
+      (s.basis L.z) (s.basis (outAt (lowDecoder L B) ((j + 2) % 2 ^ (bitWidth B / 2)) L.z)) (s.basis (outAt (lowDecoder L B) ((j + 3) % 2 ^ (bitWidth B / 2)) L.z)) =
       (s.basis (outAt (highDecoder L B) ((j + 1) / 2 ^ (bitWidth B / 2)) L.z) &&
         s.basis (outAt (lowDecoder L B) ((j + 1) % 2 ^ (bitWidth B / 2)) L.z)) := by
-    rw [hsel, hH, hL, hz, hzst]
+    rw [hsel, hH, hL, hz, hzst, neighbor (j+2), neighbor (j+3)]
     exact hok
-  rw [unpackStepX, unpackCutFront_run L B j _ _ m s (sep_z_t L B hn), hkey]
+  rw [unpackStepX, unpackCutFront_run L B j _ _ m s (sep_z_t L B hn)
+    (unpack_neighbor_ne L B (j+2) hn) (unpack_neighbor_ne L B (j+3) hn), hkey]
   conv_rhs => rw [unpackStep_cons1]
   rfl
 
@@ -60660,8 +60693,8 @@ theorem v3Plan_loanUnits : v3Plan.loanUnits = 461 := by decide
 pack+unpack totals (`5410, 3656, 2725, 1757, 1173, 582`) plus two sign
 extensions and `4 * (B - 1)` relocation CX gates (proved in `StairSlotsV3`). -/
 def v3CodecPair (B : Nat) : Nat :=
-  if B = 87 then 5759 else if B = 62 then 3905 else if B = 47 then 2914
-  else if B = 32 then 1886 else if B = 22 then 1262 else if B = 12 then 631
+  if B = 87 then 5744 else if B = 62 then 3907 else if B = 47 then 2908
+  else if B = 32 then 1886 else if B = 22 then 1257 else if B = 12 then 628
   else 0
 
 /-- CANON v3 costs: repaired `B + 1`-bit orientation (`3 (B + 1)` slots),
@@ -60694,7 +60727,7 @@ def v3Boundary1806 : Boundary where
   multEnd := 30000
   center := 430
 
-theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335228 := by
+theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 335174 := by
   decide
 
 /-! ### Cross-check: the superseded eight-row plan reproduces 639,954 -/
@@ -60852,7 +60885,7 @@ from one lazily evaluated table per decoder (`k5_dl`, `k5_dh`), so each of the a
 
 theorem codecPair12 :
     gateSlots (StairPhysicalPrimitives.pack 12) +
-      gateSlots (StairPhysicalPrimitives.unpack 12) = 631 := by
+      gateSlots (StairPhysicalPrimitives.unpack 12) = 628 := by
   decide +kernel
 
 /-- The loaned division endpoint costs at most 10,000 slots more than the

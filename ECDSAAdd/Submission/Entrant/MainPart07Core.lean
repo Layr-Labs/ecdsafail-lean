@@ -1,3 +1,4 @@
+import Mathlib.Data.Nat.Pairing
 import ECDSAAdd.Submission.Entrant.DeadCarry
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MappedSignedSquare
@@ -13714,6 +13715,35 @@ pool-B wires at stage 506; earlier ticks already use them. -/
 
 set_option maxRecDepth 30000
 set_option maxHeartbeats 0
+namespace ECDSAAdd.Entrant.CoverageBits
+abbrev Row := Bool × Bool × Nat × Nat
+def index (r : Row) : Nat := 4 * Nat.pair r.2.2.1 r.2.2.2 + 2 * r.1.toNat + r.2.1.toNat
+
+private theorem index_inj : Function.Injective index := by
+  rintro ⟨a,b,u,v⟩ ⟨c,d,w,z⟩ h
+  cases a <;> cases b <;> cases c <;> cases d <;> simp [index] at h ⊢ <;> omega
+
+def members : List Row → Nat
+  | [] => 0
+  | x :: xs => 2 ^ index x ||| members xs
+
+theorem member_of_bit (rows : List Row) (r : Row)
+    (h : (members rows).testBit (index r) = true) : r ∈ rows := by
+  induction rows with
+  | nil => simp [members] at h
+  | cons x xs ih =>
+    simp only [members, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
+      decide_eq_true_eq] at h
+    rcases h with h | h
+    · exact List.mem_cons.mpr (Or.inl (index_inj h).symm)
+    · exact List.mem_cons_of_mem _ (ih h)
+
+theorem cover {cheap hit good target : Bool}
+    (h : (!cheap || hit || !good) = true) (lookup : hit = true → target = true) :
+    (!(cheap && good) || target) = true := by
+  cases cheap <;> cases hit <;> cases good <;> simp_all
+end ECDSAAdd.Entrant.CoverageBits
+
 namespace ECDSAAdd.Entrant.Five506
 open Arithmetic MappedCompressed Secp256k1 History5
 
@@ -14788,39 +14818,72 @@ def cv (v : Nat) : Bool :=
   (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || decide ((g,s,u,v) ∈ rows)
 
-theorem cv0 : cv 0 = true := by decide +kernel
-theorem cv1 : cv 1 = true := by decide +kernel
-theorem cv2 : cv 2 = true := by decide +kernel
-theorem cv3 : cv 3 = true := by decide +kernel
-theorem cv4 : cv 4 = true := by decide +kernel
-theorem cv5 : cv 5 = true := by decide +kernel
-theorem cv6 : cv 6 = true := by decide +kernel
-theorem cv7 : cv 7 = true := by decide +kernel
-theorem cv8 : cv 8 = true := by decide +kernel
-theorem cv9 : cv 9 = true := by decide +kernel
-theorem cv10 : cv 10 = true := by decide +kernel
-theorem cv11 : cv 11 = true := by decide +kernel
-theorem cv12 : cv 12 = true := by decide +kernel
-theorem cv13 : cv 13 = true := by decide +kernel
-theorem cv14 : cv 14 = true := by decide +kernel
-theorem cv15 : cv 15 = true := by decide +kernel
-theorem cv16 : cv 16 = true := by decide +kernel
-theorem cv17 : cv 17 = true := by decide +kernel
-theorem cv18 : cv 18 = true := by decide +kernel
-theorem cv19 : cv 19 = true := by decide +kernel
-theorem cv20 : cv 20 = true := by decide +kernel
-theorem cv21 : cv 21 = true := by decide +kernel
-theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
-theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
-theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
-theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
-theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
-theorem cv32 : cv 32 = true := by decide +kernel
+private def rowWordMask : Nat := 0xf000000000000000000000000000000f000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000f0000000000000000000000000000f0000000000000000000000000000000000000000000000000000000f00000000000000000000000000f00000000000000000000000000f000000000000000000000000000000000000000000000000000f000000000000000000000000f000000000000000000000000f00000000000000000000000000000000000000000000000f0000000000000000000000f0000000000000000000000f0000000000000000000000000000000000000000000f00000000000000000000f00000000000000000000f000000000000000000000000000000000000000f000000000000000000f000000000000000000f00000000000000000000000000000000000f0000000000000000f0000000000000000f0000000000000000000000000000000f0000000000000ff000000000000f0f0000000000000000000000000f0f0000000000fff000000000000f000000000000000000000f0f00000000fff00000000f0f0000000000000000000f0000000ff000000f0f00000000000f0f0f0ffffff00f000f000000000f0f0ffff00f0f0000000f0ff00f000f0f0
+private theorem rowWordMask_eq : CoverageBits.members rows = rowWordMask := by decide +kernel
+private def siteWord : Nat := 0xf78000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fc0000000000000000000000000000000000000000000000000000000000000003fc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+private theorem siteWord_eq : encN_t8 (fun _ => true) MorningFour.sites = siteWord := by decide +kernel
+private theorem projected (x : Nat) :
+    encN_t8 (tbN_t8 x) MorningFour.sites = (x &&& siteWord) := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have bit (f : BasisState) : (encN_t8 f MorningFour.sites).testBit q =
+      (decide (q ∈ MorningFour.sites) && f q) :=
+    (foldl_tb_t8 f MorningFour.sites 0 q).trans (by simp)
+  rw [← siteWord_eq, Nat.testBit_and]
+  simp only [bit, tbN_t8]
+  cases (x.testBit q) <;> cases (decide (q ∈ MorningFour.sites)) <;> rfl
+private def fastGood (r : CoverageBits.Row) : Bool :=
+  decide (((runN_t8 tick506 [] (false, enc r)).2 &&& siteWord) ∈ legalCodes)
+private theorem fastGood_eq (r : CoverageBits.Row) : fastGood r = goodRow r := by
+  simp only [fastGood, goodRow, projected]
+private theorem hit_sound (r : CoverageBits.Row)
+    (h : rowWordMask.testBit (CoverageBits.index r) = true) : decide (r ∈ rows) = true := by
+  rw [← rowWordMask_eq] at h
+  have mem := CoverageBits.member_of_bit rows r h
+  exact decide_eq_true mem
+private def cvFast (v : Nat) : Bool :=
+  (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1)) ||
+      rowWordMask.testBit (CoverageBits.index (g,s,u,v)) || !fastGood (g,s,u,v)
+theorem cv_of_checked {v : Nat} (h : cvFast v = true) : cv v = true := by
+  simp only [cvFast, List.all_eq_true, fastGood_eq] at h
+  simp only [cv, List.all_eq_true]
+  intro u hu g hg s hs
+  exact CoverageBits.cover (h u hu g hg s hs) (hit_sound (g,s,u,v))
+
+theorem cv0 : cv 0 = true := cv_of_checked (by decide +kernel)
+theorem cv1 : cv 1 = true := cv_of_checked (by decide +kernel)
+theorem cv2 : cv 2 = true := cv_of_checked (by decide +kernel)
+theorem cv3 : cv 3 = true := cv_of_checked (by decide +kernel)
+theorem cv4 : cv 4 = true := cv_of_checked (by decide +kernel)
+theorem cv5 : cv 5 = true := cv_of_checked (by decide +kernel)
+theorem cv6 : cv 6 = true := cv_of_checked (by decide +kernel)
+theorem cv7 : cv 7 = true := cv_of_checked (by decide +kernel)
+theorem cv8 : cv 8 = true := cv_of_checked (by decide +kernel)
+theorem cv9 : cv 9 = true := cv_of_checked (by decide +kernel)
+theorem cv10 : cv 10 = true := cv_of_checked (by decide +kernel)
+theorem cv11 : cv 11 = true := cv_of_checked (by decide +kernel)
+theorem cv12 : cv 12 = true := cv_of_checked (by decide +kernel)
+theorem cv13 : cv 13 = true := cv_of_checked (by decide +kernel)
+theorem cv14 : cv 14 = true := cv_of_checked (by decide +kernel)
+theorem cv15 : cv 15 = true := cv_of_checked (by decide +kernel)
+theorem cv16 : cv 16 = true := cv_of_checked (by decide +kernel)
+theorem cv17 : cv 17 = true := cv_of_checked (by decide +kernel)
+theorem cv18 : cv 18 = true := cv_of_checked (by decide +kernel)
+theorem cv19 : cv 19 = true := cv_of_checked (by decide +kernel)
+theorem cv20 : cv 20 = true := cv_of_checked (by decide +kernel)
+theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
+theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
+theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
+theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
+theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
+theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
+theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
+theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
+theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
+theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
+theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
+theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
 
 theorem rows_complete : ∀ v, v < 33 → ∀ u, u < 33 → ∀ g s : Bool,
     (u+v ≤ 32 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
@@ -18078,27 +18141,61 @@ def cv (v : Nat) : Bool :=
   (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || rowFast (g,s,u,v)
 
-theorem cv0 : cv 0 = true := by decide +kernel
-theorem cv1 : cv 1 = true := by decide +kernel
-theorem cv2 : cv 2 = true := by decide +kernel
-theorem cv3 : cv 3 = true := by decide +kernel
-theorem cv4 : cv 4 = true := by decide +kernel
-theorem cv5 : cv 5 = true := by decide +kernel
-theorem cv6 : cv 6 = true := by decide +kernel
-theorem cv7 : cv 7 = true := by decide +kernel
-theorem cv8 : cv 8 = true := by decide +kernel
-theorem cv9 : cv 9 = true := by decide +kernel
-theorem cv10 : cv 10 = true := by decide +kernel
-theorem cv11 : cv 11 = true := by decide +kernel
-theorem cv12 : cv 12 = true := by decide +kernel
-theorem cv13 : cv 13 = true := by decide +kernel
-theorem cv14 : cv 14 = true := by decide +kernel
-theorem cv15 : cv 15 = true := by decide +kernel
-theorem cv16 : cv 16 = true := by decide +kernel
-theorem cv17 : cv 17 = true := by decide +kernel
-theorem cv18 : cv 18 = true := by decide +kernel
-theorem cv19 : cv 19 = true := by decide +kernel
-theorem cv20 : cv 20 = true := by decide +kernel
+private def rowWordMask : Nat := 0xf00000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000f000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000f0000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000f00000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000f000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000f0000000000000000000000000000000000f0000000000000000000000000000000000000f00000000000000000000000000000f00f00000000000000000000000000000f00000000000000000000000000000000f00000000000000000000000000000000000f0000000000000000000000000f0f00f0000000000000000000000000fff000000000000000000000000000000f000000000000000000000000000000000f00000000000000000000000f0f00f00000000000000000000000fff00000000000000000000000000f0f0000000000000000000000000000000f00000000000000000000000f00f0000000000000000000000ff000000000000000000000000f0f00000000000000000000000000000f0000000000000000000f0f00f0000000000000000000fff000000000000000000000000f000000000000000000000000000f00000000000000000f0f00f00000000000000000fff00000000000000000000f0f0000000000000000000000000f00000000000000000f00f0000000000000000ff000000000000000000f0f00000000000000000000000f0f0f00000f0f0f0f00f0f0f00000f0f0fff000000000000000000f000000000000000000000f0f0f000f0f0f0f00f0f0f000f0f0fff00000000000000f0f0000000000000000000f0f000f00000f00f0f000f00f0ff0000000000f0f0f00000000000000000f0f0f0f0f0f00f0f0fffffff000000f0f000f000000000000000f0f0f0f0f00f0fffffff0000f000f0f0000000000000f0f000f00f0ff0ff00f0f0f0f00000000000f0f0f0ffffff00f000f000000000f0f0ffff00f0f0000000f0ff00f000f0f0
+private theorem rowWordMask_eq : CoverageBits.members rows = rowWordMask := by decide +kernel
+private def siteWord : Nat := 0x1f7c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffc0000000000000000000000000000000000000000000000000000000000000003fe0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+private theorem siteWord_eq : encN_t8 (fun _ => true) Five506.sites = siteWord := by decide +kernel
+private theorem projected (x : Nat) :
+    encN_t8 (tbN_t8 x) Five506.sites = (x &&& siteWord) := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have bit (f : BasisState) : (encN_t8 f Five506.sites).testBit q =
+      (decide (q ∈ Five506.sites) && f q) :=
+    (foldl_tb_t8 f Five506.sites 0 q).trans (by simp)
+  rw [← siteWord_eq, Nat.testBit_and]
+  simp only [bit, tbN_t8]
+  cases (x.testBit q) <;> cases (decide (q ∈ Five506.sites)) <;> rfl
+private def fastGood (r : CoverageBits.Row) : Bool :=
+  legalFingerprint ((runN_t8 tick505 [] (false, enc r)).2 &&& siteWord)
+private theorem fastGood_eq (r : CoverageBits.Row) : fastGood r = goodRow r := by
+  simp only [fastGood, goodRow, projected]
+private theorem rows_indexed : rows.all rowFast = true := by decide +kernel
+private theorem hit_sound (r : CoverageBits.Row)
+    (h : rowWordMask.testBit (CoverageBits.index r) = true) : rowFast r = true := by
+  rw [← rowWordMask_eq] at h
+  have mem := CoverageBits.member_of_bit rows r h
+  exact List.all_eq_true.mp rows_indexed r mem
+private def cvFast (v : Nat) : Bool :=
+  (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1)) ||
+      rowWordMask.testBit (CoverageBits.index (g,s,u,v)) || !fastGood (g,s,u,v)
+theorem cv_of_checked {v : Nat} (h : cvFast v = true) : cv v = true := by
+  simp only [cvFast, List.all_eq_true, fastGood_eq] at h
+  simp only [cv, List.all_eq_true]
+  intro u hu g hg s hs
+  exact CoverageBits.cover (h u hu g hg s hs) (hit_sound (g,s,u,v))
+
+theorem cv0 : cv 0 = true := cv_of_checked (by decide +kernel)
+theorem cv1 : cv 1 = true := cv_of_checked (by decide +kernel)
+theorem cv2 : cv 2 = true := cv_of_checked (by decide +kernel)
+theorem cv3 : cv 3 = true := cv_of_checked (by decide +kernel)
+theorem cv4 : cv 4 = true := cv_of_checked (by decide +kernel)
+theorem cv5 : cv 5 = true := cv_of_checked (by decide +kernel)
+theorem cv6 : cv 6 = true := cv_of_checked (by decide +kernel)
+theorem cv7 : cv 7 = true := cv_of_checked (by decide +kernel)
+theorem cv8 : cv 8 = true := cv_of_checked (by decide +kernel)
+theorem cv9 : cv 9 = true := cv_of_checked (by decide +kernel)
+theorem cv10 : cv 10 = true := cv_of_checked (by decide +kernel)
+theorem cv11 : cv 11 = true := cv_of_checked (by decide +kernel)
+theorem cv12 : cv 12 = true := cv_of_checked (by decide +kernel)
+theorem cv13 : cv 13 = true := cv_of_checked (by decide +kernel)
+theorem cv14 : cv 14 = true := cv_of_checked (by decide +kernel)
+theorem cv15 : cv 15 = true := cv_of_checked (by decide +kernel)
+theorem cv16 : cv 16 = true := cv_of_checked (by decide +kernel)
+theorem cv17 : cv 17 = true := cv_of_checked (by decide +kernel)
+theorem cv18 : cv 18 = true := cv_of_checked (by decide +kernel)
+theorem cv19 : cv 19 = true := cv_of_checked (by decide +kernel)
+theorem cv20 : cv 20 = true := cv_of_checked (by decide +kernel)
 
 end ECDSAAdd.Entrant.Six505
 end

@@ -24,12 +24,12 @@ set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires
-theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := by decide +kernel
-theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := by decide +kernel
-theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := by decide +kernel
-theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := by decide +kernel
-theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := by decide +kernel
-theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := by decide +kernel
+theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := coveredSlice _
+theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := coveredSlice _
+theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := coveredSlice _
+theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := coveredSlice _
+theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := coveredSlice _
+theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := coveredSlice _
 theorem partition : A161GenericFold.ambient L g hs96 = (((A161GenericFold.ambient L g hs96).drop 0).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 80).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 160).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 240).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 320).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 400).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 480).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 560).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 640).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 720).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 800).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 880).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 960).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1040).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1120).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1200).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1280).take 80) := by decide +kernel
 theorem all_cover : (A161GenericFold.ambient L g hs96).all cover=true := by
  rw [partition]
@@ -756,11 +756,9 @@ def join45_60Opt:ExactChecked known45 join45_60 known60 0:=ExactChecked.append _
 def join30_60Opt:ExactChecked known30 join30_60 known60 4:=ExactChecked.append _ _ _ _ _ _ _ join30_45Opt join45_60Opt
 def join0_60Opt:ExactChecked known0 join0_60 known60 8:=ExactChecked.append _ _ _ _ _ _ _ join0_30Opt join30_60Opt
 def body:Program:=join0_60Opt.out
--- D1 (gate margin): the compiler output is stated once, in Fold98 (`bank_match`).
-theorem literal_verified:ParkAProgramBool.programEq literal (C163Low4Middle.bankChecked.out)=true:=by
- unfold C163Low4Middle.bankChecked
- exact ECDSAAdd.Entrant.D1Opt.get_of_elim C163Low4Middle.bank_match C163Low4Middle.compiled_bank
-theorem literal_eq:literal=C163Low4Middle.bankChecked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
+theorem literal_eq : literal = C163Low4Middle.bankChecked.out := rfl
+theorem literal_verified : ParkAProgramBool.programEq literal C163Low4Middle.bankChecked.out = true :=
+ (ParkAProgramBool.programEq_iff _ _).2 literal_eq
 theorem cert:Cert known0 (C163Low4Middle.bankChecked.out) body known60 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known60 8) literal_eq) join0_60Opt.proof
 
@@ -995,11 +993,9 @@ def join40_54Opt:ExactChecked known40 join40_54 known54 0:=ExactChecked.append _
 def join27_54Opt:ExactChecked known27 join27_54 known54 4:=ExactChecked.append _ _ _ _ _ _ _ join27_40Opt join40_54Opt
 def join0_54Opt:ExactChecked known0 join0_54 known54 8:=ExactChecked.append _ _ _ _ _ _ _ join0_27Opt join27_54Opt
 def body:Program:=join0_54Opt.out
--- D1 (gate margin): the compiler output is stated once, in FullLogic (`match99`).
-theorem literal_verified:ParkAProgramBool.programEq literal (A161Low4FixedFold.checked.out)=true:=by
- unfold A161Low4FixedFold.checked
- exact ECDSAAdd.Entrant.D1Opt.get_of_elim A161Low4Facts.match99 A161Low4Facts.compiled99
-theorem literal_eq:literal=A161Low4FixedFold.checked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
+theorem literal_eq : literal = A161Low4FixedFold.checked.out := rfl
+theorem literal_verified : ParkAProgramBool.programEq literal A161Low4FixedFold.checked.out = true :=
+ (ParkAProgramBool.programEq_iff _ _).2 literal_eq
 theorem cert:Cert known0 (A161Low4FixedFold.checked.out) body known54 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known54 8) literal_eq) join0_54Opt.proof
 
