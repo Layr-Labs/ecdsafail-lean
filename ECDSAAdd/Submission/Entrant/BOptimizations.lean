@@ -987,15 +987,10 @@ theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignCResearch.loop ∧
  simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at oi om
  simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
   toffoliCount_append,measurementCount_append,C105LowEraseResearch.counts.1,C105LowEraseResearch.counts.2.1]
- -- replay memory (build-chain s5-lc): unfold the aliases in the hypotheses by simp, in the goal by rw (props first);
- -- simp on the goal made the kernel evaluate the generated programs (+5.6 GB).
- simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at nc oc ni nm oi om mt mm ot omid nt
- try rw [aa]
- try rw [ap]
- try rw [ab]
- try rw [ax]
- try rw [ai]
- repeat (first | rw [xs] | rw [ys] | rw [cs] | rw [HighConsumedC105Research.xs] | rw [HighConsumedC105Research.ys] | rw [HighConsumedC105Research.cs] | rw [HighConsumedC105Research.cin] | rw [HighConsumedC105Research.hs] | rw [C105PrefixResearch.cin] | rw [CKAliasesResearch.original] | rw [Ghost3CacheC.middle] | rw [GhostRelocatedKnown.C.original] | rw [HighSignCResearch.hosts] | rw [C105SignResearch.hosts])
+ simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
+  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
+  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
+  GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
  exact ⟨by omega,by omega⟩
 
  theorem body_counts:toffoliCount body+3=toffoliCount HighSignCResearch.body ∧

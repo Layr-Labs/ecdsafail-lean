@@ -2380,8 +2380,7 @@ def unpackStep (L : Layout) (B j : Nat) : Program :=
   [.measureX L.t [] [.CZ (L.D j) L.z]]
 
 /-- The top inverse-sweep position with its decoder-product CCX replaced by `t := ¬z`
-(on the codec domain the selected digit `B - 1` is reached exactly when `z` is still clear;
-credited to patternrecognition9-del 3ffb492b). -/
+(on the codec domain the selected digit `B - 1` is reached exactly when `z` is still clear). -/
 def unpackLastStep (L : Layout) (B : Nat) : Program :=
   .CX L.z L.t :: .X L.t :: (unpackStep L B (B - 2)).tail
 
@@ -3877,6 +3876,7 @@ theorem unpackLastStep_physical (L : Layout) (B : Nat) (hn : L.Nodup B)
   · exact trivial
   · exact hp i (List.mem_of_mem_tail hi)
 
+
 theorem unpackStepX_physical (L : Layout) (B j : Nat) (hn : L.Nodup B)
     (hp : GatePhysical (unpackStep L B j)) : GatePhysical (unpackStepX L B j) := by
   have hhead : RecordedQuantum.PhysicalInstr (.gate (.CCX
@@ -4408,6 +4408,7 @@ theorem unpackLastStep_counts (L : Layout) (B : Nat) :
     toffoliCount (unpackLastStep L B) = 0 ∧
     measurementCount (unpackLastStep L B) = 1 := by
   simp [unpackLastStep, unpackStep, toffoliCount, measurementCount]
+
 
 theorem unpackCutFront_counts (L : Layout) (B j kind : Nat) :
     toffoliCount (unpackCutFront L B j kind) + unpackCutSaves kind = 1 ∧
@@ -22900,6 +22901,7 @@ theorem k5_unpackLastStep_slots (L : StairCodec.Layout) (B : Nat) :
   simp only [gateSlots, List.map_cons, List.sum_cons, instructionSlots]
   omega
 
+
 theorem k5_unpackStepX_slots (L : StairCodec.Layout) (B j : Nat) :
     gateSlots (StairCodec.unpackStepX L B j) =
       gateSlots (StairCodec.unpackStep L B j) +
@@ -39447,6 +39449,7 @@ theorem unpackStep_correct (L : Layout) (B u v j : Nat) (sigma : Bool)
     rw [run_append_zero_left_spec pA _ hzA]
   rw [hrun]
   exact hs
+
 
 /-- Each decoder output of an unpack position separately (the parts of
 `pairDecoder_selected_of_sites`). -/
