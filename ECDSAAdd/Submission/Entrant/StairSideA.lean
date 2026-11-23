@@ -32793,7 +32793,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part57 : toffoliCount (archiveRestore240 true) = 55 ∧ measurementCount (archiveRestore240 true) = 124 := by
+theorem part57 : toffoliCount (archiveRestore240 true) = 58 ∧ measurementCount (archiveRestore240 true) = 124 := by
   decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
@@ -32840,7 +32840,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part25 : toffoliCount (archiveLoad240 true) = 48 ∧ measurementCount (archiveLoad240 true) = 136 := by
+theorem part25 : toffoliCount (archiveLoad240 true) = 49 ∧ measurementCount (archiveLoad240 true) = 136 := by
   decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
@@ -40573,10 +40573,10 @@ private theorem of_member {P:Program} {g:Instr} {q:Wire} (inP:g∈P) (hit:q∈g.
     · exact Or.inr (ih tail)
 
 private def marks : Bool → Bool → List Nat
-  | false, false => [0, 0, 1, 2, 3, 29, 29, 92, 10, 28, 18, 6, 9, 37, 48, 59, 0, 1, 2, 4, 7, 9, 11]
-  | false, true => [0, 0, 1, 2, 3, 16, 16, 64, 7, 14, 13, 15, 6, 24, 22, 23, 0, 1, 2, 4, 6, 7, 10]
+  | false, false => [0, 0, 1, 2, 3, 29, 29, 92, 10, 28, 18, 6, 9, 37, 48, 59, 1985, 1987, 1989, 1991, 1993, 1995, 1997]
+  | false, true => [0, 0, 1, 2, 3, 52, 52, 162, 4, 47, 43, 10, 12, 73, 36, 62, 1995, 1997, 1999, 2001, 2003, 2005, 2007]
   | true, false => [22, 32, 55, 32, 83, 33, 0, 34, 0, 1, 86, 36, 87, 37, 20, 38, 6, 39, 10, 7, 4, 41, 21]
-  | true, true => [1, 7, 33, 1, 61, 8, 0, 9, 30, 10, 67, 11, 3, 12, 70, 13, 72, 14, 74, 15, 0, 16, 2]
+  | true, true => [33, 4, 30, 4, 34, 5, 1, 6, 36, 7, 0, 8, 27, 0, 39, 2, 40, 11, 41, 12, 1, 13, 3]
 
 private theorem marked (loading select:Bool) : ∀i:Fin 23,
     ((program (op loading select))[(marks loading select).getD i 0]?).any

@@ -74610,9 +74610,9 @@ theorem window_geom : ∀ j : Fin 24, 0 ≤ j.val → j.val ≤ 22 →
   decide
 
 theorem enter_counts (j : Fin 24) :
-    toffoliCount (enterP j) = 11 ∧ toffoliCount (enterInvP j) = 13 ∧
-    measurementCount (enterP j) = 3 ∧ measurementCount (enterInvP j) = 3 ∧
-    gateSlots (enterP j) = 67 ∧ gateSlots (enterInvP j) = 67 := by
+    toffoliCount (enterP j) = 9 ∧ toffoliCount (enterInvP j) = 9 ∧
+    measurementCount (enterP j) = 7 ∧ measurementCount (enterInvP j) = 11 ∧
+    gateSlots (enterP j) = 208 ∧ gateSlots (enterInvP j) = 316 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (renameProgram_counts _ EnterProof.forward).1.trans (by decide +kernel)
   · exact (renameProgram_counts _ EnterProof.backward).1.trans (by decide +kernel)
