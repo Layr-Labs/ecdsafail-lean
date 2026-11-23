@@ -56021,7 +56021,7 @@ theorem v3_codec87 :
       toffoliCount (checkpointPrimitives.unpack 87) = 251 ∧
       measurementCount (checkpointPrimitives.unpack 87) = 171 :=
   v3_codec_row 87 7 15 16 (by decide) (v3_bitWidth_eq 87 6 (by norm_num) (by norm_num))
-    (by decide) (by decide)
+    (by decide) (by decide +kernel)
 
 theorem v3_codec62 :
     toffoliCount (checkpointPrimitives.pack 62) = 120 ∧
@@ -56029,7 +56029,7 @@ theorem v3_codec62 :
       toffoliCount (checkpointPrimitives.unpack 62) = 177 ∧
       measurementCount (checkpointPrimitives.unpack 62) = 121 :=
   v3_codec_row 62 6 8 13 (by decide) (v3_bitWidth_eq 62 5 (by norm_num) (by norm_num))
-    (by decide) (by decide)
+    (by decide) (by decide +kernel)
 
 theorem v3_codec47 :
     toffoliCount (checkpointPrimitives.pack 47) = 90 ∧
@@ -56037,7 +56037,7 @@ theorem v3_codec47 :
       toffoliCount (checkpointPrimitives.unpack 47) = 132 ∧
       measurementCount (checkpointPrimitives.unpack 47) = 91 :=
   v3_codec_row 47 6 8 11 (by decide) (v3_bitWidth_eq 47 5 (by norm_num) (by norm_num))
-    (by decide) (by decide)
+    (by decide) (by decide +kernel)
 
 theorem v3_codec32 :
     toffoliCount (checkpointPrimitives.pack 32) = 60 ∧
@@ -56045,7 +56045,7 @@ theorem v3_codec32 :
       toffoliCount (checkpointPrimitives.unpack 32) = 87 ∧
       measurementCount (checkpointPrimitives.unpack 32) = 61 :=
   v3_codec_row 32 5 5 10 (by decide) (v3_bitWidth_eq 32 4 (by norm_num) (by norm_num))
-    (by decide) (by decide)
+    (by decide) (by decide +kernel)
 
 theorem v3_codec22 :
     toffoliCount (checkpointPrimitives.pack 22) = 40 ∧
@@ -56053,7 +56053,7 @@ theorem v3_codec22 :
       toffoliCount (checkpointPrimitives.unpack 22) = 58 ∧
       measurementCount (checkpointPrimitives.unpack 22) = 41 :=
   v3_codec_row 22 5 5 7 (by decide) (v3_bitWidth_eq 22 4 (by norm_num) (by norm_num))
-    (by decide) (by decide)
+    (by decide) (by decide +kernel)
 
 theorem v3_codec12 :
     toffoliCount (checkpointPrimitives.pack 12) = 20 ∧
@@ -56061,7 +56061,7 @@ theorem v3_codec12 :
       toffoliCount (checkpointPrimitives.unpack 12) = 28 ∧
       measurementCount (checkpointPrimitives.unpack 12) = 21 :=
   v3_codec_row 12 4 2 5 (by decide) (v3_bitWidth_eq 12 3 (by norm_num) (by norm_num))
-    (by decide) (by decide)
+    (by decide) (by decide +kernel)
 
 /-! ## Repaired orientation: `B + 1` Fredkins (LT14 defect G) -/
 
@@ -72380,7 +72380,7 @@ def parkOps (e : Nat) : List Gate :=
   swapsG [(Shadow7.e0P e + 6, bTopP e + 1), (Shadow7.e0P e + 7, bTopP e + 2), (Shadow7.e0P e + 8, bTopP e + 3)]
 
 /-- `enterFix17` with its op 17 (`ccx (h+1578) (h+1575) (h+803)`) as a measured erasure: on every row the enter
-sees, its target already holds the AND (`EnterProof17.maskF_rows`). -/
+sees, its target already holds the AND (`EnterProof17.maskF_rows`). Credited to ercumentyildirim 89f494cb. -/
 def enterFix17p (s h : Nat) : List Gate := [
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
