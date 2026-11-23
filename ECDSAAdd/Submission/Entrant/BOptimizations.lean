@@ -1478,11 +1478,7 @@ def domainSelected396 : Program := [
 ]
 
  theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by decide +kernel
- theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by
-  apply List.all_eq_true.mpr
-  intro q hq
-  simpa only [List.mem_singleton,Bool.or_eq_true,decide_eq_true_eq] using
-    C163Touch.covered_mask (domain++hosts++ports) [4762] domainSelected396 (by decide +kernel) q hq
+ theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by decide +kernel
  theorem checked : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched oldPrefix q)=true := by
  apply List.all_eq_true.mpr
  intro q hq
@@ -2473,10 +2469,7 @@ theorem selected_sublist : selected.Sublist LocalEightBody99.body := by
  rw [e]
  exact (selected_high.trans (List.take_sublist _ _)).trans (List.sublist_append_left _ _)
 
-theorem selected_covers : domain.all (C163Touch.touched selected)=true := by
-  apply List.all_eq_true.mpr
-  intro q hq
-  exact (C163Touch.covered_mask domain [] selected (by decide +kernel) q hq).resolve_left (List.not_mem_nil)
+theorem selected_covers : domain.all (C163Touch.touched selected)=true := by decide +kernel
 
 theorem sublist_support (A P : Program) (h : A.Sublist P) : wires A ⊆ wires P := by
  intro q hq

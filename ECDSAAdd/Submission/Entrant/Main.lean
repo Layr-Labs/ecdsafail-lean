@@ -6,301 +6,7 @@ import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Stair44Stock
 import Mathlib.Tactic
 import ECDSAAdd.Framework.WireRenamePool
-import ECDSAAdd.Submission.Entrant.FieldMath
-import ECDSAAdd.Framework.Syntax
-import ECDSAAdd.Framework.Semantics
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
-open ECDSAAdd.Arithmetic.MappedCompressed
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-def barrelWidth (s : Nat) : Nat := Shadow7.liveW s
-
-def place (s q : Nat) : Wire :=
-  let n := barrelWidth s
-  if q < n then Shadow7.bankW s q else if q < n+16 then Partial.tagsP.getD (q-n) 1560
-  else Shadow7.poolW s (17 + (q-n-16)%10)
-
-def barrel (s : Nat) (mirror : Bool) : Program :=
-  renameProgram (place s) (logical (barrelWidth s) mirror)
-
-def barrelT (s : Nat) (_mirror : Bool) : Nat := (measuredCosts (barrelWidth s)).1
-def barrelM (s : Nat) (_mirror : Bool) : Nat := (measuredCosts (barrelWidth s)).2.1
-def barrelSlots (s : Nat) (mirror : Bool) : Nat :=
-  let v := (measuredCosts (barrelWidth s)).2.2
-  if mirror then v.2 else v.1
-
-def before (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  Shadow7.fix0P s b ++ Partial.leaveFix1 s b ++ Shadow7.fix2P s b ++ Partial.leaveFix3 s b ++
-    Partial.leaveFix4 s b ++ Shadow7.leaveFix5Move s b ++ Shadow7.leaveAdjust s
-
-def afterPart (s : Nat) : List GateMirror.Gate :=
-  let b := Shadow7.sbP s
-  Shadow7.fix8P s b ++ Shadow7.leaveJoinMove s ++ Shadow7.fix10P s b ++
-    Partial.leaveFix11 s b ++ Partial.leaveFix12 s b ++ Shadow7.leaveLowStore s ++
-    Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
-
-def leave (j : Fin 26) : Program :=
-  let s := start j
-  if j.val ≤ 24 then
-    GateMirror.forward (before s) ++ barrel s false ++ GateMirror.forward (afterPart s)
-  else Shadow7.leaveMoveP j
-
-def unleave (j : Fin 26) : Program :=
-  let s := start j
-  if j.val ≤ 24 then
-    GateMirror.inverse (afterPart s) ++ barrel s true ++ GateMirror.inverse (before s)
-  else Shadow7.leaveMoveInvP j
-
-def params : WindowFold.Pieces Program := { Shadow7.params with leave := leave, leaveInv := unleave }
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-theorem usedWidth : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 → UsedWidth (barrelWidth (start j)) := by
-  decide +kernel
-
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-open Resources
-set_option maxRecDepth 20000
-set_option maxHeartbeats 1000000
-
-theorem field_count (p : Nat) (hp : UsedField p) (mir : Bool) :
-    count (fieldCore p mir) = fieldPrice p mir := by
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases mir <;> decide +kernel
-
-def listedPrice (n : Nat) (mir : Bool) : Count :=
-  let z := measuredCosts n
-  ⟨z.1, z.2.1, if mir then z.2.2.2 else z.2.2.1⟩
-
-private theorem window_price (n : Nat) (hn : UsedWidth n) (mir : Bool) :
-    windowPrice n mir = listedPrice n mir := by
-  unfold windowPrice
-  rw [basis_size]
-  rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases mir <;> decide +kernel
-
-theorem barrel_metrics (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool) :
-    toffoliCount (barrel (start j) mir) = barrelT (start j) mir ∧
-    measurementCount (barrel (start j) mir) = barrelM (start j) mir ∧
-    Challenge.gateSlots (barrel (start j) mir) = barrelSlots (start j) mir := by
-  have hn := usedWidth j lo hi
-  have h : count (barrel (start j) mir) = listedPrice (barrelWidth (start j)) mir := by
-    unfold barrel
-    rw [renamed, logical_count _ _ (fun pair hm => field_count _ (schedule_fields _ hn pair hm) _),
-        window_price _ hn]
-  exact ⟨congrArg Count.t h, congrArg Count.m h, congrArg Count.slots h⟩
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
-open ECDSAAdd.RecordedQuantum
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.Placement
-set_option maxRecDepth 20000
-set_option maxHeartbeats 1000000
-
-private theorem place_nodup : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
-    ((List.range (barrelWidth (start j)+26)).map (place (start j))).Nodup := by
-  have rows : ∀ j : Fin 26, j.val ≤ 24 →
-      StairLoan.nodupMask ((List.range (barrelWidth (start j)+26)).map (place (start j))) 0 = true := by
-    decide +kernel
-  intro j _ hi
-  exact StairLoan.nodup_of_mask _ (rows j hi)
-
-theorem place_inj (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) : ∀ a, a < barrelWidth (start j)+26 →
-    ∀ b, b < barrelWidth (start j)+26 → place (start j) a = place (start j) b → a = b := by
-  intro a ha b hb
-  exact List.inj_on_of_nodup_map (place_nodup j lo hi) (List.mem_range.mpr ha) (List.mem_range.mpr hb)
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel.Placement
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
-open ECDSAAdd.RecordedQuantum
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-open Placement
-
-theorem barrel_phys (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool) :
-    GatePhysical (barrel (start j) mir) := by
-  have logicalOK := logical_fits _ (usedWidth j lo hi) mir
-  have physicalOK := fits_rename (T := fun _ => True) (place (start j)) _ logicalOK
-    (fun _ _ => trivial) (place_inj j lo hi)
-  exact fun i hit => (physicalOK i hit).1
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-private theorem tag_mem : ∀ i : Fin 16, Partial.tagsP.getD i.val 1560 ∈ Partial.tagsP := by
-  decide +kernel
-
-theorem barrelWidth_le : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
-    barrelWidth (start j) ≤ Shadow7.wpP (start j) + 15 := by decide +kernel
-
-theorem place_mem (s x : Nat) :
-    (∃ i, i < barrelWidth s ∧ place s x = Shadow7.bankW s i) ∨
-    (∃ k, k < 10 ∧ place s x = Shadow7.poolW s (17+k)) ∨ place s x ∈ Partial.tagsP := by
-  by_cases h : x < barrelWidth s
-  · exact Or.inl ⟨x, h, by simp [place, h]⟩
-  by_cases t : x < barrelWidth s + 16
-  · apply Or.inr (Or.inr ?_)
-    have k : x - barrelWidth s < 16 := by omega
-    simpa only [place, if_neg h, if_pos t] using tag_mem ⟨_, k⟩
-  · right; left
-    exact ⟨(x - barrelWidth s - 16) % 10, Nat.mod_lt _ (by decide), by simp [place, h, t]⟩
-
-theorem barrel_wires (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool) :
-    ∀ q ∈ wires (barrel (start j) mir),
-      (∃ i, i < Shadow7.wpP (start j)+15 ∧ q = Shadow7.bankW (start j) i) ∨
-      (∃ k, k < 10 ∧ q = Shadow7.poolW (start j) (17+k)) ∨ q ∈ Partial.tagsP := by
-  intro q h
-  rw [barrel, renameProgram_support, Finset.mem_image] at h
-  obtain ⟨x, _, rfl⟩ := h
-  rcases place_mem (start j) x with ⟨i, hiw, eq⟩ | rest
-  · exact Or.inl ⟨i, Nat.lt_of_lt_of_le hiw (barrelWidth_le j lo hi), eq⟩
-  · exact Or.inr rest
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-open Placement Matrix Partial
-
-/-- Slot zero has no tag; slot k+1 selects k. The mirror enters on the forward image. -/
-theorem barrel_result_of_matrix (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool)
-    (slot : Fin 17) (v : Nat) (s : State) (tape : List Bool)
-    (basisOK : CoordinatesOK (barrelWidth (start j)))
-    (action : ActionOK (barrelWidth (start j)) slot.val mir)
-    (small : v < 2^(barrelWidth (start j) - (slot.val - 1)))
-    (input : HighBankBarrel.holds (Shadow7.bankW (start j)) (barrelWidth (start j))
-      (v <<< entryShift mir slot.val) s)
-    (tag : ∀ k : Fin 16, s.basis (tagsP.getD k.val 1560) = decide (slot.val = k.val+1))
-    (scratch : ∀ k < 10, s.basis (Shadow7.poolW (start j) (17+k)) = false) :
-    HighBankBarrel.Result (Shadow7.bankW (start j)) (barrelWidth (start j))
-      (v <<< exitShift mir slot.val) s (run (barrel (start j) mir) tape s) := by
-  let n := barrelWidth (start j)
-  let dim := n - (slot.val - 1)
-  let P := logical n mir
-  let f := place (start j)
-  let S := Finset.range (n+26)
-  let before := entryShift mir slot.val
-  let after := exitShift mir slot.val
-  have sv : v < 2^dim := small
-  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support (logical_fits _ (usedWidth j lo hi) _) _ hw)
-  have inj : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b :=
-    fun a ha b hb => place_inj j lo hi a (Finset.mem_range.mp ha) b (Finset.mem_range.mp hb)
-  have bank (k i : Nat) (ik : i < n) :
-      (frame (plain n dim k) v.testBit dim slot.val s.phase).basis i = (v <<< k).testBit i := by
-    simpa only [frame,Matrix.basis,plain_size,if_pos ik] using plain_bits n dim k v i sv ik
-  have placed (q : Nat) (hq : q < n) : f q = Shadow7.bankW (start j) q := by simp [f,place,n] at hq ⊢; simp [hq]
-  have other (k q : Nat) (qn : n ≤ q) (high : q < n+26) :
-      (frame (plain n dim k) v.testBit dim slot.val s.phase).basis q = s.basis (f q) := by
-    have outside : ¬q<n := Nat.not_lt.mpr qn
-    simp only [frame,Matrix.basis,plain_size,if_neg outside]
-    change flags n slot.val q = s.basis (if q<n then Shadow7.bankW (start j) q else if q<n+16 then
-      tagsP.getD (q-n) 1560 else Shadow7.poolW (start j) (17+(q-n-16)%10))
-    rw [if_neg outside]
-    by_cases mid : q < n+16
-    · have k16 : q-n < 16 := by omega
-      simpa [flags,qn,mid] using (tag ⟨q-n,k16⟩).symm
-    · have pos : q-n-16 < 10 := by omega
-      have val := scratch (q-n-16) pos
-      simpa [flags,mid,Nat.mod_eq_of_lt pos] using val.symm
-  have result := run_rename_pool f S inj P scope tape
-    (frame (plain n dim before) v.testBit dim slot.val s.phase) s rfl (by
-       intro q hq
-       by_cases low : q<n
-       · rw [bank before q low,placed q low]; exact (input q low).symm
-       · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq))
-  have shift := logical_action n (usedWidth j lo hi) mir slot.val
-    (by have := slot.isLt; omega) basisOK action v.testBit s.phase tape
-  change run P tape (frame (plain n dim before) _ _ _ _) = frame (plain n dim after) _ _ _ _ at shift
-  rw [shift] at result
-  change HighBankBarrel.Result (Shadow7.bankW (start j)) n (v <<< after) s (run (renameProgram f P) tape s)
-  refine ⟨?_,result.1,?_⟩
-  · intro i bound
-    have hi : i ∈ S := Finset.mem_range.mpr (Nat.lt_of_lt_of_le bound (Nat.le_add_right _ _))
-    have bit := (result.2 i hi).trans (bank after i bound)
-    rwa [placed i bound] at bit
-  · intro q free
-    by_cases hit : q ∈ S.image f
-    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hit
-      have above : n ≤ a := by
-        by_contra! low
-        exact free a low (placed a low)
-      change (run (renameProgram f P) tape s).basis (f a) = s.basis (f a)
-      exact Eq.trans (result.2 a ha) (other after a above (Finset.mem_range.mp ha))
-    · exact run_rename_pool_outside f S P scope tape s q hit
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
-
-section
-
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
-open Partial
-
-/-- The forward barrel shifts every bank word with clear high padding, and its measured mirror
-restores every forward image. Both preserve the exterior and the incoming phase on every tape. -/
-theorem barrel_result (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool)
-    (slot : Fin 17) (v : Nat) (s : State) (tape : List Bool)
-    (small : v < 2^(barrelWidth (start j) - (slot.val - 1)))
-    (input : HighBankBarrel.holds (Shadow7.bankW (start j)) (barrelWidth (start j))
-      (v <<< entryShift mir slot.val) s)
-    (tag : ∀ k : Fin 16, s.basis (tagsP.getD k.val 1560) = decide (slot.val = k.val+1))
-    (scratch : ∀ k < 10, s.basis (Shadow7.poolW (start j) (17+k)) = false) :
-    HighBankBarrel.Result (Shadow7.bankW (start j)) (barrelWidth (start j))
-      (v <<< exitShift mir slot.val) s (run (barrel (start j) mir) tape s) := by
-  let n := barrelWidth (start j)
-  have hn : UsedWidth n := usedWidth j lo hi
-  exact barrel_result_of_matrix j lo hi mir slot v s tape (coordinates_checked n hn)
-    (Packed.template_action n hn slot mir) small input tag scratch
-
-end ECDSAAdd.Entrant.StairPacket.CRTBarrel
-
-end
+import ECDSAAdd.Submission.Entrant.CRT
 
 -- ==== b60: field bank 13 (window block at tick 60): `starts` of StairSideA begins at 16; packet 13 is safe too ====
 section
@@ -381,8 +87,8 @@ set_option linter.unusedSimpArgs false
 
 
 theorem split_ops (s : Nat) :
-    Shadow7.leaveMoveOps s = CRTBarrel.before s ++ (Shadow7.leaveBarrel s ++ CRTBarrel.afterPart s) := by
-  simp only [Shadow7.leaveMoveOps, CRTBarrel.before, CRTBarrel.afterPart, List.append_assoc]
+    Shadow7.leaveMoveOps s = CRTBarrel.beforeReference s ++ (Shadow7.leaveBarrel s ++ CRTBarrel.afterReference s) := by
+  simp only [Shadow7.leaveMoveOps, CRTBarrel.beforeReference, CRTBarrel.afterReference, List.append_assoc]
 
 theorem forward_append (a b : List Gate) :
     GateMirror.forward (a ++ b) = GateMirror.forward a ++ GateMirror.forward b := by
@@ -404,40 +110,56 @@ theorem inBlocks_iff (j : Fin 26) : crtBlocks j = true ↔ (j.val ≤ 24) := by
 theorem parts_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (GateMirror.forward (CRTBarrel.before (start j))) +
       toffoliCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 111 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 109 ∧
     toffoliCount (inverse (CRTBarrel.afterPart (start j))) + toffoliCount (inverse (CRTBarrel.before (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 143 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 141 ∧
     measurementCount (GateMirror.forward (CRTBarrel.before (start j))) +
       measurementCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 100 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 99 ∧
     measurementCount (inverse (CRTBarrel.afterPart (start j))) +
       measurementCount (inverse (CRTBarrel.before (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 68 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 67 ∧
     gateSlots (GateMirror.forward (CRTBarrel.before (start j))) +
       gateSlots (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 672 + 3*Shadow7.wpP (start j + 15) ∧
+      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 668 + 3*Shadow7.wpP (start j + 15) ∧
     gateSlots (inverse (CRTBarrel.afterPart (start j))) + gateSlots (inverse (CRTBarrel.before (start j))) =
-      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 640 + 3*Shadow7.wpP (start j + 15) := by
+      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 636 + 3*Shadow7.wpP (start j + 15) := by
   obtain ⟨t1, t2, m1, m2, s1, s2⟩ := Shadow7.leaveMove_counts j (by omega) (by omega)
   obtain ⟨b1, b2, c1, c2, d1, d2⟩ := (Shadow7.counts_leaveBarrel (start j)).programs
   rw [Shadow7.leaveMoveP, split_ops, forward_append, forward_append] at t1 m1 s1
   rw [Shadow7.leaveMoveInvP, split_ops, inverse_append, inverse_append] at t2 m2 s2
   simp only [toffoliCount_append, measurementCount_append, gateSlots_append] at t1 t2 m1 m2 s1 s2
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+  obtain ⟨f1,f2,g1,g2,h1,h2⟩ := DeadJoin.all_local_deltas j (by omega)
+  have afterEq : DeadJoin.afterReference (start j) = CRTBarrel.afterReference (start j) := by rfl
+  rw [afterEq] at f1 f2 g1 g2 h1 h2
+  simp only [CRTBarrel.before,CRTBarrel.afterPart]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · clear * - j t1 b1 f1
+    omega
+  · clear * - j t2 b2 f2
+    omega
+  · clear * - j m1 c1 g1
+    omega
+  · clear * - j m2 c2 g2
+    omega
+  · clear * - j s1 d1 h1
+    omega
+  · clear * - j s2 d2 h2
+    omega
 
 /-- The rebuilt leave and its mirror: the Shadow7 counts with the barrel stage replaced by the CRT barrel. -/
 theorem leave_metrics (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 111 + CRTBarrel.barrelT (start j) false ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 109 + CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 143 + CRTBarrel.barrelT (start j) true ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 141 + CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 100 + CRTBarrel.barrelM (start j) false ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 99 + CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 68 + CRTBarrel.barrelM (start j) true ∧
-    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 672 +
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 67 + CRTBarrel.barrelM (start j) true ∧
+    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 668 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false ∧
-    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 640 +
+    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 636 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := parts_counts j h0 h1
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics j h0 h1 false
@@ -469,7 +191,7 @@ theorem parts_box (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     AllW (leaveBox (start j)) (CRTBarrel.before (start j)) ∧ AllW (leaveBox (start j)) (CRTBarrel.afterPart (start j)) := by
   have a := Shadow7.allW_leaveMove (start j) (Shadow7.leaveOps_box j (by omega) (by omega))
   rw [split_ops, allW_append_iff, allW_append_iff] at a
-  exact ⟨a.1, a.2.2⟩
+  exact ⟨FlagLeave.cut_allW _ _ _ _ _ (DeadJoin.before_scan_allW _ a.1), FlagLeave.cut_allW _ _ _ _ _ (DeadJoin.after_short_allW j h1 a.2.2)⟩
 
 theorem leave_eq (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     CRTBarrel.leave j = GateMirror.forward (CRTBarrel.before (start j)) ++ CRTBarrel.barrel (start j) false ++
@@ -6169,12 +5891,12 @@ def selectorTail (s : Nat) : List Gate :=
 
 def head (s : Nat) : List Gate := Shadow7.moveA s ++ selectorTail s
 
-theorem before_shape (s : Nat) : CRTBarrel.before s = head s ++ Shadow7.leaveAdjust s := by
-  simp only [CRTBarrel.before,head,selectorTail,Shadow7.moveA,Shadow7.leaveFix5Move,List.append_assoc]
+theorem before_shape (s : Nat) : CRTBarrel.beforeReference s = head s ++ Shadow7.leaveAdjust s := by
+  simp only [CRTBarrel.beforeReference,head,selectorTail,Shadow7.moveA,Shadow7.leaveFix5Move,List.append_assoc]
 
 theorem move_shape (s : Nat) :
-    Shadow7.leaveMoveOps s = CRTBarrel.before s ++ (Shadow7.leaveBarrel s ++ afterPart s) := by
-  simp only [Shadow7.leaveMoveOps,CRTBarrel.before,afterPart,List.append_assoc]
+    Shadow7.leaveMoveOps s = CRTBarrel.beforeReference s ++ (Shadow7.leaveBarrel s ++ afterReference s) := by
+  simp only [Shadow7.leaveMoveOps,CRTBarrel.beforeReference,afterReference,List.append_assoc]
 
 private theorem head_targets : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
     (head (start j)).all (fun g => decide (target g < 1598 ∨
@@ -6268,7 +5990,7 @@ private theorem crt_pool_clean : ∀ j : Fin 26, j.val ≤ 24 → ∀ i : Fin 10
 
 theorem input {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : State} {z : SkywalkNat.State}
     {g sg : Bool} (h : Admission.Inputs j s z g sg) :
-    Admissible j (run (GateMirror.forward (CRTBarrel.before (start j))) [] s) := by
+    Admissible j (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) := by
   obtain ⟨w1,w2⟩ := start_win7 j (Nat.zero_le _) (by omega)
   have geom := Shadow7.rail_win w1 (by omega)
   have top := Shadow7.pool_top w1 (by omega)
@@ -6289,7 +6011,7 @@ theorem input {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : State} {z : S
   let t := run p [] u'
   let x := regValue (ys j) t.basis
   have pe : GateMirror.forward (Shadow7.leaveAdjustCore (start j)) = p := by simp only [Shadow7.leaveAdjustCore,forward_adjustG,p,ys,carries]
-  have eq : run (GateMirror.forward (CRTBarrel.before (start j))) [] s = t := by
+  have eq : run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s = t := by
     rw [before_shape,forward_app,run_append,run_take,List.drop_nil,← hu,adjust_forward,run_cx_cons,← hu',pe]
   rw [eq]
   have clean (q : Wire) (hq : q ∈ carries j) : u'.basis q = false := by
@@ -6442,7 +6164,9 @@ theorem input {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : State} {z : S
       have hmul : 2^k0.val * x < 2^k0.val * 2^(barrelWidth (start j) - k0.val) := by
         rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)]
         have hle : 2^k0.val * x ≤ TrueMiddle.F j z := by rw [law.2, xAdj]; exact Nat.le_add_right _ _
-        exact lt_of_le_of_lt hle h.fit
+        exact lt_of_le_of_lt hle (by
+          have hbw : barrelWidth (start j) = Shadow7.liveW (start j) := rfl
+          rw [hbw]; exact h.fit)
       rw [hslot]
       exact Nat.lt_of_mul_lt_mul_left hmul
     · have x0 : x = 0 := by
@@ -6606,6 +6330,60 @@ theorem barrel_pair (j : Fin 26) (lo : 0≤j.val) (hi : j.val≤24) (s : State) 
 
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveCut
 
+namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
+open Arithmetic Partial GateMirror HighBankJoin Challenge
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+open CRTBarrel.LeaveSplice
+theorem entry_top_zero {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.State}
+    {g sg : Bool} (h : LeaveJ7.Admission.Inputs j s z g sg) :
+    (run (GateMirror.forward (LeaveJ7.entryOps (start j))) [] s).basis (Shadow7.a0P (start j)+16) = false := by
+  let u := LeaveJ7.Admission.flags z g sg
+  have entry := LeaveJ7.entry_core j (Nat.zero_le _) hi s [] z u.1 u.2
+    ⟨h.farSmall,h.endSmall⟩ h.ready h.fresh h.scratch h.temp
+  have tight := LeaveShadowRails.inputTight17 (Shadow7.sbP (start j)) z h.farSmall
+  have top := entry.2.2.2.2.2.1 17 (by decide)
+  have wire : Shadow7.a0P (start j)-1+17 = Shadow7.a0P (start j)+16 := by
+    unfold Shadow7.a0P; omega
+  rw [wire,Nat.testBit_lt_two_pow tight] at top
+  exact top
+
+theorem admitted_scan_eq {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.State}
+    {g sg : Bool} (h : LeaveJ7.Admission.Inputs j s z g sg) (m : List Bool) :
+    run (GateMirror.forward (DeadScan.fix0M (start j) (Shadow7.sbP (start j)))) m s =
+      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s := by
+  let u := LeaveJ7.Admission.flags z g sg
+  let a := SkywalkNat.step^[15] (Shadow.reduced (Shadow7.sbP (start j)) 15 z)
+  exact DeadScan.fix0M_run j (Nat.zero_le _) hi s m a.u a.v u.1 u.2 h.ready
+
+
+theorem crt_all_pair {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.State}
+    {g sg : Bool} (h : LeaveJ7.Admission.Inputs j s z g sg)
+    (original : Valid s (referenceOps (start j))) :
+    (∀ m,run (GateMirror.forward (beforeAll (start j)) ++ CRTBarrel.barrel (start j) false ++
+        GateMirror.forward (afterAll (start j))) m s=
+      run (GateMirror.forward (referenceOps (start j))) m s) ∧
+    (∀ m n,run (GateMirror.inverse (afterAll (start j)) ++ CRTBarrel.barrel (start j) true ++
+        GateMirror.inverse (beforeAll (start j))) n
+      (run (GateMirror.forward (beforeAll (start j)) ++ CRTBarrel.barrel (start j) false ++
+        GateMirror.forward (afterAll (start j))) m s)=s) := by
+  have raw : RawValid s (referenceOps (start j)) := ⟨original.physical,original.prepared,original.ready⟩
+  have rel : FlagLeave.Rel (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) false s := by
+    simp only [FlagLeave.Rel,Bool.false_and,Bool.xor_false]
+    rw [h.far,h.side]
+    cases decide (Shadow.far (Shadow7.sbP (start j)) 15 z) <;>
+      cases decide (2^Shadow7.sbP (start j)≤z.u) <;> rfl
+  obtain ⟨bf,br⟩ := CRTBarrel.LeaveCut.barrel_pair j (Nat.zero_le _) hi _
+    (CRTBarrel.LeaveCut.input (Nat.zero_le _) hi h)
+  exact raw_crt_all_pair j hi s raw (pair_zero j hi s (entry_top_zero hi h))
+    (admitted_scan_eq hi h) rel bf br
+
+end ECDSAAdd.Entrant.StairPacket.DeadJoin
+
+
 namespace ECDSAAdd.Entrant.StairPacket.LeaveJ7.Admission
 open Partial GateMirror CRTBarrel
 
@@ -6615,15 +6393,15 @@ theorem Inputs.crt_pair20 {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : S
     {g sg : Bool} (h : Inputs j s z g sg) :
     (∀ m, run (CRTBarrel.leave j) m s = run (Shadow7.leaveP j) m s) ∧
     (∀ m n, run (CRTBarrel.unleave j) n (run (CRTBarrel.leave j) m s) = s) := by
-  have v := LeaveSplice.moved_valid lo (by omega) h
-  rw [LeaveCut.move_shape] at v
-  obtain ⟨same,back⟩ := LeaveCut.barrel_pair j lo (by omega) _ (LeaveCut.input lo (by omega) h)
-  obtain ⟨f,r⟩ := LeaveSplice.replace _ _ _ _ _ s v same back
+  have original : LeaveSplice.Valid s (DeadJoin.referenceOps (start j)) := by
+    change LeaveSplice.Valid s (Shadow7.leaveMoveOps (start j))
+    exact LeaveSplice.moved_valid lo hi h
+  obtain ⟨f,r⟩ := DeadJoin.crt_all_pair hi h original
   refine ⟨?_,?_⟩
   · intro m
     rw [CRTBarrel.leave,if_pos hi]
-    exact (f m).trans (by rw [←LeaveCut.move_shape]; exact h.sameMove (Nat.zero_le _) (by omega) m)
-  · simpa only [CRTBarrel.leave,CRTBarrel.unleave,if_pos hi] using r
+    exact (f m).trans (h.sameMove lo hi m)
+  · simpa only [CRTBarrel.leave,CRTBarrel.unleave,if_pos hi,CRTBarrel.before,CRTBarrel.afterPart] using r
 
 /-- `crt_pair20` on the whole 24-block window: the CRT barrel leave on every block 0..23. -/
 theorem Inputs.crt_pair {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : State} {z : SkywalkNat.State}
@@ -6675,9 +6453,9 @@ theorem leave_keeps20 (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (q : W
     Shadow7.allW_leaveMove (start j) (Shadow7.leaveOps_box2 j (Nat.zero_le _) (by omega))
   rw [split_ops, allW_append_iff, allW_append_iff] at pieces
   have pre : ∀ w ∈ wires (GateMirror.forward (CRTBarrel.before (start j))), Shadow7.leaveBox2 (start j) w :=
-    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.before (start j)) pieces.1).1
+    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.before (start j)) (FlagLeave.cut_allW _ _ _ _ _ (DeadJoin.before_scan_allW _ pieces.1))).1
   have post : ∀ w ∈ wires (GateMirror.forward (CRTBarrel.afterPart (start j))), Shadow7.leaveBox2 (start j) w :=
-    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.afterPart (start j)) pieces.2.2).1
+    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.afterPart (start j)) (FlagLeave.cut_allW _ _ _ _ _ (DeadJoin.after_short_allW j hi pieces.2.2))).1
   rw [(leave_eq j lo hi).1, wires_append, wires_append] at hit
   rcases Finset.mem_union.mp hit with h | h
   · rcases Finset.mem_union.mp h with h | h
@@ -11705,27 +11483,27 @@ set_option linter.unusedSimpArgs false
 
 def tcV : Pieces Nat := { WindowParams7.tcV with
   leave := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+111+CRTBarrel.barrelT (start j) false
+      Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+109+CRTBarrel.barrelT (start j) false
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+122 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+143+CRTBarrel.barrelT (start j) true
+      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+141+CRTBarrel.barrelT (start j) true
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+154 else toffoliCount (Shadow7.leaveMoveInvP j) }
 
 def mcV : Pieces Nat := { WindowParams7.mcV with
   leave := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+100+CRTBarrel.barrelM (start j) false
+      Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+99+CRTBarrel.barrelM (start j) false
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+100 else measurementCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+68+CRTBarrel.barrelM (start j) true
+      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+67+CRTBarrel.barrelM (start j) true
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+68 else measurementCount (Shadow7.leaveMoveInvP j) }
 
 def slotsV : Pieces Nat := { WindowParams7.slotsV with
   leave := fun j => if crtBlocks j then
-      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+672+3*Shadow7.wpP (start j+15)+
+      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+668+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) false
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+769+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+640+3*Shadow7.wpP (start j+15)+
+      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+636+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) true
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+737+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveInvP j) }
 
@@ -11866,28 +11644,28 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=128486 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=128486 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=128828 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=128828 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=68694 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=68694 ∧
-    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=67851 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=67851 := by
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=128436 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=128436 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=128778 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=128778 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=68671 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=68671 ∧
+    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=67828 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=67828 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
     (counts true first WindowParams7.rest7).2.2.1,(counts false first WindowParams7.rest7).2.2.1,(counts true first WindowParams7.rest7).2.2.2,
     (counts false first WindowParams7.rest7).2.2.2]
   decide +kernel
 
-theorem slot_sums : (forwardL slotsV true first WindowParams7.rest7).sum ≤ 2652444 ∧ (forwardL slotsV false first WindowParams7.rest7).sum ≤ 2652444 ∧
-    (reverseL slotsV true first WindowParams7.rest7).sum ≤ 2553474 ∧ (reverseL slotsV false first WindowParams7.rest7).sum ≤ 2553474 := by
+theorem slot_sums : (forwardL slotsV true first WindowParams7.rest7).sum ≤ 2709900 ∧ (forwardL slotsV false first WindowParams7.rest7).sum ≤ 2709900 ∧
+    (reverseL slotsV true first WindowParams7.rest7).sum ≤ 2609900 ∧ (reverseL slotsV false first WindowParams7.rest7).sum ≤ 2609900 := by
   decide +kernel
 
 /-- Slot bounds of the CRT window (upper bounds only; the judge has no slot ceiling). -/
-theorem ship_slots : gateSlots (forwardW CRTBarrel.params true first WindowParams7.rest7) ≤ 2652444 ∧
-    gateSlots (forwardW CRTBarrel.params false first WindowParams7.rest7) ≤ 2652444 ∧
-    gateSlots (reverseW CRTBarrel.params true first WindowParams7.rest7) ≤ 2553474 ∧
-    gateSlots (reverseW CRTBarrel.params false first WindowParams7.rest7) ≤ 2553474 := by
+theorem ship_slots : gateSlots (forwardW CRTBarrel.params true first WindowParams7.rest7) ≤ 2709900 ∧
+    gateSlots (forwardW CRTBarrel.params false first WindowParams7.rest7) ≤ 2709900 ∧
+    gateSlots (reverseW CRTBarrel.params true first WindowParams7.rest7) ≤ 2609900 ∧
+    gateSlots (reverseW CRTBarrel.params false first WindowParams7.rest7) ≤ 2609900 := by
   rw [measure_forward gateSlots gateSlots_append, measure_forward gateSlots gateSlots_append,
     measure_reverse gateSlots gateSlots_append, measure_reverse gateSlots gateSlots_append]
   exact ⟨(forwardL_le slots_le true first WindowParams7.rest7).trans slot_sums.1,
@@ -11899,8 +11677,8 @@ theorem parts_proper (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     (∀ g ∈ CRTBarrel.before (start j), proper g = true) ∧ (∀ g ∈ CRTBarrel.afterPart (start j), proper g = true) := by
   have p := WindowPhysicalW7.leaveMove_proper j (by omega) (by omega)
   rw [split_ops] at p
-  exact ⟨fun g hg => p g (List.mem_append_left _ hg),
-    fun g hg => p g (List.mem_append_right _ (List.mem_append_right _ hg))⟩
+  exact ⟨FlagLeave.cut_proper _ _ _ _ _ (DeadJoin.before_scan_proper _ (fun g hg => p g (List.mem_append_left _ hg))),
+    FlagLeave.cut_proper _ _ _ _ _ (DeadJoin.after_short_proper j h1 (fun g hg => p g (List.mem_append_right _ (List.mem_append_right _ hg))))⟩
 
 theorem leave_phys (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     GatePhysical (CRTBarrel.leave j) ∧ GatePhysical (CRTBarrel.unleave j) := by
@@ -11965,30 +11743,30 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 128486 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 128436 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 128486 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 128436 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 128828 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 128778 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 128828 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 128778 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 68694 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 68694 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 68671 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 68671 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
-theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 67851 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 67851 :=
+theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 67828 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 67828 :=
   ship_counts.2.2.2.2.2.2
 
-theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2652444 ∧ gateSlots (forward45plus1 false) ≤ 2652444 :=
+theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2709900 ∧ gateSlots (forward45plus1 false) ≤ 2709900 :=
   ⟨ship_slots.1, ship_slots.2.1⟩
 
-theorem ship_slotsR : gateSlots (reverse45plus1 true) ≤ 2553474 ∧ gateSlots (reverse45plus1 false) ≤ 2553474 :=
+theorem ship_slotsR : gateSlots (reverse45plus1 true) ≤ 2609900 ∧ gateSlots (reverse45plus1 false) ≤ 2609900 :=
   ship_slots.2.2
 
 end ECDSAAdd.Entrant.StairPacket.CRTWindow
@@ -26738,25 +26516,8 @@ private theorem ppiList {q : Nat} (h : PPI q) : q ∈ ppList := by
   omega
 
 private def rawReady (q : Wire) : Bool := decide (q ∈ Stair44WalkSites.retired) || valid q
+private theorem firstTable : ppList.all (fun x => rawReady (Stair44WalkMap.first x)) = true := by decide +kernel
 private theorem restTable : ppList.all (fun x => rawReady (Stair44WalkMap.rest x)) = true := by decide +kernel
-private theorem walkMaps_off {x : Wire} (off : x ∉ Stair44WalkMap.switchSites) :
-    Stair44WalkMap.first x = Stair44WalkMap.rest x := by
-  simp only [Stair44WalkMap.switchSites, List.mem_cons, List.not_mem_nil, or_false, not_or] at off
-  obtain ⟨h1,h2,h3,h4,h5,h6⟩ := off
-  simp only [Stair44WalkMap.first, Stair44WalkMap.rest, Equiv.trans_apply,
-    Equiv.swap_apply_of_ne_of_ne h1 h3, Equiv.swap_apply_of_ne_of_ne h2 h4,
-    Equiv.swap_apply_of_ne_of_ne h1 h5, Equiv.swap_apply_of_ne_of_ne h2 h6]
-
-private theorem firstTable : ppList.all (fun x => rawReady (Stair44WalkMap.first x)) = true := by
-  have changed : Stair44WalkMap.switchSites.all (fun x =>
-      !ppList.contains x || rawReady (Stair44WalkMap.first x)) = true := by decide +kernel
-  apply List.all_eq_true.mpr
-  intro x hx
-  by_cases h : x ∈ Stair44WalkMap.switchSites
-  · have ready := List.all_eq_true.mp changed x h
-    simpa only [List.contains_iff_mem.mpr hx, Bool.not_true, Bool.false_or] using ready
-  · rw [walkMaps_off h]
-    exact List.all_eq_true.mp restTable x hx
 
 private theorem rebased {P : Program} (c : Equiv.Perm Wire)
     (table : ppList.all (fun x => rawReady (c x)) = true) (seen : ∀ q ∈ wires P, PPI q) :
@@ -28093,9 +27854,9 @@ theorem finite_eq (c : Cost) (C : Point) (cx cy : Fp)
     hostedGeneric,hostedSecondStage,Stair44PointMap.encode,Stair44PointMap.encodeY,Stair44PointMap.switchX,
     c.append,c.rename,divide_eq,multiply_eq,sq,Nat.add_assoc]
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2168962 ∧ measurementCount (program C) ≤ 1520242 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2169082 ∧ measurementCount (program C) ≤ 1520242 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2168962 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
+  change toffoliCount (concreteProgram C) ≤ 2169082 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
   cases C with
   | zero => exact h
   | @some cx cy hc =>
@@ -28115,7 +27876,7 @@ theorem totals (C : Point) : toffoliCount (program C) ≤ 2168962 ∧ measuremen
     exact ⟨ft.le.trans h.1,fm.le.trans h.2⟩
 open StairSlotsPlan
 
-theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860412 := by
+theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860482 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -28147,9 +27908,9 @@ theorem slotBound (C : Point) : gateSlots (program C) ≤ 50860412 := by
         ControlPointEncodingDevelop.borrowGeneric,ControlPointEncodingDevelop.genericBlock,
         gateSlots_append,rename_gateSlots] at ⊢
       omega
-    have sum : dE + dX = 335126 := v3_slotDelta_1806
+    have sum : dE + dX = 335192 := v3_slotDelta_1806
     have old := AboveFieldPointDevelop.program_slots_Q C
-    change gateSlots (program C) ≤ 50860412
+    change gateSlots (program C) ≤ 50860482
     omega
 end ECDSAAdd.Entrant.Stair44Resources
 
@@ -28608,8 +28369,8 @@ private theorem opartition (c : Cost) (d : Bool) :
 
 
 theorem ooverhead (j : Nat) (d : Bool) :
-    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 112 else 111) ∧
-    measurementCount (oten j (!d)) = measurementCount (ogroup d j 2)+(if d then 277 else 225) := by
+    toffoliCount (oten j (!d)) = toffoliCount (ogroup d j 2)+(if d then 112 else 112) ∧
+    measurementCount (oten j (!d)) = measurementCount (ogroup d j 2)+277 := by
   cases d <;>
     simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
       enter,shift,leave,fieldHook,program,if_true,if_false,Bool.false_eq_true,List.nil_append,
@@ -28706,29 +28467,29 @@ private theorem osolve (c : Cost) (d : Bool) (delta : Nat)
 
 /-- the field group (odd cell on packets 1..84, ten-blocks included) against the record packets 1..84. -/
 theorem group_cost (d : Bool) :
-    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 2051 else 2026) ∧
-    measurementCount (group84 d)+0=measurementCount (group d 1 84)+(if d then 5756 else 4456) := by
-  have t := osolve tc d (if d then 112 else 111) (fun j => (ooverhead j d).1)
-  have m := osolve mc d (if d then 277 else 225) (fun j => (ooverhead j d).2)
+    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 2051 else 2051) ∧
+    measurementCount (group84 d)+0=measurementCount (group d 1 84)+5756 := by
+  have t := osolve tc d (if d then 112 else 112) (fun j => (ooverhead j d).1)
+  have m := osolve mc d 277 (fun j => (ooverhead j d).2)
   have f := ofield_counts d
   rw [show tc.measure = toffoliCount from rfl] at t
   rw [show mc.measure = measurementCount from rfl] at m
-  cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at t m ⊢ <;> exact ⟨by omega, by omega⟩
+  cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at t ⊢ <;> exact ⟨by omega, by omega⟩
 
 /-- Static syntax counts include both correction lists of every measurement. -/
 theorem group_slots (d : Bool) :
     slots.measure (group84 d)+(if d then 7065 else 3340)=
-      slots.measure (group d 1 84)+25*(if d then 15152 else 13005)+(if d then 0 else 0) := by
+      slots.measure (group d 1 84)+25*(if d then 15152 else 13244)+(if d then 0 else 0) := by
   have hc := ofield_slots d
   have h (j : Nat) : slots.measure (oten j (!d)) =
-      slots.measure (ogroup d j 2)+(if d then 15152 else 13005) := by
+      slots.measure (ogroup d j 2)+(if d then 15152 else 13244) := by
     rw [show slots.measure=Challenge.gateSlots from rfl]
     cases d <;>
       simp only [ogroup,PacketSequence.program,Bool.not_true,Bool.not_false,oten,ofirst,osecond,
         enter,shift,leave,fieldHook,program,if_true,if_false,Bool.false_eq_true,List.nil_append,
         List.append_nil,Challenge.gateSlots_append,Baselines.rename_gateSlots,ReducedWindowArchives.enter0_counts.2.2.2,
         ReducedWindowArchives.switch0_counts.2.2.2,ReducedWindowArchives.leave0_counts.2.2.2,ReducedWindowArchives.enter1_counts.2.2.2,ReducedWindowArchives.switch1_counts.2.2.2,ReducedWindowArchives.leave1_counts.2.2.2] <;> omega
-  have w := osolve slots d (if d then 15152 else 13005) h
+  have w := osolve slots d (if d then 15152 else 13244) h
   cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at hc w ⊢ <;> omega
 
 theorem group_cost_div :
@@ -28736,15 +28497,15 @@ theorem group_cost_div :
     measurementCount (group84 true) = measurementCount (group true 1 84)+5756 := by
   have t := (group_cost true).1
   have m := (group_cost true).2
-  simp only [if_true] at t m
+  simp only [if_true] at t
   exact ⟨by omega,by omega⟩
 
 theorem group_cost_mul :
-    toffoliCount (group84 false) = toffoliCount (group false 1 84)+2026 ∧
-    measurementCount (group84 false) = measurementCount (group false 1 84)+4456 := by
+    toffoliCount (group84 false) = toffoliCount (group false 1 84)+2051 ∧
+    measurementCount (group84 false) = measurementCount (group false 1 84)+5756 := by
   have t := (group_cost false).1
   have m := (group_cost false).2
-  simp only [Bool.false_eq_true,if_false] at t m
+  simp only [Bool.false_eq_true,if_false] at t
   exact ⟨by omega,by omega⟩
 -- oddten:end WCOST
 
@@ -28898,42 +28659,42 @@ attribute [local irreducible] CRTWindow.forward45plus1 CRTWindow.reverse45plus1 
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 37614 else 37614)=
+    toffoliCount (forward d tail)+(if d then 37664 else 37664)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 37245 else 37245)=
+    toffoliCount (backward d tail)+(if d then 37295 else 37295)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
-    measurementCount (forward d tail)+14517=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
-    measurementCount (backward d tail)+15041=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
+    measurementCount (forward d tail)+14540=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
+    measurementCount (backward d tail)+15064=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   cases d
   · have sf := StockWindowCosts420.stock420from45 false
-    have a : toffoliCount (CRTWindow.forward45plus1 false) = 128486 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_false
-    have b : toffoliCount (CRTWindow.reverse45plus1 false) = 128828 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_false
-    have c : measurementCount (CRTWindow.forward45plus1 false) = 68694 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.2
-    have e : measurementCount (CRTWindow.reverse45plus1 false) = 67851 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.2
-    have t := walk tc false tail 37614 37245
-      (subEq 37614 a sf.1 (by omega)) (subEq 37245 b sf.2.2.1 (by omega))
-    have m := walk mc false tail 14517 15041
-      (subEq 14517 c sf.2.1 (by omega)) (subEq 15041 e sf.2.2.2 (by omega))
+    have a : toffoliCount (CRTWindow.forward45plus1 false) = 128436 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_false
+    have b : toffoliCount (CRTWindow.reverse45plus1 false) = 128778 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_false
+    have c : measurementCount (CRTWindow.forward45plus1 false) = 68671 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.2
+    have e : measurementCount (CRTWindow.reverse45plus1 false) = 67828 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.2
+    have t := walk tc false tail 37664 37295
+      (subEq 37664 a sf.1 (by omega)) (subEq 37295 b sf.2.2.1 (by omega))
+    have m := walk mc false tail 14540 15064
+      (subEq 14540 c sf.2.1 (by omega)) (subEq 15064 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts420.stock420from45 true
-    have a : toffoliCount (CRTWindow.forward45plus1 true) = 128486 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_true
-    have b : toffoliCount (CRTWindow.reverse45plus1 true) = 128828 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_true
-    have c : measurementCount (CRTWindow.forward45plus1 true) = 68694 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.1
-    have e : measurementCount (CRTWindow.reverse45plus1 true) = 67851 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.1
-    have t := walk tc true tail 37614 37245
-      (subEq 37614 a sf.1 (by omega)) (subEq 37245 b sf.2.2.1 (by omega))
-    have m := walk mc true tail 14517 15041
-      (subEq 14517 c sf.2.1 (by omega)) (subEq 15041 e sf.2.2.2 (by omega))
+    have a : toffoliCount (CRTWindow.forward45plus1 true) = 128436 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_toffoliF_true
+    have b : toffoliCount (CRTWindow.reverse45plus1 true) = 128778 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_toffoliR_true
+    have c : measurementCount (CRTWindow.forward45plus1 true) = 68671 := by rw [CRTWindow.assembly]; exact CRTWindow.ship_measureF.1
+    have e : measurementCount (CRTWindow.reverse45plus1 true) = 67828 := by rw [CRTWindow.unwind_assembly]; exact CRTWindow.ship_measureR.1
+    have t := walk tc true tail 37664 37295
+      (subEq 37664 a sf.1 (by omega)) (subEq 37295 b sf.2.2.1 (by omega))
+    have m := walk mc true tail 14540 15064
+      (subEq 14540 c sf.2.1 (by omega)) (subEq 15064 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
 
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 37614 else 37614)=f) (hr : (if d then 37245 else 37245)=r) :
+    (hf : (if d then 37664 else 37664)=f) (hr : (if d then 37295 else 37295)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+14517=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+15041=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+14540=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+15064=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 end ECDSAAdd.Entrant.StairPacket.WindowWalkCosts
@@ -29220,11 +28981,11 @@ private theorem fieldMcDiv :
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_div.2
 private theorem fieldTcMul :
-    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+2026 := by
+    tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+2051 := by
   rw [show tc.measure=toffoliCount from rfl]
   exact WindowFieldCosts.group_cost_mul.1
 private theorem fieldMcMul :
-    mc.measure (WindowFieldCosts.group84 false)=mc.measure (WindowFieldCosts.group false 1 84)+4456 := by
+    mc.measure (WindowFieldCosts.group84 false)=mc.measure (WindowFieldCosts.group false 1 84)+5756 := by
   rw [show mc.measure=measurementCount from rfl]
   exact WindowFieldCosts.group_cost_mul.2
 /-- the two kernels' field extras differ (460 vs 624 T, 442 vs 831 M). -/
@@ -29237,30 +28998,30 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+37614+37245=tc.measure Stair44Outer.divide+2051 :=
-  kernels tc 37614 37245 2051 (WindowWalkCosts.inst true 4 409 37614 37245 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 37614 37245 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+37664+37295=tc.measure Stair44Outer.divide+2051 :=
+  kernels tc 37664 37295 2051 (WindowWalkCosts.inst true 4 409 37664 37295 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 37664 37295 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+37614+37245=tc.measure (Stair44Outer.multiply k)+2026 :=
-  kernelsM tc k 37614 37245 2026 (WindowWalkCosts.inst false 84 489 37614 37245 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 37614 37245 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+37664+37295=tc.measure (Stair44Outer.multiply k)+2051 :=
+  kernelsM tc k 37664 37295 2051 (WindowWalkCosts.inst false 84 489 37664 37295 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 37664 37295 rfl rfl rfl).2.1 fieldTcMul
 
-theorem mc_div : mc.measure divide+14517+15041=mc.measure Stair44Outer.divide+5756 :=
-  kernels mc 14517 15041 5756 (WindowWalkCosts.inst true 4 409 37614 37245 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst false 85 490 37614 37245 rfl rfl rfl).2.2.2 fieldMcDiv
+theorem mc_div : mc.measure divide+14540+15064=mc.measure Stair44Outer.divide+5756 :=
+  kernels mc 14540 15064 5756 (WindowWalkCosts.inst true 4 409 37664 37295 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst false 85 490 37664 37295 rfl rfl rfl).2.2.2 fieldMcDiv
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+14517+15041=mc.measure (Stair44Outer.multiply k)+4456 :=
-  kernelsM mc k 14517 15041 4456 (WindowWalkCosts.inst false 84 489 37614 37245 rfl rfl rfl).2.2.1
-    (WindowWalkCosts.inst true 4 409 37614 37245 rfl rfl rfl).2.2.2 fieldMcMul
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+14540+15064=mc.measure (Stair44Outer.multiply k)+5756 :=
+  kernelsM mc k 14540 15064 5756 (WindowWalkCosts.inst false 84 489 37664 37295 rfl rfl rfl).2.2.1
+    (WindowWalkCosts.inst true 4 409 37664 37295 rfl rfl rfl).2.2.2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+145641=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+48904=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 145641 (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 48904 (sum_delta2 mc_div (mc_mul _) rfl)⟩
+    toffoliCount (finite C cx cy)+145816=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+47696=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 145816 (pair_delta2 tc_div (tc_mul _) rfl),
+    finite_delta mc C cx cy 47696 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2023321 ∧
-    measurementCount (program C) ≤ 1471582 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2023266 ∧
+    measurementCount (program C) ≤ 1472790 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -29337,33 +29098,33 @@ private theorem finite_upper (c : Cost) (C : Point) (cx cy : Fp) (gain : Nat)
 
 private theorem casts {P : Program} {n : Nat} (h : gateSlots P ≤ n) : slots.measure P ≤ n := h
 private theorem groupCap (d : Bool) (n : Nat)
-    (hn : 25*(if d then 15152 else 13005)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
+    (hn : 25*(if d then 15152 else 13244)+(if d then 0 else 0)=n+(if d then 7065 else 3340)) :
     slots.measure (WindowFieldCosts.group84 d)=slots.measure (WindowFieldCosts.group d 1 84)+n := by
   have h := WindowFieldCosts.group_slots d
   omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+2652444+2553474+371735 :=
-  kernels slots 2652444 2553474 371735
-    (walk slots true 4 2652444 2553474 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).1
-    (walk slots false 85 2652444 2553474 490 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).2
+    slots.measure Stair44Outer.divide+2709900+2609900+371735 :=
+  kernels slots 2709900 2609900 371735
+    (walk slots true 4 2709900 2609900 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).1
+    (walk slots false 85 2709900 2609900 490 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).2
     (groupCap true 371735 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+2652444+2553474+321785 :=
-  kernelsM slots k 2652444 2553474 321785
-    (walk slots false 84 2652444 2553474 489 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).1
-    (walk slots true 4 2652444 2553474 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).2
-    (groupCap false 321785 rfl)
+    slots.measure (Stair44Outer.multiply k)+2709900+2609900+327760 :=
+  kernelsM slots k 2709900 2609900 327760
+    (walk slots false 84 2709900 2609900 489 rfl (casts CRTWindow.ship_slotsF.2) (casts CRTWindow.ship_slotsR.2)).1
+    (walk slots true 4 2709900 2609900 409 rfl (casts CRTWindow.ship_slotsF.1) (casts CRTWindow.ship_slotsR.1)).2
+    (groupCap false 327760 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2652444+2553474+371735)
-    (hm : b ≤ y+2652444+2553474+321785) : a+b ≤ x+y+11105356 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2709900+2609900+371735)
+    (hm : b ≤ y+2709900+2609900+327760) : a+b ≤ x+y+11339095 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+11105356 :=
-  finite_upper slots C cx cy 11105356 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+11339095 :=
+  finite_upper slots C cx cy 11339095 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 61965768 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 62199577 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -31703,30 +31464,26 @@ theorem decompose (j : Nat) (hj : j∈bankIds) : allBanks=bank j ∪ others j :=
     · exact ⟨j,hj,own⟩
     · exact ⟨k,hk,hq⟩
 
-private theorem run_on_bank_complement (P : Program) (B : Finset Wire) (m : List Bool) (a r : State)
-    (phase : a.phase = r.phase) (rest : ∀ q ∉ B, a.basis q = r.basis q) (safe : avoids P B) :
-    (run P m a).phase = (run P m r).phase ∧ ∀ q ∉ B, (run P m a).basis q = (run P m r).basis q := by
-  have same : mask B a r = a := by
-    apply congrArg₂ State.mk phase.symm
-    funext q
-    by_cases member : q ∈ B
-    · exact if_pos member
-    · exact (if_neg member).trans (rest q member).symm
-  have outcome := mask_run P B m a r safe
-  rw [same] at outcome
-  have matched := congrArg State.phase outcome
-  refine ⟨matched, ?_⟩
-  intro q outside
-  exact (congrArg (fun s : State => s.basis q) outcome).trans (if_neg outside)
-
 theorem plain (P : Program) (rows : Nat→Nat) (code : Nat→Cols) (m : List Bool) (a r : State)
     (h : Fits rows code a r) (safe : avoids P allBanks) : Fits rows code (run P m a) (run P m r) := by
-  obtain ⟨phase, outside⟩ := run_on_bank_complement P allBanks m a r h.phase h.outside safe
-  refine ⟨phase, outside, ?_⟩
-  intro j hj q hq
-  have member : fieldPort j q ∈ allBanks := Finset.mem_biUnion.mpr
-    ⟨j, hj, Finset.mem_image.mpr ⟨q, hq, rfl⟩⟩
-  exact (run_preserves_outside P m a _ (safe _ member)).trans (h.bytes j hj q hq)
+  have eq : a=mask allBanks a r := by
+    apply congrArg₂ State.mk h.phase
+    funext q
+    by_cases qmem : q∈allBanks
+    · simp [qmem]
+    · simpa [mask,qmem] using h.outside q qmem
+  have result := mask_run P allBanks m a r safe
+  rw [←eq] at result
+  refine ⟨?_,?_,?_⟩
+  · rw [result]; rfl
+  · intro q out
+    rw [result]
+    simp [mask,out]
+  · intro j hj q hq
+    have mem : fieldPort j q∈allBanks := Finset.mem_biUnion.mpr
+      ⟨j,hj,Finset.mem_image.mpr ⟨q,hq,rfl⟩⟩
+    rw [result]
+    simpa [mask,mem] using h.bytes j hj q hq
 
 private theorem initRest (rev : Bool) :
     (List.range' 16 105).all (fun q => get (inputCols (enter rev)) q == get (StairArchiveNativeCut.canonical (!rev) (!rev)) q) = true := by
@@ -33524,8 +33281,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2023321 ∧
-    measurementCount (program C) ≤ 1471582 ∧ gateSlots (program C) ≤ 61965768 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2023266 ∧
+    measurementCount (program C) ≤ 1472790 ∧ gateSlots (program C) ≤ 62199577 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -33723,7 +33480,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2023321,1471582,1543,61965768⟩
+def bounds : Challenge.Bounds := ⟨2023266,1472790,1543,62199577⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -33732,7 +33489,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1471582
+    change measurementCount (normalizeProgram _) ≤ 1472790
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -33740,7 +33497,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 61965768
+    change gateSlots (normalizeProgram _) ≤ 62199577
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -38241,67 +37998,36 @@ def fast (q : Wire) := pwB (swB 785 1813 (phaseHostB q)-16)
 theorem phys_fast (q : Wire) : phys q=fast q := by
   simp only [phys,fast,wireFn2_eqN,phaseHost_eqN,phaseHostB,phaseHostN,pwB_eq,swB_eq]
 
+private theorem high (q : Wire) (h : 2428 ≤ q) : fast q=0 := by
+  have ne (i : Nat) (hi : i<2428) : q≠i := fun eq => (Nat.not_lt_of_ge h) (eq ▸ hi)
+  have hrest : 12≤q-16-2400 := Nat.le_sub_of_add_le (Nat.le_sub_of_add_le h)
+  have ne2 (i : Nat) (hi : i<12) : q-16-2400≠i := fun eq => (Nat.not_lt_of_ge hrest) (eq ▸ hi)
+  have above : ¬q-16<2314 := Nat.not_lt_of_ge (Nat.le_trans (by decide : 2314≤2412) (Nat.le_sub_of_add_le h))
+  simp only [fast,phaseHostB,swB_eq,pwB_eq,sw,pwN,metaN,above,
+    ne _ (by decide : 1042<2428),ne _ (by decide : 737<2428),ne _ (by decide : 1557<2428),
+    ne _ (by decide : 738<2428),ne _ (by decide : 1558<2428),ne _ (by decide : 736<2428),
+    ne _ (by decide : 785<2428),ne _ (by decide : 1813<2428),ite_false]
+  simp (disch := decide) only [ne2,ite_false]
+
+private theorem boundMap (q : Wire) (h : 2428 ≤ q) : first q=q ∧ rawX q=q ∧ rawOut q=q := by
+  have ne (i : Nat) (hi : base i<2428) : q≠base i := fun eq => (Nat.not_lt_of_ge h) (eq ▸ hi)
+  simp (disch := decide) only [rawX,rawOut,first,shared,chain,Equiv.trans_apply,Equiv.swap_apply_def,
+    ne,ite_false,Equiv.refl_apply,and_self]
+
 def test (q : Wire) := fast (first q)==integerFirst (fast q) &&
   fast (rawX q)==duringX (fast q) && fast (rawOut q)==outer (fast q)
 
-private def nearOutput (y : Nat) : Prop :=
-  (4615 ≤ y ∧ y ≤ 4619) ∨ (4835 ≤ y ∧ y ≤ 4839) ∨ y = 4629
-
-private def nearIndex (i : Nat) : Prop :=
-  (500 ≤ i ∧ i ≤ 504) ∨ (720 ≤ i ∧ i ≤ 724) ∨ i = 514
-
-private theorem outsideMeta (j : Nat) : ¬ nearOutput (metaN j) := by
-  unfold metaN
-  split_ifs <;> unfold nearOutput <;> decide
-
-private theorem nearIndex_of_output (i : Nat) (h : nearOutput (pwN i)) : nearIndex i := by
-  unfold pwN at h
-  split_ifs at h <;> first
-    | exact (outsideMeta _ h).elim
-    | (unfold nearOutput at h; unfold nearIndex; omega)
-
-private def testInputs : List Wire := [1558,1042,1557,739,740,516,517,518,519,520,530,737,738,736,785,1813]
-
-private theorem outside_input (q : Nat) (outside : q ∉ testInputs) : ¬ nearOutput (fast q) := by
-  intro hit
-  rw [fast,pwB_eq] at hit
-  have index := nearIndex_of_output _ hit
-  simp only [testInputs,List.mem_cons,List.not_mem_nil,or_false,not_or] at outside
-  obtain ⟨a,b,c,d,e,f,g,i,j,k,l,u,v,w,x,y⟩ := outside
-  simp only [phaseHostB,swB_eq,sw,a,b,c,u,v,w,x,y,ite_false] at index
-  unfold nearIndex at index
-  omega
-
-private theorem fixed_input (q : Wire) (h : q ∉ changeList) :
-    first q=q ∧ rawX q=q ∧ rawOut q=q := by
-  simp only [changeList,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,or_false,not_or] at h
-  obtain ⟨a,b,c,d,e,f,g,i,j,k,l⟩ := h
-  simp [rawX,rawOut,first,shared,chain,Equiv.swap_apply_def,a,b,c,d,e,f,g,i,j,k,l]
-
-private theorem fixed_output (q : Wire) (h : ¬ nearOutput q) :
-    integerFirst q=q ∧ duringX q=q ∧ outer q=q := by
-  have off : q ∉ Stair44PointMap.changed := by
-    intro used
-    apply h
-    simp only [Stair44PointMap.changed,List.mem_cons,List.not_mem_nil,or_false] at used
-    unfold nearOutput
-    rcases used with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  simp only [Stair44PointMap.changed,List.mem_cons,List.not_mem_nil,or_false,not_or] at off
-  obtain ⟨a,b,c,d,e,f,g,i,j,k,l⟩ := off
-  simp [integerFirst,duringX,outer,earlyPairs,chain,Equiv.swap_apply_def,a,b,c,d,e,f,g,i,j,k,l]
-
-private theorem checkedInputs : ∀ q ∈ testInputs, test q = true := by decide +kernel
+private theorem checked : (List.range 2428).all test=true := by decide +kernel
 
 theorem maps (q : Wire) : phys (first q)=integerFirst (phys q) ∧
     phys (rawX q)=duringX (phys q) ∧ phys (rawOut q)=outer (phys q) := by
   simp only [phys_fast]
-  by_cases h : q ∈ testInputs
-  · simpa only [test,Bool.and_eq_true,beq_iff_eq,and_assoc] using checkedInputs q h
-  · have subset : ∀ w ∈ changeList, w ∈ testInputs := by decide
-    have a := fixed_input q (fun use => h (subset _ use))
-    have b := fixed_output _ (outside_input q h)
-    rw [a.1,a.2.1,a.2.2,b.1,b.2.1,b.2.2]
-    exact ⟨rfl,rfl,rfl⟩
+  by_cases h : q<2428
+  · have t := List.all_eq_true.mp checked q (List.mem_range.mpr h)
+    simpa only [test,Bool.and_eq_true,beq_iff_eq,and_assoc] using t
+  · have f := boundMap q (Nat.le_of_not_gt h)
+    rw [f.1,f.2.1,f.2.2,high q (Nat.le_of_not_gt h)]
+    decide +kernel
 
 end ECDSAAdd.Entrant.Stair44Placement
 

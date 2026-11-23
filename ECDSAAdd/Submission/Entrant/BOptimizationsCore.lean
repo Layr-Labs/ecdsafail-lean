@@ -13,24 +13,6 @@ import ECDSAAdd.Challenge.Contract
 import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.KnownZeroArithmetic
-import ECDSAAdd.Submission.Entrant.StairSideA0
-
-namespace ECDSAAdd.Entrant.C163Touch
-open _root_.ECDSAAdd.Entrant.StairSquareBChecks.LT48B (maskL testBit_maskL)
-
-theorem covered_mask (ws extra : List Wire) (program : Program)
-    (h : maskL ws &&& (maskL extra ||| WireColumns.circuit program) = maskL ws) :
-    ∀ q ∈ ws, q ∈ extra ∨ touched program q = true := by
-  intro q hq
-  have hit : (maskL ws).testBit q = true := (testBit_maskL ws q).trans (decide_eq_true hq)
-  have same : (maskL ws &&& (maskL extra ||| WireColumns.circuit program)).testBit q = (maskL ws).testBit q :=
-    congrArg (fun n : Nat => n.testBit q) h
-  simp only [Nat.testBit_and,Nat.testBit_or,hit,Bool.true_and,Bool.or_eq_true] at same
-  rcases same with exempt | used
-  · exact Or.inl (of_decide_eq_true ((testBit_maskL extra q).symm.trans exempt))
-  · exact Or.inr ((touched_spec _ _).mpr ((WireColumns.circuit_bit _ _).mp used))
-
-end ECDSAAdd.Entrant.C163Touch
 
 -- BOptimizationsCore = BOptimizationsCore ++ ACCache
 -- ==== begin BOptimizationsCore ====
@@ -24179,11 +24161,7 @@ def domainSelected396 : Program := [
 ]
 
  theorem domainSelectedSublist396 : domainSelected396.Sublist oldPrefix := by decide +kernel
- theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by
-  apply List.all_eq_true.mpr
-  intro q hq
-  simpa only [List.mem_singleton,Bool.or_eq_true,decide_eq_true_eq] using
-    C163Touch.covered_mask (domain++hosts++ports) [4762] domainSelected396 (by decide +kernel) q hq
+ theorem domainSelectedCovers396 : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched domainSelected396 q)=true := by decide +kernel
  theorem checked : (domain++hosts++ports).all (fun q=>decide (q=4762)||C163Touch.touched oldPrefix q)=true := by
  apply List.all_eq_true.mpr
  intro q hq
