@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.StairSideA0
-import ECDSAAdd.Submission.Entrant.LowAccCarry
+import ECDSAAdd.Submission.Entrant.Fold98
 import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Arithmetic.SkywalkIntegerTick
@@ -32970,7 +32970,7 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part25 : toffoliCount (archiveLoad240 true) = 42 ∧ measurementCount (archiveLoad240 true) = 49 := by
+theorem part25 : toffoliCount (archiveLoad240 true) = 41 ∧ measurementCount (archiveLoad240 true) = 48 := by
   have mv : toffoliCount moveLoad240 = 0 ∧ measurementCount moveLoad240 = 0 := by decide
   simpa only [archiveLoad240, toffoliCount_append, measurementCount_append,
     (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, mv.1, mv.2, Nat.add_zero] using
@@ -33171,7 +33171,7 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part25 : gateSlots (archiveLoad240 true) ≤ 3915 := by
+theorem part25 : gateSlots (archiveLoad240 true) ≤ 3093 := by
   have move : gateSlots moveLoad240 = 33 := by decide +kernel
   simp only [archiveLoad240,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,ReducedWindowArchives.load0_counts.2.2.2,move]
   decide
@@ -41840,7 +41840,7 @@ private def marks : Bool → Bool → List Nat
   | false, false => [1, 1, 2, 4, 10, 13, 14, 160, 21, 108, 15, 23, 41, 59, 60, 80, 1225, 1148, 1095, 1158, 1088, 1247, 1105]
   | false, true => [1, 2, 6, 9, 14, 36, 37, 174, 23, 19, 25, 30, 32, 450, 59, 63, 2035, 2007, 1124, 1261, 1829, 1912, 2093]
   | true, false => [5, 30, 6, 31, 7, 32, 8, 33, 1, 35, 2, 37, 9, 38, 10, 3, 12, 23, 13, 25, 4, 14, 15]
-  | true, true => [17, 28, 41, 29, 257, 49, 241, 30, 18, 32, 1, 12, 2, 14, 22, 96, 23, 105, 24, 106, 3, 6, 7]
+  | true, true => [12, 23, 36, 24, 149, 62, 130, 25, 13, 27, 1, 8, 2, 10, 17, 64, 18, 69, 19, 70, 3, 6, 21]
 
 private theorem marked (loading select:Bool) : ∀i:Fin 23,
     ((program (op loading select))[(marks loading select).getD i 0]?).any
