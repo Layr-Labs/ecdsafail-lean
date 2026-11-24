@@ -17929,12 +17929,12 @@ attribute [local irreducible] run wires
 /-- The three branches use the same expanded inner-S bank; the tail leaves the
 one live high bit on the carrier consumed by the following integer stage. -/
 def program (k : Fp) : Program :=
-  placedN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA ++
+  placedN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA ++
     StairEntryRehost.routed (k - (C163Low4Offsets.delta : Fp))
 
 abbrev hs := StairSqLoopA.hostDomain
-theorem coreOK : CoreOK L0 (coreN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA) :=
-  SplitLeafSquare.coreOK
+theorem coreOK : CoreOK L0 (coreN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA) :=
+  PDSplitLeafSquare.coreOK
 
 /-- On the following stage's physical carrier, the entire square executes the stock operation. -/
 theorem fullRunOf (P : Program) (hP : CoreOK L0 P) (k X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m1 m2 : List Bool)
@@ -18015,10 +18015,10 @@ private theorem suffix_eq (x : Wire) : suffixWire x = fastSuffix x := by
     StairPlaceFast.swB_eq,StairPlaceFast.swap_eq_sw,pmapR_fast]
 private theorem prefix_good : (compareLabels base (base 2400)).all
     (fun x => good (StairPlaceFast.ugB (fastPrefix x))) = true :=
-  SplitLeafSquare.ReplayCertificates.transferAll SplitLeafSquare.ReplayCertificates.tailPrefixGood rfl (fun _ => rfl)
+  PDSplitLeafSquare.ReplayCertificates.transferAll PDSplitLeafSquare.ReplayCertificates.tailPrefixGood rfl (fun _ => rfl)
 private theorem suffix_good : (E1Reflected.Square31.mS5 base (base 2400)).all
     (fun x => good (StairPlaceFast.ugB (fastSuffix x))) = true :=
-  SplitLeafSquare.ReplayCertificates.transferAll SplitLeafSquare.ReplayCertificates.tailSuffixGood rfl (fun _ => rfl)
+  PDSplitLeafSquare.ReplayCertificates.transferAll PDSplitLeafSquare.ReplayCertificates.tailSuffixGood rfl (fun _ => rfl)
 theorem allGood (k : Fp) (q : Wire) (hq : q ∈ wires (routed k)) : good (StairPlaceFast.ugB q) = true := by
   have h := List.mem_toFinset.mp (uses_labels k hq)
   simp only [labels,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at h
@@ -18113,21 +18113,23 @@ theorem changingTail (P : Program) (k : Fp) :
     t,m,g,et,em,StairSquareEntryR.entryRH_slots,Nat.add_assoc,and_self]
 
 theorem metrics (k : Fp) :
-    toffoliCount (program k) + 865 = toffoliCount (A161Generic.squareEntry L0 k) ∧
+    toffoliCount (program k) + 934 = toffoliCount (A161Generic.squareEntry L0 k) ∧
     measurementCount (program k) + 589 = measurementCount (A161Generic.squareEntry L0 k) ∧
-    Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 5490003 := by
-  have h : toffoliCount (program k) = toffoliCount (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) ∧
-      measurementCount (program k) = measurementCount (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) ∧
-      Challenge.gateSlots (program k) = Challenge.gateSlots (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) + 3 :=
+    Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 5490126 := by
+  have h : toffoliCount (program k) = toffoliCount (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) ∧
+      measurementCount (program k) = measurementCount (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) ∧
+      Challenge.gateSlots (program k) = Challenge.gateSlots (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) + 3 :=
     changingTail _ _
-  have c := SplitLeafSquare.square_counts k
-  have s := SplitLeafSquare.square_slots_le k
-  refine ⟨(congrArg (fun n : Nat => n + 865) h.1).trans c.1,
+  have c := PDSplitLeafSquare.square_counts k
+  have s := PDSplitLeafSquare.square_slots_le k
+  refine ⟨(congrArg (fun n : Nat => n + 934) h.1).trans c.1,
     (congrArg (fun n : Nat => n + 589) h.2.1).trans c.2, ?_⟩
-  simpa only [Nat.add_assoc] using h.2.2.le.trans (Nat.add_le_add_right s 3)
+  have cap := h.2.2.le.trans (Nat.add_le_add_right s 3)
+  simp only [Nat.add_assoc] at cap
+  omega
 
 theorem physical (k : Fp) : GatePhysical (program k) := by
-  have p := SplitLeafSquare.square_physical k
+  have p := PDSplitLeafSquare.square_physical k
   rw [squareN, gatePhysical_append] at p
   exact (gatePhysical_append _ _).mpr ⟨p.1, routedPhysical _⟩
 end ECDSAAdd.Entrant.Stair44Square
@@ -18182,29 +18184,29 @@ private theorem fixedUG : ∀ q ∈ hs, StairSiteAvoidance.UG q = q := by
   simp only [StairPlaceFast.ug_eqB]
   decide +kernel
 theorem piece (k : Fp) : StairSiteAvoidance.PieceOK hs StairSiteAvoidance.UG (program k) := by
-  have avC := SplitLeafSquare.brC_avoids
-  have avB := SplitLeafSquare.brB_avoids
-  have avA := SplitLeafSquare.brA_avoids
-  have hostsGood : ∀ h ∈ SplitLeafSquare.allowedWires,
+  have avC := PDSplitLeafSquare.brC_avoids
+  have avB := PDSplitLeafSquare.brB_avoids
+  have avA := PDSplitLeafSquare.brA_avoids
+  have hostsGood : ∀ h ∈ PDSplitLeafSquare.allowedWires,
       StairSiteAvoidance.UG (placeFn h) ∈ StairHoleSupport.recordArena ∧
         StairSiteAvoidance.UG (placeFn h) ∉ StairHoleSupport.oldHoles := by
-    have allG : SplitLeafSquare.allowedWires.all
+    have allG : PDSplitLeafSquare.allowedWires.all
         (fun w => Stair44TailBounds.good (StairPlaceFast.ugB (LT48K.placeF w))) = true := by
-      exact SplitLeafSquare.allowedPlacedGood
+      exact PDSplitLeafSquare.allowedPlacedGood
     intro h hh
     have hg := List.all_eq_true.mp allG h hh
     have hmap : StairSiteAvoidance.UG (placeFn h) = StairPlaceFast.ugB (LT48K.placeF h) := by
       rw [LT48K.placeFn_eq]; exact StairPlaceFast.ug_eqB _
     rw [hmap]
     exact ⟨(good_sites _ hg).1, (good_sites _ hg).2.1⟩
-  have arena := placedN_arenaB SplitLeafSquare.bodyAPlain SplitLeafSquare.bodyB
-    SplitLeafSquare.bodyCPlain SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA
-    SplitLeafSquare.allowedWires
-    SplitLeafSquare.bodyAPlain_coarse SplitLeafSquare.bodyAPlain_fine
-    SplitLeafSquare.bodyCPlain_fine SplitLeafSquare.bodyB_ok.support
-    SplitLeafSquare.bodyB_normFlag
-    SplitLeafSquare.brC_support SplitLeafSquare.brB_support
-    SplitLeafSquare.brA_support hostsGood
+  have arena := placedN_arenaB PDSplitLeafSquare.bodyAPlain PDSplitLeafSquare.bodyB
+    PDSplitLeafSquare.bodyCPlain PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA
+    PDSplitLeafSquare.allowedWires
+    PDSplitLeafSquare.bodyAPlain_coarse PDSplitLeafSquare.bodyAPlain_fine
+    PDSplitLeafSquare.bodyCPlain_fine PDSplitLeafSquare.bodyB_ok.support
+    PDSplitLeafSquare.bodyB_normFlag
+    PDSplitLeafSquare.brC_support PDSplitLeafSquare.brB_support
+    PDSplitLeafSquare.brA_support hostsGood
   have unplaced := coreN_avoids hs _ _ _ avC avB avA
   apply StairSiteAvoidance.PieceOK.append _ (tailPiece _)
   refine ⟨arena, ?_⟩
@@ -18238,16 +18240,16 @@ private theorem fromValid {P : Program} (chk : allSites valid P = true) : PieceO
 
 theorem reverseTail : PieceOK holes PP reverseEnd := by
   unfold reverseEnd
-  exact ((fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl))).append
-    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.tickRSites (fun _ => rfl)))).append
-    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.inverseSites (fun _ => rfl)))
+  exact ((fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl))).append
+    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.tickRSites (fun _ => rfl)))).append
+    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.inverseSites (fun _ => rfl)))
 
 theorem forwardTail : PieceOK holes PP forwardEnd := by
   unfold forwardEnd
-  exact (((fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.mergedSites (fun _ => rfl))).append
-    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.packSites (fun _ => rfl)))).append
-    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.afterSites (fun _ => rfl)))).append
-    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl)))
+  exact (((fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.mergedSites (fun _ => rfl))).append
+    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.packSites (fun _ => rfl)))).append
+    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.afterSites (fun _ => rfl)))).append
+    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl)))
 
 theorem exitX (k : Nat) : PieceOK holes UG (Stair44PointMap.switchX (phasePlace (ParityXExitInverse23Kernel.x1N k))) := by
   apply Stair44OuterSites.fits
@@ -18324,24 +18326,24 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2167909 ∧ measurementCount (program C) ≤ 1519658 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167840 ∧ measurementCount (program C) ≤ 1519658 := by
   have h := StairCountsHosted.count_totals C
   change toffoliCount (concreteProgram C) ≤ 2168925 ∧ measurementCount (concreteProgram C) ≤ 1520247 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2167909 ∧ measurementCount [] ≤ 1519658
+    change toffoliCount [] ≤ 2167840 ∧ measurementCount [] ≤ 1519658
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
     have old := StairSquareFinal.square_counts StairSqLoopA.holes k
     have new := Stair44Square.metrics k
-    have ft := finite_sub tc (.some hc) cx cy 1016 (by
-      change toffoliCount (Stair44Square.program k) + 1016 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
+    have ft := finite_sub tc (.some hc) cx cy 1085 (by
+      change toffoliCount (Stair44Square.program k) + 1085 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
       rw [StairSquareFinal.squareEntryHL_layout]; omega)
     have fm := finite_sub mc (.some hc) cx cy 589 (by
       change measurementCount (Stair44Square.program k) + 589 = measurementCount (StairSquareFinal.squareEntryHL _ layout k)
       rw [StairSquareFinal.squareEntryHL_layout]; omega)
-    change toffoliCount _ + 1016 = toffoliCount _ at ft
+    change toffoliCount _ + 1085 = toffoliCount _ at ft
     change measurementCount _ + 589 = measurementCount _ at fm
     simp only [program,concreteProgram,hostedWrapper,(renameProgram_counts _ _).1,
       (renameProgram_counts _ _).2] at h ⊢
@@ -18368,13 +18370,13 @@ theorem slotBound (C : Point) : gateSlots (program C) ≤ 56350460 := by
       exact exitRestOf_slots_le checkpointPrimitives hostPlan _ _ v3WalkFacts
         (v3GroupFacts _) (v3BoundaryFacts _) layout cx.val
     have sq : gateSlots (Stair44Square.program (ReflectionE1.correction cx)) ≤
-        gateSlots (A161Generic.squareEntry layout (ReflectionE1.correction cx)) + 5490003 :=
+        gateSlots (A161Generic.squareEntry layout (ReflectionE1.correction cx)) + 5490126 :=
       (Stair44Square.metrics (ReflectionE1.correction cx)).2.2
-    have gen : gateSlots (generic cx cy) ≤ gateSlots (FlagExit.genericN layout cx cy) + (dE + dX) + 5490003 := by
+    have gen : gateSlots (generic cx cy) ≤ gateSlots (FlagExit.genericN layout cx cy) + (dE + dX) + 5490126 := by
       simp only [generic,FlagExit.genericN,FlagExit.secondStageN,Stair44PointMap.encodeY,
         Stair44PointMap.switchX,gateSlots_append,rename_gateSlots]
       omega
-    have whole : gateSlots (program C) ≤ gateSlots (AboveFieldPointDevelop.programQ C) + (dE + dX) + 5490003 := by
+    have whole : gateSlots (program C) ≤ gateSlots (AboveFieldPointDevelop.programQ C) + (dE + dX) + 5490126 := by
       simp only [C,program,finite,borrowGeneric,Stair44PointMap.encode,AboveFieldPointDevelop.programQ,
         AboveFieldPointDevelop.wrapperBorrow,AboveFieldPointDevelop.finiteBorrow,AboveFieldPointDevelop.middle,
         ControlPointEncodingDevelop.borrowGeneric,ControlPointEncodingDevelop.genericBlock,
@@ -21654,7 +21656,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2015346 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2015277 ∧
     measurementCount (program C) ≤ 1448820 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -26602,7 +26604,7 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2015346 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2015277 ∧
     measurementCount (program C) ≤ 1448820 ∧ gateSlots (program C) ≤ 67239392 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -26801,7 +26803,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2015346,1448820,1543,67239392⟩
+def bounds : Challenge.Bounds := ⟨2015277,1448820,1543,67239392⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
