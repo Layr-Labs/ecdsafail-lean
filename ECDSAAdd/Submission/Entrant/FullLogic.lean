@@ -24553,6 +24553,159 @@ def chunkFuelS (Q:List Wire):Nat→(p:Program)→Option (CheckedS Q p)
 
 def compileS? (Q:List Wire) (p:Program):Option (CheckedS Q p):=chunkFuelS Q (p.length+1) p
 
+-- ==== odd-word fast ZeroSet compile (replay relief) ====
+section OwFast
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+
+def owMask : List Nat → Nat
+  | [] => 0
+  | x :: xs => 2 ^ x ||| owMask xs
+
+theorem owMask_testBit : ∀ (l : List Nat) (q : Nat), (owMask l).testBit q = decide (q ∈ l)
+  | [], q => by simp [owMask]
+  | x :: xs, q => by
+    simp only [owMask, Nat.testBit_or, owMask_testBit xs q, Nat.testBit_two_pow, List.mem_cons, Bool.decide_or]
+    congr 1
+    exact decide_eq_decide.mpr eq_comm
+
+def owKeep (m : Nat) : Correction → Bool
+  | .Z t => !m.testBit t
+  | .CZ a b => !m.testBit a && !m.testBit b
+
+def owErase (m : Nat) : Instr → Program
+  | .X t => [.X t]
+  | .CX a t => if m.testBit a then [] else [.CX a t]
+  | .CCX a b t => if m.testBit a || m.testBit b then [] else [.CCX a b t]
+  | .measureX t c0 c1 => [.measureX t (c0.filter (owKeep m)) (c1.filter (owKeep m))]
+
+def owCompileFuel (m : Nat) : Nat → Program → Option Program
+  | 0, _ => none
+  | _+1, [] => some []
+  | n+1, .CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest =>
+    if (Instr.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest).take 6=majority a b d g ∧ m.testBit b = true ∧
+        m.testBit g = false ∧ [a,b,d,g].Nodup then
+      match owCompileFuel m n rest with
+      | none => none
+      | some r => some (owErase m (Instr.CCX a d g) ++ r)
+    else
+      if m.testBit (targetOf (.CX a b)) = false then
+        (owCompileFuel m n (.CX c d::.CCX e f g::i3::i4::i5::rest)).map (fun r => owErase m (.CX a b) ++ r)
+      else none
+  | n+1, i::rest =>
+    if m.testBit (targetOf i) = false then (owCompileFuel m n rest).map (fun r => owErase m i ++ r) else none
+
+def owSplitAt (m : Nat) (p : Program) (c : Nat) (rest : Unit → Option Program) : Option Program :=
+  match owCompileFuel m (c+1) (p.take c) with
+  | none => none
+  | some a =>
+    match rest () with
+    | none => none
+    | some b => some (a ++ b)
+
+def owChunkFuel (m : Nat) : Nat → Program → Option Program
+  | 0, _ => none
+  | n+1, p =>
+    if p.length ≤ 1024 then owCompileFuel m (p.length+1) p
+    else
+      (owSplitAt m p 1024 (fun _ => owChunkFuel m n (p.drop 1024))).orElse fun _ =>
+      (owSplitAt m p 1023 (fun _ => owChunkFuel m n (p.drop 1023))).orElse fun _ =>
+      (owSplitAt m p 1022 (fun _ => owChunkFuel m n (p.drop 1022))).orElse fun _ =>
+      (owSplitAt m p 1021 (fun _ => owChunkFuel m n (p.drop 1021))).orElse fun _ =>
+      (owSplitAt m p 1020 (fun _ => owChunkFuel m n (p.drop 1020))).orElse fun _ =>
+      owSplitAt m p 1019 (fun _ => owChunkFuel m n (p.drop 1019))
+
+def owCompile (m : Nat) (p : Program) : Option Program := owChunkFuel m (p.length+1) p
+
+section Proofs
+variable (Q : List Wire) (m : Nat) (hm : ∀ w, m.testBit w = decide (w ∈ Q))
+include hm
+
+theorem owKeep_eq (c : Correction) : owKeep m c = keepS Q c := by
+  cases c <;> simp [owKeep, keepS, hm]
+
+theorem owErase_eq (i : Instr) : owErase m i = eraseS Q i := by
+  have hk : owKeep m = keepS Q := funext (owKeep_eq Q m hm)
+  cases i <;> simp [owErase, eraseS, pruneS, hm, hk]
+
+theorem owMajTrue (n : Nat) (a b c d e f g : Wire) (i3 i4 i5 : Instr) (rest : Program)
+    (hc : (Instr.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest).take 6=majority a b d g ∧ b∈Q ∧ g∉Q ∧
+      [a,b,d,g].Nodup)
+    (ih : owCompileFuel m n rest = (compileFuelS Q n rest).map CheckedS.out) :
+    owCompileFuel m (n+1) (.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest) =
+      (compileFuelS Q (n+1) (.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest)).map CheckedS.out := by
+  have hc' : (Instr.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest).take 6=majority a b d g ∧ m.testBit b = true ∧
+      m.testBit g = false ∧ [a,b,d,g].Nodup := by
+    simpa [hm] using hc
+  simp only [owCompileFuel, compileFuelS]
+  rw [if_pos hc', dif_pos hc, ih]
+  cases compileFuelS Q n rest <;> simp [owErase_eq Q m hm]
+
+theorem owMajFalse (n : Nat) (a b c d e f g : Wire) (i3 i4 i5 : Instr) (rest : Program)
+    (hc : ¬((Instr.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest).take 6=majority a b d g ∧ b∈Q ∧ g∉Q ∧
+      [a,b,d,g].Nodup))
+    (ih : owCompileFuel m n (.CX c d::.CCX e f g::i3::i4::i5::rest) =
+      (compileFuelS Q n (.CX c d::.CCX e f g::i3::i4::i5::rest)).map CheckedS.out) :
+    owCompileFuel m (n+1) (.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest) =
+      (compileFuelS Q (n+1) (.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest)).map CheckedS.out := by
+  have hc' : ¬((Instr.CX a b::.CX c d::.CCX e f g::i3::i4::i5::rest).take 6=majority a b d g ∧ m.testBit b = true ∧
+      m.testBit g = false ∧ [a,b,d,g].Nodup) := fun h => hc (by simpa [hm] using h)
+  simp only [owCompileFuel, compileFuelS]
+  rw [if_neg hc', dif_neg hc]
+  simp only [normalStepS, ih, hm, targetOf]
+  by_cases hb : b ∈ Q <;> simp [hb, Option.map_map, Function.comp_def, owErase_eq Q m hm]
+
+theorem owCompileFuel_eq (n : Nat) (p : Program) :
+    owCompileFuel m n p = (compileFuelS Q n p).map CheckedS.out := by
+  induction n, p using compileFuelS.induct Q
+  all_goals first
+    | (apply owMajTrue Q m hm <;> assumption)
+    | (apply owMajFalse Q m hm <;> assumption)
+    | (simp_all [owCompileFuel, compileFuelS, normalStepS, owErase_eq Q m hm, Option.map_map, Function.comp_def]; done)
+    | (simp_all [owCompileFuel, compileFuelS, normalStepS, owErase_eq Q m hm, Option.map_map, Function.comp_def]
+       first | rfl | (split_ifs <;> first | rfl | simp [Option.map_map, Function.comp_def]))
+
+theorem owSplitAt_eq (p : Program) (c : Nat) (rest : Unit → Option (CheckedS Q (p.drop c))) :
+    owSplitAt m p c (fun u => (rest u).map CheckedS.out) = (splitAt? Q p c rest).map CheckedS.out := by
+  unfold owSplitAt splitAt?
+  rw [owCompileFuel_eq Q m hm]
+  cases compileFuelS Q (c+1) (p.take c) <;> simp
+  cases rest () <;> simp
+
+omit hm in
+theorem owOrElse_map {α β : Type _} (o : Option α) (f : Unit → Option α) (g : α → β) :
+    (o.orElse f).map g = (o.map g).orElse (fun u => (f u).map g) := by
+  cases o <;> rfl
+
+theorem owChunkFuel_eq (n : Nat) (p : Program) :
+    owChunkFuel m n p = (chunkFuelS Q n p).map CheckedS.out := by
+  induction n generalizing p with
+  | zero => rfl
+  | succ n ih =>
+    unfold owChunkFuel chunkFuelS
+    by_cases h : p.length ≤ 1024
+    · rw [if_pos h, if_pos h]
+      exact owCompileFuel_eq Q m hm _ _
+    · rw [if_neg h, if_neg h]
+      simp only [owOrElse_map, ← owSplitAt_eq Q m hm, ih]
+
+theorem owCompile_eq (p : Program) : owCompile m p = (compileS? Q p).map CheckedS.out :=
+  owChunkFuel_eq Q m hm _ _
+
+end Proofs
+
+/-- the shape every ZeroSet literal check has: `(compileS? Q p).elim false (fun c => f c.out) = true` from the fast run. -/
+theorem owElim_of_fast (Q : List Wire) (p : Program) (f : Program → Bool)
+    (h : (owCompile (owMask Q) p).elim false f = true) :
+    (compileS? Q p).elim false (fun c => f c.out) = true := by
+  rw [owCompile_eq Q (owMask Q) (owMask_testBit Q) p] at h
+  cases hc : compileS? Q p with
+  | none => simp [hc] at h
+  | some c => simpa [hc] using h
+
+end OwFast
+-- ==== end odd-word fast ZeroSet compile ====
+
 
 
 
@@ -28695,6 +28848,69 @@ theorem hasWire_iff (p:Program) (q:Wire):hasWire p q=true ↔ q∈wires p:=by
  induction p with
  | nil=>simp[hasWire,ECDSAAdd.wires]
  | cons i p ih=>simp_all[hasWire,ECDSAAdd.wires]
+
+-- ==== odd-word one-pass wire mask (replay relief): hasWire p q = (owWireMask p).testBit q ====
+section OwWire
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+set_option maxRecDepth 100000
+
+def owCorrMask : List Correction → Nat
+  | [] => 0
+  | .Z t :: cs => 2 ^ t ||| owCorrMask cs
+  | .CZ a b :: cs => 2 ^ a ||| 2 ^ b ||| owCorrMask cs
+
+theorem owCorrMask_testBit (cs : List Correction) (q : Wire) :
+    (owCorrMask cs).testBit q = true ↔ q ∈ correctionWires cs := by
+  induction cs with
+  | nil => simp [owCorrMask, correctionWires]
+  | cons c cs ih =>
+    cases c with
+    | Z t =>
+      simp only [owCorrMask, correctionWires, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
+        decide_eq_true_eq, ih, Finset.mem_union, Finset.mem_singleton]
+      simp [eq_comm]
+    | CZ a b =>
+      simp only [owCorrMask, correctionWires, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
+        decide_eq_true_eq, ih, Finset.mem_union, Finset.mem_insert, Finset.mem_singleton]
+      simp [or_assoc, eq_comm]
+
+def owInstrMask : Instr → Nat
+  | .X t => 2 ^ t
+  | .CX c t => 2 ^ c ||| 2 ^ t
+  | .CCX a b t => 2 ^ a ||| 2 ^ b ||| 2 ^ t
+  | .measureX t c0 c1 => 2 ^ t ||| owCorrMask c0 ||| owCorrMask c1
+
+theorem owInstrMask_testBit (i : Instr) (q : Wire) : (owInstrMask i).testBit q = decide (q ∈ i.wires) := by
+  apply Bool.eq_iff_iff.mpr
+  rw [decide_eq_true_iff]
+  cases i with
+  | X t =>
+    simp only [owInstrMask, Instr.wires, Nat.testBit_two_pow, decide_eq_true_eq, Finset.mem_singleton]
+    exact eq_comm
+  | CX c t =>
+    simp only [owInstrMask, Instr.wires, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq,
+      Finset.mem_insert, Finset.mem_singleton]
+    simp [eq_comm]
+  | CCX a b t =>
+    simp only [owInstrMask, Instr.wires, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq,
+      Finset.mem_insert, Finset.mem_singleton]
+    simp [or_assoc, eq_comm]
+  | measureX t c0 c1 =>
+    simp only [owInstrMask, Instr.wires, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq,
+      Finset.mem_union, Finset.mem_singleton, owCorrMask_testBit]
+    simp [or_assoc, eq_comm]
+
+def owWireMask (p : Program) : Nat := p.foldr (fun i acc => owInstrMask i ||| acc) 0
+
+theorem owHasWire (p : Program) (q : Wire) : hasWire p q = (owWireMask p).testBit q := by
+  induction p with
+  | nil => simp [hasWire, owWireMask]
+  | cons i p ih =>
+    have e1 : hasWire (i :: p) q = (decide (q ∈ i.wires) || hasWire p q) := by simp [hasWire]
+    have e2 : owWireMask (i :: p) = owInstrMask i ||| owWireMask p := rfl
+    rw [e1, e2, Nat.testBit_or, owInstrMask_testBit, ih]
+
+end OwWire
 
 def LoanReady (L:CuccaroStreamedSquareWideLayout) (g u:Wire):Prop:=
  u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++accZ L++accBank L) ∧
@@ -61152,124 +61368,6 @@ def literal:Program:=join0_54
 end ECDSAAdd.Entrant.KnownAMidStaged
 end
 
-namespace ZeroSetDevelop.MaskedRewrite
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant ZeroReadDevelop
-
-def maskOf : List Wire → Nat
-  | [] => 0
-  | x :: xs => 2 ^ x ||| maskOf xs
-
-theorem mask_mem : ∀ (xs : List Wire) (q : Wire), (maskOf xs).testBit q = decide (q ∈ xs)
-  | [], q => by simp [maskOf]
-  | x :: xs, q => by
-    simp only [maskOf, Nat.testBit_or, mask_mem xs q, Nat.testBit_two_pow, List.mem_cons,
-      Bool.decide_or]
-    congr 1
-    exact decide_eq_decide.mpr eq_comm
-
-structure Lookup (Q : List Wire) where
-  hit : Wire → Bool
-  correct : ∀ q, hit q = decide (q ∈ Q)
-
-def fromMask (Q : List Wire) (bits : Nat) (h : maskOf Q = bits) : Lookup Q :=
-  ⟨bits.testBit, fun q => by rw [← h]; exact mask_mem Q q⟩
-
-private def keepBy (hit : Wire → Bool) : Correction → Bool
-  | .Z t => !hit t
-  | .CZ a b => !hit a && !hit b
-
-private def eraseBy (hit : Wire → Bool) : Instr → Program
-  | .X t => [.X t]
-  | .CX a t => if hit a then [] else [.CX a t]
-  | .CCX a b t => if hit a || hit b then [] else [.CCX a b t]
-  | .measureX t c0 c1 => [.measureX t (c0.filter (keepBy hit)) (c1.filter (keepBy hit))]
-
-private theorem eraseBy_eq {Q : List Wire} (table : Lookup Q) (i : Instr) :
-    eraseBy table.hit i = eraseS Q i := by
-  have same : keepBy table.hit = keepS Q := by
-    funext c
-    cases c <;> simp only [keepBy, keepS, table.correct]
-  cases i <;> simp [eraseBy, eraseS, table.correct, same, pruneS]
-
-private structure Step (Q : List Wire) (p : Program) where
-  rest : Program
-  output : Program
-  sound : ∀ r, SRewrites Q rest r → SRewrites Q p (output ++ r)
-
-private def single {Q : List Wire} (table : Lookup Q) (i : Instr) (p : Program) :
-    Option (Step Q (i::p)) :=
-  if h : table.hit (targetOf i) = false then
-    some ⟨p, eraseBy table.hit i, fun r tail => by
-      rw [eraseBy_eq]
-      exact SRewrites.normal i p r (by simpa only [table.correct, decide_eq_false_iff_not] using h) tail⟩
-  else none
-
-private def next {Q : List Wire} (table : Lookup Q) : (p : Program) → Option (Step Q p)
-  | [] => none
-  | .CX a b :: .CX c d :: .CCX e f g :: i3 :: i4 :: i5 :: rest =>
-    let block : Program := [.CX a b,.CX c d,.CCX e f g,i3,i4,i5]
-    if h : block = majority a b d g ∧ table.hit b = true ∧ table.hit g = false ∧ [a,b,d,g].Nodup then
-      some ⟨rest, eraseBy table.hit (.CCX a d g), fun r ht => by
-        have hb : b ∈ Q := by simpa only [table.correct, decide_eq_true_eq] using h.2.1
-        have hg : g ∉ Q := by simpa only [table.correct, decide_eq_false_iff_not] using h.2.2.1
-        have got := SRewrites.zeroMajority a b d g rest r hb hg h.2.2.2 ht
-        rw [← h.1] at got
-        rw [eraseBy_eq]
-        exact got⟩
-    else single table (.CX a b) (.CX c d :: .CCX e f g :: i3 :: i4 :: i5 :: rest)
-  | i :: rest => single table i rest
-
-private def strip : Program → Program → Option Program
-  | [], out => some out
-  | _::_, [] => none
-  | i::p, j::out => if i=j then strip p out else none
-
-private theorem strip_eq (front out tail : Program) (h : strip front out = some tail) : out = front ++ tail := by
-  induction front generalizing out with
-  | nil => simpa [strip] using h
-  | cons i p ih =>
-    cases out with
-    | nil => simp [strip] at h
-    | cons j rest =>
-      simp only [strip] at h
-      split at h
-      · rename_i same
-        cases same
-        exact congrArg (List.cons i) (ih rest h)
-      · contradiction
-
-def check {Q : List Wire} (table : Lookup Q) : Nat → Program → Program → Bool
-  | 0, _, _ => false
-  | _+1, [], out => out.isEmpty
-  | n+1, i::p, out =>
-    match next table (i::p) with
-    | none => false
-    | some step => match strip step.output out with
-      | none => false
-      | some tail => check table n step.rest tail
-
-theorem sound {Q : List Wire} (table : Lookup Q) (fuel : Nat) (p out : Program) (h : check table fuel p out = true) : SRewrites Q p out := by
-  induction fuel generalizing p out with
-  | zero => simp [check] at h
-  | succ n ih =>
-    cases p with
-    | nil =>
-      cases out with
-      | nil => exact SRewrites.nil
-      | cons => simp [check] at h
-    | cons i p =>
-      simp only [check] at h
-      split at h
-      · contradiction
-      · rename_i step _
-        split at h
-        · contradiction
-        · rename_i tail same
-          rw [strip_eq _ _ _ same]
-          exact step.sound tail (ih _ _ h)
-
-end ZeroSetDevelop.MaskedRewrite
-
 section
 namespace ECDSAAdd.Entrant.A161Low4Facts
 
@@ -61278,12 +61376,17 @@ set_option maxHeartbeats 500000000
 
 def hs99 := A161Facts.loans95 A161FixedFold.L++A161FixedFold.L.core.work.take 4
 
-private theorem loanMask_eq : ZeroSetDevelop.MaskedRewrite.maskOf hs99 = 0x1fffffffffffffffffffffffc000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 := by decide +kernel
-private def wireLookup := ZeroSetDevelop.MaskedRewrite.fromMask hs99 0x1fffffffffffffffffffffffc000000000000000000000000000000000000001e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 loanMask_eq
+/-- replay relief (odd-word): the same literal check on `owCompile` (mask membership), tied back by `owElim_of_fast`. -/
+theorem match99_fast : (ZeroSetDevelop.owCompile (ZeroSetDevelop.owMask hs99) pLow).elim false
+    (fun o => ParkAProgramBool.programEq ECDSAAdd.Entrant.KnownAMidStaged.literal o) = true := by
+ decide +kernel
 
-theorem literal_rewrites : ZeroSetDevelop.SRewrites hs99 pLow KnownAMidStaged.literal := by
-  apply ZeroSetDevelop.MaskedRewrite.sound wireLookup (pLow.length+1)
-  decide +kernel
+theorem match99 : (ZeroSetDevelop.compileS? hs99 pLow).elim false
+    (fun c => ParkAProgramBool.programEq ECDSAAdd.Entrant.KnownAMidStaged.literal c.out) = true :=
+ ZeroSetDevelop.owElim_of_fast hs99 pLow _ match99_fast
+
+theorem compiled99 : (ZeroSetDevelop.compileS? hs99 pLow).isSome=true :=
+ ECDSAAdd.Entrant.D1Opt.isSome_of_elim match99
 
 end ECDSAAdd.Entrant.A161Low4Facts
 end
@@ -61917,7 +62020,7 @@ theorem hw:L.Widths:=A161FixedFold.hw
 theorem hn:L.wires.Nodup:=A161FixedFold.hn
 
 def checked : ZeroSetDevelop.CheckedS hs99 A161Low4Facts.pLow :=
- ⟨KnownAMidStaged.literal, A161Low4Facts.literal_rewrites⟩
+ (ZeroSetDevelop.compileS? hs99 A161Low4Facts.pLow).get A161Low4Facts.compiled99
 attribute [local irreducible] checked
 
 theorem cert99 : ZeroSetDevelop.SRewrites hs99 (A161Low4Fold.aMiddle L g) checked.out := by
@@ -62597,21 +62700,13 @@ theorem geometry : (loans L).length=82 ∧ (L.core.sumCarry::hosts L).Nodup ∧
  unfold LoanReadyTrim
  decide +kernel
 
-private def hostBlocks : Program := BData301.shared140 ++ (BData301.shared105 ++ (BData301.shared39 ++ (BData301.shared29)))
-
-private theorem hosts_in_blocks : ∀x∈FullBTemp.hosts FullBReady.L, FourthASavedCarryDevelop.hasWire hostBlocks x = true := by decide +kernel
-
-theorem used_data : ∀x∈FullBTemp.hosts FullBReady.L, FourthASavedCarryDevelop.hasWire BData301.p0 x = true := by
-  intro x hx
-  have h := (FourthASavedCarryDevelop.hasWire_iff _ _).mp (hosts_in_blocks x hx)
-  apply (FourthASavedCarryDevelop.hasWire_iff _ _).mpr
-  simp only [hostBlocks, wires_append, Finset.mem_union] at h
-  simp only [BData301.p0, wires_append, Finset.mem_union]
-  rcases h with h | h | h | h
-  · exact Or.inr (Or.inr (Or.inl (Or.inr (Or.inr (Or.inl (Or.inr (Or.inl h)))))))
-  · exact Or.inr (Or.inl (Or.inr (Or.inl (Or.inl (Or.inr (Or.inl h))))))
-  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h)))))))
-  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inl (Or.inl h))))))
+/-- replay relief (odd-word): one bit-mask pass over `p0` instead of one `Finset` walk per host. -/
+theorem used_data_fast : (hosts L).all (fun x => (FourthASavedCarryDevelop.owWireMask BData301.p0).testBit x) = true := by
+ decide +kernel
+theorem used_data : ∀x∈hosts L,FourthASavedCarryDevelop.hasWire BData301.p0 x=true := by
+ intro x hx
+ rw [FourthASavedCarryDevelop.owHasWire]
+ exact List.all_eq_true.mp used_data_fast x hx
 
 private theorem hasWire_transport (p q:Program) (e:p=q) (x:Wire)
  (h:FourthASavedCarryDevelop.hasWire p x=true):FourthASavedCarryDevelop.hasWire q x=true := e ▸ h
