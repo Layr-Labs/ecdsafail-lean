@@ -19109,36 +19109,36 @@ attribute [local irreducible] Shadow20.MixedWindow.forwardMixedCut Shadow20.Mixe
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 38415 else 38415)=
+    toffoliCount (forward d tail)+(if d then 38427 else 38427)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 37983 else 37961)=
+    toffoliCount (backward d tail)+(if d then 37995 else 37973)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
-    measurementCount (forward d tail)+(if d then 17040 else 17040)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
-    measurementCount (backward d tail)+(if d then 17436 else 17414)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
+    measurementCount (forward d tail)+(if d then 17052 else 17052)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
+    measurementCount (backward d tail)+(if d then 17448 else 17426)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   have sf := StockWindowCosts420.stock420from45 d
   have mcw := Shadow20.MixedWindow.mixedCut_counts d
   cases d
   · simp only [Bool.false_eq_true, ↓reduceIte] at mcw ⊢
-    have t := walk tc false tail 38415 37961 (subEq 38415 mcw.1 sf.1 (by omega)) (subEq 37961 mcw.2.1 sf.2.2.1 (by omega))
-    have mv := walk mc false tail 17040 17414 (subEq 17040 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17414 mcw.2.2.2 sf.2.2.2 (by omega))
+    have t := walk tc false tail 38427 37973 (subEq 38427 mcw.1 sf.1 (by omega)) (subEq 37973 mcw.2.1 sf.2.2.1 (by omega))
+    have mv := walk mc false tail 17052 17426 (subEq 17052 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17426 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
   · simp only [↓reduceIte] at mcw ⊢
-    have t := walk tc true tail 38415 37983 (subEq 38415 mcw.1 sf.1 (by omega)) (subEq 37983 mcw.2.1 sf.2.2.1 (by omega))
-    have mv := walk mc true tail 17040 17436 (subEq 17040 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17436 mcw.2.2.2 sf.2.2.2 (by omega))
+    have t := walk tc true tail 38427 37995 (subEq 38427 mcw.1 sf.1 (by omega)) (subEq 37995 mcw.2.1 sf.2.2.1 (by omega))
+    have mv := walk mc true tail 17052 17448 (subEq 17052 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17448 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 38415 else 38415)=f) (hr : (if d then 37983 else 37961)=r) :
+    (hf : (if d then 38427 else 38427)=f) (hr : (if d then 37995 else 37973)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+(if d then 17040 else 17040)=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+(if d then 17436 else 17414)=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+(if d then 17052 else 17052)=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+(if d then 17448 else 17426)=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 
 theorem instMeasurements (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 17040 else 17040)=f) (hr : (if d then 17436 else 17414)=r) :
+    (hf : (if d then 17052 else 17052)=f) (hr : (if d then 17448 else 17426)=r) :
     mc.measure (forward d tail)+f=mc.measure (Stair44WalkRun.forward d n) ∧
     mc.measure (backward d tail)+r=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
@@ -21620,44 +21620,44 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+38415+37961+933=tc.measure Stair44Outer.divide+1072 := by
-  have k := kernels tc 38415 37961 868 1072 (WindowWalkCosts.inst true 4 409 38415 37983 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 38415 37961 rfl rfl rfl).2.1 (field_delta_tc_div 1072 fieldTcDiv)
+theorem tc_div : tc.measure divide+38427+37973+933=tc.measure Stair44Outer.divide+1072 := by
+  have k := kernels tc 38427 37973 868 1072 (WindowWalkCosts.inst true 4 409 38427 37995 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 38427 37973 rfl rfl rfl).2.1 (field_delta_tc_div 1072 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+38415+37983+890=tc.measure (Stair44Outer.multiply k)+962 :=
-  kernelsM tc k 38415 37983 890 962 (WindowWalkCosts.inst false 84 489 38415 37961 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 38415 37983 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+38427+37995+890=tc.measure (Stair44Outer.multiply k)+962 :=
+  kernelsM tc k 38427 37995 890 962 (WindowWalkCosts.inst false 84 489 38427 37973 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 38427 37995 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
 
-theorem mc_div : mc.measure divide+17040+17414+1573=mc.measure Stair44Outer.divide+652 := by
-  have k := kernels mc 17040 17414 1548 652 (WindowWalkCosts.instMeasurements true 4 409 17040 17436 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements false 85 490 17040 17414 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
+theorem mc_div : mc.measure divide+17052+17426+1573=mc.measure Stair44Outer.divide+652 := by
+  have k := kernels mc 17052 17426 1548 652 (WindowWalkCosts.instMeasurements true 4 409 17052 17448 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements false 85 490 17052 17426 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
   have e : mc.measure Rolling1588.ep + mc.measure Rolling1588.dp = 5 := by
     show measurementCount Rolling1588.ep + measurementCount Rolling1588.dp = 5
     exact PackCutCounts.mc_epdp
   omega
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+17040+17436+1529=mc.measure (Stair44Outer.multiply k)+542 :=
-  kernelsM mc k 17040 17436 1529 542 (WindowWalkCosts.instMeasurements false 84 489 17040 17414 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements true 4 409 17040 17436 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+17052+17448+1529=mc.measure (Stair44Outer.multiply k)+542 :=
+  kernelsM mc k 17052 17448 1529 542 (WindowWalkCosts.instMeasurements false 84 489 17052 17426 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements true 4 409 17052 17448 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+152563=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+70838=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 152563
+    toffoliCount (finite C cx cy)+152611=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+70886=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 152611
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 70838
+    finite_delta mc C cx cy 70886
       (OddOuterBridge.entryYAllOdd_mc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2015277 ∧
-    measurementCount (program C) ≤ 1448820 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2015229 ∧
+    measurementCount (program C) ≤ 1448772 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -21768,12 +21768,12 @@ private theorem sum_flatMap_slots_le {α : Type} (f : α → List Program) (b : 
 
 private def b15SF (j : Fin 26) : Nat :=
   35 + 5000 + 168 + 15988 + 70000 +
-  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 10 * Shadow7.lowsP (start j) + 662 +
+  (6 * CRTBarrel.adjustWidth (start j) + 5 * Shadow7.liveW (start j) + 10 * Shadow7.lowsP (start j) + 662 +
     3 * Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false)
 
 private def b15SR (j : Fin 26) : Nat :=
   36 + 5000 + 166 + 12262 + 70000 +
-  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 11 * Shadow7.lowsP (start j) + 630 +
+  (6 * CRTBarrel.adjustWidth (start j) + 5 * Shadow7.liveW (start j) + 11 * Shadow7.lowsP (start j) + 630 +
     3 * Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true)
 
 private def b20SF (j : Fin 9) : Nat :=
@@ -21839,22 +21839,22 @@ private theorem exit420_slots_le (d : Bool) :
 
 private theorem mixed_slot_sum_vals :
     ((22 * Shadow7.wpP 45 - 9) + (35 + (5000 + (168 + (70000 +
-      ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 662 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 false) + 0)))))) +
+      ((6 * CRTBarrel.adjustWidth 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 662 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 false) + 0)))))) +
     (Shadow20.MixedWindow.prefixPairs.map fun p => b15SF p.2).sum +
     (35 + (5000 + (168 + (15988 + (70000 + (11607 + 0)))))) +
     ((List.finRange 9).map b20SF).sum +
     (35 + (5000 + (168 + (168 + (15988 + (70000 +
-      ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 662 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 false) + 0))))))) +
+      ((6 * CRTBarrel.adjustWidth 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 662 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 false) + 0))))))) +
     (Shadow20.MixedWindow.suffixPairs.map fun p => b15SF p.2).sum +
     (9 + ((21 * Shadow7.wpP 420 - 7) + (6004 + (168 + (15988 + 0))))) ≤ 2710000 ∧
     (12262 + (166 + (6001 + ((22 * Shadow7.wpP 420 - 9) + (9 + 0))))) +
     (Shadow20.MixedWindow.suffixPairs.reverse.map fun p => b15SR p.2).sum +
-    ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 630 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 true) +
+    ((6 * CRTBarrel.adjustWidth 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 630 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 true) +
       (70000 + (12262 + (166 + (166 + (5000 + (36 + 0))))))) +
     ((List.finRange 9).reverse.map b20SR).sum +
     (11542 + (70000 + (12262 + (166 + (5000 + (36 + 0)))))) +
     (Shadow20.MixedWindow.prefixPairs.reverse.map fun p => b15SR p.2).sum +
-    ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 630 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 true) +
+    ((6 * CRTBarrel.adjustWidth 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 630 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 true) +
       (70000 + (166 + (5000 + (36 + ((21 * Shadow7.wpP 45 - 7) + 0)))))) ≤ 2610000 := by
   decide +kernel
 
@@ -26604,8 +26604,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2015277 ∧
-    measurementCount (program C) ≤ 1448820 ∧ gateSlots (program C) ≤ 67239392 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2015229 ∧
+    measurementCount (program C) ≤ 1448772 ∧ gateSlots (program C) ≤ 67239392 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -26803,7 +26803,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2015277,1448820,1543,67239392⟩
+def bounds : Challenge.Bounds := ⟨2015229,1448772,1543,67239392⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -26812,7 +26812,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1448820
+    change measurementCount (normalizeProgram _) ≤ 1448772
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -33305,6 +33305,12 @@ private theorem red150_box2 :
     afterRow150.all (fun g => g.wires.all fun q => decide ((q : Nat) + 150 ≤ 2069)) = true := by
   decide +kernel
 
+private theorem red150_headC1Trim_eq : CRTBarrel.headC1Trim 150 = CRTBarrel.headC1 150 := by
+  have ht : CRTBarrel.trimAdjust 150 = false := by decide
+  simp only [CRTBarrel.headC1Trim, CRTBarrel.headC1Pre, CRTBarrel.leaveAdjustCoreTrim,
+    CRTBarrel.adjustWidth, ht, Bool.false_eq_true, ↓reduceIte, CRTBarrel.headC1,
+    Shadow7.leaveAdjust, Shadow7.leaveAdjustCore, List.append_assoc]
+
 private theorem red150_bef_fprog :
     GateMirror.forward (CRTBarrel.beforeRow 150) =
       GateMirror.forward [] ++ GateMirror.forward (ScanRow16.headShort 150) ++ GateMirror.forward [] ++
@@ -33314,7 +33320,7 @@ private theorem red150_bef_fprog :
       [.CCX (tagsP.getD 0 0) (Shadow7.a0P 150 + 0) (Shadow7.e0P 150 + 6), .CX (Shadow7.e0P 150 + 6) (Shadow7.a0P 150 + 0)] ++
       GateMirror.forward (CRTBarrel.headC1 150) := by
   have hnil : GateMirror.forward [] = [] := rfl
-  simp only [CRTBarrel.beforeRow, CRTBarrel.beforeRowTail, forward_app, fwd_cons, front,
+  simp only [CRTBarrel.beforeRow, CRTBarrel.beforeRowTail, red150_headC1Trim_eq, forward_app, fwd_cons, front,
     hnil, List.append_assoc, List.cons_append, List.nil_append]
 
 private theorem red150_bef_rprog :
@@ -33325,7 +33331,7 @@ private theorem red150_bef_rprog :
       [.CCX (150 + 30) (Shadow7.sbP 150 + 803) (150 + Shadow7.sbP 150 + 48)] ++ inverse [] ++
       inverse (ScanRow16.headShort 150) ++ inverse [] := by
   have hnil : inverse [] = [] := rfl
-  simp only [CRTBarrel.beforeRow, CRTBarrel.beforeRowTail, inv_app, inv_cons, GateMirror.back,
+  simp only [CRTBarrel.beforeRow, CRTBarrel.beforeRowTail, red150_headC1Trim_eq, inv_app, inv_cons, GateMirror.back,
     hnil, List.append_assoc, List.cons_append, List.nil_append, List.append_nil]
 
 private theorem red150_bef_split_fix0 :
@@ -34406,12 +34412,12 @@ private theorem sum_flatMap_le {α : Type} (m : Program → Nat) (f : α → Lis
 
 private def b15SF (d : Bool) (j : Fin 26) : Nat :=
   35 + 75000 + (144 + if d then 24 else 12) + (if d then 15978 else 15988) +
-  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 10 * Shadow7.lowsP (start j) + 662 +
+  (6 * CRTBarrel.adjustWidth (start j) + 5 * Shadow7.liveW (start j) + 10 * Shadow7.lowsP (start j) + 662 +
     3 * Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false)
 
 private def b15SR (d : Bool) (j : Fin 26) : Nat :=
   36 + 75000 + (142 + if d then 24 else 12) + (if d then 12242 else 12262) +
-  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 11 * Shadow7.lowsP (start j) + 630 +
+  (6 * CRTBarrel.adjustWidth (start j) + 5 * Shadow7.liveW (start j) + 11 * Shadow7.lowsP (start j) + 630 +
     3 * Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true)
 
 private def b20SF (d : Bool) (j : Fin 9) : Nat :=
@@ -34427,26 +34433,26 @@ private def b20SR (d : Bool) (j : Fin 9) : Nat :=
 private theorem mixed_slot_sum_le :
     (∀ d : Bool,
       ((22 * Shadow7.wpP 45 - 9) + 35 + 75000 + (144 + if d then 24 else 12) +
-        (6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 662 +
+        (6 * CRTBarrel.adjustWidth 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 662 +
           3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 false)) +
       (MixedWindow.prefixPairs.map (fun p => b15SF d p.2)).sum +
       (35 + 75000 + (144 + if d then 24 else 12) + (if d then 15978 else 15988) + 11607) +
       ((List.finRange 9).map (b20SF d)).sum +
       (35 + 75000 + 2 * (144 + if d then 24 else 12) + (if d then 15978 else 15988) +
-        (6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 662 +
+        (6 * CRTBarrel.adjustWidth 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 662 +
           3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 false)) +
       (MixedWindow.suffixPairs.map (fun p => b15SF d p.2)).sum +
       (9 + (21 * Shadow7.wpP 420 - 7) + 6004 + (144 + if d then 24 else 12) + (if d then 15978 else 15988)) ≤ 2710000) ∧
     (∀ d : Bool,
       ((if d then 12242 else 12262) + (142 + if d then 24 else 12) + 6001 + (22 * Shadow7.wpP 420 - 9) + 9) +
       (MixedWindow.suffixPairs.reverse.map (fun p => b15SR d p.2)).sum +
-      ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 630 +
+      ((6 * CRTBarrel.adjustWidth 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 630 +
           3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 true) +
         75000 + (if d then 12242 else 12262) + 2 * (142 + if d then 24 else 12) + 36) +
       ((List.finRange 9).reverse.map (b20SR d)).sum +
       (11542 + 75000 + (if d then 12242 else 12262) + (142 + if d then 24 else 12) + 36) +
       (MixedWindow.prefixPairs.reverse.map (fun p => b15SR d p.2)).sum +
-      ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 630 +
+      ((6 * CRTBarrel.adjustWidth 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 630 +
           3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 true) +
         75000 + (142 + if d then 24 else 12) + 36 + (21 * Shadow7.wpP 45 - 7)) ≤ 2610000) := by
   decide +kernel
@@ -34603,7 +34609,7 @@ private theorem h1F_le (d : Bool) :
     (([Shadow7.portalP 45, Shadow7.enterP MixedWindow.j0, Shadow7.routed MixedWindow.j0 0 1,
       MixedWindow.packW d 45 45, Shadow7.routed MixedWindow.j0 1 14, CRTBarrel.leave MixedWindow.j0]).map gateSlots).sum ≤
     (22 * Shadow7.wpP 45 - 9) + 35 + 75000 + (144 + if d then 24 else 12) +
-      (6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 662 +
+      (6 * CRTBarrel.adjustWidth 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 662 +
         3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 false) := by
   have c := (WindowSlots7.route MixedWindow.j0 0 1).1
   have f := (WindowSlots7.route MixedWindow.j0 1 14).1
@@ -34629,7 +34635,7 @@ private theorem h20F'_le (d : Bool) :
       archiveLoadP20 MixedWindow.k8 d, Shadow7.routed MixedWindow.j20 1 14,
       CRTBarrel.leave MixedWindow.j20]).map gateSlots).sum ≤
     35 + 75000 + 2 * (144 + if d then 24 else 12) + (if d then 15978 else 15988) +
-      (6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 662 +
+      (6 * CRTBarrel.adjustWidth 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 662 +
         3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 false) := by
   have b := (WindowSlots7.route MixedWindow.j20 0 1).1
   have f := (WindowSlots7.route MixedWindow.j20 1 14).1
@@ -34658,7 +34664,7 @@ private theorem h20R'_le (d : Bool) :
     (([CRTBarrel.unleave MixedWindow.j20, Shadow7.unrouted MixedWindow.j20 1 14,
       archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
       Shadow7.unrouted MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).map gateSlots).sum ≤
-    (6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 630 +
+    (6 * CRTBarrel.adjustWidth 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 630 +
         3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 true) +
       75000 + (if d then 12242 else 12262) + 2 * (142 + if d then 24 else 12) + 36 := by
   have g := (CRTWindow.leave_metrics MixedWindow.j20 (by decide) (by decide)).2.2.2.2.2.le
@@ -34685,7 +34691,7 @@ private theorem h1R_le (d : Bool) :
     (([CRTBarrel.unleave MixedWindow.j0, Shadow7.unrouted MixedWindow.j0 1 14,
       MixedWindow.unpackW d 45 45, Shadow7.unrouted MixedWindow.j0 0 1,
       Shadow7.enterInvP MixedWindow.j0, Shadow7.portalInvP 45]).map gateSlots).sum ≤
-    (6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 630 +
+    (6 * CRTBarrel.adjustWidth 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 630 +
         3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 true) +
       75000 + (142 + if d then 24 else 12) + 36 + (21 * Shadow7.wpP 45 - 7) := by
   have g := (CRTWindow.leave_metrics MixedWindow.j0 (by decide) (by decide)).2.2.2.2.2.le
