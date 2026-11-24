@@ -11924,6 +11924,7 @@ theorem traj (x : Nat) (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (s1 : State)
     (ht : pullState Rolling1588Lifetime.phaseHost t0 =
       run (Rolling1588TickGap.forward true 1 424) m s1)
     (hE : ExtraSel x t0) (c1 c2 c3 c4 : List Bool) :
+    (W1 c1 t0).basis (xRelabel (base 512)) = false ∧
     (W4 c1 c2 c3 c4 t0).phase = t0.phase ∧
     (∀ origin, TraceOK x origin → ∀ r : Fin 10,
       (W4 c1 c2 c3 c4 t0).basis (StairField2V3Packet.packetSite 84 r) =
@@ -12279,7 +12280,9 @@ theorem traj (x : Nat) (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (s1 : State)
       (fun h => hn (mPack _ (Or.inr (Or.inr h))))]
     show (W3 c1 c2 c3 t0).basis (phaseRelabel (StairExitLT24.relabelInv q)) = _
     rw [StairExitLT24.relabel_inv]
-  refine ⟨?_, ?_, ?_, ?_, legal1, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, legal1, ?_⟩
+  · rw [w1v]
+    exact (agree _ (by decide +kernel)).trans z512
   · -- phase
     have p1 : (W1 c1 t0).phase = t0.phase := by
       rw [e1]
@@ -12411,6 +12414,12 @@ theorem traj (x : Nat) (hx0 : 0 < x) (hx : x < ECDSAAdd.p) (s1 : State)
     intro q hq
     exact (out q (fun e => hbDecl (e ▸ hq))).symm
 
+/-- The first orientation leaves the sum extension zero on an admissible division trajectory. -/
+theorem firstSignZero (x : Nat) (t0 : State) (h : Adm ExtraSel x t0) (c : List Bool) :
+    (W1 c t0).basis (xRelabel (base 512)) = false := by
+  obtain ⟨hx0, hx, hE, s1, m, first, ht⟩ := h
+  exact (traj x hx0 hx s1 first m t0 ht hE c [] [] []).1
+
 /-! ## The selected half of the junction -/
 
 /-- **Selected half of the row-425 junction** (repaired first pack).  Off `Δv 87` and
@@ -12427,7 +12436,7 @@ theorem junc_sel (x : Nat) : ∀ t0, Adm ExtraSel x t0 → ∀ c,
     (∀ r ∈ futurePayload 87, (run (selJ0 P) c t0).basis (fieldPlace r) = cmpBits 87 x r) := by
   rintro t0 ⟨hx0, hx, hE, s1, m, first, ht⟩ c
   obtain ⟨c1, c2, c3, c4, e⟩ := selJ0_run c t0
-  obtain ⟨tph, tpk, tfp, toff, -, -⟩ := traj x hx0 hx s1 first m t0 ht hE c1 c2 c3 c4
+  obtain ⟨tph, tpk, tfp, toff, -, -⟩ := (traj x hx0 hx s1 first m t0 ht hE c1 c2 c3 c4).2
   -- LT50 (replay budget): `pullState` read off by generic equations; `rfl` / a defeq `exact` on
   -- the concrete state made the kernel evaluate `W4` (the packet's four programs): 11 s / 45 s
   have pb : ∀ (f : Wire → Wire) (s : State) (q : Wire), (pullState f s).basis q = s.basis (f q) :=
@@ -12489,8 +12498,8 @@ theorem firstTrip_sel (x : Nat) : ∀ t0, Adm ExtraSel x t0 → ∀ c a,
     StairPhysicalPhase.budget87_mem)
   have chain := StairExitLT24.firstPieces_chain base_pool_nodup
     (pullState Rolling1588Lifetime.phaseHost t0)
-    (fun c1 => (traj x hx0 hx s1 first m t0 ht hE c1 [] [] []).2.2.2.2.1)
-    (fun c1 c2 c3 => (traj x hx0 hx s1 first m t0 ht hE c1 c2 c3 []).2.2.2.2.2) spec
+    (fun c1 => (traj x hx0 hx s1 first m t0 ht hE c1 [] [] []).2.2.2.2.2.1)
+    (fun c1 c2 c3 => (traj x hx0 hx s1 first m t0 ht hE c1 c2 c3 []).2.2.2.2.2.2) spec
   exact StairExitLT24.firstTrip t0 chain
 
 /-! ## The junction from the two halves (with the packet-84 class) -/
