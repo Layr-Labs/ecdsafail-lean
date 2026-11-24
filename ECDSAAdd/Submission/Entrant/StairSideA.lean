@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.StairSideA0
-import ECDSAAdd.Submission.Entrant.ArchiveRows
+import ECDSAAdd.Submission.Entrant.LowAccCarry
 import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Arithmetic.SkywalkIntegerTick
@@ -2326,21 +2326,59 @@ open SkywalkNat
 
 /-- A positive long word at r remaining ticks has an elementary uniform guard.
 For any 0≤s, both (B/2) and ((B-s)/2) exceed the next guard. -/
-def guard : Nat → Nat → Nat
+def guardStep : Nat → Nat → Nat
   | 0, s => s+1
-  | r+1, s => 2*guard r s+s
+  | r+1, s => 2*guardStep r s+s
 
-theorem guard_zero (s : Nat) : guard 0 s = s+1 := rfl
-theorem guard_succ (r s : Nat) : guard (r+1) s = 2*guard r s+s := rfl
-theorem guard_formula (r s : Nat) : guard r s+s = 2^r*(2*s+1) := by
+/-- margin 16: `guard r s` is what the long word needs for the letters of exactly r ticks; nothing is asked after
+the last tick. `guard (r+1) s = guardStep r s` is the former guard of r. -/
+def guard : Nat → Nat → Nat
+  | 0, _ => 0
+  | r+1, s => guardStep r s
+
+theorem guard_zero (s : Nat) : guard 0 s = 0 := rfl
+theorem guard_one (s : Nat) : guard 1 s = s+1 := rfl
+theorem guardStep_succ (r s : Nat) : guardStep (r+1) s = 2*guardStep r s+s := rfl
+theorem guardStep_formula (r s : Nat) : guardStep r s+s = 2^r*(2*s+1) := by
   induction r with
-  | zero => simp [guard]; omega
-  | succ r ih => rw [guard_succ,pow_succ]; nlinarith
-theorem guard_gt (r s : Nat) : s < guard r s := by
+  | zero => simp [guardStep]; omega
+  | succ r ih => rw [guardStep_succ,pow_succ]; nlinarith
+theorem guardStep_gt (r s : Nat) : s < guardStep r s := by
   induction r with
+  | zero => simp [guardStep]
+  | succ r ih => rw [guardStep_succ]; omega
+theorem guardStep_mono (r : Nat) {a b : Nat} (h : a≤b) : guardStep r a ≤ guardStep r b := by
+  induction r with
+  | zero => simpa [guardStep] using h
+  | succ r ih => simp only [guardStep_succ]; omega
+theorem guard_formula (r s : Nat) : guard (r+1) s+s = 2^r*(2*s+1) := guardStep_formula r s
+theorem guard_gt (r s : Nat) : s < guard (r+1) s := guardStep_gt r s
+
+/-- One tick of the guard: the next guard on both halves, and the long word strictly above the short one. -/
+theorem guard_step {r s B : Nat} (h : guard (r+1) s ≤ B) : 2*guard r s+s ≤ B ∧ s < B := by
+  cases r with
+  | zero =>
+    have h1 : s+1 ≤ B := h
+    have z : guard 0 s = 0 := rfl
+    omega
+  | succ r =>
+    have h1 : 2*guardStep r s+s ≤ B := h
+    have g := guardStep_gt r s
+    have e : guard (r+1) s = guardStep r s := rfl
+    omega
+
+theorem guard_small (r s b : Nat) (hs : s < 2^b) :
+    guard r s ≤ 2^(b+r+1) := by
+  cases r with
   | zero => simp [guard_zero]
-  | succ r ih => rw [guard_succ]; omega
-
+  | succ r =>
+    have a : 2*s+1 ≤ 2*2^b := by omega
+    have mul := Nat.mul_le_mul_left (2^r) a
+    have f := guard_formula r s
+    have e : 2^(b+(r+1)+1) = 2*(2^r*(2*2^b)) := by
+      rw [show b+(r+1)+1 = (r+(b+1))+1 by omega,pow_succ,pow_add,pow_succ]
+      ring
+    omega
 
 /-- Runs in which u is the long rail have identical odd/even letters and
 retain a gap 2^r D at termination. The short rail is exact. -/
@@ -2351,8 +2389,8 @@ theorem long_u (r B s D : Nat) (h : guard r s ≤ B) :
   induction r generalizing B with
   | zero => simp
   | succ r ih =>
-    have hh : 2*guard r s+s ≤ B := by simpa [guard_succ] using h
-    have hg := guard_gt r s
+    have hh : 2*guard r s+s ≤ B := (guard_step h).1
+    have hg : s < B := (guard_step h).2
     have large : s ≤ B := by omega
     have nz : B ≠ 0 := by omega
     let d := 2^r*D
@@ -2378,16 +2416,16 @@ theorem long_u (r B s D : Nat) (h : guard r s ≤ B) :
 
 
 theorem guard_mono (r : Nat) {a b : Nat} (h : a≤b) : guard r a ≤ guard r b := by
-  induction r with
-  | zero => simpa [guard] using h
-  | succ r ih => simp only [guard_succ]; omega
+  cases r with
+  | zero => exact Nat.le_refl _
+  | succ r => exact guardStep_mono r h
 
 /-- Both states have the same short rail. The long rail differs by a
 multiple of the upcoming packet denominator. -/
 inductive Rel (r : Nat) : SkywalkNat.State → SkywalkNat.State → Prop where
-  | left (B s D : Nat) (h : guard r s ≤ B) :
+  | left (B s D : Nat) (h : guard r s ≤ B) (far : s < D) :
       Rel r ⟨B+2^r*D,s⟩ ⟨B,s⟩
-  | right (B s D : Nat) (h : guard r s ≤ B) :
+  | right (B s D : Nat) (h : guard r s ≤ B) (far : s < D) :
       Rel r ⟨s,B+2^r*D⟩ ⟨s,B⟩
 
 def letter (z : SkywalkNat.State) : Nat :=
@@ -2396,9 +2434,9 @@ def letter (z : SkywalkNat.State) : Nat :=
 theorem advance {r : Nat} {z t : SkywalkNat.State} (h : Rel (r+1) z t) :
     letter z = letter t ∧ Rel r (step z) (step t) := by
   cases h with
-  | left B s D ready =>
-    have lo := guard_gt r s
-    have hh : 2*guard r s+s ≤ B := by simpa [guard_succ] using ready
+  | left B s D ready far =>
+    have lo : s < B := (guard_step ready).2
+    have hh : 2*guard r s+s ≤ B := (guard_step ready).1
     let d := 2^r*D
     have pow : 2^(r+1)*D=2*d := by simp [d,pow_succ]; ring
     rw [pow]
@@ -2410,14 +2448,14 @@ theorem advance {r : Nat} {z t : SkywalkNat.State} (h : Rel (r+1) z t) :
     · by_cases e : B%2=0
       · simp only [step,if_neg nn,if_neg nb,eqp,if_pos e]
         rw [show (B+2*d)/2=B/2+d by omega]
-        exact .left _ _ D (by omega)
+        exact .left _ _ D (by omega) (by omega)
       · simp only [step,if_neg nn,if_neg nb,eqp,if_neg e,if_pos (show s≤B+2*d by omega),
           if_pos (show s≤B by omega)]
         rw [show (B+2*d-s)/2=(B-s)/2+d by omega]
-        exact .left _ _ D (by omega)
-  | right B s D ready =>
-    have lo := guard_gt r s
-    have hh : 2*guard r s+s ≤ B := by simpa [guard_succ] using ready
+        exact .left _ _ D (by omega) (by omega)
+  | right B s D ready far =>
+    have lo : s < B := (guard_step ready).2
+    have hh : 2*guard r s+s ≤ B := (guard_step ready).1
     let d := 2^r*D
     have pow : 2^(r+1)*D=2*d := by simp [d,pow_succ]; ring
     rw [pow]
@@ -2427,31 +2465,31 @@ theorem advance {r : Nat} {z t : SkywalkNat.State} (h : Rel (r+1) z t) :
       · subst s
         simp only [step]
         simpa [d,Nat.mul_assoc,Nat.mul_left_comm,Nat.mul_comm] using
-          (Rel.right B 0 (2*D) (by omega) : Rel r _ _)
+          (Rel.right B 0 (2*D) (by omega) (by omega) : Rel r _ _)
       · by_cases e : s%2=0
         · simp only [step,if_neg zero,if_pos e]
           have bound := guard_mono r (a:=s/2) (b:=s) (by omega)
           simpa [d,Nat.mul_assoc,Nat.mul_left_comm,Nat.mul_comm] using
-            (Rel.right B (s/2) (2*D) (by omega) : Rel r _ _)
+            (Rel.right B (s/2) (2*D) (by omega) (by omega) : Rel r _ _)
         · simp only [step,if_neg zero,if_neg e,if_neg (show ¬B+2*d≤s by omega),
             if_neg (show ¬B≤s by omega)]
           rw [show (B+2*d-s)/2=(B-s)/2+d by omega]
-          exact .left _ _ D (by omega)
+          exact .left _ _ D (by omega) (by omega)
 
 def letters : Nat → SkywalkNat.State → List Nat
   | 0, _ => []
   | k+1, z => letter z :: letters k (step z)
 
-theorem different {r : Nat} {z t : SkywalkNat.State} (h : Rel r z t) :
+theorem different {r : Nat} {z t : SkywalkNat.State} (h : Rel (r+1) z t) :
     z.u≠z.v ∧ t.u≠t.v := by
   cases h with
-  | left B s D h =>
-    have := guard_gt r s
-    change B+2^r*D≠s ∧ B≠s
+  | left B s D h far =>
+    have := (guard_step h).2
+    change B+2^(r+1)*D≠s ∧ B≠s
     omega
-  | right B s D h =>
-    have := guard_gt r s
-    change s≠B+2^r*D ∧ s≠B
+  | right B s D h far =>
+    have := (guard_step h).2
+    change s≠B+2^(r+1)*D ∧ s≠B
     omega
 
 end ECDSAAdd.Entrant.IntegerHigh
@@ -31606,8 +31644,8 @@ theorem long_v (k B s D : Nat) (ready : guard k s ≤ B) :
   induction k generalizing s B D with
   | zero => simp [wait]
   | succ k ih =>
-    have hh : 2*guard k s+s ≤ B := by simpa [guard_succ] using ready
-    have lo := guard_gt k s
+    have hh : 2*guard k s+s ≤ B := (guard_step ready).1
+    have lo : s < B := (guard_step ready).2
     dsimp only
     rw [Function.iterate_succ_apply,Function.iterate_succ_apply]
     by_cases e : s%2=0
@@ -31631,8 +31669,8 @@ theorem first_exchange (k B s : Nat) (ready : guard k s ≤ B) :
   induction k generalizing s with
   | zero => rfl
   | succ k ih =>
-    have hh : 2*guard k s+s ≤ B := by simpa [guard_succ] using ready
-    have lo := guard_gt k s
+    have hh : 2*guard k s+s ≤ B := (guard_step ready).1
+    have lo : s < B := (guard_step ready).2
     by_cases e : s%2=0
     · have sm := guard_mono k (a:=s/2) (b:=s) (by omega)
       have tail := ih (s/2) (by omega)
@@ -31940,7 +31978,23 @@ private theorem compose {P Q : BasisState → Prop} {A B I J : Program}
   rw [right _ _ _ (stage _ _ p).2]
   exact left _ _ _ p
 
+private theorem single (p : Shape) (i : Fin p.length) (z : SkywalkRails.State) :
+    Restores (ready p i z) (skywalkIntegerTick (ports p i)) (skywalkIntegerUntick (ports p i)) := by
+  intro s a b h
+  have clean := h.2.2.2.2 i (Nat.le_refl _) i.isLt
+  exact skywalkIntegerTick_roundtrip (ports p i) (ok p i) s a b clean.2 h.2.2.2.1
 
+theorem roundtrip (p : Shape) (i n : Nat) (bound : i+n≤p.length) (z : SkywalkRails.State)
+    (odd : (z.a+z.b)%2=1) : Restores (ready p i z) (seq p i n) (back p i n) := by
+  induction n generalizing i z with
+  | zero =>
+    intro s a b h
+    simp [back,seq,run]
+  | succ n ih =>
+    rw [seq,back]
+    apply compose (one p (j:=i) (by omega) z odd)
+    · exact single p ⟨i,by omega⟩ z
+    · exact ih (i+1) (by omega) (SkywalkTrace.next z) (nextOdd z odd)
 
 
 end ECDSAAdd.Entrant.IntegerPacket
@@ -32160,8 +32214,8 @@ theorem left_product (k B s : Nat) (ready : guard k s ≤ B) (odd : s%2=1) :
   induction k generalizing B with
   | zero => simp [mask,letters]
   | succ k ih =>
-    have hh : 2*guard k s+s ≤ B := by simpa [guard_succ] using ready
-    have lo := guard_gt k s
+    have hh : 2*guard k s+s ≤ B := (guard_step ready).1
+    have lo : s < B := (guard_step ready).2
     have nz : B ≠ 0 := by omega
     have le : s≤B := by omega
     dsimp only
@@ -32200,8 +32254,8 @@ theorem right_product (k B s : Nat) (ready : guard k s ≤ B) (odd : B%2=1) :
   induction k generalizing s B with
   | zero => simp [wait,remainder,letters,mask,Nat.add_comm]
   | succ k ih =>
-    have hh : 2*guard k s+s ≤ B := by simpa [guard_succ] using ready
-    have hg := guard_gt k s
+    have hh : 2*guard k s+s ≤ B := (guard_step ready).1
+    have hg : s < B := (guard_step ready).2
     dsimp only
     rw [Function.iterate_succ_apply]
     by_cases e : s%2=0
@@ -32576,6 +32630,10 @@ def shape (j : Fin 26) : IntegerPacket.Shape where
 def forward (j : Fin 26) := IntegerPacket.seq (shape j) 0 15
 def reverse (j : Fin 26) := IntegerPacket.back (shape j) 0 15
 
+theorem canonical (j : Fin 26) (z : SkywalkRails.State) (odd : (z.a+z.b)%2=1) :
+    Triple (IntegerPacket.ready (shape j) 0 z) (forward j)
+      (IntegerPacket.ready (shape j) 15 (SkywalkTrace.next^[15] z)) :=
+  IntegerPacket.semantic (shape j) 0 15 (by rfl) z odd
 
 theorem bounds (j : Fin 26) :
     toffoliCount (forward j)=15*(2*(smallBits j+18)) ∧
@@ -32789,6 +32847,26 @@ theorem route_records (j:Fin 26) (i n:Nat) (bound:i+n≤15) (z:SkywalkRails.Stat
   rw [←pull_routed j i n bound m s] at hh
   exact hh
 
+theorem route_undo (j:Fin 26) (i n:Nat) (bound:i+n≤15) (z:SkywalkRails.State)
+    (odd:(z.a+z.b)%2=1) :
+    Restores (onRails j i z) (routed j i n) (unrouted j i n) := by
+  intro s m t ready
+  have forward:=pull_routed j i n bound m s
+  let actual:=run (routed j i n) m s
+  have bk:pullState (windowNet j) (run (unrouted j i n) t actual)=run (back (shape j) i n) t (pullState (windowNet j) actual):=by
+    rw [(fixed_route j i n bound).2,run_rename _ (netInjective j)]
+  have fin:=IntegerPacket.roundtrip (shape j) i n bound z odd (pullState (windowNet j) s) m t ready
+  change pullState (windowNet j) actual=_ at forward
+  rw [forward,fin] at bk
+  apply congrArg₂ State.mk (congrArg State.phase bk)
+  funext q
+  have h:=congrArg (fun x:State=>x.basis (windowNet j q)) bk
+  change (run (unrouted j i n) t actual).basis (windowNet j (windowNet j q))=s.basis (windowNet j (windowNet j q)) at h
+  have inv : windowNet j (windowNet j q)=q := by
+    apply OB5.sig_invol
+    have hj:=j.isLt
+    simp [start];omega
+  rwa [inv] at h
 
 
 
@@ -32986,6 +33064,15 @@ theorem tick (p : IntegerPacket.Shape) (i : Nat) :
   rw [a] at f
   exact ⟨by omega,by omega⟩
 
+theorem route (j : Fin 26) (i n : Nat) : gateSlots (routed j i n) ≤ 5000*n ∧
+    gateSlots (unrouted j i n) ≤ 5000*n := by
+  induction n generalizing i with
+  | zero => exact ⟨by rfl,by rfl⟩
+  | succ n ih =>
+    have tail := ih (i+1)
+    have t := tick (shape j) i
+    simp only [routed,unrouted,gateSlots_append,rename_gateSlots,Nat.mul_succ]
+    exact ⟨by omega,by omega⟩
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -34585,39 +34672,39 @@ def enterFix (s h : Nat) : List Gate := [
 
 /-- The Shadow7 window enter at register margin 17 (T3, design S2): aperture rows `sb+16`, `sb+17`. -/
 def enterFix17 (s h : Nat) : List Gate := [
+  .cx (s+h+31) (h+801),
+  .ccx (s+15) (h+801) (s+h+31),
+  .cx (s+h+31) (h+801),
   .cx (s+h+32) (h+802),
   .ccx (s+15) (h+802) (s+h+32),
   .cx (s+h+32) (h+802),
-  .cx (s+h+33) (h+803),
-  .ccx (s+15) (h+803) (s+h+33),
-  .cx (s+h+33) (h+803),
+  .cx (h+1579) (h+801),
   .cx (h+1579) (h+802),
-  .cx (h+1579) (h+803),
-  .make (h+1577) (s+h+32) (h+1574),
-  .cx (h+1574) (s+h+32),
-  .cx (h+1577) (s+h+32),
-  .cx (s+h+33) (h+1575),
-  .cx (h+1575) (s+h+33),
+  .make (h+1577) (s+h+31) (h+1574),
+  .cx (h+1574) (s+h+31),
+  .cx (h+1577) (s+h+31),
+  .cx (s+h+32) (h+1575),
+  .cx (h+1575) (s+h+32),
   .x (h+1574),
   .make (h+1578) (h+1574) 1556,
   .x (h+1574),
-  .ccx 1556 (h+802) (h+803),
-  .ccx (h+1578) (h+1575) (h+803),
-  .cx 1556 (h+802),
+  .ccx 1556 (h+801) (h+802),
+  .ccx (h+1578) (h+1575) (h+802),
+  .cx 1556 (h+801),
   .x (h+1574),
   .pop (h+1578) (h+1574) 1556,
   .x (h+1574),
+  .cx (h+1579) (h+801),
   .cx (h+1579) (h+802),
-  .cx (h+1579) (h+803),
+  .cx (s+h+31) (h+801),
+  .ccx (s+15) (h+801) (s+h+31),
+  .cx (s+h+31) (h+801),
+  .make (s+15) (h+802) (s+h+32),
   .cx (s+h+32) (h+802),
-  .ccx (s+15) (h+802) (s+h+32),
-  .cx (s+h+32) (h+802),
-  .make (s+15) (h+803) (s+h+33),
-  .cx (s+h+33) (h+803),
-  .cx (s+h+33) (h+1579),
-  .cx (h+803) (h+1579),
-  .cx (h+804) (h+1576),
-  .cx (h+1576) (h+804)]
+  .cx (s+h+32) (h+1579),
+  .cx (h+802) (h+1579),
+  .cx (h+803) (h+1576),
+  .cx (h+1576) (h+803)]
 
 def moveLoadPairs (t : Nat) : List (Wire × Wire) := [
   ((OB5.sig t (t+1036)), (t+9)),
@@ -34714,6 +34801,7 @@ def cellsRestoreP (t : Nat) : List Wire :=
 /-- Raw codec scratch: port `k` at `1556+k`, skipping the live anchored block `e0(t)..e0(t)+9` (as `poolW` does).
 Equal to `1556+k` for every `t ≤ 281`. -/
 def scratchW (t k : Nat) : Nat := if 1556 + k < e0P t then 1556 + k else 1566 + k
+
 theorem bTopP_late (t : Nat) (lo : 257 ≤ t) (hi : t ≤ 512) : bTopP t = 1298 - t := by
   unfold bTopP railP
   rw [if_neg (by omega), if_neg (by omega)]
@@ -34736,8 +34824,12 @@ def restorePortsXP (e : Nat) : List Wire := cellsRestoreP e ++ (List.range 134).
 theorem scratchX_low (e k : Nat) (he : e ≤ 369) : scratchX e k = scratchS e k := if_pos he
 theorem loadPortsXP_low (e f : Nat) (he : e ≤ 369) : loadPortsXP e f = loadPortsWP e f := by
   rw [loadPortsXP, loadPortsWP, List.map_congr_left (fun k _ => scratchX_low e k he)]
+theorem restorePortsXP_low (e : Nat) (he : e ≤ 369) : restorePortsXP e = restorePortsWP e := by
+  rw [restorePortsXP, restorePortsWP, List.map_congr_left (fun k _ => scratchX_low e k he)]
 theorem loadPortsXP_length (e f : Nat) : (loadPortsXP e f).length = 155 := by
   simp [loadPortsXP, cellsLoadP]
+theorem restorePortsXP_length (e : Nat) : (restorePortsXP e).length = 150 := by
+  simp [restorePortsXP, cellsRestoreP]
 theorem scratchW_def (t k : Nat) : scratchW t k = if 1556 + k < e0P t then 1556 + k else 1566 + k := rfl
 theorem scratchW_bounds (t k : Nat) : 1556 + k ≤ scratchW t k ∧ scratchW t k ≤ 1566 + k := by
   by_cases h : 1556 + k < e0P t
@@ -34748,6 +34840,12 @@ theorem scratchW_ne_e0 (t k i : Nat) (hi : i < 10) : scratchW t k ≠ e0P t + i 
   by_cases h : 1556 + k < e0P t
   · rw [scratchW_def, if_pos h]; exact Nat.ne_of_lt (by omega)
   · rw [scratchW_def, if_neg h]; exact Nat.ne_of_gt (by omega)
+theorem scratchW_inj (t k k' : Nat) (h : scratchW t k = scratchW t k') : k = k' := by
+  have e1 := scratchW_def t k
+  have e2 := scratchW_def t k'
+  by_cases a : 1556 + k < e0P t <;> by_cases b : 1556 + k' < e0P t <;> simp only [a, b, if_true, if_false] at e1 e2 <;>
+    omega
+theorem scratchW_low (t k : Nat) (h : 1556 + k < e0P t) : scratchW t k = 1556 + k := if_pos h
 theorem scratchW_le (t k : Nat) (hk : k < 134) : scratchW t k ≤ 1699 := by
   have := scratchW_bounds t k; omega
 theorem scratchS_def (t k : Nat) : scratchS t k =
@@ -34770,6 +34868,18 @@ theorem scratchS_cases (t k : Nat) (ht : t < 512) (hk : k < 134) :
   by_cases h : scratchW t k + t < 2068
   · left; rw [scratchS_eq t k ht h]; omega
   · right; rw [scratchS_high t k ht hk (by omega)]; omega
+theorem scratchS_inj (t k k' : Nat) (ht : t < 512) (hk : k < 134) (hk' : k' < 134) (h : scratchS t k = scratchS t k') :
+    k = k' := by
+  apply scratchW_inj t
+  have b := scratchW_bounds t k
+  have b' := scratchW_bounds t k'
+  have l := scratchW_le t k hk
+  have l' := scratchW_le t k' hk'
+  by_cases a : scratchW t k + t < 2068 <;> by_cases a' : scratchW t k' + t < 2068
+  · rw [scratchS_eq t k ht a, scratchS_eq t k' ht a'] at h; exact h
+  · rw [scratchS_eq t k ht a, scratchS_high t k' ht hk' (by omega)] at h; omega
+  · rw [scratchS_high t k ht hk (by omega), scratchS_eq t k' ht a'] at h; omega
+  · rw [scratchS_high t k ht hk (by omega), scratchS_high t k' ht hk' (by omega)] at h; omega
 /-- A carry wire of the stock tick `e`: the plain port. -/
 theorem scratchX_plain (e k : Nat) (he : 370 ≤ e) (h : k + e < 512) : scratchX e k = 1556 + k := by
   unfold scratchX; rw [if_neg (by omega), if_pos (by omega)]
@@ -34784,6 +34894,10 @@ theorem scratchX_cases (e k : Nat) (he : e < 512) (hk : k < 134) :
   · by_cases b : k + e < 512
     · right; left; exact ⟨by omega, b, scratchX_plain e k (by omega) b⟩
     · right; right; exact ⟨by omega, by omega, scratchX_host e k (by omega) (by omega) (by omega)⟩
+theorem loadPortsWP_length (t f : Nat) : (loadPortsWP t f).length = 155 := by
+  simp [loadPortsWP, cellsLoadP]
+theorem restorePortsWP_length (t : Nat) : (restorePortsWP t).length = 150 := by
+  simp [restorePortsWP, cellsRestoreP]
 theorem loadPortsWP_scratch (t f k : Nat) (hk : k < 132) : (loadPortsWP t f).getD (23 + k) 0 = scratchS t k := by
   have hc : (cellsLoadP t ++ [f, f+1, f+2]).length = 23 := by simp [cellsLoadP]
   rw [loadPortsWP, List.getD_append_right _ _ _ _ (by omega), hc, show 23 + k - 23 = k by omega]
@@ -34795,6 +34909,13 @@ theorem loadPortsWP_flag (t f i : Nat) (hi : i < 3) : (loadPortsWP t f).getD (20
 theorem loadPortsWP_cell (t f k : Nat) (hk : k < 20) : (loadPortsWP t f).getD k 0 = (cellsLoadP t).getD k 0 := by
   have hc : (cellsLoadP t).length = 20 := by simp [cellsLoadP]
   rw [loadPortsWP, List.getD_append _ _ _ _ (by simp [hc]; omega), List.getD_append _ _ _ _ (by omega)]
+theorem restorePortsWP_scratch (t k : Nat) (hk : k < 134) : (restorePortsWP t).getD (16 + k) 0 = scratchS t k := by
+  have hc : (cellsRestoreP t).length = 16 := by simp [cellsRestoreP]
+  rw [restorePortsWP, List.getD_append_right _ _ _ _ (by omega), hc, show 16 + k - 16 = k by omega]
+  simp [List.getD_eq_getElem?_getD, hk]
+theorem restorePortsWP_cell (t k : Nat) (hk : k < 16) : (restorePortsWP t).getD k 0 = (cellsRestoreP t).getD k 0 := by
+  have hc : (cellsRestoreP t).length = 16 := by simp [cellsRestoreP]
+  rw [restorePortsWP, List.getD_append _ _ _ _ (by omega)]
 def moveLoadP (t : Nat) : Program := GateMirror.forward (swapsG (moveLoadPairs t))
 def moveRestoreP (t f : Nat) : Program := GateMirror.forward (swapsG (moveRestorePairs t f))
 
@@ -35059,6 +35180,7 @@ theorem counts_leaveFix8 (s h : Nat) : Counts (leaveFix8 s h) 0 0 0 2 := ⟨rfl,
 theorem counts_leaveFix10 (s h : Nat) : Counts (leaveFix10 s h) 0 0 0 2 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix11 (s h : Nat) : Counts (leaveFix11 s h) 0 0 14 31 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_leaveFix12 (s h : Nat) : Counts (leaveFix12 s h) 0 0 15 30 := ⟨rfl, rfl, rfl, rfl⟩
+theorem counts_enterFix (s h : Nat) : Counts (enterFix s h) 12 6 6 86 := ⟨rfl, rfl, rfl, rfl⟩
 theorem counts_enterFix17 (s h : Nat) : Counts (enterFix17 s h) 5 3 1 33 := ⟨rfl, rfl, rfl, rfl⟩
 /-! Segment counts. -/
 
@@ -35185,9 +35307,30 @@ theorem counts_portalOps (t : Nat) (hw : 5 ≤ wpP t) :
     (by simp [zAB, zb, w] at *; omega) (by simp [zAB, zb, w] at *; omega) (by simp [zAB, zb, w] at *; omega)
     (by simp [zAB, zb, rB, w] at *; omega)
 
+theorem counts_parkOps (e : Nat) : Counts (parkOps e) 0 0 0 9 := (counts_swapsG _).congr rfl rfl rfl rfl
 
 /-! Window statements (the interface par-d uses). `j ∈ [1,21]` covers blocks 90..390 (exit 405). -/
 
+theorem window_geom : ∀ j : Fin 26, 3 ≤ j.val → j.val ≤ 23 →
+    31 ≤ wpP (start j) ∧ 10 ≤ lowsP (start j) ∧ lowsP (start j) ≤ 11 ∧ 38 ≤ wpP (start j + 15) := by
+  decide
+theorem enter_counts (j : Fin 26) :
+    toffoliCount (enterP j) = 18 ∧ toffoliCount (enterInvP j) = 18 ∧
+    measurementCount (enterP j) = 6 ∧ measurementCount (enterInvP j) = 6 ∧
+    gateSlots (enterP j) = 92 ∧ gateSlots (enterInvP j) = 92 :=
+  (counts_enterFix _ _).programs
+theorem portal_counts (t : Nat) (hw : 5 ≤ wpP t) :
+    toffoliCount (portalP t) = 5*wpP t - 4 ∧ toffoliCount (portalInvP t) = 5*wpP t - 4 ∧
+    measurementCount (portalP t) = 3*wpP t - 5 ∧ measurementCount (portalInvP t) = 3*wpP t - 5 ∧
+    gateSlots (portalP t) = 21*wpP t - 7 ∧ gateSlots (portalInvP t) = 21*wpP t - 7 := by
+  obtain ⟨t1,t2,m1,m2,s1,s2⟩ := (counts_portalOps t hw).programs
+  exact ⟨by rw [portalP, t1]; omega, by rw [portalInvP, t2]; omega, by rw [portalP, m1], by rw [portalInvP, m2],
+    by rw [portalP, s1]; omega, by rw [portalInvP, s2]; omega⟩
+theorem park_counts (e : Nat) :
+    toffoliCount (parkP e) = 0 ∧ toffoliCount (parkInvP e) = 0 ∧
+    measurementCount (parkP e) = 0 ∧ measurementCount (parkInvP e) = 0 ∧
+    gateSlots (parkP e) = 9 ∧ gateSlots (parkInvP e) = 9 :=
+  (counts_parkOps e).programs
 
 end ECDSAAdd.Entrant.StairPacket.Partial
 
@@ -35249,9 +35392,59 @@ theorem counts_keptG (hot bank : Nat → Wire) (d : Nat) : ∀ start n, Counts (
     exact ((⟨rfl, rfl, rfl, rfl⟩ : Counts [.ccx (hot start) d (bank (start+1))] 1 0 0 1).app ih).congr
       (by omega) rfl rfl (by omega)
 
+theorem counts_leaveFix5Move (s h : Nat) : Counts (leaveFix5Move s h) 16 14 0 85 := by
+  have a : Counts ((leaveFix5 s h).take 27) 0 13 0 27 := ⟨rfl, rfl, rfl, rfl⟩
+  have b : Counts ((leaveFix5 s h).drop 43) 0 1 0 10 := ⟨rfl, rfl, rfl, rfl⟩
+  have r := counts_rowGates (e0P s + 6) (moveRows s)
+  rw [moveRows_length] at r
+  exact (a.app (r.app b)).congr rfl rfl rfl rfl
 
+theorem counts_leaveJoinMove (s : Nat) (hL : lowsP s ≤ 18) : Counts (leaveJoinMove s) 34 0 0 (102 - lowsP s) := by
+  have hw := counts_wordG 1614 (columnsP s)
+  have e1 : (columnsP s).length = 18 := by simp [columnsP]
+  have e2 : (columnsP s).countP (fun r => r.hot.isSome) = 16 := by
+    simp only [columnsP, List.countP_map]
+    show (List.range 18).countP (fun i => (if i < 16 then some (tagsP.getD i 0) else none : Option Wire).isSome) = 16
+    decide
+  have e3 : (columnsP s).countP (fun r => r.low) = lowsP s := by
+    have hl := (counts_leaveJoin s hL).len
+    have hd := (counts_digitsG (tagsP.getD · 0) (fun i => a0P s + i) (e0P s + 6) 1613 0 16).len
+    have hw' := hw.len
+    simp only [leaveJoin, List.length_append] at hl
+    rw [e1, e2] at hw'
+    omega
+  rw [e1, e2, e3] at hw
+  exact ((counts_keptG _ _ 1613 0 16).app hw).congr (by omega) rfl rfl (by omega)
 
+theorem counts_leaveMoveOps (s : Nat) (hw : 4 ≤ wpP s) (hL1 : 1 ≤ lowsP s) (hL2 : lowsP s ≤ 18)
+    (hn : 3 ≤ wpP (s+15)) :
+    Counts (leaveMoveOps s) (4*wpP s + 2*lowsP s + 99) (2*wpP s + lowsP s + 88) (2*wpP s + lowsP s + 87)
+      (21*wpP s + 9*lowsP s + 754 + 3*wpP (s+15)) := by
+  have := ((((((((((((((((counts_leaveFix0 s (sbP s)).app (counts_leaveFix1 s (sbP s))).app
+    (counts_leaveFix2 s (sbP s))).app (counts_leaveFix3 s (sbP s))).app (counts_leaveFix4 s (sbP s))).app
+    (counts_leaveFix5Move s (sbP s))).app (counts_leaveAdjust s (by omega))).app (counts_leaveBarrel s)).app
+    (counts_leaveFix8 s (sbP s))).app (counts_leaveJoinMove s hL2)).app (counts_leaveFix10 s (sbP s))).app
+    (counts_leaveFix11 s (sbP s))).app (counts_leaveFix12 s (sbP s))).app (counts_leaveLowStore s hL1)).app
+    (counts_leaveStoreMapped s (by omega))).app (counts_leaveLowClose s)).app (counts_leaveClose s hn)
+  have base := counts_leaveOps s hw hL1 hL2 hn
+  exact this.congr (by omega) (by omega) (by omega) (by omega)
 
+theorem leaveMove_counts (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    toffoliCount (leaveMoveP j) = 6*wpP (start j) + 3*lowsP (start j) + 187 ∧
+    toffoliCount (leaveMoveInvP j) = 6*wpP (start j) + 3*lowsP (start j) + 186 ∧
+    measurementCount (leaveMoveP j) = 2*wpP (start j) + lowsP (start j) + 87 ∧
+    measurementCount (leaveMoveInvP j) = 2*wpP (start j) + lowsP (start j) + 88 ∧
+    gateSlots (leaveMoveP j) = 23*wpP (start j) + 10*lowsP (start j) + 841 + 3*wpP (start j + 15) ∧
+    gateSlots (leaveMoveInvP j) = 23*wpP (start j) + 10*lowsP (start j) + 842 + 3*wpP (start j + 15) := by
+  obtain ⟨g1,g2,g3,g4⟩ := window_geom j h0 (by omega)
+  obtain ⟨t1,t2,m1,m2,s1,s2⟩ := (counts_leaveMoveOps (start j) (by omega) (by omega) (by omega) (by omega)).programs
+  refine ⟨?_,?_,?_,?_,?_,?_⟩
+  · rw [leaveMoveP, t1]; omega
+  · rw [leaveMoveInvP, t2]; omega
+  · rw [leaveMoveP, m1]
+  · rw [leaveMoveInvP, m2]
+  · rw [leaveMoveP, s1]; omega
+  · rw [leaveMoveInvP, s2]; omega
 
 /-! Shape: the reference leave and the move leave share every gate outside the mux and the digit pass. -/
 
@@ -35396,6 +35589,26 @@ theorem physical_of_proper (ops : List Gate) (h : ∀ g ∈ ops, proper g = true
     have hp := h g hg
     cases g <;> simp_all [back, erase, physicalGateCheck, proper]
 
+theorem enter_proper (s : Nat) (h0 : 90 ≤ s) (h1 : s ≤ 405) : ∀ g ∈ enterOps s, proper g = true := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  unfold enterOps enterFix
+  simp only [List.forall_mem_cons, List.forall_mem_nil, proper, decide_eq_true_eq, and_true, ne_eq]
+  and_intros <;> first | trivial | (intro x hx; cases hx) | omega | exact Nat.ne_of_gt (by omega) | exact Nat.ne_of_lt (by omega)
+theorem enterP_physical (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 24) :
+    GatePhysical (enterP j) ∧ GatePhysical (enterInvP j) :=
+  physical_of_proper _ (enter_proper (start j) (by simp [start]; omega) (by simp [start]; omega))
+theorem park_proper (e : Nat) (h0 : 90 ≤ e) (h1 : e ≤ 405) : ∀ g ∈ parkOps e, proper g = true := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts e h0 h1
+  have he : e0P e = 1574 + sbP e := rfl
+  have hb : bTopP e = 785 + railP e := rfl
+  unfold parkOps swapsG swapG
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append,
+    List.forall_mem_cons, List.forall_mem_nil, proper, decide_eq_true_eq, and_true, ne_eq]
+  and_intros <;> first | trivial | (intro x hx; cases hx) | omega | exact Nat.ne_of_gt (by omega) | exact Nat.ne_of_lt (by omega)
+theorem parkP_physical (e : Nat) (h0 : 90 ≤ e) (h1 : e ≤ 405) :
+    GatePhysical (parkP e) ∧ GatePhysical (parkInvP e) :=
+  physical_of_proper _ (park_proper e h0 h1)
+theorem portal_proper405 : (portalOps 405).all proper = true := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.Partial
 
 end
@@ -36939,6 +37152,11 @@ theorem kept_proper {s : Nat} (w1 : 90 ≤ s) (w2 : s ≤ 390) : ∀ g ∈ moveK
 
 def muxG (c : Wire) (rs : List MoveChain.Row) : List Gate := rs.map (fun r => Gate.ccx r.1 r.2 c)
 
+theorem moveMux_eq (s : Nat) : moveMux s = muxG (e0P s + 6) (moveRows s) := by
+  have e : sbP s + 1580 = e0P s + 6 := by unfold e0P; omega
+  unfold moveMux
+  rw [← e]
+  rfl
 
 theorem allW_rowGates {P : Wire → Prop} (c : Wire) (rs : List MoveChain.Row) (h : AllW P (muxG c rs)) :
     AllW P (rowGates c rs) := by
@@ -36962,6 +37180,13 @@ theorem allW_keptG {P : Wire → Prop} (hot bank : Nat → Wire) (c d : Nat) : �
     have g2 : ∀ q ∈ (Gate.ccx (hot start) d (bank (start+1))).wires, P q := h'.1 _ (by simp [clearG])
     exact allW_cons g2 (allW_keptG hot bank c d (start+1) n h'.2)
 
+theorem allW_leaveMove {P : Wire → Prop} (s : Nat) (h : AllW P (leaveOps s)) : AllW P (leaveMoveOps s) := by
+  rw [leaveOps_shape] at h
+  rw [leaveMoveOps_shape]
+  simp only [allW_append_iff] at h ⊢
+  obtain ⟨hA, hM, hB, hD, hC⟩ := h
+  rw [moveMux_eq] at hM
+  exact ⟨hA, allW_rowGates _ _ hM, hB, allW_keptG _ _ _ _ _ _ hD, hC⟩
 
 end ECDSAAdd.Entrant.StairPacket.Partial
 end
@@ -37056,8 +37281,149 @@ theorem allW_iff_flat {P : Wire → Prop} {gs : List Gate} : AllW P gs ↔ ∀ q
   · intro h q hq; obtain ⟨g, hg, hq⟩ := List.mem_flatMap.mp hq; exact h g hg q hq
   · intro h g hg q hq; exact h q (List.mem_flatMap.mpr ⟨g, hg, hq⟩)
 
+theorem sig_box {s c : Nat} (h1 : 90 ≤ s) (h2 : s ≤ 390) (hc1 : 1044 ≤ c) (hc2 : c ≤ 1058) :
+    leaveBox s (OB5.sig (s+14) (s+c)) := by
+  have e := sig_hist h1 h2 hc1 hc2
+  have r := rail_win h1 h2
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, ew, ew', ee, ee', et, et', ea, eb, el, _, _⟩ := r
+  unfold leaveBox; ((try unfold Wire at *); omega)
 
+theorem fixed_box : ∀ j : Fin 26, 3 ≤ j.val → j.val ≤ 23 →
+    segBox (start j) (leaveFix0 (start j) (sbP (start j)) ++ leaveFix1 (start j) (sbP (start j)) ++
+      leaveFix2 (start j) (sbP (start j)) ++ leaveFix3 (start j) (sbP (start j)) ++ leaveFix4 (start j) (sbP (start j)) ++
+      leaveFix5 (start j) (sbP (start j)) ++ leaveFix8 (start j) (sbP (start j)) ++ leaveFix10 (start j) (sbP (start j)) ++
+      leaveFix11 (start j) (sbP (start j)) ++ leaveFix12 (start j) (sbP (start j)) ++ lowSign (start j)) = true := by
+  decide +kernel
 
+theorem leaveOps_box (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    AllW (leaveBox (start j)) (leaveOps (start j)) := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have fb := allW_of_segBox (fixed_box j h0 h1)
+  simp only [allW_append_iff] at fb
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨f0, f1⟩, f2⟩, f3⟩, f4⟩, f5⟩, f8⟩, f10⟩, f11⟩, f12⟩, fl⟩ := fb
+  generalize hs : start j = s at *
+  have r := rail_win w1 w2
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, ew, ew', ee, ee', et, et', ea, eb, el, _, _⟩ := r
+  have hL : 10 ≤ lowsP s ∧ lowsP s ≤ 11 := by ((try unfold Wire at *); omega)
+  have bank : ∀ i, i < wpP s + 15 → leaveBox s (bankW s i) := by
+    intro i hi; have bc := bank_cases w1 w2 hi; unfold leaveBox; ((try unfold Wire at *); omega)
+  have tags : ∀ i, i < 16 → leaveBox s (tagsP.getD i 0) := by
+    intro i hi; have t := tags_range i hi; unfold leaveBox; ((try unfold Wire at *); omega)
+  have aside : ∀ i, i ≤ 19 → leaveBox s (a0P s - 1 + i) := by intro i hi; unfold leaveBox; ((try unfold Wire at *); omega)
+  have bside : ∀ i, i ≤ 12 → leaveBox s (b0P s - 1 + i) := by intro i hi; unfold leaveBox; ((try unfold Wire at *); omega)
+  have scr : ∀ q, 1556 ≤ q → q ≤ 1812 → leaveBox s q := by intro q a b; unfold leaveBox; ((try unfold Wire at *); omega)
+  have ctl : ∀ (xs : List Wire), (∀ x ∈ xs, 1556 ≤ x ∧ x ≤ 1812) → ∀ x ∈ xs, leaveBox s x :=
+    fun xs h x hx => scr x (h x hx).1 (h x hx).2
+  have adj : AllW (leaveBox s) (leaveAdjust s) := by
+    unfold leaveAdjust
+    refine allW_adjustG _ _ _ _ (fun y hy => ?_) (fun c hc => ?_) (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega)))
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bank i (by ((try unfold Wire at *); omega))
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hc; rw [List.mem_range] at hi
+      have p := pool_cases (i := i) w1 w2; exact scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))
+  have bar : AllW (leaveBox s) (leaveBarrel s) := by
+    unfold leaveBarrel
+    have st : ∀ (xs : List Wire) (d n : Nat), n + d ≤ wpP s + 15 → (∀ x ∈ xs, 1556 ≤ x ∧ x ≤ 1812) →
+        AllW (leaveBox s) (stageG 1613 (bankW s) xs d n) :=
+      fun xs d n hn hx => allW_stageG _ _ _ _ _ (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) (ctl xs hx)
+        (fun i hi => ⟨bank i (by ((try unfold Wire at *); omega)), bank (i+d) (by ((try unfold Wire at *); omega))⟩)
+    refine allW_append ?_ (st _ _ _ (by ((try unfold Wire at *); omega)) (by decide))
+    refine allW_append ?_ (st _ _ _ (by ((try unfold Wire at *); omega)) (by decide))
+    exact allW_append (st _ _ _ (by ((try unfold Wire at *); omega)) (by decide)) (st _ _ _ (by ((try unfold Wire at *); omega)) (by decide))
+  have joi : AllW (leaveBox s) (leaveJoin s) := by
+    unfold leaveJoin
+    refine allW_append (allW_digitsG _ _ _ _ (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) _ _
+      (fun i _ hi => ⟨tags i (by ((try unfold Wire at *); omega)), ?_, ?_⟩)) (allW_wordG _ (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) _ (fun r hr => ?_))
+    · have := aside (i+1) (by ((try unfold Wire at *); omega)); rwa [show a0P s - 1 + (i+1) = a0P s + i by ((try unfold Wire at *); omega)] at this
+    · have := aside (i+2) (by ((try unfold Wire at *); omega)); rwa [show a0P s - 1 + (i+2) = a0P s + (i+1) by ((try unfold Wire at *); omega)] at this
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hr; rw [List.mem_range] at hi
+      refine ⟨fun w hw => ?_, ?_, bank i (by ((try unfold Wire at *); omega))⟩
+      · dsimp only at hw; split at hw
+        · cases hw; exact tags i (by ((try unfold Wire at *); omega))
+        · cases hw
+      · have := aside (i+1) (by ((try unfold Wire at *); omega)); dsimp only; rwa [show a0P s - 1 + (i+1) = a0P s + i by ((try unfold Wire at *); omega)] at this
+  have lr : AllW (leaveBox s) (lowRest s) := by
+    unfold lowRest
+    refine allW_append (allW_append (allW_append (allW_append ?_ (allW_xsG _ ?_)) (allW_addG _ _ _ ?_ ?_ ?_))
+      (allW_xsG _ ?_)) ?_
+    · refine allW_map _ _ (fun i hi q hq => ?_); rw [List.mem_range] at hi
+      simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl|rfl|rfl <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+    all_goals try (intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; unfold leaveBox; ((try unfold Wire at *); omega))
+    · unfold leaveBox; ((try unfold Wire at *); omega)
+    · rw [allW_iff_flat]
+      simp only [List.flatMap_cons, List.flatMap_nil, Gate.wires, List.cons_append, List.nil_append, List.append_nil,
+        List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      split_ands <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+  have sm : AllW (leaveBox s) (leaveStoreMapped s) := by
+    simp only [leaveStoreMapped]
+    have lit : ∀ (gs : List Gate), (∀ q ∈ gs.flatMap Gate.wires, leaveBox s q) → AllW (leaveBox s) gs :=
+      fun gs h => allW_iff_flat.mpr h
+    have hi : ∀ y ∈ (List.range (wpP s + 15 - lowsP s)).map (fun i => bankW s (lowsP s + i)), leaveBox s y := by
+      intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bank _ (by ((try unfold Wire at *); omega))
+    have s2 : ∀ y ∈ (List.range (lowsP s + 1)).map (b0P s - 1 + ·), leaveBox s y := by
+      intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bside i (by ((try unfold Wire at *); omega))
+    refine allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append
+      ?_ (allW_xsG _ hi)) ?_) (allW_xsG _ (fun y h => hi y (List.mem_reverse.mp h)))) ?_) (allW_xsG _ s2)) ?_)
+      (allW_xsG _ (fun y h => s2 y (List.mem_reverse.mp h)))) ?_
+    · apply lit
+      simp only [List.flatMap_cons, List.flatMap_nil, Gate.wires, List.cons_append, List.nil_append, List.append_nil,
+        List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      split_ands <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+    · refine allW_chainG _ _ _ ?_ _ _ (fun k _ hk => ?_) (fun k _ hk => ?_)
+      · apply lit
+        simp only [List.flatMap_cons, List.flatMap_nil, Gate.wires, List.cons_append, List.nil_append, List.append_nil,
+          List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+        have sc := storeW_cases (wpP s + 15 - lowsP s + 1)
+        split_ands <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+      · have sc := storeW_cases k; unfold leaveBox; ((try unfold Wire at *); omega)
+      · dsimp only; split
+        · unfold leaveBox; ((try unfold Wire at *); omega)
+        · exact bank _ (by ((try unfold Wire at *); omega))
+    · apply lit
+      simp only [List.flatMap_cons, List.flatMap_nil, Gate.wires, List.cons_append, List.nil_append, List.append_nil,
+        List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      split_ands <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+    · refine allW_chainG _ _ _ ?_ _ _ (fun k _ hk => ?_) (fun k _ hk => ?_)
+      · apply lit
+        simp only [List.flatMap_cons, List.flatMap_nil, Gate.wires, List.cons_append, List.nil_append, List.append_nil,
+          List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+        split_ands <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+      · unfold leaveBox; ((try unfold Wire at *); omega)
+      · unfold leaveBox; ((try unfold Wire at *); omega)
+    · apply lit
+      simp only [List.flatMap_cons, List.flatMap_nil, Gate.wires, List.cons_append, List.nil_append, List.append_nil,
+        List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      unfold leaveBox; ((try unfold Wire at *); omega)
+  have lc : AllW (leaveBox s) (leaveLowClose s) := by
+    simp only [leaveLowClose]
+    refine allW_append (allW_append (allW_xsG _ (fun y hy => ?_)) (allW_map _ _ (fun i hi q hq => ?_)))
+      (allW_flatMap _ _ (fun i hi => allW_cswapG _ _ _ ?_ ?_ ?_))
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; unfold leaveBox; ((try unfold Wire at *); omega)
+    · rw [List.mem_range] at hi
+      simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl|rfl <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+    all_goals (rw [List.mem_range] at hi; unfold leaveBox; ((try unfold Wire at *); omega))
+  have cl : AllW (leaveBox s) (leaveClose s) := by
+    unfold leaveClose
+    refine allW_append (allW_eventsG _ _ _ (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) (scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))) ?_) (allW_swapsG _ ?_)
+    · intro p hp
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl|rfl|rfl|rfl|rfl <;> dsimp only <;>
+        exact ⟨sig_box w1 w2 (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega)), scr _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))⟩
+    · intro p hp
+      unfold movesP at hp
+      rcases List.mem_append.mp hp with hp|hp
+      · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hp; rw [List.mem_range] at hi
+        exact ⟨bank _ (by ((try unfold Wire at *); omega)), by unfold leaveBox; ((try unfold Wire at *); omega)⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+        rcases hp with rfl|rfl|rfl|rfl|rfl|rfl <;> dsimp only <;> unfold leaveBox <;> ((try unfold Wire at *); omega)
+  rw [leaveOps_split]
+  refine allW_append (allW_append ?_ (allW_append (allW_append lr sm) lc)) cl
+  unfold leaveHeadOps
+  refine allW_append ?_ fl; refine allW_append ?_ f12; refine allW_append ?_ f11; refine allW_append ?_ f10
+  refine allW_append ?_ joi; refine allW_append ?_ f8; refine allW_append ?_ bar; refine allW_append ?_ adj
+  refine allW_append ?_ f5; refine allW_append ?_ f4; refine allW_append ?_ f3; refine allW_append ?_ f2
+  exact allW_append f0 f1
 
 end ECDSAAdd.Entrant.StairPacket.Partial
 
@@ -37314,6 +37680,9 @@ theorem schedule_hot (ref : BasisState) (key : Nat) : ∀ (a : Bool) (k : Nat) (
 theorem hots (j : Fin 26) : (cols j).map (·.hot) = (columnsP 225).map (·.hot) := by
   simp only [cols, columnsP, List.map_map]; rfl
 
+theorem schedule_ok (j : Fin 26) (key : Fin 16) : schedule (hot key) key false 0 (cols j) = true := by
+  rw [schedule_hot _ _ _ _ _ (columnsP 225) (hots j)]
+  revert key; decide +kernel
 
 theorem digitSites (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
     DigitLayout (tagsP.getD · 0) (fun i => a0P (start j) + i) (e0P (start j) + 6) 1613 0 16 := by
@@ -37360,6 +37729,59 @@ theorem join_shape (s : Nat) : GateMirror.forward (leaveJoin s) =
     digits (tagsP.getD · 0) (fun i => a0P s + i) (e0P s + 6) 1613 0 16 ++ word 1614 (columnsP s) := by
   simp only [leaveJoin, forward_app, forward_digitsG, forward_wordG]
 
+theorem combine (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (key : Fin 16) (X H : Nat) (s : State) (m : List Bool)
+    (tagsOn : ∀ q ∈ tagsP, s.basis q = hot key q)
+    (shadow : ∀ i < 18, s.basis (a0P (start j) + i) = X.testBit i)
+    (tube : ∀ i < 18, s.basis (bankW (start j) i) = (2^key.val*H).testBit i)
+    (digit : X/2^key.val = (s.basis (e0P (start j) + 6)).toNat + 2*(s.basis 1613).toNat)
+    (scratch : s.basis 1614 = false) :
+    let out := run (GateMirror.forward (leaveJoin (start j))) m s
+    out.phase = s.phase ∧
+      (∀ i : Fin 18, out.basis (row j i).keep = (2^key.val*H+X%2^key.val).testBit i ∧ out.basis (row j i).free = false) ∧
+      ∀ q, (∀ r ∈ cols j, q ≠ r.shadow ∧ q ≠ r.tube) → out.basis q = s.basis q := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  let ref := hot key
+  let dp := digits (tagsP.getD · 0) (fun i => a0P (start j) + i) (e0P (start j) + 6) 1613 0 16
+  let u := run dp m s
+  have unique : ∀ i t : Fin 16, hot t (tagsP.getD i 0) = decide (i.val = t.val) := by decide +kernel
+  have sel (i : Nat) (_ : 0 ≤ i) (hi : i < 0+16) : s.basis (tagsP.getD i 0) = decide (i = key.val) :=
+    (tagsOn _ (tags_mem i hi)).trans (unique ⟨i, hi⟩ key)
+  have z := digits_remainder (digitSites j h0 h1) s m key.val (by omega) key.isLt sel X 18 (by decide)
+    (fun i _ k _ eq => Nat.add_left_cancel eq) shadow digit
+  have hits : ∀ c ∈ cols j, ∀ q ∈ c.hot, q ∈ tagsP := by
+    intro c hc q hq
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hc; rw [List.mem_range] at hi
+    simp only at hq; split at hq
+    · simp only [Option.mem_def, Option.some.injEq] at hq; subst hq; exact tags_mem i (by omega)
+    · simp at hq
+  have members : ∀ q ∈ tagsP, ∀ i : Nat, i ≤ 17 → q ≠ a0P (start j) + i := by
+    intro q hq i hi; have := tags_range' q hq; unfold Wire at *; omega
+  have ctrl : ∀ c ∈ cols j, ∀ q ∈ c.hot, u.basis q = ref q := by
+    intro c hc q hq
+    have mem := hits c hc q hq
+    exact (z.2.2 q (members q mem key.val (by omega)) (members q mem (key.val+1) (by omega))).trans (tagsOn q mem)
+  have inputs : columnsRead (cols j) u.basis X H key.val 0 := by
+    intro i hi
+    rw [cols_length] at hi
+    have g := row_eq j ⟨i, hi⟩
+    change u.basis (row j ⟨i, hi⟩).shadow = _ ∧ u.basis (row j ⟨i, hi⟩).tube = _
+    rw [g.1, g.2.1]
+    simp only [Nat.zero_add]
+    have b := bank_cases w1 w2 (i := i) (by omega)
+    refine ⟨z.2.1 i hi, (z.2.2 _ ?_ ?_).trans (tube i hi)⟩ <;> unfold Wire at * <;> omega
+  have rz : u.basis 1614 = false := (z.2.2 _ (by unfold Wire at *; omega) (by unfold Wire at *; omega)).trans scratch
+  have word := reassemble 1614 (cols j) ref u m X H key.val (colSites j h0 h1) (disjoint j h0 h1) ctrl rz
+    (schedule_ok j key) inputs
+  dsimp only
+  rw [join_shape, run_append, run_take, show measurementCount dp = 0 from (digits_counts _ _ _ _ _ _).2, List.drop_zero]
+  refine ⟨word.1.trans z.1, fun i => word.2.1 i.val (by rw [cols_length]; exact i.isLt), ?_⟩
+  intro q away
+  have safe (k : Nat) (hk : k < 18) : q ≠ a0P (start j) + k := by
+    have g := row_eq j ⟨k, hk⟩
+    rw [← g.1]
+    exact (away _ (List.getElem_mem _)).1
+  exact (word.2.2 q away).trans (z.2.2 _ (safe key.val (by omega)) (safe (key.val+1) (by omega)))
 
 
 
@@ -37408,6 +37830,73 @@ theorem nearWord_combine (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (X 
 def middleOps (s : Nat) : List Gate := leaveAdjust s ++ leaveBarrel s ++ leaveFix8 s (sbP s) ++ leaveJoin s
 theorem fix8_forward (s h : Nat) : GateMirror.forward (leaveFix8 s h) = [.X 1613, .CX 1597 1613] := rfl
 
+theorem middle_result (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (key : Fin 16) (X : Nat) (s : State) (m : List Bool)
+    (clean : ∀ q ∈ carries j, s.basis q = false) (selectZero : s.basis 1613 = false)
+    (padding : ∀ i : Nat, wpP (start j) ≤ i → i < wpP (start j) + 15 → s.basis (bankW (start j) i) = false)
+    (one : ∀ q ∈ tagsP, s.basis q = hot key q)
+    (shadow : ∀ i < 18, s.basis (a0P (start j) + i) = X.testBit i)
+    (digit : X/2^key.val = (s.basis (e0P (start j) + 6)).toNat + 2*(!s.basis 1597).toNat)
+    (scratch : s.basis 1614 = false) :
+    let H := HighBankAdjust.adjusted (regValue (ys j) s.basis) (wpP (start j)) (s.basis (e0P (start j) + 6)) (s.basis 1597)
+    let out := run (GateMirror.forward (middleOps (start j))) m s
+    out.phase = s.phase ∧
+      (∀ i : Fin 18, out.basis (row j i).keep = (2^key.val*H+X%2^key.val).testBit i ∧ out.basis (row j i).free = false) ∧
+      (∀ i : Nat, 18 ≤ i → i < wpP (start j) + 15 → out.basis (bankW (start j) i) = (2^key.val*H).testBit i) ∧
+      (∀ q, q ≠ 1613 → HighBankBarrel.outside (bankW (start j)) (wpP (start j) + 15) q → (∀ r ∈ cols j, q ≠ r.shadow ∧ q ≠ r.tube) →
+        out.basis q = s.basis q) := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  let H := HighBankAdjust.adjusted (regValue (ys j) s.basis) (wpP (start j)) (s.basis (e0P (start j) + 6)) (s.basis 1597)
+  let early := GateMirror.forward (leaveAdjust (start j) ++ leaveBarrel (start j))
+  let signBit : Program := [.X 1613, .CX 1597 1613]
+  let v := run early m s
+  let tape := m.drop (measurementCount early)
+  let u := run signBit tape v
+  have a := high_result j h0 h1 key s m clean selectZero padding one
+  have bits (i : Nat) (hi : i < wpP (start j) + 15) : v.basis (bankW (start j) i) = (2^key.val*H).testBit i := by
+    rw [Nat.mul_comm (2^key.val) H, ← Nat.shiftLeft_eq]
+    exact a.bits i hi
+  have unchanged (q : Wire) (ne : q ≠ 1613) : u.basis q = v.basis q := by simp [u, signBit, run, writeBit, Function.update, ne]
+  have old (q : Wire) (ne : q ≠ 1613) (ext : HighBankBarrel.outside (bankW (start j)) (wpP (start j) + 15) q) : u.basis q = s.basis q :=
+    (unchanged q ne).trans (a.frame q ext)
+  have bankOut : ∀ q : Nat, (1556 ≤ q ∧ q ≤ 1597) ∨ (q ≤ 785) ∨ (e0P (start j) + 3 ≤ q ∧ q ≤ e0P (start j) + 9) →
+      HighBankBarrel.outside (bankW (start j)) (wpP (start j) + 15) q := by
+    intro q hq i hi e
+    have b := bank_cases w1 w2 hi
+    unfold Wire at *; omega
+  have stable : ∀ i, i < wpP (start j) + 15 → (1613:Wire) ≠ bankW (start j) i := fun i hi => (layout j h0 h1).separate i hi
+  have readTags (q : Wire) (hq : q ∈ tagsP) : u.basis q = hot key q := by
+    have t := tags_range' q hq
+    exact (old q (by unfold Wire at *; omega) (bankOut q (Or.inl (by unfold Wire at *; omega)))).trans (one q hq)
+  have readShadow (i : Nat) (hi : i < 18) : u.basis (a0P (start j) + i) = X.testBit i :=
+    (old _ (by unfold Wire at *; omega) (bankOut _ (Or.inr (Or.inl (by omega))))).trans (shadow i hi)
+  have readTube (i : Nat) (hi : i < 18) : u.basis (bankW (start j) i) = (2^key.val*H).testBit i :=
+    (unchanged _ (stable i (by omega)).symm).trans (bits i (by omega))
+  have select : v.basis 1613 = false := (a.frame _ (layout j h0 h1).separate).trans selectZero
+  have neg : v.basis 1597 = s.basis 1597 := a.frame _ (bankOut 1597 (Or.inl (by omega)))
+  have d1 : u.basis 1613 = !s.basis 1597 := by
+    simp [u, signBit, run, writeBit, Function.update, select, neg]
+  have cross := old (e0P (start j) + 6) (by unfold Wire at *; omega) (bankOut _ (Or.inr (Or.inr (by omega))))
+  have zero := (old 1614 (by decide) (fun i hi e => by
+    have b := bank_cases w1 w2 hi; unfold Wire at *; omega)).trans scratch
+  have exactDigit : X / 2^key.val = (u.basis (e0P (start j) + 6)).toNat + 2*(u.basis 1613).toNat := by
+    rw [cross, d1]; exact digit
+  have word := combine j h0 h1 key X H u tape readTags readShadow readTube exactDigit zero
+  dsimp only
+  have parts : GateMirror.forward (middleOps (start j)) = early ++ (signBit ++ GateMirror.forward (leaveJoin (start j))) := by
+    simp only [middleOps, early, signBit, forward_app, fix8_forward, List.append_assoc]
+  rw [parts, run_append, run_take, run_append, run_take, show measurementCount signBit = 0 from rfl, List.drop_zero]
+  refine ⟨word.1.trans a.phase, word.2.1, ?_, ?_⟩
+  · intro i lo hi
+    have outsideRows : ∀ c ∈ cols j, bankW (start j) i ≠ c.shadow ∧ bankW (start j) i ≠ c.tube := by
+      intro c hc
+      obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hc; rw [List.mem_range] at hk
+      have b := bank_cases w1 w2 hi
+      refine ⟨by dsimp only; unfold Wire at *; omega, fun e => ?_⟩
+      have := bank_inj w1 w2 hi (by omega) e; omega
+    exact (word.2.2 _ outsideRows).trans ((unchanged _ (stable i hi).symm).trans (bits i hi))
+  · intro q ne ext away
+    exact (word.2.2 q away).trans ((unchanged q ne).trans (a.frame q ext))
 
 end ECDSAAdd.Entrant.StairPacket.LeaveJ
 
@@ -37604,11 +38093,22 @@ theorem park_foot (e : Nat) (h0 : 90 ≤ e) (h1 : e ≤ 405) : AllW (parkFootP e
   intro p hp; simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;> constructor <;> unfold parkFootP <;> omega
 
+theorem enter_foot (s : Nat) (h0 : 90 ≤ s) (h1 : s ≤ 405) : AllW (footP s) (enterOps s) := by
+  obtain ⟨f1, f2, f3, f4⟩ := rail_facts s h0 h1
+  unfold enterOps enterFix AllW
+  simp only [List.forall_mem_cons, List.forall_mem_nil, Gate.wires, and_true, implies_true]
+  and_intros <;> first | (intro x hx; cases hx) | (unfold footP; omega)
+theorem enter_wires (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 24) :
+    (∀ q ∈ wires (enterP j), footP (start j) q) ∧ (∀ q ∈ wires (enterInvP j), footP (start j) q) :=
+  allW_programs (enter_foot (start j) (by simp [start]; omega) (by simp [start]; omega))
 
 /-- Wires of the parametric programs (portal, park), for `Covered`. -/
 theorem portal_wires (t : Nat) (h0 : 90 ≤ t) (h1 : t ≤ 405) :
     (∀ q ∈ wires (portalP t), footP t q) ∧ (∀ q ∈ wires (portalInvP t), footP t q) :=
   allW_programs (portal_foot t h0 h1)
+theorem park_wires (e : Nat) (h0 : 90 ≤ e) (h1 : e ≤ 405) :
+    (∀ q ∈ wires (parkP e), parkFootP e q) ∧ (∀ q ∈ wires (parkInvP e), parkFootP e q) :=
+  allW_programs (park_foot e h0 h1)
 
 end ECDSAAdd.Entrant.StairPacket.Partial
 
@@ -37795,6 +38295,15 @@ theorem loadPortsWP_footW (t f p : Nat) (ht : t < 512) (hp : p < 155) :
     rw [loadPortsWP_flag t f i (by omega)]; unfold archFootW; omega
   · obtain ⟨k, rfl⟩ : ∃ k, p = 23 + k := ⟨p - 23, by omega⟩
     rw [loadPortsWP_scratch t f k (by omega)]; exact scratch_footW t f k (by omega) (by omega)
+theorem restorePortsWP_footW (t f p : Nat) (ht : t < 512) (hp : p < 150) :
+    archFootW t f ((restorePortsWP t).getD p 0) := by
+  by_cases h1 : p < 16
+  · rw [restorePortsWP_cell t p h1]
+    have hc : (cellsRestoreP t).length = 16 := by simp [cellsRestoreP]
+    rw [List.getD_eq_getElem _ _ (by omega)]
+    exact cellsRestore_footW t f (by omega) _ (List.getElem_mem _)
+  · obtain ⟨k, rfl⟩ : ∃ k, p = 16 + k := ⟨p - 16, by omega⟩
+    rw [restorePortsWP_scratch t k (by omega)]; exact scratch_footW t f k (by omega) (by omega)
 theorem moves_footW (t f : Nat) (ht : t ≤ 512) :
     AllW (archFootW t f) (swapsG (moveLoadPairs t)) ∧ AllW (archFootW t f) (swapsG (moveRestorePairs t f)) := by
   constructor <;> apply allW_swapsG
@@ -37820,6 +38329,15 @@ theorem archiveLoadP_wiresW (j : Fin 26) (d : Bool) (hj : j.val ≤ 23) :
   · exact renamed_footW _ _ 155 _ _ (by cases d <;> first | exact load0_ports | exact load1_ports)
       (fun p hp => loadPortsWP_footW _ _ p ht hp) q hq
   · exact (allW_programs (moves_footW _ (e0P (start j + 15) + 6) (by omega)).1).1 q hq
+theorem archiveRestoreP_wiresW (j : Fin 26) (d : Bool) (hj : j.val ≤ 23) :
+    ∀ q ∈ wires (archiveRestoreP j d), archFootW (start j + 15) (e0P (start j + 15) + 6) q := by
+  have ht : start j + 15 < 512 := by simp [start]; omega
+  intro q hq
+  rw [archiveRestoreP, wires_append, Finset.mem_union] at hq
+  rcases hq with hq | hq
+  · exact renamed_footW _ _ 150 _ _ (by cases d <;> first | exact restore0_ports | exact restore1_ports)
+      (fun p hp => restorePortsWP_footW _ _ p ht hp) q hq
+  · exact (allW_programs (moves_footW _ (e0P (start j + 15) + 6) (by omega)).2).1 q hq
 theorem loadPortsXP_footW (e f p : Nat) (he : e < 512) (hp : p < 155) :
     archFootW e f ((loadPortsXP e f).getD p 0) := by
   by_cases h : e ≤ 369
@@ -37834,6 +38352,18 @@ theorem loadPortsXP_footW (e f p : Nat) (he : e < 512) (hp : p < 155) :
     · exact cellsLoad_footW e f x (by omega) m
     · rcases m with rfl | rfl | rfl <;> (unfold archFootW; omega)
     · exact scratchX_footW e f k (by omega) (by omega)
+theorem restorePortsXP_footW (e f p : Nat) (he : e < 512) (hp : p < 150) :
+    archFootW e f ((restorePortsXP e).getD p 0) := by
+  by_cases h : e ≤ 369
+  · rw [restorePortsXP_low e h]; exact restorePortsWP_footW e f p (by omega) hp
+  · have len := restorePortsXP_length e
+    have mem : (restorePortsXP e).getD p 0 ∈ restorePortsXP e := by
+      rw [List.getD_eq_getElem _ _ (by omega)]; exact List.getElem_mem _
+    generalize (restorePortsXP e).getD p 0 = x at mem ⊢
+    simp only [restorePortsXP, List.mem_append, List.mem_map, List.mem_range] at mem
+    rcases mem with m | ⟨k, hk, rfl⟩
+    · exact cellsRestore_footW e f (by omega) x m
+    · exact scratchX_footW e f k (by omega) hk
 /-- Stock-form exit archives at tick `e` (flags `bTop(e)+1..3`). -/
 theorem exitLoadP_wiresW (e : Nat) (d : Bool) (he : e < 512) :
     ∀ q ∈ wires (exitLoadP e d), archFootW e (bTopP e + 1) q := by
@@ -37843,6 +38373,14 @@ theorem exitLoadP_wiresW (e : Nat) (d : Bool) (he : e < 512) :
   · exact renamed_footW _ _ 155 _ _ (by cases d <;> first | exact load0_ports | exact load1_ports)
       (fun p hp => loadPortsXP_footW _ _ p he hp) q hq
   · exact (allW_programs (moves_footW e (bTopP e + 1) (by omega)).1).1 q hq
+theorem exitRestoreP_wiresW (e : Nat) (d : Bool) (he : e < 512) :
+    ∀ q ∈ wires (exitRestoreP e d), archFootW e (bTopP e + 1) q := by
+  intro q hq
+  rw [exitRestoreP, wires_append, Finset.mem_union] at hq
+  rcases hq with hq | hq
+  · exact renamed_footW _ _ 150 _ _ (by cases d <;> first | exact restore0_ports | exact restore1_ports)
+      (fun p hp => restorePortsXP_footW _ _ p he hp) q hq
+  · exact (allW_programs (moves_footW e (bTopP e + 1) (by omega)).2).1 q hq
 
 end ECDSAAdd.Entrant.StairPacket.Partial
 end
@@ -38017,6 +38555,18 @@ def ofParts (enter enterInv leave leaveInv : Fin 26 → Program) (load restore :
 
 /-! Generic counts of the stock pieces. -/
 
+theorem routed_counts (j : Fin 26) (a n : Nat) (bound : a+n≤15) :
+    toffoliCount (StairPacket.routed j a n)=n*(2*(smallBits j+18)) ∧
+    measurementCount (StairPacket.routed j a n)=n*(smallBits j+18) ∧
+    toffoliCount (StairPacket.unrouted j a n)=n*(2*(smallBits j+18)) ∧
+    measurementCount (StairPacket.unrouted j a n)=n*(smallBits j+18) := by
+  obtain ⟨f,r⟩ := fixed_route j a n bound
+  have hs := IntegerPacket.metrics (shape j) a n bound
+  have mid : (shape j).mid+1=smallBits j+18 := rfl
+  rw [mid] at hs
+  rw [f,r,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,(renameProgram_counts _ _).1,
+    (renameProgram_counts _ _).2]
+  exact hs
 
 theorem pack_counts (d : Bool) (s t : Nat) (five : t≠5) (due : History5.packDue t=true) :
     toffoliCount (renameProgram (OB5.sig s) (Rolling1588.packAtTick d t))=9 ∧
@@ -39433,8 +39983,8 @@ theorem lead_wait (k B s : Nat) (ready : guard k s ≤ B) :
   induction k generalizing s with
   | zero => rfl
   | succ k ih =>
-    have hh : 2*guard k s+s ≤ B := by simpa [guard_succ] using ready
-    have lo := guard_gt k s
+    have hh : 2*guard k s+s ≤ B := (guard_step ready).1
+    have lo : s < B := (guard_step ready).2
     by_cases e : s%2=0
     · have st : step ⟨s,B⟩=⟨s/2,B⟩ := by
         by_cases z : s=0
@@ -39544,6 +40094,47 @@ def flags (a b low temp far long mag : Wire) (as bs : List (Wire×Wire)) : Progr
 def high (a b:Wire) (as:List (Wire×Wire)) (s:BasisState) :=
   (s a && s b) || (as.map Prod.fst).any s
 
+theorem flags_run (a b low temp far long mag : Wire) (as bs : List (Wire×Wire))
+    (lA:(a::b::temp::low::sites as).Nodup)
+    (lB:(far::long::mag::sites bs).Nodup) (ft:far≠temp)
+    (s:State) (m:List Bool) (hf:s.basis far=false) (ht:s.basis temp=false)
+    (hl:s.basis low=false) (hj:s.basis long=false)
+    (ca:∀p∈as,s.basis p.2=false) (cb:∀p∈bs,s.basis p.2=false) :
+    let f:=high a b as s.basis
+    let u:=f && (digits mag bs).any s.basis
+    run (flags a b low temp far long mag as bs) m s=
+      ⟨s.phase,writeBit (writeBit s.basis far f) long u⟩ := by
+  let f:=high a b as s.basis
+  let v:State:=⟨s.phase,writeBit s.basis far f⟩
+  have first:=threshold_run a b low temp as lA s m hl ca
+  rw [ht,Bool.false_xor] at first
+  have copy (m':List Bool) : run [.CX temp far,.CX far temp] m'
+      ⟨s.phase,writeBit s.basis temp f⟩=v:= by
+    simp [run,writeBit,Function.update,v,ft,ft.symm,hf]
+    funext q
+    by_cases qt:q=temp <;> by_cases qf:q=far <;> simp_all [Function.update]
+  obtain ⟨fl,fm,fr,n⟩ : far≠long ∧ far≠mag ∧ far∉sites bs ∧ (long::mag::sites bs).Nodup := by
+    have c:=List.nodup_cons.mp lB
+    simpa [and_assoc] using c
+  have fresh (p:Wire×Wire) (hp:p∈bs): v.basis p.2=false:=by
+    have inside:p.2∈sites bs:=List.mem_flatMap.mpr ⟨p,hp,by simp⟩
+    have eq:p.2≠far:=fun e=>fr (e ▸ inside)
+    simp [v,writeBit,eq,cb p hp]
+  have away (q:Wire) (hq:q∈digits mag bs):q≠far:=by
+    intro eq; subst q
+    rcases List.mem_cons.mp hq with h|h
+    · exact fm h
+    · obtain ⟨p,hp,h⟩:=List.mem_map.mp h
+      exact fr (h ▸ List.mem_flatMap.mpr ⟨p,hp,by simp⟩)
+  have anyEq:(digits mag bs).any v.basis=(digits mag bs).any s.basis:=by
+    apply Bool.eq_iff_iff.mpr
+    simp only [List.any_eq_true]
+    constructor <;> rintro ⟨q,hq,h⟩ <;> exact ⟨q,hq,by simpa [v,writeBit,away q hq] using h⟩
+  simp only [flags,run_append,run_take,first]
+  change run (latch false (some far) long mag bs) _ (run [.CX temp far,.CX far temp] _ ⟨s.phase,writeBit s.basis temp f⟩)=_
+  rw [copy,run_latch _ _ _ _ _ n (by intro c h; obtain rfl:=Option.mem_some_iff.mp h;exact (List.nodup_cons.mp lB).1) _ _ fresh]
+  rw [anyEq]
+  simp [active,v,writeBit,fl.symm,hj,f]
 
 end ECDSAAdd.Entrant.StairPacket.PortalAnd
 
@@ -39839,6 +40430,58 @@ def prep (a b t:Wire) (s:State) : State := ⟨s.phase,writeBit (writeBit s.basis
 theorem outside {a b t:Wire} (s:State) (q:Wire) (qa:q≠a) (qt:q≠t) :
     (prep a b t s).basis q=s.basis q := by simp [prep,writeBit,qa,qt]
 
+theorem erase_run (a b t long:Wire) (xs ys cs:List Wire) (s:State) (m:List Bool)
+    (L:Companion.Geometry xs ys cs long t) (distinct:[a,b,t,long].Nodup)
+    (noA:a∉xs ∧ a∉ys ∧ a∉cs) (noB:b∉ys) (noT:t∉xs ∧ t∉ys ∧ t∉cs)
+    (fresh:s.basis t=false) (clean:∀q∈cs,s.basis q=false)
+    (value:(regValue ys s.basis+(s.basis b && !s.basis a).toNat)%2^ys.length=
+      copyValue (some long) s.basis (regValue xs s.basis)) :
+    let r:=run (wrap a b t (Companion.erase xs ys cs long t)) m s
+    r.phase=s.phase ∧ (∀q,q∉ys → r.basis q=s.basis q) ∧ regValue ys r.basis=0 := by
+  have ⟨ab,at0,al,bt,bl,tl⟩:a≠b ∧ a≠t ∧ a≠long ∧ b≠t ∧ b≠long ∧ t≠long := by simpa [and_assoc] using distinct
+  let v:=prep a b t s
+  have start:run ([.X a,.CCX b a t]:Program) m s=v:=by
+    simp [v,prep,run,writeBit,ab.symm,at0.symm,fresh]
+  have aa:v.basis a= !s.basis a:=by simp [v,prep,writeBit,at0]
+  have bb:v.basis b=s.basis b:=outside s _ ab.symm bt
+  have tt:v.basis t=(s.basis b && !s.basis a):=by simp [v,prep,writeBit]
+  have gc:∀q∈cs,v.basis q=false:=fun q h=>(outside (a:=a) (b:=b) (t:=t) s q (fun e=>noA.2.2 (e ▸ h))
+    (fun e=>noT.2.2 (e ▸ h))).trans (clean _ h)
+  have rg (rs:List Wire) (ha:a∉rs) (ht:t∉rs):regValue rs v.basis=regValue rs s.basis:=
+    regValue_congr _ _ _ (fun q h=>outside (a:=a) (b:=b) (t:=t) s q (fun e=>ha (e ▸ h)) (fun e=>ht (e ▸ h)))
+  have vv:(regValue ys v.basis+(v.basis t).toNat)%2^ys.length=
+      copyValue (some long) v.basis (regValue xs v.basis):=by
+    rw [rg ys noA.2.1 noT.2.1,tt,rg xs noA.1 noT.1]
+    change _=if v.basis long then _ else _
+    rw [outside s long al.symm tl.symm]
+    exact value
+  let mid:=run (Companion.erase xs ys cs long t) m v
+  obtain ⟨ph,stay,zero⟩:=Companion.clear xs ys cs long t L v m gc vv
+  have ta:mid.basis a= !s.basis a:=(stay _ noA.2.1).trans aa
+  have tb:mid.basis b=s.basis b:=(stay _ noB).trans bb
+  have tc:mid.basis t=(mid.basis b && mid.basis a):=by rw [ta,tb];exact (stay _ noT.2.1).trans tt
+  have post (ms:List Bool):run ([.measureX t [] [.CZ b a],.X a]:Program) ms mid=
+      ⟨mid.phase,writeBit (writeBit mid.basis t false) a (s.basis a)⟩:=by
+    change run ([.X a]:Program) (ms.drop 1) (run ([.measureX t [] [.CZ b a]]:Program) ms mid)=_
+    rw [PortalAnd.measure_and _ _ _ _ _ bt at0 tc]
+    simp [run,writeBit,at0,ta]
+  simp only [wrap,run_append,run_take,start]
+  change (run _ _ mid).phase=_ ∧ (∀q,q∉ys → (run _ _ mid).basis q=_) ∧ regValue ys (run _ _ mid).basis=0
+  rw [post]
+  refine ⟨ph,?_,?_⟩
+  · intro q h
+    by_cases qa:q=a <;> by_cases qt:q=t
+    · exact (at0 (qa.symm.trans qt)).elim
+    · subst q; simp [writeBit]
+    · subst q; simp [writeBit,at0.symm,fresh]
+    · exact (show writeBit (writeBit mid.basis t false) a (s.basis a) q=mid.basis q by simp [writeBit,qa,qt]).trans
+        ((stay q h).trans (outside s _ qa qt))
+  · apply Eq.trans _ zero
+    apply regValue_congr
+    intro q h
+    have ha:q≠a:=fun e=>noA.2.1 (e ▸ h)
+    have ht:q≠t:=fun e=>noT.2.1 (e ▸ h)
+    simp [writeBit,ha,ht,mid]
 
 end ECDSAAdd.Entrant.StairPacket.PortalBorrow
 
@@ -39856,6 +40499,11 @@ theorem nonzero (xs:List Wire) (b:BasisState) : xs.any b=decide (0<regValue xs b
     change (b x || xs.any b)=decide (0<(if b x then 1 else 0)+2*regValue xs b)
     rw [ih];cases b x <;> simp
 
+theorem atLeastThree (a b:Wire) (rest:List Wire) (s:BasisState) :
+    ((s a && s b) || rest.any s)=decide (3≤regValue (a::b::rest) s) := by
+  rw [nonzero]
+  change _=decide (3≤(if s a then 1 else 0)+2*((if s b then 1 else 0)+2*regValue rest s))
+  cases s a <;> cases s b <;> simp <;> omega
 
 end ECDSAAdd.Entrant.StairPacket.PortalValues
 
@@ -39869,10 +40517,90 @@ open Arithmetic
 def thresholdBack (a b t out:Wire) (ps:List (Wire×Wire)):Program :=
   [.CCX a b t]++backwardLatch true none out t ps++[.measureX t [] [.CZ a b]]
 
+theorem threshold_back (a b t out:Wire) (ps:List (Wire×Wire))
+    (layout:(a::b::out::t::sites ps).Nodup) (s:State) (m:List Bool)
+    (fresh:s.basis t=false) (clean:∀p∈ps,s.basis p.2=false) :
+    run (thresholdBack a b t out ps) m s = ⟨s.phase,writeBit s.basis out
+      (s.basis out ^^ high a b ps s.basis)⟩ := by
+  apply Eq.trans _ (threshold_run _ _ _ _ _ layout s m fresh clean)
+  let v:=run ([.CCX a b t]:Program) m s
+  have lay: (out::t::sites ps).Nodup:=(List.nodup_cons.mp (List.nodup_cons.mp layout).2).2
+  have fresh':∀p∈ps,v.basis p.2=false:=by
+    intro p hp
+    have inc:p.2∈sites ps:=List.mem_flatMap.mpr ⟨p,hp,by simp⟩
+    have dif:p.2≠t:=fun eq=>(List.nodup_cons.mp (List.nodup_cons.mp lay).2).1 (eq ▸ inc)
+    simp [v,run,writeBit,dif,clean _ hp]
+  have swap (ms:List Bool):run (backwardLatch true none out t ps) ms v=run (latch true none out t ps) ms v:=by
+    rw [backward_latch _ _ _ _ _ lay (by simp) v ms fresh',run_latch _ _ _ _ _ lay (by simp) v ms fresh']
+  have rows:measurementCount (backwardLatch true none out t ps)=measurementCount (latch true none out t ps):=by
+    change measurementCount (notRegister _ ++ backward _ _ _ _ ++ notRegister _)=measurementCount (notRegister _ ++ chain _ _ _ _ _ ++ notRegister _)
+    simp only [measurementCount_append,back_count,ite_true]
+  simp only [thresholdBack,threshold,run_append,run_take,measurementCount_append,rows]
+  change run [.measureX t [] [.CZ a b]] _ (run (backwardLatch true none out t ps) _ v)=
+    run [.measureX t [] [.CZ a b]] _ (run (latch true none out t ps) _ v)
+  rw [swap]
 
 def flagsBack (a b low temp far long mag:Wire) (as bs:List (Wire×Wire)):Program :=
   backwardLatch false (some far) long mag bs ++ [.CX far temp,.CX temp far] ++ thresholdBack a b low temp as
 
+theorem flags_undo (a b low temp far long mag : Wire) (as bs : List (Wire×Wire))
+    (lA:(a::b::temp::low::sites as).Nodup)
+    (lB:(far::long::mag::sites bs).Nodup) (ft:far≠temp)
+    (s:State) (m tape:List Bool) (hf:s.basis far=false) (ht:s.basis temp=false)
+    (hl:s.basis low=false) (hj:s.basis long=false)
+    (ca:∀p∈as,s.basis p.2=false) (cb:∀p∈bs,s.basis p.2=false) :
+    run (flagsBack a b low temp far long mag as bs) tape
+      (run (flags a b low temp far long mag as bs) m s)=s := by
+  let f:=high a b as s.basis
+  let u:=f && (digits mag bs).any s.basis
+  let v:State:=⟨s.phase,writeBit s.basis far f⟩
+  let w:State:=⟨s.phase,writeBit v.basis long u⟩
+  let k:State:=⟨s.phase,writeBit s.basis temp f⟩
+  have input:run (flags a b low temp far long mag as bs) m s=w :=
+    flags_run _ _ _ _ _ _ _ _ _ lA lB ft _ _ hf ht hl hj ca cb
+  have detail (p:Wire×Wire) (ps:List (Wire×Wire)) (h:p∈ps) : p.1∈sites ps ∧ p.2∈sites ps:=by
+    constructor <;> exact List.mem_flatMap.mpr ⟨p,h,by simp⟩
+  obtain ⟨fl,fm,fr,lm,lr,mr,nb⟩:far≠long ∧ far≠mag ∧ far∉sites bs ∧ long≠mag ∧
+      long∉sites bs ∧ mag∉sites bs ∧ (sites bs).Nodup:=by simpa [and_assoc] using lB
+  obtain ⟨ab,at0,al,ar,bt,bl,br,tl,tr,lrA,na⟩:a≠b ∧ a≠temp ∧ a≠low ∧ a∉sites as ∧ b≠temp ∧ b≠low ∧ b∉sites as ∧
+      temp≠low ∧ temp∉sites as ∧ low∉sites as ∧ (sites as).Nodup:=by simpa [and_assoc] using lA
+  have stableW (q:Wire) (qf:q≠far) (ql:q≠long):w.basis q=s.basis q:=by simp [w,v,writeBit,qf,ql]
+  have src (q:Wire) (hq:q∈digits mag bs):w.basis q=s.basis q:=by
+    rcases List.mem_cons.mp hq with rfl | hq
+    · exact stableW _ fm.symm lm.symm
+    · obtain ⟨p,hp,rfl⟩:=List.mem_map.mp hq
+      exact stableW _ (fun eq=>fr (eq ▸ (detail _ _ hp).1)) (fun eq=>lr (eq ▸ (detail _ _ hp).1))
+  have anyEq:(digits mag bs).any w.basis=(digits mag bs).any s.basis:=by
+    apply Bool.eq_iff_iff.mpr
+    simp only [List.any_eq_true]
+    constructor <;> rintro ⟨q,h,hq⟩ <;> exact ⟨q,h,by simpa [src _ h] using hq⟩
+  have cbw (p:Wire×Wire) (hp:p∈bs):w.basis p.2=false:=
+    (stableW _ (fun eq=>fr (eq ▸ (detail _ _ hp).2)) (fun eq=>lr (eq ▸ (detail _ _ hp).2))).trans (cb _ hp)
+  have reset (ms:List Bool):run (backwardLatch false (some far) long mag bs) ms w=v:=by
+    rw [backward_latch _ _ _ _ _ (List.nodup_cons.mp lB).2 (by
+      intro c hc; obtain rfl:=Option.mem_some_iff.mp hc; exact (List.nodup_cons.mp lB).1) _ _ cbw,anyEq]
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases qf:q=far <;> by_cases ql:q=long <;> simp_all [active,w,v,u,writeBit,Function.update]
+  have exchange (ms:List Bool):run [.CX far temp,.CX temp far] ms v=k:=by
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases qf:q=far <;> by_cases qt:q=temp <;> simp_all [v,writeBit,Function.update,ft.symm]
+  have kskip (q:Wire) (ne:q≠temp):k.basis q=s.basis q:=by simp [k,writeBit,ne]
+  have ka (q:Wire) (h:q∈as.map Prod.fst):k.basis q=s.basis q:=by
+    obtain ⟨p,hp,rfl⟩:=List.mem_map.mp h
+    exact kskip _ (fun eq=>tr (eq ▸ (detail _ _ hp).1))
+  have anyA:(as.map Prod.fst).any k.basis=(as.map Prod.fst).any s.basis:=by
+    apply Bool.eq_iff_iff.mpr
+    simp only [List.any_eq_true]
+    constructor <;> rintro ⟨q,h,hq⟩ <;> exact ⟨q,h,by simpa [ka _ h] using hq⟩
+  have highK:high a b as k.basis=f:=by simp [high,f,kskip _ at0,kskip _ bt,anyA]
+  have clearK (ms:List Bool):run (thresholdBack a b low temp as) ms k=s:=by
+    rw [threshold_back _ _ _ _ _ lA k ms ((kskip _ tl.symm).trans hl) (fun p hp=>
+       (kskip _ (fun eq=>tr (eq ▸ (detail _ _ hp).2))).trans (ca _ hp)),highK]
+    apply congrArg (State.mk s.phase)
+    funext q; by_cases qt:q=temp <;> simp_all [k,writeBit,Function.update]
+  simp only [input,flagsBack,run_append,run_take,reset,exchange,clearK]
 
 end ECDSAAdd.Entrant.StairPacket.PortalAnd
 
@@ -39883,7 +40611,25 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.Shadow
 open SkywalkNat IntegerHigh
 
-def limb (b k : Nat) := 2^(b+k+1)
+def limb (b k : Nat) := 2^(b+k)
+
+/-- margin 16: the exact guard fits one limb: guard k s + s ≤ 2^(b+k) for s < 2^b. -/
+theorem guard_limb (b k s : Nat) (hs : s < 2^b) : guard k s+s ≤ limb b k := by
+  cases k with
+  | zero =>
+    have z : guard 0 s = 0 := rfl
+    have e : limb b 0 = 2^b := rfl
+    omega
+  | succ r =>
+    have a : 2*s+1 ≤ 2*2^b := by omega
+    have mul := Nat.mul_le_mul_left (2^r) a
+    have f := guard_formula r s
+    have e : limb b (r+1) = 2^r*(2*2^b) := by
+      change 2^(b+(r+1)) = _
+      rw [show b+(r+1)=r+(b+1) by omega,pow_add,pow_succ]
+      ring
+    rw [f, e]
+    exact mul
 def high (b k : Nat) (z : SkywalkNat.State) := (z.u+z.v)/limb b k
 def far (b k : Nat) (z : SkywalkNat.State) : Prop := 2≤high b k z
 instance (b k : Nat) (z : SkywalkNat.State) : Decidable (far b k z) := inferInstanceAs (Decidable (2≤_))
@@ -39914,42 +40660,34 @@ theorem represented (b k : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^
     dsimp [U,limb]
     apply Nat.pow_le_pow_right (by decide)
     omega
-  have tight (s : Nat) (hs : s < 2^b) : guard k s+s ≤ U := by
-    have a : 2*s+1 ≤ 2*2^b := by omega
-    have mul := Nat.mul_le_mul_left (2^k) a
-    have f := guard_formula k s
-    have e : U = 2^k*(2*2^b) := by
-      change 2^(b+k+1) = _
-      rw [show b+k+1=k+(b+1) by omega,pow_add,pow_succ]
-      ring
-    rw [f, e]
-    exact mul
-  have form:gap b k z=2^k*((H-1)*2^(b+1)) := by
-    change (H-1)*2^(b+k+1)=_
-    rw [show b+k+1=k+(b+1) by omega,pow_add]
+  have tight (s : Nat) (hs : s < 2^b) : guard k s+s ≤ U := guard_limb b k s hs
+  have form:gap b k z=2^k*((H-1)*2^b) := by
+    change (H-1)*2^(b+k)=_
+    rw [show b+k=k+b by omega,pow_add]
     ring
+  have wide : 2^b ≤ (H-1)*2^b := Nat.le_mul_of_pos_left _ (by omega)
   rw [reduced,if_pos h]
   split
   · rename_i big
     have hv:z.v<2^b:=by omega
     have t:=tight z.v hv
     have gu:guard k z.v≤z.u-gap b k z:=by omega
-    have eq:z.u=(z.u-gap b k z)+2^k*((H-1)*2^(b+1)):=by omega
+    have eq:z.u=(z.u-gap b k z)+2^k*((H-1)*2^b):=by omega
     constructor
-    · conv_lhs => rw [show z=⟨(z.u-gap b k z)+2^k*((H-1)*2^(b+1)),z.v⟩
+    · conv_lhs => rw [show z=⟨(z.u-gap b k z)+2^k*((H-1)*2^b),z.v⟩
                            from by cases z; exact congrArg₂ SkywalkNat.State.mk eq rfl]
-      exact .left _ _ _ gu
+      exact .left _ _ _ gu (by omega)
     · change U≤z.u-gap b k z+z.v ∧ z.u-gap b k z+z.v<2*U
       omega
   · rename_i little
     have u:z.u<2^b:=by omega
     have t:=tight z.u u
     have gv:guard k z.u≤z.v-gap b k z:=by omega
-    have eq:z.v=(z.v-gap b k z)+2^k*((H-1)*2^(b+1)):=by omega
+    have eq:z.v=(z.v-gap b k z)+2^k*((H-1)*2^b):=by omega
     constructor
-    · conv_lhs => rw [show z=⟨z.u,(z.v-gap b k z)+2^k*((H-1)*2^(b+1))⟩
+    · conv_lhs => rw [show z=⟨z.u,(z.v-gap b k z)+2^k*((H-1)*2^b)⟩
                            from by cases z; exact congrArg₂ SkywalkNat.State.mk rfl eq]
-      exact .right _ _ _ gv
+      exact .right _ _ _ gv (by omega)
     · change U≤z.u+(z.v-gap b k z) ∧ z.u+(z.v-gap b k z)<2*U
       omega
 
@@ -40119,7 +40857,46 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.PartialPhysical
 open Arithmetic RecordedQuantum
 
+private theorem integer_ticks (L : SkywalkIntegerLayout) (hv : L.Valid) :
+    GatePhysical (skywalkIntegerTick L) ∧ GatePhysical (skywalkIntegerUntick L) := by
+  have enough : 1 ≤ L.half.length := by simp [SkywalkIntegerLayout.half]
+  have narrow := narrowTicks_physical L 1 hv (by decide) enough
+  simp only [narrowSkywalkTick, narrowSkywalkUntick, gatePhysical_append] at narrow
+  obtain ⟨⟨⟨⟨route, half⟩, _⟩, prev⟩, ⟨⟨⟨⟨_, _⟩, _⟩, cx⟩, sw⟩⟩ := narrow
+  have nd := L.record_nodup hv
+  have fresh := (List.nodup_cons.mp nd).1
+  have sx : L.ext ≠ L.history := by
+    intro e
+    apply fresh
+    rw [← e]
+    simp [SkywalkIntegerLayout.half]
+  have sy : L.bSign ≠ L.history := by
+    intro e
+    apply fresh
+    rw [← e]
+    simp [SkywalkIntegerLayout.b, SkywalkIntegerLayout.bh]
+  have toggle : GatePhysical (skywalkSignToggle L.ext L.bSign L.history) := by
+    simp [skywalkSignToggle, GatePhysical, PhysicalInstr, ProperGate, sx, sy]
+  have arithmetic := signedWords_physical L.history L.half L.b L.carry nd
+  simp only [skywalkIntegerTick, skywalkIntegerUntick, signedRecord, signedUnrecord,
+    gatePhysical_append]
+  exact ⟨⟨⟨⟨route, half⟩, ⟨⟨toggle, arithmetic.1⟩, toggle⟩⟩, prev⟩,
+    ⟨⟨⟨⟨prev, ⟨⟨toggle, arithmetic.2⟩, toggle⟩⟩, half⟩, cx⟩, sw⟩⟩
 
+theorem route (j : Fin 26) (a n : Nat) (h : a+n ≤ 15) :
+    GatePhysical (routed j a n) ∧ GatePhysical (unrouted j a n) := by
+  induction n generalizing a with
+  | zero => simp [routed, unrouted, GatePhysical]
+  | succ n ih =>
+    have ha : a < 15 := by omega
+    have valid := IntegerPacket.ok (shape j) ⟨a, ha⟩
+    have tick := integer_ticks (IntegerPacket.ports (shape j) a) valid
+    have range := (shape j).rangeEnd
+    change start j + 15 ≤ 510 at range
+    have inj := OB5.sig_injective (start j+a) (by omega)
+    have tail := ih (a+1) (by omega)
+    exact ⟨(gatePhysical_append _ _).2 ⟨gatePhysical_rename _ inj _ tick.1, tail.1⟩,
+      (gatePhysical_append _ _).2 ⟨tail.2, gatePhysical_rename _ inj _ tick.2⟩⟩
 
 end ECDSAAdd.Entrant.StairPacket.PartialPhysical
 
@@ -40133,7 +40910,60 @@ open Arithmetic
 def restore (xs ys cs:List Wire) (long t:Wire) :=
   (copyRegister (some long) xs ys).reverse ++ PortalUnitInverse.emit ys cs t
 
+private theorem wrap_back (a b t:Wire) (p r:Program) (s:State) (m tape:List Bool)
+    (nd:[a,b,t].Nodup) (clean:s.basis t=false)
+    (pres:∀ ms,(run p ms (prep a b t s)).basis t=
+        ((run p ms (prep a b t s)).basis b && (run p ms (prep a b t s)).basis a))
+    (undo:∀ x y,run r y (run p x (prep a b t s))=prep a b t s) :
+    run (wrap a b t r) tape (run (wrap a b t p) m s)=s := by
+  obtain ⟨ab,at0,bt⟩:a≠b ∧ a≠t ∧ b≠t:=by simpa [and_assoc] using nd
+  let pre:Program:=[.X a,.CCX b a t]
+  let post:Program:=[.measureX t [] [.CZ b a],.X a]
+  have prepRun (x:List Bool):run pre x s=prep a b t s:=by
+    simp [pre,prep,run,writeBit,ab.symm,at0.symm,clean]
+  have decode (x y:List Bool) (v:State) (h:v.basis t=(v.basis b && v.basis a)):
+      run pre y (run post x v)=v:=by
+    change run [.X a,.CCX b a t] y (run [.X a] (x.drop 1) (run [.measureX t [] [.CZ b a]] x v))=_
+    rw [PortalAnd.measure_and _ _ _ _ _ bt at0 h]
+    apply congrArg (State.mk v.phase)
+    funext q
+    by_cases qa:q=a <;> by_cases qt:q=t <;> simp_all [run,writeBit,Function.update,ab.symm]
+  have close (x:List Bool):run post x (prep a b t s)=s:=by
+    change run [.X a] (x.drop 1) (run [.measureX t [] [.CZ b a]] x (prep a b t s))=_
+    rw [PortalAnd.measure_and _ _ _ _ _ bt at0 (by simp [prep,writeBit,ab.symm,at0,bt])]
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases qa:q=a <;> by_cases qt:q=t <;> simp_all [prep,writeBit,Function.update]
+  change run (pre++r++post) tape (run (pre++p++post) m s)=s
+  simp only [run_append,run_take,prepRun]
+  rw [decode _ _ _ (pres _),undo,close]
 
+theorem erase_undo (a b t long:Wire) (xs ys cs:List Wire) (s:State) (m tape:List Bool)
+    (L:Companion.Geometry xs ys cs long t) (distinct:[a,b,t,long].Nodup)
+    (noA:a∉xs ∧ a∉ys ∧ a∉cs) (noB:b∉ys) (noT:t∉xs ∧ t∉ys ∧ t∉cs)
+    (proper:ProperProgram (copyRegister (some long) xs ys))
+    (fresh:s.basis t=false) (clean:∀q∈cs,s.basis q=false) :
+    run (wrap a b t (restore xs ys cs long t)) tape (run (wrap a b t (Companion.erase xs ys cs long t)) m s)=s := by
+  obtain ⟨ab,at0,al,bt,bl,tl⟩:a≠b ∧ a≠t ∧ a≠long ∧ b≠t ∧ b≠long ∧ t≠long := by simpa [and_assoc] using distinct
+  let v:=prep a b t s
+  have cv:∀q∈cs,v.basis q=false:=fun q h=>(outside (a:=a) (b:=b) (t:=t) s q (fun eq=>noA.2.2 (eq ▸ h))
+    (fun eq=>noT.2.2 (eq ▸ h))).trans (clean _ h)
+  apply wrap_back a b t _ _ s m tape (by simp [ab,at0,bt]) fresh
+  · intro ms
+    let w:=run (HighBankUnit.add ys cs t) ms v
+    have mid:=HighBankUnit.add_correct ys cs t L.ripple L.carries v ms cv
+    have cp:=copyRegister_correct (some long) xs ys L.limbs L.copy (by
+      intro q h; obtain rfl:=Option.mem_some_iff.mp h; exact L.flag) w (ms.drop (measurementCount (HighBankUnit.add ys cs t)))
+    simp only [Companion.erase,run_append,run_take]
+    change (run _ _ w).basis t=((run _ _ w).basis b && (run _ _ w).basis a)
+    rw [cp.2.1 t noT.2.1,cp.2.1 b noB,cp.2.1 a noA.2.1]
+    change (run _ ms v).basis t=((run _ ms v).basis b && (run _ ms v).basis a)
+    rw [mid.2.1 t noT.2.1,mid.2.1 b noB,mid.2.1 a noA.2.1]
+    simp [v,prep,writeBit,at0,ab.symm,bt]
+  · intro x y
+    simp only [Companion.erase,restore,run_append,run_take]
+    rw [run_reverse_proper _ proper]
+    exact PortalUnitInverse.undo ys cs t L.carries L.ripple _ _ _ cv
 
 end ECDSAAdd.Entrant.StairPacket.PortalBorrow
 
@@ -40826,9 +41656,11 @@ theorem orientation {k : Nat} {z t : SkywalkNat.State} (h : IntegerHigh.Rel (k+1
     decide ((SkywalkNat.step z).v < (SkywalkNat.step z).u) =
       (decide (z.v<z.u) || !decide (IntegerHigh.letter z=0)) := by
   cases h with
-  | left B s D large =>
-    have lb := IntegerHigh.guard_gt k s
-    have lim : 2*IntegerHigh.guard k s+s≤B := by simpa [IntegerHigh.guard_succ] using large
+  | left B s D large far =>
+    have lb : s < B := (IntegerHigh.guard_step large).2
+    have lim : 2*IntegerHigh.guard k s+s≤B := (IntegerHigh.guard_step large).1
+    have wide : 2*D ≤ 2^(k+1)*D :=
+      Nat.mul_le_mul_right D (by rw [pow_succ]; have := Nat.two_pow_pos k; omega)
     generalize big : B+2^(k+1)*D = x
     have guard : 3*s+2≤x := by omega
     by_cases even : x%2=0
@@ -40836,9 +41668,11 @@ theorem orientation {k : Nat} {z t : SkywalkNat.State} (h : IntegerHigh.Rel (k+1
         show s<x/2 by omega]
     · simp [IntegerHigh.letter,SkywalkNat.step,show x≠0 by omega,even,show s<x by omega,
         show ¬x<s by omega,show s≤x by omega,show s<(x-s)/2 by omega]
-  | right B s D large =>
-    have lb := IntegerHigh.guard_gt k s
-    have lim : 2*IntegerHigh.guard k s+s≤B := by simpa [IntegerHigh.guard_succ] using large
+  | right B s D large far =>
+    have lb : s < B := (IntegerHigh.guard_step large).2
+    have lim : 2*IntegerHigh.guard k s+s≤B := (IntegerHigh.guard_step large).1
+    have wide : 2*D ≤ 2^(k+1)*D :=
+      Nat.mul_le_mul_right D (by rw [pow_succ]; have := Nat.two_pow_pos k; omega)
     generalize big : B+2^(k+1)*D = x
     have guard : 3*s+2≤x := by omega
     by_cases zero : s=0
@@ -41311,8 +42145,22 @@ def codePorts (i:Fin 157) : Wire := codePortsList.getD i 0
 def loadMapList : List Wire := [246,1274,247,1275,248,1276,249,1277,250,1278,251,1279,252,1280,253,1281,254,1282,255,1283,1716,1717,1718,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687]
 def loadMap (q:Wire) := loadMapList.getD q 0
 def loadRouteList : List (Fin 157) := [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,17,16,18,19,20,21,22]
+theorem load_map : ∀q:Fin 155, loadMap q=rawPorts ⟨q,by omega⟩ := by
+  have h1 : (loadMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have h2 : (rawPortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  intro q
+  simp only [loadMap, rawPorts, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h2]
+  revert q
+  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 def restoreMapList : List Wire := [246,1274,247,1275,248,249,1277,250,251,1279,252,1280,253,254,1282,255,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689]
 def restoreMap (q:Wire) := restoreMapList.getD q 0
+theorem restore_map : ∀q:Fin 150, restoreMap q=codePorts ⟨q,by omega⟩ := by
+  have h1 : (restoreMapList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  have h2 : (codePortsList.all fun x => decide (x < 2 ^ 11)) = true := by (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
+  intro q
+  simp only [restoreMap, codePorts, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h1, ECDSAAdd.Entrant.WSlimV3.tget_tpack' 11 _ h2]
+  revert q
+  (open ECDSAAdd.Entrant.WSlimV3 in decide +kernel)
 end ECDSAAdd.Entrant.StairPacket.ArchiveBoundary240
 
 end
@@ -41369,13 +42217,55 @@ def Band (t q : Nat) : Prop :=
   (q<1301 ∧ (q+t<1302 ∨ 933<q ∨ t<369)) ∨ (1044+t<q ∧ q<1556) ∨ 2069≤q+t ∨ 1700≤q ∨ ∃c<10, q=e0P t+c
 instance (t q : Nat) : Decidable (Band t q) := by unfold Band; infer_instance
 
+theorem band_off (t : Nat) (ht : t<512) {q k : Nat} (hk : k<134) (h : Band t q) : scratchS t k≠q := by
+  have b:=scratchW_bounds t k
+  have l:=scratchW_le t k hk
+  have he:1574≤e0P t:=by unfold e0P; omega
+  rcases scratchS_cases t k ht hk with ⟨e1, lo, hi, nm⟩ | ⟨t369, lo, hi⟩
+  · rw [e1] at lo hi nm ⊢
+    rcases h with h|h|h|h|⟨c,hc,rfl⟩
+    · omega
+    · omega
+    · omega
+    · omega
+    · exact scratchW_ne_e0 t k c hc
+  · rcases h with h|h|h|h|⟨c,hc,rfl⟩ <;> omega
 theorem tick_lt (i : Fin 26) : start i+15<512 := by have:=i.isLt; simp only [start]; omega
 
+theorem rawLength (i : Fin 26) : (rawPortsList i).length=157 := by
+  simp only [rawPortsList,List.length_append,loadPortsWP_length,List.length_cons,List.length_nil]
+theorem codeLength (i : Fin 26) : (codePortsList i).length=157 := by
+  simp only [codePortsList,List.length_append,restorePortsWP_length,codeTail,List.length_cons,List.length_nil]
 theorem range_two (f : Nat → Nat) (n : Nat) : (List.range n).map f++[f n,f (n+1)]=(List.range (n+2)).map f := by
   rw [List.range_succ,List.range_succ,List.map_append,List.map_append]
   simp only [List.append_assoc,List.map_cons,List.map_nil,List.cons_append,List.nil_append]
+theorem raw_split (i : Fin 26) : rawPortsList i=rawHead i++scratch i := by
+  simp only [rawPortsList,rawHead,scratch,loadPortsWP,List.append_assoc]
+  rw [range_two]
 theorem code_split (i : Fin 26) : codePortsList i=cellsRestoreP (start i+15)++scratch i++codeTail i := by
   simp only [codePortsList,restorePortsWP,scratch]
+theorem raw_scratch (i : Fin 26) {k : Nat} (hk : k<134) : (rawPortsList i).getD (23+k) 0=scratchS (start i+15) k := by
+  rw [raw_split,List.getD_append_right _ _ _ _ (by simp [rawHead,cellsLoadP]),scratch]
+  have e:23+k-(rawHead i).length=k:=by simp [rawHead,cellsLoadP]
+  rw [e,List.getD_eq_getElem?_getD,List.getElem?_map,List.getElem?_range hk]
+  rfl
+theorem code_scratch (i : Fin 26) {k : Nat} (hk : k<134) : (codePortsList i).getD (16+k) 0=scratchS (start i+15) k := by
+  rw [codePortsList,List.getD_append _ _ _ _ (by rw [restorePortsWP_length]; omega),restorePortsWP_scratch _ _ hk]
+theorem rawIndex (i : Fin 26) {q : Wire} (h : q∈rawPortsList i) : ∃k:Fin 157, rawPorts i k=q := by
+  obtain ⟨n,hn,eq⟩:=List.getElem_of_mem h
+  refine ⟨⟨n,(rawLength i) ▸ hn⟩,?_⟩
+  rw [rawPorts,List.getD_eq_getElem?_getD,List.getElem?_eq_getElem hn,Option.getD_some]
+  exact eq
+theorem codeIndex (i : Fin 26) {q : Wire} (h : q∈codePortsList i) : ∃k:Fin 157, codePorts i k=q := by
+  obtain ⟨n,hn,eq⟩:=List.getElem_of_mem h
+  refine ⟨⟨n,(codeLength i) ▸ hn⟩,?_⟩
+  rw [codePorts,List.getD_eq_getElem?_getD,List.getElem?_eq_getElem hn,Option.getD_some]
+  exact eq
+theorem scratch_mem (i : Fin 26) {k : Nat} (hk : k<134) : scratchS (start i+15) k∈scratch i :=
+  List.mem_map.mpr ⟨k,List.mem_range.mpr hk,rfl⟩
+theorem scratch_nodup (i : Fin 26) : (scratch i).Nodup :=
+  List.Nodup.map_on (fun a ha b hb h=>scratchS_inj _ a b (tick_lt i) (List.mem_range.mp ha) (List.mem_range.mp hb) h)
+    List.nodup_range
 
 /-- Head facts, one `decide` over the window archives `i ≤ 18` (short lists only). -/
 theorem heads_all : ∀ i : Fin 26, i.val≤23 →
@@ -41386,15 +42276,162 @@ theorem heads_all : ∀ i : Fin 26, i.val≤23 →
     (∀p∈restoreMoves i, p.1≠p.2 ∧ (p.1∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, p.1=scratchS (start i+15) c) ∧
       (p.2∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, p.2=scratchS (start i+15) c)) := by
   decide +kernel
+theorem routes_head_all : ∀ i : Fin 26, i.val≤23 → ∀k:Fin 157,
+    ((k.val<16 ∨ 150≤k.val) → backMap (loadMoves i) (codePorts i k)=rawPorts i (loadRoute k)) ∧
+    (k.val<30 → backMap (restoreMoves i) (rawPorts i k)=codePorts i (restoreRoute k)) := by
+  decide +kernel
 theorem routes_mid : ∀k:Fin 157, (16≤k.val → k.val<150 → (loadRoute k).val=k.val+7) ∧
     (30≤k.val → (restoreRoute k).val+7=k.val) := by decide +kernel
 theorem load_sort : ∀ k, loadRoute k=k ∨ (16≤ k.val ∧ 16≤(loadRoute k).val) := by decide +kernel
 theorem restore_sort : ∀ k, restoreRoute k=k ∨ (23≤ k.val ∧ 23≤(restoreRoute k).val) := by decide +kernel
 
+theorem rawNodup (i : Fin 26) (hi : i.val≤23) : (rawPortsList i).Nodup := by
+  obtain ⟨hn,hb,-⟩:=heads_all i hi
+  rw [raw_split,List.nodup_append]
+  refine ⟨hn,scratch_nodup i,?_⟩
+  intro a ha b hb' eq
+  obtain ⟨k,hk,rfl⟩:=List.mem_map.mp hb'
+  exact band_off _ (tick_lt i) (List.mem_range.mp hk) (hb a ha) eq.symm
+theorem codeNodup (i : Fin 26) (hi : i.val≤23) : (codePortsList i).Nodup := by
+  obtain ⟨-,-,hn,hb,-⟩:=heads_all i hi
+  rw [code_split,List.nodup_append,List.nodup_append]
+  rw [List.nodup_append] at hn
+  refine ⟨⟨hn.1,scratch_nodup i,?_⟩,hn.2.1,?_⟩
+  · intro a ha b hb' eq
+    obtain ⟨k,hk,rfl⟩:=List.mem_map.mp hb'
+    exact band_off _ (tick_lt i) (List.mem_range.mp hk) (hb a (List.mem_append_left _ ha)) eq.symm
+  · intro a ha b hb' eq
+    rcases List.mem_append.mp ha with ha|ha
+    · exact hn.2.2 a ha b hb' eq
+    · obtain ⟨k,hk,rfl⟩:=List.mem_map.mp ha
+      exact band_off _ (tick_lt i) (List.mem_range.mp hk) (hb b (List.mem_append_right _ hb')) eq
+theorem load_unique (i : Fin 26) (hi : i.val≤23) : Function.Injective (rawPorts i) :=
+  injective_list (rawPortsList i) (rawLength i) (rawNodup i hi)
+theorem restore_unique (i : Fin 26) (hi : i.val≤23) : Function.Injective (codePorts i) :=
+  injective_list (codePortsList i) (codeLength i) (codeNodup i hi)
+theorem load_map (i : Fin 26) : ∀q:Fin 155, loadMap i q=rawPorts i ⟨q,by omega⟩ := by
+  intro q
+  simp only [loadMap,rawPorts,rawPortsList]
+  rw [List.getD_append _ _ _ _ (by rw [loadPortsWP_length]; exact q.isLt)]
+theorem restore_map (i : Fin 26) : ∀q:Fin 150, restoreMap i q=codePorts i ⟨q,by omega⟩ := by
+  intro q
+  simp only [restoreMap,codePorts,codePortsList]
+  rw [List.getD_append _ _ _ _ (by rw [restorePortsWP_length]; exact q.isLt)]
 
+theorem load_route (i : Fin 26) (hi : i.val≤23) : ∀k,backMap (loadMoves i) (codePorts i k)=rawPorts i (loadRoute k) := by
+  intro k
+  by_cases h:k.val<16 ∨ 150≤k.val
+  · exact (routes_head_all i hi k).1 h
+  · have m:=(routes_mid k).1 (by omega) (by omega)
+    have hc:codePorts i k=scratchS (start i+15) (k.val-16):=by
+      have e:=code_scratch i (k:=k.val-16) (by omega); rw [show 16+(k.val-16)=k.val by omega] at e; exact e
+    have hr:rawPorts i (loadRoute k)=scratchS (start i+15) (k.val-16):=by
+      have e:=raw_scratch i (k:=k.val-16) (by omega); rw [show 23+(k.val-16)=k.val+7 by omega,← m] at e; exact e
+    rw [hc,hr]
+    apply backMap_outside
+    intro p hp
+    obtain ⟨h1,h2,-⟩:=(heads_all i hi).2.2.2.2.2.1 p hp
+    have b:=(heads_all i hi).2.1
+    exact ⟨band_off _ (tick_lt i) (by omega) (b _ h1),band_off _ (tick_lt i) (by omega) (b _ h2)⟩
+theorem restore_route (i : Fin 26) (hi : i.val≤23) :
+    ∀k,backMap (restoreMoves i) (rawPorts i k)=codePorts i (restoreRoute k) := by
+  intro k
+  by_cases h:k.val<30
+  · exact (routes_head_all i hi k).2 h
+  · have m:=(routes_mid k).2 (by omega)
+    have hr:rawPorts i k=scratchS (start i+15) (k.val-23):=by
+      have e:=raw_scratch i (k:=k.val-23) (by omega); rw [show 23+(k.val-23)=k.val by omega] at e; exact e
+    have hc:codePorts i (restoreRoute k)=scratchS (start i+15) (k.val-23):=by
+      have e:=code_scratch i (k:=k.val-23) (by omega); rw [show 16+(k.val-23)=(restoreRoute k).val by omega] at e; exact e
+    rw [hr,hc]
+    apply backMap_outside
+    intro p hp
+    obtain ⟨-,h1,h2⟩:=(heads_all i hi).2.2.2.2.2.2 p hp
+    have b:=(heads_all i hi).2.2.2.1
+    have off (q : Wire) (hq : q∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, q=scratchS (start i+15) c) :
+        scratchS (start i+15) (k.val-23)≠q := by
+      rcases hq with hq|⟨c,hc,rfl⟩
+      · exact band_off _ (tick_lt i) (by omega) (b _ hq)
+      · intro eq; have:=scratchS_inj _ _ _ (tick_lt i) (by omega) (by omega) eq; omega
+    exact ⟨off _ h1,off _ h2⟩
 
+theorem load_scope (i : Fin 26) (hi : i.val≤23) : ∀p∈loadMoves i,(∃k,rawPorts i k=p.1) ∧ (∃k,rawPorts i k=p.2) := by
+  intro p hp
+  obtain ⟨h1,h2,-⟩:=(heads_all i hi).2.2.2.2.2.1 p hp
+  exact ⟨rawIndex i (raw_split i ▸ List.mem_append_left _ h1),rawIndex i (raw_split i ▸ List.mem_append_left _ h2)⟩
+theorem restore_scope (i : Fin 26) (hi : i.val≤23) : ∀p∈restoreMoves i,(∃k,codePorts i k=p.1) ∧ (∃k,codePorts i k=p.2) := by
+  intro p hp
+  obtain ⟨-,h1,h2⟩:=(heads_all i hi).2.2.2.2.2.2 p hp
+  have mem (q : Wire) (hq : q∈cellsRestoreP (start i+15)++codeTail i ∨ ∃c<7, q=scratchS (start i+15) c) :
+      q∈codePortsList i := by
+    rw [code_split]
+    rcases hq with hq|⟨c,hc,rfl⟩
+    · rcases List.mem_append.mp hq with hq|hq
+      · exact List.mem_append_left _ (List.mem_append_left _ hq)
+      · exact List.mem_append_right _ hq
+    · exact List.mem_append_left _ (List.mem_append_right _ (scratch_mem i (by omega)))
+  exact ⟨codeIndex i (mem _ h1),codeIndex i (mem _ h2)⟩
+theorem load_proper (i : Fin 26) (hi : i.val≤23) : ∀p∈loadMoves i,p.1≠p.2 :=
+  fun p hp=>((heads_all i hi).2.2.2.2.2.1 p hp).2.2
+theorem restore_proper (i : Fin 26) (hi : i.val≤23) : ∀p∈restoreMoves i,p.1≠p.2 :=
+  fun p hp=>((heads_all i hi).2.2.2.2.2.2 p hp).1
 
+theorem load_program (i : Fin 26) (d : Bool) : archiveLoadP i d=placed (loadMap i) (op true d)++moves (loadMoves i) := by
+  cases d <;> rfl
+theorem restore_program (i : Fin 26) (d : Bool) :
+    archiveRestoreP i d=placed (restoreMap i) (op false d)++moves (restoreMoves i) := by
+  cases d <;> rfl
 
+theorem load_run (i : Fin 26) (hi : i.val≤23) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
+    (ready:Frame (rawPorts i) (startCols true d) row s) :
+    let t:=run (archiveLoadP i d) m s
+    t.phase=s.phase ∧ Frame (codePorts i) (endCols true d) row t ∧ ∀q,(∀k,rawPorts i k≠q) → t.basis q=s.basis q := by
+  rw [load_program]
+  apply packet true d (rawPorts i) (codePorts i) (loadMap i) (loadMoves i) loadRoute (load_unique i hi) _
+    (load_proper i hi) (load_route i hi) load_sort (load_scope i hi) row hr s m ready
+  intro q h
+  have lim:q<155:=by cases d <;> exact h
+  exact ⟨⟨q,by omega⟩,rfl,load_map i ⟨q,lim⟩⟩
+theorem restore_run (i : Fin 26) (hi : i.val≤23) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m:List Bool)
+    (ready:Frame (codePorts i) (startCols false d) row s) :
+    let t:=run (archiveRestoreP i d) m s
+    t.phase=s.phase ∧ Frame (rawPorts i) (endCols false d) row t ∧ ∀q,(∀k,codePorts i k≠q) → t.basis q=s.basis q := by
+  rw [restore_program]
+  apply packet false d (codePorts i) (rawPorts i) (restoreMap i) (restoreMoves i) restoreRoute (restore_unique i hi) _
+    (restore_proper i hi) (restore_route i hi) restore_sort (restore_scope i hi) row hr s m ready
+  intro q h
+  have lim:q<150:=by cases d <;> exact h
+  exact ⟨⟨q,by omega⟩,rfl,restore_map i ⟨q,lim⟩⟩
+theorem code_from_raw (i : Fin 26) (hi : i.val≤23) : ∀k,∃m,rawPorts i m=codePorts i k := by
+  intro k
+  have sub:=(heads_all i hi).2.2.2.2.1
+  have mem:codePorts i k∈codePortsList i:=by
+    rw [codePorts,List.getD_eq_getElem?_getD,List.getElem?_eq_getElem ((codeLength i).symm ▸ k.isLt),Option.getD_some]
+    exact List.getElem_mem _
+  apply rawIndex i
+  rw [raw_split]
+  rw [code_split] at mem
+  rcases List.mem_append.mp mem with mem|mem
+  · rcases List.mem_append.mp mem with mem|mem
+    · exact List.mem_append_left _ (sub _ (List.mem_append_left _ mem))
+    · exact List.mem_append_right _ mem
+  · exact List.mem_append_left _ (sub _ (List.mem_append_right _ mem))
+theorem roundtrip (i : Fin 26) (hi : i.val≤23) (d:Bool) (row:Nat) (hr:row<63145) (s:State) (m n:List Bool)
+    (ready:Frame (rawPorts i) raw row s) :
+    run (archiveRestoreP i d) n (run (archiveLoadP i d) m s)=s := by
+  have f:=load_run i hi d row hr s m ready
+  have b:=restore_run i hi d row hr _ n f.2.1
+  apply state_eq
+  · exact b.1.trans f.1
+  · intro q
+    by_cases h:∃k,rawPorts i k=q
+    · obtain ⟨k,rfl⟩:=h
+      exact (b.2.1 k).trans (ready k).symm
+    · have no:∀k,rawPorts i k≠q:=fun k eq=>h ⟨k,eq⟩
+      have noc:∀k,codePorts i k≠q:=by
+        intro k; obtain ⟨m,eq⟩:=code_from_raw i hi k
+        exact eq ▸ no m
+      exact (b.2.2 q noc).trans (f.2.2 q no)
 
 end ECDSAAdd.Entrant.StairPacket.ArchiveJ
 
@@ -41509,6 +42546,9 @@ theorem tick_closed (e : Nat) (hi : e < 511) :
   simp only [(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,tickT,tickM,recvT,recvM]
   omega
 
+private theorem due_of {t : Nat} (h : dueTick t=true) : t≠5 ∧ History5.packDue t=true := by
+  simp only [dueTick,Bool.and_eq_true,bne_iff_ne,ne_eq] at h
+  exact h
 
 end ECDSAAdd.Entrant.StairPacket.WindowParams
 
@@ -41688,6 +42728,7 @@ theorem appW {a b : Program} (ha : CoveredW a) (hb : CoveredW b) : CoveredW (a++
 theorem rail_le (s : Nat) : railP s ≤ 258 := by unfold railP; split <;> (try split) <;> omega
 theorem top_A (s : Nat) (h : s ≤ 512) : s+15+railP s ≤ 528 := by unfold railP; split <;> (try split) <;> omega
 theorem start_lo (j : Fin 26) (h : 0 ≤ j.val) : 45 ≤ start j := by simp only [start]; omega
+theorem start_hi (j : Fin 26) (h : j.val ≤ 23) : start j ≤ 390 := by simp only [start]; omega
 
 theorem footP_dom {s q : Nat} (lo : 45 ≤ s) (hi : s ≤ 405) (h : footP s q) : domainW q = true := by
   have a := top_A s (by omega); have b := rail_le s
@@ -41695,6 +42736,9 @@ theorem footP_dom {s q : Nat} (lo : 45 ≤ s) (hi : s ≤ 405) (h : footP s q) :
 theorem parkFoot_dom {e q : Nat} (lo : 225 ≤ e) (h : parkFootP e q) : domainW q = true := by
   have b : railP e ≤ 257 := by unfold railP; split <;> (try split) <;> omega
   rw [dom_iff]; unfold parkFootP at h; omega
+theorem park_cov (e : Nat) (lo : 225 ≤ e) (hi : e ≤ 405) : CoveredW (parkP e) ∧ CoveredW (parkInvP e) := by
+  have w := park_wires e (by omega) hi
+  exact ⟨fun q hq => parkFoot_dom lo (w.1 q hq), fun q hq => parkFoot_dom lo (w.2 q hq)⟩
 /-- History cells of the pack codec at due tick `t` (ticks `t-5 .. t-1`). -/
 theorem pack_cells (d : Bool) (t : Nat) (ten : 10 ≤ t) (due : History5.packDue t=true) :
     (∀ q ∈ wires (Rolling1588.packAtTick d t), ∃ r, t-5 ≤ r ∧ r ≤ t-1 ∧ (q=base r ∨ q=base (1028+r))) ∧
@@ -41742,6 +42786,7 @@ theorem exit_tick (e : Nat) (he : e < 511)
   · exact List.all_eq_true.mp table x (List.mem_toFinset.mp
       (W.ReverseCarry.compactReceiverTick_support base e (by omega) base_pool_nodup hx))
 
+theorem rest_eq : WindowParams.rest = [⟨2,by decide⟩,⟨3,by decide⟩,⟨4,by decide⟩,⟨5,by decide⟩,⟨6,by decide⟩,⟨7,by decide⟩,⟨8,by decide⟩,⟨9,by decide⟩,⟨10,by decide⟩,⟨11,by decide⟩,⟨12,by decide⟩,⟨13,by decide⟩,⟨14,by decide⟩,⟨15,by decide⟩,⟨16,by decide⟩,⟨17,by decide⟩,⟨18,by decide⟩,⟨19,by decide⟩,⟨20,by decide⟩,⟨21,by decide⟩] := by decide
 end ECDSAAdd.Entrant.StairPacket.WindowCovered
 
 end
@@ -41781,6 +42826,9 @@ theorem leaveMove_proper (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
   obtain ⟨w1, w2⟩ := start_win j h0 h1
   exact leaveMove_proper_of w1 w2 (leave_proper j h0 h1)
 
+theorem leaveMove_phys (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    GatePhysical (leaveMoveP j) ∧ GatePhysical (leaveMoveInvP j) := by
+  rw [leaveMoveP, leaveMoveInvP]; exact physical_of_proper _ (leaveMove_proper j h0 h1)
 
 /-- Packs and unpacks at any due tick, in any `OB5.sig s` frame. -/
 theorem pack_phys (d : Bool) (s t : Nat) (hs : s ≤ 511) (ten : 10 ≤ t) (hi : t ≤ 511)
@@ -41823,7 +42871,18 @@ theorem codec_phys (ports : List Wire) (n : Nat) (P : Program) (nd : ports.Nodup
   rw [List.getD_eq_getElem _ _ ha', List.getD_eq_getElem _ _ hb'] at e
   exact (List.Nodup.getElem_inj_iff nd).mp e
 
+theorem moveLoad_phys (t : Nat) (lo : 60 ≤ t) (hi : t ≤ 405) : GatePhysical (moveLoadP t) := by
+  rw [moveLoadP]
+  refine (physical_of_proper _ (proper_swapsG _ ?_)).1
+  simp only [moveLoadPairs, List.forall_mem_cons, List.forall_mem_nil, and_true, ne_eq, OB5.sig]
+  and_intros <;> first | (intro x hx; cases hx) | (unfold Wire; split_ifs <;> omega) | (unfold Wire; omega)
 
+theorem moveRestore_phys (t f : Nat) (lo : 60 ≤ t) (hi : t ≤ 405) (hf : 1563 ≤ f ∨ f+3 ≤ 1560) :
+    GatePhysical (moveRestoreP t f) := by
+  rw [moveRestoreP]
+  refine (physical_of_proper _ (proper_swapsG _ ?_)).1
+  simp only [moveRestorePairs, List.forall_mem_cons, List.forall_mem_nil, and_true, ne_eq, OB5.sig]
+  and_intros <;> first | (intro x hx; cases hx) | (unfold Wire; split_ifs <;> omega) | (unfold Wire; omega)
 
 theorem load_codec_phys (ports : List Wire) (nd : ports.Nodup) (len : 155 ≤ ports.length) (d : Bool) :
     GatePhysical (renameProgram (fun q => ports.getD q 0) (if d then ReducedWindowArchives.load0 else ReducedWindowArchives.load1)) := by
@@ -42610,7 +43669,46 @@ def guardWord17 (m h w : Nat) (far long : Bool) :=
   let na:=if far then 1 else a
   (((((m%8+w)%8) ^^^ (if long then a else 0) ^^^ (if long then na else 0))+8-w)%8)
 
+theorem limbs17 (U X M w : Nat) (positive:0<U) (bw:w≤1) (long:Bool)
+    (far:2≤X/U) (same:long=true → X/U=M/U+w) :
+    let d:=(X/U-1)*U
+    (X-d)%U=X%U ∧ (X-d)/U=1 ∧
+    (M-(if long then d else 0))%U=M%U ∧
+    ((M-(if long then d else 0))/U)%8=guardWord17 (M/U) (X/U) w true long := by
+  let H:=X/U
+  let D:=(H-1)*U
+  have hx:=Nat.mod_add_div X U
+  have xm:=Nat.mod_lt X positive
+  have splitX:U*H=D+U*1 := by
+    change U*H=(H-1)*U+U*1
+    rw [Nat.mul_comm (H-1) U,←Nat.mul_add,show H-1+1=H by change 2≤H at far;omega]
+  have rx:X-D=X%U+U*1:=by change X%U+U*H=X at hx;omega
+  dsimp only
+  change (X-D)%U=X%U ∧ (X-D)/U=1 ∧ _
+  rw [rx,Nat.add_mul_mod_self_left,Nat.mod_mod,Nat.add_mul_div_left _ _ positive,Nat.div_eq_of_lt xm,Nat.zero_add]
+  refine ⟨rfl,rfl,?_⟩
+  cases long with
+  | false =>
+    simp [guardWord17,Nat.add_mod]
+    omega
+  | true =>
+    have eq:H=M/U+w:=same rfl
+    have ym:=Nat.mod_lt M positive
+    have hy:=Nat.mod_add_div M U
+    have q:M/U=(H-1)+(1-w):=by change 2≤H at far; omega
+    have splitM:U*(M/U)=D+U*(1-w) := by rw [q,Nat.mul_add,Nat.mul_comm U (H-1)]
+    have ry:M-D=M%U+U*(1-w):=by omega
+    change (M-D)%U=M%U ∧ ((M-D)/U)%8=_
+    rw [ry,Nat.add_mul_mod_self_left,Nat.mod_mod,Nat.add_mul_div_left _ _ positive,Nat.div_eq_of_lt ym,Nat.zero_add]
+    refine ⟨rfl,?_⟩
+    have eqMod:((M/U)%8+w)%8=H%8:=by rw [eq,Nat.mod_add_mod]
+    change (1-w)%8=(((M/U%8+w)%8 ^^^ H%8 ^^^ 1)+8-w)%8
+    rw [eqMod,Nat.xor_self,Nat.zero_xor]
+    omega
 
+theorem unchanged17 (M H w : Nat) (bw:w≤1) (long:Bool) :
+    guardWord17 M H w false long=M%8 := by
+  cases long <;> simp [guardWord17] <;> omega
 
 
 
@@ -42816,8 +43914,34 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.PortalValues
 open Arithmetic
 
+theorem third (a b c:Wire) (rest:List Wire) (s:BasisState) :
+    s c=true ↔ 4≤regValue (a::b::c::rest) s%8 := by
+  change s c=true ↔ 4≤((if s a then 1 else 0)+2*((if s b then 1 else 0)+
+      2*((if s c then 1 else 0)+2*regValue rest s)))%8
+  cases s a <;> cases s b <;> cases s c <;> simp <;> omega
 
+theorem wideThird (a b c:Wire) (rest:List Wire) (s:BasisState) (U W:Nat)
+    (hp:0<U) (eq:regValue (a::b::c::rest) s=W/U) :
+    s c=true ↔ 4*U≤W%(8*U) := by
+  rw [third a b c rest s,eq,Nat.mul_comm 8 U,Nat.mod_mul]
+  have rem:=Nat.mod_lt W hp
+  constructor
+  · intro h
+    have big:=Nat.mul_le_mul_left U h
+    omega
+  · intro h
+    by_contra not
+    have ub:(W/U%8)+1≤4:=by omega
+    have p:=Nat.mul_le_mul_left U ub
+    rw [Nat.mul_add,Nat.mul_one] at p
+    omega
 
+theorem upper (a b c:Wire) (rest:List Wire) (s:BasisState) (U W:Nat)
+    (eq:regValue (a::b::c::rest) s=W/U) :
+    regValue rest s=W/(8*U) := by
+  have z:=shiftedValue (a::b::c::rest) 3 (by simp) s
+  rw [eq,Nat.div_div_eq_div_mul,Nat.mul_comm U] at z
+  exact z
 
 end ECDSAAdd.Entrant.StairPacket.PortalValues
 
@@ -43130,6 +44254,11 @@ theorem upper_restore (half u v sign radix : Nat) (hp : 0<half)
     Nat.mod_add_mod,show y+b+(radix-b)=y+radix by omega,Nat.add_mod_right,
     Nat.mod_eq_of_lt yl]
 
+theorem near_bound (u v sign divisor bound : Nat) (dp : 0<divisor) (wide : 3*divisor≤bound)
+    (near : decide (3≤(u+v)/divisor)=false) : u-sign<bound := by
+  have lo : (u+v)/divisor<3 := by simpa using near
+  have lim := (Nat.div_lt_iff_lt_mul dp).mp lo
+  omega
 
 end ECDSAAdd.Entrant.StairPacket.LeaveCompanion
 
@@ -43283,6 +44412,7 @@ def forward : Program := [.CX 0 4,
 .CX 20 14,
 .CX 14 20,
 .CX 20 14]
+theorem forward_checked : eval mask forward input=(true,output) := by decide +kernel
 def backward : Program := [.CX 20 14,
 .CX 14 20,
 .CX 20 14,
@@ -43369,6 +44499,7 @@ def backward : Program := [.CX 20 14,
 .CX 17 0,
 .measureX 17 [] [.CZ 8 4],
 .CX 0 4]
+theorem backward_checked : eval mask backward output=(true,input) := by decide +kernel
 def result (r : Nat) : Nat :=
   let ra:=r%16; let rb:=r/16%16; let g:=r.testBit 8; let neg:=r.testBit 9
   let f:=r.testBit 10; let u:=r.testBit 11
@@ -43479,6 +44610,15 @@ instance (r:Nat) : Decidable (Formula r) := inferInstanceAs (Decidable (∀_:Fin
 def Interval (lo n : Nat) : Prop := ∀ j : Fin n, Formula (lo+j)
 instance (lo n:Nat) : Decidable (Interval lo n) := inferInstanceAs (Decidable (∀_:Fin n,_))
 
+theorem combine (lo n : Nat) (a:Interval lo n) (b:Interval (lo+n) n) : Interval lo (n+n) := by
+  intro j
+  by_cases h:j.val<n
+  · exact a ⟨j,h⟩
+  · have hj:=j.isLt
+    have rhs:=b ⟨j.val-n,by omega⟩
+    change Formula (lo+n+(j.val-n)) at rhs
+    change Formula (lo+j.val)
+    rwa [show lo+n+(j.val-n)=lo+j.val by omega] at rhs
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43519,6 +44659,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part0_16 : Interval 0 16 := by decide +kernel
+private theorem part16_16 : Interval 16 16 := by decide +kernel
+private theorem part32_16 : Interval 32 16 := by decide +kernel
+private theorem part48_16 : Interval 48 16 := by decide +kernel
+private theorem part64_16 : Interval 64 16 := by decide +kernel
+private theorem part80_16 : Interval 80 16 := by decide +kernel
+private theorem part96_16 : Interval 96 16 := by decide +kernel
+private theorem part112_16 : Interval 112 16 := by decide +kernel
+private theorem part128_16 : Interval 128 16 := by decide +kernel
+private theorem part144_16 : Interval 144 16 := by decide +kernel
+private theorem part160_16 : Interval 160 16 := by decide +kernel
+private theorem part176_16 : Interval 176 16 := by decide +kernel
+private theorem part192_16 : Interval 192 16 := by decide +kernel
+private theorem part208_16 : Interval 208 16 := by decide +kernel
+private theorem part224_16 : Interval 224 16 := by decide +kernel
+private theorem part240_16 : Interval 240 16 := by decide +kernel
+theorem part0_256 : Interval 0 256 := (combine 0 128 (combine 0 64 (combine 0 32 (combine 0 16 part0_16 part16_16) (combine 32 16 part32_16 part48_16)) (combine 64 32 (combine 64 16 part64_16 part80_16) (combine 96 16 part96_16 part112_16))) (combine 128 64 (combine 128 32 (combine 128 16 part128_16 part144_16) (combine 160 16 part160_16 part176_16)) (combine 192 32 (combine 192 16 part192_16 part208_16) (combine 224 16 part224_16 part240_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43528,6 +44685,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part256_16 : Interval 256 16 := by decide +kernel
+private theorem part272_16 : Interval 272 16 := by decide +kernel
+private theorem part288_16 : Interval 288 16 := by decide +kernel
+private theorem part304_16 : Interval 304 16 := by decide +kernel
+private theorem part320_16 : Interval 320 16 := by decide +kernel
+private theorem part336_16 : Interval 336 16 := by decide +kernel
+private theorem part352_16 : Interval 352 16 := by decide +kernel
+private theorem part368_16 : Interval 368 16 := by decide +kernel
+private theorem part384_16 : Interval 384 16 := by decide +kernel
+private theorem part400_16 : Interval 400 16 := by decide +kernel
+private theorem part416_16 : Interval 416 16 := by decide +kernel
+private theorem part432_16 : Interval 432 16 := by decide +kernel
+private theorem part448_16 : Interval 448 16 := by decide +kernel
+private theorem part464_16 : Interval 464 16 := by decide +kernel
+private theorem part480_16 : Interval 480 16 := by decide +kernel
+private theorem part496_16 : Interval 496 16 := by decide +kernel
+theorem part256_256 : Interval 256 256 := (combine 256 128 (combine 256 64 (combine 256 32 (combine 256 16 part256_16 part272_16) (combine 288 16 part288_16 part304_16)) (combine 320 32 (combine 320 16 part320_16 part336_16) (combine 352 16 part352_16 part368_16))) (combine 384 64 (combine 384 32 (combine 384 16 part384_16 part400_16) (combine 416 16 part416_16 part432_16)) (combine 448 32 (combine 448 16 part448_16 part464_16) (combine 480 16 part480_16 part496_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43537,6 +44711,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part2560_16 : Interval 2560 16 := by decide +kernel
+private theorem part2576_16 : Interval 2576 16 := by decide +kernel
+private theorem part2592_16 : Interval 2592 16 := by decide +kernel
+private theorem part2608_16 : Interval 2608 16 := by decide +kernel
+private theorem part2624_16 : Interval 2624 16 := by decide +kernel
+private theorem part2640_16 : Interval 2640 16 := by decide +kernel
+private theorem part2656_16 : Interval 2656 16 := by decide +kernel
+private theorem part2672_16 : Interval 2672 16 := by decide +kernel
+private theorem part2688_16 : Interval 2688 16 := by decide +kernel
+private theorem part2704_16 : Interval 2704 16 := by decide +kernel
+private theorem part2720_16 : Interval 2720 16 := by decide +kernel
+private theorem part2736_16 : Interval 2736 16 := by decide +kernel
+private theorem part2752_16 : Interval 2752 16 := by decide +kernel
+private theorem part2768_16 : Interval 2768 16 := by decide +kernel
+private theorem part2784_16 : Interval 2784 16 := by decide +kernel
+private theorem part2800_16 : Interval 2800 16 := by decide +kernel
+theorem part2560_256 : Interval 2560 256 := (combine 2560 128 (combine 2560 64 (combine 2560 32 (combine 2560 16 part2560_16 part2576_16) (combine 2592 16 part2592_16 part2608_16)) (combine 2624 32 (combine 2624 16 part2624_16 part2640_16) (combine 2656 16 part2656_16 part2672_16))) (combine 2688 64 (combine 2688 32 (combine 2688 16 part2688_16 part2704_16) (combine 2720 16 part2720_16 part2736_16)) (combine 2752 32 (combine 2752 16 part2752_16 part2768_16) (combine 2784 16 part2784_16 part2800_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43546,6 +44737,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part2816_16 : Interval 2816 16 := by decide +kernel
+private theorem part2832_16 : Interval 2832 16 := by decide +kernel
+private theorem part2848_16 : Interval 2848 16 := by decide +kernel
+private theorem part2864_16 : Interval 2864 16 := by decide +kernel
+private theorem part2880_16 : Interval 2880 16 := by decide +kernel
+private theorem part2896_16 : Interval 2896 16 := by decide +kernel
+private theorem part2912_16 : Interval 2912 16 := by decide +kernel
+private theorem part2928_16 : Interval 2928 16 := by decide +kernel
+private theorem part2944_16 : Interval 2944 16 := by decide +kernel
+private theorem part2960_16 : Interval 2960 16 := by decide +kernel
+private theorem part2976_16 : Interval 2976 16 := by decide +kernel
+private theorem part2992_16 : Interval 2992 16 := by decide +kernel
+private theorem part3008_16 : Interval 3008 16 := by decide +kernel
+private theorem part3024_16 : Interval 3024 16 := by decide +kernel
+private theorem part3040_16 : Interval 3040 16 := by decide +kernel
+private theorem part3056_16 : Interval 3056 16 := by decide +kernel
+theorem part2816_256 : Interval 2816 256 := (combine 2816 128 (combine 2816 64 (combine 2816 32 (combine 2816 16 part2816_16 part2832_16) (combine 2848 16 part2848_16 part2864_16)) (combine 2880 32 (combine 2880 16 part2880_16 part2896_16) (combine 2912 16 part2912_16 part2928_16))) (combine 2944 64 (combine 2944 32 (combine 2944 16 part2944_16 part2960_16) (combine 2976 16 part2976_16 part2992_16)) (combine 3008 32 (combine 3008 16 part3008_16 part3024_16) (combine 3040 16 part3040_16 part3056_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43555,6 +44763,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part3072_16 : Interval 3072 16 := by decide +kernel
+private theorem part3088_16 : Interval 3088 16 := by decide +kernel
+private theorem part3104_16 : Interval 3104 16 := by decide +kernel
+private theorem part3120_16 : Interval 3120 16 := by decide +kernel
+private theorem part3136_16 : Interval 3136 16 := by decide +kernel
+private theorem part3152_16 : Interval 3152 16 := by decide +kernel
+private theorem part3168_16 : Interval 3168 16 := by decide +kernel
+private theorem part3184_16 : Interval 3184 16 := by decide +kernel
+private theorem part3200_16 : Interval 3200 16 := by decide +kernel
+private theorem part3216_16 : Interval 3216 16 := by decide +kernel
+private theorem part3232_16 : Interval 3232 16 := by decide +kernel
+private theorem part3248_16 : Interval 3248 16 := by decide +kernel
+private theorem part3264_16 : Interval 3264 16 := by decide +kernel
+private theorem part3280_16 : Interval 3280 16 := by decide +kernel
+private theorem part3296_16 : Interval 3296 16 := by decide +kernel
+private theorem part3312_16 : Interval 3312 16 := by decide +kernel
+theorem part3072_256 : Interval 3072 256 := (combine 3072 128 (combine 3072 64 (combine 3072 32 (combine 3072 16 part3072_16 part3088_16) (combine 3104 16 part3104_16 part3120_16)) (combine 3136 32 (combine 3136 16 part3136_16 part3152_16) (combine 3168 16 part3168_16 part3184_16))) (combine 3200 64 (combine 3200 32 (combine 3200 16 part3200_16 part3216_16) (combine 3232 16 part3232_16 part3248_16)) (combine 3264 32 (combine 3264 16 part3264_16 part3280_16) (combine 3296 16 part3296_16 part3312_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43564,6 +44789,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part3328_16 : Interval 3328 16 := by decide +kernel
+private theorem part3344_16 : Interval 3344 16 := by decide +kernel
+private theorem part3360_16 : Interval 3360 16 := by decide +kernel
+private theorem part3376_16 : Interval 3376 16 := by decide +kernel
+private theorem part3392_16 : Interval 3392 16 := by decide +kernel
+private theorem part3408_16 : Interval 3408 16 := by decide +kernel
+private theorem part3424_16 : Interval 3424 16 := by decide +kernel
+private theorem part3440_16 : Interval 3440 16 := by decide +kernel
+private theorem part3456_16 : Interval 3456 16 := by decide +kernel
+private theorem part3472_16 : Interval 3472 16 := by decide +kernel
+private theorem part3488_16 : Interval 3488 16 := by decide +kernel
+private theorem part3504_16 : Interval 3504 16 := by decide +kernel
+private theorem part3520_16 : Interval 3520 16 := by decide +kernel
+private theorem part3536_16 : Interval 3536 16 := by decide +kernel
+private theorem part3552_16 : Interval 3552 16 := by decide +kernel
+private theorem part3568_16 : Interval 3568 16 := by decide +kernel
+theorem part3328_256 : Interval 3328 256 := (combine 3328 128 (combine 3328 64 (combine 3328 32 (combine 3328 16 part3328_16 part3344_16) (combine 3360 16 part3360_16 part3376_16)) (combine 3392 32 (combine 3392 16 part3392_16 part3408_16) (combine 3424 16 part3424_16 part3440_16))) (combine 3456 64 (combine 3456 32 (combine 3456 16 part3456_16 part3472_16) (combine 3488 16 part3488_16 part3504_16)) (combine 3520 32 (combine 3520 16 part3520_16 part3536_16) (combine 3552 16 part3552_16 part3568_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43573,6 +44815,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part3584_16 : Interval 3584 16 := by decide +kernel
+private theorem part3600_16 : Interval 3600 16 := by decide +kernel
+private theorem part3616_16 : Interval 3616 16 := by decide +kernel
+private theorem part3632_16 : Interval 3632 16 := by decide +kernel
+private theorem part3648_16 : Interval 3648 16 := by decide +kernel
+private theorem part3664_16 : Interval 3664 16 := by decide +kernel
+private theorem part3680_16 : Interval 3680 16 := by decide +kernel
+private theorem part3696_16 : Interval 3696 16 := by decide +kernel
+private theorem part3712_16 : Interval 3712 16 := by decide +kernel
+private theorem part3728_16 : Interval 3728 16 := by decide +kernel
+private theorem part3744_16 : Interval 3744 16 := by decide +kernel
+private theorem part3760_16 : Interval 3760 16 := by decide +kernel
+private theorem part3776_16 : Interval 3776 16 := by decide +kernel
+private theorem part3792_16 : Interval 3792 16 := by decide +kernel
+private theorem part3808_16 : Interval 3808 16 := by decide +kernel
+private theorem part3824_16 : Interval 3824 16 := by decide +kernel
+theorem part3584_256 : Interval 3584 256 := (combine 3584 128 (combine 3584 64 (combine 3584 32 (combine 3584 16 part3584_16 part3600_16) (combine 3616 16 part3616_16 part3632_16)) (combine 3648 32 (combine 3648 16 part3648_16 part3664_16) (combine 3680 16 part3680_16 part3696_16))) (combine 3712 64 (combine 3712 32 (combine 3712 16 part3712_16 part3728_16) (combine 3744 16 part3744_16 part3760_16)) (combine 3776 32 (combine 3776 16 part3776_16 part3792_16) (combine 3808 16 part3808_16 part3824_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43582,6 +44841,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part3840_16 : Interval 3840 16 := by decide +kernel
+private theorem part3856_16 : Interval 3856 16 := by decide +kernel
+private theorem part3872_16 : Interval 3872 16 := by decide +kernel
+private theorem part3888_16 : Interval 3888 16 := by decide +kernel
+private theorem part3904_16 : Interval 3904 16 := by decide +kernel
+private theorem part3920_16 : Interval 3920 16 := by decide +kernel
+private theorem part3936_16 : Interval 3936 16 := by decide +kernel
+private theorem part3952_16 : Interval 3952 16 := by decide +kernel
+private theorem part3968_16 : Interval 3968 16 := by decide +kernel
+private theorem part3984_16 : Interval 3984 16 := by decide +kernel
+private theorem part4000_16 : Interval 4000 16 := by decide +kernel
+private theorem part4016_16 : Interval 4016 16 := by decide +kernel
+private theorem part4032_16 : Interval 4032 16 := by decide +kernel
+private theorem part4048_16 : Interval 4048 16 := by decide +kernel
+private theorem part4064_16 : Interval 4064 16 := by decide +kernel
+private theorem part4080_16 : Interval 4080 16 := by decide +kernel
+theorem part3840_256 : Interval 3840 256 := (combine 3840 128 (combine 3840 64 (combine 3840 32 (combine 3840 16 part3840_16 part3856_16) (combine 3872 16 part3872_16 part3888_16)) (combine 3904 32 (combine 3904 16 part3904_16 part3920_16) (combine 3936 16 part3936_16 part3952_16))) (combine 3968 64 (combine 3968 32 (combine 3968 16 part3968_16 part3984_16) (combine 4000 16 part4000_16 part4016_16)) (combine 4032 32 (combine 4032 16 part4032_16 part4048_16) (combine 4064 16 part4064_16 part4080_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43591,6 +44867,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part512_16 : Interval 512 16 := by decide +kernel
+private theorem part528_16 : Interval 528 16 := by decide +kernel
+private theorem part544_16 : Interval 544 16 := by decide +kernel
+private theorem part560_16 : Interval 560 16 := by decide +kernel
+private theorem part576_16 : Interval 576 16 := by decide +kernel
+private theorem part592_16 : Interval 592 16 := by decide +kernel
+private theorem part608_16 : Interval 608 16 := by decide +kernel
+private theorem part624_16 : Interval 624 16 := by decide +kernel
+private theorem part640_16 : Interval 640 16 := by decide +kernel
+private theorem part656_16 : Interval 656 16 := by decide +kernel
+private theorem part672_16 : Interval 672 16 := by decide +kernel
+private theorem part688_16 : Interval 688 16 := by decide +kernel
+private theorem part704_16 : Interval 704 16 := by decide +kernel
+private theorem part720_16 : Interval 720 16 := by decide +kernel
+private theorem part736_16 : Interval 736 16 := by decide +kernel
+private theorem part752_16 : Interval 752 16 := by decide +kernel
+theorem part512_256 : Interval 512 256 := (combine 512 128 (combine 512 64 (combine 512 32 (combine 512 16 part512_16 part528_16) (combine 544 16 part544_16 part560_16)) (combine 576 32 (combine 576 16 part576_16 part592_16) (combine 608 16 part608_16 part624_16))) (combine 640 64 (combine 640 32 (combine 640 16 part640_16 part656_16) (combine 672 16 part672_16 part688_16)) (combine 704 32 (combine 704 16 part704_16 part720_16) (combine 736 16 part736_16 part752_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43600,6 +44893,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part768_16 : Interval 768 16 := by decide +kernel
+private theorem part784_16 : Interval 784 16 := by decide +kernel
+private theorem part800_16 : Interval 800 16 := by decide +kernel
+private theorem part816_16 : Interval 816 16 := by decide +kernel
+private theorem part832_16 : Interval 832 16 := by decide +kernel
+private theorem part848_16 : Interval 848 16 := by decide +kernel
+private theorem part864_16 : Interval 864 16 := by decide +kernel
+private theorem part880_16 : Interval 880 16 := by decide +kernel
+private theorem part896_16 : Interval 896 16 := by decide +kernel
+private theorem part912_16 : Interval 912 16 := by decide +kernel
+private theorem part928_16 : Interval 928 16 := by decide +kernel
+private theorem part944_16 : Interval 944 16 := by decide +kernel
+private theorem part960_16 : Interval 960 16 := by decide +kernel
+private theorem part976_16 : Interval 976 16 := by decide +kernel
+private theorem part992_16 : Interval 992 16 := by decide +kernel
+private theorem part1008_16 : Interval 1008 16 := by decide +kernel
+theorem part768_256 : Interval 768 256 := (combine 768 128 (combine 768 64 (combine 768 32 (combine 768 16 part768_16 part784_16) (combine 800 16 part800_16 part816_16)) (combine 832 32 (combine 832 16 part832_16 part848_16) (combine 864 16 part864_16 part880_16))) (combine 896 64 (combine 896 32 (combine 896 16 part896_16 part912_16) (combine 928 16 part928_16 part944_16)) (combine 960 32 (combine 960 16 part960_16 part976_16) (combine 992 16 part992_16 part1008_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43609,6 +44919,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part1024_16 : Interval 1024 16 := by decide +kernel
+private theorem part1040_16 : Interval 1040 16 := by decide +kernel
+private theorem part1056_16 : Interval 1056 16 := by decide +kernel
+private theorem part1072_16 : Interval 1072 16 := by decide +kernel
+private theorem part1088_16 : Interval 1088 16 := by decide +kernel
+private theorem part1104_16 : Interval 1104 16 := by decide +kernel
+private theorem part1120_16 : Interval 1120 16 := by decide +kernel
+private theorem part1136_16 : Interval 1136 16 := by decide +kernel
+private theorem part1152_16 : Interval 1152 16 := by decide +kernel
+private theorem part1168_16 : Interval 1168 16 := by decide +kernel
+private theorem part1184_16 : Interval 1184 16 := by decide +kernel
+private theorem part1200_16 : Interval 1200 16 := by decide +kernel
+private theorem part1216_16 : Interval 1216 16 := by decide +kernel
+private theorem part1232_16 : Interval 1232 16 := by decide +kernel
+private theorem part1248_16 : Interval 1248 16 := by decide +kernel
+private theorem part1264_16 : Interval 1264 16 := by decide +kernel
+theorem part1024_256 : Interval 1024 256 := (combine 1024 128 (combine 1024 64 (combine 1024 32 (combine 1024 16 part1024_16 part1040_16) (combine 1056 16 part1056_16 part1072_16)) (combine 1088 32 (combine 1088 16 part1088_16 part1104_16) (combine 1120 16 part1120_16 part1136_16))) (combine 1152 64 (combine 1152 32 (combine 1152 16 part1152_16 part1168_16) (combine 1184 16 part1184_16 part1200_16)) (combine 1216 32 (combine 1216 16 part1216_16 part1232_16) (combine 1248 16 part1248_16 part1264_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43618,6 +44945,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part1280_16 : Interval 1280 16 := by decide +kernel
+private theorem part1296_16 : Interval 1296 16 := by decide +kernel
+private theorem part1312_16 : Interval 1312 16 := by decide +kernel
+private theorem part1328_16 : Interval 1328 16 := by decide +kernel
+private theorem part1344_16 : Interval 1344 16 := by decide +kernel
+private theorem part1360_16 : Interval 1360 16 := by decide +kernel
+private theorem part1376_16 : Interval 1376 16 := by decide +kernel
+private theorem part1392_16 : Interval 1392 16 := by decide +kernel
+private theorem part1408_16 : Interval 1408 16 := by decide +kernel
+private theorem part1424_16 : Interval 1424 16 := by decide +kernel
+private theorem part1440_16 : Interval 1440 16 := by decide +kernel
+private theorem part1456_16 : Interval 1456 16 := by decide +kernel
+private theorem part1472_16 : Interval 1472 16 := by decide +kernel
+private theorem part1488_16 : Interval 1488 16 := by decide +kernel
+private theorem part1504_16 : Interval 1504 16 := by decide +kernel
+private theorem part1520_16 : Interval 1520 16 := by decide +kernel
+theorem part1280_256 : Interval 1280 256 := (combine 1280 128 (combine 1280 64 (combine 1280 32 (combine 1280 16 part1280_16 part1296_16) (combine 1312 16 part1312_16 part1328_16)) (combine 1344 32 (combine 1344 16 part1344_16 part1360_16) (combine 1376 16 part1376_16 part1392_16))) (combine 1408 64 (combine 1408 32 (combine 1408 16 part1408_16 part1424_16) (combine 1440 16 part1440_16 part1456_16)) (combine 1472 32 (combine 1472 16 part1472_16 part1488_16) (combine 1504 16 part1504_16 part1520_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43627,6 +44971,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part1536_16 : Interval 1536 16 := by decide +kernel
+private theorem part1552_16 : Interval 1552 16 := by decide +kernel
+private theorem part1568_16 : Interval 1568 16 := by decide +kernel
+private theorem part1584_16 : Interval 1584 16 := by decide +kernel
+private theorem part1600_16 : Interval 1600 16 := by decide +kernel
+private theorem part1616_16 : Interval 1616 16 := by decide +kernel
+private theorem part1632_16 : Interval 1632 16 := by decide +kernel
+private theorem part1648_16 : Interval 1648 16 := by decide +kernel
+private theorem part1664_16 : Interval 1664 16 := by decide +kernel
+private theorem part1680_16 : Interval 1680 16 := by decide +kernel
+private theorem part1696_16 : Interval 1696 16 := by decide +kernel
+private theorem part1712_16 : Interval 1712 16 := by decide +kernel
+private theorem part1728_16 : Interval 1728 16 := by decide +kernel
+private theorem part1744_16 : Interval 1744 16 := by decide +kernel
+private theorem part1760_16 : Interval 1760 16 := by decide +kernel
+private theorem part1776_16 : Interval 1776 16 := by decide +kernel
+theorem part1536_256 : Interval 1536 256 := (combine 1536 128 (combine 1536 64 (combine 1536 32 (combine 1536 16 part1536_16 part1552_16) (combine 1568 16 part1568_16 part1584_16)) (combine 1600 32 (combine 1600 16 part1600_16 part1616_16) (combine 1632 16 part1632_16 part1648_16))) (combine 1664 64 (combine 1664 32 (combine 1664 16 part1664_16 part1680_16) (combine 1696 16 part1696_16 part1712_16)) (combine 1728 32 (combine 1728 16 part1728_16 part1744_16) (combine 1760 16 part1760_16 part1776_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43636,6 +44997,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part1792_16 : Interval 1792 16 := by decide +kernel
+private theorem part1808_16 : Interval 1808 16 := by decide +kernel
+private theorem part1824_16 : Interval 1824 16 := by decide +kernel
+private theorem part1840_16 : Interval 1840 16 := by decide +kernel
+private theorem part1856_16 : Interval 1856 16 := by decide +kernel
+private theorem part1872_16 : Interval 1872 16 := by decide +kernel
+private theorem part1888_16 : Interval 1888 16 := by decide +kernel
+private theorem part1904_16 : Interval 1904 16 := by decide +kernel
+private theorem part1920_16 : Interval 1920 16 := by decide +kernel
+private theorem part1936_16 : Interval 1936 16 := by decide +kernel
+private theorem part1952_16 : Interval 1952 16 := by decide +kernel
+private theorem part1968_16 : Interval 1968 16 := by decide +kernel
+private theorem part1984_16 : Interval 1984 16 := by decide +kernel
+private theorem part2000_16 : Interval 2000 16 := by decide +kernel
+private theorem part2016_16 : Interval 2016 16 := by decide +kernel
+private theorem part2032_16 : Interval 2032 16 := by decide +kernel
+theorem part1792_256 : Interval 1792 256 := (combine 1792 128 (combine 1792 64 (combine 1792 32 (combine 1792 16 part1792_16 part1808_16) (combine 1824 16 part1824_16 part1840_16)) (combine 1856 32 (combine 1856 16 part1856_16 part1872_16) (combine 1888 16 part1888_16 part1904_16))) (combine 1920 64 (combine 1920 32 (combine 1920 16 part1920_16 part1936_16) (combine 1952 16 part1952_16 part1968_16)) (combine 1984 32 (combine 1984 16 part1984_16 part2000_16) (combine 2016 16 part2016_16 part2032_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43645,6 +45023,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part2048_16 : Interval 2048 16 := by decide +kernel
+private theorem part2064_16 : Interval 2064 16 := by decide +kernel
+private theorem part2080_16 : Interval 2080 16 := by decide +kernel
+private theorem part2096_16 : Interval 2096 16 := by decide +kernel
+private theorem part2112_16 : Interval 2112 16 := by decide +kernel
+private theorem part2128_16 : Interval 2128 16 := by decide +kernel
+private theorem part2144_16 : Interval 2144 16 := by decide +kernel
+private theorem part2160_16 : Interval 2160 16 := by decide +kernel
+private theorem part2176_16 : Interval 2176 16 := by decide +kernel
+private theorem part2192_16 : Interval 2192 16 := by decide +kernel
+private theorem part2208_16 : Interval 2208 16 := by decide +kernel
+private theorem part2224_16 : Interval 2224 16 := by decide +kernel
+private theorem part2240_16 : Interval 2240 16 := by decide +kernel
+private theorem part2256_16 : Interval 2256 16 := by decide +kernel
+private theorem part2272_16 : Interval 2272 16 := by decide +kernel
+private theorem part2288_16 : Interval 2288 16 := by decide +kernel
+theorem part2048_256 : Interval 2048 256 := (combine 2048 128 (combine 2048 64 (combine 2048 32 (combine 2048 16 part2048_16 part2064_16) (combine 2080 16 part2080_16 part2096_16)) (combine 2112 32 (combine 2112 16 part2112_16 part2128_16) (combine 2144 16 part2144_16 part2160_16))) (combine 2176 64 (combine 2176 32 (combine 2176 16 part2176_16 part2192_16) (combine 2208 16 part2208_16 part2224_16)) (combine 2240 32 (combine 2240 16 part2240_16 part2256_16) (combine 2272 16 part2272_16 part2288_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43654,6 +45049,23 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+private theorem part2304_16 : Interval 2304 16 := by decide +kernel
+private theorem part2320_16 : Interval 2320 16 := by decide +kernel
+private theorem part2336_16 : Interval 2336 16 := by decide +kernel
+private theorem part2352_16 : Interval 2352 16 := by decide +kernel
+private theorem part2368_16 : Interval 2368 16 := by decide +kernel
+private theorem part2384_16 : Interval 2384 16 := by decide +kernel
+private theorem part2400_16 : Interval 2400 16 := by decide +kernel
+private theorem part2416_16 : Interval 2416 16 := by decide +kernel
+private theorem part2432_16 : Interval 2432 16 := by decide +kernel
+private theorem part2448_16 : Interval 2448 16 := by decide +kernel
+private theorem part2464_16 : Interval 2464 16 := by decide +kernel
+private theorem part2480_16 : Interval 2480 16 := by decide +kernel
+private theorem part2496_16 : Interval 2496 16 := by decide +kernel
+private theorem part2512_16 : Interval 2512 16 := by decide +kernel
+private theorem part2528_16 : Interval 2528 16 := by decide +kernel
+private theorem part2544_16 : Interval 2544 16 := by decide +kernel
+theorem part2304_256 : Interval 2304 256 := (combine 2304 128 (combine 2304 64 (combine 2304 32 (combine 2304 16 part2304_16 part2320_16) (combine 2336 16 part2336_16 part2352_16)) (combine 2368 32 (combine 2368 16 part2368_16 part2384_16) (combine 2400 16 part2400_16 part2416_16))) (combine 2432 64 (combine 2432 32 (combine 2432 16 part2432_16 part2448_16) (combine 2464 16 part2464_16 part2480_16)) (combine 2496 32 (combine 2496 16 part2496_16 part2512_16) (combine 2528 16 part2528_16 part2544_16))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43718,6 +45130,7 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 set_option maxRecDepth 8192
 set_option maxHeartbeats 20000000
+theorem allRows : Interval 0 4096 := (combine 0 2048 (combine 0 1024 (combine 0 512 (combine 0 256 part0_256 part256_256) (combine 512 256 part512_256 part768_256)) (combine 1024 512 (combine 1024 256 part1024_256 part1280_256) (combine 1536 256 part1536_256 part1792_256))) (combine 2048 1024 (combine 2048 512 (combine 2048 256 part2048_256 part2304_256) (combine 2560 256 part2560_256 part2816_256)) (combine 3072 512 (combine 3072 256 part3072_256 part3328_256) (combine 3584 256 part3584_256 part3840_256))))
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
 end
@@ -43736,8 +45149,49 @@ def destination (inv:Bool) := if inv then input else output
 def initial (inv:Bool) (r:Nat) := if inv then result r else r
 def finalValue (inv:Bool) (r:Nat) := if inv then r else result r
 
+private theorem width_bound (inv:Bool) : wires (step inv) ⊆ Finset.range width := by
+  apply bounded
+  cases inv <;> decide +kernel
 
+private theorem lookup (inv : Bool) (r : Fin 4096) (q:Fin width) :
+    (get (source inv) q).testBit r=(initial inv r).testBit q ∧
+    (get (destination inv) q).testBit r=(finalValue inv r).testBit q := by
+  have h:=allRows r q
+  simp only [Nat.zero_add] at h
+  cases inv
+  · exact h
+  · exact ⟨h.2,h.1⟩
 
+theorem apply_guard (f:Wire→Wire) (inv:Bool) (r:Fin 4096)
+    (inj:∀a b : Fin width, f a=f b → a=b) (m:List Bool) (s:State)
+    (entry:∀q∈wires (step inv),s.basis (f q)=(initial inv r).testBit q) :
+    (run (renameProgram f (step inv)) m s).phase=s.phase ∧
+    (∀q∈wires (step inv),(run (renameProgram f (step inv)) m s).basis (f q)=(finalValue inv r).testBit q) ∧
+    ∀q∉wires (renameProgram f (step inv)),(run (renameProgram f (step inv)) m s).basis q=s.basis q := by
+  have targetOK:∀g∈step inv,target g < (source inv).length := by cases inv <;> decide +kernel
+  have active:mask.testBit r=true := by
+    change (2^4096-1:Nat).testBit r=true
+    rw [Nat.testBit_two_pow_sub_one]
+    exact decide_eq_true r.isLt
+  let v:=value (source inv) r
+  have rel:Rel (source inv) v r:=value_rel _ _
+  have bound:=width_bound inv
+  have finInj:∀a∈Finset.range width,∀b∈Finset.range width,f a=f b → a=b := by
+    intro a ha b hb eq
+    exact congrArg Fin.val (inj ⟨a,Finset.mem_range.mp ha⟩ ⟨b,Finset.mem_range.mp hb⟩ eq)
+  have data:∀q∈wires (step inv),(pullState f s).basis q=v.testBit q := by
+    intro q h
+    exact ((entry q h).trans (lookup inv r ⟨q,Finset.mem_range.mp (bound h)⟩).1.symm).trans (rel q).symm
+  have checked:eval mask (step inv) (source inv)=(true,destination inv) := by
+    cases inv
+    · exact forward_checked
+    · exact backward_checked
+  have logical:=StairArchiveRows.run_row (step inv) mask r v m (pullState f s)
+    (source inv) (destination inv) active targetOK rel checked data
+  have phys:=run_rename_pool f _ finInj _ bound m (pullState f s) s rfl (fun _ _=>rfl)
+  exact ⟨phys.1.trans logical.1,
+    fun q h=>((phys.2 q (bound h)).trans (logical.2.1 q h)).trans (lookup inv r ⟨q,Finset.mem_range.mp (bound h)⟩).2,
+    fun q h=>run_preserves_outside _ _ _ q h⟩
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
@@ -43976,16 +45430,124 @@ namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 
 def nibble (W V:Nat):Nat:=(W/V)%16
 
+theorem digit (W V:Nat):nibble W V/2=W/(2*V)%8 := by
+  rw [Nat.mul_comm 2 V,←Nat.div_div_eq_div_mul]
+  unfold nibble
+  omega
 
+theorem bit (W V:Nat) (pos:0<V): (nibble W V).testBit 0=true ↔ V≤W%(2*V) := by
+  rw [←Nat.mod_two_eq_one_iff_testBit_zero,Nat.mul_comm 2 V,Nat.mod_mul]
+  have rem:=Nat.mod_lt W pos
+  change (W/V%16)%2=1 ↔ _
+  by_cases b:W/V%2=1
+  · rw [b,Nat.mul_one];omega
+  · have z:W/V%2=0:=by omega
+    rw [z,Nat.mul_zero];omega
 
+theorem frac (W V:Nat) (pos:0<V):nibble W V%2=(W%(2*V))/V := by
+  rw [Nat.mul_comm 2 V,Nat.mod_mul,Nat.add_mul_div_left _ _ pos,Nat.div_eq_of_lt (Nat.mod_lt _ pos)]
+  unfold nibble;omega
 
+theorem digit_join (W V:Nat):nibble W V=2*(W/(2*V)%8)+nibble W V%2 := by
+  rw [←digit];omega
 
+theorem borrowed (W M V:Nat) (pos:0<V) :
+    borrow (nibble W V) (nibble M V) true=(if V≤M%(2*V) ∧ W%(2*V)<V then 1 else 0) := by
+  have m:=bit M V pos
+  have w:=bit W V pos
+  cases hb:(nibble M V).testBit 0 <;> cases ha:(nibble W V).testBit 0 <;> simp_all [borrow]
 
+theorem short_digits (W M V e:Nat) (pos:0<V) (ew:e≤1)
+    (rel:W/(2*V)=M/(2*V)+e) (actual:e=borrow (nibble W V) (nibble M V) true)
+    (df:3≤W/(2*V)) :
+    let d:=(W/(2*V)-2)*(2*V)
+    updateA (nibble W V) true=nibble (W-d) V ∧
+    updateM (nibble W V) (nibble M V) true true=nibble (M-d) V := by
+  have hh:=EnterLimb.limbs (2*V) W M e (by omega) ew true df (fun _=>rel)
+  dsimp only at hh ⊢
+  obtain ⟨wmod,wh,mm,mh⟩:=hh
+  simp only [ite_true] at mm mh
+  have p1: nibble (W-(W/(2*V)-2)*(2*V)) V%2=nibble W V%2:=by rw [frac _ _ pos,wmod,←frac _ _ pos]
+  have p2: nibble (M-(W/(2*V)-2)*(2*V)) V%2=nibble M V%2:=by rw [frac _ _ pos,mm,←frac _ _ pos]
+  constructor
+  · rw [digit_join (W-_) V,wh,p1]
+    rfl
+  · rw [digit_join (M-_) V,p2,mh]
+    unfold updateM
+    rw [digit,digit,←actual]
+    simp [EnterLimb.guardWord]
 
+theorem short_other (W M V:Nat) (pos:0<V) (df:3≤W/(2*V)) :
+    let d:=(W/(2*V)-2)*(2*V)
+    updateA (nibble W V) true=nibble (W-d) V ∧
+    updateM (nibble W V) (nibble M V) true false=nibble M V := by
+  have hh:=EnterLimb.limbs (2*V) W M 0 (by omega) (by decide) false df (by simp)
+  obtain ⟨wm,wh,_⟩:=hh
+  dsimp only at wm wh ⊢
+  constructor
+  · rw [digit_join (W-_) V,wh,frac (W-_) _ pos,wm,←frac];rfl
+    exact pos
+  · unfold updateM
+    simp only [borrow,Bool.false_and,Bool.toNat_false,EnterLimb.guardWord,Bool.false_eq_true,ite_false,
+      Nat.add_zero,Nat.sub_zero,Nat.xor_zero,Nat.add_mod_right,Nat.mod_mod]
+    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
+    omega
 
+theorem near_digits (W M V:Nat) :
+    updateA (nibble W V) false=nibble W V ∧
+    updateM (nibble W V) (nibble M V) false false=nibble M V := by
+  constructor
+  · simp [updateA];omega
+  · unfold updateM
+    rw [EnterLimb.unchanged _ _ _ (by simp [borrow])]
+    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
+    omega
 
+theorem short_digits17 (W M V e:Nat) (pos:0<V) (ew:e≤1)
+    (rel:W/(2*V)=M/(2*V)+e) (actual:e=borrow (nibble W V) (nibble M V) true)
+    (df:2≤W/(2*V)) :
+    let d:=(W/(2*V)-1)*(2*V)
+    updateA17 (nibble W V) true=nibble (W-d) V ∧
+    updateM17 (nibble W V) (nibble M V) true true=nibble (M-d) V := by
+  have hh:=EnterLimb.limbs17 (2*V) W M e (by omega) ew true df (fun _=>rel)
+  dsimp only at hh ⊢
+  obtain ⟨wmod,wh,mm,mh⟩:=hh
+  simp only [ite_true] at mm mh
+  have p1: nibble (W-(W/(2*V)-1)*(2*V)) V%2=nibble W V%2:=by rw [frac _ _ pos,wmod,←frac _ _ pos]
+  have p2: nibble (M-(W/(2*V)-1)*(2*V)) V%2=nibble M V%2:=by rw [frac _ _ pos,mm,←frac _ _ pos]
+  constructor
+  · rw [digit_join (W-_) V,wh,p1]
+    rfl
+  · rw [digit_join (M-_) V,p2,mh]
+    unfold updateM17
+    rw [digit,digit,←actual]
+    simp [EnterLimb.guardWord17]
 
+theorem short_other17 (W M V:Nat) (pos:0<V) (df:2≤W/(2*V)) :
+    let d:=(W/(2*V)-1)*(2*V)
+    updateA17 (nibble W V) true=nibble (W-d) V ∧
+    updateM17 (nibble W V) (nibble M V) true false=nibble M V := by
+  have hh:=EnterLimb.limbs17 (2*V) W M 0 (by omega) (by decide) false df (by simp)
+  obtain ⟨wm,wh,_⟩:=hh
+  dsimp only at wm wh ⊢
+  constructor
+  · rw [digit_join (W-_) V,wh,frac (W-_) _ pos,wm,←frac];rfl
+    exact pos
+  · unfold updateM17
+    simp only [borrow,Bool.false_and,Bool.toNat_false,EnterLimb.guardWord17,Bool.false_eq_true,ite_false,
+      Nat.add_zero,Nat.sub_zero,Nat.xor_zero,Nat.add_mod_right,Nat.mod_mod]
+    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
+    omega
 
+theorem near_digits17 (W M V:Nat) :
+    updateA17 (nibble W V) false=nibble W V ∧
+    updateM17 (nibble W V) (nibble M V) false false=nibble M V := by
+  constructor
+  · simp [updateA17];omega
+  · unfold updateM17
+    rw [EnterLimb.unchanged17 _ _ _ (by simp [borrow])]
+    have z:nibble M V<16:=Nat.mod_lt _ (by decide)
+    omega
 
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
@@ -44061,13 +45623,13 @@ theorem actual_residue (b k:Nat) (z:SkywalkNat.State) (sg:Bool) (small:min z.u z
   let e:=PortalValues.negative sg z.u
   obtain ⟨tu,tx,hi,sign,tm⟩:=reduced_values b k z sg small
   rw [sign] at tm
-  have scale:limb b k=2*V:=by simp [limb,cutUnit,V,pow_succ,Nat.mul_comm]
+  have scale:limb b k=V:=rfl
   have periodic (N d:Nat) (eq:N≥d) (mul:V∣d):(N-d)%V=N%V:=by
     obtain ⟨j,rfl⟩:=mul
     conv_rhs => rw [show N=N-V*j+V*j by omega,Nat.add_mul_mod_self_left]
   have dep:V∣gap b k z := by
     unfold gap;rw [scale]
-    exact ⟨(high b k z-1)*2,by ring⟩
+    exact Nat.dvd_mul_left V (high b k z-1)
   change (T.u+T.v)%V=(z.u+z.v)%V ∧ (T.u-e.toNat)%V=(z.u-e.toNat)%V
   have pos:0<V:=by simp [V,cutUnit]
   by_cases hf:far b k z
@@ -44169,8 +45731,19 @@ theorem takeValue (r:List Wire) (n:Nat) (bound:n≤r.length) (s:BasisState) :
   rw [h,Nat.add_mul_mod_self_left]
   exact (Nat.mod_eq_of_lt (by simpa only [List.length_take,Nat.min_eq_left bound] using regValue_lt (r.take n) s)).symm
 
+theorem slice_value (r:List Wire) (k:Nat) (hi:k+4≤r.length) (s:BasisState) :
+    regValue ((r.drop k).take 4) s=nibble (regValue r s) (2^k) := by
+  rw [takeValue _ _ (by simp;omega),PortalValues.shiftedValue _ _ (by omega)]
+  rfl
 
+private theorem nibble_inverse : ∀x:Fin 16,(15-x.val) ^^^ 15=x.val := by decide +kernel
 
+theorem sign_digits (r:List Wire) (size:r.length=4) (s:BasisState) (neg:Bool) :
+    regValue r s=signedNibble neg (regValue r (fun q=>s q ^^ neg)) := by
+  cases neg
+  · simp [signedNibble]
+  · simp only [Bool.xor_true,regValue_complement,size,signedNibble,ite_true]
+    exact (nibble_inverse ⟨regValue r s,by simpa [size] using regValue_lt r s⟩).symm
 
 structure Ports (A B:List Wire) (g n f u:Wire) (rs:List Wire) where
   a : A.length=4
@@ -44178,6 +45751,27 @@ structure Ports (A B:List Wire) (g n f u:Wire) (rs:List Wire) where
   clear : List Wire
   list : rs=A++B++[g,n,f,u]++clear
 
+theorem read_ports {A B g n f u rs} (ports:Ports A B g n f u rs) (z:SkywalkNat.State) (k b:Nat) (G S:Bool) (s:BasisState)
+    (G0:s g=G) (N:s n=PortalValues.negative S z.u)
+    (F:s f=decide (Shadow.far b k z)) (U:s u=decide (Shadow.far b k z ∧ 2^b≤z.u))
+    (zero:∀q∈ports.clear,s q=false)
+    (x:regValue (if G then B else A) s=nibble (z.u+z.v) (cutUnit b k))
+    (y:regValue (if G then A else B) (fun q=>s q ^^ PortalValues.negative S z.u)=
+      nibble (z.u-(PortalValues.negative S z.u).toNat) (cutUnit b k)) :
+    regValue rs s=initialRow b k z G S := by
+  have h0:regValue ports.clear s=0:=(regValue_zero _ _).mpr zero
+  have controlValue:regValue [g,n,f,u] s=(s g).toNat+2*((s n).toNat+2*((s f).toNat+2*(s u).toNat)):=by
+    simp [regValue,Bool.toNat]
+    cases s g <;> cases s n <;> cases s f <;> cases s u <;> rfl
+  rw [ports.list,regValue_append,regValue_append,regValue_append,h0,Nat.mul_zero,Nat.add_zero,
+    List.length_append,ports.a,ports.b,controlValue,G0,N,F,U]
+  cases G <;> simp only [Bool.false_eq_true,ite_false,ite_true] at x y
+  · have y0:=sign_digits B ports.b s (PortalValues.negative S z.u)
+    rw [y] at y0
+    rw [x,y0];simp only [initialRow,rowOf,encodedPair,Bool.false_eq_true,ite_false,Bool.toNat_false];omega
+  · have y0:=sign_digits A ports.a s (PortalValues.negative S z.u)
+    rw [y] at y0
+    rw [x,y0];simp only [initialRow,rowOf,encodedPair,ite_true,Bool.toNat_true];omega
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
@@ -44204,8 +45798,51 @@ theorem forward_all : wires forward=Finset.range width:=by decide +kernel
 def leftWord (g e:Bool) (A M:Nat) := if g then signedNibble e M else A
 def rightWord (g e:Bool) (A M:Nat) := if g then A else signedNibble e M
 
+private theorem signedSmall (e:Bool) (M:Fin 16) : signedNibble e M<16 := by
+  have t:∀b:Bool,∀m:Fin 16,signedNibble b m<16:=by decide +kernel
+  exact t e M
 
+theorem projected (b k:Nat) (z:SkywalkNat.State) (G S:Bool) :
+    let T:=Shadow.reduced b k z;let V:=cutUnit b k;let e:=PortalValues.negative S z.u
+    let A:=nibble (T.u+T.v) V;let M:=nibble (T.u-e.toNat) V;let W:=shadowRow b k z G S
+    W%16=leftWord G e A M ∧ (W/16)%16=rightWord G e A M ∧ W/32768=0 := by
+  dsimp only
+  let T:=Shadow.reduced b k z;let V:=cutUnit b k;let e:=PortalValues.negative S z.u
+  let A:=nibble (T.u+T.v) V;let M:=nibble (T.u-e.toNat) V
+  have ar:A<16:=Nat.mod_lt _ (by decide)
+  have mr:M<16:=Nat.mod_lt _ (by decide)
+  have sn:signedNibble e M<16:=signedSmall e ⟨M,mr⟩
+  have gr:G.toNat≤1:=by cases G <;> decide
+  let f:=decide (Shadow.far b k z)
+  let u:=decide (Shadow.far b k z ∧ 2^b≤z.u)
+  have fb:f.toNat≤1:=by cases f <;> decide
+  have ub:u.toNat≤1:=by cases u <;> decide
+  let h:=(if Shadow.far b k z then Shadow.high b k z%8 else 0)
+  have hh:h<8:=by dsimp [h];split <;> omega
+  let X:=encodedPair G e A M+256*G.toNat+1024*f.toNat+2048*u.toNat+4096*h
+  have val:shadowRow b k z G S=X:=by
+    unfold shadowRow X h
+    by_cases off:Shadow.far b k z <;> simp [off,T,V,e,A,M,f,u]
+  rw [val]
+  change X%16=leftWord G e A M ∧ X/16%16=rightWord G e A M ∧ X/32768=0
+  dsimp only [X,encodedPair,leftWord,rightWord]
+  cases G <;> simp only [ite_true,Bool.false_eq_true,ite_false,Bool.toNat_false,Bool.toNat_true] <;> omega
 
+theorem output_values (ports:List Wire) (s:BasisState) (b k:Nat) (z:SkywalkNat.State) (G S:Bool)
+    (plen:ports.length=width)
+    (data:∀q∈wires forward,s (ports.getD q 0)=(shadowRow b k z G S).testBit q) :
+    let T:=Shadow.reduced b k z;let V:=cutUnit b k;let e:=PortalValues.negative S z.u
+    let A:=nibble (T.u+T.v) V;let M:=nibble (T.u-e.toNat) V
+    regValue (ports.take 4) s=leftWord G e A M ∧
+    regValue ((ports.drop 4).take 4) s=rightWord G e A M ∧ regValue (ports.drop 15) s=0 := by
+  let W:=shadowRow b k z G S
+  have p:=projected b k z G S
+  have N:ports.length=23:=plen
+  have whole:=value_of_bits ports s W (fun q h=>data q (forward_all ▸ Finset.mem_range.mpr (plen ▸ h)))
+  rw [N,Nat.mod_eq_of_lt (show W<2^23 by have h:W/32768=0:=p.2.2;omega)] at whole
+  rw [takeValue _ _ (by omega),whole,takeValue _ _ (by simp [N]),
+    PortalValues.shiftedValue _ 4 (by omega),whole,PortalValues.shiftedValue _ 15 (by omega),whole]
+  exact p
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
@@ -44241,6 +45878,36 @@ structure Aperture (lo hi:List (Wire×Wire)) (g n f u:Wire) (ports:List Wire) (L
   protected0 : ∀q∈g::(a++b++spec.clear),q≠n ∧ q≠f ∧ q≠u ∧ q∉sites hi
   temps : ∀q∈spec.clear,net q∈L.carry
 
+theorem read_packed {lo hi g n f u rs L net b k} (A:Aperture lo hi g n f u rs L net (b+k))
+    (raw result:State) (z:SkywalkNat.State) (G S:Bool)
+    (P:PackedCut lo hi g n f u (PortalValues.negative S z.u)
+      (decide (Shadow.far b k z)) (decide (Shadow.far b k z ∧ 2^b≤z.u)) (pullState net raw) result)
+    (input:SkywalkIntegerInput L (SkywalkRails.encode G S z.u z.v).a (SkywalkRails.encode G S z.u z.v).b G raw.basis) :
+    regValue rs result.basis=initialRow b k z G S:=by
+  let neg:=PortalValues.negative S z.u
+  have eq (q:Wire) (hq:q∈g::(A.a++A.b++A.spec.clear)):result.basis q=raw.basis (net q):=by
+    obtain ⟨h0,h1,h2,hi⟩:=A.protected0 _ hq
+    exact P.unchanged q h0 h1 h2 hi
+  have math:=PortalValues.mathematical _ _ _ _ _ _ input
+  have gOk:result.basis g=G:=(eq _ (by simp)).trans ((congrArg raw.basis A.g0).trans math.1)
+  have clean:∀q∈A.spec.clear,result.basis q=false:=fun q h=>(eq _ (by simp [h])).trans
+    ((regValue_zero _ _).mp input.2.2.2.2.2 _ (A.temps _ h))
+  have view (ns full:List Wire) (ok:∀q∈ns,q∈g::(A.a++A.b++A.spec.clear))
+      (shape:ns.map net=(full.drop (b+k)).take 4) (sz:b+k+4≤full.length) (flip:Bool) :
+      regValue ns (fun q=>result.basis q ^^ flip)=nibble (regValue full (fun q=>raw.basis q ^^ flip)) (cutUnit b k) := by
+    calc
+      _=regValue ns (fun q=>raw.basis (net q) ^^ flip):=regValue_congr _ _ _ (fun q h=>congrArg (· ^^ flip) (eq q (ok q h)))
+      _=regValue (ns.map net) (fun q=>raw.basis q ^^ flip):=(PortalValues.unroute net ns (fun q=>raw.basis q ^^ flip)).symm
+      _=_:=by rw [shape,slice_value _ _ sz];rfl
+  have left (s:Bool):=view A.a L.a (by intro q h;simp [h]) A.xa A.na s
+  have right (s:Bool):=view A.b L.b (by intro q h;simp [h]) A.xb A.nb s
+  apply read_ports A.spec z k b G S result.basis gOk P.sign P.mode P.orientation clean
+  · cases G
+    · exact (by simpa using left false : regValue A.a result.basis=_).trans (congrArg (fun x=>nibble x (cutUnit b k)) math.2.2.1)
+    · exact (by simpa using right false : regValue A.b result.basis=_).trans (congrArg (fun x=>nibble x (cutUnit b k)) math.2.2.1)
+  · cases G
+    · exact (right neg).trans (congrArg (fun x=>nibble x (cutUnit b k)) math.2.2.2)
+    · exact (left neg).trans (congrArg (fun x=>nibble x (cutUnit b k)) math.2.2.2)
 
 end EnterProof
 end ECDSAAdd.Entrant.StairPacket
@@ -44257,6 +45924,10 @@ theorem join (lo hi:List Wire) (cut W:Nat) (s:BasisState) (size:lo.length=cut)
     regValue (lo++hi) s=W := by
   rw [regValue_append,size,low,high,nibble,Nat.mod_eq_of_lt bound,Nat.mod_add_div]
 
+theorem norm_nibble (r:List Wire) (size:r.length=4) (s:BasisState) (e:Bool) (Y:Nat)
+    (v:regValue r s=signedNibble e Y) : regValue r (fun q=>s q ^^ e)=Y := by
+  have eq: signedNibble e (regValue r (fun q=>s q ^^ e))=signedNibble e Y:=(sign_digits _ size s e).symm.trans v
+  exact Nat.xor_left_inj.mp eq
 
 theorem ordinary (rs:List Wire) (bit:Nat) (length:rs.length=bit+1) (s:BasisState) (N:Nat)
     (low:N<2^bit) (value:regValue rs s=N) : signedRegValue rs s=N:=by
@@ -44294,7 +45965,40 @@ namespace ECDSAAdd.Entrant.StairPacket.EnterProof
 open Arithmetic
 set_option maxRecDepth 12000
 
+theorem tags (b k:Nat) (z:SkywalkNat.State) (g s:Bool) :
+    let W:=shadowRow b k z g s
+    W.testBit 8=g ∧ W.testBit 9=false ∧ W.testBit 10=decide (Shadow.far b k z) ∧
+    W.testBit 11=decide (Shadow.far b k z ∧ 2^b≤z.u) ∧ W/4096=
+      (if Shadow.far b k z then Shadow.high b k z%8 else 0) := by
+  let T:=Shadow.reduced b k z;let V:=cutUnit b k;let e:=PortalValues.negative s z.u
+  let A:=nibble (T.u+T.v) V;let M:=nibble (T.u-e.toNat) V
+  have ar:A<16:=Nat.mod_lt _ (by decide)
+  have mr:M<16:=Nat.mod_lt _ (by decide)
+  have small:∀x:Fin 16,∀n:Bool,signedNibble n x<16:=by decide +kernel
+  have sn:signedNibble e M<16:=small ⟨_,mr⟩ e
+  let f:=decide (Shadow.far b k z);let u:=decide (Shadow.far b k z ∧ 2^b≤z.u)
+  let h:=(if Shadow.far b k z then Shadow.high b k z%8 else 0)
+  let W:=encodedPair g e A M+256*g.toNat+1024*f.toNat+2048*u.toNat+4096*h
+  have w:shadowRow b k z g s=W:=by
+    unfold shadowRow W h
+    by_cases absent:Shadow.far b k z <;> simp [absent,T,V,e,A,M,f,u]
+  have base:encodedPair g e A M<256:=by cases g <;> dsimp [encodedPair] <;> omega
+  dsimp only
+  rw [w]
+  change W.testBit 8=g ∧ W.testBit 9=false ∧ W.testBit 10=f ∧ W.testBit 11=u ∧ W/4096=h
+  simp only [Nat.testBit_eq_decide_div_mod_eq]
+  change decide (W/256%2=1)=g ∧ decide (W/512%2=1)=false ∧ decide (W/1024%2=1)=f ∧
+    decide (W/2048%2=1)=u ∧ W/4096=h
+  dsimp only [W]
+  cases g <;> cases f <;> cases u <;> simp only [Bool.toNat_true,Bool.toNat_false,decide_eq_true_eq,decide_eq_false_iff_not] <;> omega
 
+theorem actual_tags (ports:List Wire) (s:BasisState) (b k:Nat) (z:SkywalkNat.State) (G S:Bool)
+    (h:∀q∈wires forward,s (ports.getD q 0)=(shadowRow b k z G S).testBit q) :
+    s (ports.getD 8 0)=G ∧ s (ports.getD 9 0)=false ∧ s (ports.getD 10 0)=decide (Shadow.far b k z) ∧
+    s (ports.getD 11 0)=decide (Shadow.far b k z ∧ 2^b≤z.u) := by
+  rw [h 8 (by decide +kernel),h 9 (by decide +kernel),h 10 (by decide +kernel),h 11 (by decide +kernel)]
+  have ⟨a,b,c,d,_⟩:=tags b k z G S
+  exact ⟨a,b,c,d⟩
 
 end ECDSAAdd.Entrant.StairPacket.EnterProof
 
@@ -45033,6 +46737,28 @@ def watch (j:Fin 26) :=
     [(ports p 0).a0,(ports p 0).history]).map (windowNet j)
 
 set_option linter.unusedSimpArgs false in
+theorem watch_congr (j:Fin 26) (s t:State) (agree:∀q∈watch j,t.basis q=s.basis q)
+    (z:SkywalkRails.State) (active:onRails j 1 z s.basis) :
+    onRails j 1 z t.basis ∧ cell (shape j) 0 (mappedBasis j t.basis)=cell (shape j) 0 (mappedBasis j s.basis) := by
+  let p:=shape j
+  let L:=ports p 1
+  let S:=mappedBasis j s.basis
+  let T:=mappedBasis j t.basis
+  have locality (q:Wire) (mem:q∈L.a++L.b++[L.previous]++L.carry++((List.range' 1 14).flatMap fun r=>[(ports p r).ext,(ports p r).history])++[(ports p 0).a0,(ports p 0).history]) :
+      T q=S q := agree _ (List.mem_map.mpr ⟨q,mem,rfl⟩)
+  have add (xs:List Wire) (incl:∀q∈xs,T q=S q) : signedRegValue xs T=signedRegValue xs S:=by
+    unfold signedRegValue;rw [regValue_congr _ _ _ incl]
+  obtain ⟨a,b,prev,carry,free⟩:=active
+  refine ⟨⟨(add _ (fun q h=>locality _ (by simp [L,p,h]))).trans a,
+    (add _ (fun q h=>locality _ (by simp [L,p,h]))).trans b,
+    (locality _ (by simp [L,p])).trans prev,
+    (regValue_congr _ _ _ (fun q h=>locality _ (by simp [L,p,h]))).trans carry,?_⟩,?_⟩
+  · intro r hr last
+    have inRange:r∈List.range' 1 14:=by rw [List.mem_range'_1];exact ⟨hr,last⟩
+    obtain ⟨e,h⟩:=free r hr last
+    exact ⟨(locality _ (by simp only [List.mem_append];left;right;apply List.mem_flatMap.mpr;exact ⟨r,inRange,by simp [p]⟩)).trans e,
+      (locality _ (by simp only [List.mem_append];left;right;apply List.mem_flatMap.mpr;exact ⟨r,inRange,by simp [p]⟩)).trans h⟩
+  · exact Prod.ext (locality _ (by simp [L,p])) (locality _ (by simp [L,p]))
 
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
@@ -45147,6 +46873,31 @@ structure AdminResult (j:Fin 26) (reverse:Program) (src out:State) : Prop where
   unchanged : ∀q∈watch j,out.basis q=src.basis q
   undo : ∀m,run reverse m out=src
 
+theorem body_run (j:Fin 26) (admin reverse:Program) (s:State) (m:List Bool)
+    (z:SkywalkRails.State) (odd:(z.a+z.b)%2=1) (active:onRails j 0 z s.basis)
+    (mid:let src:=run (routed j 0 1) m s
+      AdminResult j reverse src (run admin (m.drop (measurementCount (routed j 0 1))) src)) :
+    let out:=run (body j admin) m s
+    out.phase=s.phase ∧ onRails j 15 (SkywalkTrace.next^[15] z) out.basis ∧
+      readCells (shape j) 0 15 (mappedBasis j out.basis)=SkywalkTrace.trace 15 z ∧
+      ∀n,run (unbody j reverse) n out=s := by
+  let src:=run (routed j 0 1) m s
+  let t:=m.drop (measurementCount (routed j 0 1))
+  let pre:=run admin t src
+  let n:=t.drop (measurementCount admin)
+  have head:=route_frame j 0 1 (by decide) z odd s m active
+  have valid:onRails j 1 (SkywalkTrace.next z) src.basis:=head.2
+  have pass:=watch_congr j src pre mid.unchanged _ valid
+  have span:=split_run j z odd s m n active pre pass.1 pass.2
+  have last:=route_frame j 1 14 (by decide) (SkywalkTrace.next z) (nextOdd z odd) pre n pass.1
+  dsimp only [body,unbody]
+  simp only [run_append,run_take]
+  refine ⟨last.1.trans (mid.phase.trans head.1),span.1,span.2,?_⟩
+  intro r
+  have endBack:=route_undo j 1 14 (by decide) (SkywalkTrace.next z) (nextOdd z odd) pre n r pass.1
+  change run (unrouted j 0 1) _ (run reverse _ (run (unrouted j 1 14) r (run (routed j 1 14) n pre)))=s
+  rw [endBack,mid.undo]
+  exact route_undo j 0 1 (by decide) z odd s m _ active
 
 namespace NativePack225
 end NativePack225
@@ -45254,6 +47005,32 @@ def firstUnchanged (j:Fin 26) (q:Wire) : Prop :=
   r=(ports (shape j) 0).previous ∨ r∉(ports (shape j) 0).wires
 instance (j:Fin 26) (q:Wire) : Decidable (firstUnchanged j q) := by unfold firstUnchanged;infer_instance
 
+theorem first_preserves (j:Fin 26) (z:SkywalkRails.State) (odd:(z.a+z.b)%2=1) (s:State) (m:List Bool)
+    (ready:onRails j 0 z s.basis) (q:Wire) (free:firstUnchanged j q) :
+    (run (routed j 0 1) m s).basis q=s.basis q := by
+  let p:=shape j
+  let L:=ports p 0
+  let virt:=pullState (windowNet j) s
+  let v:=windowNet j q
+  have inv:windowNet j v=q:=by
+    apply OB5.sig_invol
+    have b:=j.isLt
+    simp [start];omega
+  have step:=pull_routed j 0 1 (by decide) m s
+  simp only [seq,List.append_nil] at step
+  have at_q:=congrArg (fun x:State=>x.basis v) step
+  change (run (routed j 0 1) m s).basis (windowNet j v)=(run (skywalkIntegerTick L) m virt).basis v at at_q
+  rw [inv] at at_q
+  refine at_q.trans (Eq.trans ?_ (show virt.basis v=s.basis q from congrArg s.basis inv))
+  rcases free with e|e
+  · change v=L.previous at e
+    rw [e]
+    obtain ⟨ha,hb,hg,hc,hnew⟩:=ready
+    obtain ⟨he,hh⟩:=hnew 0 (by decide) (by change 0<15;decide)
+    obtain ⟨_,_,_,_,_,prev,_⟩:=executed p ⟨0,by change 0<15;decide⟩ _ _ _ odd virt m ⟨ha,hb,hg,he,hh,hc⟩
+    exact prev.trans hg.symm
+  · apply run_preserves_outside
+    exact fun used=>e (List.mem_toFinset.mp ((skywalkIntegerTick_wires_subset _ (ok p ⟨0,by change 0<15;decide⟩)).1 used))
 
 
 end ECDSAAdd.Entrant.StairPacket
@@ -45447,6 +47224,28 @@ def zeroSites (j:Fin 26) :=
     [(ports p 0).a0,(ports p 0).history]).map (windowNet j)
 
 set_option linter.unusedSimpArgs false in
+theorem zero_congr (j:Fin 26) (s t:State) (agree:∀q∈zeroSites j,t.basis q=s.basis q)
+    (z:SkywalkRails.State) (active:onRails j 0 z s.basis) :
+    onRails j 0 z t.basis ∧ cell (shape j) 0 (mappedBasis j t.basis)=cell (shape j) 0 (mappedBasis j s.basis) := by
+  let p:=shape j
+  let L:=ports p 0
+  let S:=mappedBasis j s.basis
+  let T:=mappedBasis j t.basis
+  have locality (q:Wire) (mem:q∈L.a++L.b++[L.previous]++L.carry++((List.range' 0 15).flatMap fun r=>[(ports p r).ext,(ports p r).history])++[(ports p 0).a0,(ports p 0).history]) :
+      T q=S q := agree _ (List.mem_map.mpr ⟨q,mem,rfl⟩)
+  have add (xs:List Wire) (incl:∀q∈xs,T q=S q) : signedRegValue xs T=signedRegValue xs S:=by
+    unfold signedRegValue;rw [regValue_congr _ _ _ incl]
+  obtain ⟨a,b,prev,carry,free⟩:=active
+  refine ⟨⟨(add _ (fun q h=>locality _ (by simp [L,p,h]))).trans a,
+    (add _ (fun q h=>locality _ (by simp [L,p,h]))).trans b,
+    (locality _ (by simp [L,p])).trans prev,
+    (regValue_congr _ _ _ (fun q h=>locality _ (by simp [L,p,h]))).trans carry,?_⟩,?_⟩
+  · intro r hr last
+    have inRange:r∈List.range' 0 15:=by rw [List.mem_range'_1];exact ⟨hr,last⟩
+    obtain ⟨e,h⟩:=free r hr last
+    exact ⟨(locality _ (by simp only [List.mem_append];left;right;apply List.mem_flatMap.mpr;exact ⟨r,inRange,by simp [p]⟩)).trans e,
+      (locality _ (by simp only [List.mem_append];left;right;apply List.mem_flatMap.mpr;exact ⟨r,inRange,by simp [p]⟩)).trans h⟩
+  · exact Prod.ext (locality _ (by simp [L,p])) (locality _ (by simp [L,p]))
 
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
@@ -45698,28 +47497,21 @@ section
 namespace ECDSAAdd.Entrant.StairPacket.LeaveShadowRails
 open SkywalkNat IntegerHigh Shadow
 
-theorem scale (b : Nat) : limb b 15=2^15*2^(b+1) := by
-  rw [limb,show b+15+1=15+(b+1) by omega,pow_add]
+theorem scale (b : Nat) : limb b 15=2^15*2^b := by
+  rw [limb,show b+15=15+b by omega,pow_add]
 
 /-- margin 17 (T1): the exact guard bound. The reduced long word only keeps U - short, and
 guard 15 s + s = 2^15 (2s+1) ≤ U holds exactly for s < 2^b. -/
-theorem guard_tight (b s : Nat) (hs : s<2^b) : guard 15 s+s≤limb b 15 := by
-  have a : 2*s+1≤2*2^b := by omega
-  have mul := Nat.mul_le_mul_left (2^15) a
-  have f := guard_formula 15 s
-  have e : limb b 15=2^15*(2*2^b) := by
-    rw [scale,pow_succ 2 b,Nat.mul_comm (2^b) 2]
-  rw [f,e]
-  exact mul
+theorem guard_tight (b s : Nat) (hs : s<2^b) : guard 15 s+s≤limb b 15 := guard_limb b 15 s hs
 
 theorem rail (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b) (far : Shadow.far b 15 z) :
     let r := reduced b 15 z
-    let D := 2^(b+1)*(high b 15 z-1)
+    let D := 2^b*(high b 15 z-1)
     (2^b≤z.u → r.v=z.v ∧ z.u=r.u+2^15*D ∧ guard 15 r.v≤r.u) ∧
     (z.u<2^b → r.u=z.u ∧ z.v=r.v+2^15*D ∧ guard 15 r.u≤r.v) := by
   dsimp only
   have hr := (represented b 15 z small far).2.1
-  have amount : gap b 15 z=2^15*(2^(b+1)*(high b 15 z-1)) := by rw [gap,scale];ring
+  have amount : gap b 15 z=2^15*(2^b*(high b 15 z-1)) := by rw [gap,scale];ring
   have base : 2^b≤limb b 15 := Nat.pow_le_pow_right (by decide) (by omega)
   constructor
   · intro h
@@ -45743,19 +47535,19 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     let S:=total (step^[15] r)
     let F:=total (step^[15] z)
     let t:=if 2^b≤z.u then 0 else wait 15 z.u
-    let d:=S/2^(b+1)/2^t
+    let d:=S/2^b/2^t
     let neg:=cross17 d && (!(decide (2^b≤z.u)) && negative (oddBits (letters 15 r)))
     d+1=(cross17 d).toNat+2*(!neg).toNat ∧
-      F/2^(b+1)=2^t*HighBankAdjust.adjusted (high b 15 z) w (cross17 d) neg+S/2^(b+1)%2^t := by
+      F/2^b=2^t*HighBankAdjust.adjusted (high b 15 z) w (cross17 d) neg+S/2^b%2^t := by
   let r:=reduced b 15 z
   let H:=high b 15 z
-  let V:=2^(b+1)
+  let V:=2^b
   let D:=V*(H-1)
   have sides:=rail b z small far
   have bounds := (represented b 15 z small far).2
   rw [scale] at bounds
   have hH : 2≤H := far
-  have pos : 2^b<V := by dsimp [V];rw [pow_succ];have := Nat.two_pow_pos b;omega
+  have pos : 2^b≤V := Nat.le_refl _
   dsimp only
   by_cases h : 2^b≤z.u
   · obtain ⟨eqV,eqU,guarded⟩:=sides.1 h
@@ -45765,7 +47557,7 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     have dcap := left_digit17 15 r.u r.v V guarded rodd short bounds.1 bounds.2
     change total (step^[15] r)/V=1 ∨ total (step^[15] r)/V=2 at dcap
     have room : H-1+total (step^[15] r)/V<2^w := by change H+1<2^w at enough;omega
-    have outcome:=HighBankSum.left17 15 r.u r.v H w (b+1) guarded rodd short bounds.1 bounds.2 hH room
+    have outcome:=HighBankSum.left17 15 r.u r.v H w b guarded rodd short bounds.1 bounds.2 hH room
     rw [←shape] at outcome
     simpa only [if_pos h,decide_eq_true h,Bool.not_true,Bool.false_and,Bool.and_false,Bool.not_false,Bool.toNat_true,Nat.mul_one,pow_zero,Nat.div_one,one_mul,Nat.mod_one,Nat.add_zero] using outcome
   · obtain ⟨eqU,eqV,guarded⟩:=sides.2 (Nat.lt_of_not_ge h)
@@ -45776,14 +47568,14 @@ theorem far_result (b w : Nat) (z : SkywalkNat.State) (small : min z.u z.v<2^b)
     change total (step^[15] r)/(2^(wait 15 r.u)*V)=0 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=1 ∨ total (step^[15] r)/(2^(wait 15 r.u)*V)=2 at dcap
     rw [Nat.mul_comm (2^_) V,←Nat.div_div_eq_div_mul] at dcap
     have room : H-1+total (step^[15] r)/V/2^(wait 15 r.u)<2^w := by change H+1<2^w at enough;omega
-    have outcome:=HighBankSum.right17 15 r.v r.u H w (b+1) (by decide) guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
+    have outcome:=HighBankSum.right17 15 r.v r.u H w b (by decide) guarded rodd short (by simpa only [Nat.add_comm r.v r.u] using bounds.1) (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
     rw [←shape] at outcome
     have waits : wait 15 z.u=wait 15 r.u := congrArg (wait 15) eqU.symm
     simpa only [if_neg h,decide_eq_false h,Bool.not_false,Bool.true_and,waits] using outcome
 
 
 theorem near_result (b : Nat) (z : SkywalkNat.State) (close : ¬ Shadow.far b 15 z) :
-    reduced b 15 z=z ∧ total (step^[15] z)/2^(b+1)<2^17 := by
+    reduced b 15 z=z ∧ total (step^[15] z)/2^b<2^17 := by
   refine ⟨by simp [reduced,close],?_⟩
   have lt : (z.u+z.v)/limb b 15<2 := Nat.lt_of_not_ge close
   have lim := (Nat.div_lt_iff_lt_mul (by unfold limb;positivity)).mp lt
@@ -45806,6 +47598,11 @@ set_option maxHeartbeats 3500000
 set_option exponentiation.threshold 1024
 attribute [local irreducible] run
 
+theorem ready_after_head (j:Fin 26) (P:Program) (s:State) (a b:List Bool) (z:SkywalkRails.State)
+    (odd:(z.a+z.b)%2=1) (active:onRails j 0 z s.basis)
+    (preserve:∀t:State,∀q∈watch j,(run P b t).basis q=t.basis q) :
+    onRails j 1 (SkywalkTrace.next z) (run P b (run (routed j 0 1) a s)).basis:=
+  (watch_congr j _ _ (preserve _) _ (route_frame j 0 1 (by decide) z odd s a active).2).1
 
 def physicalCells (j:Fin 26) (s:State) := readCells (shape j) 0 15 (mappedBasis j s.basis)
 
@@ -46532,7 +48329,7 @@ theorem orient (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (far
   · have hv : z.v<2^b := by omega
     simp [lhs,show z.v<z.u by omega]
   · obtain ⟨u,v,guarded⟩:=rail.2 (by omega)
-    have g:=guard_gt 15 (Shadow.reduced b 15 z).u
+    have g : (Shadow.reduced b 15 z).u < guard 15 (Shadow.reduced b 15 z).u := guard_gt 14 _
     simp [lhs,show ¬z.v<z.u by omega]
 
 theorem certifiedChain (b : Nat) (z : SkywalkNat.State) (g s : Bool)
@@ -46638,6 +48435,23 @@ theorem route_outside (j:Fin 26) (a n:Nat) (lim:a+n≤15) (q:Wire) (free:q∉spa
   run_preserves_outside _ _ _ _ (fun used=>free (route_sites j a n lim q used))
 def oldRange (t q:Nat) : Prop := (16≤q ∧ q+2≤16+t) ∨ (1044≤q ∧ q+2≤1044+t)
 instance (t q:Nat) : Decidable (oldRange t q):=by unfold oldRange;infer_instance
+theorem old_clear {j:Fin 26} {a n q:Nat} (lim:a+n≤15)
+    (old:oldRange (start j+a) (windowNet j q)) : q∉spanSites j a n := by
+  intro mem
+  obtain ⟨r,hr,inside⟩:=List.mem_flatMap.mp mem
+  rw [List.mem_range'_1] at hr
+  obtain ⟨w,hw,eq⟩:=List.mem_map.mp inside
+  have undo:windowNet j (windowNet j w)=w:=by
+    apply OB5.sig_invol
+    have hj:=j.isLt;simp [start];omega
+  rw [←eq,undo] at old
+  have hj:=j.isLt
+  simp only [IntegerPacket.ports,shape,smallBits,start,SkywalkIntegerLayout.wires,SkywalkIntegerLayout.ah,
+    SkywalkIntegerLayout.bh,List.mem_cons,List.mem_append,List.mem_range'_1,List.not_mem_nil,or_false] at hw
+  simp only [oldRange,start] at old
+  repeat' first | cases_type Or | cases_type And
+  all_goals try simp only [Wire] at *
+  all_goals omega
 
 end ECDSAAdd.Entrant.StairPacket
 
@@ -46658,6 +48472,42 @@ theorem mapped (ps:List (Wire×Wire)) (a b:Wire×Wire→Wire) (s t:BasisState) (
     have tail:=ih (fun v h=>eq v (by simp [h]))
     change (if s (a p) then 1 else 0)+2*regValue _ s=(if t (b p) then 1 else 0)+2*regValue _ t
     rw [head,tail]
+theorem stored {lo hi g n f u neg far long} {L:SkywalkIntegerLayout} {net:Wire→Wire} (bits:Nat)
+    (raw cut:State) (z:SkywalkNat.State) (G S:Bool)
+    (packed:PackedCut lo hi g n f u neg far long (pullState net raw) cut)
+    (input:SkywalkIntegerInput L (SkywalkRails.encode G S z.u z.v).a (SkywalkRails.encode G S z.u z.v).b G raw.basis)
+    (gate:net g=L.previous) (left:(hi.map Prod.fst).map net=L.a.drop bits) (right:(hi.map Prod.snd).map net=L.b.drop bits)
+    (la:bits≤L.a.length) (lb:bits≤L.b.length) : regValue (hi.map Prod.snd) cut.basis=(z.u+z.v)/2^bits:=by
+  have math:=mathematical _ _ _ _ _ _ input
+  have tag:(pullState net raw).basis g=G:=(congrArg raw.basis gate).trans math.1
+  have select (p:Wire×Wire) (h:p∈hi):cut.basis p.2=if G then raw.basis (net p.2) else raw.basis (net p.1):=by
+    have e:=(packed.upper p h).2
+    rw [tag] at e;exact e
+  cases G with
+  | false=>
+    rw [mapped hi Prod.snd Prod.fst _ (fun q=>raw.basis (net q)) (fun p h=>by simpa using select p h),
+      ←unroute net _ _,left,shiftedValue _ _ la,show regValue L.a raw.basis=z.u+z.v from math.2.2.1]
+  | true=>
+    rw [mapped hi Prod.snd Prod.snd _ (fun q=>raw.basis (net q)) (fun p h=>by simpa using select p h),
+      ←unroute net _ _,right,shiftedValue _ _ lb,show regValue L.b raw.basis=z.u+z.v from math.2.2.1]
+theorem three (a b c:Wire) (s:BasisState) (row:Nat)
+    (ha:s a=row.testBit 12) (hb:s b=row.testBit 13) (hc:s c=row.testBit 14) :
+    regValue [a,b,c] s=row/4096%8:=by
+  simp only [regValue,List.foldr_cons,List.foldr_nil,ha,hb,hc,Nat.testBit_eq_decide_div_mod_eq,decide_eq_true_eq]
+  split <;> split <;> split <;> simp_all <;> omega
+theorem assemble (b k:Nat) (z:SkywalkNat.State) (G S:Bool) (s:BasisState) (a c e:Wire) (rest:List Wire)
+    (ha:s a=(shadowRow b k z G S).testBit 12) (hc:s c=(shadowRow b k z G S).testBit 13)
+    (he:s e=(shadowRow b k z G S).testBit 14)
+    (high:regValue rest s=(z.u+z.v)/2^(b+k+3)) :
+    regValue ([a,c,e]++rest) s=(if Shadow.far b k z then Shadow.high b k z else 0):=by
+  rw [regValue_append,three _ _ _ _ _ ha hc he,(tags b k z G S).2.2.2.2, high]
+  have div:(z.u+z.v)/2^(b+k+3)=Shadow.high b k z/8:=by
+    unfold Shadow.high Shadow.limb;rw [Nat.div_div_eq_div_mul,pow_add 2 (b+k) 3];rfl
+  rw [div]
+  change (if Shadow.far b k z then Shadow.high b k z%8 else 0)%8+8*(Shadow.high b k z/8)=_
+  by_cases h:Shadow.far b k z
+  · simp only [h,if_true];omega
+  · simp only [h,if_false];unfold Shadow.far at h;omega
 
 
 end ECDSAAdd.Entrant.StairPacket.SavedHigh
@@ -46843,6 +48693,13 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 4500000
 attribute [local irreducible] run
 def Kept (ps:Ports) (d:Bool) (row:Nat) (s:State) := ∀i:Fin 16,s.basis (ps ⟨i.val,by omega⟩)=(get (code d) i.val).testBit row
+theorem body_keeps (j:Fin 26) (P:Program) (ps:Ports) (d:Bool) (row:Nat) (s:State) (m:List Bool)
+    (off:∀i:Fin 16,ps ⟨i.val,by omega⟩∉spanSites j 1 14)
+    (hold:Frame ps (code d) row (run P (m.drop (measurementCount (routed j 0 1))) (run (routed j 0 1) m s))) :
+    Kept ps d row (run (body j P) m s) := by
+  intro i
+  simp only [body,run_append,run_take]
+  exact (route_outside j 1 14 (by decide) _ (off i) _ _).trans (hold ⟨i.val,by omega⟩)
 namespace NativePack240
 open ArchiveBoundary240
 end NativePack240
@@ -47140,93 +48997,514 @@ theorem terminalRel (k : Nat) (z r : SkywalkNat.State) (h : Rel k z r) :
     exact ih _ _ (advance h).2
 
 
-/-- margin 17 (T1): `sameThreshold` with the non-strict sum bound. After 15 ticks the reduced sum is only known
-to be ≥ 2^(b+1); the guard s+1 ≤ B then still gives half+1 ≤ B by parity (2B ≥ 2 half + 1). -/
-theorem sameThreshold17 (half e : Nat) (z r : SkywalkNat.State) (rel : Rel 0 z r)
-    (en:e≤1) (sum:2*half≤r.u+r.v) :
-    (half≤z.u-e ↔ half≤r.u-e) ∧ (0<z.u ↔ 0<r.u) := by
-  cases rel with
-  | left B s D guard =>
-    dsimp only
-    change s+1≤B at guard
-    change 2*half≤B+s at sum
-    simp only [pow_zero,one_mul]
-    omega
-  | right => exact ⟨Iff.rfl,Iff.rfl⟩
-
-theorem afterThreshold (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) (e:Nat) (en:e≤1) :
-    let full:=step^[15] z
-    let r:=step^[15] (reduced b 15 z)
-    (2^b≤full.u-e ↔ 2^b≤r.u-e) ∧ (0<full.u ↔ 0<r.u) := by
-  by_cases f: far b 15 z
-  · have rep:=represented b 15 z small f
-    have cap:=rep.2.1
-    rw [scale,pow_succ 2 b] at cap
-    have low:=sumLower 15 (2^b*2) (reduced b 15 z) (by unfold total;omega)
-    apply sameThreshold17 _ _ _ _ (terminalRel _ _ _ rep.1) en
-    unfold total at low
-    have h:=Nat.two_pow_pos b
-    omega
-  · simp [reduced,f]
 
 
-theorem limbGaps (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) :
-    let full:=step^[15] z
-    let r:=step^[15] (reduced b 15 z)
-    ∃a c:Nat,full.u=r.u+2^(b+1)*a ∧ full.v=r.v+2^(b+1)*c := by
+
+
+
+/-- The farKey the leave reads: 0 when u is long at the start, else the number of even ticks of the short u. -/
+def farKey (b : Nat) (z : SkywalkNat.State) : Nat := if 2^b ≤ z.u then 0 else wait 15 z.u
+
+/-- End states of a far block: the reduced walk plus the shifted gap on the rail that ends long. -/
+theorem gapShape (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z) :
+    (farKey b z = 15 → (step^[15] z).u = (step^[15] (reduced b 15 z)).u ∧
+        (step^[15] z).v = (step^[15] (reduced b 15 z)).v + 2^15*(2^b*(high b 15 z-1))) ∧
+    (farKey b z < 15 → (step^[15] z).u = (step^[15] (reduced b 15 z)).u + 2^(farKey b z)*(2^b*(high b 15 z-1)) ∧
+        (step^[15] z).v = (step^[15] (reduced b 15 z)).v) := by
+  have side := rail b z small f
+  by_cases long : 2^b ≤ z.u
+  · obtain ⟨rv, fullU, valid⟩ := side.1 long
+    have shape : z = ⟨(reduced b 15 z).u+2^15*(2^b*(high b 15 z-1)), (reduced b 15 z).v⟩ :=
+      SkywalkNat.State.ext fullU rv.symm
+    have result := long_u 15 (reduced b 15 z).u (reduced b 15 z).v (2^b*(high b 15 z-1)) valid
+    rw [← shape, show (⟨(reduced b 15 z).u, (reduced b 15 z).v⟩ : SkywalkNat.State) = reduced b 15 z from rfl] at result
+    have k0 : farKey b z = 0 := by rw [farKey, if_pos long]
+    rw [k0, pow_zero, one_mul]
+    exact ⟨fun h => absurd h (by decide), fun _ => ⟨by rw [result], by rw [result]⟩⟩
+  · obtain ⟨ru, fullV, valid⟩ := side.2 (Nat.lt_of_not_ge long)
+    have shape : z = ⟨(reduced b 15 z).u, (reduced b 15 z).v+2^15*(2^b*(high b 15 z-1))⟩ :=
+      SkywalkNat.State.ext ru.symm fullV
+    have result := long_v 15 (reduced b 15 z).v (reduced b 15 z).u (2^b*(high b 15 z-1)) valid
+    rw [← shape, show (⟨(reduced b 15 z).u, (reduced b 15 z).v⟩ : SkywalkNat.State) = reduced b 15 z from rfl] at result
+    have result' : step^[15] z = (if wait 15 (reduced b 15 z).u = 15 then
+        (⟨(step^[15] (reduced b 15 z)).u,
+          (step^[15] (reduced b 15 z)).v + 2^(wait 15 (reduced b 15 z).u)*(2^b*(high b 15 z-1))⟩ : SkywalkNat.State)
+      else ⟨(step^[15] (reduced b 15 z)).u + 2^(wait 15 (reduced b 15 z).u)*(2^b*(high b 15 z-1)),
+          (step^[15] (reduced b 15 z)).v⟩) := result
+    have kw : farKey b z = wait 15 (reduced b 15 z).u := by rw [farKey, if_neg long, ru]
+    rw [kw]
+    constructor
+    · intro h
+      rw [result']
+      simp only [h, ite_true, and_self]
+    · intro h
+      have hc : (wait 15 (reduced b 15 z).u = 15) = False := eq_false (Nat.ne_of_lt h)
+      rw [result']
+      simp only [hc, ite_false, and_self]
+
+/-- Unit 2^b: both rails keep their low b bits (replaces `limbGaps` at 2^(b+1)). -/
+theorem limbGaps16 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    ∃ a c : Nat, F.u = r.u + 2^b*a ∧ F.v = r.v + 2^b*c := by
   by_cases f : far b 15 z
-  · let r:=reduced b 15 z
-    let H:=high b 15 z-1
-    let V:=2^(b+1)
-    let D:=V*H
-    have side:=rail b z small f
-    dsimp only
-    by_cases long : 2^b≤z.u
-    · obtain ⟨rv,fullU,valid⟩:=side.1 long
-      have shape : z=⟨r.u+2^15*D,r.v⟩:=SkywalkNat.State.ext fullU rv.symm
-      have result:=long_u 15 r.u r.v D valid
-      rw [←shape] at result
-      rw [result]
-      exact ⟨H,0,rfl,by rw [Nat.mul_zero,Nat.add_zero]⟩
-    · obtain ⟨ru,fullV,valid⟩:=side.2 (Nat.lt_of_not_ge long)
-      have shape : z=⟨r.u,r.v+2^15*D⟩:=SkywalkNat.State.ext ru.symm fullV
-      have result:=long_v 15 r.v r.u D valid
-      rw [←shape] at result
-      dsimp only at result
-      let J:=2^(wait 15 r.u)*H
-      have shift : 2^(wait 15 r.u)*D=V*J := by dsimp [D,J];ring
-      rw [shift] at result
-      split at result
-      · rw [result];exact ⟨0,J,by rw [Nat.mul_zero,Nat.add_zero],rfl⟩
-      · rw [result];exact ⟨J,0,rfl,by rw [Nat.mul_zero,Nat.add_zero]⟩
-  · refine ⟨0,0,?_,?_⟩ <;> simp [reduced,f]
+  · obtain ⟨last, early⟩ := gapShape b z small f
+    try dsimp only at last early ⊢
+    by_cases h : farKey b z = 15
+    · obtain ⟨hu, hv⟩ := last h
+      exact ⟨0, 2^15*(high b 15 z-1), by rw [hu]; simp, by rw [hv]; ring⟩
+    · have lt : farKey b z < 15 := by
+        have le : farKey b z ≤ 15 := by
+          unfold farKey; split
+          · omega
+          · exact wait_le 15 z.u
+        omega
+      obtain ⟨hu, hv⟩ := early lt
+      exact ⟨2^(farKey b z)*(high b 15 z-1), 0, by rw [hu]; ring, by rw [hv]; simp⟩
+  · refine ⟨0, 0, ?_, ?_⟩ <;> simp [reduced, f]
 
-theorem retainedLow (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) (sg:Bool) :
-    let F:=step^[15] z
-    let r:=step^[15] (reduced b 15 z)
-    let e:=PortalValues.negative sg r.u
-    let V:=2^(b+1)
-    PortalValues.negative sg F.u=e ∧ (F.u+F.v)%V=(r.u+r.v)%V ∧ (F.u-e.toNat)%V=(r.u-e.toNat)%V := by
-  let F:=step^[15] z
-  let r:=step^[15] (reduced b 15 z)
-  let e:=PortalValues.negative sg r.u
-  let V:=2^(b+1)
-  obtain ⟨a,c,ahu,chv⟩:=limbGaps b z small
-  have same:0<F.u ↔ 0<r.u:=(afterThreshold b z small 0 (by decide)).2
-  have se:e.toNat≤r.u := by
-    by_cases p:0<r.u
-    · have le:e.toNat≤1:=by cases e <;> decide
+/-- Claim A, gap part: for farKey >= 1 the gap is a multiple of 2^(b+1), as at margin 17. -/
+theorem evenGap (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k1 : 1 ≤ farKey b z) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    ∃ a c : Nat, F.u = r.u + 2^(b+1)*a ∧ F.v = r.v + 2^(b+1)*c := by
+  obtain ⟨last, early⟩ := gapShape b z small f
+  try dsimp only at last early ⊢
+  by_cases h : farKey b z = 15
+  · obtain ⟨hu, hv⟩ := last h
+    refine ⟨0, 2^14*(high b 15 z-1), by rw [hu]; simp, ?_⟩
+    rw [hv]
+    ring
+  · have le : farKey b z ≤ 15 := by
+      unfold farKey; split
+      · omega
+      · exact wait_le 15 z.u
+    obtain ⟨hu, hv⟩ := early (by omega)
+    obtain ⟨m, hm⟩ : ∃ m, farKey b z = m+1 := ⟨farKey b z - 1, by omega⟩
+    refine ⟨2^m*(high b 15 z-1), 0, ?_, by rw [hv]; simp⟩
+    rw [hu, hm]
+    ring
+
+/-- Claim B, shape: at farKey 0 the gap G = 2^b (H-1) sits on the u rail, unshifted. -/
+theorem key0Shape (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    F.u = r.u + 2^b*(high b 15 z-1) ∧ F.v = r.v := by
+  obtain ⟨_, early⟩ := gapShape b z small f
+  try dsimp only at early ⊢
+  have h := early (by omega)
+  rw [k0, pow_zero, one_mul] at h
+  exact h
+
+/-- Claim B, latch: at farKey 0 the true u rail is long whatever the reduced one is (H >= 2, e <= r.u). -/
+theorem key0Latch (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) (e : Nat) (he : e ≤ (step^[15] (reduced b 15 z)).u) :
+    2^b ≤ (step^[15] z).u - e := by
+  obtain ⟨hu, _⟩ := key0Shape b z small f k0
+  try dsimp only at hu
+  have hH : 2 ≤ high b 15 z := f
+  have big : 2^b ≤ 2^b*(high b 15 z-1) := Nat.le_mul_of_pos_right _ (by omega)
+  omega
+
+/-- Bit `b` of `x + 2^b * g` is bit `b` of `x`, flipped when `g` is odd. -/
+theorem bit_add (b x g : Nat) : (x + 2^b*g)/2^b % 2 = (x/2^b + g) % 2 := by
+  rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos b)]
+
+/-- Claim B, bit rule: at farKey 0 bit b of (u - e) and of the total flip together with G0 = (H-1) mod 2. -/
+theorem key0Bits (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) (e : Nat) (he : e ≤ (step^[15] (reduced b 15 z)).u) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    let g := high b 15 z - 1
+    (F.u - e)/2^b % 2 = ((r.u - e)/2^b + g) % 2 ∧ (F.u + F.v)/2^b % 2 = ((r.u + r.v)/2^b + g) % 2 := by
+  obtain ⟨hu, hv⟩ := key0Shape b z small f k0
+  try dsimp only at hu hv ⊢
+  constructor
+  · rw [hu, show (step^[15] (reduced b 15 z)).u + 2^b*(high b 15 z-1) - e =
+      ((step^[15] (reduced b 15 z)).u - e) + 2^b*(high b 15 z-1) by omega]
+    exact bit_add _ _ _
+  · rw [hu, hv, show (step^[15] (reduced b 15 z)).u + 2^b*(high b 15 z-1) + (step^[15] (reduced b 15 z)).v =
+      ((step^[15] (reduced b 15 z)).u + (step^[15] (reduced b 15 z)).v) + 2^b*(high b 15 z-1) by omega]
+    exact bit_add _ _ _
+
+/-- Reduced sum of a far block: one limb at the start, so at least 2^b after the 15 ticks. -/
+theorem endSum (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z) :
+    2^b ≤ (step^[15] (reduced b 15 z)).u + (step^[15] (reduced b 15 z)).v := by
+  have lo := (represented b 15 z small f).2.1
+  rw [scale] at lo
+  exact LeaveShadowRails.sumLower 15 (2^b) (reduced b 15 z) lo
+
+/-- Claim B, sign: at farKey 0 the reduced u rail ends positive (it ends at least 2^b minus the short word). -/
+theorem key0Positive (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) : 0 < (step^[15] (reduced b 15 z)).u := by
+  obtain ⟨hu, hv⟩ := key0Shape b z small f k0
+  try dsimp only at hu hv
+  have hH : 2 ≤ high b 15 z := f
+  have big : 2^b ≤ 2^b*(high b 15 z-1) := Nat.le_mul_of_pos_right _ (by omega)
+  have mi := LeaveShadowRails.min_iter 15 z
+  have sum := endSum b z small f
+  omega
+
+/-- Claim A, threshold: for 1 <= farKey < 15 the reduced u rail ends above 2^b (first tick halves the short word;
+`sumLower` over the other 14 ticks). -/
+theorem midKeyLong (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k1 : 1 ≤ farKey b z) (k15 : farKey b z < 15) : 2^b + 1 ≤ (step^[15] (reduced b 15 z)).u := by
+  have short : z.u < 2^b := by
+    by_contra h
+    have : farKey b z = 0 := by rw [farKey, if_pos (Nat.le_of_not_gt h)]
+    omega
+  have kw : farKey b z = wait 15 z.u := by rw [farKey, if_neg (Nat.not_le.mpr short)]
+  have even : z.u % 2 = 0 := by
+    by_contra odd
+    have : wait 15 z.u = 0 := by
+      show (if z.u % 2 = 0 then wait 14 (z.u/2) + 1 else 0) = 0
+      rw [if_neg odd]
+    omega
+  have side := (rail b z small f).2 short
+  obtain ⟨ru, fullV, valid⟩ := side
+  have lo := (represented b 15 z small f).2.1
+  rw [scale] at lo
+  -- first tick of both walks: the short u halves
+  let r0 := reduced b 15 z
+  have r0u : r0.u = z.u := ru
+  have stepR : step r0 = ⟨z.u/2, r0.v⟩ := by
+    by_cases zero : z.u = 0
+    · have : wait 15 z.u = 15 := by rw [zero]; decide
       omega
-    · simp [e,PortalValues.negative,p]
-  change PortalValues.negative sg F.u=e ∧ (F.u+F.v)%V=(r.u+r.v)%V ∧ (F.u-e.toNat)%V=(r.u-e.toNat)%V
-  refine ⟨by simp only [e,PortalValues.negative,same],?_,?_⟩
-  · have sum:F.u+F.v=r.u+r.v+V*(a+c) := by
-      change F.u=r.u+V*a at ahu
-      change F.v=r.v+V*c at chv
-      rw [ahu,chv];ring
-    rw [sum,Nat.add_mul_mod_self_left]
-  · change F.u=r.u+V*a at ahu
-    rw [ahu,show r.u+V*a-e.toNat=(r.u-e.toNat)+V*a by omega,Nat.add_mul_mod_self_left]
+    · have e : r0 = ⟨z.u, r0.v⟩ := SkywalkNat.State.ext r0u rfl
+      rw [e]; simp [step, zero, even]
+  have stepZ : step z = ⟨z.u/2, z.v⟩ := by
+    by_cases zero : z.u = 0
+    · have : wait 15 z.u = 15 := by rw [zero]; decide
+      omega
+    · have e : z = ⟨z.u, z.v⟩ := rfl
+      rw [e]; simp [step, zero, even]
+  have sum14 : 2^b + 1 + z.u/2 ≤ (step^[15] r0).u + (step^[15] r0).v := by
+    have h := LeaveShadowRails.sumLower 14 (2^b + 1 + z.u/2) (step r0) (by
+      rw [stepR]
+      change 2^14*(2^b+1+z.u/2) ≤ z.u/2 + r0.v
+      have tot : 2^15*2^b ≤ z.u + r0.v := by rw [← r0u]; exact lo
+      have e15 : (2:Nat)^15 = 32768 := by norm_num
+      have e14 : (2:Nat)^14 = 16384 := by norm_num
+      have pos := Nat.two_pow_pos b
+      rw [e15] at tot
+      rw [e14]
+      omega)
+    rw [Function.iterate_succ_apply]
+    exact h
+  -- the true walk: its short word ends at most z.u / 2 and sits in v
+  obtain ⟨_, early⟩ := gapShape b z small f
+  try dsimp only at early
+  obtain ⟨hu, hv⟩ := early k15
+  have mi : min (step^[15] z).u (step^[15] z).v ≤ z.u/2 := by
+    have m := LeaveShadowRails.min_iter 14 (step z)
+    rw [stepZ] at m
+    rw [Function.iterate_succ_apply, stepZ]
+    exact le_trans m (Nat.min_le_left _ _)
+  have hH : 2 ≤ high b 15 z := f
+  have gbig : 2^b ≤ 2^(farKey b z)*(2^b*(high b 15 z-1)) := by
+    have one : 1 ≤ 2^(farKey b z) := Nat.one_le_two_pow
+    have g : 2^b ≤ 2^b*(high b 15 z-1) := Nat.le_mul_of_pos_right _ (by omega)
+    calc 2^b ≤ 2^b*(high b 15 z-1) := g
+      _ = 1*(2^b*(high b 15 z-1)) := (Nat.one_mul _).symm
+      _ ≤ 2^(farKey b z)*(2^b*(high b 15 z-1)) := Nat.mul_le_mul_right _ one
+  change 2^b + 1 + z.u/2 ≤ (step^[15] (reduced b 15 z)).u + (step^[15] (reduced b 15 z)).v at sum14
+  omega
+
+/-- Replaces `afterThreshold`: the sign test always agrees; the latch agrees except in far blocks with farKey 0. -/
+theorem afterThreshold16 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (e : Nat) (en : e ≤ 1) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    (0 < F.u ↔ 0 < r.u) ∧ (¬(far b 15 z ∧ farKey b z = 0) → (2^b ≤ F.u-e ↔ 2^b ≤ r.u-e)) := by
+  dsimp only
+  by_cases f : far b 15 z
+  · obtain ⟨last, early⟩ := gapShape b z small f
+    try dsimp only at last early
+    have le : farKey b z ≤ 15 := by
+      unfold farKey; split
+      · omega
+      · exact wait_le 15 z.u
+    by_cases h15 : farKey b z = 15
+    · obtain ⟨hu, _⟩ := last h15
+      rw [hu]
+      exact ⟨Iff.rfl, fun _ => Iff.rfl⟩
+    · obtain ⟨hu, _⟩ := early (by omega)
+      by_cases h0 : farKey b z = 0
+      · have pos := key0Positive b z small f h0
+        exact ⟨⟨fun _ => pos, fun _ => by omega⟩, fun n => absurd ⟨f, h0⟩ n⟩
+      · have long := midKeyLong b z small f (by omega) (by omega)
+        exact ⟨⟨fun _ => by omega, fun _ => by omega⟩, fun _ => ⟨fun _ => by omega, fun _ => by omega⟩⟩
+  · have same : reduced b 15 z = z := by simp [reduced, f]
+    rw [same]
+    exact ⟨Iff.rfl, fun _ => Iff.rfl⟩
+
+/-- Retained low part for any unit V dividing both gaps (the sign needs `0 < F.u ↔ 0 < r.u`). -/
+theorem retained_of_gaps (V : Nat) (F r : SkywalkNat.State) (sg : Bool) (same : 0 < F.u ↔ 0 < r.u)
+    (a c : Nat) (hu : F.u = r.u + V*a) (hv : F.v = r.v + V*c) :
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u+F.v) % V = (r.u+r.v) % V ∧
+      (F.u-e.toNat) % V = (r.u-e.toNat) % V := by
+  dsimp only
+  have se : (PortalValues.negative sg r.u).toNat ≤ r.u := by
+    by_cases p : 0 < r.u
+    · have le : (PortalValues.negative sg r.u).toNat ≤ 1 := by
+        cases PortalValues.negative sg r.u <;> decide
+      omega
+    · simp [PortalValues.negative, p]
+  refine ⟨by simp only [PortalValues.negative, same], ?_, ?_⟩
+  · rw [hu, hv, show r.u + V*a + (r.v + V*c) = r.u + r.v + V*(a+c) by ring, Nat.add_mul_mod_self_left]
+  · rw [hu, show r.u + V*a - (PortalValues.negative sg r.u).toNat =
+      (r.u - (PortalValues.negative sg r.u).toNat) + V*a by omega, Nat.add_mul_mod_self_left]
+
+/-- Replaces `retainedLow`: the sign and the low b bits of the total and of u - e are those of the reduced walk. -/
+theorem retainedLow16 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (sg : Bool) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u+F.v) % 2^b = (r.u+r.v) % 2^b ∧
+      (F.u-e.toNat) % 2^b = (r.u-e.toNat) % 2^b := by
+  obtain ⟨a, c, ahu, chv⟩ := limbGaps16 b z small
+  have at16 := afterThreshold16 b z small 0 (by decide)
+  try dsimp only at at16 ahu chv
+  exact retained_of_gaps (2^b) _ _ sg at16.1 a c ahu chv
+
+/-- Claim A, low part: outside far blocks with farKey 0 the margin-17 statement (mod 2^(b+1)) still holds. -/
+theorem retainedLow17 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (sg : Bool)
+    (plain : ¬(far b 15 z ∧ farKey b z = 0)) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u+F.v) % 2^(b+1) = (r.u+r.v) % 2^(b+1) ∧
+      (F.u-e.toNat) % 2^(b+1) = (r.u-e.toNat) % 2^(b+1) := by
+  have at16 := afterThreshold16 b z small 0 (by decide)
+  try dsimp only at at16
+  have same := at16.1
+  by_cases f : far b 15 z
+  · have k1 : 1 ≤ farKey b z := by
+      by_contra h
+      exact plain ⟨f, by omega⟩
+    obtain ⟨a, c, ahu, chv⟩ := evenGap b z small f k1
+    try dsimp only at ahu chv
+    exact retained_of_gaps (2^(b+1)) _ _ sg same a c ahu chv
+  · have eq : reduced b 15 z = z := by simp [reduced, f]
+    rw [eq] at same ⊢
+    exact retained_of_gaps (2^(b+1)) _ _ sg same 0 0 (by simp) (by simp)
+
+/-- The borrow reads one bit of each rail: bit `half` of u - sign set and bit `half` of the total clear. -/
+theorem mod_split (h x : Nat) : x % (2*h) = x % h + h*(x/h % 2) := by
+  rw [Nat.mul_comm 2 h]
+  exact Nat.mod_mul
+
+theorem half_le_mod_iff (h x : Nat) (hp : 0 < h) : h ≤ x % (2*h) ↔ x/h % 2 = 1 := by
+  have e := mod_split h x
+  have a := Nat.mod_lt x hp
+  rcases Nat.mod_two_eq_zero_or_one (x/h) with c | c <;> rw [c] at e <;> rw [c] <;>
+    simp only [Nat.mul_zero, Nat.mul_one, Nat.add_zero] at e <;> constructor <;> intro hh <;> omega
+
+theorem mod_lt_half_iff (h x : Nat) (hp : 0 < h) : x % (2*h) < h ↔ x/h % 2 = 0 := by
+  have e := mod_split h x
+  have a := Nat.mod_lt x hp
+  rcases Nat.mod_two_eq_zero_or_one (x/h) with c | c <;> rw [c] at e <;> rw [c] <;>
+    simp only [Nat.mul_zero, Nat.mul_one, Nat.add_zero] at e <;> constructor <;> intro hh <;> omega
+
+/-- The borrow reads one bit of each rail: bit `half` of u - sign set and bit `half` of the total clear. -/
+theorem borrow_bits (half u v sign : Nat) (hp : 0 < half) :
+    LeaveCompanion.upperBorrow half u v sign =
+      if (u-sign)/half % 2 = 1 ∧ (u+v)/half % 2 = 0 then 1 else 0 := by
+  unfold LeaveCompanion.upperBorrow
+  simp only [half_le_mod_iff half (u-sign) hp, mod_lt_half_iff half (u+v) hp]
+
+/-- Claim B, borrow: at farKey 0 with G0 = (H-1) mod 2 = 1 both bits flip, so the true borrow is the mirrored test;
+with G0 = 0 it is the reduced borrow. -/
+theorem key0Borrow (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) (e : Nat) (he : e ≤ (step^[15] (reduced b 15 z)).u) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    LeaveCompanion.upperBorrow (2^b) F.u F.v e =
+      if (high b 15 z - 1) % 2 = 1 then
+        (if (r.u-e)/2^b % 2 = 0 ∧ (r.u+r.v)/2^b % 2 = 1 then 1 else 0)
+      else LeaveCompanion.upperBorrow (2^b) r.u r.v e := by
+  obtain ⟨bu, bt⟩ := key0Bits b z small f k0 e he
+  try dsimp only at bu bt ⊢
+  rw [borrow_bits _ _ _ _ (Nat.two_pow_pos b), borrow_bits _ _ _ _ (Nat.two_pow_pos b), bu, bt]
+  generalize ((step^[15] (reduced b 15 z)).u - e)/2^b = x
+  generalize ((step^[15] (reduced b 15 z)).u + (step^[15] (reduced b 15 z)).v)/2^b = y
+  generalize high b 15 z - 1 = g
+  split_ifs <;> omega
+
+/-- Key 0: the short word of the far block ends in v, below 2^b, on both walks. -/
+theorem key0ShortV (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) : (step^[15] (reduced b 15 z)).v < 2^b := by
+  obtain ⟨hu, hv⟩ := key0Shape b z small f k0
+  try dsimp only at hu hv
+  have hH : 2 ≤ high b 15 z := f
+  have big : 2^b ≤ 2^b*(high b 15 z-1) := Nat.le_mul_of_pos_right _ (by omega)
+  have mi := LeaveShadowRails.min_iter 15 z
+  omega
+
+/-- G2 (latch), erase side: when the reduced u rail of a farKey-0 far block ends below the cutoff, the reduced total is
+below 2^(b+1), so the rows the companion erase ANDs with the latch are all zero. -/
+theorem key0EraseBound (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (f : far b 15 z)
+    (k0 : farKey b z = 0) (e : Nat) (en : e ≤ 1) (low : ¬ 2^b ≤ (step^[15] (reduced b 15 z)).u - e) :
+    (step^[15] (reduced b 15 z)).u + (step^[15] (reduced b 15 z)).v < 2*2^b := by
+  have sv := key0ShortV b z small f k0
+  omega
+
+/-- `LeaveCompanion.upper_clear` with a latch that may also be set by a side condition `K`, as long as `K` without
+the plain latch forces a total below one unit. -/
+theorem upper_clear_or (half u v sign radix : Nat) (hp : 0 < half) (se : sign ≤ 1) (su : sign ≤ u)
+    (small : min u v < half) (K : Prop) [Decidable K] (hK : K → ¬ half ≤ u - sign → u + v < 2*half) :
+    (((u-sign)/(2*half)) % radix + LeaveCompanion.upperBorrow half u v sign) % radix =
+      (if half ≤ u - sign ∨ K then ((u+v)/(2*half)) % radix else 0) := by
+  have base := LeaveCompanion.upper_clear half u v sign radix hp se su small
+  by_cases h : half ≤ u - sign
+  · rw [if_pos (Or.inl h)]
+    rw [if_pos h] at base
+    exact base
+  · rw [if_neg h] at base
+    by_cases k : K
+    · rw [if_pos (Or.inr k), base, Nat.div_eq_of_lt (hK k h), Nat.zero_mod]
+    · rw [if_neg (fun hk => hk.elim h k)]
+      exact base
+
+/-- The latch the margin-16 leave computes (G2): reduced latch OR (far and farKey 0) is the TRUE latch. -/
+theorem latch16 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (e : Nat) (en : e ≤ 1)
+    (he : e ≤ (step^[15] (reduced b 15 z)).u) :
+    (2^b ≤ (step^[15] (reduced b 15 z)).u - e ∨ (far b 15 z ∧ farKey b z = 0)) ↔ 2^b ≤ (step^[15] z).u - e := by
+  have at16 := afterThreshold16 b z small e en
+  try dsimp only at at16
+  by_cases k : far b 15 z ∧ farKey b z = 0
+  · have t := key0Latch b z small k.1 k.2 e he
+    exact ⟨fun _ => t, fun _ => Or.inr k⟩
+  · have same := at16.2 k
+    exact ⟨fun h => h.elim same.mpr (fun hk => absurd hk k), fun h => Or.inl (same.mp h)⟩
+
+/-- Margin-16 row bound (the cell16 argument one unit lower): the reduced end total is below 2^(b+16). -/
+theorem inputTight16 (b : Nat) (z : SkywalkNat.State) (small : far b 15 z → min z.u z.v < 2^b) :
+    ((step^[15] (reduced b 15 z)).u + (step^[15] (reduced b 15 z)).v)/2^b < 2^16 := by
+  have upper : (reduced b 15 z).u + (reduced b 15 z).v < 2*limb b 15 := by
+    by_cases f : far b 15 z
+    · exact (represented b 15 z (small f) f).2.2
+    · have low : (z.u+z.v)/limb b 15 < 2 := Nat.lt_of_not_ge f
+      simpa only [reduced, if_neg f] using (Nat.div_lt_iff_lt_mul (by unfold limb; positivity)).mp low
+  have noninc := iter_sum_nonincrease 15 (reduced b 15 z)
+  apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos b)).mpr
+  rw [scale] at upper
+  have e15 : (2:Nat)^15 = 32768 := by norm_num
+  have e16 : (2:Nat)^16 = 65536 := by norm_num
+  rw [e15] at upper
+  rw [e16]
+  omega
+
+/-- One step's new `u` is at most half the old sum (copy of Stair44Stock's `step_u_half`, which sits downstream). -/
+theorem step_u_half' (z : SkywalkNat.State) : (step z).u ≤ (z.u + z.v)/2 := by
+  unfold step; split_ifs <;> (try dsimp only) <;> omega
+
+/-- Companion row 14 (margin-16 form of `inputRow15`): the reduced sum is below `2^16*2^b`, so after the block
+`a.u < 2^15*2^b`; and if `a.u ≥ 2^b` while `min a.u a.v < 2^b`, then `a.u+a.v < 2^15*2^b`. -/
+theorem inputRow14 (b : Nat) (z : SkywalkNat.State) (small : far b 15 z → min z.u z.v < 2^b) :
+    let a := step^[15] (reduced b 15 z)
+    a.u < 2^15*2^b ∧ (min a.u a.v < 2^b → 2^b ≤ a.u → a.u+a.v < 2^15*2^b) := by
+  have hb := Nat.two_pow_pos b
+  have hS : (reduced b 15 z).u + (reduced b 15 z).v < 2^16*2^b := by
+    by_cases f : far b 15 z
+    · have upper := (represented b 15 z (small f) f).2.2
+      rw [scale] at upper
+      omega
+    · simp only [reduced, if_neg f]
+      have upper := (Nat.div_lt_iff_lt_mul (by unfold limb; positivity)).mp (Nat.lt_of_not_ge f)
+      rw [scale] at upper
+      omega
+  dsimp only
+  rw [show (15:Nat) = 13+1+1 from rfl, Function.iterate_succ_apply', Function.iterate_succ_apply']
+  have hc0 := iter_sum_nonincrease 13 (reduced b 15 z)
+  generalize step^[13] (reduced b 15 z) = c at hc0 ⊢
+  have h1 := step_u_half' c
+  have h2 := step_sum_nonincrease c
+  generalize step c = d at h1 h2 ⊢
+  have h3 := step_u_half' d
+  refine ⟨by omega, fun hmin hlong => ?_⟩
+  unfold step at hmin hlong ⊢
+  split_ifs at hmin hlong ⊢ <;> (try dsimp only at hmin hlong ⊢) <;> omega
+
+/-- G2, flag side: in a far block "u long at the start" xor "the first tick's swap record" is exactly farKey 0.
+(The circuit reads `side = far && long` on e0P+4 and the first swap record cell.) -/
+theorem key0Flag (b : Nat) (z : SkywalkNat.State) (g s : Bool) (small : min z.u z.v < 2^b) (odd : z.v%2=1)
+    (f : far b 15 z) :
+    (decide (2^b ≤ z.u) ^^
+      ((SkywalkTrace.trace 15 (SkywalkRails.encode g s z.u z.v))[0]?.getD (false,false)).2) =
+      decide (farKey b z = 0) := by
+  by_cases long : 2^b ≤ z.u
+  · have ch := LeaveTraceHistory.certifiedChain b z g s small odd f
+    have k0 : farKey b z = 0 := by rw [farKey, if_pos long]
+    rw [k0, decide_eq_true long]
+    generalize SkywalkTrace.trace 15 (SkywalkRails.encode g s z.u z.v) = xs at ch ⊢
+    cases xs with
+    | nil => simp
+    | cons v vs =>
+      have hv : v.2 = false := by
+        have h1 := ch.1
+        simpa [long] using h1
+      simp [hv]
+  · have fs := LeaveTraceHistory.firstSwap b z g s small odd f (decide_eq_false long)
+    try dsimp only at fs
+    have hi : 0 < (SkywalkTrace.trace 15 (SkywalkRails.encode g s z.u z.v)).length := by
+      rw [SkywalkTrace.trace_length]; decide
+    have h0 := fs 0 hi (Nat.zero_le _)
+    have kw : farKey b z = wait 15 z.u := by rw [farKey, if_neg long]
+    rw [List.getElem?_eq_getElem hi, Option.getD_some, h0, kw, decide_eq_false long]
+    by_cases w : wait 15 z.u = 0
+    · simp [w]
+    · have w' : ¬ 0 = wait 15 z.u := fun h => w h.symm
+      simp [w, w']
+
+/-- Replaces `LeaveRestoreTruth.truth`: sign, TRUE latch from the G2 latch, and the retained low b bits. -/
+theorem truth16 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2^b) (sg : Bool) :
+    let F := step^[15] z
+    let r := step^[15] (reduced b 15 z)
+    let e := (PortalValues.negative sg r.u).toNat
+    PortalValues.negative sg F.u = PortalValues.negative sg r.u ∧
+      (decide (2^b ≤ r.u-e) || decide (far b 15 z ∧ farKey b z = 0)) = decide (2^b ≤ F.u-e) ∧
+      (F.u-e) % 2^b = (r.u-e) % 2^b ∧ (F.u+F.v) % 2^b = (r.u+r.v) % 2^b := by
+  have low := retainedLow16 b z small sg
+  try dsimp only at low ⊢
+  have e1 : (PortalValues.negative sg (step^[15] (reduced b 15 z)).u).toNat ≤ 1 := by
+    cases PortalValues.negative sg (step^[15] (reduced b 15 z)).u <;> decide
+  have eu : (PortalValues.negative sg (step^[15] (reduced b 15 z)).u).toNat ≤ (step^[15] (reduced b 15 z)).u := by
+    by_cases p : 0 < (step^[15] (reduced b 15 z)).u
+    · omega
+    · have n0 : PortalValues.negative sg (step^[15] (reduced b 15 z)).u = false := by
+        simp only [PortalValues.negative, decide_eq_false p, Bool.and_false]
+      rw [n0]; exact Nat.zero_le _
+  have lt := latch16 b z small _ e1 eu
+  refine ⟨low.1, ?_, low.2.2, low.2.1⟩
+  apply Bool.eq_iff_iff.mpr
+  simp only [Bool.or_eq_true, decide_eq_true_eq]
+  exact lt
+
+/-- Replaces `LeaveRestoreTruth.restored`: the restore runs on TRUE values (true latch, true borrow), so it is
+`upper_restore` on the end state itself. -/
+theorem restored16 (b k : Nat) (z : SkywalkNat.State) (endSmall : min (step^[15] z).u (step^[15] z).v < 2^b)
+    (sg : Bool) :
+    let F := step^[15] z
+    let e := (PortalValues.negative sg F.u).toNat
+    ((if 2^b ≤ F.u-e then ((F.u+F.v)/2^(b+1)) % 2^k else 0) + 2^k -
+        LeaveCompanion.upperBorrow (2^b) F.u F.v e) % 2^k = ((F.u-e)/2^(b+1)) % 2^k := by
+  dsimp only
+  have le : (PortalValues.negative sg (step^[15] z).u).toNat ≤ 1 := by
+    cases PortalValues.negative sg (step^[15] z).u <;> decide
+  have eu : (PortalValues.negative sg (step^[15] z).u).toNat ≤ (step^[15] z).u := by
+    by_cases p : 0 < (step^[15] z).u
+    · omega
+    · have n0 : PortalValues.negative sg (step^[15] z).u = false := by
+        simp only [PortalValues.negative, decide_eq_false p, Bool.and_false]
+      rw [n0]; exact Nat.zero_le _
+  have out := LeaveCompanion.upper_restore (2^b) (step^[15] z).u (step^[15] z).v
+    (PortalValues.negative sg (step^[15] z).u).toNat (2^k) (Nat.two_pow_pos _) le eu endSmall (Nat.two_pow_pos _)
+  have two : 2*2^b = 2^(b+1) := (Nat.mul_comm _ _).trans (pow_succ 2 b).symm
+  simpa only [two] using out
 
 end ECDSAAdd.Entrant.StairPacket.LeaveShadowRails
 
@@ -47289,6 +49567,20 @@ theorem named_range (j:Fin 26) (a n q:Nat) (lim:a+n≤15) (outside:¬MayTouch j 
   repeat' first | cases_type Or | cases_type And
   all_goals try simp only [Wire] at *
   all_goals omega
+theorem through_body (j:Fin 26) (P:Program) (s:State) (m:List Bool) (q:Nat)
+    (free:¬MayTouch j (windowNet j q))
+    (admin:let a:=run (routed j 0 1) m s
+      (run P (m.drop (measurementCount (routed j 0 1))) a).basis q=a.basis q) :
+    (run (body j P) m s).basis q=s.basis q:=by
+  simp only [body,run_append,run_take]
+  exact (route_outside j 1 14 (by decide) q (named_range j 1 14 q (by decide) free) _ _).trans
+    (admin.trans (route_outside j 0 1 (by decide) q (named_range j 0 1 q (by decide) free) s m))
+theorem body_cover (j:Fin 26) (P:Program) (controls effects:List Wire)
+    (clean:∀q∈controls,¬MayTouch j (windowNet j q)) (apart:∀q∈controls,q∉effects)
+    (cover:wires P⊆effects.toFinset) (s:State) (m:List Bool) (q:Wire) (hit:q∈controls) :
+    (run (body j P) m s).basis q=s.basis q:=
+  through_body j P s m q (clean q hit) (run_preserves_outside P _ _ q
+    (fun used=>apart q hit (List.mem_toFinset.mp (cover used))))
 theorem keep_values (a b c:Wire) (saved:List Wire) (s t:State) (H:Nat) (f u:Bool)
     (agree:∀q∈[a,b,c]++saved,t.basis q=s.basis q) (h:regValue saved s.basis=H)
     (sa:s.basis a=false) (sb:s.basis b=f) (sc:s.basis c=u) :
@@ -47661,52 +49953,7 @@ open SkywalkNat Shadow LeaveCompanion PortalValues
 set_option maxHeartbeats 1500000
 attribute [local irreducible] SkywalkNat.step
 
-theorem truth (b : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) (sg:Bool) :
-    let F:=step^[15] z
-    let r:=step^[15] (reduced b 15 z)
-    let e:=(negative sg r.u).toNat
-    (decide (2^b≤r.u-e)=decide (2^b≤F.u-e)) ∧
-      upperBorrow (2^b) r.u r.v e=upperBorrow (2^b) F.u F.v e ∧
-      (F.u-e)%(2*2^b)=(r.u-e)%(2*2^b) ∧
-      negative sg F.u=negative sg r.u := by
-  let F:=step^[15] z
-  let r:=step^[15] (reduced b 15 z)
-  let e:=(negative sg r.u).toNat
-  have smallE:e≤1:=by cases h : negative sg r.u <;> simp [e,h]
-  have low:=LeaveShadowRails.retainedLow b z small sg
-  have hi:=(LeaveShadowRails.afterThreshold b z small e smallE).1
-  have two : 2*2^b=2^(b+1) := (Nat.mul_comm _ _).trans (pow_succ 2 b).symm
-  dsimp only at low hi ⊢
-  refine ⟨by apply Bool.eq_iff_iff.mpr; simp only [decide_eq_true_eq];exact hi.symm,?_,?_,low.1⟩
-  · unfold upperBorrow
-    rw [two,low.2.1,low.2.2]
-  · rw [two];exact low.2.2
 
-theorem restored (b k : Nat) (z : SkywalkNat.State) (small:min z.u z.v<2^b) (sg:Bool) :
-    let F:=step^[15] z
-    let r:=step^[15] (reduced b 15 z)
-    let e:=(negative sg r.u).toNat
-    ((if 2^b≤r.u-e then ((F.u+F.v)/2^(b+1))%2^k else 0)+2^k-upperBorrow (2^b) r.u r.v e)%2^k =
-      ((F.u-e)/2^(b+1))%2^k := by
-  let F:=step^[15] z
-  let r:=step^[15] (reduced b 15 z)
-  let e:=(negative sg r.u).toNat
-  have le:e≤1 := by cases h:negative sg r.u <;> simp [e,h]
-  have eq:=truth b z small sg
-  have pos:0<F.u ↔ 0<r.u := (LeaveShadowRails.afterThreshold b z small e le).2
-  have eu:e≤F.u := by
-    by_cases h:0<F.u
-    · omega
-    · have no:¬0<r.u:=fun hr=>h (pos.mpr hr)
-      simp [e,negative,no]
-  have sm:min F.u F.v<2^b := lt_of_le_of_lt (LeaveShadowRails.min_iter 15 z) small
-  have out:=upper_restore (2^b) F.u F.v e (2^k) (Nat.two_pow_pos _) le eu sm (Nat.two_pow_pos _)
-  have h:2^b≤r.u-e ↔ 2^b≤F.u-e := (LeaveShadowRails.afterThreshold b z small e le).1.symm
-  have two : 2*2^b=2^(b+1) := (Nat.mul_comm _ _).trans (pow_succ 2 b).symm
-  change ((if 2^b≤r.u-e then ((F.u+F.v)/2^(b+1))%2^k else 0)+2^k-upperBorrow (2^b) r.u r.v e)%2^k=_
-  have bor : upperBorrow (2^b) r.u r.v e=upperBorrow (2^b) F.u F.v e := eq.2.1
-  simp only [h,bor]
-  simpa only [two] using out
 
 end ECDSAAdd.Entrant.StairPacket.LeaveRestoreTruth
 
@@ -48046,6 +50293,28 @@ theorem fixed_input (i x p:Nat) (hi:i<512) (good:Bounds x p) (s:State) (dom:Doma
     (original_input true x p i good.positive good.nonzero good.odd good.cap good.gap good.small good.coprime hi ref stage)
 theorem unique_input {i:Nat} {s:State} {a b:SkywalkRails.State} (left:InputAt i a s) (right:InputAt i b s):a=b:=
   SkywalkRails.State.ext (left.1.symm.trans right.1) (left.2.1.symm.trans right.2.1) (left.2.2.1.symm.trans right.2.2.1)
+theorem advance_signed_gen (i b x p:Nat) (lo:15≤ i) (hi:i+15<512) (good:Bounds x p)
+    (raw history:State) (dom:Domain i x p raw) (G S:Bool)
+    (input:InputAt i (encode G S (unsigned i x p).u (unsigned i x p).v) raw)
+    (small:min (unsigned i x p).u (unsigned i x p).v<2^b) :
+    let z:=unsigned i x p
+    let t:=Shadow.reduced b 15 z
+    let flags:=SharedSigned.flags G S (SkywalkTrace.trace 15 (encode G S z.u z.v))
+    let endState:=unsigned (i+15) x p
+    SkywalkTrace.next^[15] (encode G S t.u t.v)=encode flags.1 flags.2 (SkywalkNat.step^[15] t).u (SkywalkNat.step^[15] t).v ∧
+      InputAt (i+15) (encode flags.1 flags.2 endState.u endState.v) (endRaw i raw history):=by
+  let z:=unsigned i x p
+  have odd:z.v%2=1:=(SkywalkNat.iter_valid i (SkywalkNat.init x p) good.positive good.odd).2.1
+  obtain ⟨a,b'⟩:=SharedSigned.same b z small odd G S
+  have eq:=unique_input input (fixed_input i x p (by omega) good raw dom)
+  have stepRel:canonical (i+15) x p=SkywalkTrace.next^[15] (canonical i x p):=by rw [Nat.add_comm];exact Function.iterate_add_apply _ _ _ _
+  have numRel:unsigned (i+15) x p=SkywalkNat.step^[15] z:=by rw [Nat.add_comm];exact Function.iterate_add_apply _ _ _ _
+  have nextDom:=advance_gen i x p lo (by omega) good.positive good.nonzero good.odd good.cap good.gap good.small good.coprime raw history dom
+  have active:=fixed_input (i+15) x p hi good (endRaw i raw history) nextDom
+  dsimp only
+  refine ⟨a,?_⟩
+  rw [stepRel,←eq,b'] at active
+  simpa only [numRel] using active
 end ECDSAAdd.Entrant.StairPacket.WideReference
 
 end
@@ -48357,26 +50626,188 @@ theorem fix1_forward (s h : Nat) : GateMirror.forward (leaveFix1 s h) = notRegis
 theorem history_nodup (j : Fin 26) : ((List.range 15).map (start j + 16 + ·)).Nodup :=
   List.Nodup.map (fun _ _ e => by omega) List.nodup_range
 
+theorem scratchWire_band {q : Nat}
+    (h : q ∈ (1556 :: 1557 :: 1558 :: fullC : List Nat)) : 1556 ≤ q ∧ q ≤ 1575 := by
+  simp only [List.mem_cons, fullC, List.mem_map, List.mem_range] at h
+  rcases h with rfl | rfl | rfl | ⟨i, hi, rfl⟩
+  · exact ⟨Nat.le_refl _, by decide⟩
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨by omega, by omega⟩
 
+theorem longTemp_band (j : Fin 26) {p : Wire × Wire} (h : p ∈ longPairs j) :
+    1557 ≤ p.2 ∧ p.2 ≤ 1574 := by
+  simp only [longPairs, List.mem_map, List.mem_range] at h
+  obtain ⟨i, hi, rfl⟩ := h
+  refine ⟨Nat.le_add_right 1557 i, ?_⟩
+  exact le_trans (Nat.add_le_add_left (Nat.le_of_lt_succ hi) 1557) (by decide : 1557 + 17 ≤ 1574)
 
 /-! Arithmetic that `entry_core` needs, proved here so `omega` never sees `onRails` or `rail_win`. -/
 
+theorem sb_lo (s : Nat) (hs : s ≤ 390) : 61 ≤ sbP s := by
+  simp only [sbP]
+  have hsub : 122 ≤ 513 - s := by omega
+  have : 61 * 2 ≤ 513 - s := by simpa using hsub
+  exact (Nat.le_div_iff_mul_le (by decide : 0 < 2)).mpr this
 
+theorem sb_hi (s : Nat) (hs : 90 ≤ s) : sbP s ≤ 211 := by
+  simp only [sbP]
+  exact Nat.div_le_div_right (show 513 - s ≤ 423 by omega)
 
+theorem a0_le (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : a0P (start j) ≤ 633 := by
+  have w := start_win j h0 h1
+  simp only [a0P]
+  have sb := sb_hi (start j) w.1
+  omega
 
+theorem b0_ge (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : 848 ≤ b0P (start j) := by
+  have w := start_win j h0 h1
+  simp only [b0P]
+  have sb := sb_lo (start j) w.2
+  omega
 
+theorem b0_le (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : b0P (start j) ≤ 998 := by
+  have w := start_win j h0 h1
+  simp only [b0P]
+  have sb := sb_hi (start j) w.1
+  omega
 
+theorem aCol_above (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) :
+    start j + 30 < a0P (start j) - 1 + i := by
+  have sb := sb_lo (start j) (start_win j h0 h1).2
+  simp only [a0P]
+  omega
 
+theorem bCol_above (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) :
+    start j + 30 < b0P (start j) - 1 + i := by
+  have hb : 848 ≤ b0P (start j) := b0_ge j h0 h1
+  have one : 1 ≤ b0P (start j) := le_trans (by decide) hb
+  have low : 847 ≤ b0P (start j) - 1 := by simpa using Nat.sub_le_sub_right hb 1
+  have base : 847 ≤ b0P (start j) - 1 + i := le_trans low (Nat.le_add_right _ i)
+  have top : start j + 30 ≤ 420 := by
+    have := (start_win j h0 h1).2
+    omega
+  exact Nat.lt_of_le_of_lt top (Nat.lt_of_lt_of_le (by decide : (420 : Nat) < 847) base)
 
+theorem flag_ge (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : 1640 ≤ e0P (start j) + 5 := by
+  have sb := sb_lo (start j) (start_win j h0 h1).2
+  simp only [e0P]
+  omega
 
+theorem flag_above (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    start j + 30 < e0P (start j) + 5 := by
+  have top : start j + 30 ≤ 420 := by
+    have := (start_win j h0 h1).2
+    omega
+  exact Nat.lt_of_le_of_lt top (Nat.lt_of_lt_of_le (by decide : (420 : Nat) < 1640) (flag_ge j h0 h1))
 
+theorem aCol_le (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) (hi : i < 19) :
+    a0P (start j) - 1 + i ≤ 650 := by
+  have ile : i ≤ 18 := Nat.le_of_lt_succ hi
+  have ha : a0P (start j) ≤ 633 := a0_le j h0 h1
+  have one : 1 ≤ a0P (start j) := by
+    simp only [a0P]
+    exact le_trans (by decide : (1 : Nat) ≤ 32) (Nat.le_add_left 32 (start j + sbP (start j)))
+  calc a0P (start j) - 1 + i
+      ≤ a0P (start j) - 1 + 18 := Nat.add_le_add_left ile _
+    _ = a0P (start j) + 17 := by
+        rw [show (18 : Nat) = 1 + 17 from rfl, ← Nat.add_assoc, Nat.sub_add_cancel one]
+    _ ≤ 633 + 17 := Nat.add_le_add_right ha 17
+    _ = 650 := by decide
 
+theorem aCol_out (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) (hi : i < 19) :
+    a0P (start j) - 1 + i ∉ (1556 :: 1557 :: 1558 :: fullM j : List Nat) := by
+  intro h
+  have up := aCol_le j h0 h1 i hi
+  have hb := b0_ge j h0 h1
+  simp only [List.mem_cons, fullM, List.mem_map, List.mem_range] at h
+  rcases h with h1 | h1 | h1 | ⟨k, hk, h1⟩
+  · exact absurd h1 (Nat.ne_of_lt (Nat.lt_of_le_of_lt up (by decide : 650 < 1556)))
+  · exact absurd h1 (Nat.ne_of_lt (Nat.lt_of_le_of_lt up (by decide : 650 < 1557)))
+  · exact absurd h1 (Nat.ne_of_lt (Nat.lt_of_le_of_lt up (by decide : 650 < 1558)))
+  · have ge : 848 ≤ b0P (start j) + k := le_trans hb (Nat.le_add_right _ k)
+    exact absurd h1 (Nat.ne_of_gt (Nat.lt_of_le_of_lt up (Nat.lt_of_lt_of_le (by decide : 650 < 848) ge)))
 
+theorem flag_out (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    e0P (start j) + 5 ∉ (1556 :: 1557 :: 1558 :: fullM j : List Nat) := by
+  intro h
+  have ge := flag_ge j h0 h1
+  have hb := b0_le j h0 h1
+  simp only [List.mem_cons, fullM, List.mem_map, List.mem_range] at h
+  rcases h with h1 | h1 | h1 | ⟨k, hk, h1⟩
+  · exact absurd h1 (Nat.ne_of_gt (Nat.lt_of_lt_of_le (by decide : 1556 < 1640) ge))
+  · exact absurd h1 (Nat.ne_of_gt (Nat.lt_of_lt_of_le (by decide : 1557 < 1640) ge))
+  · exact absurd h1 (Nat.ne_of_gt (Nat.lt_of_lt_of_le (by decide : 1558 < 1640) ge))
+  · have top : b0P (start j) + k ≤ 1015 :=
+      le_trans (Nat.add_le_add hb (Nat.le_of_lt_succ hk)) (by decide : 998 + 17 ≤ 1015)
+    exact absurd h1 (Nat.ne_of_lt (Nat.lt_of_le_of_lt top (Nat.lt_of_lt_of_le (by decide : 1015 < 1640) ge)))
 
+theorem scan_lt (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) {q : Nat}
+    (hq : q ∈ RailPair.sites (scanPairs j)) : q < 1556 := by
+  obtain ⟨p, hp, hq'⟩ := List.mem_flatMap.mp hq
+  simp only [scanPairs, List.mem_map, List.mem_range] at hp
+  obtain ⟨i, hi, rfl⟩ := hp
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hq'
+  have ha := a0_le j h0 h1
+  have hb := b0_le j h0 h1
+  rcases hq' with rfl | rfl <;> omega
 
+theorem scratch_away (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (q : Nat)
+    (hq : 1556 ≤ q ∧ q ≤ 1597) :
+    (q < start j + 16 ∨ start j + 30 < q) ∧ q ≠ e0P (start j) + 5 ∧
+      q ∉ RailPair.sites (scanPairs j) := by
+  have w := start_win j h0 h1
+  have sb := sb_lo (start j) w.2
+  refine ⟨Or.inr (by omega), ?_, ?_⟩
+  · simp only [e0P]; omega
+  · intro hm
+    have := scan_lt j h0 h1 hm
+    omega
 
+theorem watched_lo (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (q : Nat)
+    (hq : (q = e0P (start j) + 6 ∨ q = e0P (start j) + 7) ∨ (1559 ≤ q ∧ q < 1559 + 39)) :
+    1559 ≤ q := by
+  rcases hq with (rfl | rfl) | ⟨lo, _⟩
+  · exact le_trans (by decide : (1559 : Nat) ≤ 1640)
+      (le_trans (flag_ge j h0 h1) (Nat.add_le_add_left (by decide : (5 : Nat) ≤ 6) (e0P (start j))))
+  · exact le_trans (by decide : (1559 : Nat) ≤ 1640)
+      (le_trans (flag_ge j h0 h1) (Nat.add_le_add_left (by decide : (5 : Nat) ≤ 7) (e0P (start j))))
+  · exact lo
 
+theorem watched_side (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (q : Nat)
+    (hq : (q = e0P (start j) + 6 ∨ q = e0P (start j) + 7) ∨ (1559 ≤ q ∧ q < 1559 + 39)) :
+    q ∉ (1556 :: 1557 :: 1558 :: fullM j : List Nat) ∧
+      (q < start j + 16 ∨ start j + 30 < q) ∧ q ≠ e0P (start j) + 5 ∧
+      q ∉ RailPair.sites (scanPairs j) := by
+  have lo := watched_lo j h0 h1 q hq
+  have ge := flag_ge j h0 h1
+  have hb := b0_le j h0 h1
+  have top : start j + 30 ≤ 420 := by
+    have := (start_win j h0 h1).2
+    omega
+  refine ⟨?_, Or.inr (Nat.lt_of_le_of_lt top (Nat.lt_of_lt_of_le (by decide : (420 : Nat) < 1559) lo)), ?_, ?_⟩
+  · intro h
+    simp only [List.mem_cons, fullM, List.mem_map, List.mem_range] at h
+    have neq {n : Nat} (hn : n < 1559) : q ≠ n := Nat.ne_of_gt (Nat.lt_of_lt_of_le hn lo)
+    rcases h with h1 | h1 | h1 | ⟨k, hk, h1⟩
+    · exact absurd h1 (neq (by decide))
+    · exact absurd h1 (neq (by decide))
+    · exact absurd h1 (neq (by decide))
+    · have bound : b0P (start j) + k ≤ 1015 :=
+        le_trans (Nat.add_le_add hb (Nat.le_of_lt_succ hk)) (by decide : 998 + 17 ≤ 1015)
+      exact absurd h1 (neq (Nat.lt_of_le_of_lt bound (by decide : 1015 < 1559))).symm
+  · rcases hq with (rfl | rfl) | ⟨_, hi⟩
+    · exact Nat.ne_of_gt (Nat.lt_succ_self _)
+    · exact Nat.ne_of_gt (Nat.lt_trans (Nat.lt_succ_self _) (Nat.lt_succ_self _))
+    · exact Nat.ne_of_lt (Nat.lt_of_lt_of_le hi (le_trans (by decide : 1559 + 39 ≤ 1640) ge))
+  · intro hm
+    exact absurd (scan_lt j h0 h1 hm) (Nat.not_lt_of_ge (le_trans (by decide : (1556 : Nat) ≤ 1559) lo))
 
+theorem run_forward_append (a b : List Gate) (m : List Bool) (s : State) :
+    run (GateMirror.forward (a ++ b)) m s =
+      run (GateMirror.forward b) (m.drop (measurementCount (GateMirror.forward a)))
+        (run (GateMirror.forward a) m s) := by
+  rw [forward_app, run_append, run_take]
 
 attribute [local irreducible] run SkywalkNat.step leaveFix0 leaveFix1 leaveFix2 latch Companion.erase
 
@@ -48487,6 +50918,11 @@ theorem hit_sites (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : Layout 1
     simp only [LeaveSelector.tags]
     unfold Wire at *; omega
 
+theorem swaps_apart (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) (hi : i < 15) :
+    swaps j i ≠ 1559 ∧ swaps j i ≠ 1560 := by
+  have r := rail_win (start_win j h0 h1).1 (start_win j h0 h1).2
+  have a := swaps_range j h0 h1 i hi
+  unfold Wire at *; omega
 
 /-! The selector words. -/
 
@@ -49067,6 +51503,10 @@ theorem cert10_control : ∀ k : Mode,
   decide +kernel
 theorem cert10_clean : ∀ k : Mode, targetCert (ports 12) (prepare 12) (retire 12) false k = true := by
   decide +kernel
+theorem cert10_tag : ∀ k : Mode, ∀ i : Fin 16,
+    sim (prepare 12) (LeaveSelector.start (ports 12) false k) (tagsP.getD i 0) =
+      .bit (enabled k && decide (i.val = key k)) := by
+  decide +kernel
 theorem cert10_foot : (prepare 12 ++ retire 12).all (fun o => decide (o.dst ∈ affected (ports 12))) = true := by
   decide +kernel
 
@@ -49107,6 +51547,14 @@ theorem _root_.ECDSAAdd.Entrant.StairPacket.LeaveJ.cleanCert (j : Fin 26) (h0 : 
   apply decide_eq_decide.mpr
   exact ⟨rE_inj hσ _ _ (gd q hqD) (restored_good k q hqD), fun e => by rw [e]⟩
 
+theorem _root_.ECDSAAdd.Entrant.StairPacket.LeaveJ.tagCertificate (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (k : Mode) (i : Fin 16) :
+    sim (prepare j) (LeaveSelector.start (ports j) false k) (tagsP.getD i 0) =
+      .bit (enabled k && decide (i.val = key k)) := by
+  have hs := (sim_rel (ren_inj j h0 h1) (prepare 12) prep10_in _ _ (start_good k) (start_rel j h0 h1 k)).1
+  have ht := tags_range i i.isLt
+  have e := hs (tagsP.getD i 0) (Or.inl ht)
+  rw [ren_const j _ ht] at e
+  rw [← prepare_ren j h0 h1, e, cert10_tag k i]; rfl
 
 theorem _root_.ECDSAAdd.Entrant.StairPacket.LeaveJ.foot_ok (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
     (prepare j ++ retire j).all (fun o => decide (o.dst ∈ affected (ports j))) = true := by
@@ -49148,6 +51596,11 @@ theorem _root_.ECDSAAdd.Entrant.StairPacket.LeaveJ.witnessCert (j : Fin 26) (h0 
       Bool.false_eq_true, ↓reduceIte]
     split_ifs <;> first | (exfalso; (try unfold Wire at *); omega) | rfl
 
+theorem _root_.ECDSAAdd.Entrant.StairPacket.LeaveJ.prefix_parts : ∀ j : Fin 26, 3 ≤ j.val → j.val ≤ 23 →
+    GateMirror.forward (leaveFix3 (start j) (sbP (start j)) ++ leaveFix4 (start j) (sbP (start j)) ++
+      leaveFix5 (start j) (sbP (start j))) =
+      withHits (e0P (start j) + 3) (e0P (start j) + 4) false (swaps j) ((prepare j).map Op.enter) := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.LeaveJ.SelRen
 end
@@ -49166,8 +51619,30 @@ set_option maxRecDepth 20000
 def fullPrefix (j : Fin 26) : List Gate :=
   leaveFix3 (start j) (sbP (start j)) ++ leaveFix4 (start j) (sbP (start j)) ++ leaveFix5 (start j) (sbP (start j))
 
+theorem far_ne (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    (e0P (start j) + 3 : Wire) ≠ 1559 ∧ (e0P (start j) + 3 : Wire) ≠ 1560 := by
+  have r := rail_win (start_win j h0 h1).1 (start_win j h0 h1).2
+  unfold Wire; omega
 
+theorem preparedState (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s : State) (m : List Bool) (v : BasisState)
+    (small : Nat) (k : Mode) (mode : k = farMode (s.basis (e0P (start j) + 3)) (s.basis (e0P (start j) + 4)) small)
+    (a : s.basis 1559 = false) (b : s.basis 1560 = false)
+    (input : ∀ q, q ≠ 1559 → q ≠ 1560 → s.basis q = (before (ports j) false k q).read v)
+    (exchange : right k = true → ∀ i < 15, i ≤ key k → s.basis (swaps j i) = decide (i = key k)) :
+    run (GateMirror.forward (fullPrefix j)) m s =
+      ⟨s.phase, fun q => (sim (prepare j) (LeaveSelector.start (ports j) false k) q).read v⟩ := by
+  rw [fullPrefix, prefix_parts j h0 h1]
+  exact allSites (ports j) _ _ false _ (swaps j) (hit_sites j h0 h1) (fun i hi => swaps_apart j h0 h1 i hi) s m v small
+    (far_ne j h0 h1).1 (far_ne j h0 h1).2 a b k mode input exchange
 
+theorem selected (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s : State) (m : List Bool) (v : BasisState)
+    (small : Nat) (k : Mode) (mode : k = farMode (s.basis (e0P (start j) + 3)) (s.basis (e0P (start j) + 4)) small)
+    (a : s.basis 1559 = false) (b : s.basis 1560 = false)
+    (input : ∀ q, q ≠ 1559 → q ≠ 1560 → s.basis q = (before (ports j) false k q).read v)
+    (exchange : right k = true → ∀ i < 15, i ≤ key k → s.basis (swaps j i) = decide (i = key k)) (i : Fin 16) :
+    (run (GateMirror.forward (fullPrefix j)) m s).basis (tagsP.getD i 0) = (enabled k && decide (i.val = key k)) := by
+  rw [preparedState j h0 h1 s m v small k mode a b input exchange]
+  exact congrArg (Expr.read v) (tagCertificate j h0 h1 k i)
 
 /-- dadon's `Leave{s}Selector.clear` (forward): the retired selector word restores the selector wires. -/
 theorem clear (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (k : Mode) (s : State) (m : List Bool) (v : BasisState)
@@ -49280,8 +51755,40 @@ theorem nearMiddle_result (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (X
 /-- dadon's `Leave{s}OutputPorts.live`: the output register's wires. -/
 def live (j : Fin 26) (i : Nat) : Wire := if i < lowsP (start j) then a0P (start j) + i else bankW (start j) i
 
+theorem live_row (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Fin 18) : live j i.val = (row j i).keep := by
+  have g := row_eq j i
+  unfold Column.keep live
+  rw [g.2.2.1]
+  by_cases h : i.val < lowsP (start j)
+  · simp [h, g.1]
+  · simp [h, g.2.1]
 
+theorem activeBits (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (X H : Nat) (k : Fin 16) (s : State)
+    (lo : ∀ i : Fin 18, s.basis (row j i).keep = (2^k.val*H + X%2^k.val).testBit i.val)
+    (hi : ∀ i : Nat, 18 ≤ i → i < wpP (start j) + 15 → s.basis (bankW (start j) i) = (2^k.val*H).testBit i) :
+    ∀ i < wpP (start j) + 15, s.basis (live j i) = (2^k.val*H + X%2^k.val).testBit i := by
+  have r := rail_win (start_win j h0 h1).1 (start_win j h0 h1).2
+  intro i bound
+  by_cases h : i < 18
+  · rw [live_row j h0 h1 ⟨i, h⟩]; exact lo ⟨i, h⟩
+  · have nl : ¬ i < lowsP (start j) := by omega
+    rw [live, if_neg nl, hi i (by omega) bound]
+    have z := HighBankJoin.merged_bits X H k.val i
+    have kval := k.isLt
+    have a : (X%2^k.val).testBit i = false := by simpa only [if_pos (show k.val ≤ i by omega)] using z.1
+    simpa only [a, Bool.false_xor] using z.2
 
+theorem inactiveBits (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (X : Nat) (small : X < 2^18) (s : State)
+    (lo : ∀ i : Fin 18, s.basis (row j i).keep = X.testBit i.val)
+    (hi : ∀ i : Nat, 18 ≤ i → i < wpP (start j) + 15 → s.basis (bankW (start j) i) = false) :
+    ∀ i < wpP (start j) + 15, s.basis (live j i) = X.testBit i := by
+  have r := rail_win (start_win j h0 h1).1 (start_win j h0 h1).2
+  intro i bound
+  by_cases h : i < 18
+  · rw [live_row j h0 h1 ⟨i, h⟩]; exact lo ⟨i, h⟩
+  · have nl : ¬ i < lowsP (start j) := by omega
+    rw [live, if_neg nl, hi i (by omega) bound,
+      Nat.testBit_lt_two_pow (lt_of_lt_of_le small (Nat.pow_le_pow_right (by decide) (by omega)))]
 
 /-! TrueMiddle (dadon's `Leave{s}TrueMiddle`): the actual word-update values. -/
 
@@ -49301,9 +51808,49 @@ end TrueMiddle
 /-- dadon's `Leave{s}RetireActual.prior`: the selector state after the prepared word. -/
 def prior (j : Fin 26) (k : Mode) : Sym := sim (prepare j) (LeaveSelector.start (ports j) false k)
 
+theorem tags_inj (i i' : Nat) (hi : i < 16) (hi' : i' < 16) (e : tagsP.getD i 0 = tagsP.getD i' 0) : i = i' := by
+  have h : ∀ a b : Fin 16, tagsP.getD a 0 = tagsP.getD b 0 → a = b := by decide
+  exact congrArg Fin.val (h ⟨i, hi⟩ ⟨i', hi'⟩ e)
 
+theorem physicalTags (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (k : Mode) (q : Wire) (hq : q ∈ tagsP) :
+    prior j k q = .bit (enabled k && decide (q = tagsP.getD (LeaveSelector.key k) 0)) := by
+  obtain ⟨i, hi, rfl⟩ : ∃ i, i < 16 ∧ tagsP.getD i 0 = q := by
+    obtain ⟨i, hi, e⟩ := List.getElem_of_mem hq
+    exact ⟨i, by simpa [tagsP] using hi, by rw [List.getD_eq_getElem _ _ hi]; exact e⟩
+  rw [prior, tagCertificate j h0 h1 k ⟨i, hi⟩]
+  congr 2
+  by_cases hk : LeaveSelector.key k < 16
+  · exact Bool.eq_iff_iff.mpr ⟨fun h => by simp_all, fun h => by
+      simp only [decide_eq_true_eq] at h ⊢; exact tags_inj _ _ hi hk h⟩
+  · have hne : i ≠ LeaveSelector.key k := fun eq => hk (eq ▸ hi)
+    have hk' : tagsP.getD (LeaveSelector.key k) 0 = 0 := by
+      rw [List.getD_eq_default]
+      simp only [tagsP, List.length]
+      exact Nat.not_lt.mp hk
+    rw [hk']
+    have nz : tagsP.getD i 0 ≠ 0 := by
+      have t := tags_range' _ (tags_mem i hi)
+      exact Nat.ne_of_gt (Nat.lt_of_lt_of_le (by decide : (0 : Nat) < 1556) t.1)
+    simp only [decide_eq_false hne, decide_eq_false nz, Bool.and_false]
 
+theorem loaded_tags (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (z : SkywalkNat.State) (v : BasisState) (q : Wire)
+    (hq : q ∈ tagsP) :
+    (prior j (actualMode (sbP (start j)) z) q).read v =
+      if far (sbP (start j)) 15 z then hot (TrueMiddle.key j z) q else false := by
+  rw [physicalTags j h0 h1 _ _ hq]
+  by_cases f : far (sbP (start j)) 15 z
+  · rw [if_pos f]
+    obtain ⟨idx, _, on⟩ := modeKey (sbP (start j)) z f
+    simp only [Expr.read, on, Bool.true_and, idx]
+    rfl
+  · simp [f, Expr.read, actualMode, farMode, ofFlags, enabled]
 
+theorem controlsAt (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (k : Mode) :
+    prior j k (e0P (start j) + 6) = crossing (ports j) k ∧
+      prior j k 1597 = conj (crossing (ports j) k) (signExpr (ports j) k) := by
+  have h := controlCert j h0 h1 k
+  simp only [reads, LeaveSelector.controls, List.cons.injEq, and_true] at h
+  exact ⟨h.2.1, h.2.2.2⟩
 
 theorem dest_forward (gs : List Gate) : (GateMirror.forward gs).map LeaveReadoutFrame.destination = gs.map target := by
   induction gs with
@@ -49630,6 +52177,12 @@ theorem retireActual_result (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) 
 def workOps (s : Nat) : List Gate :=
   middleOps s ++ leaveFix10 s (sbP s) ++ (leaveFix11 s (sbP s) ++ leaveFix12 s (sbP s) ++ lowSign s)
 
+theorem live_out (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) (hi : i < wpP (start j) + 15) :
+    (live j i : Nat) ≠ 1613 ∧ ¬ (1559 ≤ (live j i : Nat) ∧ (live j i : Nat) ≤ 1597) := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  have b := bank_cases w1 w2 hi
+  unfold live; split <;> unfold Wire at * <;> omega
 
 /-- The history cells in the `sig` frame, exactly: on the B rail above every bank wire, or in the pool. -/
 theorem swaps_cases (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) (hi : i < 15) :
@@ -49640,6 +52193,14 @@ theorem swaps_cases (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat
   unfold swaps; rw [show start j + 1044 + i = start j + (1044 + i) by omega]
   unfold Wire at *; omega
 
+theorem free_out (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Fin 18) :
+    ((row j i).free : Nat) ≠ 1613 ∧ ¬ (1559 ≤ ((row j i).free : Nat) ∧ ((row j i).free : Nat) ≤ 1597) := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  have g := row_eq j i
+  have b := bank_cases w1 w2 (i := i.val) (by omega)
+  unfold Column.free; rw [g.2.2.1]
+  split <;> simp only [g.1, g.2.1] <;> unfold Wire at * <;> omega
 
 /-- The wires the core must not touch (dadon's `Leave{s}Core.watched` facts). -/
 theorem core_untouched (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (q : Nat)
@@ -49667,6 +52228,10 @@ theorem prefix_dest : ∀ j : Fin 26, 3 ≤ j.val → j.val ≤ 23 → ∀ q ∈
     (1559 ≤ q ∧ q ≤ 1597) ∨ q = e0P (start j) + 6 ∨ q = e0P (start j) + 7 := by
   decide +kernel
 
+theorem prefix_keep (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (q : Nat)
+    (hq : ¬ ((1559 ≤ q ∧ q ≤ 1597) ∨ q = e0P (start j) + 6 ∨ q = e0P (start j) + 7)) (s : State) (tape : List Bool) :
+    (run (GateMirror.forward (fullPrefix j)) tape s).basis q = s.basis q :=
+  LeaveReadoutFrame.preserved _ s tape q (fun h => hq (prefix_dest j h0 h1 q h))
 
 def bodyOps (j : Fin 26) : List Gate := fullPrefix j ++ workOps (start j)
 
@@ -49688,28 +52253,6 @@ theorem outputSmall (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s : Sta
     simp [smallA, live, List.getD_eq_getElem?_getD, hi]
   rw [g]; exact bits i (by omega)
 
-/-- dadon's `Leave{s}Restored.result`. -/
-theorem restored_result (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (z : SkywalkNat.State) (sg : Bool) (s : State)
-    (m : List Bool) (small : min z.u z.v < 2^(sbP (start j))) (clean : ∀ q ∈ smallC j, s.basis q = false)
-    (cleared : regValue (smallM j) s.basis = 0)
-    (input : let r := step^[15] (reduced (sbP (start j)) 15 z)
-      let F := step^[15] z
-      let e := (PortalValues.negative sg r.u).toNat
-      s.basis 1556 = decide (2^(sbP (start j)) ≤ r.u - e) ∧
-        (s.basis 1558).toNat = LeaveCompanion.upperBorrow (2^(sbP (start j))) r.u r.v e ∧
-        regValue (smallA j) s.basis = ((F.u+F.v)/2^(sbP (start j) + 1)) % 2^(lowsP (start j))) :
-    let F := step^[15] z
-    let e := (PortalValues.negative sg F.u).toNat
-    let out := run (Companion.restore (smallA j) (smallM j) (smallC j) 1556 1558) m s
-    out.phase = s.phase ∧ (∀ q, q ∉ smallM j → out.basis q = s.basis q) ∧
-      regValue (smallM j) out.basis = ((F.u - e)/2^(sbP (start j) + 1)) % 2^(lowsP (start j)) := by
-  have hardware := restore_run j h0 h1 s m clean cleared
-  refine ⟨hardware.1, hardware.2.1, hardware.2.2.trans ?_⟩
-  dsimp only at input ⊢
-  have math := LeaveRestoreTruth.restored (sbP (start j)) (lowsP (start j)) z small sg
-  have sign := (LeaveRestoreTruth.truth (sbP (start j)) z small sg).2.2.2
-  rw [smallM_length, copyValue, input.1, input.2.1, input.2.2, sign]
-  simpa only [decide_eq_true_eq] using math
 
 
 /-! Target footprint of the body (for the families that read wires the body never writes). -/
@@ -49796,55 +52339,6 @@ theorem body_dest (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
     · exact Or.inr (Or.inr h)
   · exact Or.inl (work_dest j h0 h1 q hq)
 
-/-- dadon's `Leave{s}RoutedRestore.result`. -/
-theorem routedRestore_result (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (z : SkywalkNat.State) (sg : Bool)
-    (s : State) (m m' : List Bool) (small : min z.u z.v < 2^(sbP (start j))) (mag0 : regValue (fullM j) s.basis = 0)
-    (flags : let a := step^[15] (reduced (sbP (start j)) 15 z)
-      let e := (PortalValues.negative sg a.u).toNat
-      s.basis 1556 = decide (2^(sbP (start j)) ≤ a.u - e) ∧
-        (s.basis 1558).toNat = LeaveCompanion.upperBorrow (2^(sbP (start j))) a.u a.v e)
-    (liveBits : ∀ i < wpP (start j) + 15, (run (GateMirror.forward (bodyOps j)) m s).basis (live j i) = (TrueMiddle.F j z).testBit i)
-    (retired : ∀ i : Fin 39, (run (GateMirror.forward (bodyOps j)) m s).basis (1559 + i.val) = false) :
-    let a := step^[15] z
-    let mag := a.u - (PortalValues.negative sg a.u).toNat
-    let u := run (GateMirror.forward (bodyOps j)) m s
-    let v := run (Companion.restore (smallA j) (smallM j) (smallC j) 1556 1558) m' u
-    v.phase = u.phase ∧ (∀ q, q ∉ smallM j → v.basis q = u.basis q) ∧
-      regValue (smallM j) v.basis = (mag/2^(sbP (start j) + 1)) % 2^(lowsP (start j)) ∧
-      v.basis 1556 = decide (2^(sbP (start j)) ≤ mag) ∧
-      (∀ i < wpP (start j) + 15, v.basis (live j i) = (TrueMiddle.F j z).testBit i) := by
-  obtain ⟨w1, w2⟩ := start_win j h0 h1
-  have rr := rail_win w1 w2
-  generalize hu : run (GateMirror.forward (bodyOps j)) m s = u at liveBits retired
-  have keep (q : Wire) (h : (q : Nat) = 1556 ∨ (q : Nat) = 1558 ∨ (b0P (start j) ≤ q ∧ (q : Nat) < b0P (start j) + 18)) :
-      u.basis q = s.basis q := by
-    rw [← hu]
-    exact LeaveReadoutFrame.preserved _ _ _ q (fun hm => by have := body_dest j h0 h1 q hm; unfold midT workT at this; unfold Wire at *; omega)
-  have clear : ∀ q ∈ smallC j, u.basis q = false := by
-    intro q h
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h; rw [List.mem_range] at hi
-    exact retired ⟨i, by omega⟩
-  have mag : regValue (smallM j) u.basis = 0 := by
-    apply (regValue_zero _ _).mpr
-    intro q h
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h; rw [List.mem_range] at hi
-    refine (keep _ (Or.inr (Or.inr ⟨by show b0P (start j) ≤ b0P (start j) + i; omega,
-      by show b0P (start j) + i < b0P (start j) + 18; omega⟩))).trans ((regValue_zero _ _).mp mag0 _ ?_)
-    exact List.mem_map.mpr ⟨i, List.mem_range.mpr (by omega), rfl⟩
-  have reg := outputSmall j h0 h1 u (TrueMiddle.F j z) liveBits
-  have old := (keep 1556 (Or.inl rfl)).trans flags.1
-  have new := restored_result j h0 h1 z sg u m' small clear mag
-    ⟨old, (congrArg Bool.toNat (keep 1558 (Or.inr (Or.inl rfl)))).trans flags.2, reg⟩
-  have ch := LeaveRestoreTruth.truth (sbP (start j)) z small sg
-  refine ⟨new.1, new.2.1, new.2.2, ?_, ?_⟩
-  · rw [new.2.1 _ (fun h => by obtain ⟨i, hi, e⟩ := List.mem_map.mp h; rw [List.mem_range] at hi; unfold Wire at *; omega),
-      old, ch.1, ch.2.2.2]
-  · intro i hi
-    have outside : live j i ∉ smallM j := by
-      intro h; obtain ⟨k, hk, e⟩ := List.mem_map.mp h; rw [List.mem_range] at hk
-      have b := bank_cases w1 w2 hi
-      unfold live at e; split at e <;> unfold Wire at * <;> omega
-    exact (new.2.1 _ outside).trans (liveBits i hi)
 
 end ECDSAAdd.Entrant.StairPacket.LeaveJ
 
@@ -52138,7 +54632,25 @@ set_option linter.unusedTactic false
 set_option maxHeartbeats 4000000
 attribute [local irreducible] run SkywalkNat.step
 
+theorem entry_dest : ∀ j : Fin 26, 3 ≤ j.val → j.val ≤ 23 → (entryOps (start j)).all (fun g =>
+    (decide (a0P (start j) - 1 ≤ target g) && decide (target g ≤ a0P (start j) + 17)) ||
+    (decide (b0P (start j) - 1 ≤ target g) && decide (target g ≤ b0P (start j) + 17)) ||
+    (decide (start j + 16 ≤ target g) && decide (target g ≤ start j + 30)) ||
+    (decide (1556 ≤ target g) && decide (target g ≤ 1575)) || decide (target g = e0P (start j) + 5)) = true := by
+  decide +kernel
 
+theorem entry_keep (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (q : Nat)
+    (hq : ¬ ((a0P (start j) - 1 ≤ q ∧ q ≤ a0P (start j) + 17) ∨ (b0P (start j) - 1 ≤ q ∧ q ≤ b0P (start j) + 17) ∨
+      (start j + 16 ≤ q ∧ q ≤ start j + 30) ∨ (1556 ≤ q ∧ q ≤ 1575) ∨ q = e0P (start j) + 5)) (s : State) (m : List Bool) :
+    (run (GateMirror.forward (entryOps (start j))) m s).basis q = s.basis q := by
+  apply LeaveReadoutFrame.preserved
+  intro hm
+  rw [dest_forward] at hm
+  obtain ⟨g, hg, e⟩ := List.mem_map.mp hm
+  have := List.all_eq_true.mp (entry_dest j h0 h1) g hg
+  simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at this
+  rw [e] at this
+  exact hq (by unfold Wire at *; omega)
 
 /-- dadon's `Leave{s}FullArithmetic.program`. -/
 def fullProgram (j : Fin 26) : Program :=
@@ -52180,8 +54692,28 @@ attribute [local irreducible] run SkywalkNat.step
 
 /-! Gate-level chains are dadon's `PortalAnd.chain`. -/
 
+theorem forward_xsG (xs : List Wire) : GateMirror.forward (xsG xs) = notRegister xs := forward_xsG' xs
 
+theorem forward_cons' (g : Gate) (gs : List Gate) : GateMirror.forward (g :: gs) = front g :: GateMirror.forward gs := rfl
+theorem forward_nil' : GateMirror.forward [] = [] := rfl
 
+theorem forward_chainG (c seq : Nat → Wire) (out : Wire) : ∀ (i n : Nat),
+    GateMirror.forward (chainG c seq [.cx (c (i+n)) out, .x out] i n) =
+      PortalAnd.chain true none out (c i) ((List.range n).map (fun k => (seq (i+k), c (i+k+1))))
+  | i, 0 => by simp [chainG, PortalAnd.chain, PortalAnd.target, GateMirror.forward, front]
+  | i, n+1 => by
+    have ih := forward_chainG c seq out (i+1) n
+    rw [show i + 1 + n = i + (n+1) by omega] at ih
+    have el : (List.range (n+1)).map (fun k => (seq (i+k), c (i+k+1))) =
+        (seq i, c (i+1)) :: (List.range n).map (fun k => (seq (i+1+k), c (i+1+k+1))) := by
+      rw [List.range_succ_eq_map, List.map_cons, List.map_map]
+      refine congrArg₂ List.cons rfl (List.map_congr_left (fun k _ => ?_))
+      show (seq (i+(k+1)), c (i+(k+1)+1)) = (seq (i+1+k), c (i+1+k+1))
+      rw [show i + (k+1) = i + 1 + k by omega]
+    show GateMirror.forward (.make (c i) (seq i) (c (i+1)) ::
+      (chainG c seq [.cx (c (i+(n+1))) out, .x out] (i+1) n ++ [.pop (c i) (seq i) (c (i+1))])) = _
+    rw [forward_cons', forward_app, ih, el]
+    rfl
 
 theorem sites_perm : ∀ ps : List (Wire × Wire), (PortalAnd.sites ps).Perm (ps.map Prod.fst ++ ps.map Prod.snd)
   | [] => by simp [PortalAnd.sites]
@@ -52199,8 +54731,38 @@ theorem pending_fst (j : Fin 26) : (pendingPairs j).map Prod.fst =
   simp only [Function.comp, if_pos, Nat.succ_ne_zero, if_false]
   congr 1
 
+theorem forward_chainG0 (c seq : Nat → Wire) (out : Wire) (n : Nat) :
+    GateMirror.forward (chainG c seq [.cx (c n) out, .x out] 0 n) =
+      PortalAnd.chain true none out (c 0) ((List.range n).map (fun k => (seq k, c (k+1)))) := by
+  have h := forward_chainG c seq out 0 n
+  simp only [Nat.zero_add] at h
+  exact h
 
+theorem clearFlag_fst (j : Fin 26) :
+    (clearFlagPairs j).map Prod.fst = (List.range (lowsP (start j) + 1)).map (b0P (start j) - 1 + ·) := by
+  simp only [clearFlagPairs, List.map_map]; rfl
 
+theorem storeMapped_parts (j : Fin 26) :
+    GateMirror.forward (leaveStoreMapped (start j)) =
+      threshold (a0P (start j) + lowsP (start j) - 1 - 2) (a0P (start j) + lowsP (start j) - 1 - 1) 1558 1557 (pendingPairs j) ++
+        ([.CCX 1556 1557 1558] ++ latch true none 1556 1558 (clearFlagPairs j)) := by
+  have ch1 : GateMirror.forward (chainG storeW
+      (fun i => if i = 0 then a0P (start j) + lowsP (start j) - 1 else bankW (start j) (lowsP (start j) + i - 1))
+      [.cx (storeW (wpP (start j) + 15 - lowsP (start j) + 1)) 1557, .x 1557] 0 (wpP (start j) + 15 - lowsP (start j) + 1)) =
+      PortalAnd.chain true none 1557 1558 (pendingPairs j) := forward_chainG0 _ _ _ _
+  have ch2 : GateMirror.forward (chainG (fun i => (1558 + i : Wire)) (fun i => b0P (start j) - 1 + i)
+      [.cx (1558 + (lowsP (start j) + 1)) 1556, .x 1556] 0 (lowsP (start j) + 1)) =
+      PortalAnd.chain true none 1556 1558 (clearFlagPairs j) := by
+    have h := forward_chainG0 (fun i => (1558 + i : Wire)) (fun i => b0P (start j) - 1 + i) 1556 (lowsP (start j) + 1)
+    have e : (List.range (lowsP (start j) + 1)).map (fun k => (b0P (start j) - 1 + k, (1558 + (k+1) : Wire))) =
+        clearFlagPairs j := by
+      simp only [clearFlagPairs]; apply List.map_congr_left; intro k _; simp only [Prod.mk.injEq, true_and]
+      unfold Wire; omega
+    rw [← e]; exact h
+  simp only [leaveStoreMapped, forward_app, forward_xsG, ch1, ch2, threshold, PortalAnd.latch, PortalAnd.digits,
+    pending_fst, clearFlag_fst, forward_cons', forward_nil', front, erase, notRegister, List.map_cons, List.map_nil,
+    List.map_append, List.reverse_cons, List.append_assoc, List.cons_append, List.singleton_append, List.nil_append,
+    if_true, ↓reduceIte]
 
 
 /-! The scanned output register (dadon's `OutputPorts.scanned`, `outputRegisters` high part). -/
@@ -52208,7 +54770,31 @@ theorem pending_fst (j : Fin 26) : (pendingPairs j).map Prod.fst =
 def scanned (j : Fin 26) : List Wire :=
   (a0P (start j) + lowsP (start j) - 1 - 2) :: (a0P (start j) + lowsP (start j) - 1 - 1) :: (pendingPairs j).map Prod.fst
 
+theorem scanned_eq (j : Fin 26) : scanned j =
+    (a0P (start j) + lowsP (start j) - 1 - 2) :: (a0P (start j) + lowsP (start j) - 1 - 1) :: (a0P (start j) + lowsP (start j) - 1) ::
+      (List.range (wpP (start j) + 15 - lowsP (start j))).map (fun i => bankW (start j) (lowsP (start j) + i)) := by
+  rw [scanned, pending_fst]
 
+theorem outputScanned (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s : State) (Z : Nat)
+    (bits : ∀ i < wpP (start j) + 15, s.basis (live j i) = Z.testBit i) :
+    regValue (scanned j) s.basis = (Z / 2^(lowsP (start j) - 3)) % 2^(wpP (start j) + 15 - lowsP (start j) + 3) := by
+  have rr := rail_win (start_win j h0 h1).1 (start_win j h0 h1).2
+  have len : (scanned j).length = wpP (start j) + 15 - lowsP (start j) + 3 := by
+    rw [scanned_eq]; simp
+  rw [← len]
+  apply EnterProof.value_of_bits (scanned j)
+  intro i hi
+  rw [len] at hi
+  have g : (scanned j).getD i 0 = live j (lowsP (start j) - 3 + i) := by
+    rw [scanned_eq]
+    rcases i with _ | _ | _ | i
+    · simp [live]; rw [if_pos (by omega)]; (try unfold Wire at *); omega
+    · simp [live]; rw [if_pos (by omega)]; (try unfold Wire at *); omega
+    · simp [live]; rw [if_pos (by omega)]; (try unfold Wire at *); omega
+    · simp [live, List.getD_eq_getElem?_getD, show i < wpP (start j) + 15 - lowsP (start j) by omega]
+      rw [if_neg (by omega)]; congr 1; omega
+  rw [g, Nat.testBit_div_two_pow, Nat.add_comm i]
+  exact bits _ (by omega)
 
 /-! The pending threshold (dadon's `LeaveCompanion{s}.pending_three`). -/
 
@@ -52310,7 +54896,7 @@ attribute [local irreducible] run SkywalkNat.step
 
 /-- dadon's `Leave{s}NextFlagTruth.value`: the scanned register holds the next block's high value. -/
 theorem nextFlag_value (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (z : SkywalkNat.State) :
-    TrueMiddle.F j z / 2^(lowsP (start j) - 3) = Shadow.high (sbP (start j + 15)) 15 (step^[15] z) := by
+    TrueMiddle.F j z / 2^(lowsP (start j) - 4) = Shadow.high (sbP (start j + 15)) 15 (step^[15] z) := by
   have rr := rail_win (start_win j h0 h1).1 (start_win j h0 h1).2
   unfold TrueMiddle.F Shadow.high limb HighBankSum.total
   rw [Nat.div_div_eq_div_mul, ← Nat.pow_add]
@@ -52327,8 +54913,8 @@ theorem nextFlag_orientation (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23)
   -- powers in terms of P = 2^sb'
   obtain ⟨d, hd, hdd⟩ : ∃ d, sbP (start j) = sbP (start j + 15) + d ∧ (d = 7 ∨ d = 8) :=
     ⟨sbP (start j) - sbP (start j + 15), by omega, by omega⟩
-  have p2 : 2^(sbP (start j + 15) + 15 + 1) = 65536 * 2^(sbP (start j + 15)) := by
-    rw [show sbP (start j + 15) + 15 + 1 = sbP (start j + 15) + 16 by omega, Nat.pow_add, Nat.mul_comm]
+  have p2 : 2^(sbP (start j + 15) + 15) = 32768 * 2^(sbP (start j + 15)) := by
+    rw [Nat.pow_add, Nat.mul_comm]
   rw [p2] at lower
   rcases hdd with rfl | rfl
   · have p1 : 2^(sbP (start j)) = 128 * 2^(sbP (start j + 15)) := by rw [hd, Nat.pow_add, Nat.mul_comm]
@@ -52342,6 +54928,9 @@ theorem nextFlag_orientation (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23)
 
 /-! nextU and the clear-flag latch. -/
 
+theorem nextU_run (s : State) (m : List Bool) (fresh : s.basis 1558 = false) :
+    run ([.CCX 1556 1557 1558] : Program) m s = ⟨s.phase, writeBit s.basis 1558 (s.basis 1556 && s.basis 1557)⟩ := by
+  simp [run, fresh]
 
 theorem clearFlag_layout (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
     (1556 :: (1558:Wire) :: PortalAnd.sites (clearFlagPairs j)).Nodup := by
@@ -52610,56 +55199,36 @@ theorem head_state (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s : Stat
     obtain ⟨a1, a2, a3⟩ := away p.2 hr
     rw [same _ a1 a2 a3]; exact temp _ h
 
-/-- dadon's `Leave{s}MaskCut.result`. -/
-theorem maskCut_result (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s : State) (m : List Bool)
-    (z : SkywalkNat.State) (G sg : Bool) (small : min z.u z.v < 2^(sbP (start j)))
-    (ready : onRails j 15 (SkywalkRails.encode G sg (step^[15] (reduced (sbP (start j)) 15 z)).u
-        (step^[15] (reduced (sbP (start j)) 15 z)).v) s.basis)
-    (fresh : s.basis (e0P (start j) + 5) = false)
-    (scratch : ∀ q ∈ 1556::1557::1558::fullC, s.basis q = false)
-    (temp : ∀ p ∈ longPairs j, s.basis p.2 = false) :
-    let a := step^[15] z
-    let mag := a.u - (PortalValues.negative sg a.u).toNat
-    let v := run (fullProgram j) m s
-    v.basis (b0P (start j) - 1) = decide (2^(sbP (start j)) ≤ mag % (2*2^(sbP (start j)))) ∧
-    ∀ mm, run (releaseMaskP j) mm v = ⟨v.phase, writeBit (writeBit v.basis 1557 false) 1558 false⟩ := by
-  obtain ⟨n1, n2, n3, n4, n5, n6, nd⟩ := mask_wires j h0 h1
-  have hd := head_state j h0 h1 s m z G sg ready fresh scratch temp
-  dsimp only at hd
-  generalize hv0 : run (GateMirror.forward (leaveFix0 (start j) (sbP (start j)) ++ leaveFix1 (start j) (sbP (start j)))) m s
-    = v0 at hd
-  obtain ⟨bits, clean, temps⟩ := hd
-  have eq : run (beforeOpen j) m s =
-      ⟨v0.phase, writeBit v0.basis 1556 (v0.basis 1556 ^^ ((PortalAnd.digits (b0P (start j) - 1) (longPairs j)).any v0.basis))⟩ := by
-    rw [beforeOpen, run_append, run_take, hv0, long_run j h0 h1 v0 _ temps]
-  generalize he : run (beforeOpen j) m s = e at eq
-  have keep (q : Wire) (neq : q ≠ 1556) : e.basis q = v0.basis q := by rw [eq]; simp [writeBit, neq]
-  have x : e.basis 1557 = false := (keep _ (by decide)).trans (clean _ (by simp))
-  have y : e.basis 1558 = false := (keep _ (by decide)).trans (clean _ (by simp))
-  have maskOK : (b0P (start j) - 1 : Wire) ∉ (maskP j).map LeaveReadoutFrame.destination := by
-    simp only [maskP, List.map_cons, List.map_nil, LeaveReadoutFrame.destination, List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨n3, n3, n4⟩
-  generalize hn : m.drop (measurementCount (beforeOpen j)) = n
-  have bit (w' : List Bool) : (run (interior j) w' (run (maskP j) n e)).basis (b0P (start j) - 1) = e.basis (b0P (start j) - 1) :=
-    (LeaveReadoutFrame.preserved _ _ _ _ (interior_layout j h0 h1 _ (Or.inr (Or.inl rfl)))).trans
-      (LeaveReadoutFrame.preserved (maskP j) e n _ maskOK)
-  have raw : e.basis (b0P (start j) - 1) =
-      (((step^[15] (reduced (sbP (start j)) 15 z)).u -
-        (PortalValues.negative sg (step^[15] (reduced (sbP (start j)) 15 z)).u).toNat) / 2^(sbP (start j))).testBit 0 := by
-    have b0 := (bits 0 (by decide)).2
-    rw [Nat.add_zero] at b0
-    rw [keep _ n6, b0]
-  have tr := LeaveRestoreTruth.truth (sbP (start j)) z small sg
-  dsimp only
-  rw [full_split j h0 h1, run_append, run_take, run_append, run_take, he, hn]
-  constructor
-  · rw [bit, raw, LeaveCompanion.thresholdBit _ _ (Nat.two_pow_pos _), tr.2.2.2, tr.2.2.1]
-  · exact fun mm => maskThrough_released j h0 h1 e n _ mm x y
 
 /-! BeforeStore. -/
 
+theorem live_away (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (i : Nat) (hi : i < wpP (start j) + 15) :
+    (live j i : Wire) ≠ 1556 ∧ (live j i : Wire) ≠ 1557 ∧ (live j i : Wire) ≠ 1558 := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  have b := bank_cases w1 w2 hi
+  unfold live; split <;> unfold Wire at * <;> omega
 
+theorem smallM_away (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    ∀ q ∈ smallM j, q ≠ 1556 ∧ q ≠ 1557 ∧ q ≠ 1558 := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  intro q hq
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq; rw [List.mem_range] at hi
+  unfold Wire at *; omega
 
+theorem flagTargets_away (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) :
+    ∀ q ∈ flagTargets j, q ≠ 1557 ∧ q ≠ 1558 := by
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  have r := rail_win w1 w2
+  intro q hq
+  simp only [flagTargets, List.map_append, List.mem_append, List.mem_map] at hq
+  rcases hq with ⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hp
+    have sc := storeW_cases (i+1)
+    dsimp only; unfold Wire at *; omega
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hp; rw [List.mem_range] at hi
+    dsimp only; unfold Wire at *; omega
 
 /-- dadon's `Leave{s}BeforeStore.program` (cut 2788 at 225). -/
 def beforeStoreProgram (j : Fin 26) : Program :=
@@ -52951,6 +55520,10 @@ abbrev magSites (j : Fin 26) : List Wire := LeaveJ.fullM j
 def targets (j : Fin 26) : List Wire :=
   List.range' 1559 39 ++ (List.finRange 18).map (fun i => (LeaveJ.row j i).free) ++ rawSites j ++ magSites j
 
+theorem raw_range (j : Fin 26) (q : Nat) (hq : q ∈ rawSites j) :
+    (1613 ≤ q ∧ q < e0P (start j)) ∨ (e0P (start j) + 8 ≤ q ∧ q ≤ 1812 ∧ q + start j ≤ 2054) := by
+  simp only [rawSites, List.mem_append, List.mem_range'_1] at hq
+  omega
 
 /-- dadon's `Leave{s}CoreCheckpoint.oracle`: the five wires the Mirror asks to be clean after the head. -/
 theorem oracle (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) (s out : State)
@@ -53010,6 +55583,9 @@ end Routed
 namespace FullArithmetic
 /-- dadon's `Leave{s}FullArithmetic.program`. -/
 abbrev program (j : Fin 26) : Program := LeaveJ.fullProgram j
+theorem restoreShape (j : Fin 26) :
+    program j = CoreCheckpoint.program j ++ Companion.restore (LeaveJ.smallA j) (LeaveJ.smallM j) (LeaveJ.smallC j) 1556 1558 := by
+  simp only [program, LeaveJ.fullProgram, CoreCheckpoint.program, head_eq]
 end FullArithmetic
 
 namespace BeforeStore
@@ -54687,6 +57263,13 @@ theorem readInput (i x p:Nat) (raw:State) (g sg:Bool) (h:InputAt i (signedAt i x
   unfold InputAt at h
   rwa [eq] at h
 
+theorem stepInput_gen (i b x p:Nat) (lo:15 ≤ i) (hi:i+15<512) (good:Bounds x p)
+    (raw v:State) (g sg:Bool) (domain:Domain i x p raw) (input:InputAt i (signedAt i x p g sg) raw)
+    (small:min (unsigned i x p).u (unsigned i x p).v<2^b) :
+    let next:=SharedSigned.flags g sg (SkywalkTrace.trace 15 (signedAt i x p g sg))
+    Domain (i+15) x p (endRaw i raw v) ∧ InputAt (i+15) (signedAt (i+15) x p next.1 next.2) (endRaw i raw v) := by
+  exact ⟨advance_gen i x p lo (Nat.le_of_lt hi) good.positive good.nonzero good.odd good.cap good.gap good.small good.coprime raw v domain,
+    (advance_signed_gen i b x p lo hi good raw v domain g sg input small).2⟩
 end ECDSAAdd.Entrant.StairPacket.StockWindowTicket
 
 end
@@ -57375,6 +59958,13 @@ theorem smallC_targets (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : ∀
   left; left; left
   exact List.mem_range'_1.mpr ⟨by omega, by unfold lowsP at hi; unfold sbP at *; omega⟩
 
+theorem smallM_mag (j : Fin 26) (h0 : 3 ≤ j.val) (h1 : j.val ≤ 23) : ∀ q ∈ LeaveJ.smallM j, q ∈ CoreCheckpoint.magSites j := by
+  intro q hq
+  obtain ⟨w1, w2⟩ := start_win j h0 h1
+  simp only [LeaveJ.smallM, List.mem_map, List.mem_range] at hq
+  obtain ⟨i, hi, rfl⟩ := hq
+  simp only [CoreCheckpoint.magSites, LeaveJ.fullM, List.mem_map, List.mem_range]
+  exact ⟨i, by unfold lowsP at hi; unfold sbP at *; omega, rfl⟩
 
 theorem row_free (j : Fin 26) (i : Nat) (hi : i < 18) :
     (LeaveJ.row j ⟨i, hi⟩).free = if i < lowsP (start j) then bankW (start j) i else a0P (start j) + i := by
@@ -57726,7 +60316,14 @@ set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 set_option maxHeartbeats 4000000
 
+theorem moveA_split (s : Nat) : moveA s =
+    entryOps s ++ ((leaveFix3 s (sbP s) ++ leaveFix4 s (sbP s)) ++ (leaveFix5 s (sbP s)).take 27) := by
+  unfold moveA entryOps; simp only [List.append_assoc]
 
+theorem fullPrefix_split (j : Fin 26) : fullPrefix j =
+    ((leaveFix3 (start j) (sbP (start j)) ++ leaveFix4 (start j) (sbP (start j))) ++
+      (leaveFix5 (start j) (sbP (start j))).take 27) ++ (leaveFix5 (start j) (sbP (start j))).drop 27 := by
+  unfold fullPrefix; rw [List.append_assoc _ ((leaveFix5 _ _).take 27), List.take_append_drop]
 
 /-- In front of the mux: the crossing wire is still clean (nothing in the selector prefix writes it). -/
 theorem prefix302_targets (s h : Nat) : ((leaveFix3 s h ++ leaveFix4 s h) ++ (leaveFix5 s h).take 27).map target =
@@ -57736,6 +60333,16 @@ theorem prefix302_targets (s h : Nat) : ((leaveFix3 s h ++ leaveFix4 s h) ++ (le
      1577, 1578, 1578, 1579, 1580, 1580, 1581, 1582, 1582, 1583, 1584, 1584,
      1585, 1586, 1586, 1587, 1588, 1588, 1589] := rfl
 
+theorem cross_kept (s h : Nat) (hh : 16 ≤ h) (q : Wire) (hq : q = h + 1580) (st : State) (o : List Bool) :
+    (run (GateMirror.forward ((leaveFix3 s h ++ leaveFix4 s h) ++ (leaveFix5 s h).take 27)) o st).basis q =
+      st.basis q := by
+  apply LeaveReadoutFrame.preserved
+  rw [dest_forward, prefix302_targets]
+  subst hq
+  intro hm
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
+  (try unfold Wire at *)
+  omega
 
 /-- Behind the mux: the rest of the selector never writes a tag. -/
 theorem tags_kept (s h : Nat) (i : Nat) (hi : i < 16) (st : State) (o : List Bool) :
@@ -58019,6 +60626,8 @@ set_option maxHeartbeats 4000000
 attribute [local irreducible] run SkywalkNat.step
 
 private theorem flagEq (g sg:Bool) (u v:Int) : (encode g sg u v).g=g := by cases g <;> rfl
+private theorem both (P Q:Prop) [Decidable P] [Decidable Q] : (decide P && decide Q)=decide (P ∧ Q) := by
+  by_cases a:P <;> by_cases b:Q <;> simp [a,b]
 
 /-- The rail of a window block narrows by at most one wire per tick, never widens, and when it narrows over the
 block it narrows at the block's last tick. -/
