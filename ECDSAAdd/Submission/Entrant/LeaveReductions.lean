@@ -11205,16 +11205,70 @@ def beforeRow (s : Nat) := ScanRow16.headShort s ++ beforeRowTail s
 
 theorem beforeRow_old (s : Nat) : beforeC5 s = headA0 s ++ beforeRowTail s := rfl
 
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel
+
+namespace ECDSAAdd.Entrant.StairPacket.KeptParity
+open Arithmetic Partial GateMirror CRTBarrel
+set_option maxHeartbeats 1500000
+def old : List Gate := [.ccx 1 0 9, .ccx 2 0 10, .ccx 3 0 11, .ccx 4 0 12, .ccx 5 0 13, .ccx 6 0 14, .ccx 7 0 15, .ccx 8 0 16]
+
+def replacement : List Gate := [.cx 0 9,
+  .cx 10 9, .ccx 2 0 10, .cx 10 9,
+  .cx 11 9, .ccx 3 0 11, .cx 11 9,
+  .cx 12 9, .ccx 4 0 12, .cx 12 9,
+  .cx 13 9, .ccx 5 0 13, .cx 13 9,
+  .cx 14 9, .ccx 6 0 14, .cx 14 9,
+  .cx 15 9, .ccx 7 0 15, .cx 15 9,
+  .cx 16 9, .ccx 8 0 16, .cx 16 9]
+
+theorem counts : toffoliCount (GateMirror.forward replacement) + 1 = toffoliCount (GateMirror.forward old) ∧
+    toffoliCount (inverse replacement) + 1 = toffoliCount (inverse old) ∧
+    measurementCount (GateMirror.forward replacement) = 0 ∧ measurementCount (inverse replacement) = 0 ∧
+    Challenge.gateSlots (GateMirror.forward replacement) = Challenge.gateSlots (GateMirror.forward old) + 14 ∧
+    Challenge.gateSlots (inverse replacement) = Challenge.gateSlots (inverse old) + 14 := by decide
+
+def port (s : Nat) : Wire → Wire
+  | 0 => 1613
+  | i+1 => if i < 8 then tagsP.getD i 0 else Shadow7.a0P s + (i-7)
+
+def placed (s : Nat) : List Gate := [.cx (port s 0) (port s 9),
+  .cx (port s 10) (port s 9), .ccx (port s 2) (port s 0) (port s 10), .cx (port s 10) (port s 9),
+  .cx (port s 11) (port s 9), .ccx (port s 3) (port s 0) (port s 11), .cx (port s 11) (port s 9),
+  .cx (port s 12) (port s 9), .ccx (port s 4) (port s 0) (port s 12), .cx (port s 12) (port s 9),
+  .cx (port s 13) (port s 9), .ccx (port s 5) (port s 0) (port s 13), .cx (port s 13) (port s 9),
+  .cx (port s 14) (port s 9), .ccx (port s 6) (port s 0) (port s 14), .cx (port s 14) (port s 9),
+  .cx (port s 15) (port s 9), .ccx (port s 7) (port s 0) (port s 15), .cx (port s 15) (port s 9),
+  .cx (port s 16) (port s 9), .ccx (port s 8) (port s 0) (port s 16), .cx (port s 16) (port s 9)]
+
+private theorem physical : ∀ j : Fin 26, (placed (start j)).all proper = true := by decide +kernel
+
+def newTail (b : Nat) : List Gate :=
+  Shadow7.fix8P b (Shadow7.sbP b) ++ (placed b ++ wordPre 1614 (colsC b))
+
+def afterTail (s : Nat) : List Gate :=
+  (tailD1 s ++ (.cx (Shadow7.e0P s + 4) 1559 :: (tailE0 s ++
+    (.cx (Shadow7.a0P s + Shadow7.lowsP s - 1) 1559 :: (chainMid s ++ (.cx (Shadow7.a0P s + Shadow7.lowsP s - 1) 1559 ::
+      tailE1 s))))))
+
+def afterRows (s : Nat) := newTail s ++ afterTail s
+
+theorem afterOld (s : Nat) : afterPartC3 s = tailD0 s ++ afterTail s := rfl
+
+theorem oldTail (s : Nat) : tailD0 s =
+  Shadow7.fix8P s (Shadow7.sbP s) ++ (Shadow7.moveKept s ++ wordPre 1614 (colsC s)) := rfl
+end ECDSAAdd.Entrant.StairPacket.KeptParity
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
 def leave (j : Fin 26) : Program :=
   let s := start j
   if j.val ≤ 24 then
-    GateMirror.forward (beforeRow s) ++ barrel s false ++ GateMirror.forward (afterPartC3 s)
+    GateMirror.forward (beforeRow s) ++ barrel s false ++ GateMirror.forward (KeptParity.afterRows s)
   else Shadow7.leaveMoveP j
 
 def unleave (j : Fin 26) : Program :=
   let s := start j
   if j.val ≤ 24 then
-    GateMirror.inverse (afterPartC3 s) ++ barrel s true ++ GateMirror.inverse (beforeRow s)
+    GateMirror.inverse (KeptParity.afterRows s) ++ barrel s true ++ GateMirror.inverse (beforeRow s)
   else Shadow7.leaveMoveInvP j
 
 def params : WindowFold.Pieces Program := { Shadow7.params with leave := leave, leaveInv := unleave }
@@ -11955,22 +12009,78 @@ end ECDSAAdd.Entrant.StairPacket.ScanRow16
 
 namespace ECDSAAdd.Entrant.StairPacket.CRTWindow
 open Arithmetic MappedCompressed WindowFold Baselines Challenge GateMirror Partial WindowParams
+end ECDSAAdd.Entrant.StairPacket.CRTWindow
+
+namespace ECDSAAdd.Entrant.StairPacket.KeptParity
+open Partial GateMirror CRTBarrel Challenge
+theorem afterCounts (s : Nat) :
+    toffoliCount (GateMirror.forward (afterRows s)) + 1 = toffoliCount (GateMirror.forward (afterPartC3 s)) ∧
+    toffoliCount (inverse (afterRows s)) + 1 = toffoliCount (inverse (afterPartC3 s)) ∧
+    measurementCount (GateMirror.forward (afterRows s)) = measurementCount (GateMirror.forward (afterPartC3 s)) ∧
+    measurementCount (inverse (afterRows s)) = measurementCount (inverse (afterPartC3 s)) ∧
+    gateSlots (GateMirror.forward (afterRows s)) = gateSlots (GateMirror.forward (afterPartC3 s)) + 14 ∧
+    gateSlots (inverse (afterRows s)) = gateSlots (inverse (afterPartC3 s)) + 14 := by
+  have cells :
+      toffoliCount (GateMirror.forward (placed s)) + 1 = toffoliCount (GateMirror.forward (Shadow7.moveKept s)) ∧
+      toffoliCount (inverse (placed s)) + 1 = toffoliCount (inverse (Shadow7.moveKept s)) ∧
+      measurementCount (GateMirror.forward (placed s)) = measurementCount (GateMirror.forward (Shadow7.moveKept s)) ∧
+      measurementCount (inverse (placed s)) = measurementCount (inverse (Shadow7.moveKept s)) ∧
+      gateSlots (GateMirror.forward (placed s)) = gateSlots (GateMirror.forward (Shadow7.moveKept s)) + 14 ∧
+      gateSlots (inverse (placed s)) = gateSlots (inverse (Shadow7.moveKept s)) + 14 := by
+    have nf : GateMirror.forward (placed s) = renameProgram (port s) (GateMirror.forward replacement) := rfl
+    have nr : inverse (placed s) = renameProgram (port s) (inverse replacement) := rfl
+    have ofwd : GateMirror.forward (Shadow7.moveKept s) = renameProgram (port s) (GateMirror.forward old) := rfl
+    have obwd : inverse (Shadow7.moveKept s) = renameProgram (port s) (inverse old) := rfl
+    rw [nf, nr, ofwd, obwd]
+    simp only [renameProgram_counts, Baselines.rename_gateSlots]
+    exact counts
+  obtain ⟨a,b,c,d,e,f⟩ := cells
+  rw [afterRows,afterOld,newTail,oldTail]
+  simp only [CRTWindow.forward_append,CRTWindow.inverse_append,toffoliCount_append,measurementCount_append,gateSlots_append]
+  exact ⟨by omega,by omega,by omega,by omega,by omega,by omega⟩
+
+private theorem wiresCovered : ∀ j : Fin 26, (placed (start j)).all (fun g =>
+    g.wires.all (fun q => ((Shadow7.moveKept (start j)).flatMap Gate.wires).contains q)) = true := by decide +kernel
+
+theorem afterAllW {P : Wire → Prop} (j : Fin 26) (covered : AllW P (afterPartC3 (start j))) :
+    AllW P (afterRows (start j)) := by
+  rw [afterOld,allW_append_iff,oldTail,allW_append_iff,allW_append_iff] at covered
+  have sub : AllW P (placed (start j)) := by
+    intro g hg q hq
+    have inc := List.all_eq_true.mp (List.all_eq_true.mp (wiresCovered j) g hg) q hq
+    obtain ⟨k,hk,hw⟩ := List.mem_flatMap.mp (List.contains_iff_mem.mp inc)
+    exact covered.1.2.1 k hk q hw
+  rw [afterRows,allW_append_iff,newTail,allW_append_iff,allW_append_iff]
+  exact ⟨⟨covered.1.1,sub,covered.1.2.2⟩,covered.2⟩
+
+theorem afterProper (j : Fin 26) (old : ∀ g ∈ afterPartC3 (start j), proper g = true) :
+    ∀ g ∈ afterRows (start j), proper g = true := by
+  have keep := List.all_eq_true.mpr old
+  simp only [afterOld,oldTail,List.all_append,Bool.and_eq_true] at keep
+  apply List.all_eq_true.mp
+  simp only [afterRows,newTail,List.all_append,Bool.and_eq_true]
+  exact ⟨⟨keep.1.1,physical j,keep.1.2.2⟩,keep.2⟩
+end ECDSAAdd.Entrant.StairPacket.KeptParity
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTWindow
+open Arithmetic MappedCompressed WindowFold Baselines Challenge GateMirror Partial WindowParams
 /-- The rebuilt leave and its mirror: the Shadow7 counts with the barrel stage replaced by the CRT barrel. -/
 theorem leave_metrics (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 100 + CRTBarrel.barrelT (start j) false ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 99 + CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 132 + CRTBarrel.barrelT (start j) true ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 131 + CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
       Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 92 + CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
       Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 60 + CRTBarrel.barrelM (start j) true ∧
-    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 648 +
+    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 662 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false ∧
-    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 616 +
+    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 630 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := partsC8_counts j h0 h1
   obtain ⟨r1,r2,r3,r4,r5,r6⟩ := ScanRow16.beforeRow_counts (start j)
+  obtain ⟨k1,k2,k3,k4,k5,k6⟩ := KeptParity.afterCounts (start j)
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics j h0 h1 false
   obtain ⟨g1, g2, g3⟩ := CRTBarrel.barrel_metrics j h0 h1 true
   simp only [CRTBarrel.leave, CRTBarrel.unleave, h1, ↓reduceIte, toffoliCount_append,
@@ -12123,14 +12233,14 @@ theorem afterPartC3_allW {P : Wire → Prop} {s : Nat} (h : AllW P (CRTBarrel.af
   simpa only [List.append_assoc] using h3
 
 theorem partsC8_box (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
-    AllW (leaveBox (start j)) (CRTBarrel.beforeRow (start j)) ∧ AllW (leaveBox (start j)) (CRTBarrel.afterPartC3 (start j)) := by
+    AllW (leaveBox (start j)) (CRTBarrel.beforeRow (start j)) ∧ AllW (leaveBox (start j)) (KeptParity.afterRows (start j)) := by
   obtain ⟨a, b⟩ := parts_box j h0 h1
-  exact ⟨ScanRow16.beforeRow_allW _ (beforeC5_allW a), afterPartC3_allW b⟩
+  exact ⟨ScanRow16.beforeRow_allW _ (beforeC5_allW a), KeptParity.afterAllW j (afterPartC3_allW b)⟩
 
 theorem leave_eq (j : Fin 26) (_h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     CRTBarrel.leave j = GateMirror.forward (CRTBarrel.beforeRow (start j)) ++ CRTBarrel.barrel (start j) false ++
-      GateMirror.forward (CRTBarrel.afterPartC3 (start j)) ∧
-    CRTBarrel.unleave j = inverse (CRTBarrel.afterPartC3 (start j)) ++ CRTBarrel.barrel (start j) true ++
+      GateMirror.forward (KeptParity.afterRows (start j)) ∧
+    CRTBarrel.unleave j = inverse (KeptParity.afterRows (start j)) ++ CRTBarrel.barrel (start j) true ++
       inverse (CRTBarrel.beforeRow (start j)) := by
   simp only [CRTBarrel.leave, CRTBarrel.unleave, h1, ↓reduceIte, and_self]
 
@@ -17508,21 +17618,14 @@ theorem kept8_moveAB_run (j : Fin 26) (o : List Bool) (s : State) :
   rw [kept8_moveAB_split j, forward_app (entryOps (start j)), forward_app (fullPrefix j), run_append, run_append,
     run_take (GateMirror.forward (fullPrefix j))]
 
-set_option linter.unnecessarySeqFocus false in
-set_option linter.unreachableTactic false in
-set_option linter.unusedTactic false in
-/-- research-far (kept8): in front of the digit pass a hot tag `i ≥ 8` sees `1613 = 0`. A tag is hot only when the mode
-is enabled (far flag on) at its key; a key `≥ 8` makes `signExpr` the empty suffix, so `1596 = 1`, `1597 = e0+6`, and
-`fix8P` leaves `1613 = (1 ^^ e0+6) ^^ 1 ^^ e0+6 = 0`. This is the hypothesis `dead` of `Shadow7.leaveMove_same`. -/
-theorem Inputs.dead {j : Fin 26} (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
+theorem Inputs.keptState {j : Fin 26} (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
     {g0 s0 : Bool} (h : Inputs j s z g0 s0) (o : List Bool) :
-    ∀ i, 8 ≤ i → i < 16 →
-      (run (GateMirror.forward (Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ Shadow7.moveB (start j)))) o s).basis
-        (tagsP.getD i 0) = true →
-      (run (GateMirror.forward (Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ Shadow7.moveB (start j)))) o s).basis
-        1613 = false := by
-  intro i i8 i16 on
-  rw [kept8_moveAB_run j o s] at on ⊢
+    let v := run (GateMirror.forward (Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ Shadow7.moveB (start j)))) o s
+    ∃ (k : Mode) (c sg : Bool), (k.val = 0 → c = false ∧ sg = false) ∧ (8 ≤ key k → sg = true) ∧
+      v.basis 1613 = (((enabled k ^^ c) ^^ sg) ^^ (c && sg)) ∧
+      ∀ i : Fin 16, v.basis (tagsP.getD i.val 0) = (enabled k && decide (i.val = key k)) := by
+  dsimp only
+  rw [kept8_moveAB_run j o s]
   obtain ⟨w1, w2⟩ := start_win7 j h0 (by omega)
   have rr := Shadow7.rail_win w1 w2
   let fl := flags z g0 s0
@@ -17584,26 +17687,50 @@ theorem Inputs.dead {j : Fin 26} (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) {s : Sta
         ((loaded_tags j h0 (by omega) z en.basis q hq).trans (if_pos f))⟩
     · exact Or.inr (fun q hq => (sym q).trans ((loaded_tags j h0 (by omega) z en.basis q hq).trans (if_neg f)))
   have pj := kept8_preJoin j h0 h1 t (n.drop (measurementCount (GateMirror.forward (fullPrefix j)))) cleanT zeroT padT tagsT
-  have onT : t.basis (tagsP.getD i 0) = true := (pj.1 _ (tags_mem i i16)).symm.trans on
-  have tagI := selected j h0 (by omega) en n en.basis z.u k modeE z59 z60 (beforeFresh _ _ _ base zc zn) eventsE ⟨i, i16⟩
-  obtain ⟨enK, ikD⟩ := Bool.and_eq_true_iff.mp (tagI.symm.trans onT)
-  have ik : i = key k := of_decide_eq_true ikD
-  have k8 : 8 ≤ key k := by omega
-  have fe : en.basis (Shadow7.e0P (start j) + 3) = true := by
+  have fe : en.basis (Shadow7.e0P (start j) + 3) = enabled k := by
     have e := congrArg LeaveSelector.enabled modeE
     rw [enabled_farMode] at e
-    exact e.symm.trans enK
-  have t3 : t.basis (Shadow7.e0P (start j) + 3) = true :=
+    exact e.symm
+  have t3 : t.basis (Shadow7.e0P (start j) + 3) = enabled k :=
     (prefix_keep j h0 (by omega) _ (by unfold Wire at *; omega) en n).trans fe
   have t6 : t.basis (Shadow7.e0P (start j) + 6) = (crossing (ports j) k).read en.basis := by
     rw [sym, (controlsAt j h0 (by omega) k).1]
-  have t96 : t.basis 1596 = true := by
-    rw [sym, control96 j h0 (by omega) k]; exact kept8_signExpr (ports j) k en.basis k8
-  have t97 : t.basis 1597 = ((crossing (ports j) k).read en.basis && true) := by
-    rw [sym, (controlsAt j h0 (by omega) k).2, read_conj, kept8_signExpr (ports j) k en.basis k8]
-  refine pj.2.trans ?_
-  rw [t3, t6, t96, t97]
-  cases (crossing (ports j) k).read en.basis <;> rfl
+  have t96 : t.basis 1596 = (signExpr (ports j) k).read en.basis := by
+    rw [sym, control96 j h0 (by omega) k]
+  have t97 : t.basis 1597 = ((crossing (ports j) k).read en.basis && (signExpr (ports j) k).read en.basis) := by
+    rw [sym, (controlsAt j h0 (by omega) k).2, read_conj]
+  refine ⟨k, (crossing (ports j) k).read en.basis, (signExpr (ports j) k).read en.basis, ?_,
+    fun hi => kept8_signExpr _ _ _ hi, pj.2.trans (by rw [t3, t6, t96, t97]), ?_⟩
+  · intro hk
+    have zero : k = 0 := Fin.ext hk
+    rw [zero]
+    exact ⟨rfl, rfl⟩
+  · intro i
+    exact (pj.1 _ (tags_mem i.val i.isLt)).trans
+      (selected j h0 h1 en n en.basis z.u k modeE z59 z60 (beforeFresh _ _ _ base zc zn) eventsE i)
+
+
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unreachableTactic false in
+set_option linter.unusedTactic false in
+/-- research-far (kept8): in front of the digit pass a hot tag `i ≥ 8` sees `1613 = 0`. A tag is hot only when the mode
+is enabled (far flag on) at its key; a key `≥ 8` makes `signExpr` the empty suffix, so `1596 = 1`, `1597 = e0+6`, and
+`fix8P` leaves `1613 = (1 ^^ e0+6) ^^ 1 ^^ e0+6 = 0`. This is the hypothesis `dead` of `Shadow7.leaveMove_same`. -/
+theorem Inputs.dead {j : Fin 26} (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
+    {g0 s0 : Bool} (h : Inputs j s z g0 s0) (o : List Bool) :
+    ∀ i, 8 ≤ i → i < 16 →
+      (run (GateMirror.forward (Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ Shadow7.moveB (start j)))) o s).basis
+        (tagsP.getD i 0) = true →
+      (run (GateMirror.forward (Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ Shadow7.moveB (start j)))) o s).basis
+        1613 = false := by
+  intro i i8 i16 hot
+  obtain ⟨k,c,sgn,_,high,digit,tags⟩ := h.keptState h0 h1 o
+  have tag := (tags (⟨i, i16⟩ : Fin 16)).symm.trans hot
+  obtain ⟨en, which⟩ := Bool.and_eq_true_iff.mp tag
+  have index : i = LeaveSelector.key k := of_decide_eq_true which
+  have sign := high (index ▸ i8)
+  rw [digit, en, sign]
+  cases c <;> rfl
 
 theorem Inputs.sameMove {j : Fin 26} (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
     {g0 s0 : Bool} (h : Inputs j s z g0 s0) (m : List Bool) : run (Shadow7.leaveMoveP j) m s = run (Shadow7.leaveP j) m s := by
@@ -18962,7 +19089,7 @@ theorem lowRest_1558 (s : Nat) (t : State) : (run (GateMirror.forward (Shadow7.l
   simp [GateMirror.forward, front, GateMirror.erase, run, measureAndCorrect, ECDSAAdd.correct, writeBit, Function.update_apply]
 
 /-- `LeaveSplice.replace` with 8 replaced middles. -/
-theorem replace8Head (a0 b1 a1 b2 a2 b3 a3 b4 a4 b5 a5 b6 a6 b7 a7 b8 a8 : List Gate) (f0 r0 f1 r1 f2 r2 f3 r3 f4 r4 f5 r5 f6 r6 f7 r7 f8 r8 : Program) (s : State)
+theorem replace8Rows (a0 b1 a1 b2 a2 b3 a3 b4 a4 b5 a5 b6 a6 b7 a7 b8 a8 : List Gate) (f0 r0 f1 r1 f2 r2 f3 r3 f4 r4 fK rK f5 r5 f6 r6 f7 r7 f8 r8 : Program) (s : State)
     (v : Valid s (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4 ++ (b5 ++ (a5 ++ (b6 ++ (a6 ++ (b7 ++ (a7 ++ (b8 ++ (a8))))))))))))))))))
     (same0 : ∀ t, run f0 t s = run (GateMirror.forward a0) [] s)
     (back0 : ∀ t, run r0 t (run (GateMirror.forward a0) [] s) = s)
@@ -18982,6 +19109,10 @@ theorem replace8Head (a0 b1 a1 b2 a2 b3 a3 b4 a4 b5 a5 b6 a6 b7 a7 b8 a8 : List 
       run (GateMirror.forward b4) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3)))))))) [] s))
     (back4 : ∀ t, run r4 t (run (GateMirror.forward b4) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3)))))))) [] s)) =
       run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3)))))))) [] s)
+    (sameK : ∀ t, run fK t (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4))))))))) [] s) =
+      run (GateMirror.forward a4) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4))))))))) [] s))
+    (backK : ∀ t, run rK t (run (GateMirror.forward a4) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4))))))))) [] s)) =
+      run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4))))))))) [] s)
     (same5 : ∀ t, run f5 t (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4)))))))))) [] s) =
       run (GateMirror.forward b5) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4)))))))))) [] s))
     (back5 : ∀ t, run r5 t (run (GateMirror.forward b5) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4)))))))))) [] s)) =
@@ -18998,11 +19129,11 @@ theorem replace8Head (a0 b1 a1 b2 a2 b3 a3 b4 a4 b5 a5 b6 a6 b7 a7 b8 a8 : List 
       run (GateMirror.forward b8) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4 ++ (b5 ++ (a5 ++ (b6 ++ (a6 ++ (b7 ++ (a7)))))))))))))))) [] s))
     (back8 : ∀ t, run r8 t (run (GateMirror.forward b8) [] (run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4 ++ (b5 ++ (a5 ++ (b6 ++ (a6 ++ (b7 ++ (a7)))))))))))))))) [] s)) =
       run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4 ++ (b5 ++ (a5 ++ (b6 ++ (a6 ++ (b7 ++ (a7)))))))))))))))) [] s)
-    : (∀ m, run (f0 ++ f1 ++ GateMirror.forward a1 ++ f2 ++ GateMirror.forward a2 ++ f3 ++ GateMirror.forward a3 ++ f4 ++ GateMirror.forward a4 ++ f5 ++ GateMirror.forward a5 ++ f6 ++ GateMirror.forward a6 ++ f7 ++ GateMirror.forward a7 ++ f8 ++ GateMirror.forward a8) m s =
+    : (∀ m, run (f0 ++ f1 ++ GateMirror.forward a1 ++ f2 ++ GateMirror.forward a2 ++ f3 ++ GateMirror.forward a3 ++ f4 ++ fK ++ f5 ++ GateMirror.forward a5 ++ f6 ++ GateMirror.forward a6 ++ f7 ++ GateMirror.forward a7 ++ f8 ++ GateMirror.forward a8) m s =
       run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4 ++ (b5 ++ (a5 ++ (b6 ++ (a6 ++ (b7 ++ (a7 ++ (b8 ++ (a8)))))))))))))))))) m s) ∧
-    (∀ m n, run (GateMirror.inverse a8 ++ r8 ++ GateMirror.inverse a7 ++ r7 ++ GateMirror.inverse a6 ++ r6 ++ GateMirror.inverse a5 ++ r5 ++ GateMirror.inverse a4 ++ r4 ++ GateMirror.inverse a3 ++ r3 ++ GateMirror.inverse a2 ++ r2 ++ GateMirror.inverse a1 ++ r1 ++ r0) n
-      (run (f0 ++ f1 ++ GateMirror.forward a1 ++ f2 ++ GateMirror.forward a2 ++ f3 ++ GateMirror.forward a3 ++ f4 ++ GateMirror.forward a4 ++ f5 ++ GateMirror.forward a5 ++ f6 ++ GateMirror.forward a6 ++ f7 ++ GateMirror.forward a7 ++ f8 ++ GateMirror.forward a8) m s) = s) := by
-  simp only [run_nil_append] at same2 back2 same3 back3 same4 back4 same5 back5 same6 back6 same7 back7 same8 back8
+    (∀ m n, run (GateMirror.inverse a8 ++ r8 ++ GateMirror.inverse a7 ++ r7 ++ GateMirror.inverse a6 ++ r6 ++ GateMirror.inverse a5 ++ r5 ++ rK ++ r4 ++ GateMirror.inverse a3 ++ r3 ++ GateMirror.inverse a2 ++ r2 ++ GateMirror.inverse a1 ++ r1 ++ r0) n
+      (run (f0 ++ f1 ++ GateMirror.forward a1 ++ f2 ++ GateMirror.forward a2 ++ f3 ++ GateMirror.forward a3 ++ f4 ++ fK ++ f5 ++ GateMirror.forward a5 ++ f6 ++ GateMirror.forward a6 ++ f7 ++ GateMirror.forward a7 ++ f8 ++ GateMirror.forward a8) m s) = s) := by
+  simp only [run_nil_append] at same2 back2 same3 back3 same4 back4 sameK backK same5 back5 same6 back6 same7 back7 same8 back8
   obtain ⟨va0, w0⟩ := v.parts
   obtain ⟨vb1, w1⟩ := w0.parts
   obtain ⟨va1, w2⟩ := w1.parts
@@ -19020,9 +19151,9 @@ theorem replace8Head (a0 b1 a1 b2 a2 b3 a3 b4 a4 b5 a5 b6 a6 b7 a7 b8 a8 : List 
   obtain ⟨va7, w14⟩ := w13.parts
   obtain ⟨vb8, w15⟩ := w14.parts
   have va8 := w15
-  have emitted (m : List Bool) : run (f0 ++ f1 ++ GateMirror.forward a1 ++ f2 ++ GateMirror.forward a2 ++ f3 ++ GateMirror.forward a3 ++ f4 ++ GateMirror.forward a4 ++ f5 ++ GateMirror.forward a5 ++ f6 ++ GateMirror.forward a6 ++ f7 ++ GateMirror.forward a7 ++ f8 ++ GateMirror.forward a8) m s =
+  have emitted (m : List Bool) : run (f0 ++ f1 ++ GateMirror.forward a1 ++ f2 ++ GateMirror.forward a2 ++ f3 ++ GateMirror.forward a3 ++ f4 ++ fK ++ f5 ++ GateMirror.forward a5 ++ f6 ++ GateMirror.forward a6 ++ f7 ++ GateMirror.forward a7 ++ f8 ++ GateMirror.forward a8) m s =
       (run (GateMirror.forward a8) [] (run (GateMirror.forward b8) [] (run (GateMirror.forward a7) [] (run (GateMirror.forward b7) [] (run (GateMirror.forward a6) [] (run (GateMirror.forward b6) [] (run (GateMirror.forward a5) [] (run (GateMirror.forward b5) [] (run (GateMirror.forward a4) [] (run (GateMirror.forward b4) [] (run (GateMirror.forward a3) [] (run (GateMirror.forward b3) [] (run (GateMirror.forward a2) [] (run (GateMirror.forward b2) [] (run (GateMirror.forward a1) [] (run (GateMirror.forward b1) [] (run (GateMirror.forward a0) [] s))))))))))))))))) := by
-    simp only [run_append, run_take, same0, same1, va1.default_run, same2, va2.default_run, same3, va3.default_run, same4, va4.default_run, same5, va5.default_run, same6, va6.default_run, same7, va7.default_run, same8]
+    simp only [run_append, run_take, same0, same1, va1.default_run, same2, va2.default_run, same3, va3.default_run, same4, sameK, same5, va5.default_run, same6, va6.default_run, same7, va7.default_run, same8]
     exact va8.default_run _
   have old (m : List Bool) : run (GateMirror.forward (a0 ++ (b1 ++ (a1 ++ (b2 ++ (a2 ++ (b3 ++ (a3 ++ (b4 ++ (a4 ++ (b5 ++ (a5 ++ (b6 ++ (a6 ++ (b7 ++ (a7 ++ (b8 ++ (a8)))))))))))))))))) m s =
       (run (GateMirror.forward a8) [] (run (GateMirror.forward b8) [] (run (GateMirror.forward a7) [] (run (GateMirror.forward b7) [] (run (GateMirror.forward a6) [] (run (GateMirror.forward b6) [] (run (GateMirror.forward a5) [] (run (GateMirror.forward b5) [] (run (GateMirror.forward a4) [] (run (GateMirror.forward b4) [] (run (GateMirror.forward a3) [] (run (GateMirror.forward b3) [] (run (GateMirror.forward a2) [] (run (GateMirror.forward b2) [] (run (GateMirror.forward a1) [] (run (GateMirror.forward b1) [] (run (GateMirror.forward a0) [] s))))))))))))))))) := by
@@ -19035,11 +19166,10 @@ theorem replace8Head (a0 b1 a1 b2 a2 b3 a3 b4 a4 b5 a5 b6 a6 b7 a7 b8 a8 : List 
   have undoA7 (l : List Bool) := va7.undo_run [] l
   have undoA6 (l : List Bool) := va6.undo_run [] l
   have undoA5 (l : List Bool) := va5.undo_run [] l
-  have undoA4 (l : List Bool) := va4.undo_run [] l
   have undoA3 (l : List Bool) := va3.undo_run [] l
   have undoA2 (l : List Bool) := va2.undo_run [] l
   have undoA1 (l : List Bool) := va1.undo_run [] l
-  simp only [run_append, run_take, undoA8, back8, undoA7, back7, undoA6, back6, undoA5, back5, undoA4, back4, undoA3, back3, undoA2, back2, undoA1, back1]
+  simp only [run_append, run_take, undoA8, back8, undoA7, back7, undoA6, back6, undoA5, back5, backK, back4, undoA3, back3, undoA2, back2, undoA1, back1]
   exact back0 _
 
 
@@ -19241,6 +19371,232 @@ theorem head_pair {j : Fin 26} (hi : j.val ≤ 24) {t : State} {z : SkywalkNat.S
 
 end ECDSAAdd.Entrant.StairPacket.ScanRow16
 
+
+namespace ECDSAAdd.Entrant.StairPacket.KeptParity
+open Arithmetic GateMirror
+
+set_option maxRecDepth 16000
+set_option maxHeartbeats 1500000
+set_option linter.unusedSimpArgs false
+
+/-- The digit is active on one of the first eight rows when it is set. -/
+def relation (v : BasisState) : Prop :=
+  (v 1 && v 0) = (v 0 ^^ (v 2 && v 0) ^^ (v 3 && v 0) ^^ (v 4 && v 0) ^^ (v 5 && v 0) ^^ (v 6 && v 0) ^^ (v 7 && v 0) ^^ (v 8 && v 0))
+
+private def tag (k : LeaveSelector.Mode) (i : Nat) := LeaveSelector.enabled k && decide (i = LeaveSelector.key k)
+private def digitBit (k : LeaveSelector.Mode) (cross sign : Bool) :=
+  ((LeaveSelector.enabled k ^^ cross) ^^ sign) ^^ (cross && sign)
+
+private theorem finiteModes : ∀ (k : LeaveSelector.Mode) (cross sign : Bool),
+    (k.val = 0 → cross = false ∧ sign = false) → (8 ≤ LeaveSelector.key k → sign = true) →
+    let digit := digitBit k cross sign
+    (tag k 0 && digit) = (digit ^^ (tag k 1 && digit) ^^ (tag k 2 && digit) ^^ (tag k 3 && digit) ^^ (tag k 4 && digit) ^^ (tag k 5 && digit) ^^ (tag k 6 && digit) ^^ (tag k 7 && digit)) := by decide +kernel
+
+theorem relationOfMode (v : BasisState) (k : LeaveSelector.Mode) (cross sign : Bool)
+    (inactive : k.val = 0 → cross = false ∧ sign = false) (high : 8 ≤ LeaveSelector.key k → sign = true)
+    (digit : v 0 = digitBit k cross sign) (ports : ∀ i, i < 8 → v (i+1) = tag k i) : relation v := by
+  unfold relation
+  rw [ports 0 (by decide), ports 1 (by decide), ports 2 (by decide), ports 3 (by decide), ports 4 (by decide), ports 5 (by decide), ports 6 (by decide), ports 7 (by decide), digit]
+  exact finiteModes k cross sign inactive high
+
+private def shifted (s : State) (x : Bool) : State :=
+  ⟨s.phase, writeBit s.basis 9 (s.basis 9 ^^ x)⟩
+
+private def bareStep (h y : Wire) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis y (s.basis y ^^ (s.basis h && s.basis 0))⟩
+
+private theorem twice (a b c d : Bool) : (((a ^^ b) ^^ c) ^^ (c ^^ d)) = (a ^^ (b ^^ d)) := by
+  cases a <;> cases b <;> cases c <;> cases d <;> rfl
+
+private theorem liftedStep (h y : Wire) (hn : h ≠ 9) (yn : y ≠ 9) (s : State) (x : Bool)
+    (tail : Program) (m : List Bool) :
+    run (.CX y 9 :: .CCX h 0 y :: .CX y 9 :: tail) m (shifted s x) =
+      run tail m (shifted (bareStep h y s) (x ^^ (s.basis h && s.basis 0))) := by
+  simp only [run]
+  apply congrArg (run tail m)
+  apply State.extensionality
+  · rfl
+  funext q
+  by_cases endBit : q = 9
+  · subst q
+    simp [shifted, bareStep, writeBit, Function.update_of_ne, hn, yn, Ne.symm yn, twice]
+  · by_cases dataBit : q = y
+    · subst q
+      simp [shifted, bareStep, writeBit, Function.update_of_ne, hn, yn, Ne.symm yn]
+    · simp [shifted, bareStep, writeBit, Function.update_of_ne, endBit, dataBit]
+
+private def bare (i : Nat) (n : Nat) : Program :=
+  match n with
+  | 0 => []
+  | n+1 => .CCX (i+2) 0 (i+10) :: bare (i+1) n
+
+private def lifted (i : Nat) (n : Nat) : Program :=
+  match n with
+  | 0 => []
+  | n+1 => .CX (i+10) 9 :: .CCX (i+2) 0 (i+10) :: .CX (i+10) 9 :: lifted (i+1) n
+
+private def parity (v : BasisState) (i n : Nat) (x : Bool) : Bool :=
+  match n with
+  | 0 => x
+  | n+1 => parity v (i+1) n (x ^^ (v (i+2) && v 0))
+
+private theorem ladder (v : BasisState) (m : List Bool) (i n : Nat) (bound : i+n ≤ 7)
+    (s : State) (keep : ∀ q : Nat, q ≤ 8 → s.basis q = v q) (x : Bool) :
+    run (lifted i n) m (shifted s x) = shifted (run (bare i n) m s) (parity v i n x) := by
+  induction n generalizing i s x with
+  | zero => rfl
+  | succ n ih =>
+    have hn : (i+2 : Wire) ≠ 9 := by unfold Wire at *; omega
+    have yn : (i+10 : Wire) ≠ 9 := by unfold Wire at *; omega
+    simp only [lifted, bare, parity, liftedStep _ _ hn yn, run]
+    rw [← keep (i+2) (by omega), ← keep 0 (by decide)]
+    apply ih (i+1) (by omega) (bareStep (i+2) (i+10) s)
+    intro q hq
+    have ne : (q : Wire) ≠ i+10 := by unfold Wire at *; omega
+    simpa [bareStep, writeBit, Function.update_of_ne ne] using keep q hq
+
+private theorem parity_left (v : BasisState) (i n : Nat) (a b : Bool) :
+    parity v i n (a ^^ b) = (a ^^ parity v i n b) := by
+  induction n generalizing i b with
+  | zero => rfl
+  | succ n ih => simp only [parity, Bool.xor_assoc, ih]
+
+private theorem shift_shift (s : State) (a b : Bool) : shifted (shifted s a) b = shifted s (a ^^ b) := by
+  apply State.extensionality
+  · rfl
+  funext q
+  by_cases h : q = 9
+  · subst q; simp [shifted, writeBit, Bool.xor_assoc]
+  · simp [shifted, writeBit, Function.update_of_ne h]
+
+private theorem shift_zero (s : State) : shifted s false = s := by
+  apply State.extensionality
+  · rfl
+  funext q
+  by_cases h : q = 9
+  · subst q; simp [shifted, writeBit]
+  · simp [shifted, writeBit, Function.update_of_ne h]
+
+theorem same (s : State) (m : List Bool) (mode : relation s.basis) :
+    run (GateMirror.forward replacement) m s = run (GateMirror.forward old) m s := by
+  have newProgram : GateMirror.forward replacement = .CX 0 9 :: lifted 0 7 := rfl
+  have oldProgram : GateMirror.forward old = .CCX 1 0 9 :: bare 0 7 := rfl
+  rw [newProgram, oldProgram]
+  let top := s.basis 1 && s.basis 0
+  let t := shifted s top
+  change run (lifted 0 7) m (shifted s (s.basis 0)) = run (bare 0 7) m t
+  have prepared : shifted t (top ^^ s.basis 0) = shifted s (s.basis 0) := by
+    rw [show shifted t _ = shifted s (top ^^ (top ^^ s.basis 0)) from shift_shift _ _ _]
+    congr 1
+    cases top <;> cases s.basis 0 <;> rfl
+  have keep (q : Nat) (hq : q ≤ 8) : t.basis q = s.basis q := by
+    have ne : (q : Wire) ≠ 9 := by unfold Wire at *; omega
+    simp [t, shifted, writeBit, Function.update_of_ne ne]
+  have parityEq : parity s.basis 0 7 (s.basis 0) = top := mode.symm
+  rw [← prepared, ladder s.basis m 0 7 (by decide) t keep, parity_left, parityEq, Bool.xor_self, shift_zero]
+
+end ECDSAAdd.Entrant.StairPacket.KeptParity
+
+namespace ECDSAAdd.Entrant.StairPacket.KeptParity
+open Arithmetic GateMirror Partial
+private theorem geometry : ∀ (j : Fin 26) (a b : Fin 17), port (start j) a = port (start j) b → a = b := by
+  decide +kernel
+
+set_option maxRecDepth 16000 in
+theorem placed_pair (j : Fin 26) (s : State) (h : relation (fun q => s.basis (port (start j) q))) :
+    (∀ m, run (GateMirror.forward (placed (start j))) m s = run (GateMirror.forward (Shadow7.moveKept (start j))) [] s) ∧
+    (∀ n, run (inverse (placed (start j))) n (run (GateMirror.forward (Shadow7.moveKept (start j))) [] s) = s) := by
+  let f := port (start j)
+  let t : State := ⟨s.phase, fun q => s.basis (f q)⟩
+  have inj (a : Wire) (ha : a ∈ Finset.range 17) (b : Wire) (hb : b ∈ Finset.range 17)
+      (eq : f a = f b) : a = b :=
+    congrArg Fin.val (geometry j ⟨a, Finset.mem_range.mp ha⟩ ⟨b, Finset.mem_range.mp hb⟩ eq)
+  have sameF (m : List Bool) : run (GateMirror.forward (placed (start j))) m s = run (GateMirror.forward (Shadow7.moveKept (start j))) [] s := by
+    have eq : run (GateMirror.forward replacement) m t = run (GateMirror.forward old) [] t :=
+      (same t m h).trans (run_take (GateMirror.forward old) m t).symm
+    have boundedNew : wires (GateMirror.forward replacement) ⊆ Finset.range 17 := by decide
+    have boundedOld : wires (GateMirror.forward old) ⊆ Finset.range 17 := by decide
+    exact run_rename_eq_of_eq f (Finset.range 17) inj _ _ boundedNew boundedOld m [] t s rfl (fun _ _ => rfl) eq
+  refine ⟨sameF, ?_⟩
+  intro n
+  rw [← sameF []]
+  have valid : CRTBarrel.LeaveSplice.Valid s (placed (start j)) := by
+    refine ⟨List.all_eq_true.mp (physical j), ?_, ready_plain _ (by rfl) _⟩
+    repeat' constructor
+  exact valid.undo_run [] n
+end ECDSAAdd.Entrant.StairPacket.KeptParity
+
+namespace ECDSAAdd.Entrant.StairPacket.LeaveJ7.Admission
+open Arithmetic Partial GateMirror LeaveSelector KeptParity
+def movedKeptPrefix (s : Nat) : List Gate :=
+  Shadow7.moveA s ++ (rowGates (Shadow7.e0P s + 6) (Shadow7.moveRows s) ++ Shadow7.moveB s)
+
+theorem Inputs.movedRelation {j : Fin 26} (lo : 0 ≤ j.val) (hi : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
+    {g sg : Bool} (h : Inputs j s z g sg) (o : List Bool) :
+    relation (fun i => (run (GateMirror.forward (movedKeptPrefix (start j))) o s).basis (port (start j) i)) := by
+  obtain ⟨w1,w2⟩ := start_win7 j lo hi
+  obtain ⟨k,c,sgn,inactive,high,digit,tags⟩ := h.keptState lo hi o
+  have hot := h.hot lo hi o
+  have moved := Shadow7.prefix_rows w1 w2 s o _ hot.1 hot.2
+  have cl := Shadow7.cell_lt w1 w2
+  have off (q : Wire) (hq : 1556 ≤ q) : ∀ r ∈ Shadow7.moveRows (start j), q ≠ r.2 := by
+    intro r hr
+    obtain ⟨i, bound, rfl⟩ := Shadow7.mem_moveRows hr
+    dsimp only
+    unfold Wire at *
+    omega
+  have unchanged (q : Wire) (hq : 1556 ≤ q) :
+      (run (GateMirror.forward (movedKeptPrefix (start j))) o s).basis q =
+      (run (GateMirror.forward (Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ Shadow7.moveB (start j)))) o s).basis q := by
+    rw [movedKeptPrefix, forward_app, forward_app, rowGates_forward, moved, Shadow7.clrAll_frame _ _ _ _ (off q hq)]
+  apply relationOfMode _ k c sgn inactive high
+  · exact (unchanged 1613 (by decide)).trans digit
+  · intro i hi8
+    have small : (i : Nat) < 8 := hi8
+    have lim : (i : Nat) < 16 := Nat.lt_trans small (by decide)
+    have hit := tags (⟨i, lim⟩ : Fin 16)
+    have bound := tags_range' _ (tags_mem i lim)
+    simpa only [port, if_pos small] using (unchanged _ bound.1).trans hit
+end ECDSAAdd.Entrant.StairPacket.LeaveJ7.Admission
+
+namespace ECDSAAdd.Entrant.StairPacket.KeptParity
+open GateMirror CRTBarrel
+theorem frontShape (b : Nat) : (before b ++ Shadow7.leaveBarrel b) ++ Shadow7.fix8P b (Shadow7.sbP b) =
+    LeaveJ7.Admission.movedKeptPrefix b := by
+  rw [LeaveCut.before_shape]
+  simp only [LeaveCut.head, LeaveCut.selectorTail, LeaveJ7.Admission.movedKeptPrefix, Shadow7.moveB, List.append_assoc]
+end ECDSAAdd.Entrant.StairPacket.KeptParity
+
+namespace ECDSAAdd.Entrant.StairPacket.LeaveJ7.Admission
+open Partial GateMirror CRTBarrel KeptParity
+theorem Inputs.keptTailPair {j : Fin 26} (lo : 0 ≤ j.val) (hi : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
+    {g sg : Bool} (h : Inputs j s z g sg) :
+    let b := start j
+    let t := run (GateMirror.forward (CRTBarrel.before b ++ Shadow7.leaveBarrel b)) [] s
+    (∀ m, run (GateMirror.forward (newTail b)) m t = run (GateMirror.forward (tailD0 b)) [] t) ∧
+    (∀ n, run (inverse (newTail b)) n (run (GateMirror.forward (tailD0 b)) [] t) = t) := by
+  let b := start j
+  let t := run (GateMirror.forward (CRTBarrel.before b ++ Shadow7.leaveBarrel b)) [] s
+  have full := LeaveSplice.moved_valid lo hi h
+  rw [LeaveCut.move_shape, CRTWindow.after_split, CRTWindow.tailD_cut] at full
+  have valid : LeaveSplice.Valid t (tailD0 b) := by
+    dsimp only [t]
+    rw [FlagCut.run_nil_append]
+    exact full.parts.2.parts.2.parts.1.parts.1
+  have key := placed_pair j _ (h.movedRelation lo hi [])
+  rw [← frontShape, FlagCut.run_nil_append] at key
+  obtain ⟨fwd,rev⟩ := LeaveSplice.replace (Shadow7.fix8P b (Shadow7.sbP b)) (Shadow7.moveKept b)
+    (wordPre 1614 (colsC b)) (GateMirror.forward (placed b)) (inverse (placed b)) t valid key.1 key.2
+  have f (m : List Bool) : run (GateMirror.forward (newTail b)) m t = run (GateMirror.forward (tailD0 b)) [] t := by
+    apply Eq.trans _ (valid.default_run m)
+    simpa only [newTail,forward_app,List.append_assoc] using fwd m
+  refine ⟨f, ?_⟩
+  intro n
+  change run (inverse (newTail b)) n (run (GateMirror.forward (tailD0 b)) [] t) = t
+  rw [← f []]
+  simpa only [newTail,forward_app,FlagCut.inv_app,List.append_assoc] using rev [] n
+end ECDSAAdd.Entrant.StairPacket.LeaveJ7.Admission
+
 namespace ECDSAAdd.Entrant.StairPacket.LeaveJ7.Admission
 open Partial GateMirror CRTBarrel
 
@@ -19366,7 +19722,11 @@ theorem Inputs.crt_pair20 {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : S
   have topne : (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) ≠ 1559 := by
     unfold Shadow7.a0P at *; ((try unfold Wire at *); omega)
   have head := ScanRow16.head_pair hi h v8.parts.1.parts.1
-  obtain ⟨f, r⟩ := FlagCut7.replace8Head (headA0 (start j)) [.ccx (start j + 30) (Shadow7.sbP (start j) + 803) (start j + Shadow7.sbP (start j) + 48)] (headA1 (start j)) [.make (Shadow7.sbP (start j) + 1577) (Shadow7.sbP (start j) + 1578) 1559] (headC0 (start j)) [.cx (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6), .ccx (Partial.tagsP.getD 0 0) (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0), .cx (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6)] (headC1 (start j)) (Shadow7.leaveBarrel (start j)) (tailD0 (start j)) (Partial.pairGM false 1614 (Shadow7.a0P (start j) + 16) (Shadow7.bankW (start j) 16)) (tailD1 (start j)) [.pop (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] (tailE0 (start j))
+  have tail := h.keptTailPair lo hi
+  dsimp only at tail
+  rw [FlagCut5.before_split5] at tail
+  simp only [List.append_assoc] at tail
+  obtain ⟨f, r⟩ := FlagCut7.replace8Rows (headA0 (start j)) [.ccx (start j + 30) (Shadow7.sbP (start j) + 803) (start j + Shadow7.sbP (start j) + 48)] (headA1 (start j)) [.make (Shadow7.sbP (start j) + 1577) (Shadow7.sbP (start j) + 1578) 1559] (headC0 (start j)) [.cx (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6), .ccx (Partial.tagsP.getD 0 0) (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0), .cx (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6)] (headC1 (start j)) (Shadow7.leaveBarrel (start j)) (tailD0 (start j)) (Partial.pairGM false 1614 (Shadow7.a0P (start j) + 16) (Shadow7.bankW (start j) 16)) (tailD1 (start j)) [.pop (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] (tailE0 (start j))
     [.make 1558 (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] (chainMid (start j)) [.pop 1558 (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] (tailE1 (start j))
     (GateMirror.forward (ScanRow16.headShort (start j))) (inverse (ScanRow16.headShort (start j)))
     [GateMirror.erase (start j + 30) (Shadow7.sbP (start j) + 803) (start j + Shadow7.sbP (start j) + 48)]
@@ -19376,7 +19736,8 @@ theorem Inputs.crt_pair20 {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : S
       .CX (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0)]
     [.CX (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0),
       GateMirror.erase (Partial.tagsP.getD 0 0) (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6)]
-    (barrel (start j) false) (barrel (start j) true) [] []
+    (barrel (start j) false) (barrel (start j) true)
+    (GateMirror.forward (KeptParity.newTail (start j))) (inverse (KeptParity.newTail (start j))) [] []
     [.CX (Shadow7.e0P (start j) + 4) 1559] [.CX (Shadow7.e0P (start j) + 4) 1559]
     [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] s v
     head.1 head.2
@@ -19387,6 +19748,7 @@ theorem Inputs.crt_pair20 {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : S
     (fun t => FlagCut5.swap_make _ _ _ _ hxy htx hty hyR t)
     (fun t => FlagCut5.swap_make_back _ _ _ _ hxy htx hty hyR t)
     same back
+    tail.1 tail.2
     (fun t => (FlagCut6.pair_high_id _ _ _ _ hne16 hJ).symm)
     (fun t => FlagCut6.pair_high_id _ _ _ _ hne16 hJ)
     (fun t => FlagCut.erase_cx (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 _ hv3 t)
@@ -19401,21 +19763,21 @@ theorem Inputs.crt_pair20 {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : S
       GateMirror.forward (headC0 (start j)) ++
       [.CCX (Partial.tagsP.getD 0 0) (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6),
         .CX (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0)] ++
-      GateMirror.forward (headC1 (start j)) ++ barrel (start j) false ++ GateMirror.forward (tailD0 (start j)) ++ [] ++ GateMirror.forward (tailD1 (start j)) ++
+      GateMirror.forward (headC1 (start j)) ++ barrel (start j) false ++ GateMirror.forward (KeptParity.newTail (start j)) ++ [] ++ GateMirror.forward (tailD1 (start j)) ++
       [.CX (Shadow7.e0P (start j) + 4) 1559] ++ GateMirror.forward (tailE0 (start j)) ++ [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] ++ GateMirror.forward (chainMid (start j)) ++
       [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] ++ GateMirror.forward (tailE1 (start j)) := by
-    simp only [CRTBarrel.leave, if_pos hi, beforeRow, beforeRowTail, afterPartC3, forward_app, FlagCut.fwd_cons, front, List.append_assoc,
+    simp only [CRTBarrel.leave, if_pos hi, beforeRow, beforeRowTail, KeptParity.afterRows, KeptParity.afterTail, forward_app, FlagCut.fwd_cons, front, List.append_assoc,
       List.cons_append, List.nil_append, List.append_nil]
   have uprog : CRTBarrel.unleave j = GateMirror.inverse (tailE1 (start j)) ++ [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] ++ GateMirror.inverse (chainMid (start j)) ++
       [.CX (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] ++ GateMirror.inverse (tailE0 (start j)) ++ [.CX (Shadow7.e0P (start j) + 4) 1559] ++
-      GateMirror.inverse (tailD1 (start j)) ++ [] ++ GateMirror.inverse (tailD0 (start j)) ++ barrel (start j) true ++ GateMirror.inverse (headC1 (start j)) ++
+      GateMirror.inverse (tailD1 (start j)) ++ [] ++ GateMirror.inverse (KeptParity.newTail (start j)) ++ barrel (start j) true ++ GateMirror.inverse (headC1 (start j)) ++
       [.CX (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0),
         GateMirror.erase (Partial.tagsP.getD 0 0) (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6)] ++
       GateMirror.inverse (headC0 (start j)) ++
       [.CX (Shadow7.sbP (start j) + 1578) 1559] ++ GateMirror.inverse (headA1 (start j)) ++
       [.CCX (start j + 30) (Shadow7.sbP (start j) + 803) (start j + Shadow7.sbP (start j) + 48)] ++
       GateMirror.inverse (ScanRow16.headShort (start j)) := by
-    simp only [CRTBarrel.unleave, if_pos hi, beforeRow, beforeRowTail, afterPartC3, FlagCut.inv_app, FlagCut.inv_cons, GateMirror.back,
+    simp only [CRTBarrel.unleave, if_pos hi, beforeRow, beforeRowTail, KeptParity.afterRows, KeptParity.afterTail, FlagCut.inv_app, FlagCut.inv_cons, GateMirror.back,
       List.append_assoc, List.cons_append, List.nil_append, List.append_nil]
   have shape : Shadow7.leaveMoveOps (start j) = headA0 (start j) ++ ([.ccx (start j + 30) (Shadow7.sbP (start j) + 803) (start j + Shadow7.sbP (start j) + 48)] ++ (headA1 (start j) ++ ([.make (Shadow7.sbP (start j) + 1577) (Shadow7.sbP (start j) + 1578) 1559] ++ (headC0 (start j) ++ ([.cx (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6), .ccx (Partial.tagsP.getD 0 0) (Shadow7.e0P (start j) + 6) (Shadow7.a0P (start j) + 0), .cx (Shadow7.a0P (start j) + 0) (Shadow7.e0P (start j) + 6)] ++ (headC1 (start j) ++ (Shadow7.leaveBarrel (start j) ++ (tailD0 (start j) ++ (Partial.pairGM false 1614 (Shadow7.a0P (start j) + 16) (Shadow7.bankW (start j) 16) ++ (tailD1 (start j) ++ ([.pop (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] ++ (tailE0 (start j) ++ ([.make 1558 (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] ++ (chainMid (start j) ++ ([.pop 1558 (Shadow7.a0P (start j) + Shadow7.lowsP (start j) - 1) 1559] ++ (tailE1 (start j))))))))))))))))) := by
     rw [LeaveCut.move_shape, FlagCut5.before_split5, CRTWindow.after_split, CRTWindow.tailD_cut, l16, CRTWindow.tailE_cut]
@@ -19468,25 +19830,31 @@ theorem barrel_box2 (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : B
     obtain ⟨t1, t2⟩ := bounds q tag
     apply Shadow7.box2_S w1 (by omega) <;> (try unfold Wire at *) <;> omega
 
+private theorem avoidsThree {P : Wire → Prop} {whole a b c : Program}
+    (parts : whole = a ++ b ++ c) (ha : ∀ w ∈ wires a, P w)
+    (hb : ∀ w ∈ wires b, P w) (hc : ∀ w ∈ wires c, P w) {q : Wire}
+    (out : ¬ P q) : q ∉ wires whole := by
+  rw [parts, wires_append, wires_append]
+  intro hit
+  rcases Finset.mem_union.mp hit with ab | cc
+  · rcases Finset.mem_union.mp ab with aa | bb
+    · exact out (ha q aa)
+    · exact out (hb q bb)
+  · exact out (hc q cc)
+
 /-- `LeaveJ7.leaveMove_keeps` for the CRT leave: a wire outside `Shadow7.leaveBox2` keeps its value. -/
 theorem leave_keeps20 (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (q : Wire)
     (outside : ¬ Shadow7.leaveBox2 (start j) q) (m : List Bool) (s : State) :
     (run (CRTBarrel.leave j) m s).basis q = s.basis q := by
   apply run_preserves_outside
-  intro hit
   have pieces : AllW (Shadow7.leaveBox2 (start j)) (Shadow7.leaveMoveOps (start j)) :=
     Shadow7.allW_leaveMove (start j) (Shadow7.leaveOps_box2 j (Nat.zero_le _) (by omega))
   rw [split_ops, allW_append_iff, allW_append_iff] at pieces
   have pre : ∀ w ∈ wires (GateMirror.forward (CRTBarrel.beforeRow (start j))), Shadow7.leaveBox2 (start j) w :=
     (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.beforeRow (start j)) (ScanRow16.beforeRow_allW _ (beforeC5_allW pieces.1))).1
-  have post : ∀ w ∈ wires (GateMirror.forward (CRTBarrel.afterPartC3 (start j))), Shadow7.leaveBox2 (start j) w :=
-    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.afterPartC3 (start j)) (afterPartC3_allW pieces.2.2)).1
-  rw [(leave_eq j lo hi).1, wires_append, wires_append] at hit
-  rcases Finset.mem_union.mp hit with h | h
-  · rcases Finset.mem_union.mp h with h | h
-    · exact outside (pre q h)
-    · exact outside (barrel_box2 j lo hi false q h)
-  · exact outside (post q h)
+  have post : ∀ w ∈ wires (GateMirror.forward (KeptParity.afterRows (start j))), Shadow7.leaveBox2 (start j) w :=
+    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := KeptParity.afterRows (start j)) (KeptParity.afterAllW j (afterPartC3_allW pieces.2.2))).1
+  exact avoidsThree (leave_eq j lo hi).1 pre (barrel_box2 j lo hi false) post outside
 
 /-- `leave_keeps20` on the whole 22-block window (`LeaveJ7.leaveMove_keeps` for `CRTBarrel.leave`): the CRT barrel
 leave on every block 1..22 (the move-leave branch is vacuous). -/
@@ -24508,10 +24876,10 @@ set_option linter.unusedSimpArgs false
 
 def tcV : Pieces Nat := { WindowParams7.tcV with
   leave := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+100+CRTBarrel.barrelT (start j) false
+      Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+99+CRTBarrel.barrelT (start j) false
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+115 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+132+CRTBarrel.barrelT (start j) true
+      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+131+CRTBarrel.barrelT (start j) true
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+147 else toffoliCount (Shadow7.leaveMoveInvP j) }
 
 def mcV : Pieces Nat := { WindowParams7.mcV with
@@ -24524,11 +24892,11 @@ def mcV : Pieces Nat := { WindowParams7.mcV with
 
 def slotsV : Pieces Nat := { WindowParams7.slotsV with
   leave := fun j => if crtBlocks j then
-      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+648+3*Shadow7.wpP (start j+15)+
+      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+662+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) false
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+746+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+616+3*Shadow7.wpP (start j+15)+
+      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+630+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) true
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+714+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveInvP j) }
 
@@ -24669,10 +25037,10 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=128011 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=128011 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=128428 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=128453 ∧
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127986 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127986 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=128403 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=128428 ∧
     measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=66344 ∧
     measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=66344 ∧
     measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65626 ∧
@@ -24682,15 +25050,15 @@ theorem ship_counts :
     (counts false first WindowParams7.rest7).2.2.2]
   decide +kernel
 
-theorem slot_sums : (forwardL slotsV true first WindowParams7.rest7).sum ≤ 2370644 ∧ (forwardL slotsV false first WindowParams7.rest7).sum ≤ 2370644 ∧
-    (reverseL slotsV true first WindowParams7.rest7).sum ≤ 2333874 ∧ (reverseL slotsV false first WindowParams7.rest7).sum ≤ 2333874 := by
+theorem slot_sums : (forwardL slotsV true first WindowParams7.rest7).sum ≤ 2370994 ∧ (forwardL slotsV false first WindowParams7.rest7).sum ≤ 2370994 ∧
+    (reverseL slotsV true first WindowParams7.rest7).sum ≤ 2334224 ∧ (reverseL slotsV false first WindowParams7.rest7).sum ≤ 2334224 := by
   decide +kernel
 
 /-- Slot bounds of the CRT window (upper bounds only; the judge has no slot ceiling). -/
-theorem ship_slots : gateSlots (forwardW CRTBarrel.params true first WindowParams7.rest7) ≤ 2370644 ∧
-    gateSlots (forwardW CRTBarrel.params false first WindowParams7.rest7) ≤ 2370644 ∧
-    gateSlots (reverseW CRTBarrel.params true first WindowParams7.rest7) ≤ 2333874 ∧
-    gateSlots (reverseW CRTBarrel.params false first WindowParams7.rest7) ≤ 2333874 := by
+theorem ship_slots : gateSlots (forwardW CRTBarrel.params true first WindowParams7.rest7) ≤ 2370994 ∧
+    gateSlots (forwardW CRTBarrel.params false first WindowParams7.rest7) ≤ 2370994 ∧
+    gateSlots (reverseW CRTBarrel.params true first WindowParams7.rest7) ≤ 2334224 ∧
+    gateSlots (reverseW CRTBarrel.params false first WindowParams7.rest7) ≤ 2334224 := by
   rw [measure_forward gateSlots gateSlots_append, measure_forward gateSlots gateSlots_append,
     measure_reverse gateSlots gateSlots_append, measure_reverse gateSlots gateSlots_append]
   exact ⟨(forwardL_le slots_le true first WindowParams7.rest7).trans slot_sums.1,
@@ -24804,7 +25172,7 @@ theorem leave_phys (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     GatePhysical (CRTBarrel.leave j) ∧ GatePhysical (CRTBarrel.unleave j) := by
   obtain ⟨pb, pa⟩ := partsC8_proper j h0 h1
   have b := physical_of_proper _ (ScanRow16.beforeRow_proper j pb)
-  have a := physical_of_proper _ pa
+  have a := physical_of_proper _ (KeptParity.afterProper j pa)
   rw [(leave_eq j h0 h1).1, (leave_eq j h0 h1).2]
   exact ⟨WindowPhysicalW.appP (WindowPhysicalW.appP b.1 (CRTBarrel.barrel_phys j h0 h1 false)) a.1,
     WindowPhysicalW.appP (WindowPhysicalW.appP a.2 (CRTBarrel.barrel_phys j h0 h1 true)) b.2⟩
@@ -24863,16 +25231,16 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 128011 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127986 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 128011 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127986 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 128428 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 128403 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 128453 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 128428 :=
   ship_counts.2.2.2.1
 
 theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 66344 ∧
@@ -24883,10 +25251,10 @@ theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first W
     measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65651 :=
   ship_counts.2.2.2.2.2.2
 
-theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2370644 ∧ gateSlots (forward45plus1 false) ≤ 2370644 :=
+theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2370994 ∧ gateSlots (forward45plus1 false) ≤ 2370994 :=
   ⟨ship_slots.1, ship_slots.2.1⟩
 
-theorem ship_slotsR : gateSlots (reverse45plus1 true) ≤ 2333874 ∧ gateSlots (reverse45plus1 false) ≤ 2333874 :=
+theorem ship_slotsR : gateSlots (reverse45plus1 true) ≤ 2334224 ∧ gateSlots (reverse45plus1 false) ≤ 2334224 :=
   ship_slots.2.2
 
 end ECDSAAdd.Entrant.StairPacket.CRTWindow
@@ -41650,3 +42018,973 @@ end
 
 end
 -- ==== end OddFullPass ====
+
+/-!
+# Window boundary swap-pair cancellation
+
+Each window boundary `leave_k → enter_{k+1}` (and `portal → enter_0`, `leave_24 → park → portalInv`) carries the
+same two controlled swaps at the tail of the first piece and at the head of the second; the gates between them
+never touch the swaps' wires.  The swaps are measurement-free and self-inverse, so both copies can be dropped:
+the run is unchanged for every state and tape.
+-/
+
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.StairPacket.FredCut
+open ECDSAAdd ECDSAAdd.Arithmetic
+
+/-! ## Generic layer -/
+
+/-- One controlled swap `c ? (a ↔ b)` as three CNOT/Toffoli instructions (`GateMirror.cswapG` mirrored). -/
+def cs (c a b : Wire) : Program := [.CX b a, .CCX c a b, .CX b a]
+
+theorem cs_measure (c a b : Wire) : measurementCount (cs c a b) = 0 := rfl
+
+theorem cs_run (c a b : Wire) (hca : c ≠ a) (hcb : c ≠ b) (hab : a ≠ b) (m : List Bool) (t : State) :
+    run (cs c a b) m t =
+      ⟨t.phase, fun q => if t.basis c then (if q = a then t.basis b else if q = b then t.basis a else t.basis q)
+        else t.basis q⟩ := by
+  have hba : b ≠ a := Ne.symm hab
+  simp only [cs, run, writeBit]
+  congr 1
+  funext q
+  simp only [Function.update_apply, if_neg hba, if_neg hca, if_neg hcb, if_neg hab, if_true]
+  by_cases hqa : q = a
+  · subst hqa
+    simp only [if_true, if_neg hab]
+    cases t.basis c <;> cases t.basis q <;> cases t.basis b <;> rfl
+  · by_cases hqb : q = b
+    · subst hqb
+      simp only [if_neg hqa, if_true]
+      cases t.basis c <;> cases t.basis a <;> cases t.basis q <;> rfl
+    · simp only [if_neg hqa, if_neg hqb]
+      cases t.basis c <;> rfl
+
+/-- Two controlled swaps on disjoint pairs under one control. -/
+def S2 (c a b a' b' : Wire) : Program := cs c a b ++ cs c a' b'
+
+theorem S2_measure (c a b a' b' : Wire) : measurementCount (S2 c a b a' b') = 0 := rfl
+
+theorem S2_inv (c a b a' b' : Wire) (hca : c ≠ a) (hcb : c ≠ b) (hab : a ≠ b) (hca' : c ≠ a') (hcb' : c ≠ b')
+    (hab' : a' ≠ b') (h1 : a ≠ a') (h2 : a ≠ b') (h3 : b ≠ a') (h4 : b ≠ b')
+    (t : State) (m1 m2 : List Bool) : run (S2 c a b a' b') m2 (run (S2 c a b a' b') m1 t) = t := by
+  simp only [S2, run_append, cs_measure, List.take_zero, List.drop_zero]
+  rw [cs_run c a b hca hcb hab, cs_run c a' b' hca' hcb' hab', cs_run c a b hca hcb hab,
+    cs_run c a' b' hca' hcb' hab']
+  apply State.extensionality
+  · rfl
+  · funext q
+    have e1 := hca.symm; have e2 := hcb.symm; have e3 := hab.symm; have e4 := hca'.symm; have e5 := hcb'.symm
+    have e6 := hab'.symm; have e7 := h1.symm; have e8 := h2.symm; have e9 := h3.symm; have e10 := h4.symm
+    by_cases hc : t.basis c
+    · by_cases hqa : q = a
+      · subst hqa
+        simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10]
+      · by_cases hqb : q = b
+        · subst hqb
+          simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa]
+        · by_cases hqa' : q = a'
+          · subst hqa'
+            simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa,
+              hqb]
+          · by_cases hqb' : q = b'
+            · subst hqb'
+              simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10,
+                hqa, hqb, hqa']
+            · simp [hc, hca, hcb, hca', hcb', hqa, hqb, hqa', hqb']
+    · simp [hc, hca, hcb, hca', hcb']
+
+/-- Cancellation of a measurement-free block pair around a middle `M` that never touches `W ⊇ wires E`: the
+middle commutes past `E` (disjoint wires), then `D` undoes `E`. -/
+theorem cancel_free (E M D : Program) (W : Finset Wire)
+    (hE : wires E ⊆ W) (hM : ∀ q ∈ W, q ∉ wires M)
+    (inv : ∀ t (a b : List Bool), run D b (run E a t) = t)
+    (x : State) (me mm md : List Bool) :
+    run D md (run M mm (run E me x)) = run M mm x := by
+  have dis : Disjoint (wires M) (wires E) :=
+    Finset.disjoint_left.mpr (fun q hqM hqE => hM q (hE hqE) hqM)
+  rw [run_disjoint_commute M E dis mm me x]
+  exact inv _ _ _
+
+/-- FRED cancellation: a measurement-free self-inverse block `S` on both sides of a middle `M` that never touches
+`wires S` can be dropped, for every state and tape. -/
+theorem fred_cancel (S M Y : Program) (hM : ∀ q ∈ wires S, q ∉ wires M)
+    (h0 : measurementCount S = 0) (inv : ∀ t (a b : List Bool), run S b (run S a t) = t)
+    (m : List Bool) (s : State) :
+    run (S ++ (M ++ (S ++ Y))) m s = run (M ++ Y) m s := by
+  rw [run_append S, h0, List.take_zero, List.drop_zero, run_append M, run_append S, h0, List.take_zero,
+    List.drop_zero, run_append M]
+  congr 1
+  exact cancel_free S M S (wires S) (Finset.Subset.refl _) hM inv s [] _ []
+
+/-- The same with an arbitrary prefix. -/
+theorem fred_cancel_pre (X S M Y : Program) (hM : ∀ q ∈ wires S, q ∉ wires M)
+    (h0 : measurementCount S = 0) (inv : ∀ t (a b : List Bool), run S b (run S a t) = t)
+    (m : List Bool) (s : State) :
+    run (X ++ (S ++ (M ++ (S ++ Y)))) m s = run (X ++ (M ++ Y)) m s := by
+  rw [run_append X, run_append X]
+  exact fred_cancel S M Y hM h0 inv _ _
+
+/-! ## Piece-list cuts -/
+
+/-- `Cut n ps ps'`: `ps'` is `ps` with `n` boundary block pairs removed (each block 2 Toffolis).  `pair`: the tail block `E` of one piece (followed by
+that piece's suffix `M1`) and the head block `D` of the next piece (preceded by its prefix `M2`) cancel around
+`M1 ++ M2`; `triple`: the same across one whole intermediate piece `Q`.  Blocks are measurement-free, act inside
+`W`, `D` undoes `E`, and the gates between them avoid `W`. -/
+inductive Cut : Nat → List Program → List Program → Prop
+  | nil : Cut 0 [] []
+  | keep (p : Program) {n : Nat} {ps ps' : List Program} : Cut n ps ps' → Cut n (p :: ps) (p :: ps')
+  | pair (A E M1 M2 D B : Program) (W : Finset Wire) {n : Nat} {ps ps' : List Program}
+      (hE : wires E ⊆ W) (hD : wires D ⊆ W) (hM : ∀ q ∈ W, q ∉ wires (M1 ++ M2))
+      (mE : measurementCount E = 0) (mD : measurementCount D = 0)
+      (tE : toffoliCount E = 2) (tD : toffoliCount D = 2)
+      (inv : ∀ t (a b : List Bool), run D b (run E a t) = t) :
+      Cut n ps ps' → Cut (n+1) ((A ++ (E ++ M1)) :: (M2 ++ (D ++ B)) :: ps) ((A ++ M1) :: (M2 ++ B) :: ps')
+  | triple (A E M1 Q M2 D B : Program) (W : Finset Wire) {n : Nat} {ps ps' : List Program}
+      (hE : wires E ⊆ W) (hD : wires D ⊆ W) (hM : ∀ q ∈ W, q ∉ wires (M1 ++ (Q ++ M2)))
+      (mE : measurementCount E = 0) (mD : measurementCount D = 0)
+      (tE : toffoliCount E = 2) (tD : toffoliCount D = 2)
+      (inv : ∀ t (a b : List Bool), run D b (run E a t) = t) :
+      Cut n ps ps' → Cut (n+1) ((A ++ (E ++ M1)) :: Q :: (M2 ++ (D ++ B)) :: ps) ((A ++ M1) :: Q :: (M2 ++ B) :: ps')
+
+theorem app_congr (X T T' : Program) (h : ∀ m s, run T m s = run T' m s) (m : List Bool) (s : State) :
+    run (X ++ T) m s = run (X ++ T') m s := by
+  rw [run_append, run_append, h]
+
+/-- Core block cancellation with a prefix and a run-equal suffix. -/
+theorem block_cancel (A E M D Y Y' : Program) (W : Finset Wire)
+    (hE : wires E ⊆ W) (_hD : wires D ⊆ W) (hM : ∀ q ∈ W, q ∉ wires M)
+    (mE : measurementCount E = 0) (mD : measurementCount D = 0)
+    (inv : ∀ t (a b : List Bool), run D b (run E a t) = t)
+    (hY : ∀ m s, run Y' m s = run Y m s) (m : List Bool) (s : State) :
+    run (A ++ (M ++ Y')) m s = run (A ++ (E ++ (M ++ (D ++ Y)))) m s := by
+  rw [run_append A (M ++ Y'), run_append A (E ++ (M ++ (D ++ Y)))]
+  generalize run A (m.take (measurementCount A)) s = t
+  generalize m.drop (measurementCount A) = m'
+  rw [run_append M Y', run_append E (M ++ (D ++ Y)), mE, List.take_zero, List.drop_zero,
+    run_append M (D ++ Y), run_append D Y, mD, List.take_zero, List.drop_zero, hY,
+    cancel_free E M D W hE hM inv t [] _ []]
+
+theorem Cut.run_eq {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') (m : List Bool) (s : State) :
+    run ps'.flatten m s = run ps.flatten m s := by
+  induction h generalizing m s with
+  | nil => rfl
+  | keep p _ ih =>
+    simp only [List.flatten_cons]
+    exact app_congr p _ _ (fun m s => ih m s) m s
+  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, List.append_assoc]
+    have h := block_cancel A E (M1 ++ M2) D (B ++ _) (B ++ _) W hE hD hM mE mD inv
+      (fun m s => app_congr B _ _ (fun m s => ih m s) m s) m s
+    simpa only [List.append_assoc] using h
+  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, List.append_assoc]
+    have h := block_cancel A E (M1 ++ (Q ++ M2)) D (B ++ _) (B ++ _) W hE hD hM mE mD inv
+      (fun m s => app_congr B _ _ (fun m s => ih m s) m s) m s
+    simpa only [List.append_assoc] using h
+
+
+theorem Cut.mc_eq {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    measurementCount ps'.flatten = measurementCount ps.flatten := by
+  induction h with
+  | nil => rfl
+  | keep p _ ih => simp only [List.flatten_cons, measurementCount_append, ih]
+  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, measurementCount_append, ih, mE, mD]; omega
+  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, measurementCount_append, ih, mE, mD]; omega
+
+theorem Cut.wires_sub {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    wires ps'.flatten ⊆ wires ps.flatten := by
+  induction h with
+  | nil => exact Finset.Subset.refl _
+  | keep p _ ih =>
+    simp only [List.flatten_cons, wires_append]
+    exact Finset.union_subset_union (Finset.Subset.refl _) ih
+  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, wires_append]
+    intro q hq
+    simp only [Finset.mem_union] at hq ⊢
+    rcases hq with ((hq | hq) | (hq | hq) | hq) <;> tauto
+  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, wires_append]
+    intro q hq
+    simp only [Finset.mem_union] at hq ⊢
+    rcases hq with ((hq | hq) | hq | (hq | hq) | hq) <;> tauto
+
+/-- Each cancelled pair removes two blocks of two Toffolis. -/
+theorem Cut.tc_eq {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    toffoliCount ps'.flatten + 4 * n = toffoliCount ps.flatten := by
+  induction h with
+  | nil => rfl
+  | keep p _ ih => simp only [List.flatten_cons, toffoliCount_append]; omega
+  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, toffoliCount_append]; omega
+  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, toffoliCount_append]; omega
+
+/-- Every instruction of the cut list is an instruction of the original. -/
+theorem Cut.mem {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    ∀ i ∈ ps'.flatten, i ∈ ps.flatten := by
+  induction h with
+  | nil => exact fun _ h => h
+  | keep p _ ih =>
+    intro i hi
+    simp only [List.flatten_cons, List.mem_append] at hi ⊢
+    have := ih i
+    tauto
+  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    intro i hi
+    simp only [List.flatten_cons, List.mem_append] at hi ⊢
+    have := ih i
+    tauto
+  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    intro i hi
+    simp only [List.flatten_cons, List.mem_append] at hi ⊢
+    have := ih i
+    tauto
+
+theorem Cut.slots_le {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Challenge.gateSlots ps'.flatten ≤ Challenge.gateSlots ps.flatten := by
+  induction h with
+  | nil => exact le_refl _
+  | keep p _ ih => simp only [List.flatten_cons, Challenge.gateSlots_append]; omega
+  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, Challenge.gateSlots_append]; omega
+  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
+    simp only [List.flatten_cons, Challenge.gateSlots_append]; omega
+
+/-- The two swaps in the other order undo the block too. -/
+theorem S2_inv_swap (c a b a' b' : Wire) (hca : c ≠ a) (hcb : c ≠ b) (hab : a ≠ b) (hca' : c ≠ a') (hcb' : c ≠ b')
+    (hab' : a' ≠ b') (h1 : a ≠ a') (h2 : a ≠ b') (h3 : b ≠ a') (h4 : b ≠ b')
+    (t : State) (m1 m2 : List Bool) : run (S2 c a' b' a b) m2 (run (S2 c a b a' b') m1 t) = t := by
+  simp only [S2, run_append, cs_measure, List.take_zero, List.drop_zero]
+  rw [cs_run c a b hca hcb hab, cs_run c a' b' hca' hcb' hab', cs_run c a' b' hca' hcb' hab',
+    cs_run c a b hca hcb hab]
+  apply State.extensionality
+  · rfl
+  · funext q
+    have e1 := hca.symm; have e2 := hcb.symm; have e3 := hab.symm; have e4 := hca'.symm; have e5 := hcb'.symm
+    have e6 := hab'.symm; have e7 := h1.symm; have e8 := h2.symm; have e9 := h3.symm; have e10 := h4.symm
+    by_cases hc : t.basis c
+    · by_cases hqa : q = a
+      · subst hqa
+        simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10]
+      · by_cases hqb : q = b
+        · subst hqb
+          simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa]
+        · by_cases hqa' : q = a'
+          · subst hqa'
+            simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa,
+              hqb]
+          · by_cases hqb' : q = b'
+            · subst hqb'
+              simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10,
+                hqa, hqb, hqa']
+            · simp [hc, hca, hcb, hca', hcb', hqa, hqb, hqa', hqb']
+    · simp [hc, hca, hcb, hca', hcb']
+
+
+/-! ## pp7 shapes -/
+/-- The leave's low close ends with the two controlled swaps of its last two rows. -/
+theorem lowClose_split (s : Nat) (hL : 1 ≤ Shadow7.lowsP s) :
+    ∃ V, Shadow7.leaveLowClose s = V ++
+      (Partial.cswapG (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)) ++
+       Partial.cswapG (s+30) (Shadow7.b0P s - 1 + Shadow7.lowsP s) (Shadow7.a0P s - 1 + Shadow7.lowsP s)) := by
+  have hr : List.range (Shadow7.lowsP s + 1) =
+      List.range (Shadow7.lowsP s - 1) ++ [Shadow7.lowsP s - 1, Shadow7.lowsP s] := by
+    have e : Shadow7.lowsP s + 1 = (Shadow7.lowsP s - 1) + 1 + 1 := by omega
+    rw [e, List.range_succ, List.range_succ, List.append_assoc]
+    simp only [List.singleton_append, show Shadow7.lowsP s - 1 + 1 = Shadow7.lowsP s by omega]
+  refine ⟨Partial.xsG ((List.range 15).map (s+16+·)) ++
+      (List.range (Shadow7.lowsP s + 1)).map (fun i => GateMirror.Gate.cx (Shadow7.e0P s + 5) (Shadow7.b0P s - 1 + i)) ++
+      (List.range (Shadow7.lowsP s - 1)).flatMap
+        (fun i => Partial.cswapG (s+30) (Shadow7.b0P s - 1 + i) (Shadow7.a0P s - 1 + i)), ?_⟩
+  unfold Shadow7.leaveLowClose
+  simp only []
+  rw [hr, List.flatMap_append]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
+
+theorem suffix_after (s : Nat) :
+    (Shadow7.leaveLowClose s ++ Shadow7.leaveClose s) <:+ KeptParity.afterRows s := by
+  unfold KeptParity.afterRows KeptParity.afterTail CRTBarrel.tailE1
+  simp only [List.append_assoc, List.cons_append]
+  repeat (first
+    | (with_reducible exact List.suffix_refl _)
+    | refine List.IsSuffix.trans ?_ (List.suffix_append _ _)
+    | refine List.IsSuffix.trans ?_ (List.suffix_cons _ _))
+
+/-- The window leave (CRT barrel leave) as prefix ++ (two controlled swaps ++ leaveClose). -/
+theorem leave_shape (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (start k)) :
+    ∃ X, CRTBarrel.params.leave k = X ++ (GateMirror.forward
+      (Partial.cswapG (start k + 30) (Shadow7.b0P (start k) - 1 + (Shadow7.lowsP (start k) - 1))
+          (Shadow7.a0P (start k) - 1 + (Shadow7.lowsP (start k) - 1)) ++
+        Partial.cswapG (start k + 30) (Shadow7.b0P (start k) - 1 + Shadow7.lowsP (start k))
+          (Shadow7.a0P (start k) - 1 + Shadow7.lowsP (start k))) ++
+      GateMirror.forward (Shadow7.leaveClose (start k))) := by
+  obtain ⟨Z, hZ⟩ := suffix_after (start k)
+  obtain ⟨V, hV⟩ := lowClose_split (start k) hL
+  refine ⟨GateMirror.forward (CRTBarrel.beforeRow (start k)) ++ CRTBarrel.barrel (start k) false ++
+    GateMirror.forward Z ++ GateMirror.forward V, ?_⟩
+  show CRTBarrel.leave k = _
+  unfold CRTBarrel.leave
+  simp only [if_pos hk]
+  rw [← hZ, hV]
+  simp only [GateMirror.forward, List.map_append, List.append_assoc]
+
+
+/-! ## pp7 window pieces -/
+open ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+
+abbrev P : WindowFold.Pieces Program := CRTBarrel.params
+
+def K (j : Fin 26) : Nat := (GateMirror.forward (Shadow7.leaveClose (start j))).length
+
+def leaveC (j : Fin 26) : Program :=
+  if j.val ≤ 24 then (P.leave j).take ((P.leave j).length - K j - 6) ++ (P.leave j).drop ((P.leave j).length - K j)
+  else P.leave j
+def unleaveC (j : Fin 26) : Program :=
+  if j.val ≤ 24 then (P.leaveInv j).take (K j) ++ (P.leaveInv j).drop (K j + 6) else P.leaveInv j
+def enterC (j : Fin 26) : Program := (P.enter j).drop 6
+def enterInvC (j : Fin 26) : Program := (P.enterInv j).take ((P.enterInv j).length - 6)
+def portalC (t : Nat) : Program := (P.portal t).take ((P.portal t).length - 6)
+def portalInvC (t : Nat) : Program := (P.portalInv t).drop 6
+
+def Pcut : WindowFold.Pieces Program where
+  enter := enterC
+  enterInv := enterInvC
+  leave := leaveC
+  leaveInv := unleaveC
+  load := P.load
+  restore := P.restore
+  portal := portalC
+  portalInv := portalInvC
+  park := P.park
+  parkInv := P.parkInv
+  exitLoad := P.exitLoad
+  exitRestore := P.exitRestore
+  routed := P.routed
+  unrouted := P.unrouted
+  pack := P.pack
+  unpack := P.unpack
+  tick := P.tick
+  receiver := P.receiver
+
+attribute [irreducible] enterC enterInvC leaveC unleaveC portalC portalInvC
+
+theorem Pcut_enter (j : Fin 26) : Pcut.enter j = enterC j := rfl
+theorem Pcut_enterInv (j : Fin 26) : Pcut.enterInv j = enterInvC j := rfl
+theorem Pcut_leave (j : Fin 26) : Pcut.leave j = leaveC j := rfl
+theorem Pcut_leaveInv (j : Fin 26) : Pcut.leaveInv j = unleaveC j := rfl
+theorem Pcut_portal (t : Nat) : Pcut.portal t = portalC t := rfl
+theorem Pcut_portalInv (t : Nat) : Pcut.portalInv t = portalInvC t := rfl
+theorem Pcut_park (t : Nat) : Pcut.park t = P.park t := rfl
+theorem Pcut_parkInv (t : Nat) : Pcut.parkInv t = P.parkInv t := rfl
+
+/-- The leave's tail block, as a program. -/
+def Eblk (s : Nat) : Program := GateMirror.forward
+  (Partial.cswapG (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)) ++
+   Partial.cswapG (s+30) (Shadow7.b0P s - 1 + Shadow7.lowsP s) (Shadow7.a0P s - 1 + Shadow7.lowsP s))
+
+theorem Eblk_S2 (s : Nat) : Eblk s = S2 (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1))
+    (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.b0P s - 1 + Shadow7.lowsP s)
+    (Shadow7.a0P s - 1 + Shadow7.lowsP s) := rfl
+
+theorem tc_Eblk (s : Nat) : toffoliCount (Eblk s) = 2 := rfl
+
+theorem leaveC_eq (j : Fin 26) (hj : j.val ≤ 24) (X : Program)
+    (hX : P.leave j = X ++ (Eblk (start j) ++ GateMirror.forward (Shadow7.leaveClose (start j)))) :
+    Pcut.leave j = X ++ GateMirror.forward (Shadow7.leaveClose (start j)) := by
+  rw [Pcut_leave]
+  have hE : (Eblk (start j)).length = 6 := rfl
+  unfold leaveC
+  rw [if_pos hj, hX]
+  simp only [List.length_append, hE, K]
+  rw [show X.length + (6 + (GateMirror.forward (Shadow7.leaveClose (start j))).length) -
+      (GateMirror.forward (Shadow7.leaveClose (start j))).length - 6 = X.length by omega,
+    show X.length + (6 + (GateMirror.forward (Shadow7.leaveClose (start j))).length) -
+      (GateMirror.forward (Shadow7.leaveClose (start j))).length = X.length + 6 by omega]
+  rw [List.take_left' rfl, ← List.append_assoc, List.drop_left' (by simp [hE])]
+
+/-- Forward boundary leave_k → enter_{k+1}. -/
+theorem bnd_fwd (k : Nat) (hk : k < 24)
+    (hhead : (P.enter ⟨k+1, by omega⟩).take 6 = Eblk (start ⟨k, by omega⟩))
+    (hL : 1 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
+    (havoid : ∀ q ∈ wires (Eblk (start ⟨k, by omega⟩)),
+      q ∉ wires (GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++ []))
+    (inv : ∀ t (a b : List Bool), run (Eblk (start ⟨k, by omega⟩)) b (run (Eblk (start ⟨k, by omega⟩)) a t) = t)
+    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Cut (n+1) (P.leave ⟨k, by omega⟩ :: P.enter ⟨k+1, by omega⟩ :: ps)
+      (Pcut.leave ⟨k, by omega⟩ :: Pcut.enter ⟨k+1, by omega⟩ :: ps') := by
+  obtain ⟨X, hX⟩ := leave_shape ⟨k, by omega⟩ (by simp; omega) hL
+  have hX' : P.leave ⟨k, by omega⟩ = X ++ (Eblk (start ⟨k, by omega⟩) ++
+      GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩))) := hX
+  have hC := leaveC_eq ⟨k, by omega⟩ (by simp; omega) X hX'
+  have hEn : P.enter ⟨k+1, by omega⟩ = [] ++ (Eblk (start ⟨k, by omega⟩) ++ enterC ⟨k+1, by omega⟩) := by
+    rw [← hhead]; simp only [List.nil_append, enterC, List.take_append_drop]
+  have hEnC : Pcut.enter ⟨k+1, by omega⟩ = [] ++ enterC ⟨k+1, by omega⟩ := by
+    rw [Pcut_enter, List.nil_append]
+  rw [hX', hC, hEn, hEnC]
+  exact Cut.pair X _ _ [] _ _ (wires (Eblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) (Finset.Subset.refl _)
+    havoid rfl rfl (tc_Eblk _) (tc_Eblk _) inv h
+
+/-- Forward boundary portal → enter_0. -/
+theorem bnd_portal (t : Nat) (j : Fin 26)
+    (hhead : (P.enter j).take 6 = (P.portal t).drop ((P.portal t).length - 6))
+    (inv : ∀ u (a b : List Bool), run ((P.portal t).drop ((P.portal t).length - 6)) b
+      (run ((P.portal t).drop ((P.portal t).length - 6)) a u) = u)
+    (m0 : measurementCount ((P.portal t).drop ((P.portal t).length - 6)) = 0)
+    (t0 : toffoliCount ((P.portal t).drop ((P.portal t).length - 6)) = 2)
+    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Cut (n+1) (P.portal t :: P.enter j :: ps) (Pcut.portal t :: Pcut.enter j :: ps') := by
+  have h1 : P.portal t = portalC t ++ ((P.portal t).drop ((P.portal t).length - 6) ++ []) := by
+    simp only [portalC, List.append_nil, List.take_append_drop]
+  have h2 : Pcut.portal t = portalC t ++ [] := by
+    rw [Pcut_portal, List.append_nil]
+  have h3 : P.enter j = [] ++ ((P.portal t).drop ((P.portal t).length - 6) ++ enterC j) := by
+    rw [← hhead]; simp only [List.nil_append, enterC, List.take_append_drop]
+  have h4 : Pcut.enter j = [] ++ enterC j := by
+    rw [Pcut_enter, List.nil_append]
+  rw [h1, h2, h3, h4]
+  exact Cut.pair _ _ [] [] _ _ (wires ((P.portal t).drop ((P.portal t).length - 6))) (Finset.Subset.refl _)
+    (Finset.Subset.refl _) (by intro q _; simp [wires]) m0 m0 t0 t0 inv h
+
+/-- Forward exit boundary leave_24 → park → portalInv. -/
+theorem bnd_exit (k : Nat) (hk : k ≤ 24) (e : Nat)
+    (hL : 1 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
+    (havoid : ∀ q ∈ wires (Eblk (start ⟨k, by omega⟩)),
+      q ∉ wires (GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++ (P.park e ++ [])))
+    (hsub : wires ((P.portalInv e).take 6) ⊆ wires (Eblk (start ⟨k, by omega⟩)))
+    (inv : ∀ u (a b : List Bool), run ((P.portalInv e).take 6) b (run (Eblk (start ⟨k, by omega⟩)) a u) = u)
+    (mD : measurementCount ((P.portalInv e).take 6) = 0)
+    (tD : toffoliCount ((P.portalInv e).take 6) = 2)
+    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Cut (n+1) (P.leave ⟨k, by omega⟩ :: P.park e :: P.portalInv e :: ps)
+      (Pcut.leave ⟨k, by omega⟩ :: Pcut.park e :: Pcut.portalInv e :: ps') := by
+  obtain ⟨X, hX⟩ := leave_shape ⟨k, by omega⟩ (by simp; omega) hL
+  have hX' : P.leave ⟨k, by omega⟩ = X ++ (Eblk (start ⟨k, by omega⟩) ++
+      GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩))) := hX
+  have hC := leaveC_eq ⟨k, by omega⟩ (by simp; omega) X hX'
+  have hPI : P.portalInv e = [] ++ ((P.portalInv e).take 6 ++ portalInvC e) := by
+    simp only [List.nil_append, portalInvC, List.take_append_drop]
+  have hPIC : Pcut.portalInv e = [] ++ portalInvC e := by
+    rw [Pcut_portalInv, List.nil_append]
+  have hPark : Pcut.park e = P.park e := Pcut_park e
+  rw [hX', hC, hPI, hPIC, hPark]
+  exact Cut.triple X _ _ (P.park e) [] _ _ (wires (Eblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) hsub
+    havoid rfl mD (tc_Eblk _) tD inv h
+
+/-- Ends of the reverse walk use the inverse window pieces. -/
+theorem inv_app (a b : List GateMirror.Gate) : GateMirror.inverse (a ++ b) = GateMirror.inverse b ++ GateMirror.inverse a := by
+  simp only [GateMirror.inverse, List.map_append, List.reverse_append]
+
+/-- The reverse leave: inverse leaveClose, then the swapped block, then the rest. -/
+def Dblk (s : Nat) : Program := GateMirror.inverse
+  (Partial.cswapG (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)) ++
+   Partial.cswapG (s+30) (Shadow7.b0P s - 1 + Shadow7.lowsP s) (Shadow7.a0P s - 1 + Shadow7.lowsP s))
+
+theorem tc_Dblk (s : Nat) : toffoliCount (Dblk s) = 2 := rfl
+
+theorem unleave_shape (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (start k)) :
+    ∃ R, CRTBarrel.params.leaveInv k = GateMirror.inverse (Shadow7.leaveClose (start k)) ++ (Dblk (start k) ++ R) := by
+  obtain ⟨Z, hZ⟩ := suffix_after (start k)
+  obtain ⟨V, hV⟩ := lowClose_split (start k) hL
+  refine ⟨GateMirror.inverse V ++ GateMirror.inverse Z ++ CRTBarrel.barrel (start k) true ++
+    GateMirror.inverse (CRTBarrel.beforeRow (start k)), ?_⟩
+  show CRTBarrel.unleave k = _
+  unfold CRTBarrel.unleave
+  simp only [if_pos hk]
+  rw [← hZ, hV]
+  simp only [Dblk, inv_app, List.append_assoc]
+
+theorem unleaveC_eq (j : Fin 26) (hj : j.val ≤ 24) (R : Program)
+    (hR : P.leaveInv j = GateMirror.inverse (Shadow7.leaveClose (start j)) ++ (Dblk (start j) ++ R)) :
+    Pcut.leaveInv j = GateMirror.inverse (Shadow7.leaveClose (start j)) ++ R := by
+  rw [Pcut_leaveInv]
+  have hD : (Dblk (start j)).length = 6 := rfl
+  have hK : (GateMirror.inverse (Shadow7.leaveClose (start j))).length = K j := by
+    simp only [K, GateMirror.inverse, GateMirror.forward, List.length_reverse, List.length_map]
+  unfold unleaveC
+  rw [if_pos hj, hR, ← hK, List.take_left' rfl]
+  rw [show (GateMirror.inverse (Shadow7.leaveClose (start j))).length + 6 =
+      (GateMirror.inverse (Shadow7.leaveClose (start j)) ++ Dblk (start j)).length by simp [hD]]
+  rw [← List.append_assoc, List.drop_left' rfl]
+
+/-- Reverse boundary enterInv_{k+1} → leaveInv_k. -/
+theorem bnd_rev (k : Nat) (hk : k < 24)
+    (htail : (P.enterInv ⟨k+1, by omega⟩).drop ((P.enterInv ⟨k+1, by omega⟩).length - 6) = Dblk (start ⟨k, by omega⟩))
+    (hL : 1 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
+    (havoid : ∀ q ∈ wires (Dblk (start ⟨k, by omega⟩)),
+      q ∉ wires ([] ++ GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩))))
+    (inv : ∀ u (a b : List Bool), run (Dblk (start ⟨k, by omega⟩)) b (run (Dblk (start ⟨k, by omega⟩)) a u) = u)
+    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Cut (n+1) (P.enterInv ⟨k+1, by omega⟩ :: P.leaveInv ⟨k, by omega⟩ :: ps)
+      (Pcut.enterInv ⟨k+1, by omega⟩ :: Pcut.leaveInv ⟨k, by omega⟩ :: ps') := by
+  obtain ⟨R, hR⟩ := unleave_shape ⟨k, by omega⟩ (by simp; omega) hL
+  have hR' : P.leaveInv ⟨k, by omega⟩ = GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++
+      (Dblk (start ⟨k, by omega⟩) ++ R) := hR
+  have hC := unleaveC_eq ⟨k, by omega⟩ (by simp; omega) R hR'
+  have h1 : P.enterInv ⟨k+1, by omega⟩ = enterInvC ⟨k+1, by omega⟩ ++ (Dblk (start ⟨k, by omega⟩) ++ []) := by
+    rw [← htail]; simp only [enterInvC, List.append_nil, List.take_append_drop]
+  have h2 : Pcut.enterInv ⟨k+1, by omega⟩ = enterInvC ⟨k+1, by omega⟩ ++ [] := by
+    rw [Pcut_enterInv, List.append_nil]
+  rw [h1, h2, hR', hC]
+  exact Cut.pair _ _ [] _ _ R (wires (Dblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) (Finset.Subset.refl _)
+    havoid rfl rfl (tc_Dblk _) (tc_Dblk _) inv h
+
+/-- Reverse exit boundary portal → parkInv → leaveInv_24. -/
+theorem bnd_rev_exit (k : Nat) (hk : k ≤ 24) (e : Nat)
+    (htail : (P.portal e).drop ((P.portal e).length - 6) = Eblk (start ⟨k, by omega⟩))
+    (hL : 1 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
+    (havoid : ∀ q ∈ wires (Eblk (start ⟨k, by omega⟩)),
+      q ∉ wires ([] ++ (P.parkInv e ++ GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩)))))
+    (hsub : wires (Dblk (start ⟨k, by omega⟩)) ⊆ wires (Eblk (start ⟨k, by omega⟩)))
+    (inv : ∀ u (a b : List Bool), run (Dblk (start ⟨k, by omega⟩)) b (run (Eblk (start ⟨k, by omega⟩)) a u) = u)
+    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Cut (n+1) (P.portal e :: P.parkInv e :: P.leaveInv ⟨k, by omega⟩ :: ps)
+      (Pcut.portal e :: Pcut.parkInv e :: Pcut.leaveInv ⟨k, by omega⟩ :: ps') := by
+  obtain ⟨R, hR⟩ := unleave_shape ⟨k, by omega⟩ (by simp; omega) hL
+  have hR' : P.leaveInv ⟨k, by omega⟩ = GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++
+      (Dblk (start ⟨k, by omega⟩) ++ R) := hR
+  have hC := unleaveC_eq ⟨k, by omega⟩ (by simp; omega) R hR'
+  have h1 : P.portal e = portalC e ++ (Eblk (start ⟨k, by omega⟩) ++ []) := by
+    rw [← htail]; simp only [portalC, List.append_nil, List.take_append_drop]
+  have h2 : Pcut.portal e = portalC e ++ [] := by
+    rw [Pcut_portal, List.append_nil]
+  have h3 : Pcut.parkInv e = P.parkInv e := Pcut_parkInv e
+  rw [h1, h2, h3, hR', hC]
+  exact Cut.triple _ _ [] (P.parkInv e) _ _ R (wires (Eblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) hsub
+    havoid rfl rfl (tc_Eblk _) (tc_Dblk _) inv h
+
+/-- Reverse end boundary enterInv_0 → portalInv. -/
+theorem bnd_rev_end (j : Fin 26) (t : Nat)
+    (hhead : (P.portalInv t).take 6 = (P.enterInv j).drop ((P.enterInv j).length - 6))
+    (inv : ∀ u (a b : List Bool), run ((P.enterInv j).drop ((P.enterInv j).length - 6)) b
+      (run ((P.enterInv j).drop ((P.enterInv j).length - 6)) a u) = u)
+    (m0 : measurementCount ((P.enterInv j).drop ((P.enterInv j).length - 6)) = 0)
+    (t0 : toffoliCount ((P.enterInv j).drop ((P.enterInv j).length - 6)) = 2)
+    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
+    Cut (n+1) (P.enterInv j :: P.portalInv t :: ps) (Pcut.enterInv j :: Pcut.portalInv t :: ps') := by
+  have h1 : P.enterInv j = enterInvC j ++ ((P.enterInv j).drop ((P.enterInv j).length - 6) ++ []) := by
+    simp only [enterInvC, List.append_nil, List.take_append_drop]
+  have h2 : Pcut.enterInv j = enterInvC j ++ [] := by
+    rw [Pcut_enterInv, List.append_nil]
+  have h3 : P.portalInv t = [] ++ ((P.enterInv j).drop ((P.enterInv j).length - 6) ++ portalInvC t) := by
+    rw [← hhead]; simp only [List.nil_append, portalInvC, List.take_append_drop]
+  have h4 : Pcut.portalInv t = [] ++ portalInvC t := by
+    rw [Pcut_portalInv, List.nil_append]
+  rw [h1, h2, h3, h4]
+  exact Cut.pair _ _ [] [] _ _ (wires ((P.enterInv j).drop ((P.enterInv j).length - 6))) (Finset.Subset.refl _)
+    (Finset.Subset.refl _) (by intro q _; simp [wires]) m0 m0 t0 t0 inv h
+
+
+/-! ## List-based wire checks (cheap kernel decides) -/
+
+def cwl : List Correction → List Wire
+  | [] => []
+  | .Z t :: cs => t :: cwl cs
+  | .CZ a b :: cs => a :: b :: cwl cs
+
+def iwl : Instr → List Wire
+  | .X t => [t]
+  | .CX c t => [c, t]
+  | .CCX a b t => [a, b, t]
+  | .measureX t c0 c1 => t :: (cwl c0 ++ cwl c1)
+
+def wl : Program → List Wire
+  | [] => []
+  | i :: p => iwl i ++ wl p
+
+theorem mem_cwl (q : Wire) (cs : List Correction) : q ∈ correctionWires cs ↔ q ∈ cwl cs := by
+  induction cs with
+  | nil => simp [correctionWires, cwl]
+  | cons c cs ih => cases c <;> simp [correctionWires, cwl, ih]
+
+theorem mem_iwl (q : Wire) (i : Instr) : q ∈ i.wires ↔ q ∈ iwl i := by
+  cases i <;> simp [Instr.wires, iwl, mem_cwl, or_assoc]
+
+theorem mem_wl (q : Wire) (P : Program) : q ∈ wires P ↔ q ∈ wl P := by
+  induction P with
+  | nil => simp [wires, wl]
+  | cons i p ih => simp [wires, wl, mem_iwl, ih]
+
+theorem avoid_of_check (E M : Program) (h : (wl E).all (fun q => !((wl M).contains q)) = true) :
+    ∀ q ∈ wires E, q ∉ wires M := by
+  intro q hq hm
+  rw [mem_wl] at hq hm
+  have h1 := List.all_eq_true.mp h q hq
+  have h2 : q ∉ wl M := by simpa using h1
+  exact h2 hm
+
+theorem sub_of_check (D E : Program) (h : (wl D).all (fun q => (wl E).contains q) = true) :
+    wires D ⊆ wires E := by
+  intro q hq
+  rw [mem_wl] at hq ⊢
+  have h1 := List.all_eq_true.mp h q hq
+  simpa using h1
+
+/-! ## Block facts -/
+
+def dist5 (c a b a' b' : Wire) : Prop :=
+  c ≠ a ∧ c ≠ b ∧ a ≠ b ∧ c ≠ a' ∧ c ≠ b' ∧ a' ≠ b' ∧ a ≠ a' ∧ a ≠ b' ∧ b ≠ a' ∧ b ≠ b'
+
+instance (c a b a' b' : Wire) : Decidable (dist5 c a b a' b') := by unfold dist5; infer_instance
+
+theorem inv_of_eq (X : Program) (c a b a' b' : Wire) (hX : X = S2 c a b a' b') (hd : dist5 c a b a' b') :
+    ∀ t (m1 m2 : List Bool), run X m2 (run X m1 t) = t := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hd
+  intro t m1 m2; subst hX; exact S2_inv c a b a' b' h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 t m1 m2
+
+theorem inv_swap_of_eq (X Y : Program) (c a b a' b' : Wire) (hX : X = S2 c a b a' b') (hY : Y = S2 c a' b' a b)
+    (hd : dist5 c a b a' b') : ∀ t (m1 m2 : List Bool), run Y m2 (run X m1 t) = t := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hd
+  intro t m1 m2; subst hX; subst hY; exact S2_inv_swap c a b a' b' h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 t m1 m2
+
+theorem S2_measure0 (X : Program) (c a b a' b' : Wire) (hX : X = S2 c a b a' b') : measurementCount X = 0 := by
+  subst hX; rfl
+
+theorem Dblk_S2 (s : Nat) : Dblk s = S2 (s+30) (Shadow7.b0P s - 1 + Shadow7.lowsP s) (Shadow7.a0P s - 1 + Shadow7.lowsP s)
+    (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)) := rfl
+
+theorem rest7_eq : WindowParams7.rest7 = ([⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩, ⟨4, by decide⟩, ⟨5, by decide⟩, ⟨6, by decide⟩, ⟨7, by decide⟩, ⟨8, by decide⟩, ⟨9, by decide⟩, ⟨10, by decide⟩, ⟨11, by decide⟩, ⟨12, by decide⟩, ⟨13, by decide⟩, ⟨14, by decide⟩, ⟨15, by decide⟩, ⟨16, by decide⟩, ⟨17, by decide⟩, ⟨18, by decide⟩, ⟨19, by decide⟩, ⟨20, by decide⟩, ⟨21, by decide⟩, ⟨22, by decide⟩, ⟨23, by decide⟩, ⟨24, by decide⟩] : List (Fin 26)) := by
+  decide
+
+set_option maxHeartbeats 4000000 in
+theorem fwd_cut (d : Bool) :
+    Cut 26 (WindowFold.forwardL P d WindowParams.first WindowParams7.rest7)
+      (WindowFold.forwardL Pcut d WindowParams.first WindowParams7.rest7) := by
+  rw [rest7_eq]
+  simp only [WindowFold.forwardL, WindowFold.firstF, WindowFold.chainF, WindowFold.nextF, WindowFold.exitF,
+    List.cons_append, List.nil_append]
+  apply bnd_portal (start WindowParams.first) WindowParams.first (by decide +kernel)
+    (inv_of_eq _ 60 1028 303 1029 304 (by decide +kernel) (by decide +kernel))
+    (S2_measure0 _ 60 1028 303 1029 304 (by decide +kernel)) (by decide +kernel)
+  apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 0 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 1 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 2 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 3 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 4 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 5 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 6 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 7 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 8 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 9 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 10 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 11 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 12 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 13 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 14 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 15 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 16 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 17 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 18 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 19 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 20 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 21 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 22 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_fwd 23 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_exit 24 (by decide) _ (by decide +kernel) (avoid_of_check _ _ (by decide +kernel)) (sub_of_check _ _ (by decide +kernel))
+    (inv_swap_of_eq _ _ 435 841 491 842 492 (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (S2_measure0 _ 435 842 492 841 491 (by decide +kernel)) (by decide +kernel)
+  apply Cut.keep; apply Cut.keep; apply Cut.keep
+  exact Cut.nil
+
+set_option maxHeartbeats 4000000 in
+theorem rev_cut (d : Bool) :
+    Cut 26 (WindowFold.reverseL P d WindowParams.first WindowParams7.rest7)
+      (WindowFold.reverseL Pcut d WindowParams.first WindowParams7.rest7) := by
+  rw [rest7_eq]
+  simp only [WindowFold.reverseL, WindowFold.exitR, WindowFold.chainR, WindowFold.nextR, WindowFold.firstR,
+    List.cons_append, List.nil_append, List.append_assoc]
+  apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev_exit 24 (by decide) _ (by decide +kernel) (by decide +kernel)
+    (avoid_of_check _ _ (by decide +kernel)) (sub_of_check _ _ (by decide +kernel)) (inv_swap_of_eq _ _ _ _ _ _ _ (Eblk_S2 _) (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 23 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 22 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 21 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 20 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 19 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 18 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 17 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 16 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 15 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 14 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 13 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 12 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 11 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 10 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 9 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 8 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 7 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 6 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 5 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 4 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 3 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 2 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 1 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev 0 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
+    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
+  apply Cut.keep; apply Cut.keep; apply Cut.keep
+  apply bnd_rev_end WindowParams.first (start WindowParams.first) (by decide +kernel)
+    (inv_of_eq _ 60 1029 304 1028 303 (by decide +kernel) (by decide +kernel))
+    (S2_measure0 _ 60 1029 304 1028 303 (by decide +kernel)) (by decide +kernel)
+  exact Cut.nil
+
+
+/-! ## Per-piece count deltas (for the ledger) -/
+
+theorem tc_S2 (c a b a' b' : Wire) : toffoliCount (S2 c a b a' b') = 2 := rfl
+
+theorem tail_counts (X : Program) (hE : ∃ c a b a' b', X.drop (X.length - 6) = S2 c a b a' b') :
+    toffoliCount X = toffoliCount (X.take (X.length - 6)) + 2 ∧
+      measurementCount X = measurementCount (X.take (X.length - 6)) := by
+  obtain ⟨c, a, b, a', b', h⟩ := hE
+  have e := List.take_append_drop (X.length - 6) X
+  have t1 : toffoliCount X = toffoliCount (X.take (X.length - 6)) + toffoliCount (X.drop (X.length - 6)) := by
+    rw [← toffoliCount_append, e]
+  have m1 : measurementCount X = measurementCount (X.take (X.length - 6)) +
+      measurementCount (X.drop (X.length - 6)) := by
+    rw [← measurementCount_append, e]
+  rw [h, tc_S2] at t1
+  rw [h, S2_measure0 _ c a b a' b' rfl] at m1
+  exact ⟨t1, by omega⟩
+
+theorem head_counts (X : Program) (hE : ∃ c a b a' b', X.take 6 = S2 c a b a' b') :
+    toffoliCount X = toffoliCount (X.drop 6) + 2 ∧ measurementCount X = measurementCount (X.drop 6) := by
+  obtain ⟨c, a, b, a', b', h⟩ := hE
+  have e := List.take_append_drop 6 X
+  have t1 : toffoliCount X = toffoliCount (X.take 6) + toffoliCount (X.drop 6) := by
+    rw [← toffoliCount_append, e]
+  have m1 : measurementCount X = measurementCount (X.take 6) + measurementCount (X.drop 6) := by
+    rw [← measurementCount_append, e]
+  rw [h, tc_S2] at t1
+  rw [h, S2_measure0 _ c a b a' b' rfl] at m1
+  exact ⟨by omega, by omega⟩
+
+
+theorem enter_counts (j : Fin 26) (hE : ∃ c a b a' b', (P.enter j).take 6 = S2 c a b a' b') :
+    toffoliCount (P.enter j) = toffoliCount (Pcut.enter j) + 2 ∧
+      measurementCount (P.enter j) = measurementCount (Pcut.enter j) := by
+  rw [Pcut_enter, enterC]
+  exact head_counts _ hE
+
+theorem leave_counts (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (start k)) :
+    toffoliCount (P.leave k) = toffoliCount (Pcut.leave k) + 2 ∧
+      measurementCount (P.leave k) = measurementCount (Pcut.leave k) := by
+  obtain ⟨X, hX⟩ := leave_shape k hk hL
+  have hX' : P.leave k = X ++ (Eblk (start k) ++ GateMirror.forward (Shadow7.leaveClose (start k))) := hX
+  rw [leaveC_eq k hk X hX', hX']
+  simp only [toffoliCount_append, measurementCount_append, Eblk_S2, tc_S2,
+    S2_measure0 _ _ _ _ _ _ rfl]
+  constructor <;> omega
+
+theorem leaveInv_counts (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (start k)) :
+    toffoliCount (P.leaveInv k) = toffoliCount (Pcut.leaveInv k) + 2 ∧
+      measurementCount (P.leaveInv k) = measurementCount (Pcut.leaveInv k) := by
+  obtain ⟨R, hR⟩ := unleave_shape k hk hL
+  have hR' : P.leaveInv k = GateMirror.inverse (Shadow7.leaveClose (start k)) ++ (Dblk (start k) ++ R) := hR
+  rw [unleaveC_eq k hk R hR', hR']
+  simp only [toffoliCount_append, measurementCount_append, Dblk_S2, tc_S2,
+    S2_measure0 _ _ _ _ _ _ rfl]
+  constructor <;> omega
+
+/-- FRED-CUT on the window walk: the cut walk has the same run as the original, for every state and tape. -/
+theorem walk_run_eq (d : Bool) (m : List Bool) (s : State) :
+    run (WindowFold.forwardW Pcut d WindowParams.first WindowParams7.rest7) m s =
+      run (WindowFold.forwardW P d WindowParams.first WindowParams7.rest7) m s :=
+  (fwd_cut d).run_eq m s
+
+theorem walk_run_eq_rev (d : Bool) (m : List Bool) (s : State) :
+    run (WindowFold.reverseW Pcut d WindowParams.first WindowParams7.rest7) m s =
+      run (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) m s :=
+  (rev_cut d).run_eq m s
+
+
+theorem walk_mc_eq (d : Bool) :
+    measurementCount (WindowFold.forwardW Pcut d WindowParams.first WindowParams7.rest7) =
+      measurementCount (WindowFold.forwardW P d WindowParams.first WindowParams7.rest7) :=
+  (fwd_cut d).mc_eq
+
+theorem walk_mc_eq_rev (d : Bool) :
+    measurementCount (WindowFold.reverseW Pcut d WindowParams.first WindowParams7.rest7) =
+      measurementCount (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) :=
+  (rev_cut d).mc_eq
+
+theorem walk_wires_sub (d : Bool) :
+    wires (WindowFold.forwardW Pcut d WindowParams.first WindowParams7.rest7) ⊆
+      wires (WindowFold.forwardW P d WindowParams.first WindowParams7.rest7) :=
+  (fwd_cut d).wires_sub
+
+theorem walk_wires_sub_rev (d : Bool) :
+    wires (WindowFold.reverseW Pcut d WindowParams.first WindowParams7.rest7) ⊆
+      wires (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) :=
+  (rev_cut d).wires_sub
+
+end ECDSAAdd.Entrant.StairPacket.FredCut
+
+/-! ## The caller's CRT window, with every boundary swap pair cancelled -/
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.CRTWindow
+open Arithmetic MappedCompressed WindowFold Baselines Challenge GateMirror Partial WindowParams
+
+/-- The CRT window walk on the cut pieces `FredCut.Pcut`. -/
+def forwardCut (d : Bool) : Program := forwardW FredCut.Pcut d first WindowParams7.rest7
+
+def reverseCut (d : Bool) : Program := reverseW FredCut.Pcut d first WindowParams7.rest7
+
+theorem run_cut (d : Bool) : run (forwardCut d) = run (forwardW CRTBarrel.params d first WindowParams7.rest7) :=
+  funext fun m => funext fun s => FredCut.walk_run_eq d m s
+
+theorem run_cut_rev (d : Bool) : run (reverseCut d) = run (reverseW CRTBarrel.params d first WindowParams7.rest7) :=
+  funext fun m => funext fun s => FredCut.walk_run_eq_rev d m s
+
+theorem cut_toffoli (d : Bool) :
+    toffoliCount (forwardCut d) + 104 = toffoliCount (forwardW CRTBarrel.params d first WindowParams7.rest7) ∧
+    toffoliCount (reverseCut d) + 104 = toffoliCount (reverseW CRTBarrel.params d first WindowParams7.rest7) :=
+  ⟨(FredCut.fwd_cut d).tc_eq, (FredCut.rev_cut d).tc_eq⟩
+
+theorem cut_measure (d : Bool) :
+    measurementCount (forwardCut d) = measurementCount (forwardW CRTBarrel.params d first WindowParams7.rest7) ∧
+    measurementCount (reverseCut d) = measurementCount (reverseW CRTBarrel.params d first WindowParams7.rest7) :=
+  ⟨FredCut.walk_mc_eq d, FredCut.walk_mc_eq_rev d⟩
+
+section
+attribute [local irreducible] wires
+
+theorem cut_covered (d : Bool) : WindowCovered.CoveredW (forwardCut d) ∧ WindowCovered.CoveredW (reverseCut d) :=
+  ⟨fun q h => (window_covered d).1 q (FredCut.walk_wires_sub d h),
+    fun q h => (window_covered d).2 q (FredCut.walk_wires_sub_rev d h)⟩
+
+end
+
+theorem cut_physical (d : Bool) : GatePhysical (forwardCut d) ∧ GatePhysical (reverseCut d) :=
+  ⟨fun i h => (window_physical d).1 i ((FredCut.fwd_cut d).mem i h),
+    fun i h => (window_physical d).2 i ((FredCut.rev_cut d).mem i h)⟩
+
+theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2370994 ∧ gateSlots (forwardCut false) ≤ 2370994 :=
+  ⟨(FredCut.fwd_cut true).slots_le.trans ship_slots.1, (FredCut.fwd_cut false).slots_le.trans ship_slots.2.1⟩
+
+theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2334224 ∧ gateSlots (reverseCut false) ≤ 2334224 :=
+  ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
+
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 127882 ∧ toffoliCount (forwardCut false) = 127882 := by
+  have a := (cut_toffoli true).1
+  have b := (cut_toffoli false).1
+  rw [ship_toffoliF_true] at a
+  rw [ship_toffoliF_false] at b
+  exact ⟨by omega, by omega⟩
+
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 128299 ∧ toffoliCount (reverseCut false) = 128324 := by
+  have a := (cut_toffoli true).2
+  have b := (cut_toffoli false).2
+  rw [ship_toffoliR_true] at a
+  rw [ship_toffoliR_false] at b
+  exact ⟨by omega, by omega⟩
+
+theorem cut_measureF : measurementCount (forwardCut true) = 66344 ∧ measurementCount (forwardCut false) = 66344 := by
+  rw [(cut_measure true).1, (cut_measure false).1]
+  exact ship_measureF
+
+theorem cut_measureR : measurementCount (reverseCut true) = 65626 ∧ measurementCount (reverseCut false) = 65651 := by
+  rw [(cut_measure true).2, (cut_measure false).2]
+  exact ship_measureR
+
+end ECDSAAdd.Entrant.StairPacket.CRTWindow
+end
