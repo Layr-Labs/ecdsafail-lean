@@ -1,18 +1,1140 @@
-import ECDSAAdd.Framework.RunAppendAgreement
-import ECDSAAdd.Submission.Entrant.BOptimizations
-import ECDSAAdd.Submission.Entrant.StairSideA
-import ECDSAAdd.Submission.Entrant.QTop
-import ECDSAAdd.Submission.Entrant.Stair44Stock
-import Mathlib.Tactic
-import ECDSAAdd.Framework.WireRenamePool
-import ECDSAAdd.Submission.Entrant.CRT
-import ECDSAAdd.Submission.Entrant.OddField
-import ECDSAAdd.Framework.RecordedPaths
-import ECDSAAdd.Framework.MeasuredLocality
-import ECDSAAdd.Submission.Entrant.MainP1
+import ECDSAAdd.Submission.Entrant.MainA
+
+-- ==== Main: reopened scopes at the cut (split4.py) ====
+section
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowSites
+open Arithmetic MappedCompressed StairSiteAvoidance StairSiteEasy StairConcreteAssembly
+open StairArchiveInactive StairArchiveNativeCut StairArchiveTen WindowFieldCosts
+set_option maxRecDepth 18000
+set_option maxHeartbeats 1200000
+attribute [local irreducible] wires renameProgram StairArchiveInactive.packet
+
+private theorem distributed_ok (d : Bool) (j n : Nat) :
+    PieceOK reserved TP (distributed d j n) ↔
+    ∀ (i : Nat), j ≤ i → i < j+n → PieceOK reserved TP (packet d i) := by
+  induction n generalizing j with
+  | zero =>
+    change PieceOK _ _ [] ↔ _
+    exact ⟨fun _ i lo hi => False.elim (by omega),fun _ => pieceOK_nil _ _⟩
+  | succ n ih =>
+    change PieceOK _ _ (if d then packet d j ++ distributed d (j+1) n
+      else distributed d (j+1) n ++ packet d j) ↔ _
+    have both : (PieceOK reserved TP (packet d j) ∧ PieceOK reserved TP (distributed d (j+1) n)) ↔
+        ∀ (i : Nat), j ≤ i → i < j+(n+1) → PieceOK reserved TP (packet d i) := by
+      rw [ih]
+      refine ⟨fun h i l u => ?_,fun h => ⟨h j (by omega) (by omega),?_⟩⟩
+      · by_cases e : j=i
+        · exact e ▸ h.1
+        · exact h.2 i (by omega) (by omega)
+      · exact fun i l u => h i (by omega) (by omega)
+    cases d <;> simp only [Bool.false_eq_true,if_false,if_true,app]
+    · exact and_comm.trans both
+    · exact both
+
+private theorem whole (d : Bool) : ∀ (i : Nat), 1 ≤ i → i < 85 → PieceOK reserved TP (packet d i) := by
+  apply (distributed_ok d 1 84).mp
+  rw [←distribute]
+  exact Stair44Groups.hostedGroup44 d 0 1 84 (by decide)
+
+private theorem ordinary (d : Bool) (j n : Nat) (lo : 1≤j) (hi : j+n≤85) :
+    PieceOK reserved TP (group d j n) := by
+  rw [group,distribute,distributed_ok]
+  exact fun i l u => whole d i (by omega) (by omega)
+
+private theorem pair (d : Bool) (j : Nat) (lo : 1≤j) (hi : j≤83) :
+    PieceOK reserved TP (ten j (!d)) := by
+  have jmem : j∈List.range' 1 83 := List.mem_range'_1.mpr ⟨lo,by omega⟩
+  have here := whole d j lo (by omega)
+  have next := whole d (j+1) (by omega) (by omega)
+  have firstOK : PieceOK reserved TP (first j (!d)) := by cases d <;> first | exact here | exact next
+  have lastOK : PieceOK reserved TP (second j (!d)) := by cases d <;> first | exact here | exact next
+  exact (hook j jmem _).append (firstOK.append ((hook j jmem _).append (lastOK.append (hook j jmem _))))
+
+
+-- oddten:begin SITES
+/-- oddten: the field group's own packets avoid the reserved holes (their wires are record wires). -/
+private theorem ot_ogroup_piece (d : Bool) (j n : Nat) (lo : 1≤j) (hi : j+n≤85) :
+    PieceOK reserved TP (ogroup d j n) := by
+  have hrec := ordinary d j n lo hi
+  exact ⟨fun x hx => hrec.1 x (WindowFieldCosts.ot_ogroup_sub d j n hx),
+    fun x hx => hrec.2 x (WindowFieldCosts.ot_ogroup_sub d j n hx)⟩
+
+private theorem ot_oten_piece (d : Bool) (j : Nat) (lo : 1≤j) (hi : j≤83) : PieceOK reserved TP (oten j (!d)) := by
+  have hrec := pair d j lo hi
+  exact ⟨fun x hx => hrec.1 x (WindowFieldCosts.ot_oten_sub j (!d) hx),
+    fun x hx => hrec.2 x (WindowFieldCosts.ot_oten_sub j (!d) hx)⟩
+
+theorem group84_ok (d : Bool) : PieceOK reserved TP (group84 d) := by
+  have ord {a b : Program} (ha : PieceOK reserved TP a) (hb : PieceOK reserved TP b) :
+      PieceOK reserved TP (ordered d a b) := by cases d <;> first | exact ha.append hb | exact hb.append ha
+  have c40 := ord (ot_oten_piece d 76 (by decide) (by decide)) (ord (ot_ogroup_piece d 78 1 (by decide) (by decide)) (ord (ot_oten_piece d 79 (by decide) (by decide)) (ord (ot_ogroup_piece d 81 1 (by decide) (by decide)) (ord (ot_oten_piece d 82 (by decide) (by decide)) (ot_ogroup_piece d 84 1 (by decide) (by decide))))))
+  have c39 := ord (ot_ogroup_piece d 75 1 (by decide) (by decide)) c40
+  have c38 := ord (ot_oten_piece d 73 (by decide) (by decide)) c39
+  have c37 := ord (ot_ogroup_piece d 72 1 (by decide) (by decide)) c38
+  have c36 := ord (ot_oten_piece d 70 (by decide) (by decide)) c37
+  have c35 := ord (ot_ogroup_piece d 69 1 (by decide) (by decide)) c36
+  have c34 := ord (ot_oten_piece d 67 (by decide) (by decide)) c35
+  have c33 := ord (ot_ogroup_piece d 66 1 (by decide) (by decide)) c34
+  have c32 := ord (ot_oten_piece d 64 (by decide) (by decide)) c33
+  have c31 := ord (ot_ogroup_piece d 63 1 (by decide) (by decide)) c32
+  have c30 := ord (ot_oten_piece d 61 (by decide) (by decide)) c31
+  have c29 := ord (ot_ogroup_piece d 60 1 (by decide) (by decide)) c30
+  have c28 := ord (ot_oten_piece d 58 (by decide) (by decide)) c29
+  have c27 := ord (ot_ogroup_piece d 57 1 (by decide) (by decide)) c28
+  have c26 := ord (ot_oten_piece d 55 (by decide) (by decide)) c27
+  have c25 := ord (ot_ogroup_piece d 54 1 (by decide) (by decide)) c26
+  have c24 := ord (ot_oten_piece d 52 (by decide) (by decide)) c25
+  have c23 := ord (ot_ogroup_piece d 51 1 (by decide) (by decide)) c24
+  have c22 := ord (ot_oten_piece d 49 (by decide) (by decide)) c23
+  have c21 := ord (ot_ogroup_piece d 48 1 (by decide) (by decide)) c22
+  have c20 := ord (ot_oten_piece d 46 (by decide) (by decide)) c21
+  have c19 := ord (ot_ogroup_piece d 45 1 (by decide) (by decide)) c20
+  have c18 := ord (ot_oten_piece d 43 (by decide) (by decide)) c19
+  have c17 := ord (ot_ogroup_piece d 42 1 (by decide) (by decide)) c18
+  have c16 := ord (ot_oten_piece d 40 (by decide) (by decide)) c17
+  have c15 := ord (ot_ogroup_piece d 39 1 (by decide) (by decide)) c16
+  have c14 := ord (ot_oten_piece d 37 (by decide) (by decide)) c15
+  have c13 := ord (ot_ogroup_piece d 36 1 (by decide) (by decide)) c14
+  have c12 := ord (ot_oten_piece d 34 (by decide) (by decide)) c13
+  have c11 := ord (ot_ogroup_piece d 33 1 (by decide) (by decide)) c12
+  have c10 := ord (ot_oten_piece d 31 (by decide) (by decide)) c11
+  have c9 := ord (ot_ogroup_piece d 30 1 (by decide) (by decide)) c10
+  have c8 := ord (ot_oten_piece d 28 (by decide) (by decide)) c9
+  have c7 := ord (ot_ogroup_piece d 27 1 (by decide) (by decide)) c8
+  have c6 := ord (ot_oten_piece d 25 (by decide) (by decide)) c7
+  have c5 := ord (ot_ogroup_piece d 24 1 (by decide) (by decide)) c6
+  have c4 := ord (ot_oten_piece d 22 (by decide) (by decide)) c5
+  have c3 := ord (ot_ogroup_piece d 21 1 (by decide) (by decide)) c4
+  have c2 := ord (ot_oten_piece d 19 (by decide) (by decide)) c3
+  have cq16a := ord (ot_ogroup_piece d 18 1 (by decide) (by decide)) c2
+  have cq16b := ord (ot_oten_piece d 16 (by decide) (by decide)) cq16a
+  have cq13a := ord (ot_ogroup_piece d 15 1 (by decide) (by decide)) cq16b
+  have cq13b := ord (ot_oten_piece d 13 (by decide) (by decide)) cq13a
+  have cq10a := ord (ot_ogroup_piece d 12 1 (by decide) (by decide)) cq13b
+  have cq10b := ord (ot_oten_piece d 10 (by decide) (by decide)) cq10a
+  exact ord (ot_ogroup_piece d 1 9 (by decide) (by decide)) cq10b
+
+end ECDSAAdd.Entrant.StairPacket.WindowSites
+
+end
 
 section
 
+namespace ECDSAAdd.Entrant.StairPacket.WindowPhysical
+open Arithmetic MappedCompressed Baselines StairPhysicalV3 StairRestSupport StairConcreteAssembly
+variable {p : StairSchedule.StairPrimitives}
+set_option maxRecDepth 14000
+set_option maxHeartbeats 1200000
+theorem sound_entryTailPrefix (H : LoanHyp) (P : PrimitiveSlots p) (hs : HostSlots hostPlan) :
+    Sound (WindowCallerCosts.entryTailPrefix p) := by
+  have g0 := group84_ok true
+  have oddSound (d f c : Nat) (hd : d ≤ 43) (h42 : d ≠ 42) (hfc : f + c ≤ 102)
+      (ho : Sound (StairHostsSchedule.hostedGroup hostPlan true d f c)) :
+      Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan true d f c) :=
+    ⟨OddFullPass.P1LifeLoan.hostedGroup_physical hostPlan true d f c hfc,
+     good_of_subset (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan true d f c hd h42) ho.good⟩
+  have g14 := oddSound 13 85 5 (by decide) (by decide) (by decide) (sound_hostedGroup H hs true 13 85 5 (by decide) (by omega) (by omega) (by omega))
+  have g23 := oddSound 22 90 3 (by decide) (by decide) (by decide) (sound_hostedGroup H hs true 22 90 3 (by decide) (by omega) (by omega) (by omega))
+  have g31 := oddSound 30 93 3 (by decide) (by decide) (by decide) (sound_hostedGroup H hs true 30 93 3 (by decide) (by omega) (by omega) (by omega))
+  have g37 := oddSound 36 96 2 (by decide) (by decide) (by decide) (sound_hostedGroup H hs true 36 96 2 (by decide) (by omega) (by omega) (by omega))
+  have g42 := oddSound 41 98 2 (by decide) (by decide) (by decide) (sound_hostedGroup H hs true 41 98 2 (by decide) (by omega) (by omega) (by omega))
+  have s1 := sound_forwardSegment P 87 62 425 450 (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by omega) (by omega)
+  have s2 := sound_forwardSegment P 62 47 450 465 (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by omega) (by omega)
+  have s3 := sound_forwardSegment P 47 32 465 480 (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by omega) (by omega)
+  have s4 := sound_forwardSegment P 32 22 480 490 (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by omega) (by omega)
+  have s5 := sound_forwardSegment P 22 12 490 500 (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by omega) (by omega)
+  have sl := sound_forwardLast P
+  unfold WindowCallerCosts.entryTailPrefix
+  exact sound_append (sound_append (sound_append (sound_append (sound_append
+    (sound_append (sound_append (sound_append (sound_append (sound_append
+    (sound_append g0 s1) g14) s2) g23) s3) g31) s4) g37) s5) g42) sl
+
+theorem sound_exitHeadSuffix (H : LoanHyp) (P : PrimitiveSlots p) (hs : HostSlots hostPlan) :
+    Sound (WindowCallerCosts.exitHeadSuffix p) := by
+  have g0 := group84_ok false
+  have oddSound (d f c : Nat) (hd : d ≤ 43) (h42 : d ≠ 42) (hfc : f + c ≤ 102)
+      (ho : Sound (StairHostsSchedule.hostedGroup hostPlan false d f c)) :
+      Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan false d f c) :=
+    ⟨OddFullPass.P1LifeLoan.hostedGroup_physical hostPlan false d f c hfc,
+     good_of_subset (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan false d f c hd h42) ho.good⟩
+  let Pc := StairPhysicalV3.primitiveSlots_v3 StairPhysicalV3.primitiveChecks
+  have cut0 := PackCutOddExit.cutRow0_sound
+    (oddSound 13 85 5 (by decide) (by decide) (by decide) (sound_hostedGroup H hs false 13 85 5 (by decide) (by omega) (by omega) (by omega)))
+    (sound_reverseSegment Pc 87 62 425 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega))
+  have cut1 := PackCutOddExit.cutRow1_sound
+    (oddSound 22 90 3 (by decide) (by decide) (by decide) (sound_hostedGroup H hs false 22 90 3 (by decide) (by omega) (by omega) (by omega)))
+    (sound_reverseSegment Pc 62 47 450 465 (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega))
+  have cut2 := PackCutOddExit.cutRow2_sound
+    (oddSound 30 93 3 (by decide) (by decide) (by decide) (sound_hostedGroup H hs false 30 93 3 (by decide) (by omega) (by omega) (by omega)))
+    (sound_reverseSegment Pc 47 32 465 480 (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega))
+  have cut3 := PackCutOddExit.cutRow3_sound
+    (oddSound 36 96 2 (by decide) (by decide) (by decide) (sound_hostedGroup H hs false 36 96 2 (by decide) (by omega) (by omega) (by omega)))
+    (sound_reverseSegment Pc 32 22 480 490 (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega))
+  have cut4 := PackCutOddExit.cutRow4_sound
+    (oddSound 41 98 2 (by decide) (by decide) (by decide) (sound_hostedGroup H hs false 41 98 2 (by decide) (by omega) (by omega) (by omega)))
+    (sound_reverseSegment Pc 22 12 490 500 (by decide) (by decide) (by decide) (by decide) (by decide) (by omega) (by omega))
+  have rl := sound_reverseLast P
+  unfold WindowCallerCosts.exitHeadSuffix
+  exact sound_append (sound_append (sound_append (sound_append (sound_append
+    (sound_append rl cut4) cut3) cut2) cut1) cut0) g0
+
+private theorem sound_firstPacketOdd (divide : Bool) :
+    Sound (JointOdd1588.placedFirstPacketOdd WindowCallerCosts.oddFirstHalf divide) := by
+  refine ⟨JointOdd1588.placedFirstPacketOdd_physical WindowCallerCosts.oddFirstHalf divide
+      (WindowCallerCosts.oddFirstHalf_physical divide), ?_⟩
+  intro q hq
+  have hsup := StairWireCheck.allSites_sound StairWireCheck.fpSup _
+    (JointOdd1588.placedFirstPacketOdd_passSup WindowCallerCosts.oddFirstHalf divide
+      (WindowCallerCosts.oddFirstHalf_support divide)) q hq
+  rcases WindowCallerCosts.fpSup_bounds q hsup with h1 | h2
+  · exact Or.inl h1
+  · exact Or.inr (by rw [h2]; decide)
+
+theorem sound_entryFieldHosted (H : LoanHyp) (P : PrimitiveSlots p) (B : BoundarySlots)
+    (hs : HostSlots hostPlan) :
+    Sound (WindowCallerCosts.entryFieldHosted p) := by
+  have first := sound_rebindMany _ _ exclusiveRoles_indom (hs.firstPacket true)
+    (sound_firstPacketOdd true)
+  have pre : Sound (WindowCallerCosts.entryLowPrefix p) := by
+    unfold WindowCallerCosts.entryLowPrefix
+    exact sound_append (sound_append (sound_append first sound_clearProgram)
+      (sound_borrow (sound_entryTailPrefix H P hs))) sound_unprefix
+  have tailStd : Sound (StairHostsSchedule.entryTailSuffix hostPlan) := by
+    have g := sound_hostedGroup H hs true 43 100 2 (by decide) (by omega) (by omega) (by omega)
+    unfold StairHostsSchedule.entryTailSuffix
+    exact sound_append (sound_append (sound_append g
+      (sound_sig 511 (by omega) B.divEndpoint)) sound_copyN) B.canon
+  have tail : Sound (OddFullPass.P1LifeLoan.entryTailSuffixOdd hostPlan) := by
+    refine ⟨?_, good_of_subset (OddFullPass.P1LifeLoan.entryTailSuffixOdd_wires_sub hostPlan) tailStd.good⟩
+    unfold OddFullPass.P1LifeLoan.entryTailSuffixOdd
+    simp only [gatePhysical_append]
+    exact ⟨⟨⟨OddFullPass.P1LifeLoan.hostedGroup_physical hostPlan true 43 100 2 (by decide),
+      gatePhysical_rename _ (OB5.sig_injective 511 (by decide)) _
+        OddFullPass.CompareDecoderOdd.endPacket760DivOddLoan_physical⟩,
+      sound_copyN.physical⟩, OddFullPass.HalfConvertOdd.canon760OddLoan_physical⟩
+  have suf : Sound (OddFullPass.P1LifeLoan.entryLowSuffixOdd hostPlan) := by
+    unfold OddFullPass.P1LifeLoan.entryLowSuffixOdd
+    exact sound_append (sound_append sound_clearProgram (sound_borrow tail)) sound_unprefix
+  unfold WindowCallerCosts.entryFieldHosted
+  exact sound_append (sound_append (sound_append (sound_append (sound_append
+    (sound_fieldRename pre) sound_paritySetup) sound_hostedX)
+    (sound_fieldRename suf)) sound_hostedX) sound_paritySetup
+
+theorem sound_exitFieldHosted (H : LoanHyp) (P : PrimitiveSlots p) (B : BoundarySlots)
+    (hs : HostSlots hostPlan) :
+    Sound (WindowCallerCosts.exitFieldHosted p) := by
+  have headStd : Sound (StairHostsSchedule.exitHeadPrefix hostPlan) := by
+    have g := sound_hostedGroup H hs false 43 100 2 (by decide) (by omega) (by omega) (by omega)
+    unfold StairHostsSchedule.exitHeadPrefix StairHostsSchedule.hostedEndpoint
+      StairSchedule.placedEndPacket
+    exact sound_append (sound_append (sound_append B.center sound_copyN)
+      (sound_sig 511 (by omega) B.multEndpoint)) g
+  have head : Sound (OddFullPass.P1LifeLoan.exitHeadPrefixOdd hostPlan) := by
+    refine ⟨?_, good_of_subset (OddFullPass.P1LifeLoan.exitHeadPrefixOdd_wires_sub hostPlan) headStd.good⟩
+    unfold OddFullPass.P1LifeLoan.exitHeadPrefixOdd
+    simp only [gatePhysical_append]
+    exact ⟨⟨⟨OddFullPass.HalfConvertOdd.center760OddLoan_physical, sound_copyN.physical⟩,
+      gatePhysical_rename _ (OB5.sig_injective 511 (by decide)) _
+        OddFullPass.InverseTailCOdd.endPacket760OddLoan44_physical⟩,
+      OddFullPass.P1LifeLoan.hostedGroup_physical hostPlan false 43 100 2 (by decide)⟩
+  have pre : Sound (OddFullPass.P1LifeLoan.exitLowPrefixOdd hostPlan) := by
+    unfold OddFullPass.P1LifeLoan.exitLowPrefixOdd
+    exact sound_append (sound_append sound_clearProgram (sound_borrow head)) sound_unprefix
+  have last := sound_rebindMany _ _ exclusiveRoles_indom (hs.firstPacket false)
+    (sound_firstPacketOdd false)
+  have suf : Sound (WindowCallerCosts.exitLowSuffix p) := by
+    unfold WindowCallerCosts.exitLowSuffix
+    exact sound_append (sound_append (sound_append sound_clearProgram
+      (sound_borrow (sound_exitHeadSuffix H P hs))) sound_unprefix) last
+  unfold WindowCallerCosts.exitFieldHosted
+  exact sound_append (sound_append (sound_append (sound_append (sound_append
+    sound_paritySetup sound_hostedX) (sound_fieldRename pre)) sound_paritySetup)
+    sound_hostedX) (sound_fieldRename suf)
+
+end ECDSAAdd.Entrant.StairPacket.WindowPhysical
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowSites
+open Arithmetic MappedCompressed StairSiteAvoidance StairSiteEasy StairConcreteAssembly
+open StairRestSupport
+set_option maxRecDepth 14000
+set_option maxHeartbeats 1000000
+attribute [local irreducible] wires renameProgram CRTWindow.forwardCut CRTWindow.reverseCut
+  Rolling1588TickGap.forward Rolling1588.reverse Stair44WalkMap.rest Stair44WalkMap.first
+
+abbrev GoodWindow (p : Program) :=
+  ∀ q∈wires p, Stair44PhaseSites.valid (Stair44WalkMap.rest q)=true
+
+private theorem native {p : Program} (h : GoodWindow p) :
+    PieceOK reserved (fun x => PP (Stair44WalkMap.rest x)) p := by
+  apply weaken
+  apply Stair44OuterSites.fits
+  intro x hx
+  change Stair44OuterSites.fit (StairOuterPlacement.phasePlace (Stair44WalkMap.rest x))=true
+  rw [StairPlaceFast.phasePlace_eqB]
+  exact h x hx
+
+theorem walkF (d : Bool) (tail : Nat) (bound : 16+(405+tail)≤506)
+    (new : GoodWindow (CRTWindow.forwardCut d)) :
+    PieceOK reserved PP (WindowWalkCosts.forward d tail) := by
+  have old := weaken (Stair44PhaseSites.forward d (405+tail) bound)
+  have a := StairRestSupport.forward_append d 29 16 (376+tail)
+  have b := StairRestSupport.forward_append d 376 45 tail
+  change Rolling1588TickGap.forward d 16 (29+(376+tail)) =
+    Rolling1588TickGap.forward d 16 29 ++ Rolling1588TickGap.forward d 45 (376+tail) at a
+  rw [b] at a
+  have num : 405+tail=29+(376+tail) := by omega
+  simp only [Stair44WalkRun.forward,num,a,app,ren] at old
+  simp only [WindowWalkCosts.forward,app,ren]
+  exact ⟨old.1,⟨old.2.1,native new⟩,old.2.2.2⟩
+
+theorem walkR (d : Bool) (tail : Nat) (bound : 16+(405+tail)≤506)
+    (new : GoodWindow (CRTWindow.reverseCut d)) :
+    PieceOK reserved PP (WindowWalkCosts.backward d tail) := by
+  have old := weaken (Stair44PhaseSites.backward d (405+tail) bound)
+  have a := StairRestSupport.reverse_append d 29 16 (376+tail)
+  have b := StairRestSupport.reverse_append d 376 45 tail
+  change Rolling1588.reverse d 16 (29+(376+tail)) =
+    Rolling1588.reverse d 45 (376+tail) ++ Rolling1588.reverse d 16 29 at a
+  rw [b] at a
+  have num : 405+tail=29+(376+tail) := by omega
+  simp only [Stair44WalkRun.backward,num,a,app,ren] at old
+  simp only [WindowWalkCosts.backward,app,ren]
+  exact ⟨⟨⟨old.1.1.1,native new⟩,old.1.2⟩,old.2⟩
+
+end ECDSAAdd.Entrant.StairPacket.WindowSites
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowPhysical
+open Arithmetic MappedCompressed Secp256k1 Baselines StairPhysicalV3 StairRestSupport
+open Stair44Outer StairConcreteAssembly Stair44WalkMap
+set_option maxHeartbeats 1400000
+set_option maxRecDepth 20000
+attribute [local irreducible] wires GatePhysical
+private theorem parts {P Q : Program} (h : Sound (P ++ Q)) : Sound P ∧ Sound Q :=
+  ⟨⟨gp_left h.physical,good_left h.good⟩,⟨gp_right h.physical,good_right h.good⟩⟩
+
+private theorem firstDom (q : Wire) (h : InDom q) : InDom (first q) := by
+  unfold first shared
+  simp only [Equiv.trans_apply]
+  exact indom_swap _ _ (by decide) (by decide) _
+    (indom_swap _ _ (by decide) (by decide) _ (indom_swap _ _ (by decide) (by decide) _ h))
+
+private theorem restDom (q : Wire) (h : InDom q) : InDom (rest q) := by
+  unfold rest shared
+  simp only [Equiv.trans_apply]
+  exact indom_swap _ _ (by decide) (by decide) _
+    (indom_swap _ _ (by decide) (by decide) _ (indom_swap _ _ (by decide) (by decide) _ h))
+
+
+private theorem dom {p : Program} (cover : PartialSites.Covered p) : Good p := by
+  intro q hq
+  have h := cover q hq
+  simp only [PartialSites.domain,Bool.or_eq_true,Bool.and_eq_true,decide_eq_true_eq] at h
+  unfold InDom InDomN
+  left
+  constructor
+  all_goals omega
+
+private theorem fw (d : Bool) (tail n : Nat) (hn : 15+(405+tail)=n)
+    (ref_ : Sound (Rolling1588TickGap.forward d 1 n))
+    (p : GatePhysical (CRTWindow.forwardCut d)) : Sound (WindowWalkCosts.forward d tail) := by
+  subst n
+  rw [forward_append d 15 1 (405+tail)] at ref_
+  obtain ⟨early,late⟩ := parts ref_
+  change Sound (Rolling1588TickGap.forward d 16 (405+tail)) at late
+  rw [show 405+tail=29+(376+tail) by omega,forward_append d 29 16 (376+tail)] at late
+  obtain ⟨pre,ms⟩ := parts late
+  change Sound (Rolling1588TickGap.forward d 45 (376+tail)) at ms
+  rw [forward_append d 376 45 tail] at ms
+  have patch : Sound (CRTWindow.forwardCut d) := ⟨p,dom (PartialSites.forward45plus1_domain d)⟩
+  have last : Sound (Rolling1588TickGap.forward d 421 tail) := (parts ms).2
+  exact sound_append (sound_rename _ first.injective firstDom early)
+    (sound_rename _ rest.injective restDom (sound_append (sound_append pre patch) last))
+
+private theorem bw (d : Bool) (tail n : Nat) (hn : 15+(405+tail)=n)
+    (ref_ : Sound (Rolling1588.reverse d 1 n))
+    (p : GatePhysical (CRTWindow.reverseCut d)) : Sound (WindowWalkCosts.backward d tail) := by
+  subst n
+  rw [reverse_append d 15 1 (405+tail)] at ref_
+  obtain ⟨late,early⟩ := parts ref_
+  change Sound (Rolling1588.reverse d 16 (405+tail)) at late
+  rw [show 405+tail=29+(376+tail) by omega,reverse_append d 29 16 (376+tail)] at late
+  obtain ⟨ms,pre⟩ := parts late
+  change Sound (Rolling1588.reverse d 45 (376+tail)) at ms
+  rw [reverse_append d 376 45 tail] at ms
+  have patch : Sound (CRTWindow.reverseCut d) := ⟨p,dom (PartialSites.reverse45plus1_domain d)⟩
+  have last : Sound (Rolling1588.reverse d 421 tail) := (parts ms).1
+  exact sound_append (sound_rename _ rest.injective restDom (sound_append (sound_append last patch) pre))
+    (sound_rename _ first.injective firstDom early)
+private theorem phase {P : Program} (h : Sound P) : GatePhysical (phasePlace P) :=
+  rest_physical _ (sound_phaseHost h)
+
+variable (ff : ∀d,GatePhysical (CRTWindow.forwardCut d)) (rr : ∀d,GatePhysical (CRTWindow.reverseCut d))
+
+include ff rr in
+theorem dividePhysical : GatePhysical WindowCallerCosts.divide := by
+  have eq : InverseFive23.lastPhase15 false = reverseEnd ++
+      Rolling1588.reverse false 1 505 ++ FrontierEntry1591NativeH.inverse base := by
+    simp only [InverseFive23.lastPhase15,InverseFive23.stackReverse15,InverseFive23.reverseTail15,
+      reverseEnd,List.append_assoc]
+  have h := sound_lastPhase15
+  rw [eq] at h
+  have ⟨a,native⟩ := parts h
+  have ⟨tail,walk⟩ := parts a
+  let P := primitiveSlots_v3 primitiveChecks
+  have field := PackCutSub.sound_sub WindowCallerCosts.field_sublist
+    (sound_entryFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3)
+  simp only [WindowCallerCosts.divide,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨phase (fw true 4 424 rfl sound_forward424 (ff _)),phase P.firstPack⟩,rest_physical _ field⟩,
+    phase tail⟩,phase (bw false 85 505 rfl walk (rr _))⟩,phase (sound_rename _ first.injective firstDom native)⟩
+
+include ff rr in
+theorem multiplyPhysical (k : Nat) : GatePhysical (WindowCallerCosts.multiply k) := by
+  have eq : Rolling1588TickGap.tailPhase false = Rolling1588TickGap.forward false 1 504 ++ forwardEnd := by
+    simp only [Rolling1588TickGap.tailPhase,Rolling1588TickGap.stackForward,Six505.stackForward6,
+      forwardEnd,List.append_assoc]
+  have h := sound_tailPhase
+  rw [eq] at h
+  have ⟨walk,tail⟩ := parts h
+  let P := primitiveSlots_v3 primitiveChecks
+  have field := sound_exitFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3
+  simp only [WindowCallerCosts.multiply,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨phase (fw false 84 504 rfl walk (ff _)),phase tail⟩,rest_physical _ field⟩,phase P.firstUnpack⟩,
+    phase (bw true 4 424 rfl sound_reverse424 (rr _))⟩,
+    gatePhysical_rename _ Stair44PointMap.duringX.injective _ (phase (sound_x1N k))⟩
+
+include ff rr in
+theorem genericPhysical (cx cy : Fp) : GatePhysical (WindowCallerCosts.generic cx cy) := by
+  have g := FlagTop2.genericN_physical cx cy
+  simp only [FlagExit.genericN,FlagExit.secondStageN,gatePhysical_append] at g
+  simp only [WindowCallerCosts.generic,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨gatePhysical_rename _ Stair44PointMap.duringY.injective _
+      (EntryFuseOdd.entryYAllOdd_physical layout layout_widths layout_nodup (-cy)),
+    gatePhysical_rename _ Stair44PointMap.duringX.injective _ g.1.1.2⟩,dividePhysical ff rr⟩,
+    Stair44Square.physical _⟩,multiplyPhysical ff rr _⟩,
+    gatePhysical_rename _ Stair44PointMap.duringY.injective _
+      (EntryFuseOdd.exitYAllOdd_physical layout layout_widths layout_nodup cy)⟩
+
+include ff rr in
+theorem physical (C : Point) : GatePhysical (WindowCallerCosts.program C) := by
+  cases C with
+  | zero => simp [WindowCallerCosts.program,GatePhysical]
+  | @some cx cy hc =>
+    let C : Point := .some hc
+    have m := AboveFieldPointDevelop.middle_physical C cx cy
+    simp only [AboveFieldPointDevelop.middle,gatePhysical_append] at m
+    apply gatePhysical_rename _ (Wrapper5.U layout).injective
+    simp only [WindowCallerCosts.finite,gatePhysical_append]
+    refine ⟨⟨gatePhysical_rename _ Stair44PointMap.outer.injective _ ?_,?_⟩,
+      gatePhysical_rename _ Stair44PointMap.outer.injective _ ?_⟩
+    · simp only [gatePhysical_append]
+      exact ⟨⟨FlagTop.stageNew_physical hc,m.1.1.1.1⟩,m.1.1.1.2⟩
+    · exact gatePhysical_rename _ (Equiv.swap _ _).injective _
+        (gatePhysical_rename _ FlagTop.rho_injective _ (genericPhysical ff rr cx cy))
+    · simp only [gatePhysical_append]
+      exact ⟨⟨m.1.2,m.2⟩,ControlPointEncodingDevelop.borrowOut_physical hc⟩
+end ECDSAAdd.Entrant.StairPacket.WindowPhysical
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowSites
+open Arithmetic MappedCompressed Secp256k1 Baselines StairSiteAvoidance StairSiteEasy
+open StairConcreteAssembly Stair44Outer
+set_option maxRecDepth 18000
+set_option maxHeartbeats 3000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] wires renameProgram
+
+/-- Replacing a child leaves the safety contract on the other children intact. -/
+private def SafeChange (f : Wire → Wire) (old new : Program) :=
+  PieceOK reserved f old → PieceOK reserved f new
+private theorem same (f : Wire → Wire) (p : Program) : SafeChange f p p := id
+private theorem fresh {f : Wire → Wire} {p q : Program} (h : PieceOK reserved f q) :
+    SafeChange f p q := fun _ => h
+private theorem appendChange {f : Wire → Wire} {a b x y : Program}
+    (l : SafeChange f a x) (r : SafeChange f b y) : SafeChange f (a++b) (x++y) :=
+  fun old => (l (app.mp old).1).append (r (app.mp old).2)
+private theorem renameChange {f g : Wire → Wire} {a b : Program}
+    (h : SafeChange (fun x => f (g x)) a b) : SafeChange f (renameProgram g a) (renameProgram g b) :=
+  fun old => ren.mpr (h (ren.mp old))
+
+private theorem tail (p : StairSchedule.StairPrimitives) :
+    SafeChange TP (StairHostsSchedule.entryTailPrefix p hostPlan)
+      (WindowCallerCosts.entryTailPrefix p) := by
+  have subCh (d f c : Nat) (hd : d ≤ 43) (h42 : d ≠ 42) :
+      SafeChange TP (StairHostsSchedule.hostedGroup hostPlan true d f c)
+        (OddFullPass.P1LifeLoan.hostedGroup hostPlan true d f c) :=
+    fun h => ⟨fun q hq => h.1 q (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan true d f c hd h42 hq),
+              fun q hq => h.2 q (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan true d f c hd h42 hq)⟩
+  unfold StairHostsSchedule.entryTailPrefix WindowCallerCosts.entryTailPrefix
+  refine appendChange ?_ (same _ _)
+  refine appendChange ?_ (subCh 41 98 2 (by decide) (by decide))
+  refine appendChange ?_ (same _ _)
+  refine appendChange ?_ (subCh 36 96 2 (by decide) (by decide))
+  refine appendChange ?_ (same _ _)
+  refine appendChange ?_ (subCh 30 93 3 (by decide) (by decide))
+  refine appendChange ?_ (same _ _)
+  refine appendChange ?_ (subCh 22 90 3 (by decide) (by decide))
+  refine appendChange ?_ (same _ _)
+  refine appendChange ?_ (subCh 13 85 5 (by decide) (by decide))
+  refine appendChange ?_ (same _ _)
+  exact fresh (group84_ok true)
+
+private theorem head (p : StairSchedule.StairPrimitives) (hp : p = StairConcreteAssembly.checkpointPrimitives) :
+    SafeChange TP (StairHostsSchedule.exitHeadSuffix p hostPlan)
+      (WindowCallerCosts.exitHeadSuffix p) := by
+  subst hp
+  unfold StairHostsSchedule.exitHeadSuffix WindowCallerCosts.exitHeadSuffix
+  refine appendChange ?_ (fresh (group84_ok false))
+  intro h
+  exact ⟨fun q hq => h.1 q (PackCutOddExit.cutRows_sub hq), fun q hq => h.2 q (PackCutOddExit.cutRows_sub hq)⟩
+
+private theorem entryField : PieceOK reserved KP
+    (WindowCallerCosts.entryFieldHosted checkpointPrimitives) := by
+  have h : PieceOK reserved KP (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan) :=
+    Stair44FieldSites.entry
+  apply (show SafeChange KP (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan)
+    (WindowCallerCosts.entryFieldHosted checkpointPrimitives) from ?_) h
+  have fpOk : PieceOK reserved lowPlace (JointOdd1588.hostedFirstPacketOdd WindowCallerCosts.oddFirstHalf true) :=
+    weaken (JointOdd1588.hostedFirstPacketOdd_pieceOK WindowCallerCosts.oddFirstHalf
+      StairPhysicalInventory.physicalHoles (fun _ h => h) true
+      (WindowCallerCosts.oddFirstHalf_support true))
+  have low : SafeChange lowPlace (StairHostsSchedule.entryLowPrefix checkpointPrimitives hostPlan)
+      (WindowCallerCosts.entryLowPrefix checkpointPrimitives) :=
+    appendChange (appendChange (appendChange (fresh fpOk) (same _ _)) (renameChange (tail _))) (same _ _)
+  have field : SafeChange KP (StairSchedule.fieldRename (StairHostsSchedule.entryLowPrefix checkpointPrimitives hostPlan))
+      (StairSchedule.fieldRename (WindowCallerCosts.entryLowPrefix checkpointPrimitives)) :=
+    renameChange (renameChange low)
+  have sufLow : SafeChange lowPlace (StairHostsSchedule.entryLowSuffix hostPlan)
+      (OddFullPass.P1LifeLoan.entryLowSuffixOdd hostPlan) :=
+    fun ok => ⟨fun q hq => ok.1 q (OddFullPass.P1LifeLoan.entryLowSuffixOdd_wires_sub hostPlan hq),
+      fun q hq => ok.2 q (OddFullPass.P1LifeLoan.entryLowSuffixOdd_wires_sub hostPlan hq)⟩
+  have sufCh : SafeChange KP (StairSchedule.fieldRename (StairHostsSchedule.entryLowSuffix hostPlan))
+      (StairSchedule.fieldRename (OddFullPass.P1LifeLoan.entryLowSuffixOdd hostPlan)) :=
+    renameChange (renameChange sufLow)
+  exact appendChange (appendChange (appendChange (appendChange (appendChange field
+    (same _ _)) (same _ _)) sufCh) (same _ _)) (same _ _)
+
+private theorem exitField : PieceOK reserved KP
+    (WindowCallerCosts.exitFieldHosted checkpointPrimitives) := by
+  have h : PieceOK reserved KP (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan) :=
+    Stair44FieldSites.exit
+  apply (show SafeChange KP (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan)
+    (WindowCallerCosts.exitFieldHosted checkpointPrimitives) from ?_) h
+  have preLow : SafeChange lowPlace (StairHostsSchedule.exitLowPrefix hostPlan)
+      (OddFullPass.P1LifeLoan.exitLowPrefixOdd hostPlan) :=
+    fun ok => ⟨fun q hq => ok.1 q (OddFullPass.P1LifeLoan.exitLowPrefixOdd_wires_sub hostPlan hq),
+      fun q hq => ok.2 q (OddFullPass.P1LifeLoan.exitLowPrefixOdd_wires_sub hostPlan hq)⟩
+  have preCh : SafeChange KP (StairSchedule.fieldRename (StairHostsSchedule.exitLowPrefix hostPlan))
+      (StairSchedule.fieldRename (OddFullPass.P1LifeLoan.exitLowPrefixOdd hostPlan)) :=
+    renameChange (renameChange preLow)
+  have fpOk : PieceOK reserved lowPlace (JointOdd1588.hostedFirstPacketOdd WindowCallerCosts.oddFirstHalf false) :=
+    weaken (JointOdd1588.hostedFirstPacketOdd_pieceOK WindowCallerCosts.oddFirstHalf
+      StairPhysicalInventory.physicalHoles (fun _ h => h) false
+      (WindowCallerCosts.oddFirstHalf_support false))
+  have low : SafeChange lowPlace (StairHostsSchedule.exitLowSuffix checkpointPrimitives hostPlan)
+      (WindowCallerCosts.exitLowSuffix checkpointPrimitives) :=
+    appendChange (appendChange (appendChange (same _ _) (renameChange (head _ rfl))) (same _ _)) (fresh fpOk)
+  exact appendChange (appendChange (appendChange (appendChange (appendChange (same _ _) (same _ _))
+    preCh) (same _ _)) (same _ _)) (renameChange (renameChange low))
+
+section
+private theorem pieceOK_sub {holes : List Wire} {f : Wire → Wire} {P Q : Program}
+    (h : ∀ q ∈ wires P, q ∈ wires Q) (hq : PieceOK holes f Q) : PieceOK holes f P :=
+  ⟨fun x hx => hq.1 x (h x hx), fun x hx => hq.2 x (h x hx)⟩
+private theorem entryFieldCut : PieceOK reserved KP WindowCallerCosts.entryFieldHostedCut :=
+  pieceOK_sub (PackCutSub.wires_sub WindowCallerCosts.field_sublist) entryField
+end
+
+private theorem phase {P : Program} (v : PieceOK reserved PP P) :
+    PieceOK reserved UG (Stair44Outer.phasePlace P) := ok_kernel (ok_phase v)
+
+theorem division (f : GoodWindow (CRTWindow.forwardCut true))
+    (r : GoodWindow (CRTWindow.reverseCut false)) :
+    PieceOK reserved UG WindowCallerCosts.divide :=
+  (((((phase (walkF true 4 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.pack)))).append
+    (ok_kernel entryFieldCut)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.reverseTail)))).append
+    (phase (walkR false 85 (by decide) r))).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.native)))
+
+theorem multiplication (k : Nat) (f : GoodWindow (CRTWindow.forwardCut false))
+    (r : GoodWindow (CRTWindow.reverseCut true)) :
+    PieceOK reserved UG (WindowCallerCosts.multiply k) :=
+  (((((phase (walkF false 84 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.forwardTail)))).append
+    (ok_kernel exitField)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.unpack)))).append
+    (phase (walkR true 4 (by decide) r))).append (weaken (Stair44PhaseSites.exitX k))
+
+theorem program_width (C : Point) (f : ∀d, GoodWindow (CRTWindow.forwardCut d))
+    (r : ∀d,GoodWindow (CRTWindow.reverseCut d)) :
+    Challenge.qubits (WindowCallerCosts.program C) ≤ 1543 := by
+  apply width
+  cases C with
+  | zero => exact pieceOK_nil _ _
+  | @some cx cy hc =>
+    apply ok_wrapper
+    exact ((weaken (Stair44OuterSites.initial hc)).append (ok_generic
+      ((((((weaken (Stair44OuterSites.entryY (-cy))).append (weaken (Stair44OuterSites.entryX (-cx)))).append
+        (division (f _) (r _))).append (weaken (Stair44Release.squareSites (ReflectionE1.correction cx)))).append
+          (multiplication cx.val (f _) (r _))).append (weaken (Stair44OuterSites.exitY cy))))).append
+      (weaken (Stair44OuterSites.finalPart hc))
+end ECDSAAdd.Entrant.StairPacket.WindowSites
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowCallerCosts
+open Arithmetic Secp256k1
+
+theorem physical (C : Point) : GatePhysical (program C) :=
+  WindowPhysical.physical (fun d => (CRTWindow.cut_physical d).1) (fun d => (CRTWindow.cut_physical d).2) C
+
+end ECDSAAdd.Entrant.StairPacket.WindowCallerCosts
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowCallerCosts
+open Secp256k1
+
+theorem qubitBound (C : Point) : Challenge.qubits (program C) ≤ 1543 :=
+  WindowSites.program_width C PartialSites.forward45plus1_fits PartialSites.reverse45plus1_fits
+
+end ECDSAAdd.Entrant.StairPacket.WindowCallerCosts
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
+open Arithmetic Secp256k1 Challenge Baselines
+
+end ECDSAAdd.Entrant.StairPacket.WindowRelease
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
+open ArchiveFieldScratch StairArchiveTen
+
+def mask (bank : Finset Wire) (archive stock : State) : State :=
+  ⟨stock.phase, fun q => if q ∈ bank then archive.basis q else stock.basis q⟩
+
+def avoids (P : Program) (bank : Finset Wire) : Prop := ∀ q ∈ bank, q ∉ wires P
+
+theorem mask_run (P : Program) (bank : Finset Wire) (m : List Bool) (a r : State)
+    (safe : avoids P bank) :
+    run P m (mask bank a r) = mask bank a (run P m r) := by
+  have h := Arithmetic.run_local_increment P (mask bank a r) r m (fun q used => by
+    have off : q ∉ bank := fun x => safe q x used
+    simp [mask, off])
+  apply congrArg₂ State.mk
+  · have hh := h.1
+    change ((run P m (mask bank a r)).phase ^^ r.phase) = ((run P m r).phase ^^ r.phase) at hh
+    change (run P m (mask bank a r)).phase = (run P m r).phase
+    cases r.phase <;> simp_all
+  · funext q
+    by_cases used : q ∈ wires P
+    · have off : q ∉ bank := fun x => safe q x used
+      simpa [mask, off] using h.2 q used
+    · rw [run_preserves_outside P m (mask bank a r) q used]
+      change (if q ∈ bank then a.basis q else r.basis q) =
+        (if q ∈ bank then a.basis q else (run P m r).basis q)
+      rw [run_preserves_outside P m r q used]
+
+theorem mask_frame (j row : Nat) (cs : CodecBitSliceVerify.Cols) (bank : Finset Wire)
+    (a r : State) (off : ∀ q∈inside j, q∉bank) (h : frame j row cs r) :
+    frame j row cs (mask bank a r) := by
+  intro q hq
+  have hk := off (fieldPort j q) (Finset.mem_image.mpr ⟨q,hq,rfl⟩)
+  simpa [mask,hk] using h q hq
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+
+end
+
+section
+namespace ECDSAAdd.Entrant.StairArchiveRelease
+theorem packetSites_length (j : Nat) : (ArchiveFieldScratch.packetSites j).length = 16 := by
+  simp [ArchiveFieldScratch.packetSites, List.range, List.range.loop]
+/-- The field ports from 16 on (the tag and the 104 holes) do not depend on the bank. -/
+theorem fieldPort_tail (j q : Nat) (h : 16 ≤ q) : fieldPort j q = fieldPort 0 q := by
+  have a : (ArchiveFieldScratch.packetSites j).length ≤ q := by rw [packetSites_length]; exact h
+  have b : (ArchiveFieldScratch.packetSites 0).length ≤ q := by rw [packetSites_length]; exact h
+  simp only [fieldPort, fieldSites, List.getElem?_append_right a, List.getElem?_append_right b, packetSites_length]
+end ECDSAAdd.Entrant.StairArchiveRelease
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+open Arithmetic MappedCompressed ArchiveFieldScratch StairArchiveInactive StairArchiveNativeCut StairArchiveRelease
+def slots (j : Nat) := (List.range 16).map (fieldPort j)
+def banks := [10,13,16,19,22,25,28,31,34,37,40,43,46,49,52,55,58,61,64,67,70,73,76,79,82]
+private def fixedCover (q : Wire) : Bool := decide (
+  q ∈ [base 2400,base 2409,base 2410] ∨
+  q ∈ [base 765,base 768,base 767,base 766,base 2312,base 1797,base 1027,base 2311,
+       base 1025,base 2056,base 1540,base 1541,base 1026] ∨
+  base 2057 ≤ q ∧ q < base 2311 ∨ base 770 ≤ q ∧ q < base 1025 ∨
+  base 512 ≤ q ∧ q < base 765)
+set_option maxRecDepth 20000 in
+set_option maxHeartbeats 1200000 in
+private theorem fixedCover_of_id {i : Nat} (h : i ∈ Q6EndpointCell.ids) :
+    fixedCover (base i) = true := by
+  simp only [Q6EndpointCell.ids, List.mem_append, List.mem_cons, List.not_mem_nil,
+    List.mem_range'_1, or_false] at h
+  simp only [fixedCover, decide_eq_true_eq, List.mem_cons, List.not_mem_nil, or_false,
+    MappedCompressed.base]
+  simp only [Nat.add_left_inj, Nat.add_le_add_iff_right, Nat.add_lt_add_iff_right]
+  change _ ∨ _ ∨ 2057 ≤ i ∧ i < 2057+254 ∨ 770 ≤ i ∧ i < 770+255 ∨ 512 ≤ i ∧ i < 512+253
+  tauto
+def compactCover (k : Nat) (q : Wire) : Bool := fixedCover q ||
+  ((List.finRange 10).map (History5.historyMap base (5*k))).contains q
+theorem compactCover_present {k : Nat} {q : Wire} (h : q ∈ cover k) :
+    compactCover k q = true := by
+  rw [compactCover, Bool.or_eq_true]
+  simp only [cover, List.mem_append, or_assoc] at h
+  rcases h with small | fixed | dynamic
+  · exact Or.inl (by simp only [fixedCover, decide_eq_true_eq]; exact Or.inl small)
+  · obtain ⟨i,hi,rfl⟩ := List.mem_map.mp fixed
+    exact Or.inl (fixedCover_of_id hi)
+  · exact Or.inr (List.contains_iff_mem.mpr dynamic)
+
+
+def allowed (j k : Nat) := k=j || k=j+1 || (slots j).all (fun q => !compactCover k (preimage k q))
+def part (h offset count : Nat) := (List.range' offset count).all (allowed h)
+/-- `allowed` with the bank's `host.symm` images as a list: the tick-independent half of `preimage` (build-chain). -/
+def allowedW (w : List Nat) (j k : Nat) := k=j || k=j+1 ||
+  w.all (fun x => !compactCover k ((MappedCompressed.shifted (Placement5.pi k)).symm x))
+def partW (w : List Nat) (h offset count : Nat) := (List.range' offset count).all (allowedW w h)
+theorem part_eq_W (h offset count : Nat) (w : List Nat)
+    (hw : (slots h).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) = w) :
+    part h offset count = partW w h offset count := by
+  subst hw
+  have key : allowed h = allowedW ((slots h).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q))) h := by
+    funext k
+    have e : ((fun x => !compactCover k ((MappedCompressed.shifted (Placement5.pi k)).symm x)) ∘
+        (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q))) = (fun q => !compactCover k (preimage k q)) := by
+      funext q; simp only [Function.comp_apply, preimage]
+    simp only [allowed, allowedW, List.all_map, e]
+  unfold part partW
+  rw [key]
+-- build-chain: the h-chunk check generic in the bank and the tick (helpers/build-chain/box/gen/BankGen.lean)
+/-- Bank `h`'s sixteen packet cells after `sig 511 ∘ host.symm` (ticks `5h..5h+9`, B-sides at offsets 0,1,3,5,6,8). -/
+def cellsW (h : Nat) : List Nat :=
+  [base (5*h), base (1028+5*h), base (5*h+1), base (1028+5*h+1), base (5*h+2), base (5*h+3), base (1028+5*h+3),
+   base (5*h+4), base (5*h+5), base (1028+5*h+5), base (5*h+6), base (1028+5*h+6), base (5*h+7), base (5*h+8),
+   base (1028+5*h+8), base (5*h+9)]
+
+theorem shifted_symm_base (e : Equiv.Perm Nat) (n : Nat) :
+    (MappedCompressed.shifted e).symm (base n) = base (e.symm n) :=
+  MappedCompressed.shiftedFn_base e.symm n
+
+theorem pi_symm_fix (k n : Nat) (hk : k ≤ 100) (hw : n < 515 ∨ 719 ≤ n)
+    (hh : n < 1030 ∨ 1537 < n ∨ ((n-1030)%5 ≠ 0 ∧ (n-1030)%5 ≠ 2)) :
+    (Placement5.pi k).symm n = n := by
+  have z : Placement5.pi0.symm n = n := by
+    rw [Equiv.symm_apply_eq]
+    exact (Placement5.pi0_outside n (by
+      simp only [Placement5.zeroRegion, Placement5.workRegion, Placement5.holeRegion]; omega)).symm
+  have a1 : n ≠ Placement5.H (2*k+1) := by simp only [Placement5.H]; omega
+  have a2 : n ≠ Placement5.H 203 := by simp only [Placement5.H]; omega
+  have a3 : n ≠ Placement5.H (2*k) := by simp only [Placement5.H]; omega
+  have a4 : n ≠ Placement5.H 202 := by simp only [Placement5.H]; omega
+  have a5 : n ≠ Placement5.W (2*k+1) := by simp only [Placement5.W]; omega
+  have a7 : n ≠ Placement5.W (2*k) := by simp only [Placement5.W]; omega
+  simp only [Placement5.pi, Equiv.symm_trans_apply, Equiv.symm_swap, z,
+    Equiv.swap_apply_of_ne_of_ne a1 a2, Equiv.swap_apply_of_ne_of_ne a3 a4,
+    Equiv.swap_apply_of_ne_of_ne a5 a1, Equiv.swap_apply_of_ne_of_ne a7 a3]
+
+private theorem fixed_false (n : Nat) (hn : n < 512 ∨ (1028 ≤ n ∧ n < 1540)) : fixedCover (base n) = false := by
+  unfold fixedCover
+  rw [decide_eq_false_iff_not]
+  simp only [List.mem_cons, List.mem_nil_iff, or_false, base]
+  try simp only [Wire] at *
+  omega
+
+theorem hist_false (k n : Nat) (hn : ∀ i, i < 5 → n ≠ 5*k+i ∧ n ≠ 1028+5*k+i) :
+    ((List.finRange 10).map (History5.historyMap base (5*k))).contains (base n) = false := by
+  rw [Bool.eq_false_iff]
+  intro hc
+  obtain ⟨q, -, hq⟩ := List.mem_map.mp (List.contains_iff_mem.mp hc)
+  simp only [History5.historyMap, History5.historyId, base] at hq
+  try simp only [Wire] at hq
+  have hq5 : q.val / 2 < 5 := by omega
+  split_ifs at hq
+  · exact (hn (q.val/2) hq5).1 (by omega)
+  · exact (hn (q.val/2) hq5).2 (by omega)
+
+theorem cell_good (k n : Nat) (hk : k ≤ 100) (hw : n < 515 ∨ 719 ≤ n)
+    (hh : n < 1030 ∨ 1537 < n ∨ ((n-1030)%5 ≠ 0 ∧ (n-1030)%5 ≠ 2))
+    (hf : n < 512 ∨ (1028 ≤ n ∧ n < 1540)) (hi : ∀ i, i < 5 → n ≠ 5*k+i ∧ n ≠ 1028+5*k+i) :
+    (!compactCover k ((MappedCompressed.shifted (Placement5.pi k)).symm (base n))) = true := by
+  rw [shifted_symm_base, pi_symm_fix k n hk hw hh, compactCover, fixed_false n hf, hist_false k n hi]
+  rfl
+
+theorem cells_good (h k : Nat) (h1 : 1 ≤ h) (hh : h ≤ 100) (hk : k ≤ 100) (e0 : k ≠ h) (e1 : k ≠ h+1) :
+    ∀ x ∈ cellsW h, (!compactCover k ((MappedCompressed.shifted (Placement5.pi k)).symm x)) = true := by
+  intro x hx
+  simp only [cellsW, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
+    exact cell_good k _ hk (by omega) (by omega) (by omega) (fun i hi => ⟨by omega, by omega⟩)
+
+theorem allowedW_cells (h k : Nat) (h1 : 1 ≤ h) (hh : h ≤ 100) (hk : k ≤ 100) :
+    allowedW (cellsW h) h k = true := by
+  by_cases e0 : k = h
+  · simp [allowedW, e0]
+  by_cases e1 : k = h+1
+  · simp [allowedW, e1]
+  simp only [allowedW, List.all_eq_true.mpr (cells_good h k h1 hh hk e0 e1), Bool.or_true]
+
+theorem partW_cells (h offset count : Nat) (h1 : 1 ≤ h) (hh : h ≤ 100) (hk : offset+count ≤ 101) :
+    (List.range' offset count).all (allowedW (cellsW h) h) = true :=
+  List.all_eq_true.mpr fun k hk' => allowedW_cells h k h1 hh (by have := List.mem_range'_1.mp hk'; omega)
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+open Arithmetic MappedCompressed StairArchiveRelease StairArchiveNativeCut StairArchiveInactive
+open ArchiveFieldScratch StairArchiveTen CodecBitSliceVerify
+
+def bank (j : Nat) := (Finset.range 16).image (fieldPort j)
+
+def offBanks (persistent other : Finset Wire) (a r : State) : Prop :=
+  ∀ q, q ∉ persistent → q ∉ other → a.basis q = r.basis q
+
+set_option maxRecDepth 30000
+set_option maxHeartbeats 5000000
+set_option exponentiation.threshold 100000
+
+theorem restored (rev : Bool) :
+    (List.range' 16 105).all (fun q => get (outputCols (leave rev)) q == get (StairArchiveNativeCut.canonical rev rev) q) = true := by
+  cases rev <;> decide +kernel
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldMask
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem wl10 : (slots 10).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 10 := by
+  decide +kernel
+theorem wl13 : (slots 13).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 13 := by
+  decide +kernel
+theorem wl16 : (slots 16).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 16 := by
+  decide +kernel
+theorem wl19 : (slots 19).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 19 := by
+  decide +kernel
+theorem wl22 : (slots 22).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 22 := by
+  decide +kernel
+theorem wl25 : (slots 25).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 25 := by
+  decide +kernel
+theorem wl28 : (slots 28).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 28 := by
+  decide +kernel
+theorem wl31 : (slots 31).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 31 := by
+  decide +kernel
+theorem wl34 : (slots 34).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 34 := by
+  decide +kernel
+theorem wl37 : (slots 37).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 37 := by
+  decide +kernel
+theorem wl40 : (slots 40).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 40 := by
+  decide +kernel
+theorem wl43 : (slots 43).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 43 := by
+  decide +kernel
+theorem wl46 : (slots 46).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 46 := by
+  decide +kernel
+theorem wl49 : (slots 49).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 49 := by
+  decide +kernel
+theorem wl52 : (slots 52).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 52 := by
+  decide +kernel
+theorem wl55 : (slots 55).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 55 := by
+  decide +kernel
+theorem wl58 : (slots 58).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 58 := by
+  decide +kernel
+theorem wl61 : (slots 61).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 61 := by
+  decide +kernel
+theorem wl64 : (slots 64).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 64 := by
+  decide +kernel
+theorem wl67 : (slots 67).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 67 := by
+  decide +kernel
+theorem wl70 : (slots 70).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 70 := by
+  decide +kernel
+theorem wl73 : (slots 73).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 73 := by
+  decide +kernel
+theorem wl76 : (slots 76).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 76 := by
+  decide +kernel
+theorem wl79 : (slots 79).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 79 := by
+  decide +kernel
+theorem wl82 : (slots 82).map (fun q => OB5.sig 511 (StairArchiveInactive.host.symm q)) =
+    cellsW 82 := by
+  decide +kernel
+theorem h25_1 : part 25 1 7 = true := by
+  rw [part_eq_W 25 1 7 _ wl25]
+  exact partW_cells 25 1 7 (by decide) (by decide) (by decide)
+theorem h25_8 : part 25 8 7 = true := by
+  rw [part_eq_W 25 8 7 _ wl25]
+  exact partW_cells 25 8 7 (by decide) (by decide) (by decide)
+theorem h25_15 : part 25 15 7 = true := by
+  rw [part_eq_W 25 15 7 _ wl25]
+  exact partW_cells 25 15 7 (by decide) (by decide) (by decide)
+theorem h25_22 : part 25 22 7 = true := by
+  rw [part_eq_W 25 22 7 _ wl25]
+  exact partW_cells 25 22 7 (by decide) (by decide) (by decide)
+theorem h25_29 : part 25 29 7 = true := by
+  rw [part_eq_W 25 29 7 _ wl25]
+  exact partW_cells 25 29 7 (by decide) (by decide) (by decide)
+theorem h25_36 : part 25 36 7 = true := by
+  rw [part_eq_W 25 36 7 _ wl25]
+  exact partW_cells 25 36 7 (by decide) (by decide) (by decide)
+theorem h25_43 : part 25 43 7 = true := by
+  rw [part_eq_W 25 43 7 _ wl25]
+  exact partW_cells 25 43 7 (by decide) (by decide) (by decide)
+theorem h25_50 : part 25 50 7 = true := by
+  rw [part_eq_W 25 50 7 _ wl25]
+  exact partW_cells 25 50 7 (by decide) (by decide) (by decide)
+theorem h25_57 : part 25 57 7 = true := by
+  rw [part_eq_W 25 57 7 _ wl25]
+  exact partW_cells 25 57 7 (by decide) (by decide) (by decide)
+theorem h25_64 : part 25 64 7 = true := by
+  rw [part_eq_W 25 64 7 _ wl25]
+  exact partW_cells 25 64 7 (by decide) (by decide) (by decide)
+theorem h25_71 : part 25 71 7 = true := by
+  rw [part_eq_W 25 71 7 _ wl25]
+  exact partW_cells 25 71 7 (by decide) (by decide) (by decide)
+theorem h25_78 : part 25 78 7 = true := by
+  rw [part_eq_W 25 78 7 _ wl25]
+  exact partW_cells 25 78 7 (by decide) (by decide) (by decide)
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h28_1 : part 28 1 7 = true := by
+  rw [part_eq_W 28 1 7 _ wl28]
+  exact partW_cells 28 1 7 (by decide) (by decide) (by decide)
+theorem h28_8 : part 28 8 7 = true := by
+  rw [part_eq_W 28 8 7 _ wl28]
+  exact partW_cells 28 8 7 (by decide) (by decide) (by decide)
+theorem h28_15 : part 28 15 7 = true := by
+  rw [part_eq_W 28 15 7 _ wl28]
+  exact partW_cells 28 15 7 (by decide) (by decide) (by decide)
+theorem h28_22 : part 28 22 7 = true := by
+  rw [part_eq_W 28 22 7 _ wl28]
+  exact partW_cells 28 22 7 (by decide) (by decide) (by decide)
+theorem h28_29 : part 28 29 7 = true := by
+  rw [part_eq_W 28 29 7 _ wl28]
+  exact partW_cells 28 29 7 (by decide) (by decide) (by decide)
+theorem h28_36 : part 28 36 7 = true := by
+  rw [part_eq_W 28 36 7 _ wl28]
+  exact partW_cells 28 36 7 (by decide) (by decide) (by decide)
+theorem h28_43 : part 28 43 7 = true := by
+  rw [part_eq_W 28 43 7 _ wl28]
+  exact partW_cells 28 43 7 (by decide) (by decide) (by decide)
+theorem h28_50 : part 28 50 7 = true := by
+  rw [part_eq_W 28 50 7 _ wl28]
+  exact partW_cells 28 50 7 (by decide) (by decide) (by decide)
+theorem h28_57 : part 28 57 7 = true := by
+  rw [part_eq_W 28 57 7 _ wl28]
+  exact partW_cells 28 57 7 (by decide) (by decide) (by decide)
+theorem h28_64 : part 28 64 7 = true := by
+  rw [part_eq_W 28 64 7 _ wl28]
+  exact partW_cells 28 64 7 (by decide) (by decide) (by decide)
+theorem h28_71 : part 28 71 7 = true := by
+  rw [part_eq_W 28 71 7 _ wl28]
+  exact partW_cells 28 71 7 (by decide) (by decide) (by decide)
+theorem h28_78 : part 28 78 7 = true := by
+  rw [part_eq_W 28 78 7 _ wl28]
+  exact partW_cells 28 78 7 (by decide) (by decide) (by decide)
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h31_1 : part 31 1 7 = true := by
+  rw [part_eq_W 31 1 7 _ wl31]
+  exact partW_cells 31 1 7 (by decide) (by decide) (by decide)
+theorem h31_8 : part 31 8 7 = true := by
+  rw [part_eq_W 31 8 7 _ wl31]
+  exact partW_cells 31 8 7 (by decide) (by decide) (by decide)
+theorem h31_15 : part 31 15 7 = true := by
+  rw [part_eq_W 31 15 7 _ wl31]
+  exact partW_cells 31 15 7 (by decide) (by decide) (by decide)
+theorem h31_22 : part 31 22 7 = true := by
+  rw [part_eq_W 31 22 7 _ wl31]
+  exact partW_cells 31 22 7 (by decide) (by decide) (by decide)
+theorem h31_29 : part 31 29 7 = true := by
+  rw [part_eq_W 31 29 7 _ wl31]
+  exact partW_cells 31 29 7 (by decide) (by decide) (by decide)
+theorem h31_36 : part 31 36 7 = true := by
+  rw [part_eq_W 31 36 7 _ wl31]
+  exact partW_cells 31 36 7 (by decide) (by decide) (by decide)
+theorem h31_43 : part 31 43 7 = true := by
+  rw [part_eq_W 31 43 7 _ wl31]
+  exact partW_cells 31 43 7 (by decide) (by decide) (by decide)
+theorem h31_50 : part 31 50 7 = true := by
+  rw [part_eq_W 31 50 7 _ wl31]
+  exact partW_cells 31 50 7 (by decide) (by decide) (by decide)
+theorem h31_57 : part 31 57 7 = true := by
+  rw [part_eq_W 31 57 7 _ wl31]
+  exact partW_cells 31 57 7 (by decide) (by decide) (by decide)
+theorem h31_64 : part 31 64 7 = true := by
+  rw [part_eq_W 31 64 7 _ wl31]
+  exact partW_cells 31 64 7 (by decide) (by decide) (by decide)
+theorem h31_71 : part 31 71 7 = true := by
+  rw [part_eq_W 31 71 7 _ wl31]
+  exact partW_cells 31 71 7 (by decide) (by decide) (by decide)
+theorem h31_78 : part 31 78 7 = true := by
+  rw [part_eq_W 31 78 7 _ wl31]
+  exact partW_cells 31 78 7 (by decide) (by decide) (by decide)
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h34_1 : part 34 1 7 = true := by
+  rw [part_eq_W 34 1 7 _ wl34]
+  exact partW_cells 34 1 7 (by decide) (by decide) (by decide)
+theorem h34_8 : part 34 8 7 = true := by
+  rw [part_eq_W 34 8 7 _ wl34]
+  exact partW_cells 34 8 7 (by decide) (by decide) (by decide)
+theorem h34_15 : part 34 15 7 = true := by
+  rw [part_eq_W 34 15 7 _ wl34]
+  exact partW_cells 34 15 7 (by decide) (by decide) (by decide)
+theorem h34_22 : part 34 22 7 = true := by
+  rw [part_eq_W 34 22 7 _ wl34]
+  exact partW_cells 34 22 7 (by decide) (by decide) (by decide)
+theorem h34_29 : part 34 29 7 = true := by
+  rw [part_eq_W 34 29 7 _ wl34]
+  exact partW_cells 34 29 7 (by decide) (by decide) (by decide)
+theorem h34_36 : part 34 36 7 = true := by
+  rw [part_eq_W 34 36 7 _ wl34]
+  exact partW_cells 34 36 7 (by decide) (by decide) (by decide)
+theorem h34_43 : part 34 43 7 = true := by
+  rw [part_eq_W 34 43 7 _ wl34]
+  exact partW_cells 34 43 7 (by decide) (by decide) (by decide)
+theorem h34_50 : part 34 50 7 = true := by
+  rw [part_eq_W 34 50 7 _ wl34]
+  exact partW_cells 34 50 7 (by decide) (by decide) (by decide)
+theorem h34_57 : part 34 57 7 = true := by
+  rw [part_eq_W 34 57 7 _ wl34]
+  exact partW_cells 34 57 7 (by decide) (by decide) (by decide)
+theorem h34_64 : part 34 64 7 = true := by
+  rw [part_eq_W 34 64 7 _ wl34]
+  exact partW_cells 34 64 7 (by decide) (by decide) (by decide)
+theorem h34_71 : part 34 71 7 = true := by
+  rw [part_eq_W 34 71 7 _ wl34]
+  exact partW_cells 34 71 7 (by decide) (by decide) (by decide)
+theorem h34_78 : part 34 78 7 = true := by
+  rw [part_eq_W 34 78 7 _ wl34]
+  exact partW_cells 34 78 7 (by decide) (by decide) (by decide)
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+set_option maxRecDepth 36000
+set_option maxHeartbeats 3500000
+theorem h37_1 : part 37 1 7 = true := by
+  rw [part_eq_W 37 1 7 _ wl37]
+  exact partW_cells 37 1 7 (by decide) (by decide) (by decide)
+theorem h37_8 : part 37 8 7 = true := by
+  rw [part_eq_W 37 8 7 _ wl37]
+  exact partW_cells 37 8 7 (by decide) (by decide) (by decide)
+theorem h37_15 : part 37 15 7 = true := by
+  rw [part_eq_W 37 15 7 _ wl37]
+  exact partW_cells 37 15 7 (by decide) (by decide) (by decide)
+theorem h37_22 : part 37 22 7 = true := by
+  rw [part_eq_W 37 22 7 _ wl37]
+  exact partW_cells 37 22 7 (by decide) (by decide) (by decide)
+theorem h37_29 : part 37 29 7 = true := by
+  rw [part_eq_W 37 29 7 _ wl37]
+  exact partW_cells 37 29 7 (by decide) (by decide) (by decide)
+theorem h37_36 : part 37 36 7 = true := by
+  rw [part_eq_W 37 36 7 _ wl37]
+  exact partW_cells 37 36 7 (by decide) (by decide) (by decide)
+theorem h37_43 : part 37 43 7 = true := by
+  rw [part_eq_W 37 43 7 _ wl37]
+  exact partW_cells 37 43 7 (by decide) (by decide) (by decide)
+theorem h37_50 : part 37 50 7 = true := by
+  rw [part_eq_W 37 50 7 _ wl37]
+  exact partW_cells 37 50 7 (by decide) (by decide) (by decide)
+theorem h37_57 : part 37 57 7 = true := by
+  rw [part_eq_W 37 57 7 _ wl37]
+  exact partW_cells 37 57 7 (by decide) (by decide) (by decide)
+theorem h37_64 : part 37 64 7 = true := by
+  rw [part_eq_W 37 64 7 _ wl37]
+  exact partW_cells 37 64 7 (by decide) (by decide) (by decide)
+theorem h37_71 : part 37 71 7 = true := by
+  rw [part_eq_W 37 71 7 _ wl37]
+  exact partW_cells 37 71 7 (by decide) (by decide) (by decide)
+theorem h37_78 : part 37 78 7 = true := by
+  rw [part_eq_W 37 78 7 _ wl37]
+  exact partW_cells 37 78 7 (by decide) (by decide) (by decide)
+end ECDSAAdd.Entrant.StairPacket.WindowBankCheck
+
+end
 
 section
 
@@ -2945,8 +4067,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2013130 ∧
-    measurementCount (program C) ≤ 1449740 ∧ gateSlots (program C) ≤ 66279058 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2012747 ∧
+    measurementCount (program C) ≤ 1446189 ∧ gateSlots (program C) ≤ 66279508 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -3144,7 +4266,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2013130,1449740,1543,66279058⟩
+def bounds : Challenge.Bounds := ⟨2012747,1446189,1543,66279508⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -3153,7 +4275,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1449740
+    change measurementCount (normalizeProgram _) ≤ 1446189
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -3161,7 +4283,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 66279058
+    change gateSlots (normalizeProgram _) ≤ 66279508
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -3634,13 +4756,23 @@ open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask StairField2V3RecS
 set_option maxRecDepth 2200
 set_option maxHeartbeats 500000
 
+-- [carbon-replay: main-wfv]
 private def regular (z : Wire) := !(EP.contains z) && !((futurePayload 87).contains z)
+private def crRegFast (m : Nat) (z : Wire) : Bool := !m.testBit z
+private theorem crRegular_eq :
+    regular = crRegFast (ZeroSetDevelop.owMask EP |||
+      ZeroSetDevelop.owMask (futurePayload 87)) := by
+  funext z
+  simp only [regular, crRegFast, Nat.testBit_or, ZeroSetDevelop.owMask_testBit,
+    List.contains_eq_mem, Bool.not_or]
 private def archiveGood (j : Nat) := (List.range 121).all (fun q => q==16 || regular (host.symm (fieldPort j q)))
 private theorem portsHead :
     WindowBankCheck.banks.all (fun j => (List.range 16).all (fun q => regular (host.symm (fieldPort j q))))=true := by
+  rw [crRegular_eq]
   decide +kernel
 private theorem portsTail :
     (List.range' 16 105).all (fun q => q==16 || regular (host.symm (fieldPort 0 q)))=true := by
+  rw [crRegular_eq]
   decide +kernel
 private theorem portsCheck : WindowBankCheck.banks.all archiveGood=true := by
   rw [List.all_eq_true]
@@ -6727,11 +7859,27 @@ theorem basis (d:Bool) (raw payload:State) (m n:List Bool)
     exact encoded
   rw [keep q normal]
   by_cases touched:q∈rawPortsList
-  · have mask:∀q∈rawPortsList,q∈newBank ∨ (q∈zeros ∧ ∃i:Fin 157,16≤ i.val ∧ codePorts i=q) := by decide +kernel
+  · have hmaskB : rawPortsList.all (fun q =>
+        (ZeroSetDevelop.owMask newBank).testBit q ||
+        ((ZeroSetDevelop.owMask zeros).testBit q &&
+          ((List.finRange 157).filter (fun i => decide (16 ≤ i.val))).any (fun i => codePorts i == q))) = true := by
+      decide +kernel
+    have mask : ∀q∈rawPortsList,q∈newBank ∨ (q∈zeros ∧ ∃i:Fin 157,16≤ i.val ∧ codePorts i=q) := by
+      intro x hx
+      have hb := List.all_eq_true.mp hmaskB x hx
+      simp only [Bool.or_eq_true, Bool.and_eq_true, ZeroSetDevelop.owMask_testBit,
+        decide_eq_true_eq, List.any_eq_true, List.mem_filter, beq_iff_eq] at hb
+      rcases hb with h1 | ⟨h2, i, ⟨_, hi⟩, hcp⟩
+      · exact Or.inl h1
+      · exact Or.inr ⟨h2, i, hi, hcp⟩
     obtain ⟨blank,i,hi,slot⟩:=(mask q touched).resolve_left outside
     rw [clear q blank,←slot,frame,archive_blank _ _ hi,Nat.zero_testBit]
   · have no:q∉wires ((Shadow7.exitLoadP 420) d):=fun h=>touched (List.mem_toFinset.mp (load_cover d h))
-    have mask:∀q∈dst,q∈rawPortsList:=by decide +kernel
+    have hmaskD : dst.all (fun q => (ZeroSetDevelop.owMask rawPortsList).testBit q) = true := by
+      decide +kernel
+    have mask:∀q∈dst,q∈rawPortsList := fun x hx =>
+      of_decide_eq_true ((ZeroSetDevelop.owMask_testBit rawPortsList x).symm.trans
+        (List.all_eq_true.mp hmaskD x hx))
     have notDst:q∉dst:=fun h=>touched (mask q h)
     rw [run_preserves_outside _ _ _ _ no]
     exact (NativePack4207.outside d q (fun i e=>normal (List.mem_map.mpr ⟨i,List.mem_finRange i,e.symm⟩)) _ _).trans
@@ -9462,8 +10610,7 @@ private theorem foldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : L
   let Post : Program := [.CX L760.lower L760.rmsb, .CX L760.parity L760.rmsb, .X L760.rmsb,
     .CX L760.parity L760.lower, .CX L760.rmsb L760.lower, .X L760.lower,
     .measureX L760.one [] [.CZ L760.parity L760.rmsb]]
-  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedAddLoan d StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb (FoldTop.foldAdd d L760)
   let MidQ := Q6LifetimeResearch.move (base 760) L760.rmsb
     (StairLoan.mappedAddLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
   have hP : foldLoan d L760 = Pre ++ (MidP ++ Post) := by
@@ -9486,7 +10633,7 @@ private theorem foldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : L
     have h2 : L760.rmsb ≠ L760.one := by decide +kernel
     simp [Pre, run, writeBit, h1, h2, hlow]
   apply move_run_eq (base 760) L760.rmsb _ _ u x []
-  apply mappedAddLoan_760_run_eq d (by omega) (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
+  apply FoldTop.foldAdd_760_run_eq d hd (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
   intro q hq
   by_cases hq760 : q = base 760
   · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
@@ -9507,8 +10654,7 @@ private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m :
     .CX L760.parity L760.rmsb, .X L760.rmsb]
   let Post : Program := [.CX L760.lower L760.rmsb, .CX L760.rmsb L760.lower,
     .measureX L760.one [] [.CZ L760.parity L760.rmsb]]
-  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedSubLoan d StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb (FoldTop.unfoldSub d L760)
   let MidQ := Q6LifetimeResearch.move (base 760) L760.rmsb
     (StairLoan.mappedSubLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
   have hP : unfoldLoan d L760 = Pre ++ (MidP ++ Post) := by
@@ -9540,7 +10686,7 @@ private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m :
       Function.update_of_ne h4.symm, Function.update_of_ne h5.symm, Function.update_of_ne h6.symm, hlow]
     cases s.basis L760.parity <;> cases s.basis L760.rmsb <;> rfl
   apply move_run_eq (base 760) L760.rmsb _ _ u x []
-  apply mappedSubLoan_760_run_eq d (by omega) (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
+  apply FoldTop.unfoldSub_760_run_eq d hd (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
   intro q hq
   by_cases hq760 : q = base 760
   · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
@@ -10710,18 +11856,13 @@ private theorem half760OddLoan_in_jp (d : Nat) (divide : Bool) :
       refine hmove_in_jp (mappedSub (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         hrmsb hu2 ?_
       intro w hw
-      simp only [StairLoan.mappedSubLoan, wires_append, Finset.mem_union] at hw
+      simp only [FoldTop.unfoldSub, wires_append, Finset.mem_union] at hw
       rcases hw with (hn | hm) | hn
       · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
-      · have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
-          (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
-          (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hm
-        rw [← StairLoan.mappedAdd_as_sweep] at he
-        simp only [Finset.mem_union] at he
-        rcases he with (hsw | hret) | hlay
+      · rcases FoldTop.foldAdd_wires_envelope d w hm with hsw | hret | hcs
         · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hsw, true_or, or_true])
-        · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take (List.mem_toFinset.mp hret)))
-        · exact Or.inr (layerHosts_take_in_jp (mappedLayers_hosts _ _ _ _ carry254_in_jp) hlay)
+        · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take hret))
+        · exact Or.inr (carry254_in_jp w hcs)
       · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
     · -- rawSubLoan
       delta rawSubLoan; delta P1Life.rawSub at h12
@@ -10818,15 +11959,10 @@ private theorem half760OddLoan_in_jp (d : Nat) (divide : Bool) :
       refine hmove_in_jp (mappedAdd (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         hrmsb f2 ?_
       intro w hw
-      have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
-        (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
-        (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hw
-      rw [← StairLoan.mappedAdd_as_sweep] at he
-      simp only [Finset.mem_union] at he
-      rcases he with (hsw | hret) | hlay
+      rcases FoldTop.foldAdd_wires_envelope d w hw with hsw | hret | hcs
       · exact Or.inl hsw
-      · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take (List.mem_toFinset.mp hret)))
-      · exact Or.inr (layerHosts_take_in_jp (mappedLayers_hosts _ _ _ _ carry254_in_jp) hlay)
+      · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take hret))
+      · exact Or.inr (carry254_in_jp w hcs)
 
 theorem half760OddLoan_support (d : Nat) (divide : Bool) (hd : d ≤ 43) (h42 : d ≠ 42) :
     RouteA.Rolling1588.HalfSupport (half760OddLoan d divide) := by
