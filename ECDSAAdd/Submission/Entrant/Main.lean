@@ -16118,12 +16118,12 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2167914 ∧ measurementCount (program C) ≤ 1519653 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167909 ∧ measurementCount (program C) ≤ 1519658 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2168930 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
+  change toffoliCount (concreteProgram C) ≤ 2168925 ∧ measurementCount (concreteProgram C) ≤ 1520247 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2167914 ∧ measurementCount [] ≤ 1519653
+    change toffoliCount [] ≤ 2167909 ∧ measurementCount [] ≤ 1519658
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
@@ -17293,7 +17293,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
   ⟨finite_delta tc C cx cy 147766 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 65404 (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2020148 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2020143 ∧
     measurementCount (program C) ≤ 1454493 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -21556,7 +21556,7 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2020148 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2020143 ∧
     measurementCount (program C) ≤ 1454493 ∧ gateSlots (program C) ≤ 66035191 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -21755,7 +21755,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2020148,1454493,1543,66035191⟩
+def bounds : Challenge.Bounds := ⟨2020143,1454493,1543,66035191⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -29311,12 +29311,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment425Ori:Clear (checkpointPrimitives.orient 450):=checked (by decide +kernel)
+private theorem segment425OriR:Clear (checkpointPrimitives.orientR 450):=checked (by decide +kernel)
 private theorem segment425P:Clear (renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450)):=checked (by decide +kernel)
 private theorem segment425U:Clear (renameProgram (OB5.sig 450) (Rolling1588.unpackAtTick true 450)):=checked (by decide +kernel)
 theorem forward425:Clear (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450):=
   both (both (both (both (both (unpackFree 87 (by decide)) (tfFree 87 (by decide))) (mfFree 87 (by decide))) segment425Ori) segment425P) (packFree 62 (by decide))
 theorem reverse425:Clear (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450):=
-  both (both (both (both (both (unpackFree 62 (by decide)) segment425U) segment425Ori) (mrFree 87 (by decide))) (trFree 87 (by decide))) (packFree 87 (by decide))
+  both (both (both (both (both (unpackFree 62 (by decide)) segment425U) segment425OriR) (mrFree 87 (by decide))) (trFree 87 (by decide))) (packFree 87 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29328,12 +29329,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment450Ori:Clear (checkpointPrimitives.orient 465):=checked (by decide +kernel)
+private theorem segment450OriR:Clear (checkpointPrimitives.orientR 465):=checked (by decide +kernel)
 private theorem segment450P:Clear (renameProgram (OB5.sig 465) (Rolling1588.Integer.packFirst base true 465)):=checked (by decide +kernel)
 private theorem segment450U:Clear (renameProgram (OB5.sig 465) (Rolling1588.unpackAtTick true 465)):=checked (by decide +kernel)
 theorem forward450:Clear (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465):=
   both (both (both (both (both (unpackFree 62 (by decide)) (tfFree 62 (by decide))) (mfFree 62 (by decide))) segment450Ori) segment450P) (packFree 47 (by decide))
 theorem reverse450:Clear (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465):=
-  both (both (both (both (both (unpackFree 47 (by decide)) segment450U) segment450Ori) (mrFree 62 (by decide))) (trFree 62 (by decide))) (packFree 62 (by decide))
+  both (both (both (both (both (unpackFree 47 (by decide)) segment450U) segment450OriR) (mrFree 62 (by decide))) (trFree 62 (by decide))) (packFree 62 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29345,12 +29347,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment465Ori:Clear (checkpointPrimitives.orient 480):=checked (by decide +kernel)
+private theorem segment465OriR:Clear (checkpointPrimitives.orientR 480):=checked (by decide +kernel)
 private theorem segment465P:Clear (renameProgram (OB5.sig 480) (Rolling1588.Integer.packFirst base true 480)):=checked (by decide +kernel)
 private theorem segment465U:Clear (renameProgram (OB5.sig 480) (Rolling1588.unpackAtTick true 480)):=checked (by decide +kernel)
 theorem forward465:Clear (StairSchedule.forwardSegment checkpointPrimitives 47 32 465 480):=
   both (both (both (both (both (unpackFree 47 (by decide)) (tfFree 47 (by decide))) (mfFree 47 (by decide))) segment465Ori) segment465P) (packFree 32 (by decide))
 theorem reverse465:Clear (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480):=
-  both (both (both (both (both (unpackFree 32 (by decide)) segment465U) segment465Ori) (mrFree 47 (by decide))) (trFree 47 (by decide))) (packFree 47 (by decide))
+  both (both (both (both (both (unpackFree 32 (by decide)) segment465U) segment465OriR) (mrFree 47 (by decide))) (trFree 47 (by decide))) (packFree 47 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29362,12 +29365,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment480Ori:Clear (checkpointPrimitives.orient 490):=checked (by decide +kernel)
+private theorem segment480OriR:Clear (checkpointPrimitives.orientR 490):=checked (by decide +kernel)
 private theorem segment480P:Clear (renameProgram (OB5.sig 490) (Rolling1588.Integer.packFirst base true 490)):=checked (by decide +kernel)
 private theorem segment480U:Clear (renameProgram (OB5.sig 490) (Rolling1588.unpackAtTick true 490)):=checked (by decide +kernel)
 theorem forward480:Clear (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490):=
   both (both (both (both (both (unpackFree 32 (by decide)) (tfFree 32 (by decide))) (mfFree 32 (by decide))) segment480Ori) segment480P) (packFree 22 (by decide))
 theorem reverse480:Clear (StairSchedule.reverseSegment checkpointPrimitives 32 22 480 490):=
-  both (both (both (both (both (unpackFree 22 (by decide)) segment480U) segment480Ori) (mrFree 32 (by decide))) (trFree 32 (by decide))) (packFree 32 (by decide))
+  both (both (both (both (both (unpackFree 22 (by decide)) segment480U) segment480OriR) (mrFree 32 (by decide))) (trFree 32 (by decide))) (packFree 32 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29379,12 +29383,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment490Ori:Clear (checkpointPrimitives.orient 500):=checked (by decide +kernel)
+private theorem segment490OriR:Clear (checkpointPrimitives.orientR 500):=checked (by decide +kernel)
 private theorem segment490P:Clear (renameProgram (OB5.sig 500) (Rolling1588.Integer.packFirst base true 500)):=checked (by decide +kernel)
 private theorem segment490U:Clear (renameProgram (OB5.sig 500) (Rolling1588.unpackAtTick true 500)):=checked (by decide +kernel)
 theorem forward490:Clear (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500):=
   both (both (both (both (both (unpackFree 22 (by decide)) (tfFree 22 (by decide))) (mfFree 22 (by decide))) segment490Ori) segment490P) (packFree 12 (by decide))
 theorem reverse490:Clear (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500):=
-  both (both (both (both (both (unpackFree 12 (by decide)) segment490U) segment490Ori) (mrFree 22 (by decide))) (trFree 22 (by decide))) (packFree 22 (by decide))
+  both (both (both (both (both (unpackFree 12 (by decide)) segment490U) segment490OriR) (mrFree 22 (by decide))) (trFree 22 (by decide))) (packFree 22 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
