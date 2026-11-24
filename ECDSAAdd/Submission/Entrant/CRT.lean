@@ -3354,9 +3354,79 @@ end ECDSAAdd.Entrant.StairPacket.ScanRowGordo
 end
 -- ==== end ScanRowGordo defs ====
 
+section
+namespace ECDSAAdd.Entrant.StairPacket.AdjustShort
+open Arithmetic Partial GateMirror
+
+/-- Tightened high-bank adjust width: on early blocks (`s < 225`) and late blocks (`270 ≤ s`),
+the signed rail width `wpP s` has an unused top bit above `Shadow.high (sbP s) 15 z + 1`. -/
+def adjW (s : Nat) : Nat :=
+  if s < 225 ∨ 270 ≤ s then Shadow7.wpP s - 1 else Shadow7.wpP s
+
+def core (s : Nat) : List Gate :=
+  adjustG ((List.range (adjW s)).map (Shadow7.bankW s))
+    ((List.range (adjW s - 1)).map (Shadow7.poolW s))
+    (Shadow7.e0P s + 3) 1596
+
+def beforePost5Pre (s : Nat) : List Gate :=
+  let b := Shadow7.sbP s
+  rowGates (Shadow7.e0P s + 6) ((Shadow7.moveRows s).drop 1) ++ (Shadow7.fix5P s b).drop 43 ++
+    [.cx (Shadow7.e0P s + 6) (Shadow7.e0P s + 3)]
+
+def beforePost5Short (s : Nat) : List Gate :=
+  beforePost5Pre s ++ core s
+
+def before5Pre (s : Nat) : List Gate :=
+  DeadJoin.beforePre5Cut s ++ (DeadJoin.row0New s ++ beforePost5Pre s)
+
+def before5Short (s : Nat) : List Gate :=
+  DeadJoin.beforePre5Cut s ++ (DeadJoin.row0New s ++ beforePost5Short s)
+
+def before5TailShort (s : Nat) : List Gate :=
+  let h := Shadow7.sbP s
+  let preTail := (DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ Shadow7.fix2P s h ++
+    leaveFix3 s h ++ leaveFix4 s h ++ (Shadow7.fix5P s h).take 27
+  FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 preTail ++
+    (DeadJoin.row0New s ++ beforePost5Short s)
+
+def before5RowPrefix (s : Nat) : List Gate :=
+  let h := Shadow7.sbP s
+  let preTail := (DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ Shadow7.fix2P s h ++
+    leaveFix3 s h ++ leaveFix4 s h ++ (Shadow7.fix5P s h).take 27
+  ScanRowGordo.firstRows s h ++ (ScanRowGordo.shortCell s h ++
+    (FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 preTail ++
+      (DeadJoin.row0New s ++ beforePost5Pre s)))
+
+def before5RowShort (s : Nat) : List Gate :=
+  let h := Shadow7.sbP s
+  ScanRowGordo.firstRows s h ++ (ScanRowGordo.shortCell s h ++ before5TailShort s)
+
+theorem beforePost5_split (s : Nat) :
+    DeadJoin.beforePost5 s = beforePost5Pre s ++ Shadow7.leaveAdjustCore s := by
+  simp only [DeadJoin.beforePost5, beforePost5Pre, Shadow7.leaveAdjust, List.append_assoc]
+
+theorem before5_split_core (s : Nat) :
+    DeadJoin.before5 s = before5Pre s ++ Shadow7.leaveAdjustCore s := by
+  simp only [DeadJoin.before5, before5Pre, beforePost5_split, List.append_assoc]
+
+theorem before5Short_split_core (s : Nat) :
+    before5Short s = before5Pre s ++ core s := by
+  simp only [before5Short, before5Pre, beforePost5Short, List.append_assoc]
+
+theorem before5Row_split_core (s : Nat) :
+    ScanRowGordo.before5Row s = before5RowPrefix s ++ Shadow7.leaveAdjustCore s := by
+  simp only [ScanRowGordo.before5Row, ScanRowGordo.before5Tail, before5RowPrefix, beforePost5_split, List.append_assoc]
+
+theorem before5RowShort_split_core (s : Nat) :
+    before5RowShort s = before5RowPrefix s ++ core s := by
+  simp only [before5RowShort, before5TailShort, before5RowPrefix, beforePost5Short, List.append_assoc]
+
+end ECDSAAdd.Entrant.StairPacket.AdjustShort
+end
+
 namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
-def before (s : Nat) : List GateMirror.Gate := ScanRowGordo.before5Row s
+def before (s : Nat) : List GateMirror.Gate := AdjustShort.before5RowShort s
 def afterPart (s : Nat) : List GateMirror.Gate := DeadJoin.after7K s
 -- ==== end DeadJoin ====
 
@@ -7259,12 +7329,21 @@ theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
     (barrelBack : ∀ n, run (CRTBarrel.barrel (start j) true) n
       (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)) =
       run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)
+    (t0 : State)
+    (ht0 : run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0 =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)
+    (ht0_undo : run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) []
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) = t0)
+    (adjSame : ∀ m, run (GateMirror.forward (AdjustShort.core (start j))) m t0 =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0)
+    (adjBack : ∀ n, run (GateMirror.inverse (AdjustShort.core (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) = t0)
     (keptRel : KeptParity.relation (fun q => (run (GateMirror.forward (CRTBarrel.beforeReference (start j) ++
       (Shadow7.leaveBarrel (start j) ++ keptHead (start j)))) [] s).basis (KeptParity.port (start j) q))) :
-    (∀ m, run (GateMirror.forward (before5 (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7K (start j))) m s =
+    (∀ m, run (GateMirror.forward (AdjustShort.before5Short (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7K (start j))) m s =
       run (GateMirror.forward (referenceOps (start j))) m s) ∧
-    (∀ m n, run (GateMirror.inverse (after7K (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (before5 (start j))) n
-      (run (GateMirror.forward (before5 (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7K (start j))) m s) = s) := by
+    (∀ m n, run (GateMirror.inverse (after7K (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (AdjustShort.before5Short (start j))) n
+      (run (GateMirror.forward (AdjustShort.before5Short (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7K (start j))) m s) = s) := by
   obtain ⟨v0, same0, beforeEq⟩ := raw_all_valid j hi s original zero scanEq rel
   -- Step 1: FlagCut5 (row0Old -> row0New inside beforeAll)
   have shape0 : allOps (start j) =
@@ -7353,19 +7432,59 @@ theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
       before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7K (start j)) := by
     simp only [after7K, List.append_assoc]
   rw [shapeK2] at v7K
-  obtain ⟨f, r⟩ := raw_replace _ _ _ _ _ s v7K same' back'
-  refine ⟨fun m => ?_, r⟩
-  have h1 := f m
-  rw [← shapeK2] at h1
-  have hK := same7K m
-  rw [← shapeK, ← shape7] at hK
-  have h2 := (same7b m)
-  rw [← shape7a] at h2
-  have h3 := (same7a m)
-  rw [← shape5] at h3
-  have h4 := (same5 m)
-  rw [← shape0] at h4
-  exact h1.trans (hK.trans (h2.trans (h3.trans (h4.trans (same0 m)))))
+  have vPreAdj : RawValid s (AdjustShort.before5Pre (start j) ++ Shadow7.leaveAdjustCore (start j)) := by
+    rw [← AdjustShort.before5_split_core]; exact v7K.parts.1
+  have hstep1 : run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) []
+      (run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s) =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0 := by
+    have hsplit : run (GateMirror.forward (before5 (start j))) [] s =
+        run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) []
+          (run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s) := by
+      rw [AdjustShort.before5_split_core, forward_app, run_append, run_take, List.drop_nil]
+    rw [← hsplit, bEq, ht0]
+  have hpreEq : run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s = t0 := by
+    have hinv := congrArg (run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) []) hstep1
+    rw [vPreAdj.parts.2.undo_run [] [], ht0_undo] at hinv
+    exact hinv
+  have sameAB : ∀ m, run (GateMirror.forward (AdjustShort.core (start j)) ++ CRTBarrel.barrel (start j) false) m
+      (run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s) =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j))) []
+        (run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s) := by
+    intro m
+    rw [hpreEq, run_append, run_take, adjSame, forward_app, run_append, run_take, List.drop_nil, ht0]
+    exact barrelSame _
+  have backAB : ∀ n, run (CRTBarrel.barrel (start j) true ++ GateMirror.inverse (AdjustShort.core (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j))) []
+        (run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s)) =
+      run (GateMirror.forward (AdjustShort.before5Pre (start j))) [] s := by
+    intro n
+    rw [hpreEq, run_append, run_take, forward_app, run_append, run_take, List.drop_nil, ht0, barrelBack _, ← ht0]
+    exact adjBack _
+  have hspA : before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7K (start j)) =
+      AdjustShort.before5Pre (start j) ++ ((Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j)) ++ after7K (start j)) := by
+    rw [AdjustShort.before5_split_core]; simp only [List.append_assoc]
+  rw [hspA] at v7K
+  obtain ⟨f, r⟩ := raw_replace _ _ _ _ _ s v7K sameAB backAB
+  have hfprog : GateMirror.forward (AdjustShort.before5Short (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7K (start j)) =
+      GateMirror.forward (AdjustShort.before5Pre (start j)) ++ ((GateMirror.forward (AdjustShort.core (start j)) ++ CRTBarrel.barrel (start j) false) ++ GateMirror.forward (after7K (start j))) := by
+    rw [AdjustShort.before5Short_split_core, forward_app]; simp only [List.append_assoc]
+  have hrprog : GateMirror.inverse (after7K (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (AdjustShort.before5Short (start j)) =
+      GateMirror.inverse (after7K (start j)) ++ ((CRTBarrel.barrel (start j) true ++ GateMirror.inverse (AdjustShort.core (start j))) ++ GateMirror.inverse (AdjustShort.before5Pre (start j))) := by
+    rw [AdjustShort.before5Short_split_core, inverse_append]; simp only [List.append_assoc]
+  refine ⟨fun m => ?_, fun m n => ?_⟩
+  · have h1 := f m
+    rw [← hfprog, ← hspA, ← shapeK2] at h1
+    have hK := same7K m
+    rw [← shapeK, ← shape7] at hK
+    have h2 := (same7b m)
+    rw [← shape7a] at h2
+    have h3 := (same7a m)
+    rw [← shape5] at h3
+    have h4 := (same5 m)
+    rw [← shape0] at h4
+    exact h1.trans (hK.trans (h2.trans (h3.trans (h4.trans (same0 m)))))
+  · rw [hfprog, hrprog]
+    exact r m n
 
 end ECDSAAdd.Entrant.StairPacket.DeadJoin
 end
@@ -7399,6 +7518,15 @@ theorem before5_split (j : Fin 26) (hi : j.val ≤ 24) :
         (cell (start j) (Shadow7.sbP (start j)) ++ before5Tail (start j)) := by
   obtain ⟨hc, hr⟩ := prefix_cut_noop j hi
   unfold DeadJoin.before5 DeadJoin.beforePre5Cut before5Tail
+  rw [pre5_prefix, FlagLeave.cut_append, hc, hr]
+  simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
+
+theorem before5Short_split (j : Fin 26) (hi : j.val ≤ 24) :
+    AdjustShort.before5Short (start j) =
+      firstRows (start j) (Shadow7.sbP (start j)) ++
+        (cell (start j) (Shadow7.sbP (start j)) ++ AdjustShort.before5TailShort (start j)) := by
+  obtain ⟨hc, hr⟩ := prefix_cut_noop j hi
+  unfold AdjustShort.before5Short DeadJoin.beforePre5Cut AdjustShort.before5TailShort
   rw [pre5_prefix, FlagLeave.cut_append, hc, hr]
   simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
 
@@ -7662,25 +7790,25 @@ theorem before5Row_pair (j : Fin 26) (hi : j.val ≤ 24) (s : State) (u v : Nat)
     (ready : Shadow7.onRails j 15 (SkywalkRails.encode G sg u v) s.basis)
     (fresh : s.basis (Shadow7.e0P (start j) + 5) = false)
     (small : u < 2^15 * 2^(Shadow7.sbP (start j)))
-    (phys : ∀ g ∈ DeadJoin.before5 (start j), proper g = true)
+    (phys : ∀ g ∈ AdjustShort.before5Short (start j), proper g = true)
     (orig_det : ∀ m, run (GateMirror.forward (DeadJoin.referenceOps (start j))) m s =
       run (GateMirror.forward (DeadJoin.referenceOps (start j))) [] s)
-    (fwd5 : ∀ m, run (GateMirror.forward (DeadJoin.before5 (start j)) ++ CRTBarrel.barrel (start j) false ++
+    (fwd5 : ∀ m, run (GateMirror.forward (AdjustShort.before5Short (start j)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7K (start j))) m s =
       run (GateMirror.forward (DeadJoin.referenceOps (start j))) m s)
     (rev5 : ∀ m n, run (inverse (DeadJoin.after7K (start j)) ++ CRTBarrel.barrel (start j) true ++
-        inverse (DeadJoin.before5 (start j))) n
-      (run (GateMirror.forward (DeadJoin.before5 (start j)) ++ CRTBarrel.barrel (start j) false ++
+        inverse (AdjustShort.before5Short (start j))) n
+      (run (GateMirror.forward (AdjustShort.before5Short (start j)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7K (start j))) m s) = s) :
-    (∀ m, run (GateMirror.forward (before5Row (start j)) ++ CRTBarrel.barrel (start j) false ++
+    (∀ m, run (GateMirror.forward (AdjustShort.before5RowShort (start j)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7K (start j))) m s =
       run (GateMirror.forward (DeadJoin.referenceOps (start j))) m s) ∧
     (∀ m n, run (inverse (DeadJoin.after7K (start j)) ++ CRTBarrel.barrel (start j) true ++
-        inverse (before5Row (start j))) n
-      (run (GateMirror.forward (before5Row (start j)) ++ CRTBarrel.barrel (start j) false ++
+        inverse (AdjustShort.before5RowShort (start j))) n
+      (run (GateMirror.forward (AdjustShort.before5RowShort (start j)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7K (start j))) m s) = s) := by
   let st := start j; let h := Shadow7.sbP st
-  have sp := before5_split j hi
+  have sp := before5Short_split j hi
   have pFR : ∀ g ∈ firstRows st h, proper g = true := fun g hg => phys g (by rw [sp]; exact List.mem_append_left _ hg)
   have pC : ∀ g ∈ cell st h, proper g = true := fun g hg => phys g (by rw [sp]; exact List.mem_append_right _ (List.mem_append_left _ hg))
   obtain ⟨fFR, rFR, rFR2⟩ := pure_list_roundtrip (firstRows st h) (firstRows_pure j hi) pFR
@@ -7697,13 +7825,13 @@ theorem before5Row_pair (j : Fin 26) (hi : j.val ≤ 24) (s : State) (u v : Nat)
       change measurementCount (GateMirror.forward [g] ++ GateMirror.forward tl) = 0
       rw [measurementCount_append, h1, ih hl.2]
   have hmcC : measurementCount (GateMirror.forward (cell st h)) = 0 := rfl
-  have hFwd : ∀ m, run (GateMirror.forward (before5Row st) ++ CRTBarrel.barrel st false ++
+  have hFwd : ∀ m, run (GateMirror.forward (AdjustShort.before5RowShort st) ++ CRTBarrel.barrel st false ++
       GateMirror.forward (DeadJoin.after7K st)) m s =
       run (GateMirror.forward (DeadJoin.referenceOps st)) m s := by
     intro m
     let m' := m.drop (measurementCount (GateMirror.forward (shortCell st h)))
     have h5m := fwd5 m'
-    rw [before5Row, fwd_app, fwd_app]
+    rw [AdjustShort.before5RowShort, fwd_app, fwd_app]
     simp only [List.append_assoc]
     rw [run_append, run_append, fFR, hmcF, List.drop_zero, cFwd]
     rw [sp, fwd_app, fwd_app] at h5m
@@ -7712,17 +7840,17 @@ theorem before5Row_pair (j : Fin 26) (hi : j.val ≤ 24) (s : State) (u v : Nat)
     exact h5m.trans ((orig_det m').trans (orig_det m).symm)
   refine ⟨hFwd, fun m n => ?_⟩
   rw [hFwd m, orig_det m, ← orig_det [], ← fwd5 []]
-  let endS := run (GateMirror.forward (DeadJoin.before5 st) ++ CRTBarrel.barrel st false ++
+  let endS := run (GateMirror.forward (AdjustShort.before5Short st) ++ CRTBarrel.barrel st false ++
     GateMirror.forward (DeadJoin.after7K st)) [] s
   have hrev := rev5 [] n
-  change run (inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (DeadJoin.before5 st)) n endS = s at hrev
-  let midP := inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (before5Tail st)
-  have hInv5 : inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (DeadJoin.before5 st) =
+  change run (inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (AdjustShort.before5Short st)) n endS = s at hrev
+  let midP := inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (AdjustShort.before5TailShort st)
+  have hInv5 : inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (AdjustShort.before5Short st) =
       midP ++ (inverse (cell st h) ++ inverse (firstRows st h)) := by
     rw [sp, inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
-  have hInvR : inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (before5Row st) =
+  have hInvR : inverse (DeadJoin.after7K st) ++ CRTBarrel.barrel st true ++ inverse (AdjustShort.before5RowShort st) =
       midP ++ (inverse (shortCell st h) ++ inverse (firstRows st h)) := by
-    rw [before5Row, inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
+    rw [AdjustShort.before5RowShort, inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
   rw [hInv5, run_append, run_append] at hrev
   have hMid : run midP (n.take (measurementCount midP)) endS =
       run (GateMirror.forward (cell st h)) [] (run (GateMirror.forward (firstRows st h)) [] s) := by

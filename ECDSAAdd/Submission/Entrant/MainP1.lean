@@ -2320,26 +2320,252 @@ theorem inBlocks_iff (j : Fin 26) : crtBlocks j = true ↔ (j.val ≤ 24) := by
 
 /-! Counts. -/
 
+end ECDSAAdd.Entrant.StairPacket.CRTWindow
+
+namespace ECDSAAdd.Entrant.StairPacket.AdjustShort
+open Arithmetic Partial GateMirror CRTBarrel Challenge
+
+theorem adjW_le (s : Nat) : adjW s ≤ Shadow7.wpP s := by
+  unfold adjW; split_ifs <;> omega
+
+theorem wpP_ge2 : ∀ j : Fin 26, j.val ≤ 24 → 2 ≤ Shadow7.wpP (start j) := by decide
+
+theorem adjW_pos (j : Fin 26) (h1 : j.val ≤ 24) : 1 ≤ adjW (start j) := by
+  have hw := wpP_ge2 j h1
+  unfold adjW; split_ifs <;> omega
+
+theorem core_counts (s : Nat) (hw : 1 ≤ adjW s) :
+    Counts (core s) 0 (adjW s - 1) (adjW s - 1) (5 * adjW s - 2) :=
+  ((counts_cxsG _ _).app ((counts_addG _ _ _ (by simp; omega)).app (counts_cxsG _ _))).congr
+    (by simp) (by simp) (by simp) (by simp; omega)
+
+theorem old_core_counts (s : Nat) (hw : 1 ≤ Shadow7.wpP s) :
+    Counts (Shadow7.leaveAdjustCore s) 0 (Shadow7.wpP s - 1) (Shadow7.wpP s - 1) (5 * Shadow7.wpP s - 2) :=
+  ((counts_cxsG _ _).app ((counts_addG _ _ _ (by simp; omega)).app (counts_cxsG _ _))).congr
+    (by simp) (by simp) (by simp) (by simp; omega)
+
+theorem beforeShort_counts (j : Fin 26) (h1 : j.val ≤ 24) :
+    toffoliCount (GateMirror.forward (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
+      toffoliCount (GateMirror.forward (ScanRowGordo.before5Row (start j))) ∧
+    toffoliCount (inverse (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
+      toffoliCount (inverse (ScanRowGordo.before5Row (start j))) ∧
+    measurementCount (GateMirror.forward (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
+      measurementCount (GateMirror.forward (ScanRowGordo.before5Row (start j))) ∧
+    measurementCount (inverse (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
+      measurementCount (inverse (ScanRowGordo.before5Row (start j))) ∧
+    gateSlots (GateMirror.forward (before5RowShort (start j))) + 6 * (Shadow7.wpP (start j) - adjW (start j)) =
+      gateSlots (GateMirror.forward (ScanRowGordo.before5Row (start j))) ∧
+    gateSlots (inverse (before5RowShort (start j))) + 6 * (Shadow7.wpP (start j) - adjW (start j)) =
+      gateSlots (inverse (ScanRowGordo.before5Row (start j))) := by
+  have hw2 := wpP_ge2 j h1
+  have hle := adjW_le (start j)
+  have hap := adjW_pos j h1
+  obtain ⟨a1, a2, a3, a4, a5, a6⟩ := (core_counts (start j) hap).programs
+  obtain ⟨b1, b2, b3, b4, b5, b6⟩ := (old_core_counts (start j) (by omega)).programs
+  rw [before5RowShort_split_core, before5Row_split_core]
+  simp only [CRTWindow.forward_append, CRTWindow.inverse_append, toffoliCount_append,
+    measurementCount_append, gateSlots_append]
+  refine ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
+
+private theorem allW_cxsG_mem {P : Wire → Prop} (neg : Wire) (ys : List Wire)
+    (h : AllW P (cxsG neg ys)) (y : Wire) (hy : y ∈ ys) : P neg ∧ P y := by
+  have hm : Gate.cx neg y ∈ cxsG neg ys := List.mem_map.mpr ⟨y, hy, rfl⟩
+  exact ⟨h _ hm neg (by simp [Gate.wires]), h _ hm y (by simp [Gate.wires])⟩
+
+private theorem allW_addG_mem {P : Wire → Prop} :
+    ∀ (ys cs : List Wire) (cin : Wire), ys.length = cs.length + 1 →
+      AllW P (addG ys cs cin) → P cin ∧ ∀ c ∈ cs, P c
+  | [y], [], cin, _, h =>
+    ⟨h (.cx cin y) (by simp [addG]) cin (by simp [Gate.wires]), fun _ hc => by cases hc⟩
+  | y :: y' :: ys, c :: cs, cin, hlen, h => by
+    have hcons : addG (y :: y' :: ys) (c :: cs) cin =
+        .make y cin c :: (addG (y' :: ys) cs c ++ [.pop y cin c, .cx cin y]) := rfl
+    rw [hcons] at h
+    have hm := h (.make y cin c) (List.mem_cons_self ..)
+    have hrest : AllW P (addG (y' :: ys) cs c) := fun g hg =>
+      h g (List.mem_cons_of_mem _ (List.mem_append_left _ hg))
+    have ih := allW_addG_mem (y' :: ys) cs c (by simpa using hlen) hrest
+    refine ⟨hm cin (by simp [Gate.wires]), fun q hq => ?_⟩
+    rcases List.mem_cons.mp hq with rfl | hq'
+    · exact hm q (by simp [Gate.wires])
+    · exact ih.2 q hq'
+  | [], [], _, hlen, _ => by simp at hlen
+  | [], _ :: _, _, hlen, _ => by simp at hlen
+  | [_], _ :: _, _, hlen, _ => by simp at hlen
+  | _ :: _ :: _, [], _, hlen, _ => by simp at hlen
+
+theorem beforeShort_allW {P : Wire → Prop} (j : Fin 26) (h1 : j.val ≤ 24)
+    (covered : AllW P (ScanRowGordo.before5Row (start j))) :
+    AllW P (before5RowShort (start j)) := by
+  have hw2 := wpP_ge2 j h1
+  have hle := adjW_le (start j)
+  rw [before5Row_split_core, allW_append_iff] at covered
+  rw [before5RowShort_split_core, allW_append_iff]
+  refine ⟨covered.1, ?_⟩
+  have hcore := covered.2
+  unfold Shadow7.leaveAdjustCore adjustG at hcore
+  rw [allW_append_iff, allW_append_iff] at hcore
+  have hcy : ∀ y ∈ (List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j)), P 1596 ∧ P y :=
+    allW_cxsG_mem 1596 _ hcore.1
+  have h0y : Shadow7.bankW (start j) 0 ∈ (List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j)) :=
+    List.mem_map.mpr ⟨0, List.mem_range.mpr (by omega), rfl⟩
+  have hneg : P 1596 := (hcy _ h0y).1
+  have hadd := allW_addG_mem _ _ _ (by simp; omega) hcore.2.1
+  refine allW_adjustG _ _ _ _ (fun y hy => ?_) (fun c hc => ?_) hadd.1 hneg
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy
+    rw [List.mem_range] at hi
+    exact (hcy _ (List.mem_map.mpr ⟨i, List.mem_range.mpr (by omega), rfl⟩)).2
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hc
+    rw [List.mem_range] at hi
+    exact hadd.2 _ (List.mem_map.mpr ⟨i, List.mem_range.mpr (by omega), rfl⟩)
+
+theorem core_proper_all : ∀ j : Fin 26, j.val ≤ 24 →
+    (core (start j)).all proper = true := by decide +kernel
+
+theorem beforeShort_proper (j : Fin 26) (h1 : j.val ≤ 24)
+    (old : ∀ g ∈ ScanRowGordo.before5Row (start j), proper g = true) :
+    ∀ g ∈ before5RowShort (start j), proper g = true := by
+  have keep := List.all_eq_true.mpr old
+  rw [before5Row_split_core, List.all_append, Bool.and_eq_true] at keep
+  apply List.all_eq_true.mp
+  rw [before5RowShort_split_core, List.all_append, Bool.and_eq_true]
+  exact ⟨keep.1, core_proper_all j h1⟩
+
+theorem before5Short_proper (j : Fin 26) (h1 : j.val ≤ 24)
+    (old : ∀ g ∈ DeadJoin.before5 (start j), proper g = true) :
+    ∀ g ∈ before5Short (start j), proper g = true := by
+  have keep := List.all_eq_true.mpr old
+  rw [before5_split_core, List.all_append, Bool.and_eq_true] at keep
+  apply List.all_eq_true.mp
+  rw [before5Short_split_core, List.all_append, Bool.and_eq_true]
+  exact ⟨keep.1, core_proper_all j h1⟩
+
+theorem run_cx_single (a b : Wire) (u : State) :
+    run [.CX a b] [] u = ⟨u.phase, writeBit u.basis b (u.basis b ^^ u.basis a)⟩ := rfl
+
+theorem ready_append (a b : List Gate) (s : State) :
+    Ready s (a ++ b) ↔ Ready s a ∧ Ready (run (GateMirror.forward a) [] s) b := by
+  induction a generalizing s with
+  | nil => simp [Ready, GateMirror.forward, run]
+  | cons g gs ih =>
+    change (Fresh s g ∧ Ready (transition g s) (gs ++ b)) ↔
+      (Fresh s g ∧ Ready (transition g s) gs) ∧ Ready (run ([front g] ++ GateMirror.forward gs) [] s) b
+    rw [run_append, run_take, List.drop_nil]
+    change (Fresh s g ∧ Ready (transition g s) (gs ++ b)) ↔
+      (Fresh s g ∧ Ready (transition g s) gs) ∧ Ready (run (GateMirror.forward gs) [] (transition g s)) b
+    rw [ih (transition g s)]
+    tauto
+
+theorem ready_cxsG (neg : Wire) (ys : List Wire) (s : State) :
+    Ready s (cxsG neg ys) := by
+  induction ys generalizing s with
+  | nil => trivial
+  | cons y ys ih => exact ⟨trivial, ih _⟩
+
+theorem transition_make_other (a b t : Wire) (s : State) (q : Wire) (hq : q ≠ t) :
+    (transition (.make a b t) s).basis q = s.basis q := by
+  simp [transition, front, run, writeBit, hq]
+
+theorem ready_addG : ∀ (ys cs : List Wire) (cin : Wire) (s : State),
+    ys.length = cs.length + 1 → cs.Nodup → (∀ c ∈ cs, s.basis c = false) →
+    Ready s (addG ys cs cin)
+  | [y], [], cin, s, _, _, _ => ⟨trivial, trivial⟩
+  | y :: y' :: ys, c :: cs, cin, s, hlen, hnd, hclean => by
+    have hcons : addG (y :: y' :: ys) (c :: cs) cin =
+        .make y cin c :: (addG (y' :: ys) cs c ++ [.pop y cin c, .cx cin y]) := rfl
+    rw [hcons]
+    have hnd' := List.nodup_cons.mp hnd
+    refine ⟨hclean c (List.mem_cons_self ..), ?_⟩
+    rw [ready_append]
+    refine ⟨ready_addG (y' :: ys) cs c _ (by simpa using hlen) hnd'.2 (fun q hq => ?_), ⟨trivial, trivial, trivial⟩⟩
+    exact (transition_make_other y cin c s q (fun heq => hnd'.1 (heq ▸ hq))).trans
+      (hclean q (List.mem_cons_of_mem _ hq))
+  | [], [], _, _, hlen, _, _ => by simp at hlen
+  | [], _ :: _, _, _, hlen, _, _ => by simp at hlen
+  | [_], _ :: _, _, _, hlen, _, _ => by simp at hlen
+  | _ :: _ :: _, [], _, _, hlen, _, _ => by simp at hlen
+
+theorem ready_adjustG (ys cs : List Wire) (cin neg : Wire) (s : State)
+    (hlen : ys.length = cs.length + 1) (hnd : cs.Nodup) (hdisj : ∀ c ∈ cs, c ∉ ys)
+    (hneg : neg ∉ ys) (hynd : ys.Nodup) (hclean : ∀ c ∈ cs, s.basis c = false) :
+    Ready s (adjustG ys cs cin neg) := by
+  unfold adjustG
+  rw [ready_append]
+  refine ⟨ready_cxsG neg ys s, ?_⟩
+  rw [ready_append]
+  refine ⟨ready_addG ys cs cin _ hlen hnd (fun c hc => ?_), ready_cxsG neg ys _⟩
+  rw [forward_cxsG]
+  exact ((signComplement_correct neg ys hynd hneg s []).2.1 c (hdisj c hc)).trans (hclean c hc)
+
+theorem adjusted_drop_top (v w : Nat) (cin neg : Bool)
+    (h : (v = 0 ∧ cin = false) ∨ (1 ≤ v ∧ v + 1 < 2^w)) :
+    HighBankAdjust.adjusted v w cin neg = HighBankAdjust.adjusted v (w + 1) cin neg ∧
+    HighBankAdjust.adjusted v w cin neg < 2^w := by
+  have hp : 2^(w + 1) = 2 * 2^w := by rw [pow_succ]; omega
+  have hpos : 0 < 2^w := Nat.two_pow_pos w
+  rcases h with ⟨rfl, rfl⟩ | ⟨h1, hlt⟩
+  · cases neg <;> simp [HighBankAdjust.adjusted, hpos]
+  · cases cin <;> cases neg <;> simp only [HighBankAdjust.adjusted, Bool.false_eq_true, ↓reduceIte,
+      Bool.toNat_false, Bool.toNat_true, Nat.sub_zero, Nat.add_zero]
+    · exact ⟨by rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)], by omega⟩
+    · rw [Nat.add_mod_right, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      exact ⟨rfl, by omega⟩
+    · exact ⟨by rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)], by omega⟩
+    · have e1 : v + 2^w - 1 = (v - 1) + 2^w := by omega
+      have e2 : v + 2^(w + 1) - 1 = (v - 1) + 2^(w + 1) := by omega
+      rw [e1, e2, Nat.add_mod_right, Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      exact ⟨rfl, by omega⟩
+
+theorem basis_eq_of_regValue (ys : List Wire) (b1 b2 : BasisState)
+    (hout : ∀ q, q ∉ ys → b1 q = b2 q) (hval : regValue ys b1 = regValue ys b2) :
+    b1 = b2 := by
+  funext q
+  by_cases hq : q ∈ ys
+  · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hq
+    have g1 := HighBankAdjust.bit_read ys i b1 hi
+    have g2 := HighBankAdjust.bit_read ys i b2 hi
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some] at g1 g2
+    rw [g1, g2, hval]
+  · exact hout q hq
+
+theorem regValue_snoc (ys : List Wire) (z : Wire) (b : BasisState) :
+    regValue (ys ++ [z]) b = regValue ys b + 2^ys.length * (b z).toNat := by
+  induction ys with
+  | nil => cases h : b z <;> simp [regValue, h]
+  | cons y ys ih =>
+    change (if b y then 1 else 0) + 2 * regValue (ys ++ [z]) b =
+      (if b y then 1 else 0) + 2 * regValue ys b + 2^(ys.length + 1) * (b z).toNat
+    rw [ih, pow_succ]
+    ring
+
+end ECDSAAdd.Entrant.StairPacket.AdjustShort
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTWindow
+open Arithmetic MappedCompressed WindowFold Baselines Challenge GateMirror Partial WindowParams
+
 /-- The rebuilt leave's prefix and suffix carry the Shadow7 move leave's counts minus its barrel stage. -/
 -- ==== FlagCut57 wired (credited to ercumentyildirim ae9d602d) ====
 theorem parts_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (GateMirror.forward (CRTBarrel.before (start j))) +
       toffoliCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 97 ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 97 ∧
     toffoliCount (inverse (CRTBarrel.afterPart (start j))) + toffoliCount (inverse (CRTBarrel.before (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 129 ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 129 ∧
     measurementCount (GateMirror.forward (CRTBarrel.before (start j))) +
       measurementCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 89 ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 89 ∧
     measurementCount (inverse (CRTBarrel.afterPart (start j))) +
       measurementCount (inverse (CRTBarrel.before (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 57 ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 57 ∧
     gateSlots (GateMirror.forward (CRTBarrel.before (start j))) +
       gateSlots (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 646 + 3*Shadow7.wpP (start j + 15) ∧
+      6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 646 + 3*Shadow7.wpP (start j + 15) ∧
     gateSlots (inverse (CRTBarrel.afterPart (start j))) + gateSlots (inverse (CRTBarrel.before (start j))) =
-      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 + 3*Shadow7.wpP (start j + 15) := by
+      6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 + 3*Shadow7.wpP (start j + 15) := by
   obtain ⟨r1, r2, r3, r4, r5, r6⟩ := ScanRowGordo.before5Row_counts j (by omega)
+  obtain ⟨a1, a2, a3, a4, a5, a6⟩ := AdjustShort.beforeShort_counts j h1
+  have hle := AdjustShort.adjW_le (start j)
   dsimp only [CRTBarrel.before, CRTBarrel.afterPart] at *
   obtain ⟨t1, t2, m1, m2, s1, s2⟩ := Shadow7.leaveMove_counts j (by omega) (by omega)
   obtain ⟨b1, b2, c1, c2, d1, d2⟩ := (Shadow7.counts_leaveBarrel (start j)).programs
@@ -2351,32 +2577,32 @@ theorem parts_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
   have afterEq : DeadJoin.afterReference (start j) = CRTBarrel.afterReference (start j) := by rfl
   rw [afterEq] at f1 f2 g1 g2 h1 h2
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · clear * - j t1 b1 f1 r1 k1
+  · clear * - j t1 b1 f1 r1 a1 hle k1
     omega
-  · clear * - j t2 b2 f2 r2 k2
+  · clear * - j t2 b2 f2 r2 a2 hle k2
     omega
-  · clear * - j m1 c1 g1 r3 k3
+  · clear * - j m1 c1 g1 r3 a3 hle k3
     omega
-  · clear * - j m2 c2 g2 r4 k4
+  · clear * - j m2 c2 g2 r4 a4 hle k4
     omega
-  · clear * - j s1 d1 h1 r5 k5
+  · clear * - j s1 d1 h1 r5 a5 hle k5
     omega
-  · clear * - j s2 d2 h2 r6 k6
+  · clear * - j s2 d2 h2 r6 a6 hle k6
     omega
 
 /-- The rebuilt leave and its mirror: the Shadow7 counts with the barrel stage replaced by the CRT barrel. -/
 theorem leave_metrics (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 97 + CRTBarrel.barrelT (start j) false ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 97 + CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 129 + CRTBarrel.barrelT (start j) true ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 129 + CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 89 + CRTBarrel.barrelM (start j) false ∧
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 89 + CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 57 + CRTBarrel.barrelM (start j) true ∧
-    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 646 +
+      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 57 + CRTBarrel.barrelM (start j) true ∧
+    gateSlots (CRTBarrel.leave j) = 6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 646 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false ∧
-    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 +
+    gateSlots (CRTBarrel.unleave j) = 6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := parts_counts j h0 h1
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics j h0 h1 false
@@ -2408,7 +2634,7 @@ theorem parts_box (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     AllW (leaveBox (start j)) (CRTBarrel.before (start j)) ∧ AllW (leaveBox (start j)) (CRTBarrel.afterPart (start j)) := by
   have a := Shadow7.allW_leaveMove (start j) (Shadow7.leaveOps_box j (by omega) (by omega))
   rw [split_ops, allW_append_iff, allW_append_iff] at a
-  exact ⟨ScanRowGordo.before5Row_allW j h1 (DeadJoin.before5_allW j h1 (show AllW _ (DeadJoin.beforeAll (start j)) from FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_allW _ a.1))),
+  exact ⟨AdjustShort.beforeShort_allW j h1 (ScanRowGordo.before5Row_allW j h1 (DeadJoin.before5_allW j h1 (show AllW _ (DeadJoin.beforeAll (start j)) from FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_allW _ a.1)))),
     DeadJoin.after7K_allW j h1 (show AllW _ (DeadJoin.afterAll (start j)) from FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1 (DeadJoin.afterShort (start j)) (DeadJoin.after_short_allW j h1 a.2.2))⟩
 
 theorem leave_eq (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
@@ -4433,11 +4659,73 @@ theorem terminal_fit_store (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (
 
 namespace Admission
 
+private theorem sum_adj_early (x p t : Nat) (good : WideReference.Bounds x p) (ht : 45 ≤ t) :
+    (step^[t] (init x p)).u + (step^[t] (init x p)).v < 2^256 + 2^211 := by
+  let z := step^[t] (init x p)
+  change z.u + z.v < 2^256 + 2^211
+  have valid := iter_valid t (init x p) good.positive good.odd
+  change 0 < z.v ∧ z.v % 2 = 1 ∧ z.u.gcd z.v = x.gcd p at valid
+  by_cases empty : z.u = 0
+  · have hg := valid.2.2
+    rw [empty, Nat.gcd_zero_left] at hg
+    rw [empty, hg.trans good.coprime, Nat.zero_add]
+    have h256 : 1 < 2^256 := Nat.one_lt_two_pow (by decide)
+    omega
+  · obtain ⟨a, b, total, hu, hv⟩ := capped_scales x p t (lt_trans good.small good.cap) good.cap
+    obtain ⟨_, su⟩ := unscale (Nat.pos_of_ne_zero empty) (show 2^a * z.u < 2^256 from hu)
+    obtain ⟨_, sv⟩ := unscale valid.1 (show 2^b * z.v < 2^256 from hv)
+    by_cases az : a = 0
+    · have ub : z.u < 2^256 := by simpa [az] using su
+      have vb : z.v < 2^211 := sv.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+      omega
+    · by_cases bz : b = 0
+      · have vb : z.v < 2^256 := by simpa [bz] using sv
+        have ub : z.u < 2^211 := su.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+        omega
+      · have ub : z.u < 2^255 := su.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+        have vb : z.v < 2^255 := sv.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+        have p256 : 2^256 = 2^255 + 2^255 := by rw [show (256 : Nat) = 255 + 1 by decide, pow_succ]; omega
+        omega
+
+private theorem sum_adj_late (x p t : Nat) (good : WideReference.Bounds x p) (ht : 270 ≤ t) (hi : t ≤ 405) :
+    (step^[t] (init x p)).u + (step^[t] (init x p)).v ≤ 2^(511 - t) := by
+  let z := step^[t] (init x p)
+  change z.u + z.v ≤ 2^(511 - t)
+  have valid := iter_valid t (init x p) good.positive good.odd
+  change 0 < z.v ∧ z.v % 2 = 1 ∧ z.u.gcd z.v = x.gcd p at valid
+  by_cases empty : z.u = 0
+  · have hg := valid.2.2
+    rw [empty, Nat.gcd_zero_left] at hg
+    rw [empty, hg.trans good.coprime, Nat.zero_add]
+    exact Nat.two_pow_pos _
+  · obtain ⟨a, b, total, hu, hv⟩ := capped_scales x p t (lt_trans good.small good.cap) good.cap
+    obtain ⟨aa, su⟩ := unscale (Nat.pos_of_ne_zero empty) (show 2^a * z.u < 2^256 from hu)
+    obtain ⟨bb, sv⟩ := unscale valid.1 (show 2^b * z.v < 2^256 from hv)
+    by_cases ea : a = 255
+    · have ub : z.u < 2 := by simpa [ea] using su
+      have vb : z.v < 2^(511 - t) := sv.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+      omega
+    · by_cases eb : b = 255
+      · have vb : z.v < 2 := by simpa [eb] using sv
+        have ub : z.u < 2^(511 - t) := su.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+        omega
+      · have ub : z.u < 2^(510 - t) := su.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+        have vb : z.v < 2^(510 - t) := sv.trans_le (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega))
+        have p511 : 2^(511 - t) = 2^(510 - t) + 2^(510 - t) := by
+          rw [show 511 - t = (510 - t) + 1 by omega, pow_succ]; omega
+        omega
+
+private theorem adj_geo : ∀ j : Fin 26, j.val ≤ 24 →
+    (start j < 225 → Shadow7.sbP (start j) + 15 ≤ 242 ∧ AdjustShort.adjW (start j) + (Shadow7.sbP (start j) + 15) = 257) ∧
+    (270 ≤ start j → Shadow7.sbP (start j) + 15 < 511 - start j ∧ AdjustShort.adjW (start j) + (Shadow7.sbP (start j) + 15) = 512 - start j) := by
+  decide
+
 /-- dadon's `Leave{s}Admission.Numeric` (225: sb 144, Wp 97, next sb 136, W 112). -/
 structure Numeric (j : Fin 26) (z : SkywalkNat.State) : Prop where
   farSmall : Shadow7.SmallIfFar (Shadow7.sbP (start j)) 15 z
   odd : z.v % 2 = 1
   room : Shadow.high (Shadow7.sbP (start j)) 15 z + 1 < 2^(Shadow7.wpP (start j))
+  roomTight : Shadow.high (Shadow7.sbP (start j)) 15 z + 1 < 2^(AdjustShort.adjW (start j))
   endSmall : Shadow7.EndSmall (Shadow7.sbP (start j)) z
   nextFarSmall : Shadow7.SmallIfFar (Shadow7.sbP (start j + 15)) 15 (SkywalkNat.step^[15] z)
   bound : TrueMiddle.F j z < 2^(Shadow7.wpP (start j) + 15)
@@ -4460,10 +4748,50 @@ theorem actualNumbers (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (x p :
         refine Or.inr ⟨by omega, ?_⟩
         rw [show Shadow7.wpP (start j) - 1 + (Shadow7.sbP (start j) + 15) = 512 - start j by omega]
         exact sum_late x p _ good (by omega))
+  have tight : Shadow.high (Shadow7.sbP (start j)) 15 (step^[start j] (init x p)) + 1 < 2^(AdjustShort.adjW (start j)) := by
+    have geo := adj_geo j h1
+    by_cases hlt : start j < 225
+    · obtain ⟨e_le, e_sum⟩ := geo.1 hlt
+      have hs := sum_adj_early x p (start j) good w1
+      have hpow : 2^(Shadow7.sbP (start j) + 15) ≤ 2^242 := Nat.pow_le_pow_right (by decide : 0 < 2) e_le
+      have h257 : 2^256 + 2^211 + 2^242 ≤ 2^257 := by
+        have h1 : 2^211 ≤ 2^242 := Nat.pow_le_pow_right (by decide : 0 < 2) (by decide)
+        have h2 : 2^242 + 2^242 = 2^243 := by rw [show (243 : Nat) = 242 + 1 by decide, pow_succ]; omega
+        have h3 : 2^243 ≤ 2^256 := Nat.pow_le_pow_right (by decide : 0 < 2) (by decide)
+        have h4 : 2^256 + 2^256 = 2^257 := by rw [show (257 : Nat) = 256 + 1 by decide, pow_succ]; omega
+        omega
+      have hlt257 : (step^[start j] (init x p)).u + (step^[start j] (init x p)).v + 2^(Shadow7.sbP (start j) + 15) <
+          2^(AdjustShort.adjW (start j)) * 2^(Shadow7.sbP (start j) + 15) := by
+        rw [← pow_add, e_sum]; omega
+      unfold Shadow.high Shadow.limb
+      have hpos : 0 < 2^(Shadow7.sbP (start j) + 15) := Nat.two_pow_pos _
+      have hdiv : ((step^[start j] (init x p)).u + (step^[start j] (init x p)).v) / 2^(Shadow7.sbP (start j) + 15) *
+          2^(Shadow7.sbP (start j) + 15) ≤ (step^[start j] (init x p)).u + (step^[start j] (init x p)).v :=
+        Nat.div_mul_le_self _ _
+      nlinarith
+    · by_cases hge : 270 ≤ start j
+      · obtain ⟨e_lt, e_sum⟩ := geo.2 hge
+        have hs := sum_adj_late x p (start j) good hge w3
+        have hpow : 2^(Shadow7.sbP (start j) + 15) < 2^(511 - start j) :=
+          Nat.pow_lt_pow_right (by decide : 1 < 2) e_lt
+        have h512 : 2^(511 - start j) + 2^(511 - start j) = 2^(512 - start j) := by
+          rw [show 512 - start j = (511 - start j) + 1 by omega, pow_succ]; omega
+        have hlt512 : (step^[start j] (init x p)).u + (step^[start j] (init x p)).v + 2^(Shadow7.sbP (start j) + 15) <
+            2^(AdjustShort.adjW (start j)) * 2^(Shadow7.sbP (start j) + 15) := by
+          rw [← pow_add, e_sum]; omega
+        unfold Shadow.high Shadow.limb
+        have hpos : 0 < 2^(Shadow7.sbP (start j) + 15) := Nat.two_pow_pos _
+        have hdiv : ((step^[start j] (init x p)).u + (step^[start j] (init x p)).v) / 2^(Shadow7.sbP (start j) + 15) *
+            2^(Shadow7.sbP (start j) + 15) ≤ (step^[start j] (init x p)).u + (step^[start j] (init x p)).v :=
+          Nat.div_mul_le_self _ _
+        nlinarith
+      · have heq : AdjustShort.adjW (start j) = Shadow7.wpP (start j) := by
+          unfold AdjustShort.adjW; rw [if_neg]; omega
+        rw [heq]; exact env.1
   have it : step^[15] (step^[start j] (init x p)) = step^[start j + 15] (init x p) := by
     rw [← Function.iterate_add_apply, Nat.add_comm]
   have now := Shadow7.Envelope.inputs x p (start j) hx good.cap (by omega)
-  refine ⟨now.1, (iter_valid (start j) (init x p) good.positive good.odd).2.1, env.1, now.2,
+  refine ⟨now.1, (iter_valid (start j) (init x p) good.positive good.odd).2.1, env.1, tight, now.2,
     Shadow7.Envelope.nextFarSmall x p (start j) hx good.cap (by omega), ?_, terminal_fit_store j h0 (by omega) x p good⟩
   · unfold TrueMiddle.F
     rw [Nat.div_lt_iff_lt_mul (by positivity), ← pow_add,
@@ -9083,6 +9411,281 @@ theorem input {j : Fin 26} (lo : 0≤j.val) (hi : j.val≤24) {s : State} {z : S
   · exact (unchanged 1613 (by decide) (by unfold Wire at *; omega)).trans
       (native_carryJ j (Nat.zero_le _) (by omega) _ s h.ready h.top h.top2 1613 (by decide) (by unfold Wire at *; omega))
 
+theorem adjust_pair {j : Fin 26} (lo : 0 ≤ j.val) (hi : j.val ≤ 24) {s : State} {z : SkywalkNat.State}
+    {g sg : Bool} (h : Admission.Inputs j s z g sg) :
+    let t0 := run (GateMirror.forward (head (start j) ++ [.cx (Shadow7.e0P (start j) + 6) (Shadow7.e0P (start j) + 3)])) [] s
+    (∀ m, run (GateMirror.forward (AdjustShort.core (start j))) m t0 =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) ∧
+    (∀ n, run (GateMirror.inverse (AdjustShort.core (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) = t0) := by
+  obtain ⟨w1, w2⟩ := start_win7 j (Nat.zero_le _) (by omega)
+  have geom := Shadow7.rail_win w1 (by omega)
+  have top := Shadow7.pool_top w1 (by omega)
+  obtain ⟨u, hu⟩ : ∃ u : State, u = run (GateMirror.forward (head (start j))) [] s := ⟨_, rfl⟩
+  obtain ⟨u', hu'⟩ : ∃ u' : State, u' = ⟨u.phase, writeBit u.basis (Shadow7.e0P (start j)+3)
+      (u.basis (Shadow7.e0P (start j)+3) ^^ u.basis (Shadow7.e0P (start j)+6))⟩ := ⟨_, rfl⟩
+  have ht0 : run (GateMirror.forward (head (start j) ++ [.cx (Shadow7.e0P (start j) + 6) (Shadow7.e0P (start j) + 3)])) [] s = u' := by
+    rw [forward_app, run_append, run_take, List.drop_nil, ← hu]
+    change run [.CX (Shadow7.e0P (start j) + 6) (Shadow7.e0P (start j) + 3)] [] u = u'
+    rw [AdjustShort.run_cx_single, ← hu']
+  dsimp only
+  rw [ht0]
+  have preq (q : Wire) (ne : q ≠ Shadow7.e0P (start j)+3) : u'.basis q = u.basis q := by
+    rw [hu']; simp only [writeBit, Function.update_of_ne ne]
+  have uk (q : Wire) (large : 1598 ≤ q) (apart : q < Shadow7.e0P (start j) ∨ Shadow7.e0P (start j)+10 ≤ q) :
+      u.basis q = s.basis q := by rw [hu]; exact head_keeps j lo (by omega) s q large apart
+  have uup (q : Wire) (low : Shadow7.a0P (start j)+17 ≤ q) (high : q < Shadow7.a0P (start j)+20) :
+      u.basis q = s.basis q := by rw [hu]; exact head_up_keeps j lo (by omega) s q low high
+  have clean (q : Wire) (hq : q ∈ carries j) : u'.basis q = false := by
+    obtain ⟨i, him, rfl⟩ := List.mem_map.mp hq
+    have him' := List.mem_range.mp him
+    have loc := Shadow7.pool_cases (i := i) w1 (by omega)
+    by_cases up : (Shadow7.poolW (start j) i : Nat) < 1598
+    · exact (preq _ (by unfold Wire at *; omega)).trans ((uup _ (by unfold Wire at *; omega) (by unfold Wire at *; omega)).trans
+        (h.clean _ (by assumption)))
+    · exact (preq _ (by unfold Wire at *; omega)).trans ((uk _ (by unfold Wire at *; omega) (by unfold Wire at *; omega)).trans
+        (h.clean _ (by assumption)))
+  have absent (q : Wire) (qa : 1043 < q) (qb : q < Shadow7.e0P (start j)) : q ∉ ys j := by
+    rintro hit
+    obtain ⟨i, ii, rfl⟩ := List.mem_map.mp hit
+    have lim := List.mem_range.mp ii
+    have loc := Shadow7.bank_cases (i := i) w1 (by omega) (by omega)
+    unfold Wire at *
+    omega
+  have hnd := adjust_nodup j (Nat.zero_le _) (by omega)
+  have hnegOut : 1596 ∉ ys j := absent 1596 (by decide) (by unfold Wire at *; omega)
+  have hlen : (carries j).length + 1 = (ys j).length := by simp [ys, carries]; omega
+  have hw2 := AdjustShort.wpP_ge2 j hi
+  have hle := AdjustShort.adjW_le (start j)
+  have hap := AdjustShort.adjW_pos j hi
+  let ys' := (List.range (AdjustShort.adjW (start j))).map (Shadow7.bankW (start j))
+  let cs' := (List.range (AdjustShort.adjW (start j) - 1)).map (Shadow7.poolW (start j))
+  have hys_sub : ∀ q ∈ ys', q ∈ ys j := by
+    intro q hq; obtain ⟨i, ii, rfl⟩ := List.mem_map.mp hq
+    exact List.mem_map.mpr ⟨i, List.mem_range.mpr (by rw [List.mem_range] at ii; omega), rfl⟩
+  have hcs_sub : ∀ q ∈ cs', q ∈ carries j := by
+    intro q hq; obtain ⟨i, ii, rfl⟩ := List.mem_map.mp hq
+    exact List.mem_map.mpr ⟨i, List.mem_range.mpr (by rw [List.mem_range] at ii; omega), rfl⟩
+  have hys_sublist : ys'.Sublist (ys j) := by
+    by_cases hcond_w : start j < 225 ∨ 270 ≤ start j
+    · have heq : ys j = ys' ++ [Shadow7.bankW (start j) (Shadow7.wpP (start j) - 1)] := by
+        simp only [ys, ys', AdjustShort.adjW, if_pos hcond_w]
+        conv_lhs => rw [show Shadow7.wpP (start j) = (Shadow7.wpP (start j) - 1) + 1 by omega,
+          List.range_succ, List.map_append, List.map_singleton]
+      rw [heq]; exact List.sublist_append_left _ _
+    · have heq : ys' = ys j := by simp only [ys, ys', AdjustShort.adjW, if_neg hcond_w]
+      rw [heq]
+  have hcs_sublist : cs'.Sublist (carries j) := by
+    by_cases hcond_w : start j < 225 ∨ 270 ≤ start j
+    · have heq : carries j = cs' ++ [Shadow7.poolW (start j) (Shadow7.wpP (start j) - 2)] := by
+        simp only [carries, cs', AdjustShort.adjW, if_pos hcond_w]
+        conv_lhs => rw [show Shadow7.wpP (start j) - 1 = (Shadow7.wpP (start j) - 2) + 1 by omega,
+          List.range_succ, List.map_append, List.map_singleton]
+        rw [show Shadow7.wpP (start j) - 1 - 1 = Shadow7.wpP (start j) - 2 by omega]
+      rw [heq]; exact List.sublist_append_left _ _
+    · have heq : cs' = carries j := by simp only [carries, cs', AdjustShort.adjW, if_neg hcond_w]
+      rw [heq]
+  have hnd_full := List.nodup_cons.mp hnd
+  have hnd_app := List.nodup_append.mp hnd_full.2
+  have hnd_ys' : ys'.Nodup := hnd_app.1.sublist hys_sublist
+  have hnd_cs' : cs'.Nodup := hnd_app.2.1.sublist hcs_sublist
+  have hnd' : ((Shadow7.e0P (start j) + 3) :: (ys' ++ cs')).Nodup := by
+    rw [List.nodup_cons, List.nodup_append]
+    refine ⟨fun hmem => hnd_full.1 ?_, hnd_ys', hnd_cs', fun a ha b hb => hnd_app.2.2 a (hys_sub a ha) b (hcs_sub b hb)⟩
+    rcases List.mem_append.mp hmem with h1 | h2
+    · exact List.mem_append_left _ (hys_sub _ h1)
+    · exact List.mem_append_right _ (hcs_sub _ h2)
+  have hnegOut' : 1596 ∉ ys' := fun hm => hnegOut (hys_sub _ hm)
+  have hlen' : cs'.length + 1 = ys'.length := by simp [ys', cs']; omega
+  have hclean' : ∀ q ∈ cs', u'.basis q = false := fun q hq => clean q (hcs_sub q hq)
+  have hphys' : ∀ g ∈ AdjustShort.core (start j), proper g = true :=
+    List.all_eq_true.mp (AdjustShort.core_proper_all j hi)
+  have hready' : Ready u' (AdjustShort.core (start j)) :=
+    AdjustShort.ready_adjustG ys' cs' (Shadow7.e0P (start j) + 3) 1596 u' (by omega) hnd_cs'
+      (fun c hc hc' => hnd_app.2.2 c (hys_sub c hc') c (hcs_sub c hc) rfl) hnegOut' hnd_ys' hclean'
+  have hprep' : Prepared u' (AdjustShort.core (start j)) :=
+    all_prepared _ u' hphys' (fun m => by
+      change (run (GateMirror.forward (adjustG ys' cs' (Shadow7.e0P (start j) + 3) 1596)) m u').phase = u'.phase
+      rw [forward_adjustG]
+      exact (HighBankAdjust.correct ys' cs' (Shadow7.e0P (start j) + 3) 1596 hnd' hnegOut' hlen' u' m hclean').1)
+  have hfwd : ∀ m, run (GateMirror.forward (AdjustShort.core (start j))) m u' =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u' := by
+    intro m
+    by_cases hsame : AdjustShort.adjW (start j) = Shadow7.wpP (start j)
+    · have hceq : AdjustShort.core (start j) = Shadow7.leaveAdjustCore (start j) := by
+        unfold AdjustShort.core Shadow7.leaveAdjustCore; rw [hsame]
+      rw [hceq]
+      exact (LeaveSplice.Valid.mk (by rwa [← hceq]) (by rwa [← hceq]) (by rwa [← hceq])).default_run m
+    · have hstep : Shadow7.wpP (start j) = AdjustShort.adjW (start j) + 1 := by
+        unfold AdjustShort.adjW at hsame ⊢; split_ifs at hsame ⊢ <;> omega
+      have hys_snoc : ys j = ys' ++ [Shadow7.bankW (start j) (AdjustShort.adjW (start j))] := by
+        simp only [ys, ys', hstep, List.range_succ, List.map_append, List.map_singleton]
+      have hlast_notin : Shadow7.bankW (start j) (AdjustShort.adjW (start j)) ∉ ys' := by
+        have hndy := hnd_app.1
+        rw [hys_snoc, List.nodup_append] at hndy
+        intro hm; exact hndy.2.2 _ hm _ (List.mem_singleton_self _) rfl
+      let D := (Shadow7.fix5P (start j) (Shadow7.sbP (start j))).drop 43
+      let a := run (GateMirror.forward (entryOps (start j))) [] s
+      let u0 := run (GateMirror.forward (fullPrefix j)) [] a
+      have stillD : (Shadow7.moveRows (start j)).all (fun r => (GateMirror.forward D).all (MoveChain.quiet (Shadow7.e0P (start j) + 6) r)) = true := by
+        rw [List.all_eq_true]; intro r hr; rw [List.all_eq_true]; intro g hg
+        exact List.all_eq_true.mp (List.all_eq_true.mp (Shadow7.stillB w1 (by omega)) r hr) g
+          (by simp [Shadow7.moveB, forward_app, D, hg])
+      have hotA := h.hot (Nat.zero_le _) (by omega) []
+      have hstock : entryOps (start j) ++ fullPrefix j =
+          Shadow7.moveA (start j) ++ (Shadow7.moveMux (start j) ++ D) := by
+        unfold entryOps fullPrefix Shadow7.moveA Shadow7.moveMux D
+        have e5 : Shadow7.fix5P (start j) (Shadow7.sbP (start j)) =
+            (Shadow7.fix5P (start j) (Shadow7.sbP (start j))).take 27 ++
+            (((Shadow7.fix5P (start j) (Shadow7.sbP (start j))).drop 27).take 16 ++
+              (Shadow7.fix5P (start j) (Shadow7.sbP (start j))).drop 43) := rfl
+        conv_lhs => rw [e5]
+        simp only [List.append_assoc]
+      have u_eq_clr : u = MoveChain.clrAll (Shadow7.e0P (start j) + 6) (Shadow7.moveRows (start j)) u0 := by
+        rw [hu, head, selectorTail, forward_app, forward_app, rowGates_forward, run_append, run_take,
+          List.drop_nil, run_append, run_take, List.drop_nil]
+        rw [MoveChain.moved (Shadow7.e0P (start j) + 6) (Shadow7.moveRows (start j)) []
+          (run (GateMirror.forward (Shadow7.moveA (start j))) [] s) _
+          (Shadow7.apart_move w1 (by omega)) (Shadow7.lone_move (start j)) hotA.1 hotA.2]
+        rw [MoveChain.commAll _ _ _ stillD]
+        congr 1
+        have hu0 : u0 = run (GateMirror.forward (entryOps (start j) ++ fullPrefix j)) [] s := by
+          simp only [u0, a, forward_app, run_append, run_take, List.drop_nil]
+        rw [hu0, hstock]
+        simp only [forward_app, Shadow7.mux_forward, run_append, run_take, List.drop_nil]
+      have clrAll_other (rs : List MoveChain.Row) (st : State) (q : Wire) (hq : ∀ r ∈ rs, q ≠ r.2) :
+          (MoveChain.clrAll (Shadow7.e0P (start j) + 6) rs st).basis q = st.basis q := by
+        induction rs generalizing st with
+        | nil => rfl
+        | cons r rs ih =>
+          show (MoveChain.clrAll _ rs (MoveChain.clr _ r st)).basis q = st.basis q
+          rw [ih _ (fun r' hr' => hq r' (List.mem_cons_of_mem _ hr'))]
+          exact MoveChain.wb_other _ _ _ _ (hq r List.mem_cons_self)
+      have u_eq_u0 (q : Wire) (hq : q < Shadow7.a0P (start j) - 1 ∨ Shadow7.a0P (start j) + 15 ≤ q) :
+          u.basis q = u0.basis q := by
+        rw [u_eq_clr]
+        apply clrAll_other
+        intro r hr
+        obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hr
+        rw [List.mem_range] at hi
+        dsimp only; unfold Wire at *; omega
+      let uFlags := LeaveJ7.Admission.flags z g sg
+      have par := RecordedParity.result j (Nat.zero_le _) (by omega) s z g sg ⟨h.farSmall, h.endSmall⟩ h.odd h.record
+      have mode : LeaveSelector.actualMode (Shadow7.sbP (start j)) z =
+          LeaveSelector.farMode (s.basis (Shadow7.e0P (start j) + 3)) (s.basis (Shadow7.e0P (start j) + 4)) z.u := by
+        rw [h.far, h.side]; exact LeaveTraceHistory.flags _ _
+      have ev := RecordedEvents.result j (Nat.zero_le _) (by omega) s z g sg ⟨h.farSmall, h.endSmall⟩ h.odd h.record
+      have front := entry_core j (Nat.zero_le _) (by omega) s [] z uFlags.1 uFlags.2 ⟨h.farSmall, h.endSmall⟩ h.ready h.fresh h.scratch h.temp
+        (Shadow.far (Shadow7.sbP (start j)) 15 z ∧ LeaveShadowRails.farKey (Shadow7.sbP (start j)) z = 0)
+        (LeaveJ7.glueBound j z uFlags.2 ⟨h.farSmall, h.endSmall⟩)
+        (LeaveJ7.RecordedEvents.glueFlag j (Nat.zero_le _) (by omega) s z g sg ⟨h.farSmall, h.endSmall⟩ h.odd h.record h.far h.side)
+      have watchedOK := frontReady_frame j (Nat.zero_le _) (by omega) s [] z uFlags.1 uFlags.2 ⟨h.farSmall, h.endSmall⟩ h.ready h.fresh h.scratch h.temp
+        (Shadow.far (Shadow7.sbP (start j)) 15 z ∧ LeaveShadowRails.farKey (Shadow7.sbP (start j)) z = 0)
+        (LeaveJ7.glueBound j z uFlags.2 ⟨h.farSmall, h.endSmall⟩)
+        (LeaveJ7.RecordedEvents.glueFlag j (Nat.zero_le _) (by omega) s z g sg ⟨h.farSmall, h.endSmall⟩ h.odd h.record h.far h.side)
+      have keptA (q : Nat) (ok : ¬ ((Shadow7.a0P (start j) - 1 ≤ q ∧ q ≤ Shadow7.a0P (start j) + 16) ∨
+          (Shadow7.b0P (start j) - 1 ≤ q ∧ q ≤ Shadow7.b0P (start j) + 16) ∨ (start j + 16 ≤ q ∧ q ≤ start j + 30) ∨
+          (1556 ≤ q ∧ q ≤ 1575) ∨ q = Shadow7.e0P (start j) + 5)) : a.basis q = s.basis q :=
+        entry_keep j (Nat.zero_le _) (by omega) q ok s []
+      have zA : ∀ q ∈ watched j, a.basis q = false := fun q hq => (watchedOK _ hq).trans (h.zero _ hq)
+      have baseA : ∀ q : Nat, 1561 ≤ q → q ≤ 1597 → a.basis q = false := by
+        intro q q1 q2; apply zA; simp only [watched, List.mem_append, List.mem_range'_1]; right; omega
+      have z59A : a.basis 1559 = false := zA _ (by simp [watched, List.mem_range'_1])
+      have z60A : a.basis 1560 = false := zA _ (by simp [watched, List.mem_range'_1])
+      have zcA : a.basis (ports j).crossing = false := zA _ (by simp [watched, ports])
+      have znA : a.basis (ports j).near = false := zA _ (by simp [watched, ports])
+      have modeA : LeaveSelector.actualMode (Shadow7.sbP (start j)) z =
+          LeaveSelector.farMode (a.basis (Shadow7.e0P (start j) + 3)) (a.basis (Shadow7.e0P (start j) + 4)) z.u := by
+        rw [keptA _ (by omega), keptA _ (by omega)]; exact mode
+      have evA : LeaveSelector.right (LeaveSelector.actualMode (Shadow7.sbP (start j)) z) = true →
+          ∀ i < 15, i ≤ LeaveSelector.key (LeaveSelector.actualMode (Shadow7.sbP (start j)) z) →
+            a.basis (swaps j i) = decide (i = LeaveSelector.key (LeaveSelector.actualMode (Shadow7.sbP (start j)) z)) := by
+        intro on i hi hk; have sw := swaps_cases j (Nat.zero_le _) (by omega) i hi
+        exact (keptA _ (by unfold Wire at *; omega)).trans (ev.2 on i hi hk)
+      have prepared := preparedState j (Nat.zero_le _) (by omega) a [] a.basis z.u (LeaveSelector.actualMode (Shadow7.sbP (start j)) z)
+        modeA z59A z60A (LeaveSelector.beforeFresh _ _ _ baseA zcA znA) evA
+      have sym (q : Wire) : u0.basis q = (prior j (LeaveSelector.actualMode (Shadow7.sbP (start j)) z) q).read a.basis :=
+        congrArg (fun st : State => st.basis q) prepared
+      have keepU0 (q : Nat) (ok : ¬ ((1559 ≤ q ∧ q ≤ 1597) ∨ q = Shadow7.e0P (start j) + 6 ∨ q = Shadow7.e0P (start j) + 7)) :
+          u0.basis q = a.basis q := prefix_keep j (Nat.zero_le _) (by omega) q ok a []
+      have math := loaded_signed j (Nat.zero_le _) (by omega) z a.basis ⟨h.farSmall, h.endSmall⟩ h.odd h.room
+        (fun i hi => upperBits j (Nat.zero_le _) (by omega) _ a.basis front.2.2.2.2.2.1 i (Nat.lt_trans hi (by decide : 16 < 17)))
+        ((entry_parity j (Nat.zero_le _) (by omega) s []).trans par)
+      have yEq : regValue (ys j) u'.basis = regValue (ys j) s.basis := by
+        rw [regValue_eq_iff]; intro q hq
+        obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq; rw [List.mem_range] at hi
+        have bc := Shadow7.bank_cases (i := i) w1 (by omega) (by omega)
+        exact (preq _ (by unfold Wire at *; omega)).trans ((u_eq_u0 _ (by unfold Wire at *; omega)).trans
+          ((keepU0 _ (by unfold Wire at *; omega)).trans (keptA _ (by unfold Wire at *; omega))))
+      have u3eq : u.basis (Shadow7.e0P (start j) + 3) = decide (Shadow.far (Shadow7.sbP (start j)) 15 z) :=
+        (u_eq_u0 _ (by unfold Wire at *; omega)).trans ((keepU0 _ (by omega)).trans ((keptA _ (by omega)).trans h.far))
+      have u6eq : u.basis (Shadow7.e0P (start j) + 6) =
+          if Shadow.far (Shadow7.sbP (start j)) 15 z then !HighBankSum.cross17 (TrueMiddle.d j z) else false :=
+        (u_eq_u0 _ (by unfold Wire at *; omega)).trans ((sym _).trans math.1)
+      have u'3 : u'.basis (Shadow7.e0P (start j) + 3) = (u.basis (Shadow7.e0P (start j) + 3) ^^ u.basis (Shadow7.e0P (start j) + 6)) := by
+        rw [hu']; simp only [writeBit, Function.update_self]
+      have hcond : (regValue (ys j) u'.basis = 0 ∧ u'.basis (Shadow7.e0P (start j) + 3) = false) ∨
+          (1 ≤ regValue (ys j) u'.basis ∧ regValue (ys j) u'.basis + 1 < 2^(AdjustShort.adjW (start j))) := by
+        rw [yEq, h.bank]
+        by_cases hfar : Shadow.far (Shadow7.sbP (start j)) 15 z
+        · right
+          rw [if_pos hfar]
+          exact ⟨by unfold Shadow.far at hfar; omega, h.roomTight⟩
+        · left
+          rw [if_neg hfar, u'3, u3eq, u6eq, decide_eq_false hfar, if_neg hfar]
+          exact ⟨rfl, rfl⟩
+      have hv_lt : regValue (ys j) u'.basis < 2^(AdjustShort.adjW (start j)) := by
+        rcases hcond with ⟨hz, _⟩ | ⟨_, hlt⟩
+        · rw [hz]; exact Nat.two_pow_pos _
+        · omega
+      have htop_zero : u'.basis (Shadow7.bankW (start j) (AdjustShort.adjW (start j))) = false := by
+        have br := HighBankAdjust.bit_read (ys j) (AdjustShort.adjW (start j)) u'.basis (by rw [ys_length]; omega)
+        have hget : (ys j).getD (AdjustShort.adjW (start j)) 0 = Shadow7.bankW (start j) (AdjustShort.adjW (start j)) := by
+          simp only [ys, List.getD_eq_getElem?_getD, List.getElem?_map,
+            List.getElem?_range (show AdjustShort.adjW (start j) < Shadow7.wpP (start j) by omega),
+            Option.map_some, Option.getD_some]
+        rw [hget] at br
+        rw [br, Nat.testBit_lt_two_pow hv_lt]
+      have hval_eq : regValue ys' u'.basis = regValue (ys j) u'.basis := by
+        have hsn := AdjustShort.regValue_snoc ys' (Shadow7.bankW (start j) (AdjustShort.adjW (start j))) u'.basis
+        rw [← hys_snoc, htop_zero] at hsn
+        simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsn
+        exact hsn.symm
+      have h1 := HighBankAdjust.correct ys' cs' (Shadow7.e0P (start j) + 3) 1596 hnd' hnegOut' hlen' u' m hclean'
+      have h2 := HighBankAdjust.correct (ys j) (carries j) (Shadow7.e0P (start j) + 3) 1596 hnd hnegOut hlen u' [] clean
+      have h1f : GateMirror.forward (AdjustShort.core (start j)) =
+          HighBankAdjust.adjust ys' cs' (Shadow7.e0P (start j) + 3) 1596 := by
+        unfold AdjustShort.core; exact forward_adjustG _ _ _ _
+      have h2f : GateMirror.forward (Shadow7.leaveAdjustCore (start j)) =
+          HighBankAdjust.adjust (ys j) (carries j) (Shadow7.e0P (start j) + 3) 1596 := by
+        unfold Shadow7.leaveAdjustCore; exact forward_adjustG _ _ _ _
+      rw [h1f, h2f]
+      let r1 := run (HighBankAdjust.adjust ys' cs' (Shadow7.e0P (start j) + 3) 1596) m u'
+      let r2 := run (HighBankAdjust.adjust (ys j) (carries j) (Shadow7.e0P (start j) + 3) 1596) [] u'
+      change r1 = r2
+      have htop_r1 : r1.basis (Shadow7.bankW (start j) (AdjustShort.adjW (start j))) = false :=
+        (h1.2.1 _ hlast_notin).trans htop_zero
+      have hadj := (AdjustShort.adjusted_drop_top (regValue (ys j) u'.basis) (AdjustShort.adjW (start j))
+        (u'.basis (Shadow7.e0P (start j) + 3)) (u'.basis 1596) hcond).1
+      have hreg : regValue (ys j) r1.basis = regValue (ys j) r2.basis := by
+        conv_lhs => rw [hys_snoc, AdjustShort.regValue_snoc, htop_r1]
+        simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero]
+        rw [h1.2.2, h2.2.2, hval_eq]
+        have hl1 : ys'.length = AdjustShort.adjW (start j) := by simp [ys']
+        have hl2 : (ys j).length = AdjustShort.adjW (start j) + 1 := by rw [ys_length, hstep]
+        rw [hl1, hl2]
+        exact hadj
+      have hph : r1.phase = r2.phase := h1.1.trans h2.1.symm
+      have hba : r1.basis = r2.basis :=
+        AdjustShort.basis_eq_of_regValue (ys j) r1.basis r2.basis (fun q hq =>
+          (h1.2.1 q (fun hq' => hq (hys_sub q hq'))).trans (h2.2.1 q hq).symm) hreg
+      have hmk : ∀ (s1 s2 : State), s1.phase = s2.phase → s1.basis = s2.basis → s1 = s2 := by
+        rintro ⟨_, _⟩ ⟨_, _⟩ rfl rfl; rfl
+      exact hmk r1 r2 hph hba
+  refine ⟨hfwd, fun n => ?_⟩
+  rw [← hfwd []]
+  exact invert (AdjustShort.core (start j)) u' hphys' hprep' hready' [] n
+
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveCut
 end
 
@@ -9239,12 +9842,12 @@ theorem admitted_scan_eq {j : Fin 26} (hi : j.val≤24) {s : State} {z : Skywalk
 theorem crt_all_pair {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.State}
     {g sg : Bool} (h : LeaveJ7.Admission.Inputs j s z g sg)
     (original : Valid s (referenceOps (start j))) :
-    (∀ m,run (GateMirror.forward (ScanRowGordo.before5Row (start j)) ++ CRTBarrel.barrel (start j) false ++
+    (∀ m,run (GateMirror.forward (AdjustShort.before5RowShort (start j)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (after7K (start j))) m s=
       run (GateMirror.forward (referenceOps (start j))) m s) ∧
     (∀ m n,run (GateMirror.inverse (after7K (start j)) ++ CRTBarrel.barrel (start j) true ++
-        GateMirror.inverse (ScanRowGordo.before5Row (start j))) n
-      (run (GateMirror.forward (ScanRowGordo.before5Row (start j)) ++ CRTBarrel.barrel (start j) false ++
+        GateMirror.inverse (AdjustShort.before5RowShort (start j))) n
+      (run (GateMirror.forward (AdjustShort.before5RowShort (start j)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (after7K (start j))) m s)=s) := by
   have raw : RawValid s (referenceOps (start j)) := ⟨original.physical,original.prepared,original.ready⟩
   have rel : FlagLeave.Rel (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) false s := by
@@ -9255,6 +9858,27 @@ theorem crt_all_pair {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.
   have zero6 : s.basis (Shadow7.e0P (start j)+6) = false := h.zero _ (by simp [LeaveJ7.watched])
   obtain ⟨bf,br⟩ := CRTBarrel.LeaveCut.barrel_pair j (Nat.zero_le _) hi _
     (CRTBarrel.LeaveCut.input (Nat.zero_le _) hi h)
+  obtain ⟨af, ar⟩ := CRTBarrel.LeaveCut.adjust_pair (Nat.zero_le _) hi h
+  let t0 := run (GateMirror.forward (CRTBarrel.LeaveCut.head (start j) ++ [.cx (Shadow7.e0P (start j) + 6) (Shadow7.e0P (start j) + 3)])) [] s
+  have hbr_split : CRTBarrel.beforeReference (start j) =
+      (CRTBarrel.LeaveCut.head (start j) ++ [.cx (Shadow7.e0P (start j) + 6) (Shadow7.e0P (start j) + 3)]) ++
+        Shadow7.leaveAdjustCore (start j) := by
+    rw [CRTBarrel.LeaveCut.before_shape, Shadow7.leaveAdjust, List.append_assoc]
+  have ht0 : run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0 =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s := by
+    rw [hbr_split, CRTWindow.forward_append, run_append, run_take, List.drop_nil]
+  have href_split : referenceOps (start j) =
+      ((CRTBarrel.LeaveCut.head (start j) ++ [.cx (Shadow7.e0P (start j) + 6) (Shadow7.e0P (start j) + 3)]) ++
+        Shadow7.leaveAdjustCore (start j)) ++ (Shadow7.leaveBarrel (start j) ++ afterReference (start j)) := by
+    rw [← hbr_split]
+    simp only [referenceOps, CRTBarrel.beforeReference, afterReference, List.append_assoc]
+  have vAdj : RawValid t0 (Shadow7.leaveAdjustCore (start j)) := by
+    have raw' := raw
+    rw [href_split] at raw'
+    exact raw'.parts.1.parts.2
+  have ht0_undo : run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) []
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) = t0 :=
+    vAdj.undo_run [] []
   have keptRel : KeptParity.relation (fun q => (run (GateMirror.forward (CRTBarrel.beforeReference (start j) ++
       (Shadow7.leaveBarrel (start j) ++ keptHead (start j)))) [] s).basis (KeptParity.port (start j) q)) := by
     have shape : CRTBarrel.beforeReference (start j) ++ (Shadow7.leaveBarrel (start j) ++ keptHead (start j)) =
@@ -9264,7 +9888,7 @@ theorem crt_all_pair {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.
     rw [shape]
     exact h.movedRelation (Nat.zero_le _) hi
   obtain ⟨fwd5, rev5⟩ := raw_crt_all_pair57 j hi s raw (pair_zero j hi s (entry_top_zero hi h))
-    (admitted_scan_eq hi h) rel zero6 bf br keptRel
+    (admitted_scan_eq hi h) rel zero6 bf br t0 ht0 ht0_undo af ar keptRel
   have small := (LeaveShadowRails.inputRow14 (Shadow7.sbP (start j)) z h.farSmall).1
   have hbr : Proper (CRTBarrel.beforeReference (start j)) := by
     intro g hg
@@ -9275,7 +9899,9 @@ theorem crt_all_pair {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.
     exact List.mem_append_left _ hg
   have phys5 : ∀ g ∈ before5 (start j), proper g = true :=
     before5_proper j hi (FlagLeave.cut_proper _ _ _ _ _ (before_scan_proper _ hbr))
-  exact ScanRowGordo.before5Row_pair j hi s _ _ _ _ h.ready h.fresh small phys5 raw.default_run fwd5 rev5
+  have phys5s : ∀ g ∈ AdjustShort.before5Short (start j), proper g = true :=
+    AdjustShort.before5Short_proper j hi phys5
+  exact ScanRowGordo.before5Row_pair j hi s _ _ _ _ h.ready h.fresh small phys5s raw.default_run fwd5 rev5
 
 end ECDSAAdd.Entrant.StairPacket.DeadJoin
 -- ==== end DeadJoin bridge ====
@@ -9353,7 +9979,7 @@ theorem leave_keeps20 (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (q : W
   have postAll : AllW (Shadow7.leaveBox2 (start j)) (DeadJoin.afterAll (start j)) :=
     FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1 (DeadJoin.afterShort (start j)) (DeadJoin.after_short_allW j hi pieces.2.2)
   have pre : ∀ w ∈ wires (GateMirror.forward (CRTBarrel.before (start j))), Shadow7.leaveBox2 (start j) w :=
-    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.before (start j)) (ScanRowGordo.before5Row_allW j hi (DeadJoin.before5_allW j hi preAll))).1
+    (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.before (start j)) (AdjustShort.beforeShort_allW j hi (ScanRowGordo.before5Row_allW j hi (DeadJoin.before5_allW j hi preAll)))).1
   have post : ∀ w ∈ wires (GateMirror.forward (CRTBarrel.afterPart (start j))), Shadow7.leaveBox2 (start j) w :=
     (allW_programs (P := Shadow7.leaveBox2 (start j)) (ops := CRTBarrel.afterPart (start j)) (DeadJoin.after7K_allW j hi postAll)).1
   have bb : ∀ w ∈ wires (CRTBarrel.barrel (start j) false), Shadow7.leaveBox2 (start j) w :=
@@ -14481,29 +15107,29 @@ set_option linter.unusedSimpArgs false
 
 def tcV : Pieces Nat := { WindowParams7.tcV with
   leave := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+97+CRTBarrel.barrelT (start j) false
+      AdjustShort.adjW (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+97+CRTBarrel.barrelT (start j) false
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+113 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+129+CRTBarrel.barrelT (start j) true
+      AdjustShort.adjW (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+129+CRTBarrel.barrelT (start j) true
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+145 else toffoliCount (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.tcV.unrouted j a n - (if a=1 ∧ n=14 then 14 else 0) }
 
 def mcV : Pieces Nat := { WindowParams7.mcV with
   leave := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+89+CRTBarrel.barrelM (start j) false
+      AdjustShort.adjW (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+89+CRTBarrel.barrelM (start j) false
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+90 else measurementCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+57+CRTBarrel.barrelM (start j) true
+      AdjustShort.adjW (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+57+CRTBarrel.barrelM (start j) true
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+58 else measurementCount (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.mcV.unrouted j a n + (if a=1 ∧ n=14 then 14 else 0) }
 
 def slotsV : Pieces Nat := { WindowParams7.slotsV with
   leave := fun j => if crtBlocks j then
-      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+646+3*Shadow7.wpP (start j+15)+
+      6*AdjustShort.adjW (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+646+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) false
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+730+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      6*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+614+3*Shadow7.wpP (start j+15)+
+      6*AdjustShort.adjW (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+614+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) true
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+698+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.slotsV.unrouted j a n + (if a=1 ∧ n=14 then 98 else 0) }
@@ -14664,14 +15290,14 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127306 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127306 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=127373 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=127398 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=66040 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=66040 ∧
-    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65672 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65697 := by
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127284 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127284 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=127351 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=127376 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=66018 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=66018 ∧
+    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65650 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65675 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
     (counts true first WindowParams7.rest7).2.2.1,(counts false first WindowParams7.rest7).2.2.1,(counts true first WindowParams7.rest7).2.2.2,
     (counts false first WindowParams7.rest7).2.2.2]
@@ -14697,7 +15323,7 @@ theorem parts_proper (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     (∀ g ∈ CRTBarrel.before (start j), proper g = true) ∧ (∀ g ∈ CRTBarrel.afterPart (start j), proper g = true) := by
   have p := WindowPhysicalW7.leaveMove_proper j (by omega) (by omega)
   rw [split_ops] at p
-  exact ⟨ScanRowGordo.before5Row_proper j h1 (DeadJoin.before5_proper j h1 (show Proper (DeadJoin.beforeAll (start j)) from FlagLeave.cut_proper (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_proper _ (fun g hg => p g (List.mem_append_left _ hg))))),
+  exact ⟨AdjustShort.beforeShort_proper j h1 (ScanRowGordo.before5Row_proper j h1 (DeadJoin.before5_proper j h1 (show Proper (DeadJoin.beforeAll (start j)) from FlagLeave.cut_proper (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_proper _ (fun g hg => p g (List.mem_append_left _ hg)))))),
     DeadJoin.after7K_proper j h1 (show Proper (DeadJoin.afterAll (start j)) from FlagLeave.cut_proper (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1 (DeadJoin.afterShort (start j)) (DeadJoin.after_short_proper j h1 (fun g hg => p g (List.mem_append_right _ (List.mem_append_right _ hg)))))⟩
 
 theorem leave_phys (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
@@ -14767,24 +15393,24 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127306 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127284 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127306 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127284 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 127373 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 127351 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 127398 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 127376 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 66040 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 66040 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 66018 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 66018 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
-theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65672 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65697 :=
+theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65650 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65675 :=
   ship_counts.2.2.2.2.2.2
 
 theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2419094 ∧ gateSlots (forward45plus1 false) ≤ 2419094 :=
@@ -14835,25 +15461,25 @@ theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2419094 ∧ gateSlots (forw
 theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2403571 ∧ gateSlots (reverseCut false) ≤ 2403571 :=
   ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
 
-theorem cut_toffoliF : toffoliCount (forwardCut true) = 127202 ∧ toffoliCount (forwardCut false) = 127202 := by
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 127180 ∧ toffoliCount (forwardCut false) = 127180 := by
   have a := (cut_toffoli true).1
   have b := (cut_toffoli false).1
   rw [ship_toffoliF_true] at a
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 127269 ∧ toffoliCount (reverseCut false) = 127294 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 127247 ∧ toffoliCount (reverseCut false) = 127272 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
   rw [ship_toffoliR_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_measureF : measurementCount (forwardCut true) = 66040 ∧ measurementCount (forwardCut false) = 66040 := by
+theorem cut_measureF : measurementCount (forwardCut true) = 66018 ∧ measurementCount (forwardCut false) = 66018 := by
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
-theorem cut_measureR : measurementCount (reverseCut true) = 65672 ∧ measurementCount (reverseCut false) = 65697 := by
+theorem cut_measureR : measurementCount (reverseCut true) = 65650 ∧ measurementCount (reverseCut false) = 65675 := by
   rw [(cut_measure true).2, (cut_measure false).2]
   exact ship_measureR
 
@@ -31726,47 +32352,47 @@ attribute [local irreducible] CRTWindow.forwardCut CRTWindow.reverseCut Rolling1
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 38898 else 38898)=
+    toffoliCount (forward d tail)+(if d then 38920 else 38920)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 38804 else 38779)=
+    toffoliCount (backward d tail)+(if d then 38826 else 38801)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
-    measurementCount (forward d tail)+(if d then 17171 else 17171)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
-    measurementCount (backward d tail)+(if d then 17220 else 17195)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
+    measurementCount (forward d tail)+(if d then 17193 else 17193)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
+    measurementCount (backward d tail)+(if d then 17242 else 17217)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   cases d
   · have sf := StockWindowCosts420.stock420from45 false
-    have a : toffoliCount (CRTWindow.forwardCut false) = 127202 := CRTWindow.cut_toffoliF.2
-    have b : toffoliCount (CRTWindow.reverseCut false) = 127294 := CRTWindow.cut_toffoliR.2
-    have c : measurementCount (CRTWindow.forwardCut false) = 66040 := CRTWindow.cut_measureF.2
-    have e : measurementCount (CRTWindow.reverseCut false) = 65697 := CRTWindow.cut_measureR.2
-    have t := walk tc false tail 38898 38779
-      (subEq 38898 a sf.1 (by omega)) (subEq 38779 b sf.2.2.1 (by omega))
-    have m := walk mc false tail 17171 17195
-      (subEq 17171 c sf.2.1 (by omega)) (subEq 17195 e sf.2.2.2 (by omega))
+    have a : toffoliCount (CRTWindow.forwardCut false) = 127180 := CRTWindow.cut_toffoliF.2
+    have b : toffoliCount (CRTWindow.reverseCut false) = 127272 := CRTWindow.cut_toffoliR.2
+    have c : measurementCount (CRTWindow.forwardCut false) = 66018 := CRTWindow.cut_measureF.2
+    have e : measurementCount (CRTWindow.reverseCut false) = 65675 := CRTWindow.cut_measureR.2
+    have t := walk tc false tail 38920 38801
+      (subEq 38920 a sf.1 (by omega)) (subEq 38801 b sf.2.2.1 (by omega))
+    have m := walk mc false tail 17193 17217
+      (subEq 17193 c sf.2.1 (by omega)) (subEq 17217 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts420.stock420from45 true
-    have a : toffoliCount (CRTWindow.forwardCut true) = 127202 := CRTWindow.cut_toffoliF.1
-    have b : toffoliCount (CRTWindow.reverseCut true) = 127269 := CRTWindow.cut_toffoliR.1
-    have c : measurementCount (CRTWindow.forwardCut true) = 66040 := CRTWindow.cut_measureF.1
-    have e : measurementCount (CRTWindow.reverseCut true) = 65672 := CRTWindow.cut_measureR.1
-    have t := walk tc true tail 38898 38804
-      (subEq 38898 a sf.1 (by omega)) (subEq 38804 b sf.2.2.1 (by omega))
-    have m := walk mc true tail 17171 17220
-      (subEq 17171 c sf.2.1 (by omega)) (subEq 17220 e sf.2.2.2 (by omega))
+    have a : toffoliCount (CRTWindow.forwardCut true) = 127180 := CRTWindow.cut_toffoliF.1
+    have b : toffoliCount (CRTWindow.reverseCut true) = 127247 := CRTWindow.cut_toffoliR.1
+    have c : measurementCount (CRTWindow.forwardCut true) = 66018 := CRTWindow.cut_measureF.1
+    have e : measurementCount (CRTWindow.reverseCut true) = 65650 := CRTWindow.cut_measureR.1
+    have t := walk tc true tail 38920 38826
+      (subEq 38920 a sf.1 (by omega)) (subEq 38826 b sf.2.2.1 (by omega))
+    have m := walk mc true tail 17193 17242
+      (subEq 17193 c sf.2.1 (by omega)) (subEq 17242 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
 
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 38898 else 38898)=f) (hr : (if d then 38804 else 38779)=r) :
+    (hf : (if d then 38920 else 38920)=f) (hr : (if d then 38826 else 38801)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+(if d then 17171 else 17171)=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+(if d then 17220 else 17195)=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+(if d then 17193 else 17193)=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+(if d then 17242 else 17217)=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 
 theorem instMeasurements (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 17171 else 17171)=f) (hr : (if d then 17220 else 17195)=r) :
+    (hf : (if d then 17193 else 17193)=f) (hr : (if d then 17242 else 17217)=r) :
     mc.measure (forward d tail)+f=mc.measure (Stair44WalkRun.forward d n) ∧
     mc.measure (backward d tail)+r=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
@@ -34246,44 +34872,44 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+38898+38779+933=tc.measure Stair44Outer.divide+1390 := by
-  have k := kernels tc 38898 38779 868 1390 (WindowWalkCosts.inst true 4 409 38898 38804 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 38898 38779 rfl rfl rfl).2.1 (field_delta_tc_div 1390 fieldTcDiv)
+theorem tc_div : tc.measure divide+38920+38801+933=tc.measure Stair44Outer.divide+1390 := by
+  have k := kernels tc 38920 38801 868 1390 (WindowWalkCosts.inst true 4 409 38920 38826 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 38920 38801 rfl rfl rfl).2.1 (field_delta_tc_div 1390 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+38898+38804+890=tc.measure (Stair44Outer.multiply k)+1265 :=
-  kernelsM tc k 38898 38804 890 1265 (WindowWalkCosts.inst false 84 489 38898 38779 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 38898 38804 rfl rfl rfl).2.1 (field_delta_tc_mul 1265 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+38920+38826+890=tc.measure (Stair44Outer.multiply k)+1265 :=
+  kernelsM tc k 38920 38826 890 1265 (WindowWalkCosts.inst false 84 489 38920 38801 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 38920 38826 rfl rfl rfl).2.1 (field_delta_tc_mul 1265 fieldTcMul)
 
-theorem mc_div : mc.measure divide+17171+17195+1573=mc.measure Stair44Outer.divide+970 := by
-  have k := kernels mc 17171 17195 1548 970 (WindowWalkCosts.instMeasurements true 4 409 17171 17220 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements false 85 490 17171 17195 rfl rfl rfl).2 (field_delta_mc_div 970 fieldMcDiv)
+theorem mc_div : mc.measure divide+17193+17217+1573=mc.measure Stair44Outer.divide+970 := by
+  have k := kernels mc 17193 17217 1548 970 (WindowWalkCosts.instMeasurements true 4 409 17193 17242 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements false 85 490 17193 17217 rfl rfl rfl).2 (field_delta_mc_div 970 fieldMcDiv)
   have e : mc.measure Rolling1588.ep + mc.measure Rolling1588.dp = 5 := by
     show measurementCount Rolling1588.ep + measurementCount Rolling1588.dp = 5
     exact PackCutCounts.mc_epdp
   omega
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+17171+17220+1529=mc.measure (Stair44Outer.multiply k)+845 :=
-  kernelsM mc k 17171 17220 1529 845 (WindowWalkCosts.instMeasurements false 84 489 17171 17195 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements true 4 409 17171 17220 rfl rfl rfl).2 (field_delta_mc_mul 845 fieldMcMul)
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+17193+17242+1529=mc.measure (Stair44Outer.multiply k)+845 :=
+  kernelsM mc k 17193 17242 1529 845 (WindowWalkCosts.instMeasurements false 84 489 17193 17217 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements true 4 409 17193 17242 rfl rfl rfl).2 (field_delta_mc_mul 845 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+154547=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+70044=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 154547
+    toffoliCount (finite C cx cy)+154635=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+70132=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 154635
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 70044
+    finite_delta mc C cx cy 70132
       (OddOuterBridge.entryYAllOdd_mc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2013293 ∧
-    measurementCount (program C) ≤ 1449853 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2013205 ∧
+    measurementCount (program C) ≤ 1449765 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
