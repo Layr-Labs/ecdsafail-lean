@@ -2945,8 +2945,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2013130 ∧
-    measurementCount (program C) ≤ 1449740 ∧ gateSlots (program C) ≤ 66279058 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2013078 ∧
+    measurementCount (program C) ≤ 1449468 ∧ gateSlots (program C) ≤ 66279058 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -3144,7 +3144,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2013130,1449740,1543,66279058⟩
+def bounds : Challenge.Bounds := ⟨2013078,1449468,1543,66279058⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -3153,7 +3153,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1449740
+    change measurementCount (normalizeProgram _) ≤ 1449468
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -9462,17 +9462,13 @@ private theorem foldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : L
   let Post : Program := [.CX L760.lower L760.rmsb, .CX L760.parity L760.rmsb, .X L760.rmsb,
     .CX L760.parity L760.lower, .CX L760.rmsb L760.lower, .X L760.lower,
     .measureX L760.one [] [.CZ L760.parity L760.rmsb]]
-  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedAddLoan d StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb (foldAddLoan d L760)
   let MidQ := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedAddLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+    (mappedAdd (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
   have hP : foldLoan d L760 = Pre ++ (MidP ++ Post) := by
     delta foldLoan; simp only [Pre, MidP, Post, List.append_assoc]
   have hQ : P1Life.fold (base 760) L760 = Pre ++ (MidQ ++ Post) := by
     delta P1Life.fold
-    rw [show mappedAdd (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one =
-        StairLoan.mappedAddLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one from
-        (StairLoan.mappedAddLoan_zero _ _ _ _ _).symm]
     simp only [Pre, MidQ, Post, List.append_assoc]
   rw [hP, hQ]
   apply replace_mid Pre MidP MidQ Post s m
@@ -9486,7 +9482,7 @@ private theorem foldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : L
     have h2 : L760.rmsb ≠ L760.one := by decide +kernel
     simp [Pre, run, writeBit, h1, h2, hlow]
   apply move_run_eq (base 760) L760.rmsb _ _ u x []
-  apply mappedAddLoan_760_run_eq d (by omega) (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
+  apply foldAddLoan_760_run_eq d hd (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
   intro q hq
   by_cases hq760 : q = base 760
   · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
@@ -9507,17 +9503,13 @@ private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m :
     .CX L760.parity L760.rmsb, .X L760.rmsb]
   let Post : Program := [.CX L760.lower L760.rmsb, .CX L760.rmsb L760.lower,
     .measureX L760.one [] [.CZ L760.parity L760.rmsb]]
-  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedSubLoan d StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+  let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb (unfoldSubLoan d L760)
   let MidQ := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedSubLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+    (mappedSub (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
   have hP : unfoldLoan d L760 = Pre ++ (MidP ++ Post) := by
     delta unfoldLoan; simp only [Pre, MidP, Post, List.append_assoc]
   have hQ : P1Life.unfoldStep (base 760) L760 = Pre ++ (MidQ ++ Post) := by
     delta P1Life.unfoldStep
-    rw [show mappedSub (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one =
-        StairLoan.mappedSubLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one from
-        (StairLoan.mappedSubLoan_zero _ _ _ _ _).symm]
     simp only [Pre, MidQ, Post, List.append_assoc]
   rw [hP, hQ]
   apply replace_mid Pre MidP MidQ Post s m
@@ -9540,7 +9532,7 @@ private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m :
       Function.update_of_ne h4.symm, Function.update_of_ne h5.symm, Function.update_of_ne h6.symm, hlow]
     cases s.basis L760.parity <;> cases s.basis L760.rmsb <;> rfl
   apply move_run_eq (base 760) L760.rmsb _ _ u x []
-  apply mappedSubLoan_760_run_eq d (by omega) (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
+  apply unfoldSubLoan_760_run_eq d hd (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
   intro q hq
   by_cases hq760 : q = base 760
   · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
@@ -10710,19 +10702,32 @@ private theorem half760OddLoan_in_jp (d : Nat) (divide : Bool) :
       refine hmove_in_jp (mappedSub (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         hrmsb hu2 ?_
       intro w hw
-      simp only [StairLoan.mappedSubLoan, wires_append, Finset.mem_union] at hw
-      rcases hw with (hn | hm) | hn
-      · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
-      · have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
-          (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
-          (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hm
-        rw [← StairLoan.mappedAdd_as_sweep] at he
-        simp only [Finset.mem_union] at he
-        rcases he with (hsw | hret) | hlay
-        · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hsw, true_or, or_true])
-        · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take (List.mem_toFinset.mp hret)))
-        · exact Or.inr (layerHosts_take_in_jp (mappedLayers_hosts _ _ _ _ carry254_in_jp) hlay)
-      · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
+      unfold unfoldSubLoan at hw
+      split_ifs at hw with hfold
+      · simp only [wires_append, Finset.mem_union] at hw
+        rcases hw with (hn | hm) | hn
+        · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
+        · rcases FoldTop.support d (by omega) hfold.2 w hm with h1 | h2 | h3 | h4
+          · exact Or.inl (by
+              have : w ∈ wires (notRegister L760.low) := by rw [notRegister_wires, List.mem_toFinset]; exact h1
+              simp only [mappedSub, wires_append, Finset.mem_union, this, true_or, or_true])
+          · exact Or.inr (by subst h2; decide +kernel)
+          · exact Or.inr (by subst h3; decide +kernel)
+          · exact Or.inr (carry254_in_jp w h4.1)
+        · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
+      · simp only [StairLoan.mappedSubLoan, wires_append, Finset.mem_union] at hw
+        rcases hw with (hn | hm) | hn
+        · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
+        · have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
+            (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+            (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hm
+          rw [← StairLoan.mappedAdd_as_sweep] at he
+          simp only [Finset.mem_union] at he
+          rcases he with (hsw | hret) | hlay
+          · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hsw, true_or, or_true])
+          · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take (List.mem_toFinset.mp hret)))
+          · exact Or.inr (layerHosts_take_in_jp (mappedLayers_hosts _ _ _ _ carry254_in_jp) hlay)
+        · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
     · -- rawSubLoan
       delta rawSubLoan; delta P1Life.rawSub at h12
       dsimp only at h12 ⊢
@@ -10818,15 +10823,24 @@ private theorem half760OddLoan_in_jp (d : Nat) (divide : Bool) :
       refine hmove_in_jp (mappedAdd (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         hrmsb f2 ?_
       intro w hw
-      have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
-        (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
-        (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hw
-      rw [← StairLoan.mappedAdd_as_sweep] at he
-      simp only [Finset.mem_union] at he
-      rcases he with (hsw | hret) | hlay
-      · exact Or.inl hsw
-      · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take (List.mem_toFinset.mp hret)))
-      · exact Or.inr (layerHosts_take_in_jp (mappedLayers_hosts _ _ _ _ carry254_in_jp) hlay)
+      unfold foldAddLoan at hw
+      split_ifs at hw with hfold
+      · rcases FoldTop.support d (by omega) hfold.2 w hw with h1 | h2 | h3 | h4
+        · exact Or.inr (by
+            have hchk : L760.low.all (fun z => decide (z ∈ P1Life.junctionFootprint L760)) = true := by decide +kernel
+            exact of_decide_eq_true (List.all_eq_true.mp hchk w h1))
+        · exact Or.inr (by subst h2; decide +kernel)
+        · exact Or.inr (by subst h3; decide +kernel)
+        · exact Or.inr (carry254_in_jp w h4.1)
+      · have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
+          (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+          (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hw
+        rw [← StairLoan.mappedAdd_as_sweep] at he
+        simp only [Finset.mem_union] at he
+        rcases he with (hsw | hret) | hlay
+        · exact Or.inl hsw
+        · exact Or.inr (retiredRoles_in_jp w (List.mem_of_mem_take (List.mem_toFinset.mp hret)))
+        · exact Or.inr (layerHosts_take_in_jp (mappedLayers_hosts _ _ _ _ carry254_in_jp) hlay)
 
 theorem half760OddLoan_support (d : Nat) (divide : Bool) (hd : d ≤ 43) (h42 : d ≠ 42) :
     RouteA.Rolling1588.HalfSupport (half760OddLoan d divide) := by
