@@ -18170,7 +18170,200 @@ set_option linter.unusedVariables false
 def clean:List Wire:=acc++pad++bank++[cin]
 def initial:Env:=fun q=>if q∈clean then some false else none
 def original:Program:=ReorderedAHead.head acc pad bank cin src
-def output:Program:=compile initial original
+end ECDSAAdd.Entrant.KnownBHeadResearch
+
+namespace ECDSAAdd.Entrant.SparseBHead
+open KnownBitCompilerResearch KnownBHeadResearch
+set_option maxRecDepth 30000
+set_option maxHeartbeats 5000000
+
+private def target : Instr → Wire
+  | .X q | .CX _ q | .CCX _ _ q | .measureX q _ _ => q
+
+private def keeps (e : Env) (i : Instr) : Bool :=
+  match e (target i) with
+  | none => true
+  | some b => decide (next e i (target i) = some b)
+
+private theorem keepsOne (e : Env) (i : Instr) (h : keeps e i = true)
+    (s : State) (m : List Bool) (hs : Sound e s) : Sound e (run [i] m s) := by
+  have step := next_sound e i s m hs
+  intro q
+  by_cases same : q = target i
+  · subst q
+    cases he : e (target i) with
+    | none => simp [Matches]
+    | some b =>
+      have x : next e i (target i) = some b := by simpa only [keeps,he,decide_eq_true_eq] using h
+      simpa only [x] using step (target i)
+  · have off : next e i q = e q := by
+      cases i <;> simp only [target] at same <;> simp [next,Function.update_of_ne same]
+    simpa only [off] using step q
+
+private theorem keepsAll {e : Env} (p : Program) (h : p.all (keeps e) = true)
+    (s : State) (m : List Bool) (hs : Sound e s) : Sound e (run p m s) := by
+  induction p generalizing s m with
+  | nil => exact hs
+  | cons i p ih =>
+    obtain ⟨one,tail⟩ := Bool.and_eq_true_iff.mp h
+    rw [show i :: p = [i] ++ p from rfl,run_append,run_take]
+    exact ih tail _ _ (keepsOne e i one s m hs)
+
+private def watch (b : Bool) (q : Wire) : Option Bool :=
+  if 4635 ≤ q ∧ q ≤ 4637 then some b
+  else if 4796 ≤ q ∧ q ≤ 4800 then some false else none
+
+private theorem inFirst (q : Nat) (h : 4635 ≤ q ∧ q ≤ 4637) :
+    q=4635 ∨ q=4636 ∨ q=4637 := by omega
+private theorem inSecond (q : Nat) (h : 4796 ≤ q ∧ q ≤ 4800) :
+    q=4796 ∨ q=4797 ∨ q=4798 ∨ q=4799 ∨ q=4800 := by omega
+
+private theorem start (s : State) (hz : ∀q∈clean,s.basis q=false) : Sound (watch false) s := by
+  have allClean : ∀q∈([4635,4636,4637,4796,4797,4798,4799,4800] : List Wire), q∈clean := by decide +kernel
+  intro q
+  by_cases a : 4635 ≤ q ∧ q ≤ 4637
+  · simp only [watch,if_pos a,Matches]
+    rcases inFirst q a with rfl | rfl | rfl <;> exact (hz _ (allClean _ (by decide))).symm
+  · by_cases b : 4796 ≤ q ∧ q ≤ 4800
+    · simp only [watch,if_neg a,if_pos b,Matches]
+      rcases inSecond q b with rfl | rfl | rfl | rfl | rfl <;> exact (hz _ (allClean _ (by decide))).symm
+    · simp [watch,a,b,Matches]
+
+private def flips : Program := [.X 4635,.X 4636,.X 4637]
+
+private theorem toggleThree (s : State) (m : List Bool) (hs : Sound (watch false) s) :
+    Sound (watch true) (run flips m s) := by
+  intro q
+  have prior := hs q
+  by_cases a : q = 4635
+  · subst q; simpa [watch,Matches,flips,run,writeBit] using prior
+  by_cases b : q = 4636
+  · subst q; simpa [watch,Matches,flips,run,writeBit] using prior
+  by_cases c : q = 4637
+  · subst q; simpa [watch,Matches,flips,run,writeBit] using prior
+  have outside : ¬(4635 ≤ q ∧ q ≤ 4637) := fun h => (inFirst q h).elim a (fun x => x.elim b c)
+  simpa [watch,outside,flips,run,writeBit,a,b,c] using prior
+
+private theorem lower : (original.take 285).all (keeps (watch false)) = true := by decide +kernel
+private theorem middle : (original.drop 285).take 3 = flips := by decide +kernel
+private theorem upper : ((original.drop 288).take 784).all (keeps (watch true)) = true := by decide +kernel
+
+private theorem frame (n : Nat) (lo : 288 ≤ n) (hi : n ≤ 1072) (s : State) (m : List Bool)
+    (hz : ∀q∈clean,s.basis q=false) : Sound (watch true) (run (original.take n) m s) := by
+  have first : original.take 288 = original.take 285 ++ flips := by
+    rw [show 288=285+3 from rfl,List.take_add,middle]
+  have cut : original.take n = original.take 288 ++ (original.drop 288).take (n-288) := by
+    rw [←List.take_add, Nat.add_sub_of_le lo]
+  have last : ((original.drop 288).take (n-288)).all (keeps (watch true)) = true := by
+    apply List.all_eq_true.mpr
+    intro i mem
+    apply List.all_eq_true.mp upper
+    have eq : (((original.drop 288).take 784).take (n-288)) = (original.drop 288).take (n-288) := by
+      rw [List.take_take,Nat.min_eq_left (by omega)]
+    exact List.mem_of_mem_take (eq.symm ▸ mem)
+  rw [cut,run_append,run_take,first,run_append,run_take]
+  exact keepsAll _ last _ _ (toggleThree _ _ (keepsAll _ lower _ _ (start s hz)))
+
+end ECDSAAdd.Entrant.SparseBHead
+
+namespace ECDSAAdd.Entrant.SparseBHead
+open KnownBitCompilerResearch KnownBHeadResearch Arithmetic
+set_option maxRecDepth 30000
+
+private def oldBlock : Program := [
+  .CCX 4635 4500 4764,
+  .CX 4796 4764,
+  .CX 4796 4500,
+  .CX 4796 4635,
+  .CX 4797 4636,
+  .CX 4797 4764,
+  .CCX 4636 4764 4765,
+  .CX 4797 4765,
+  .CX 4797 4764,
+  .CX 4797 4636,
+  .CX 4798 4637,
+  .CX 4798 4765,
+  .CCX 4637 4765 4766
+]
+private def newBlock : Program := [
+  .CX 4500 4764,
+  .CX 4796 4764,
+  .CX 4796 4500,
+  .CX 4796 4635,
+  .CX 4797 4636,
+  .CX 4797 4764,
+  .CX 4764 4765,
+  .CX 4797 4765,
+  .CX 4797 4764,
+  .CX 4797 4636,
+  .CX 4798 4637,
+  .CX 4798 4765,
+  .CX 4765 4766
+]
+private def headPart := original.take 1059
+private def restPart := original.drop 1072
+def emitted : Program := headPart ++ (newBlock ++ restPart)
+
+private theorem oldAt : (original.drop 1059).take 13 = oldBlock := by decide +kernel
+private theorem compiledBlock : compile (watch true) oldBlock = newBlock := by decide +kernel
+private theorem blockCounts : toffoliCount newBlock + 3 = toffoliCount oldBlock ∧
+    measurementCount newBlock = measurementCount oldBlock ∧ _root_.ECDSAAdd.Challenge.gateSlots newBlock = _root_.ECDSAAdd.Challenge.gateSlots oldBlock := by decide +kernel
+
+private theorem originalParts : original = headPart ++ (oldBlock ++ restPart) := by
+  have join : oldBlock ++ restPart = original.drop 1059 := by
+    simpa only [restPart,List.drop_drop,oldAt] using List.take_append_drop 13 (original.drop 1059)
+  exact (List.take_append_drop 1059 original).symm.trans (congrArg (headPart ++ ·) join.symm)
+
+attribute [local irreducible] KnownBHeadResearch.original oldBlock newBlock
+
+theorem run_eq (s : State) (m : List Bool) (hz : ∀q∈clean,s.basis q=false) :
+    run emitted m s=run original m s := by
+  have atCut : Sound (watch true) (run headPart m s) := frame 1059 (by decide) (by decide) s m hz
+  have same := compile_run (watch true) oldBlock (run headPart m s) (m.drop (measurementCount headPart)) atCut
+  rw [compiledBlock] at same
+  calc
+    _ = run (headPart ++ (oldBlock ++ restPart)) m s := by
+      simp only [emitted,run_append,run_take]
+      rw [blockCounts.2.1,same]
+    _ = run original m s := congrArg (fun p => run p m s) originalParts.symm
+
+theorem counts : toffoliCount emitted + 3 = toffoliCount original ∧
+    measurementCount emitted = measurementCount original ∧ _root_.ECDSAAdd.Challenge.gateSlots emitted=_root_.ECDSAAdd.Challenge.gateSlots original := by
+  have tc := congrArg toffoliCount originalParts
+  have mc := congrArg measurementCount originalParts
+  have sl := congrArg _root_.ECDSAAdd.Challenge.gateSlots originalParts
+  have small := blockCounts
+  simp only [emitted,toffoliCount_append,measurementCount_append,_root_.ECDSAAdd.Challenge.gateSlots_append] at tc mc sl ⊢
+  omega
+
+theorem support : wires emitted ⊆ wires original := by
+  have within := compile_support (watch true) oldBlock
+  rw [compiledBlock] at within
+  calc
+    _ ⊆ wires (headPart ++ (oldBlock ++ restPart)) := by
+      simp only [emitted,wires_append]
+      exact Finset.union_subset_union (Finset.Subset.refl _) (Finset.union_subset_union within (Finset.Subset.refl _))
+    _ = wires original := congrArg wires originalParts.symm
+
+theorem physical (h : GatePhysical original) : GatePhysical emitted := by
+  have parts := (gatePhysical_append _ _).mp (originalParts ▸ h)
+  have sub := (gatePhysical_append _ _).mp parts.2
+  have inner := compile_physical (watch true) oldBlock sub.1
+  rw [compiledBlock] at inner
+  exact (gatePhysical_append _ _).mpr ⟨parts.1,(gatePhysical_append _ _).mpr ⟨inner,sub.2⟩⟩
+
+end ECDSAAdd.Entrant.SparseBHead
+
+namespace ECDSAAdd.Entrant.KnownBHeadResearch
+open ReorderedBPrefixResearch KnownBitCompilerResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+def output:Program:=SparseBHead.emitted
 
 theorem initial_sound(s:State)(hz:∀q∈clean,s.basis q=false):Sound initial s:=by
  intro q
@@ -18179,23 +18372,12 @@ theorem initial_sound(s:State)(hz:∀q∈clean,s.basis q=false):Sound initial s:
  · simp [initial,h,Matches]
 
 theorem run_eq(s:State)(m:List Bool)(hz:∀q∈clean,s.basis q=false):
- run output m s=run original m s:=compile_run initial original s m (initial_sound s hz)
+ run output m s=run original m s:=SparseBHead.run_eq s m hz
 
-theorem savings_exact:savings initial original=3:=by decide +kernel
-
-theorem toffoli:toffoliCount output+3=toffoliCount original:=by
- have h:=compile_toffoli initial original
- rw [savings_exact] at h
- rw [show output=compile initial original from rfl]
- exact h
-
-theorem measurements:measurementCount output=measurementCount original:=compile_measurements initial original
-
-theorem support:wires output⊆wires original:=compile_support initial original
-
-theorem physical(h:GatePhysical original):GatePhysical output:=compile_physical initial original h
-
-
+theorem toffoli:toffoliCount output+3=toffoliCount original:=SparseBHead.counts.1
+theorem measurements:measurementCount output=measurementCount original:=SparseBHead.counts.2.1
+theorem support:wires output⊆wires original:=SparseBHead.support
+theorem physical(h:GatePhysical original):GatePhysical output:=SparseBHead.physical h
 
 end ECDSAAdd.Entrant.KnownBHeadResearch
 
@@ -18670,7 +18852,7 @@ theorem compile_slots(E:Env)(p:Program):Challenge.gateSlots (compile E p)≤Chal
 
 end ECDSAAdd.Entrant.KnownBitCompilerResearch
 namespace ECDSAAdd.Entrant.KnownBHeadResearch
- theorem slots:Challenge.gateSlots output≤Challenge.gateSlots original:=KnownBitCompilerResearch.compile_slots initial original
+ theorem slots:Challenge.gateSlots output≤Challenge.gateSlots original:=Nat.le_of_eq SparseBHead.counts.2.2
 end ECDSAAdd.Entrant.KnownBHeadResearch
 
 end
