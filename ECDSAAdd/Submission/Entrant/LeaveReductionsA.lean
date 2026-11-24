@@ -10,6 +10,7 @@ import ECDSAAdd.Submission.Entrant.Stair44Stock
 import Mathlib.Tactic
 import ECDSAAdd.Framework.Syntax
 import ECDSAAdd.Framework.Semantics
+import ECDSAAdd.Challenge.Contract
 
 section
 
@@ -2032,7 +2033,7 @@ def accumulate {α : Type} (p : Nat) (mir : Bool) (q : Nat) (combine : α → α
   let d := fieldDegree p
   ((List.range 16).flatMap fun k => (selected d (rowMask p mir q >>> (k*d))).map (term k)).foldl combine (source q)
 
-private theorem map_fold {α β} (f : α → β) (op : α → α → α) (op' : β → β → β)
+theorem map_fold {α β} (f : α → β) (op : α → α → α) (op' : β → β → β)
     (pres : ∀ a b, f (op a b) = op' (f a) (f b)) (xs : List α) (a : α) :
     f (xs.foldl op a) = (xs.map f).foldl op' (f a) := by
   induction xs generalizing a with
@@ -2244,7 +2245,7 @@ theorem fieldPool_iff {d q : Nat} (sd : d ≤ 8) : q ∈ fieldPool d ↔ fieldSc
   unfold fieldScope
   omega
 
-private theorem pack_lt (bs : List Bool) : packBits bs < 2^bs.length := by
+theorem pack_lt (bs : List Bool) : packBits bs < 2^bs.length := by
   induction bs with
   | nil => decide
   | cons b bs ih =>
@@ -2376,7 +2377,7 @@ def xorAt (bits : BasisState) : List Wire → Bool
   | [] => false
   | w::ws => bits w ^^ xorAt bits ws
 
-private theorem xorAt_congr (xs : List Wire) (u v : BasisState) (h : ∀ q ∈ xs, u q = v q) :
+theorem xorAt_congr (xs : List Wire) (u v : BasisState) (h : ∀ q ∈ xs, u q = v q) :
     xorAt u xs = xorAt v xs := by
   induction xs with
   | nil => rfl
@@ -2663,7 +2664,7 @@ private theorem run_parts {α} (xs : List α) (g : α → Program) (next : Rows 
     rw [List.flatMap_cons,run_append,run_take,step a (by simp) r size]
     exact ih _ _ ((keep r a).trans size) (fun y hy => step y (List.mem_cons_of_mem _ hy))
 
-private theorem fold_size {α} (xs : List α) (f : Rows → α → Rows) (r : Rows)
+theorem fold_size {α} (xs : List α) (f : Rows → α → Rows) (r : Rows)
     (h : ∀ r a, (f r a).size = r.size) : (xs.foldl f r).size = r.size := by
   induction xs generalizing r with
   | nil => rfl
@@ -3258,7 +3259,7 @@ private theorem read_sweep_list (r : Rows) (i q : Nat) (xs : List Nat) (nd : xs.
     · subst q; simp [apply_read _ _ _ _ hj, (List.nodup_cons.mp nd).1]
     · simp [apply_read _ _ _ _ hj,eq,distinct]
 
-private theorem backward_row (n i donor mask : Nat) (r : Rows) (size : r.size = n) (off : mask.testBit i = false) :
+theorem backward_row (n i donor mask : Nat) (r : Rows) (size : r.size = n) (off : mask.testBit i = false) :
     applyOps (elimStep n i (donor,mask)).reverse r = pivotBack n r ((donor,mask),i) := by
   let xs := (selected n mask).reverse
   have nd : xs.Nodup := List.nodup_reverse.mpr (List.Nodup.filter _ List.nodup_range)
@@ -3434,9 +3435,9 @@ def spreadFour (x : Nat) : Nat :=
   let pairs := (x ||| (x <<< (2*(width-1)))) &&& (3 ||| (3 <<< (2*width)))
   (pairs ||| (pairs <<< (width-1))) &&& (1 ||| (1 <<< width) ||| (1 <<< (2*width)) ||| (1 <<< (3*width)))
 
-private theorem four_checked : ∀ a : Fin 16, spreadFour a.val = mark width 4 a.val := by decide +kernel
+theorem four_checked : ∀ a : Fin 16, spreadFour a.val = mark width 4 a.val := by decide +kernel
 
-private theorem mark_congr (n a b : Nat) (eq : ∀ i < n, a.testBit i = b.testBit i) : mark width n a = mark width n b := by
+theorem mark_congr (n a b : Nat) (eq : ∀ i < n, a.testBit i = b.testBit i) : mark width n a = mark width n b := by
   induction n generalizing a b with
   | zero => rfl
   | succ n ih =>
@@ -3451,7 +3452,7 @@ theorem four (a : Nat) : mark width 4 a = spreadFour (a%16) := by
   rw [Nat.testBit_mod_two_pow]
   simp [hi]
 
-private theorem mark_add (n m bits : Nat) :
+theorem mark_add (n m bits : Nat) :
     mark width (n+m) bits = mark width n bits + 2^(width*n) * mark width m (bits>>>n) := by
   induction n generalizing bits with
   | zero => simp [mark]
@@ -3463,7 +3464,7 @@ def spreadChunks (r : Nat) : Nat → Nat → Nat
   | 0, a => mark width r a
   | c+1, a => spreadFour (a%16) + (spreadChunks r c (a>>>4) <<< (4*width))
 
-private theorem spreadChunks_eq (r c bits : Nat) : mark width (4*c+r) bits = spreadChunks r c bits := by
+theorem spreadChunks_eq (r c bits : Nat) : mark width (4*c+r) bits = spreadChunks r c bits := by
   induction c generalizing bits with
   | zero => simp [spreadChunks]
   | succ c ih =>
@@ -3481,7 +3482,7 @@ def quickStep (n : Nat) (bits : Nat) (v : (Nat × Nat) × Nat) : Nat :=
   let mid := bits ^^^ (capture width bits i * marks)
   if v.1.1<n then mid ^^^ (capture width mid v.1.1 <<< (width*i)) else mid
 
-private theorem quickStep_eq (n : Nat) : quickStep n = step n := by
+theorem quickStep_eq (n : Nat) : quickStep n = step n := by
   funext bits v
   unfold quickStep step
   simp only [capture_eq,←spreadChunks_eq,Nat.div_add_mod]
@@ -3818,7 +3819,7 @@ theorem digit_put (x i q v : Nat) (hv : v < 2^width) : digit width (put x i v) q
   rw [put,digit_xor,digit_single _ _ _ _ (Nat.xor_lt_two_pow (digit_bound ..) hv)]
   by_cases e : q=i <;> simp [e]
 
-private theorem digit_replace (x q : Nat) (xs : List Nat) (v : Nat → Nat) (bound : ∀ j ∈ xs, v j < 2^width) :
+theorem digit_replace (x q : Nat) (xs : List Nat) (v : Nat → Nat) (bound : ∀ j ∈ xs, v j < 2^width) :
     digit width (replace x xs v) q = if q ∈ xs then v q else digit width x q := by
   induction xs generalizing x with
   | nil => simp [replace]
@@ -3888,7 +3889,7 @@ private theorem scalar_matches (p : Nat) (mir : Bool) (slot off x : Nat) (r : Ro
       rw [show Matrix.read r (off+j) = data j from h _ (lt_of_lt_of_le (Nat.add_lt_add_left hj _) endp)]
   · exact h q sq
 
-private theorem cx_matches (x : Nat) (r : Rows) (p : Wire × Wire) (ha : p.1 < r.size) (hb : p.2 < r.size)
+theorem cx_matches (x : Nat) (r : Rows) (p : Wire × Wire) (ha : p.1 < r.size) (hb : p.2 < r.size)
     (h : Matches x r) : Matches (cxWord x p) (applyPair r p) := by
   obtain ⟨a,b⟩ := p
   intro q hq
@@ -3896,7 +3897,7 @@ private theorem cx_matches (x : Nat) (r : Rows) (p : Wire × Wire) (ha : p.1 < r
   rw [apply_read _ _ _ _ hb,cxWord,digit_xor,digit_single _ _ _ _ (digit_bound ..)]
   by_cases eq : q=b <;> simp [eq,h q sq,h a ha,h b hb]
 
-private theorem fold_matches {α} (xs : List α) (f : Nat → α → Nat) (g : Rows → α → Rows) (n x : Nat) (r : Rows)
+theorem fold_matches {α} (xs : List α) (f : Nat → α → Nat) (g : Rows → α → Rows) (n x : Nat) (r : Rows)
     (size : r.size=n) (h : Matches x r) (keep : ∀ r a, (g r a).size = r.size)
     (step : ∀ a∈xs, ∀ x r, r.size = n → Matches x r → Matches (f x a) (g r a)) :
     Matches (xs.foldl f x) (xs.foldl g r) := by
@@ -4035,7 +4036,7 @@ theorem slice_scalar (p : Nat) (mir : Bool) (slot off len j original bank block 
     rw [digit_scalar,if_neg (by omega)]
     exact h.exterior q exterior
 
-private theorem slice_cx (f : Nat → Nat) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b)
+theorem slice_cx (f : Nat → Nat) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b)
     (off len original bank block a b : Nat) (ha : a < len) (hb : b < len)
     (h : Slice f off len original bank block) :
     Slice f off len original (cxWord bank (off+a,off+b)) (cxWord block (a,b)) := by
@@ -4094,7 +4095,7 @@ private theorem slice_stage (f : Nat → Nat) (fx : ∀ a b, f (a ^^^ b) = f a ^
 theorem r8Enabled_same (n m slot : Nat) (tags : List Nat) : r8Enabled n slot tags = r8Enabled m slot tags := by
   simp only [r8Enabled, parity_map]
 
-private theorem shift_r8Ops (off : Nat) (st : R8Step) :
+theorem shift_r8Ops (off : Nat) (st : R8Step) :
     r8Ops off st = (r8Ops 0 st).map (fun (a,b) => (off+a, off+b)) := by
   simp [r8Ops, List.map_append, List.map_reverse]
 
@@ -4178,7 +4179,7 @@ private theorem prototype_digit (p m dim k : Nat) (use : UsedPrimary p m) (hd : 
   have inList : q < (prototype p).size := lt_of_lt_of_le hq (prototype_size p m use)
   simpa [xs,prototypeWord,Matrix.read,List.getElem?_map,List.getElem?_take,hq,inList] using h
 
-private theorem clip_factor (n sh k v : Nat) (high : n ≤ 135) (hk : k ≤ sh) :
+theorem clip_factor (n sh k v : Nat) (high : n ≤ 135) (hk : k ≤ sh) :
     clipShift (n-sh) k (v &&& (2^n-1)) = clipShift (n-sh) 0 (clipShift (135-sh) k v) := by
   apply Nat.eq_of_testBit_eq
   intro i
