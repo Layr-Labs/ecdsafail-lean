@@ -16118,12 +16118,12 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2167914 ∧ measurementCount (program C) ≤ 1519653 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167909 ∧ measurementCount (program C) ≤ 1519658 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2168930 ∧ measurementCount (concreteProgram C) ≤ 1520242 at h
+  change toffoliCount (concreteProgram C) ≤ 2168925 ∧ measurementCount (concreteProgram C) ≤ 1520247 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2167914 ∧ measurementCount [] ≤ 1519653
+    change toffoliCount [] ≤ 2167909 ∧ measurementCount [] ≤ 1519658
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
@@ -16925,30 +16925,30 @@ attribute [local irreducible] CRTWindow.forwardCut CRTWindow.reverseCut Rolling1
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 38193 else 38193)=
+    toffoliCount (forward d tail)+(if d then 38218 else 38218)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 37749 else 37724)=
+    toffoliCount (backward d tail)+(if d then 37774 else 37749)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
     measurementCount (forward d tail)+(if d then 16867 else 16867)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
     measurementCount (backward d tail)+(if d then 17266 else 17241)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   cases d
   · have sf := StockWindowCosts420.stock420from45 false
-    have a : toffoliCount (CRTWindow.forwardCut false) = 127907 := CRTWindow.cut_toffoliF.2
-    have b : toffoliCount (CRTWindow.reverseCut false) = 128349 := CRTWindow.cut_toffoliR.2
+    have a : toffoliCount (CRTWindow.forwardCut false) = 127882 := CRTWindow.cut_toffoliF.2
+    have b : toffoliCount (CRTWindow.reverseCut false) = 128324 := CRTWindow.cut_toffoliR.2
     have c : measurementCount (CRTWindow.forwardCut false) = 66344 := CRTWindow.cut_measureF.2
     have e : measurementCount (CRTWindow.reverseCut false) = 65651 := CRTWindow.cut_measureR.2
-    have t := walk tc false tail 38193 37724
-      (subEq 38193 a sf.1 (by omega)) (subEq 37724 b sf.2.2.1 (by omega))
+    have t := walk tc false tail 38218 37749
+      (subEq 38218 a sf.1 (by omega)) (subEq 37749 b sf.2.2.1 (by omega))
     have m := walk mc false tail 16867 17241
       (subEq 16867 c sf.2.1 (by omega)) (subEq 17241 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
   · have sf := StockWindowCosts420.stock420from45 true
-    have a : toffoliCount (CRTWindow.forwardCut true) = 127907 := CRTWindow.cut_toffoliF.1
-    have b : toffoliCount (CRTWindow.reverseCut true) = 128324 := CRTWindow.cut_toffoliR.1
+    have a : toffoliCount (CRTWindow.forwardCut true) = 127882 := CRTWindow.cut_toffoliF.1
+    have b : toffoliCount (CRTWindow.reverseCut true) = 128299 := CRTWindow.cut_toffoliR.1
     have c : measurementCount (CRTWindow.forwardCut true) = 66344 := CRTWindow.cut_measureF.1
     have e : measurementCount (CRTWindow.reverseCut true) = 65626 := CRTWindow.cut_measureR.1
-    have t := walk tc true tail 38193 37749
-      (subEq 38193 a sf.1 (by omega)) (subEq 37749 b sf.2.2.1 (by omega))
+    have t := walk tc true tail 38218 37774
+      (subEq 38218 a sf.1 (by omega)) (subEq 37774 b sf.2.2.1 (by omega))
     have m := walk mc true tail 16867 17266
       (subEq 16867 c sf.2.1 (by omega)) (subEq 17266 e sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,m⟩
@@ -16956,7 +16956,7 @@ theorem exactWalks (d : Bool) (tail : Nat) :
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 38193 else 38193)=f) (hr : (if d then 37749 else 37724)=r) :
+    (hf : (if d then 38218 else 38218)=f) (hr : (if d then 37774 else 37749)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+(if d then 16867 else 16867)=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -17269,13 +17269,13 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+38193+37724=tc.measure Stair44Outer.divide+1901 :=
-  kernels tc 38193 37724 1901 (WindowWalkCosts.inst true 4 409 38193 37749 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 38193 37724 rfl rfl rfl).2.1 fieldTcDiv
+theorem tc_div : tc.measure divide+38218+37749=tc.measure Stair44Outer.divide+1901 :=
+  kernels tc 38218 37749 1901 (WindowWalkCosts.inst true 4 409 38218 37774 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 38218 37749 rfl rfl rfl).2.1 fieldTcDiv
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+38193+37749=tc.measure (Stair44Outer.multiply k)+1776 :=
-  kernelsM tc k 38193 37749 1776 (WindowWalkCosts.inst false 84 489 38193 37724 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 38193 37749 rfl rfl rfl).2.1 fieldTcMul
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+38218+37774=tc.measure (Stair44Outer.multiply k)+1776 :=
+  kernelsM tc k 38218 37774 1776 (WindowWalkCosts.inst false 84 489 38218 37749 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 38218 37774 rfl rfl rfl).2.1 fieldTcMul
 
 theorem mc_div : mc.measure divide+16867+17241=mc.measure Stair44Outer.divide+1481 :=
   kernels mc 16867 17241 1481 (WindowWalkCosts.instMeasurements true 4 409 16867 17266 rfl rfl rfl).1
@@ -17286,13 +17286,13 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+16867+17266=mc.measure (Stair
     (WindowWalkCosts.instMeasurements true 4 409 16867 17266 rfl rfl rfl).2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+148182=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+148282=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+65404=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 148182 (pair_delta2 tc_div (tc_mul _) rfl),
+  ⟨finite_delta tc C cx cy 148282 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 65404 (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2019732 ∧
-    measurementCount (program C) ≤ 1454493 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2019627 ∧
+    measurementCount (program C) ≤ 1454498 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -17374,28 +17374,28 @@ private theorem groupCap (d : Bool) (n : Nat)
   have h := WindowFieldCosts.group_slots d
   omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+2370644+2333874+125985 :=
-  kernels slots 2370644 2333874 125985
-    (walk slots true 4 2370644 2333874 409 rfl (casts CRTWindow.cut_slotsF.1) (casts CRTWindow.cut_slotsR.1)).1
-    (walk slots false 85 2370644 2333874 490 rfl (casts CRTWindow.cut_slotsF.2) (casts CRTWindow.cut_slotsR.2)).2
+    slots.measure Stair44Outer.divide+2370994+2334224+125985 :=
+  kernels slots 2370994 2334224 125985
+    (walk slots true 4 2370994 2334224 409 rfl (casts CRTWindow.cut_slotsF.1) (casts CRTWindow.cut_slotsR.1)).1
+    (walk slots false 85 2370994 2334224 490 rfl (casts CRTWindow.cut_slotsF.2) (casts CRTWindow.cut_slotsR.2)).2
     (groupCap true 125985 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+2370644+2333874+149710 :=
-  kernelsM slots k 2370644 2333874 149710
-    (walk slots false 84 2370644 2333874 489 rfl (casts CRTWindow.cut_slotsF.2) (casts CRTWindow.cut_slotsR.2)).1
-    (walk slots true 4 2370644 2333874 409 rfl (casts CRTWindow.cut_slotsF.1) (casts CRTWindow.cut_slotsR.1)).2
+    slots.measure (Stair44Outer.multiply k)+2370994+2334224+149710 :=
+  kernelsM slots k 2370994 2334224 149710
+    (walk slots false 84 2370994 2334224 489 rfl (casts CRTWindow.cut_slotsF.2) (casts CRTWindow.cut_slotsR.2)).1
+    (walk slots true 4 2370994 2334224 409 rfl (casts CRTWindow.cut_slotsF.1) (casts CRTWindow.cut_slotsR.1)).2
     (groupCap false 149710 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2370644+2333874+125985)
-    (hm : b ≤ y+2370644+2333874+149710) : a+b ≤ x+y+9684731 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2370994+2334224+125985)
+    (hm : b ≤ y+2370994+2334224+149710) : a+b ≤ x+y+9686131 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+9684731 :=
-  finite_upper slots C cx cy 9684731 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+9686131 :=
+  finite_upper slots C cx cy 9686131 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 66035191 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 66036591 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -21554,8 +21554,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2019732 ∧
-    measurementCount (program C) ≤ 1454493 ∧ gateSlots (program C) ≤ 66035191 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2019627 ∧
+    measurementCount (program C) ≤ 1454498 ∧ gateSlots (program C) ≤ 66036591 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -21753,7 +21753,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2019732,1454493,1543,66035191⟩
+def bounds : Challenge.Bounds := ⟨2019627,1454498,1543,66036591⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -21762,7 +21762,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1454493
+    change measurementCount (normalizeProgram _) ≤ 1454498
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -21770,7 +21770,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 66035191
+    change gateSlots (normalizeProgram _) ≤ 66036591
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -29308,12 +29308,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment425Ori:Clear (checkpointPrimitives.orient 450):=checked (by decide +kernel)
+private theorem segment425OriR:Clear (checkpointPrimitives.orientR 450):=checked (by decide +kernel)
 private theorem segment425P:Clear (renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450)):=checked (by decide +kernel)
 private theorem segment425U:Clear (renameProgram (OB5.sig 450) (Rolling1588.unpackAtTick true 450)):=checked (by decide +kernel)
 theorem forward425:Clear (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450):=
   both (both (both (both (both (unpackFree 87 (by decide)) (tfFree 87 (by decide))) (mfFree 87 (by decide))) segment425Ori) segment425P) (packFree 62 (by decide))
 theorem reverse425:Clear (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450):=
-  both (both (both (both (both (unpackFree 62 (by decide)) segment425U) segment425Ori) (mrFree 87 (by decide))) (trFree 87 (by decide))) (packFree 87 (by decide))
+  both (both (both (both (both (unpackFree 62 (by decide)) segment425U) segment425OriR) (mrFree 87 (by decide))) (trFree 87 (by decide))) (packFree 87 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29325,12 +29326,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment450Ori:Clear (checkpointPrimitives.orient 465):=checked (by decide +kernel)
+private theorem segment450OriR:Clear (checkpointPrimitives.orientR 465):=checked (by decide +kernel)
 private theorem segment450P:Clear (renameProgram (OB5.sig 465) (Rolling1588.Integer.packFirst base true 465)):=checked (by decide +kernel)
 private theorem segment450U:Clear (renameProgram (OB5.sig 465) (Rolling1588.unpackAtTick true 465)):=checked (by decide +kernel)
 theorem forward450:Clear (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465):=
   both (both (both (both (both (unpackFree 62 (by decide)) (tfFree 62 (by decide))) (mfFree 62 (by decide))) segment450Ori) segment450P) (packFree 47 (by decide))
 theorem reverse450:Clear (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465):=
-  both (both (both (both (both (unpackFree 47 (by decide)) segment450U) segment450Ori) (mrFree 62 (by decide))) (trFree 62 (by decide))) (packFree 62 (by decide))
+  both (both (both (both (both (unpackFree 47 (by decide)) segment450U) segment450OriR) (mrFree 62 (by decide))) (trFree 62 (by decide))) (packFree 62 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29342,12 +29344,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment465Ori:Clear (checkpointPrimitives.orient 480):=checked (by decide +kernel)
+private theorem segment465OriR:Clear (checkpointPrimitives.orientR 480):=checked (by decide +kernel)
 private theorem segment465P:Clear (renameProgram (OB5.sig 480) (Rolling1588.Integer.packFirst base true 480)):=checked (by decide +kernel)
 private theorem segment465U:Clear (renameProgram (OB5.sig 480) (Rolling1588.unpackAtTick true 480)):=checked (by decide +kernel)
 theorem forward465:Clear (StairSchedule.forwardSegment checkpointPrimitives 47 32 465 480):=
   both (both (both (both (both (unpackFree 47 (by decide)) (tfFree 47 (by decide))) (mfFree 47 (by decide))) segment465Ori) segment465P) (packFree 32 (by decide))
 theorem reverse465:Clear (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480):=
-  both (both (both (both (both (unpackFree 32 (by decide)) segment465U) segment465Ori) (mrFree 47 (by decide))) (trFree 47 (by decide))) (packFree 47 (by decide))
+  both (both (both (both (both (unpackFree 32 (by decide)) segment465U) segment465OriR) (mrFree 47 (by decide))) (trFree 47 (by decide))) (packFree 47 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29359,12 +29362,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment480Ori:Clear (checkpointPrimitives.orient 490):=checked (by decide +kernel)
+private theorem segment480OriR:Clear (checkpointPrimitives.orientR 490):=checked (by decide +kernel)
 private theorem segment480P:Clear (renameProgram (OB5.sig 490) (Rolling1588.Integer.packFirst base true 490)):=checked (by decide +kernel)
 private theorem segment480U:Clear (renameProgram (OB5.sig 490) (Rolling1588.unpackAtTick true 490)):=checked (by decide +kernel)
 theorem forward480:Clear (StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490):=
   both (both (both (both (both (unpackFree 32 (by decide)) (tfFree 32 (by decide))) (mfFree 32 (by decide))) segment480Ori) segment480P) (packFree 22 (by decide))
 theorem reverse480:Clear (StairSchedule.reverseSegment checkpointPrimitives 32 22 480 490):=
-  both (both (both (both (both (unpackFree 22 (by decide)) segment480U) segment480Ori) (mrFree 32 (by decide))) (trFree 32 (by decide))) (packFree 32 (by decide))
+  both (both (both (both (both (unpackFree 22 (by decide)) segment480U) segment480OriR) (mrFree 32 (by decide))) (trFree 32 (by decide))) (packFree 32 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end
@@ -29376,12 +29380,13 @@ open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly
 set_option maxRecDepth 50000
 set_option maxHeartbeats 3500000
 private theorem segment490Ori:Clear (checkpointPrimitives.orient 500):=checked (by decide +kernel)
+private theorem segment490OriR:Clear (checkpointPrimitives.orientR 500):=checked (by decide +kernel)
 private theorem segment490P:Clear (renameProgram (OB5.sig 500) (Rolling1588.Integer.packFirst base true 500)):=checked (by decide +kernel)
 private theorem segment490U:Clear (renameProgram (OB5.sig 500) (Rolling1588.unpackAtTick true 500)):=checked (by decide +kernel)
 theorem forward490:Clear (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500):=
   both (both (both (both (both (unpackFree 22 (by decide)) (tfFree 22 (by decide))) (mfFree 22 (by decide))) segment490Ori) segment490P) (packFree 12 (by decide))
 theorem reverse490:Clear (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500):=
-  both (both (both (both (both (unpackFree 12 (by decide)) segment490U) segment490Ori) (mrFree 22 (by decide))) (trFree 22 (by decide))) (packFree 22 (by decide))
+  both (both (both (both (both (unpackFree 12 (by decide)) segment490U) segment490OriR) (mrFree 22 (by decide))) (trFree 22 (by decide))) (packFree 22 (by decide))
 end ECDSAAdd.Entrant.StairPacket.ExteriorPorts
 
 end

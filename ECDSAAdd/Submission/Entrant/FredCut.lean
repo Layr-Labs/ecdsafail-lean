@@ -287,8 +287,8 @@ theorem lowClose_split (s : Nat) (hL : 1 ≤ Shadow7.lowsP s) :
   simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
 
 theorem suffix_after (s : Nat) :
-    (Shadow7.leaveLowClose s ++ Shadow7.leaveClose s) <:+ CRTBarrel.afterPartC3 s := by
-  unfold CRTBarrel.afterPartC3 CRTBarrel.tailE1
+    (Shadow7.leaveLowClose s ++ Shadow7.leaveClose s) <:+ KeptParity.afterRows s := by
+  unfold KeptParity.afterRows KeptParity.afterTail CRTBarrel.tailE1
   simp only [List.append_assoc, List.cons_append]
   repeat (first
     | (with_reducible exact List.suffix_refl _)
@@ -939,20 +939,20 @@ theorem cut_physical (d : Bool) : GatePhysical (forwardCut d) ∧ GatePhysical (
   ⟨fun i h => (window_physical d).1 i ((FredCut.fwd_cut d).mem i h),
     fun i h => (window_physical d).2 i ((FredCut.rev_cut d).mem i h)⟩
 
-theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2370644 ∧ gateSlots (forwardCut false) ≤ 2370644 :=
+theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2370994 ∧ gateSlots (forwardCut false) ≤ 2370994 :=
   ⟨(FredCut.fwd_cut true).slots_le.trans ship_slots.1, (FredCut.fwd_cut false).slots_le.trans ship_slots.2.1⟩
 
-theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2333874 ∧ gateSlots (reverseCut false) ≤ 2333874 :=
+theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2334224 ∧ gateSlots (reverseCut false) ≤ 2334224 :=
   ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
 
-theorem cut_toffoliF : toffoliCount (forwardCut true) = 127907 ∧ toffoliCount (forwardCut false) = 127907 := by
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 127882 ∧ toffoliCount (forwardCut false) = 127882 := by
   have a := (cut_toffoli true).1
   have b := (cut_toffoli false).1
   rw [ship_toffoliF_true] at a
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 128324 ∧ toffoliCount (reverseCut false) = 128349 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 128299 ∧ toffoliCount (reverseCut false) = 128324 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
