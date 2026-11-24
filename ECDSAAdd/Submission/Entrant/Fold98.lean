@@ -12898,29 +12898,36 @@ theorem copy_fast (u:Wire) (h:inside copyRanges u=true):u∈wires copyW:=
 theorem known_fast(u:Wire) (h:inside knownRanges u=true):u∈wires ParkAData.p0:=
  known_support u (List.contains_iff_mem.mp (List.all_eq_true.mp known_sites_checked u ((inside_spec _ _).mp h)))
 def cover(u:Wire):Bool:=u==d || u==g || u==4371 || u==4372 || inside copyRanges u || inside knownRanges u
-theorem used0:(((ambient.drop 0).take 80).all cover)=true:=by decide +kernel
-theorem used1:(((ambient.drop 80).take 80).all cover)=true:=by decide +kernel
-theorem used2:(((ambient.drop 160).take 80).all cover)=true:=by decide +kernel
-theorem used3:(((ambient.drop 240).take 80).all cover)=true:=by decide +kernel
-theorem used4:(((ambient.drop 320).take 80).all cover)=true:=by decide +kernel
-theorem used5:(((ambient.drop 400).take 80).all cover)=true:=by decide +kernel
-theorem used6:(((ambient.drop 480).take 80).all cover)=true:=by decide +kernel
-theorem used7:(((ambient.drop 560).take 80).all cover)=true:=by decide +kernel
-theorem used8:(((ambient.drop 640).take 80).all cover)=true:=by decide +kernel
-theorem used9:(((ambient.drop 720).take 80).all cover)=true:=by decide +kernel
-theorem used10:(((ambient.drop 800).take 80).all cover)=true:=by decide +kernel
-theorem used11:(((ambient.drop 880).take 80).all cover)=true:=by decide +kernel
-theorem used12:(((ambient.drop 960).take 80).all cover)=true:=by decide +kernel
-theorem used13:(((ambient.drop 1040).take 80).all cover)=true:=by decide +kernel
-theorem used14:(((ambient.drop 1120).take 80).all cover)=true:=by decide +kernel
-theorem used15:(((ambient.drop 1200).take 80).all cover)=true:=by decide +kernel
-theorem used16:(((ambient.drop 1280).take 80).all cover)=true:=by decide +kernel
-theorem partition:ambient=((ambient.drop 0).take 80) ++ ((ambient.drop 80).take 80) ++ ((ambient.drop 160).take 80) ++ ((ambient.drop 240).take 80) ++ ((ambient.drop 320).take 80) ++ ((ambient.drop 400).take 80) ++ ((ambient.drop 480).take 80) ++ ((ambient.drop 560).take 80) ++ ((ambient.drop 640).take 80) ++ ((ambient.drop 720).take 80) ++ ((ambient.drop 800).take 80) ++ ((ambient.drop 880).take 80) ++ ((ambient.drop 960).take 80) ++ ((ambient.drop 1040).take 80) ++ ((ambient.drop 1120).take 80) ++ ((ambient.drop 1200).take 80) ++ ((ambient.drop 1280).take 80) := by decide +kernel
-theorem all_cover:ambient.all cover=true:=by
- rw [partition]
- simp only [List.all_append,used0,used1,used2,used3,used4,used5,used6,used7,used8,used9,used10,used11,used12,used13,used14,used15,used16,Bool.true_and]
+theorem all_cover : ambient.all cover = true := by decide +kernel
 
+private theorem coveredSlice (offset : Nat) : ((ambient.drop offset).take 80).all cover = true := by
+  apply List.all_eq_true.mpr
+  intro q h
+  exact List.all_eq_true.mp all_cover q (List.mem_of_mem_drop (List.mem_of_mem_take h))
 
+theorem used0:(((ambient.drop 0).take 80).all cover)=true:=coveredSlice _
+theorem used1:(((ambient.drop 80).take 80).all cover)=true:=coveredSlice _
+theorem used2:(((ambient.drop 160).take 80).all cover)=true:=coveredSlice _
+theorem used3:(((ambient.drop 240).take 80).all cover)=true:=coveredSlice _
+theorem used4:(((ambient.drop 320).take 80).all cover)=true:=coveredSlice _
+theorem used5:(((ambient.drop 400).take 80).all cover)=true:=coveredSlice _
+theorem used6:(((ambient.drop 480).take 80).all cover)=true:=coveredSlice _
+theorem used7:(((ambient.drop 560).take 80).all cover)=true:=coveredSlice _
+theorem used8:(((ambient.drop 640).take 80).all cover)=true:=coveredSlice _
+theorem used9:(((ambient.drop 720).take 80).all cover)=true:=coveredSlice _
+theorem used10:(((ambient.drop 800).take 80).all cover)=true:=coveredSlice _
+theorem used11:(((ambient.drop 880).take 80).all cover)=true:=coveredSlice _
+theorem used12:(((ambient.drop 960).take 80).all cover)=true:=coveredSlice _
+theorem used13:(((ambient.drop 1040).take 80).all cover)=true:=coveredSlice _
+theorem used14:(((ambient.drop 1120).take 80).all cover)=true:=coveredSlice _
+theorem used15:(((ambient.drop 1200).take 80).all cover)=true:=coveredSlice _
+theorem used16:(((ambient.drop 1280).take 80).all cover)=true:=coveredSlice _
+theorem partition:ambient=((ambient.drop 0).take 80) ++ ((ambient.drop 80).take 80) ++ ((ambient.drop 160).take 80) ++ ((ambient.drop 240).take 80) ++ ((ambient.drop 320).take 80) ++ ((ambient.drop 400).take 80) ++ ((ambient.drop 480).take 80) ++ ((ambient.drop 560).take 80) ++ ((ambient.drop 640).take 80) ++ ((ambient.drop 720).take 80) ++ ((ambient.drop 800).take 80) ++ ((ambient.drop 880).take 80) ++ ((ambient.drop 960).take 80) ++ ((ambient.drop 1040).take 80) ++ ((ambient.drop 1120).take 80) ++ ((ambient.drop 1200).take 80) ++ ((ambient.drop 1280).take 80) := by
+  calc
+    ambient = ambient.take 1360 := (List.take_of_length_le (by decide +kernel)).symm
+    _ = _ := by
+      generalize ambient = xs
+      simp only [List.drop_zero, ← List.take_add]
 
 end ECDSAAdd.Entrant.C163CoverFast
 
