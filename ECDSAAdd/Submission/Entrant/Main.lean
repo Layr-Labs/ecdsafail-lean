@@ -279,6 +279,7 @@ theorem ofield_counts (d : Bool) :
   have h84 := OddFullPass.P1LifeLoan.packet_counts d 0 84 (by decide) (by decide)
   rw [StairGroups.packet_zero] at h84
   rw [oddPk_end] at o1 o2
+  simp only [show FoldLoanTop.saving 0 = 0 from rfl] at h84
   norm_num only at h84
   simp only [if_true,if_false] at h84
   exact ⟨by omega,by omega⟩
@@ -290,7 +291,7 @@ theorem half760OddLoan_zero_eq (d : Bool) :
     OddFullPass.P1LifeLoan.inverseLoan,P1Life.inverse,
     OddFullPass.P1LifeLoan.p1Seed,P1Life.p1Seed,
     OddFullPass.P1LifeLoan.rawAddLoan,P1Life.rawAdd,
-    OddFullPass.P1LifeLoan.foldLoan,P1Life.fold,
+    OddFullPass.P1LifeLoan.foldLoan,FoldLoanTop.choose_zero,FoldLoanTop.stock,P1Life.fold,
     OddFullPass.P1LifeLoan.rawSubLoan,P1Life.rawSub,
     OddFullPass.P1LifeLoan.unfoldLoan,P1Life.unfoldStep,
     OddFullPass.P1LifeLoan.compareBlockLoan,P1Life.compare,
@@ -430,36 +431,36 @@ attribute [local irreducible] Shadow20.MixedWindow.forwardMixedCut TickCut.Mixed
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 39109 else 39109)=
+    toffoliCount (forward d tail)+(if d then 39130 else 39130)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 39020 else 38998)=
+    toffoliCount (backward d tail)+(if d then 39041 else 39019)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
-    measurementCount (forward d tail)+(if d then 17398 else 17376)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
-    measurementCount (backward d tail)+(if d then 17407 else 17385)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
+    measurementCount (forward d tail)+(if d then 17419 else 17397)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
+    measurementCount (backward d tail)+(if d then 17428 else 17406)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   have sf := StockWindowCosts420.stock420from45 d
   have mcw := TickCut.Mixed.mixed_counts d
   cases d
   · simp only [Bool.false_eq_true, ↓reduceIte] at mcw ⊢
-    have t := walk tc false tail 39109 38998 (subEq 39109 mcw.1 sf.1 (by omega)) (subEq 38998 mcw.2.1 sf.2.2.1 (by omega))
-    have mv := walk mc false tail 17376 17385 (subEq 17376 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17385 mcw.2.2.2 sf.2.2.2 (by omega))
+    have t := walk tc false tail 39130 39019 (subEq 39130 mcw.1 sf.1 (by omega)) (subEq 39019 mcw.2.1 sf.2.2.1 (by omega))
+    have mv := walk mc false tail 17397 17406 (subEq 17397 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17406 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
   · simp only [↓reduceIte] at mcw ⊢
-    have t := walk tc true tail 39109 39020 (subEq 39109 mcw.1 sf.1 (by omega)) (subEq 39020 mcw.2.1 sf.2.2.1 (by omega))
-    have mv := walk mc true tail 17398 17407 (subEq 17398 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17407 mcw.2.2.2 sf.2.2.2 (by omega))
+    have t := walk tc true tail 39130 39041 (subEq 39130 mcw.1 sf.1 (by omega)) (subEq 39041 mcw.2.1 sf.2.2.1 (by omega))
+    have mv := walk mc true tail 17419 17428 (subEq 17419 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17428 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 39109 else 39109)=f) (hr : (if d then 39020 else 38998)=r) :
+    (hf : (if d then 39130 else 39130)=f) (hr : (if d then 39041 else 39019)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
-    mc.measure (forward d tail)+(if d then 17398 else 17376)=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+(if d then 17407 else 17385)=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (forward d tail)+(if d then 17419 else 17397)=mc.measure (Stair44WalkRun.forward d n) ∧
+    mc.measure (backward d tail)+(if d then 17428 else 17406)=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 
 theorem instMeasurements (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 17398 else 17376)=f) (hr : (if d then 17407 else 17385)=r) :
+    (hf : (if d then 17419 else 17397)=f) (hr : (if d then 17428 else 17406)=r) :
     mc.measure (forward d tail)+f=mc.measure (Stair44WalkRun.forward d n) ∧
     mc.measure (backward d tail)+r=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
@@ -603,7 +604,7 @@ def entryFieldHostedCut : Program :=
 
 theorem field_delta_tc_div (n : Nat)
     (h : tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+n) :
-    tc.measure (entryFieldHosted checkpointPrimitives)+868 =
+    tc.measure (entryFieldHosted checkpointPrimitives)+953 =
       tc.measure (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan)+n := by
   have g13 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan true 13 85 5 (by decide) (by decide)).1
   have g22 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan true 22 90 3 (by decide) (by decide)).1
@@ -632,13 +633,14 @@ theorem field_delta_tc_div (n : Nat)
     StairHostsSchedule.entryTailSuffix,StairConcrete.bestLoans_divEndpoint,
     StairConcrete.bestLoans,StairSchedule.fieldRename,StairSchedule.parityRename,
     renameProgram_counts,toffoliCount_append] at *
+  simp only [show FoldLoanTop.saving 13 = 1 from rfl,show FoldLoanTop.saving 22 = 1 from rfl,show FoldLoanTop.saving 30 = 1 from rfl,show FoldLoanTop.saving 36 = 1 from rfl,show FoldLoanTop.saving 41 = 1 from rfl,show FoldLoanTop.saving 43 = 1 from rfl] at g13 g22 g30 g36 g41 g43
   norm_num only at g13 g22 g30 g36 g41 g43
   simp only [if_false,if_true] at g13 g22 g30 g36 g41 g43
   omega
 
 theorem field_delta_tc_mul (n : Nat)
     (h : tc.measure (WindowFieldCosts.group84 false)=tc.measure (WindowFieldCosts.group false 1 84)+n) :
-    tc.measure (exitFieldHosted checkpointPrimitives)+890 =
+    tc.measure (exitFieldHosted checkpointPrimitives)+1020 =
       tc.measure (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan)+n := by
   have g13 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan false 13 85 5 (by decide) (by decide)).1
   have g22 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan false 22 90 3 (by decide) (by decide)).1
@@ -673,13 +675,14 @@ theorem field_delta_tc_mul (n : Nat)
     StairSchedule.placedEndPacket,StairConcrete.bestLoans,StairConcrete.endPacket,
     Bool.false_eq_true,if_false,if_true,StairSchedule.fieldRename,StairSchedule.parityRename,
     renameProgram_counts,toffoliCount_append] at *
+  simp only [show FoldLoanTop.saving 13 = 1 from rfl,show FoldLoanTop.saving 22 = 1 from rfl,show FoldLoanTop.saving 30 = 1 from rfl,show FoldLoanTop.saving 36 = 1 from rfl,show FoldLoanTop.saving 41 = 1 from rfl,show FoldLoanTop.saving 43 = 1 from rfl] at g13 g22 g30 g36 g41 g43
   norm_num only at g13 g22 g30 g36 g41 g43
   simp only [if_false,if_true] at g13 g22 g30 g36 g41 g43
   omega
 
 theorem field_delta_mc_div (n : Nat)
     (h : mc.measure (WindowFieldCosts.group84 true)=mc.measure (WindowFieldCosts.group true 1 84)+n) :
-    mc.measure (entryFieldHosted checkpointPrimitives)+1548 =
+    mc.measure (entryFieldHosted checkpointPrimitives)+1718 =
       mc.measure (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan)+n := by
   have g13 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan true 13 85 5 (by decide) (by decide)).2
   have g22 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan true 22 90 3 (by decide) (by decide)).2
@@ -708,13 +711,14 @@ theorem field_delta_mc_div (n : Nat)
     StairHostsSchedule.entryTailSuffix,StairConcrete.bestLoans_divEndpoint,
     StairConcrete.bestLoans,StairSchedule.fieldRename,StairSchedule.parityRename,
     renameProgram_counts,measurementCount_append] at *
+  simp only [show FoldLoanTop.saving 13 = 1 from rfl,show FoldLoanTop.saving 22 = 1 from rfl,show FoldLoanTop.saving 30 = 1 from rfl,show FoldLoanTop.saving 36 = 1 from rfl,show FoldLoanTop.saving 41 = 1 from rfl,show FoldLoanTop.saving 43 = 1 from rfl] at g13 g22 g30 g36 g41 g43
   norm_num only at g13 g22 g30 g36 g41 g43
   simp only [if_false,if_true] at g13 g22 g30 g36 g41 g43
   omega
 
 theorem field_delta_mc_mul (n : Nat)
     (h : mc.measure (WindowFieldCosts.group84 false)=mc.measure (WindowFieldCosts.group false 1 84)+n) :
-    mc.measure (exitFieldHosted checkpointPrimitives)+1529 =
+    mc.measure (exitFieldHosted checkpointPrimitives)+1744 =
       mc.measure (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan)+n := by
   have g13 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan false 13 85 5 (by decide) (by decide)).2
   have g22 := (OddFullPass.P1LifeLoan.hostedGroup_counts hostPlan false 22 90 3 (by decide) (by decide)).2
@@ -749,6 +753,7 @@ theorem field_delta_mc_mul (n : Nat)
     StairSchedule.placedEndPacket,StairConcrete.bestLoans,StairConcrete.endPacket,
     Bool.false_eq_true,if_false,if_true,StairSchedule.fieldRename,StairSchedule.parityRename,
     renameProgram_counts,measurementCount_append] at *
+  simp only [show FoldLoanTop.saving 13 = 1 from rfl,show FoldLoanTop.saving 22 = 1 from rfl,show FoldLoanTop.saving 30 = 1 from rfl,show FoldLoanTop.saving 36 = 1 from rfl,show FoldLoanTop.saving 41 = 1 from rfl,show FoldLoanTop.saving 43 = 1 from rfl] at g13 g22 g30 g36 g41 g43
   norm_num only at g13 g22 g30 g36 g41 g43
   simp only [if_false,if_true] at g13 g22 g30 g36 g41 g43
   omega
@@ -966,44 +971,44 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+39109+38998+933=tc.measure Stair44Outer.divide+1050 := by
-  have k := kernels tc 39109 38998 868 1050 (WindowWalkCosts.inst true 4 409 39109 39020 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 39109 38998 rfl rfl rfl).2.1 (field_delta_tc_div 1050 fieldTcDiv)
+theorem tc_div : tc.measure divide+39130+39019+1018=tc.measure Stair44Outer.divide+1050 := by
+  have k := kernels tc 39130 39019 953 1050 (WindowWalkCosts.inst true 4 409 39130 39041 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 39130 39019 rfl rfl rfl).2.1 (field_delta_tc_div 1050 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+39109+39020+890=tc.measure (Stair44Outer.multiply k)+962 :=
-  kernelsM tc k 39109 39020 890 962 (WindowWalkCosts.inst false 84 489 39109 38998 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 39109 39020 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+39130+39041+1020=tc.measure (Stair44Outer.multiply k)+962 :=
+  kernelsM tc k 39130 39041 1020 962 (WindowWalkCosts.inst false 84 489 39130 39019 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 39130 39041 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
 
-theorem mc_div : mc.measure divide+17398+17385+1573=mc.measure Stair44Outer.divide+652 := by
-  have k := kernels mc 17398 17385 1548 652 (WindowWalkCosts.instMeasurements true 4 409 17398 17407 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements false 85 490 17376 17385 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
+theorem mc_div : mc.measure divide+17419+17406+1743=mc.measure Stair44Outer.divide+652 := by
+  have k := kernels mc 17419 17406 1718 652 (WindowWalkCosts.instMeasurements true 4 409 17419 17428 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements false 85 490 17397 17406 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
   have e : mc.measure Rolling1588.ep + mc.measure Rolling1588.dp = 5 := by
     show measurementCount Rolling1588.ep + measurementCount Rolling1588.dp = 5
     exact PackCutCounts.mc_epdp
   omega
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+17376+17407+1529=mc.measure (Stair44Outer.multiply k)+542 :=
-  kernelsM mc k 17376 17407 1529 542 (WindowWalkCosts.instMeasurements false 84 489 17376 17385 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements true 4 409 17398 17407 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+17397+17428+1744=mc.measure (Stair44Outer.multiply k)+542 :=
+  kernelsM mc k 17397 17428 1744 542 (WindowWalkCosts.instMeasurements false 84 489 17397 17406 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements true 4 409 17419 17428 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+156047=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+71474=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 156047
+    toffoliCount (finite C cx cy)+156346=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+71943=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 156346
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 71474
+    finite_delta mc C cx cy 71943
       (OddOuterBridge.entryYAllOdd_mc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2011793 ∧
-    measurementCount (program C) ≤ 1448423 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2011375 ∧
+    measurementCount (program C) ≤ 1447729 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -1224,12 +1229,12 @@ private theorem sum_flatMap_slots_le {α : Type} (f : α → List Program) (b : 
 
 private def b15SF (j : Fin 26) : Nat :=
   35 + 5000 + 168 + 15988 + 70000 +
-  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 10 * Shadow7.lowsP (start j) + 650 +
+  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 10 * Shadow7.lowsP (start j) + 645 +
     3 * Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false)
 
 private def b15SR (j : Fin 26) : Nat :=
   36 + 5000 + 166 + 12262 + 70098 +
-  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 11 * Shadow7.lowsP (start j) + 619 +
+  (6 * Shadow7.wpP (start j) + 5 * Shadow7.liveW (start j) + 11 * Shadow7.lowsP (start j) + 614 +
     3 * Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true)
 
 private def b20SF (j : Fin 9) : Nat :=
@@ -1295,22 +1300,22 @@ private theorem exit420_slots_le (d : Bool) :
 
 private theorem mixed_slot_sum_vals :
     ((22 * Shadow7.wpP 45 - 9) + (35 + (5000 + (168 + (70000 +
-      ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 650 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 false) + 0)))))) +
+      ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 10 * Shadow7.lowsP 45 + 645 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 false) + 0)))))) +
     (Shadow20.MixedWindow.prefixPairs.map fun p => b15SF p.2).sum +
     (35 + (5000 + (168 + (15988 + (70000 + (13392 + 0)))))) +
     ((List.finRange 9).map b20SF).sum +
     (35 + (5000 + (168 + (168 + (15988 + (70000 +
-      ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 650 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 false) + 0))))))) +
+      ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 10 * Shadow7.lowsP 345 + 645 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 false) + 0))))))) +
     (Shadow20.MixedWindow.suffixPairs.map fun p => b15SF p.2).sum +
     (9 + ((21 * Shadow7.wpP 420 - 7) + (6004 + (168 + (15988 + 0))))) ≤ 2710000 ∧
     (12262 + (166 + (6001 + ((22 * Shadow7.wpP 420 - 9) + (9 + 0))))) +
     (Shadow20.MixedWindow.suffixPairs.reverse.map fun p => b15SR p.2).sum +
-    ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 619 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 true) +
+    ((6 * Shadow7.wpP 345 + 5 * Shadow7.liveW 345 + 11 * Shadow7.lowsP 345 + 614 + 3 * Shadow7.wpP 360 + CRTBarrel.barrelSlots 345 true) +
       (70098 + (12262 + (166 + (166 + (5000 + (36 + 0))))))) +
     ((List.finRange 9).reverse.map b20SR).sum +
     (13368 + (70098 + (12262 + (166 + (5000 + (36 + 0)))))) +
     (Shadow20.MixedWindow.prefixPairs.reverse.map fun p => b15SR p.2).sum +
-    ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 619 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 true) +
+    ((6 * Shadow7.wpP 45 + 5 * Shadow7.liveW 45 + 11 * Shadow7.lowsP 45 + 614 + 3 * Shadow7.wpP 60 + CRTBarrel.barrelSlots 45 true) +
       (70098 + (166 + (5000 + (36 + ((21 * Shadow7.wpP 45 - 7) + 0)))))) ≤ 2610000 := by
   decide +kernel
 
@@ -5273,8 +5278,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2011793 ∧
-    measurementCount (program C) ≤ 1448423 ∧ gateSlots (program C) ≤ 67241790 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2011375 ∧
+    measurementCount (program C) ≤ 1447729 ∧ gateSlots (program C) ≤ 67241790 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -5472,7 +5477,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2011793,1448423,1543,67241790⟩
+def bounds : Challenge.Bounds := ⟨2011375,1447729,1543,67241790⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -5481,7 +5486,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1448423
+    change measurementCount (normalizeProgram _) ≤ 1447729
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -18412,7 +18417,7 @@ private theorem foldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : L
     .CX L760.parity L760.lower, .CX L760.rmsb L760.lower, .X L760.lower,
     .measureX L760.one [] [.CZ L760.parity L760.rmsb]]
   let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedAddLoan d StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+    (FoldLoanTop.choose d L760 false)
   let MidQ := Q6LifetimeResearch.move (base 760) L760.rmsb
     (StairLoan.mappedAddLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
   have hP : foldLoan d L760 = Pre ++ (MidP ++ Post) := by
@@ -18435,17 +18440,18 @@ private theorem foldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : L
     have h2 : L760.rmsb ≠ L760.one := by decide +kernel
     simp [Pre, run, writeBit, h1, h2, hlow]
   apply move_run_eq (base 760) L760.rmsb _ _ u x []
-  apply mappedAddLoan_760_run_eq d (by omega) (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
-  intro q hq
-  by_cases hq760 : q = base 760
-  · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
-  · have hqAway : q ≠ L760.rmsb ∧ q ≠ L760.one := by
-      have hchk : (L760.carry.take 254).all (fun z => decide (z ≠ L760.rmsb ∧ z ≠ L760.one)) = true := by decide +kernel
-      exact of_decide_eq_true (List.all_eq_true.mp hchk q hq)
-    simp only [pullState, Equiv.swap_apply_of_ne_of_ne hq760 hqAway.1]
-    rw [huEq]
-    simp only [Pre, run, writeBit, Function.update_of_ne hqAway.1, Function.update_of_ne hqAway.2]
-    exact hcar q (List.mem_of_mem_take hq)
+  have clean : ∀ q ∈ L760.carry.take 254, (pullState (Equiv.swap (base 760) L760.rmsb) u).basis q = false := by
+    intro q hq
+    by_cases hq760 : q = base 760
+    · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
+    · have hqAway : q ≠ L760.rmsb ∧ q ≠ L760.one := by
+        have hchk : (L760.carry.take 254).all (fun z => decide (z ≠ L760.rmsb ∧ z ≠ L760.one)) = true := by decide +kernel
+        exact of_decide_eq_true (List.all_eq_true.mp hchk q hq)
+      simp only [pullState, Equiv.swap_apply_of_ne_of_ne hq760 hqAway.1]
+      rw [huEq]
+      simp only [Pre, run, writeBit, Function.update_of_ne hqAway.1, Function.update_of_ne hqAway.2]
+      exact hcar q (List.mem_of_mem_take hq)
+  exact FoldLoanTop.choose_run d false _ x [] clean (mappedAddLoan_760_run_eq d (by omega) _ x [] clean)
 
 private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m : List Bool)
     (hlow : s.basis L760.lower = false)
@@ -18457,7 +18463,7 @@ private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m :
   let Post : Program := [.CX L760.lower L760.rmsb, .CX L760.rmsb L760.lower,
     .measureX L760.one [] [.CZ L760.parity L760.rmsb]]
   let MidP := Q6LifetimeResearch.move (base 760) L760.rmsb
-    (StairLoan.mappedSubLoan d StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
+    (FoldLoanTop.choose d L760 true)
   let MidQ := Q6LifetimeResearch.move (base 760) L760.rmsb
     (StairLoan.mappedSubLoan 0 StairLoan.retiredRoles (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
   have hP : unfoldLoan d L760 = Pre ++ (MidP ++ Post) := by
@@ -18489,18 +18495,19 @@ private theorem unfoldLoan_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m :
       Function.update_of_ne h4.symm, Function.update_of_ne h5.symm, Function.update_of_ne h6.symm, hlow]
     cases s.basis L760.parity <;> cases s.basis L760.rmsb <;> rfl
   apply move_run_eq (base 760) L760.rmsb _ _ u x []
-  apply mappedSubLoan_760_run_eq d (by omega) (pullState (Equiv.swap (base 760) L760.rmsb) u) x []
-  intro q hq
-  by_cases hq760 : q = base 760
-  · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
-  · have hqAway : q ≠ L760.rmsb ∧ q ≠ L760.one ∧ q ≠ L760.lower := by
-      have hchk : (L760.carry.take 254).all (fun z => decide (z ≠ L760.rmsb ∧ z ≠ L760.one ∧ z ≠ L760.lower)) = true := by decide +kernel
-      exact of_decide_eq_true (List.all_eq_true.mp hchk q hq)
-    simp only [pullState, Equiv.swap_apply_of_ne_of_ne hq760 hqAway.1]
-    rw [huEq]
-    simp only [Pre, run, writeBit, Function.update_of_ne hqAway.1, Function.update_of_ne hqAway.2.1,
-      Function.update_of_ne hqAway.2.2]
-    exact hcar q (List.mem_of_mem_take hq)
+  have clean : ∀ q ∈ L760.carry.take 254, (pullState (Equiv.swap (base 760) L760.rmsb) u).basis q = false := by
+    intro q hq
+    by_cases hq760 : q = base 760
+    · subst hq760; simp only [pullState, Equiv.swap_apply_left]; exact hurmsb
+    · have hqAway : q ≠ L760.rmsb ∧ q ≠ L760.one ∧ q ≠ L760.lower := by
+        have hchk : (L760.carry.take 254).all (fun z => decide (z ≠ L760.rmsb ∧ z ≠ L760.one ∧ z ≠ L760.lower)) = true := by decide +kernel
+        exact of_decide_eq_true (List.all_eq_true.mp hchk q hq)
+      simp only [pullState, Equiv.swap_apply_of_ne_of_ne hq760 hqAway.1]
+      rw [huEq]
+      simp only [Pre, run, writeBit, Function.update_of_ne hqAway.1, Function.update_of_ne hqAway.2.1,
+        Function.update_of_ne hqAway.2.2]
+      exact hcar q (List.mem_of_mem_take hq)
+  exact FoldLoanTop.choose_run d true _ x [] clean (mappedSubLoan_760_run_eq d (by omega) _ x [] clean)
 
 private theorem shortConstAddLoan_760_move_run_eq (d : Nat) (hd : d ≤ 43) (h42 : d ≠ 42)
     (k : Nat) (hk : k / 8 < 2 ^ 252) (s : State) (m : List Bool)
@@ -19658,7 +19665,9 @@ private theorem half760OddLoan_in_jp (d : Nat) (divide : Bool) :
       refine wires_append_sub (wires_append_sub hu1 ?_) hu3
       refine hmove_in_jp (mappedSub (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         hrmsb hu2 ?_
-      intro w hw
+      intro w fresh
+      have hw := FoldLoanTop.choose_sites d true fresh
+      simp only [FoldLoanTop.stock,Bool.false_eq_true,if_false,if_true] at hw
       simp only [StairLoan.mappedSubLoan, wires_append, Finset.mem_union] at hw
       rcases hw with (hn | hm) | hn
       · exact Or.inl (by simp only [mappedSub, wires_append, Finset.mem_union, hn, true_or, or_true])
@@ -19766,7 +19775,9 @@ private theorem half760OddLoan_in_jp (d : Nat) (divide : Bool) :
       refine wires_append_sub (wires_append_sub f1 ?_) f3
       refine hmove_in_jp (mappedAdd (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         hrmsb f2 ?_
-      intro w hw
+      intro w fresh
+      have hw := FoldLoanTop.choose_sites d false fresh
+      simp only [FoldLoanTop.stock,Bool.false_eq_true,if_false,if_true] at hw
       have he := StairLoanSupport.emitLoan_support_envelope d StairLoan.retiredRoles
         (StairLoan.mappedLayers (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one)
         (StairLoan.mappedTop (ShortBiasedFold.lowBits L760) L760.low (L760.carry.take 254) L760.one) hw

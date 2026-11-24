@@ -2576,9 +2576,67 @@ def afterWord (s : Nat) : List Gate :=
   leaveFix12 s (Shadow7.sbP s) ++ Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++
   Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
+private abbrev middleTarget (s q : Wire) : Prop :=
+  q ≠ Shadow7.a0P s - 1 + 16 ∧ q ≠ Shadow7.e0P s + 3 ∧ q ≠ Shadow7.e0P s + 4 ∧
+  q ≠ Shadow7.e0P s + 6 ∧ q ≠ 1559
+
+private theorem middle_sites_checked : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let n := Shadow7.wpP s
+    middleTarget s 1613 ∧
+    (List.range (n + 15)).all (fun i => decide (middleTarget s (Shadow7.bankW s i))) = true ∧
+    (List.range (n - 1)).all (fun i => decide (middleTarget s (Shadow7.poolW s i))) = true := by
+  decide +kernel
+
+private theorem middle_sites (j : Fin 26) (h : j.val ≤ 24) :
+    let s := start j
+    AllAT (fun _ => True) (middleTarget s) (Shadow7.leaveAdjustCore s) ∧
+    AllAT (fun _ => True) (middleTarget s) (Shadow7.leaveBarrel s) := by
+  let s := start j
+  obtain ⟨control, bank_sites, pool_sites⟩ := middle_sites_checked j h
+  have bank (i : Nat) (used : i < Shadow7.wpP s + 15) :
+      middleTarget s (Shadow7.bankW s i) :=
+    of_decide_eq_true (List.all_eq_true.mp bank_sites i (List.mem_range.mpr used))
+  change AllAT _ _ (Shadow7.leaveAdjustCore s) ∧ AllAT _ _ (Shadow7.leaveBarrel s)
+  constructor
+  · unfold Shadow7.leaveAdjustCore
+    apply allAT_adjustG
+    · intro w hw
+      obtain ⟨i, index, rfl⟩ := List.mem_map.mp hw
+      rw [List.mem_range] at index
+      exact ⟨trivial, bank i (by omega)⟩
+    · intro w hw
+      obtain ⟨i, index, rfl⟩ := List.mem_map.mp hw
+      exact ⟨trivial, of_decide_eq_true (List.all_eq_true.mp pool_sites i index)⟩
+    · trivial
+    · trivial
+  · have stage (xs : List Wire) (d n : Nat) (bound : n + d ≤ Shadow7.wpP s + 15) :
+        AllAT (fun _ => True) (middleTarget s) (stageG 1613 (Shadow7.bankW s) xs d n) :=
+      allAT_stageG _ _ _ _ _ ⟨trivial, control⟩ (fun _ _ => trivial)
+        (fun i used => ⟨⟨trivial, bank i (by omega)⟩, ⟨trivial, bank (i + d) (by omega)⟩⟩)
+    unfold Shadow7.leaveBarrel
+    exact allAT_append (allAT_append (allAT_append (stage _ _ _ (by omega))
+      (stage _ _ _ (by omega))) (stage _ _ _ (by omega))) (stage _ _ _ (by omega))
+
+private theorem post_local_checked : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let h := Shadow7.sbP s
+    (leaveFix3 s h ++ leaveFix4 s h ++ Shadow7.leaveFix5Move s h ++
+      [Gate.cx (Shadow7.e0P s + 6) (Shadow7.e0P s + 3)] ++ Shadow7.fix8P s h ++
+      Shadow7.glueG3 s ++ keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s - 1 + i) 1613 0 8 ++
+      wordOpen 1614 (cols16 s)).all (fun g => decide (target g ≠ Shadow7.a0P s - 1 + 16)) = true := by
+  decide +kernel
+
 theorem post_keeps_checked : ∀ j : Fin 26, j.val≤24 →
     (postEntry (start j)).all (fun g => decide (target g ≠ Shadow7.a0P (start j) - 1 + 16)) = true := by
-  decide +kernel
+  intro j hi
+  obtain ⟨adj, bar⟩ := middle_sites j hi
+  have all (gs : List Gate) (sites : AllAT (fun _ => True) (middleTarget (start j)) gs) :
+      gs.all (fun g => decide (target g ≠ Shadow7.a0P (start j) - 1 + 16)) = true :=
+    List.all_eq_true.mpr (fun g hg => decide_eq_true (sites g hg).2.1)
+  simp only [postEntry, Shadow7.leaveAdjust, List.all_append]
+  rw [all (Shadow7.leaveAdjustCore (start j)) adj, all (Shadow7.leaveBarrel (start j)) bar]
+  simpa only [List.all_append, Bool.and_true] using post_local_checked j hi
 
 
 theorem pair_layout_checked : ∀ j : Fin 26, j.val≤24 →
@@ -2651,9 +2709,58 @@ theorem scan_shortened_shape (s : Nat) : scanShortenedOps s = beforeScan s ++
   simp only [scanShortenedOps,scanTail,postEntry,afterWord,beforeScan,beforeScanTail,afterShort,
     wordOpenClose,List.append_assoc]
 
+private theorem check_tail_congr (f u c l : Wire) (before left right : List Gate)
+    (same : ∀ n shifted, FlagLeave.check f u c l n shifted left = FlagLeave.check f u c l n shifted right)
+    (n : Nat) (shifted : Bool) :
+    FlagLeave.check f u c l n shifted (before ++ left) = FlagLeave.check f u c l n shifted (before ++ right) := by
+  induction before generalizing n shifted with
+  | nil => exact same n shifted
+  | cons g before ih => cases n <;> simp only [List.cons_append, FlagLeave.check, ih]
+
+private theorem check_middle (s : Nat) (middle tail : List Gate)
+    (sites : AllAT (fun _ => True) (middleTarget s) middle) (n : Nat) (shifted : Bool) :
+    FlagLeave.check (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) (Shadow7.e0P s + 6) 1559 n shifted (middle ++ tail) =
+      FlagLeave.check (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) (Shadow7.e0P s + 6) 1559 n shifted tail := by
+  induction middle generalizing n shifted with
+  | nil => rfl
+  | cons g middle ih =>
+    cases n with
+    | zero => simp only [FlagLeave.check]
+    | succ n =>
+      obtain ⟨_, hf, hu, hc, hl⟩ := (sites g List.mem_cons_self).2
+      have miss : FlagLeave.hit (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 g ≠ true := by
+        intro hit
+        rcases of_decide_eq_true hit with rfl | rfl <;> exact hl rfl
+      have target_ok : ¬ (target g = Shadow7.e0P s + 4 ∨
+          (shifted = true ∧ target g = Shadow7.e0P s + 6)) :=
+        fun bad => bad.elim hu (fun h => hc h.2)
+      rw [List.cons_append, FlagLeave.check, if_neg miss, if_neg hf, if_neg target_ok]
+      exact ih (fun x hx => sites x (List.mem_cons_of_mem _ hx)) (n + 1) shifted
+
+private def checkPrefix (s : Nat) : List Gate :=
+  let h := Shadow7.sbP s
+  DeadScan.fix0M s h ++ leaveFix1 s h ++ Shadow7.fix2P s h ++ leaveFix3 s h ++ leaveFix4 s h ++
+    Shadow7.leaveFix5Move s h ++ [Gate.cx (Shadow7.e0P s + 6) (Shadow7.e0P s + 3)]
+
+private theorem all_local_checked : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    FlagLeave.check (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) (Shadow7.e0P s + 6) 1559
+      2 false (checkPrefix s ++ afterShort s) = true := by
+  decide +kernel
+
 theorem all_checked : ∀ j : Fin 26, j.val≤24 →
     FlagLeave.check (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) 1559
-      2 false (scanShortenedOps (start j)) = true := by decide +kernel
+      2 false (scanShortenedOps (start j)) = true := by
+  intro j hi
+  let s := start j
+  obtain ⟨adj, bar⟩ := middle_sites j hi
+  have shape : scanShortenedOps s = checkPrefix s ++
+      ((Shadow7.leaveAdjustCore s ++ Shadow7.leaveBarrel s) ++ afterShort s) := by
+    simp only [scan_shortened_shape, beforeScan, beforeScanTail, Shadow7.leaveAdjust,
+      checkPrefix, List.append_assoc]
+  change FlagLeave.check _ _ _ _ 2 false (scanShortenedOps s) = true
+  rw [shape, check_tail_congr _ _ _ _ _ _ _ (check_middle s _ _ (allAT_append adj bar))]
+  exact all_local_checked j hi
 
 theorem before_all_checked : ∀ j : Fin 26, j.val≤24 →
     FlagLeave.check (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) 1559
@@ -2663,13 +2770,82 @@ theorem before_all_checked : ∀ j : Fin 26, j.val≤24 →
     (Shadow7.leaveBarrel (start j) ++ afterShort (start j))
     (by rw [←scan_shortened_shape]; exact all_checked j hi)
 
-theorem removed_before : ∀ j : Fin 26, j.val≤24 →
-    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (beforeScan (start j)) =
+private theorem hit_target (f u l : Wire) (g : Gate) (hit : FlagLeave.hit f u l g = true) :
+    target g = l := by
+  rcases of_decide_eq_true hit with rfl | rfl <;> rfl
+
+private theorem removed_filter (f u l : Wire) (n : Nat) (p : List Gate) :
+    FlagLeave.removed f u l n p = (p.filter (FlagLeave.hit f u l)).take n := by
+  induction p generalizing n with
+  | nil => cases n <;> rfl
+  | cons g p ih =>
+    cases n with
+    | zero => rfl
+    | succ n =>
+      by_cases hit : FlagLeave.hit f u l g = true <;>
+        simp [FlagLeave.removed,hit,ih]
+
+private theorem adjust_sites : ∀ j : Fin 26, j.val≤24 →
+    let s := start j
+    let n := Shadow7.wpP s
+    decide (Shadow7.e0P s+3 ≠ 1559) = true ∧
+    (List.range n).all (fun i => decide (Shadow7.bankW s i ≠ 1559)) = true ∧
+    (List.range (n-1)).all (fun i => decide (Shadow7.poolW s i ≠ 1559)) = true := by decide +kernel
+
+private theorem no_adjust_hits (j : Fin 26) (hi : j.val≤24) (f u : Wire) :
+    (Shadow7.leaveAdjust (start j)).filter (FlagLeave.hit f u 1559) = [] := by
+  let s := start j
+  obtain ⟨clear,bank,pool⟩ := adjust_sites j hi
+  have safe : AllAT (fun _ => True) (· ≠ 1559) (Shadow7.leaveAdjustCore s) := by
+    unfold Shadow7.leaveAdjustCore
+    apply allAT_adjustG
+    · intro w hw
+      obtain ⟨i,used,rfl⟩ := List.mem_map.mp hw
+      exact ⟨trivial,of_decide_eq_true (List.all_eq_true.mp bank i used)⟩
+    · intro w hw
+      obtain ⟨i,used,rfl⟩ := List.mem_map.mp hw
+      exact ⟨trivial,of_decide_eq_true (List.all_eq_true.mp pool i used)⟩
+    · trivial
+    · trivial
+  apply List.filter_eq_nil_iff.mpr
+  intro g hg hit
+  have dst := hit_target f u 1559 g hit
+  rw [Shadow7.leaveAdjust,List.singleton_append,List.mem_cons] at hg
+  rcases hg with rfl | belongs
+  · exact of_decide_eq_true clear dst
+  · exact (safe g belongs).2 dst
+
+theorem removed_barrel (j : Fin 26) (_ : j.val ≤ 24) :
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (Shadow7.leaveBarrel (start j)) = [] := by
+  rw [removed_filter]
+  have counts := Shadow7.counts_leaveBarrel (start j)
+  have noHit : (Shadow7.leaveBarrel (start j)).filter
+      (FlagLeave.hit (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559) = [] := by
+    apply List.filter_eq_nil_iff.mpr
+    intro g hg hit
+    rcases of_decide_eq_true hit with rfl | rfl
+    · exact (List.countP_eq_zero.mp counts.make) _ hg rfl
+    · exact (List.countP_eq_zero.mp counts.pop) _ hg rfl
+  rw [noHit]
+  rfl
+
+private def before_adjust (s : Nat) : List Gate :=
+  DeadScan.fix0M s (Shadow7.sbP s) ++ leaveFix1 s (Shadow7.sbP s) ++
+  Shadow7.fix2P s (Shadow7.sbP s) ++ leaveFix3 s (Shadow7.sbP s) ++
+  leaveFix4 s (Shadow7.sbP s) ++ Shadow7.leaveFix5Move s (Shadow7.sbP s)
+
+private theorem before_hits : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (before_adjust (start j)) =
       [.make (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559] := by decide +kernel
 
-theorem removed_barrel : ∀ j : Fin 26, j.val≤24 →
-    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
-      (Shadow7.leaveBarrel (start j)) = [] := by decide +kernel
+theorem removed_before (j : Fin 26) (hi : j.val ≤ 24) :
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (beforeScan (start j)) =
+      [.make (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559] := by
+  have shape (s : Nat) : beforeScan s = before_adjust s ++ Shadow7.leaveAdjust s := by
+    simp only [beforeScan,beforeScanTail,before_adjust,List.append_assoc]
+  rw [shape,removed_filter,List.filter_append,no_adjust_hits j hi,List.append_nil,←removed_filter]
+  exact before_hits j hi
 
 theorem all_split (j : Fin 26) (hi : j.val≤24) : allOps (start j) =
     beforeAll (start j) ++ (Shadow7.leaveBarrel (start j) ++ afterAll (start j)) := by
@@ -2907,9 +3083,21 @@ theorem removed_pre5 : ∀ j : Fin 26, j.val ≤ 24 →
     FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 2 (beforePre5 (start j)) =
       [.make (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] := by decide +kernel
 
-theorem removed_post5 : ∀ j : Fin 26, j.val ≤ 24 →
-    FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 1
-      (row0Old (start j) ++ beforePost5 (start j)) = [] := by decide +kernel
+private def post_adjust (s : Nat) : List Gate :=
+  row0Old s ++ rowGates (Shadow7.e0P s+6) ((Shadow7.moveRows s).drop 1) ++
+  (Shadow7.fix5P s (Shadow7.sbP s)).drop 43
+
+private theorem post_hits : ∀ j : Fin 26, j.val ≤ 24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (post_adjust (start j)) = [] := by decide +kernel
+
+theorem removed_post5 (j : Fin 26) (hi : j.val ≤ 24) :
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (row0Old (start j) ++ beforePost5 (start j)) = [] := by
+  have shape (s : Nat) : row0Old s ++ beforePost5 s = post_adjust s ++ Shadow7.leaveAdjust s := by
+    simp only [beforePost5,post_adjust,List.append_assoc]
+  rw [shape,removed_filter,List.filter_append,no_adjust_hits j hi,List.append_nil,←removed_filter]
+  exact post_hits j hi
 
 theorem beforeAll_split5 (j : Fin 26) (hi : j.val ≤ 24) :
     beforeAll (start j) = beforePre5Cut (start j) ++ (row0Old (start j) ++ beforePost5 (start j)) := by
@@ -2952,9 +3140,9 @@ def chainMid7 (s : Nat) : List Gate :=
 def afterPost7 (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 2; let H := Shadow7.liveW s - L
   let hi := (List.range H).map (fun i => Shadow7.bankW s (L+i))
-  let seq2 := (List.range L).map (Shadow7.b0P s - 1 + ·)
+  let seq2 := (List.range (L - 1)).map (Shadow7.b0P s - 1 + ·)
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-    chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+L) 1556, .x 1556] 0 L ++
+    chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+(L-1)) 1556, .x 1556] 0 (L-1) ++
     xsG seq2.reverse ++ [.x 1558] ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
 theorem store0_7 (s : Nat) : Shadow7.storeW s 0 = 1558 := by
@@ -4264,9 +4452,71 @@ namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.Placement
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 
+private def fitCorrection (d : Nat) : Correction → Bool
+  | .Z a => decide (fieldScope d a)
+  | .CZ a b => decide (fieldScope d a) && decide (fieldScope d b)
+
+private theorem fitCorrections_sound (d : Nat) (cs : List Correction)
+    (ok : cs.all (fitCorrection d) = true) :
+    ∀ q ∈ correctionWires cs, fieldScope d q := by
+  induction cs with
+  | nil => simp [correctionWires]
+  | cons c cs ih =>
+    simp only [List.all_cons, Bool.and_eq_true] at ok
+    have rest := ih ok.2
+    intro q hq
+    cases c <;>
+      simp only [correctionWires, Finset.mem_union, Finset.mem_insert, Finset.mem_singleton] at hq
+    · rcases hq with rfl | hq
+      · exact of_decide_eq_true ok.1
+      · exact rest q hq
+    · simp only [fitCorrection, Bool.and_eq_true, decide_eq_true_eq] at ok
+      rcases hq with (rfl | rfl) | hq
+      · exact ok.1.1
+      · exact ok.1.2
+      · exact rest q hq
+
+private def fitWires (d : Nat) : Instr → Bool
+  | .X a => decide (fieldScope d a)
+  | .CX a b => decide (fieldScope d a) && decide (fieldScope d b)
+  | .CCX a b c => (decide (fieldScope d a) && decide (fieldScope d b)) && decide (fieldScope d c)
+  | .measureX a bs cs => (decide (fieldScope d a) && bs.all (fitCorrection d)) && cs.all (fitCorrection d)
+
+private theorem fitWires_sound (d : Nat) (i : Instr) (ok : fitWires d i = true) :
+    ∀ q ∈ i.wires, fieldScope d q := by
+  intro q hq
+  cases i <;>
+    simp only [Instr.wires, Finset.mem_union, Finset.mem_insert, Finset.mem_singleton] at hq <;>
+    simp only [fitWires, Bool.and_eq_true, decide_eq_true_eq] at ok
+  · subst q
+    exact ok
+  · rcases hq with rfl | rfl
+    · exact ok.1
+    · exact ok.2
+  · rcases hq with rfl | rfl | rfl
+    · exact ok.1.1
+    · exact ok.1.2
+    · exact ok.2
+  · rcases hq with (rfl | hq) | hq
+    · exact ok.1.1
+    · exact fitCorrections_sound _ _ ok.1.2 q hq
+    · exact fitCorrections_sound _ _ ok.2 q hq
+
+private def coreTestFast (p : Nat) (mir : Bool) : Bool :=
+  (fieldCore p mir).all fun i => physicalBit i && fitWires (fieldDegree p) i
+
+private theorem fits_core_of_fast (p : Nat) (mir : Bool) (h : coreTestFast p mir = true) :
+    Fits (fieldScope (fieldDegree p)) (fieldCore p mir) := by
+  intro i hi
+  have ok := List.all_eq_true.mp h i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨physical, inside⟩ := ok
+  refine ⟨?_, fitWires_sound _ _ inside⟩
+  cases i <;> simp_all [physicalBit, PhysicalInstr, ProperGate]
+
 theorem fits_core (p : Nat) (hp : UsedField p) (mir : Bool) :
     Fits (fieldScope (fieldDegree p)) (fieldCore p mir) := by
-  apply fits_core_of_test
+  apply fits_core_of_fast
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases mir <;> decide +kernel
 
 theorem used_degree (p : Nat) (hp : UsedField p) : 0 < fieldDegree p ∧ fieldDegree p ≤ 8 := by
@@ -8773,20 +9023,20 @@ set_option linter.unusedSimpArgs false
 theorem parts_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (GateMirror.forward (CRTBarrel.before (start j))) +
       toffoliCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 97 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 96 ∧
     toffoliCount (inverse (CRTBarrel.afterPart (start j))) + toffoliCount (inverse (CRTBarrel.before (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 128 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 127 ∧
     measurementCount (GateMirror.forward (CRTBarrel.before (start j))) +
       measurementCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 ∧
     measurementCount (inverse (CRTBarrel.afterPart (start j))) +
       measurementCount (inverse (CRTBarrel.before (start j))) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 57 ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 56 ∧
     gateSlots (GateMirror.forward (CRTBarrel.before (start j))) +
       gateSlots (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 650 + 3*Shadow7.wpP (start j + 15) ∧
+      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 645 + 3*Shadow7.wpP (start j + 15) ∧
     gateSlots (inverse (CRTBarrel.afterPart (start j))) + gateSlots (inverse (CRTBarrel.before (start j))) =
-      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 619 + 3*Shadow7.wpP (start j + 15) := by
+      6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 + 3*Shadow7.wpP (start j + 15) := by
   obtain ⟨r1, r2, r3, r4, r5, r6⟩ := ScanRowGordo.before5Row_counts j (by omega)
   dsimp only [CRTBarrel.before, CRTBarrel.afterPart] at *
   obtain ⟨t1, t2, m1, m2, s1, s2⟩ := Shadow7.leaveMove_counts j (by omega) (by omega)
@@ -8824,16 +9074,16 @@ set_option linter.unusedSimpArgs false
 /-- The rebuilt leave and its mirror: the Shadow7 counts with the barrel stage replaced by the CRT barrel. -/
 theorem leave_metrics (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 97 + CRTBarrel.barrelT (start j) false ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 96 + CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 128 + CRTBarrel.barrelT (start j) true ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 127 + CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 + CRTBarrel.barrelM (start j) false ∧
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 + CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 57 + CRTBarrel.barrelM (start j) true ∧
-    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 650 +
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 56 + CRTBarrel.barrelM (start j) true ∧
+    gateSlots (CRTBarrel.leave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 645 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false ∧
-    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 619 +
+    gateSlots (CRTBarrel.unleave j) = 6*Shadow7.wpP (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := parts_counts j h0 h1
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics j h0 h1 false
