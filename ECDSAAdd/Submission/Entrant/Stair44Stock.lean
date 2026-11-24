@@ -30,12 +30,6 @@ import ECDSAAdd.Arithmetic.SwapRegisters
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Submission.Entrant.StairSideA0
 import ECDSAAdd.Submission.Entrant.StairSideA
-import ECDSAAdd.Arithmetic.Copy
-import ECDSAAdd.Arithmetic.SkywalkIntegerTick
-import ECDSAAdd.Framework.GateInverse
-import ECDSAAdd.Submission.Entrant.MainPart07Core
-import ECDSAAdd.Arithmetic.SignedRecordProgram
-
 
 namespace ECDSAAdd.Entrant.StairPacket
 /-- The shadow window's blocks 1..22 start between ticks 90 and 405. -/
@@ -283,15 +277,11 @@ theorem head_copies(s:State)(m:List Bool)
   exact run_preserves_outside _ _ _ q (rest_off q hq)
  have frame:=ReorderedAHead.head_triple acc pad bank cin src acc_length (by have h:=source_length;omega)
   fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
- -- [carbon-replay: s44-b95]
- have away:∀q∈src,q∉acc:=k7_mask_disjoint src acc (by decide +kernel)
+ have away:∀q∈src,q∉acc:=by decide +kernel
  have source(q:Wire)(hq:q∈src):u.basis q=(run head m s).basis q:=by
   have h:= (regValue_eq_iff src _ _).mp ready.2.1 q hq
   exact h.trans (frame.2.2 q (away q hq)).symm
- have hsrc : ([4243, 4244, 4245] : List Wire).all (fun q => (ZeroSetDevelop.owMask src).testBit q) = true := by decide +kernel
- have hsrcm (q : Wire) (hq : q ∈ ([4243, 4244, 4245] : List Wire)) : q ∈ src :=
-  of_decide_eq_true ((ZeroSetDevelop.owMask_testBit src q).symm.trans (List.all_eq_true.mp hsrc q hq))
- rw [low 4505 (by decide),low 4506 (by decide),low 4507 (by decide),source 4243 (hsrcm 4243 (by decide)),source 4244 (hsrcm 4244 (by decide)),source 4245 (hsrcm 4245 (by decide))] at cp
+ rw [low 4505 (by decide),low 4506 (by decide),low 4507 (by decide),source 4243 (by decide +kernel),source 4244 (by decide +kernel),source 4245 (by decide +kernel)] at cp
  exact cp
 
 theorem forward_erased(s:State)(m:List Bool)
@@ -779,12 +769,13 @@ theorem core_eq(s:State)(m:List Bool)(hc:ExtraCarryDomain.Clean s.basis)
  have flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false:=
   (f.2.2 4762 (by decide +kernel)).trans hc.1.modFlag
  have one:=core_plain s m hz hb hi small zero ready flag
- have two:run BPatchedLoopResearch.core m s=run (oldF++oldM++ReorderedAPlain.unbuild acc pad bank cin src) m s:=
-  HighCachedLoopBResearch.loop_eq acc ReorderedBMiddlePatchesResearch.output acc_length fits rfl
-   s m hz hb hi small ReorderedBSupportResearch.fresh
-   (fun q hq=>(ReorderedBSupportResearch.plain_free q hq).1)
-   (fun q hq=>(ReorderedBSupportResearch.plain_free q hq).2)
-   ReorderedBMiddlePatchesResearch.fresh zero ready
+ have two:run BPatchedLoopResearch.core m s=run (oldF++oldM++ReorderedAPlain.unbuild acc pad bank cin src) m s:=by
+  simpa only [BPatchedLoopResearch.core,oldF,oldM] using
+   HighCachedLoopBResearch.loop_eq acc ReorderedBMiddlePatchesResearch.output acc_length fits rfl
+    s m hz hb hi small ReorderedBSupportResearch.fresh
+    (fun q hq=>(ReorderedBSupportResearch.plain_free q hq).1)
+    (fun q hq=>(ReorderedBSupportResearch.plain_free q hq).2)
+    ReorderedBMiddlePatchesResearch.fresh zero ready
  exact one.trans two.symm
 
 theorem core_frame(base:BasisState)(clean:L.PairClean base)(hsum:base L.core.sumCarry=false)
@@ -1093,10 +1084,7 @@ theorem ext_in:ext.toFinset⊆S:=by
  · have eq:q=4762:=List.mem_singleton.mp h
    exact eq ▸ mod_old
 
-theorem finite_scope:∀q∈domain++hosts++ports,q∈ext:=by
- have h:(domain++hosts++ports).all (fun q=>(ZeroSetDevelop.owMask ext).testBit q)=true:=by decide +kernel
- intro q hq
- exact of_decide_eq_true ((ZeroSetDevelop.owMask_testBit ext q).symm.trans (List.all_eq_true.mp h q hq))
+theorem finite_scope:∀q∈domain++hosts++ports,q∈ext:=by decide +kernel
 
 theorem scope_in(q:Wire)(hq:q∈domain++hosts++ports):q∈S:=
  ext_in (List.mem_toFinset.mpr (finite_scope q hq))
@@ -14139,149 +14127,7 @@ def postDense (g s : Bool) (uv : Nat×Nat) : Nat := bitRun forwardDense (preDens
 def checkInput (uv : Nat×Nat) : Bool :=
   [false,true].all fun g=>[false,true].all fun s=>decide (postDense g s uv∈rowInputs)
 
--- [carbon-replay: s44-input-table]
-private theorem crPerm_eq_sites : ∀ q ∈ List.range 40, perm q = TerminalFiveDomain.sites.getD q 0 := by
-  decide +kernel
-
-private theorem crFoldl_congr (f1 f2 : Wire → Bool) (h : ∀ q ∈ List.range 40, f1 q = f2 q) :
-    encN_t8 f1 (List.range 40) = encN_t8 f2 (List.range 40) := by
-  unfold encN_t8
-  suffices ∀ (l : List Wire), (∀ q ∈ l, f1 q = f2 q) → ∀ a : Nat,
-      l.foldl (fun acc w => if f1 w then acc ||| 2 ^ w else acc) a =
-        l.foldl (fun acc w => if f2 w then acc ||| 2 ^ w else acc) a from this (List.range 40) h 0
-  intro l
-  induction l with
-  | nil => intro _ _; rfl
-  | cons w ws ih =>
-    intro hl a
-    simp only [List.foldl_cons, hl w (List.mem_cons_self)]
-    exact ih (fun q hq => hl q (List.mem_cons_of_mem w hq)) _
-
-private def crFastPre (g s : Bool) (uv : Nat × Nat) : Nat :=
-  let st := SkywalkRails.encode g s (uv.1 : Int) (uv.2 : Int)
-  (if g then 1 else 0) |||
-  (if st.a / 1 % 2 = 1 then 2 else 0) |||
-  (if st.a / 2 % 2 = 1 then 4 else 0) |||
-  (if st.a / 4 % 2 = 1 then 8 else 0) |||
-  (if st.a / 8 % 2 = 1 then 16 else 0) |||
-  (if st.a / 16 % 2 = 1 then 32 else 0) |||
-  (if st.a / 32 % 2 = 1 then 64 else 0) |||
-  (if st.a < 0 then 128 else 0) |||
-  (if st.b / 1 % 2 = 1 then 1024 else 0) |||
-  (if st.b / 2 % 2 = 1 then 2048 else 0) |||
-  (if st.b / 4 % 2 = 1 then 4096 else 0) |||
-  (if st.b / 8 % 2 = 1 then 8192 else 0) |||
-  (if st.b / 16 % 2 = 1 then 16384 else 0) |||
-  (if st.b / 32 % 2 = 1 then 32768 else 0) |||
-  (if st.b < 0 then 65536 else 0)
-
-private def crSitesPre (g s : Bool) (uv : Nat × Nat) : Nat :=
-  encN_t8 (fun q => TerminalFiveDomain.pre g s uv.1 uv.2 (TerminalFiveDomain.sites.getD q 0)) (List.range 40)
-
-private theorem crPreDense_eq_sites (g s : Bool) (uv : Nat × Nat) :
-    preDense g s uv = crSitesPre g s uv :=
-  crFoldl_congr _ _ (fun q hq => congrArg (TerminalFiveDomain.pre g s uv.1 uv.2) (crPerm_eq_sites q hq))
-
-private def crCases288 : List ((Nat × Nat) × Bool × Bool) :=
-  TerminalFiveDomain.pairs.flatMap (fun uv => [(uv, false, false), (uv, false, true), (uv, true, false), (uv, true, true)])
-
-private def crBridgeRowWord (cols : CodecBitSliceVerify.Cols) (r : Nat) : Nat :=
-  CodecBitSliceVerify.packBits (cols.map (fun c => c.testBit r))
-
-private theorem crBridgeRowWord_rel (cols : CodecBitSliceVerify.Cols) (r : Nat) :
-    CodecBitSliceVerify.Rel cols (crBridgeRowWord cols r) r := by
-  intro q
-  rw [crBridgeRowWord, CodecBitSliceVerify.pack_testBit, List.getElem?_map, CodecBitSliceVerify.get]
-  cases cols[q]? <;> simp
-
-private def crBridgeInWords : List Nat :=
-  crCases288.map (fun x => crFastPre x.2.1 x.2.2 x.1)
-
-private def crBridgeInCols : CodecBitSliceVerify.Cols :=
-  (List.range 40).map (fun q => CodecBitSliceVerify.packBits (crBridgeInWords.map (fun x => x.testBit q)))
-
-private def crBridgeEval : Bool × CodecBitSliceVerify.Cols :=
-  CodecBitSliceVerify.eval (2 ^ 288 - 1) forwardDense crBridgeInCols
-
-private def crBridgeIdx : List Nat := [0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285]
-
-private theorem crBridge_targets : ∀ i ∈ forwardDense, CodecBitSliceVerify.target i < crBridgeInCols.length := by
-  decide +kernel
-
-private theorem crBridge_pre_ok :
-    crCases288.zipIdx.all (fun (x, r) =>
-      (crSitesPre x.2.1 x.2.2 x.1 == crFastPre x.2.1 x.2.2 x.1) &&
-      (crBridgeRowWord crBridgeInCols r == crFastPre x.2.1 x.2.2 x.1)) = true := by
-  decide +kernel
-
-private theorem crBridge_eval_ok :
-    crBridgeEval.1 = true ∧
-    (List.range 288).all (fun r =>
-      let idx := crBridgeIdx.getD r 0
-      decide (idx < rowInputs.length) && (rowInputs.getD idx 0 == crBridgeRowWord crBridgeEval.2 r)) = true := by
-  decide +kernel
-
-private theorem crRowInputs_mem_of_getD (idx x : Nat) (hlt : idx < rowInputs.length)
-    (heq : rowInputs.getD idx 0 = x) : x ∈ rowInputs := by
-  rw [← heq, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, Option.getD_some]
-  exact List.getElem_mem hlt
-
-private theorem crRow_valid (r : Nat) (hr : r < 288) (x : (Nat × Nat) × Bool × Bool)
-    (hpre : crSitesPre x.2.1 x.2.2 x.1 = crFastPre x.2.1 x.2.2 x.1 ∧
-      crBridgeRowWord crBridgeInCols r = crFastPre x.2.1 x.2.2 x.1) :
-    postDense x.2.1 x.2.2 x.1 ∈ rowInputs := by
-  have hm : ((2 ^ 288 - 1 : Nat)).testBit r = true := by
-    rw [Nat.testBit_two_pow_sub_one]; exact decide_eq_true hr
-  have hrel : CodecBitSliceVerify.Rel crBridgeInCols (preDense x.2.1 x.2.2 x.1) r := by
-    rw [crPreDense_eq_sites, hpre.1, ← hpre.2]
-    exact crBridgeRowWord_rel crBridgeInCols r
-  have es := CodecBitSliceVerify.eval_sound (2 ^ 288 - 1) r hm forwardDense crBridgeInCols
-    (preDense x.2.1 x.2.2 x.1) crBridge_targets hrel crBridge_eval_ok.1
-  have hout : postDense x.2.1 x.2.2 x.1 = crBridgeRowWord crBridgeEval.2 r := by
-    apply Nat.eq_of_testBit_eq
-    intro q
-    exact (es.2 q).trans (crBridgeRowWord_rel crBridgeEval.2 r q).symm
-  have hchk := List.all_eq_true.mp crBridge_eval_ok.2 r (List.mem_range.mpr hr)
-  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at hchk
-  rw [hout]
-  exact crRowInputs_mem_of_getD _ _ hchk.1 hchk.2
-
-private theorem crZipIdx_mem {α : Type} : ∀ (xs : List α) (k : Nat) (x : α),
-    x ∈ xs → ∃ r, (x, r) ∈ xs.zipIdx k ∧ r < k + xs.length
-  | [], _, _, h => nomatch h
-  | y :: ys, k, x, h => by
-    rcases List.mem_cons.mp h with rfl | hmem
-    · exact ⟨k, List.mem_cons_self, by simp [Nat.lt_add_of_pos_right]⟩
-    · obtain ⟨r, hr1, hr2⟩ := crZipIdx_mem ys (k + 1) x hmem
-      exact ⟨r, List.mem_cons_of_mem _ hr1, by simp only [List.length_cons]; omega⟩
-
-theorem inputTable : TerminalFiveDomain.pairs.all checkInput=true := by
-  have hlen : crCases288.length = 288 := by decide
-  rw [List.all_eq_true]
-  intro uv huv
-  unfold checkInput
-  rw [List.all_eq_true]
-  intro g hg
-  rw [List.all_eq_true]
-  intro s hs
-  rw [decide_eq_true_iff]
-  have hmem : (uv, g, s) ∈ crCases288 := by
-    unfold crCases288
-    rw [List.mem_flatMap]
-    refine ⟨uv, huv, ?_⟩
-    rcases List.mem_cons.mp hg with rfl | hg2
-    · rcases List.mem_cons.mp hs with rfl | hs2
-      · simp
-      · cases List.mem_singleton.mp hs2; simp
-    · cases List.mem_singleton.mp hg2
-      rcases List.mem_cons.mp hs with rfl | hs2
-      · simp
-      · cases List.mem_singleton.mp hs2; simp
-  obtain ⟨r, hzr, hrlt⟩ := crZipIdx_mem crCases288 0 (uv, g, s) hmem
-  rw [Nat.zero_add, hlen] at hrlt
-  have hp := List.all_eq_true.mp crBridge_pre_ok ((uv, g, s), r) hzr
-  simp only [Bool.and_eq_true, beq_iff_eq] at hp
-  exact crRow_valid r hrlt (uv, g, s) hp
+theorem inputTable : TerminalFiveDomain.pairs.all checkInput=true := by decide +kernel
 
 end ECDSAAdd.Entrant.TerminalFiveBridge
 
@@ -24816,85 +24662,21 @@ def oout (xS : Bool) (v : Nat) : Nat :=
   ofBits [v.testBit 0, v.testBit 1, v.testBit 2, v.testBit 3, v.testBit 4, !xS,
     false, false, false, false, false, false, false]
 
--- [carbon-replay: s44-otail]
-private def crRowWord (cols : CodecBitSliceVerify.Cols) (r : Nat) : Nat :=
-  CodecBitSliceVerify.packBits (cols.map (fun c => c.testBit r))
-
-private theorem crRowWord_rel (cols : CodecBitSliceVerify.Cols) (r : Nat) :
-    CodecBitSliceVerify.Rel cols (crRowWord cols r) r := by
-  intro q
-  rw [crRowWord, CodecBitSliceVerify.pack_testBit, List.getElem?_map, CodecBitSliceVerify.get]
-  cases cols[q]? <;> simp
-
-private def crPackCols32 (f : Nat → Nat) : CodecBitSliceVerify.Cols :=
-  let ws := (List.range 32).map f
-  (List.range 13).map (fun q => CodecBitSliceVerify.packBits (ws.map (fun x => x.testBit q)))
-
-private def crOin1 (a1 s2 b2 yc y2c e : Bool) (r : Nat) : Nat :=
-  oin (oxS1 a1 s2 (r.testBit 0) (r.testBit 1) (r.testBit 2))
-      (oxA1 a1 s2 (r.testBit 0) (r.testBit 1) (r.testBit 2))
-      (oxB1 a1 b2 (r.testBit 0) (r.testBit 1) (r.testBit 2)) yc y2c e r
-
-private def crOout1 (a1 s2 : Bool) (r : Nat) : Nat :=
-  oout (oxS1 a1 s2 (r.testBit 0) (r.testBit 1) (r.testBit 2)) r
-
-private def crOin2 (a1 s2 b2 yc y2c e : Bool) (r : Nat) : Nat :=
-  oin (oxS2 a1 s2 (r.testBit 0) (r.testBit 1) (r.testBit 2))
-      (oxA2 a1 b2 (r.testBit 0) (r.testBit 1) (r.testBit 2))
-      (oxB2 a1 b2 (r.testBit 0) (r.testBit 1) (r.testBit 2)) yc y2c e r
-
-private def crOout2 (a1 s2 : Bool) (r : Nat) : Nat :=
-  oout (oxS2 a1 s2 (r.testBit 0) (r.testBit 1) (r.testBit 2)) r
-
-private def crCheck32 (P : Program) (fin fout : Nat → Nat) : Bool :=
-  let cin := crPackCols32 fin
-  let cout := crPackCols32 fout
-  (P.all (fun i => decide (CodecBitSliceVerify.target i < cin.length))) &&
-    (CodecBitSliceVerify.eval (2 ^ 32 - 1) P cin == (true, cout)) &&
-    ((List.range 32).all (fun r => (crRowWord cin r == fin r) && (crRowWord cout r == fout r)))
-
-private theorem crCheck32_sound (P : Program) (fin fout : Nat → Nat) (hc : crCheck32 P fin fout = true)
-    (v : Fin 32) : safe P (fin v.val) = true ∧ bitRun P (fin v.val) = fout v.val := by
-  simp only [crCheck32, Bool.and_eq_true, beq_iff_eq] at hc
-  obtain ⟨⟨hb, hev⟩, hrows⟩ := hc
-  have hbound : ∀ i ∈ P, CodecBitSliceVerify.target i < (crPackCols32 fin).length :=
-    fun i hi => of_decide_eq_true (List.all_eq_true.mp hb i hi)
-  have hr : (crRowWord (crPackCols32 fin) v.val = fin v.val) ∧
-      (crRowWord (crPackCols32 fout) v.val = fout v.val) := by
-    simpa only [Bool.and_eq_true, beq_iff_eq] using List.all_eq_true.mp hrows v.val (List.mem_range.mpr v.isLt)
-  have hm : ((2 ^ 32 - 1 : Nat)).testBit v.val = true := by
-    rw [Nat.testBit_two_pow_sub_one]; exact decide_eq_true v.isLt
-  have hrel : CodecBitSliceVerify.Rel (crPackCols32 fin) (fin v.val) v.val :=
-    hr.1 ▸ crRowWord_rel (crPackCols32 fin) v.val
-  have es := CodecBitSliceVerify.eval_sound (2 ^ 32 - 1) v.val hm P (crPackCols32 fin) (fin v.val)
-    hbound hrel (congrArg Prod.fst hev)
-  refine ⟨es.1, Nat.eq_of_testBit_eq (fun q => ?_)⟩
-  rw [es.2 q, hev, ← hr.2]
-  exact (crRowWord_rel (crPackCols32 fout) v.val q).symm
-
-private theorem crOtail1_all : ∀ a1 s2 b2 yc y2c e : Bool,
-    crCheck32 (otail1 a1 s2 b2 yc y2c e) (crOin1 a1 s2 b2 yc y2c e) (crOout1 a1 s2) = true := by
-  decide +kernel
-
-private theorem crOtail2_all : ∀ a1 s2 b2 yc y2c e : Bool,
-    crCheck32 (otail2 a1 s2 b2 yc y2c e) (crOin2 a1 s2 b2 yc y2c e) (crOout2 a1 s2) = true := by
-  decide +kernel
-
 theorem otail1_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xS := oxS1 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xA := oxA1 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xB := oxB1 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     safe (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = true ∧
-      bitRun (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val :=
-  fun a1 s2 b2 yc y2c e v => crCheck32_sound _ _ _ (crOtail1_all a1 s2 b2 yc y2c e) v
+      bitRun (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val := by
+  decide +kernel
 
 theorem otail2_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xS := oxS2 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xA := oxA2 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xB := oxB2 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     safe (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = true ∧
-      bitRun (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val :=
-  fun a1 s2 b2 yc y2c e v => crCheck32_sound _ _ _ (crOtail2_all a1 s2 b2 yc y2c e) v
+      bitRun (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val := by
+  decide +kernel
 
 theorem predec_counts (b1 s2 yc : Bool) :
     toffoliCount (predec1 b1 s2 yc) = 3 ∧ measurementCount (predec1 b1 s2 yc) = 0 ∧
