@@ -17042,6 +17042,29 @@ def exitFieldHosted (p : StairSchedule.StairPrimitives)
     StairSchedule.paritySetup ++ StairSchedule.hostedX ++
     StairSchedule.fieldRename (exitLowSuffix p)
 
+/-- The division field's tail prefix with the five cut rows: in each row the placed `ep` that closes the
+due write and the placed `dp` that opens the next hosted group cancel. -/
+def entryTailPrefixCut : Program :=
+  WindowFieldCosts.group84 true ++
+    (PackCutEntry.cutRow 87 62 425 450 13 85 4 ++
+    (PackCutEntry.cutRow 62 47 450 465 22 90 2 ++
+    (PackCutEntry.cutRow 47 32 465 480 30 93 2 ++
+    (PackCutEntry.cutRow 32 22 480 490 36 96 1 ++
+    (PackCutEntry.cutRow 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast checkpointPrimitives)))))
+
+def entryLowPrefixCut : Program :=
+  StairLoan.rebindMany StairSchedule.exclusiveRoles (hostPlan.firstPacket true)
+      (Rolling1588.placedFirstPacket true) ++
+    FourScratchWindow.clearProgram ++
+    renameProgram Prefix1590.borrow entryTailPrefixCut ++
+    FourScratchWindow.unprefix
+
+def entryFieldHostedCut : Program :=
+  StairSchedule.fieldRename entryLowPrefixCut ++
+    StairSchedule.paritySetup ++ StairSchedule.hostedX ++
+    StairSchedule.fieldRename (entryLowSuffix hostPlan) ++
+    StairSchedule.hostedX ++ StairSchedule.paritySetup
+
 theorem field_delta (c : Cost) (d : Bool) (n : Nat)
     (h : c.measure (WindowFieldCosts.group84 d)=c.measure (WindowFieldCosts.group d 1 84)+n) :
     (if d then c.measure (entryFieldHosted checkpointPrimitives)
@@ -17057,11 +17080,76 @@ theorem field_delta (c : Cost) (d : Bool) (n : Nat)
     c.rename,c.append,h]
   all_goals omega
 
+theorem tailPrefix_rows : entryTailPrefix checkpointPrimitives = WindowFieldCosts.group84 true ++
+      ((StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450 ++ hostedGroup hostPlan true 13 85 (4 + 1)) ++
+      ((StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465 ++ hostedGroup hostPlan true 22 90 (2 + 1)) ++
+      ((StairSchedule.forwardSegment checkpointPrimitives 47 32 465 480 ++ hostedGroup hostPlan true 30 93 (2 + 1)) ++
+      ((StairSchedule.forwardSegment checkpointPrimitives 32 22 480 490 ++ hostedGroup hostPlan true 36 96 (1 + 1)) ++
+      ((StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500 ++ hostedGroup hostPlan true 41 98 (1 + 1)) ++
+        StairSchedule.forwardLast checkpointPrimitives))))) := by
+  simp only [entryTailPrefix, List.append_assoc]
+
+theorem tail_sublist : entryTailPrefixCut.Sublist (entryTailPrefix checkpointPrimitives) := by
+  rw [tailPrefix_rows]
+  unfold entryTailPrefixCut
+  exact PackCutSub.rows_sub _ _
+
+theorem low_sublist : entryLowPrefixCut.Sublist (entryLowPrefix checkpointPrimitives) := by
+  unfold entryLowPrefixCut entryLowPrefix
+  exact ((List.Sublist.refl _).append (PackCutSub.rename_sub _ tail_sublist)).append (List.Sublist.refl _)
+
+theorem field_sublist : entryFieldHostedCut.Sublist (entryFieldHosted checkpointPrimitives) := by
+  have f : (StairSchedule.fieldRename entryLowPrefixCut).Sublist
+      (StairSchedule.fieldRename (entryLowPrefix checkpointPrimitives)) :=
+    PackCutSub.rename_sub _ (PackCutSub.rename_sub _ low_sublist)
+  unfold entryFieldHostedCut entryFieldHosted
+  exact ((((f.append (List.Sublist.refl _)).append (List.Sublist.refl _)).append (List.Sublist.refl _)).append
+    (List.Sublist.refl _)).append (List.Sublist.refl _)
+
+/-- One cut row costs the placed `ep` and `dp` less, for every additive renaming-invariant cost. -/
+theorem row_cost (c : Cost) (B N s f d first cc : Nat)
+    (h1 : s + 1 ≤ 5 * first + 5) (h2 : 5 * first + 5 + 1 ≤ f)
+    (h5 : 5 * first + 5 ≠ 5) (hdue : History5.packDue (5 * first + 5) = true) (hf0 : first ≠ 0)
+    (hdp : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (cc + 1))
+        (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first))
+          (Rolling1588.onPacket first Rolling1588.dp))) =
+      renameProgram (MeasuredCodec5.label (History5.historyMap
+        (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (5 * first)))
+        Rolling1588.dp) :
+    c.measure (StairSchedule.forwardSegment checkpointPrimitives B N s f ++
+        StairHostsSchedule.hostedGroup StairConcreteAssembly.hostPlan true d first (cc + 1)) =
+      c.measure (PackCutEntry.cutRow B N s f d first cc) + (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  obtain ⟨X, M, Y, ho, hc⟩ := PackCutCounts.row_shape B N s f d first cc h1 h2 h5 hdue hf0 hdp
+  rw [ho, hc]
+  simp only [c.append, c.rename]
+  omega
+
+theorem rows_cost (c : Cost) :
+    c.measure (entryTailPrefix checkpointPrimitives) =
+      c.measure entryTailPrefixCut + 5 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  have r1 := row_cost c 87 62 425 450 13 85 4 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp1
+  have r2 := row_cost c 62 47 450 465 22 90 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp2
+  have r3 := row_cost c 47 32 465 480 30 93 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp3
+  have r4 := row_cost c 32 22 480 490 36 96 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp4
+  have r5 := row_cost c 22 12 490 500 41 98 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp5
+  rw [tailPrefix_rows]
+  simp only [entryTailPrefixCut, c.append] at r1 r2 r3 r4 r5 ⊢
+  omega
+
+theorem field_cut (c : Cost) :
+    c.measure (entryFieldHosted checkpointPrimitives) =
+      c.measure entryFieldHostedCut + 5 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  have hr := rows_cost c
+  simp only [entryFieldHosted, entryFieldHostedCut, entryLowPrefix, entryLowPrefixCut,
+    StairSchedule.fieldRename, StairSchedule.parityRename, c.rename, c.append]
+  omega
+
 open Stair44Outer
 
 def divide : Program :=
   phasePlace (WindowWalkCosts.forward true 4) ++ phasePlace checkpointPrimitives.firstPack ++
-    kernelPlace (entryFieldHosted checkpointPrimitives) ++
+    kernelPlace entryFieldHostedCut ++
     phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 85) ++
     phasePlace (renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base))
 
@@ -17095,8 +17183,10 @@ theorem kernels (c : Cost) (gainF gainR fieldExtra : Nat)
     (dF : c.measure (WindowWalkCosts.forward true 4)+gainF=c.measure (Stair44WalkRun.forward true 409))
     (dR : c.measure (WindowWalkCosts.backward false 85)+gainR=c.measure (Stair44WalkRun.backward false 490))
     (g : c.measure (WindowFieldCosts.group84 true)=c.measure (WindowFieldCosts.group true 1 84)+fieldExtra) :
-    c.measure divide+gainF+gainR=c.measure Stair44Outer.divide+fieldExtra := by
+    c.measure divide+gainF+gainR+5 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp)=
+      c.measure Stair44Outer.divide+fieldExtra := by
   have h := field_delta c true _ g
+  have hc := field_cut c
   simp only [if_true] at h
   simp only [divide,Stair44Outer.divide,phasePlace,kernelPlace,c.append,c.rename]
   omega
@@ -17269,29 +17359,37 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+38218+37749=tc.measure Stair44Outer.divide+1901 :=
-  kernels tc 38218 37749 1901 (WindowWalkCosts.inst true 4 409 38218 37774 rfl rfl rfl).1
+theorem tc_div : tc.measure divide+38218+37749=tc.measure Stair44Outer.divide+1836 := by
+  have k := kernels tc 38218 37749 1901 (WindowWalkCosts.inst true 4 409 38218 37774 rfl rfl rfl).1
     (WindowWalkCosts.inst false 85 490 38218 37749 rfl rfl rfl).2.1 fieldTcDiv
+  have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
+    show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
+    rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
+  omega
 
 theorem tc_mul (k : Nat) : tc.measure (multiply k)+38218+37774=tc.measure (Stair44Outer.multiply k)+1776 :=
   kernelsM tc k 38218 37774 1776 (WindowWalkCosts.inst false 84 489 38218 37749 rfl rfl rfl).1
     (WindowWalkCosts.inst true 4 409 38218 37774 rfl rfl rfl).2.1 fieldTcMul
 
-theorem mc_div : mc.measure divide+16867+17241=mc.measure Stair44Outer.divide+1481 :=
-  kernels mc 16867 17241 1481 (WindowWalkCosts.instMeasurements true 4 409 16867 17266 rfl rfl rfl).1
+theorem mc_div : mc.measure divide+16867+17241=mc.measure Stair44Outer.divide+1456 := by
+  have k := kernels mc 16867 17241 1481 (WindowWalkCosts.instMeasurements true 4 409 16867 17266 rfl rfl rfl).1
     (WindowWalkCosts.instMeasurements false 85 490 16867 17241 rfl rfl rfl).2 fieldMcDiv
+  have e : mc.measure Rolling1588.ep + mc.measure Rolling1588.dp = 5 := by
+    show measurementCount Rolling1588.ep + measurementCount Rolling1588.dp = 5
+    exact PackCutCounts.mc_epdp
+  omega
 
 theorem mc_mul (k : Nat) : mc.measure (multiply k)+16867+17266=mc.measure (Stair44Outer.multiply k)+1356 :=
   kernelsM mc k 16867 17266 1356 (WindowWalkCosts.instMeasurements false 84 489 16867 17241 rfl rfl rfl).1
     (WindowWalkCosts.instMeasurements true 4 409 16867 17266 rfl rfl rfl).2 fieldMcMul
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+148282=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+65404=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 148282 (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 65404 (pair_delta2 mc_div (mc_mul _) rfl)⟩
+    toffoliCount (finite C cx cy)+148347=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+65429=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 148347 (pair_delta2 tc_div (tc_mul _) rfl),
+    finite_delta mc C cx cy 65429 (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2019627 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2019562 ∧
     measurementCount (program C) ≤ 1454498 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -17344,6 +17442,7 @@ private theorem kernels (c : Cost) (gainF gainR fieldExtra : Nat)
     (g : c.measure (WindowFieldCosts.group84 true)=c.measure (WindowFieldCosts.group true 1 84)+fieldExtra) :
     c.measure WindowCallerCosts.divide ≤ c.measure Stair44Outer.divide+gainF+gainR+fieldExtra := by
   have h  := WindowCallerCosts.field_delta c true _ g
+  have hc := WindowCallerCosts.field_cut c
   simp only [if_true] at h
   simp only [WindowCallerCosts.divide,Stair44Outer.divide,phasePlace,kernelPlace,c.append,c.rename]
   omega
@@ -17912,7 +18011,8 @@ theorem dividePhysical : GatePhysical WindowCallerCosts.divide := by
   have ⟨a,native⟩ := parts h
   have ⟨tail,walk⟩ := parts a
   let P := primitiveSlots_v3 primitiveChecks
-  have field := sound_entryFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3
+  have field := PackCutSub.sound_sub WindowCallerCosts.field_sublist
+    (sound_entryFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3)
   simp only [WindowCallerCosts.divide,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨phase (fw true 4 424 rfl sound_forward424 (ff _)),phase P.firstPack⟩,rest_physical _ field⟩,
     phase tail⟩,phase (bw false 85 505 rfl walk (rr _))⟩,phase (sound_rename _ first.injective firstDom native)⟩
@@ -18035,6 +18135,15 @@ private theorem exitField : PieceOK reserved KP
     appendChange (appendChange (appendChange (same _ _) (renameChange (head _))) (same _ _)) (same _ _)
   exact appendChange (same _ _) (renameChange (renameChange low))
 
+section
+attribute [local irreducible] wires
+private theorem pieceOK_sub {holes : List Wire} {f : Wire → Wire} {P Q : Program}
+    (h : ∀ q ∈ wires P, q ∈ wires Q) (hq : PieceOK holes f Q) : PieceOK holes f P :=
+  ⟨fun x hx => hq.1 x (h x hx), fun x hx => hq.2 x (h x hx)⟩
+private theorem entryFieldCut : PieceOK reserved KP WindowCallerCosts.entryFieldHostedCut :=
+  pieceOK_sub (PackCutSub.wires_sub WindowCallerCosts.field_sublist) entryField
+end
+
 private theorem phase {P : Program} (v : PieceOK reserved PP P) :
     PieceOK reserved UG (Stair44Outer.phasePlace P) := ok_kernel (ok_phase v)
 
@@ -18042,7 +18151,7 @@ theorem division (f : GoodWindow (CRTWindow.forwardCut true))
     (r : GoodWindow (CRTWindow.reverseCut false)) :
     PieceOK reserved UG WindowCallerCosts.divide :=
   (((((phase (walkF true 4 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.pack)))).append
-    (ok_kernel entryField)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.reverseTail)))).append
+    (ok_kernel entryFieldCut)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.reverseTail)))).append
     (phase (walkR false 85 (by decide) r))).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.native)))
 
 theorem multiplication (k : Nat) (f : GoodWindow (CRTWindow.forwardCut false))
@@ -21074,11 +21183,25 @@ def exitFieldHosted (p : StairSchedule.StairPrimitives)
     WindowFieldParity.setup ++ StairSchedule.hostedX ++
     StairSchedule.fieldRename (WindowCallerCosts.exitLowSuffix p)
 
+def entryFieldHostedCut : Program :=
+  StairSchedule.fieldRename WindowCallerCosts.entryLowPrefixCut ++
+    WindowFieldParity.setup ++ StairSchedule.hostedX ++
+    StairSchedule.fieldRename (entryLowSuffix hostPlan) ++
+    StairSchedule.hostedX ++ WindowFieldParity.setup
+
+theorem field_sublist : entryFieldHostedCut.Sublist (entryFieldHosted checkpointPrimitives) := by
+  have f : (StairSchedule.fieldRename WindowCallerCosts.entryLowPrefixCut).Sublist
+      (StairSchedule.fieldRename (WindowCallerCosts.entryLowPrefix checkpointPrimitives)) :=
+    PackCutSub.rename_sub _ (PackCutSub.rename_sub _ WindowCallerCosts.low_sublist)
+  unfold entryFieldHostedCut entryFieldHosted
+  exact ((((f.append (List.Sublist.refl _)).append (List.Sublist.refl _)).append (List.Sublist.refl _)).append
+    (List.Sublist.refl _)).append (List.Sublist.refl _)
+
 open Stair44Outer
 
 def divide : Program :=
   phasePlace (WindowWalkCosts.forward true 4) ++ phasePlace checkpointPrimitives.firstPack ++
-    kernelPlace (entryFieldHosted checkpointPrimitives) ++
+    kernelPlace entryFieldHostedCut ++
     phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 85) ++
     phasePlace (renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base))
 
@@ -21551,10 +21674,11 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
     simp only [program, WindowCallerCosts.program, finite, WindowCallerCosts.finite,
       borrowGeneric, WindowCallerCosts.borrowGeneric, generic, WindowCallerCosts.generic,
       divide, WindowCallerCosts.divide, multiply, WindowCallerCosts.multiply,
-      entryFieldHosted, WindowCallerCosts.entryFieldHosted, exitFieldHosted,
+      entryFieldHosted, WindowCallerCosts.entryFieldHosted, entryFieldHostedCut,
+      WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2019627 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2019562 ∧
     measurementCount (program C) ≤ 1454498 ∧ gateSlots (program C) ≤ 66036591 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -21753,7 +21877,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2019627,1454498,1543,66036591⟩
+def bounds : Challenge.Bounds := ⟨2019562,1454498,1543,66036591⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -26617,7 +26741,7 @@ set_option maxRecDepth 16000
 set_option maxHeartbeats 2000000
 
 def openWalk (d:Bool) (tail:Nat):Program:=Stair44Kernel.firstR++WindowWalkCosts.forward d tail
-def divBefore:Program:=renameProgram phaseHost (openWalk true 4++checkpointPrimitives.firstPack)++WindowParityCaller.entryFieldHosted checkpointPrimitives
+def divBefore:Program:=renameProgram phaseHost (openWalk true 4++checkpointPrimitives.firstPack)++WindowParityCaller.entryFieldHostedCut
 def divAfter:Program:=Stair44Outer.reverseEnd++(WindowWalkCosts.backward false 85++renameProgram first (FrontierEntry1591NativeH.inverse base))
 def division:Program:=divBefore++renameProgram phaseHost divAfter
 def mulBefore:Program:=(renameProgram phaseHost (openWalk false 84++Stair44Outer.forwardEnd)++WindowParityCaller.exitFieldHosted checkpointPrimitives)++renameProgram phaseHost checkpointPrimitives.firstUnpack
@@ -26738,6 +26862,10 @@ theorem entryFieldHosted_corrected :
     (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
       (fieldRename_caller _ entryLowPrefix_ours) setup) glue_own.1)
     (fieldRename_caller _ entryLowSuffixV3_caller)) glue_own.1) setup
+
+theorem entryFieldHostedCut_corrected :
+    wires WindowParityCaller.entryFieldHostedCut ⊆ callerDomain :=
+  fun q hq => entryFieldHosted_corrected (PackCutSub.wires_sub WindowParityCaller.field_sublist q hq)
 
 theorem exitFieldHosted_corrected :
     wires (WindowParityCaller.exitFieldHosted StairConcreteAssembly.checkpointPrimitives) ⊆ callerDomain := by
@@ -28927,7 +29055,7 @@ set_option maxRecDepth 17000
 set_option maxHeartbeats 3500000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] wires renameProgram
-theorem division (g:wires (WindowParityCaller.entryFieldHosted checkpointPrimitives)⊆callerDomain):
+theorem division (g:wires WindowParityCaller.entryFieldHostedCut⊆callerDomain):
     wires WindowKernelPrograms.division⊆callerDomain:=by
   have original:=Stair44CallerSupport.division
   have f:=phaseHost_caller _ (WindowIntegerSites.forward true 4 (by decide))
@@ -28950,7 +29078,7 @@ theorem multiplication (k:Nat) (g:wires (WindowParityCaller.exitFieldHosted chec
 
 theorem certificate (enter:WindowMiddleContract.entry) (leave:WindowMiddleContract.exit):
     Challenge.Certificate WindowParityRelease.entry WindowParityRelease.bounds:=
-  WindowGeneric.certificate ⟨division ExteriorCaller.entryFieldHosted_corrected,fun k=>multiplication k ExteriorCaller.exitFieldHosted_corrected,
+  WindowGeneric.certificate ⟨division ExteriorCaller.entryFieldHostedCut_corrected,fun k=>multiplication k ExteriorCaller.exitFieldHosted_corrected,
     WindowKernelReplay.division_correct enter,WindowKernelReplay.multiplication_eq leave⟩
 end ECDSAAdd.Entrant.StairPacket.WindowReleaseProof
 
@@ -30004,6 +30132,40 @@ theorem entryOfPrefix {pre between post newPrefix oldPrefix : Program}
   refine ⟨joinTapes oldPrefix old n,?_⟩
   rw [newShape,oldShape,joined,run_append,run_take]
   exact pairPull Rolling1588Lifetime.phaseHost Rolling1588Lifetime.phaseHost.injective phaseFix pair
+/-- `runTail` for an old head `H` that runs like the stock division head on every entry frame. -/
+theorem runTailH {H pre between post oldPrefix : Program} {s : State} (F : EntryFrame s)
+    (back : ∀ m, ∃ n, run H m s = run WindowMiddleContract.oldDivHead n s)
+    (shape : H=oldPrefix ++ program pre between post StairSchedule.paritySetup)
+    (hp : Clear pre) (hb : Clear between) (ht : Clear post) (a : State) (old m : List Bool)
+    (ff : Fits (fieldRows (StockRowVector.rows F.x p)) (finalCode true (plan true) (initialCode true)) a (run oldPrefix old s)) :
+    ∃n, Paired false F.x (run (program pre between post WindowFieldParity.setup) m a)
+      (run (program pre between post StairSchedule.paritySetup) n (run oldPrefix old s)) (StockRowVector.rows F.x p) := by
+  let tape := joinTapes oldPrefix old []
+  obtain ⟨k,hk⟩ := back tape
+  have native := WindowEndBytes.div_native F k
+  rw [← hk] at native
+  have known := nativeUnpull native.bytes
+  unfold tape at known
+  rw [shape,joined] at known
+  have here := nativeBack (keepTail hp hb ht) known
+  have source : Paired false F.x a (run oldPrefix old s) (StockRowVector.rows F.x p) := pairFinished ff native.ids here
+  exact carry hp hb ht _ _ source m
+
+theorem entryOfPrefixH {H pre between post newPrefix oldPrefix : Program}
+    (back : ∀ {s : State} (_ : EntryFrame s) (m : List Bool), ∃ n, run H m s = run WindowMiddleContract.oldDivHead n s)
+    (newShape : WindowMiddleContract.divHead=newPrefix ++ program pre between post WindowFieldParity.setup)
+    (oldShape : H=oldPrefix ++ program pre between post StairSchedule.paritySetup)
+    (hp : Clear pre) (hb : Clear between) (ht : Clear post)
+    (starts : ∀ {s : State} (F : EntryFrame s) (m : List Bool), ∃old,
+      Fits (fieldRows (StockRowVector.rows F.x p)) (finalCode true (plan true) (initialCode true))
+        (run newPrefix m s) (run oldPrefix old s)) : WindowMiddleContract.entry := by
+  intro s F m
+  obtain ⟨old,ff⟩ := starts F m
+  obtain ⟨n,pair⟩ := runTailH F (back F) oldShape hp hb ht _ old (m.drop (measurementCount newPrefix)) ff
+  obtain ⟨k,hk⟩ := back F (joinTapes oldPrefix old n)
+  refine ⟨k,?_⟩
+  rw [← hk,newShape,oldShape,joined,run_append,run_take]
+  exact pairPull Rolling1588Lifetime.phaseHost Rolling1588Lifetime.phaseHost.injective phaseFix pair
 end ECDSAAdd.Entrant.StairPacket.WindowReturningTail
 
 end
@@ -30085,6 +30247,69 @@ end
 
 section
 
+namespace ECDSAAdd.Entrant.StairPacket.ExteriorDivPieces
+open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly StairField13V3 StairField13V3Clean
+open StairField2V3Replay StairHostsSchedule ExteriorPorts Rolling1588Lifetime
+set_option maxRecDepth 14000
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run measurementCount wires
+
+/-- The field rows with the five cut rows. -/
+def rawTailCut := PackCutEntry.cutRow 87 62 425 450 13 85 4 ++ (PackCutEntry.cutRow 62 47 450 465 22 90 2 ++
+  (PackCutEntry.cutRow 47 32 465 480 30 93 2 ++ (PackCutEntry.cutRow 32 22 480 490 36 96 1 ++
+  (PackCutEntry.cutRow 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast checkpointPrimitives))))
+def preCut := renameProgram fieldEquiv rawTailCut ++ StairSchedule.fieldRename FourScratchWindow.unprefix
+
+theorem correctedCut : WindowParityCaller.entryFieldHostedCut =
+    (((beforeGroup ++ renameProgram fieldEquiv (WindowFieldCosts.group84 true)) ++ preCut) ++ WindowFieldParity.setup) ++
+      between ++ WindowFieldParity.setup := by
+  simp only [beforeGroup,preCut,between,rawTailCut,WindowParityCaller.entryFieldHostedCut,
+    WindowCallerCosts.entryLowPrefixCut,WindowCallerCosts.entryTailPrefixCut,←placedShape,fieldRename_append,
+    rename_append,List.append_assoc]
+
+theorem preCut_sub : preCut.Sublist pre := by
+  have e : rawTail =
+      (StairSchedule.forwardSegment cp 87 62 425 450 ++ hostedGroup hostPlan true 13 85 (4 + 1)) ++
+      ((StairSchedule.forwardSegment cp 62 47 450 465 ++ hostedGroup hostPlan true 22 90 (2 + 1)) ++
+      ((StairSchedule.forwardSegment cp 47 32 465 480 ++ hostedGroup hostPlan true 30 93 (2 + 1)) ++
+      ((StairSchedule.forwardSegment cp 32 22 480 490 ++ hostedGroup hostPlan true 36 96 (1 + 1)) ++
+      ((StairSchedule.forwardSegment cp 22 12 490 500 ++ hostedGroup hostPlan true 41 98 (1 + 1)) ++
+        StairSchedule.forwardLast cp)))) := by
+    simp only [rawTail, List.append_assoc]
+  unfold preCut pre
+  rw [e]
+  exact (PackCutSub.rename_sub _ (PackCutSub.rows_sub0 _)).append (List.Sublist.refl _)
+
+theorem preCutFree : Clear preCut :=
+  fun q hq hw => preFree q hq (PackCutSub.wires_sub preCut_sub q hw)
+
+theorem head4 : (((StairField13V3.entryPieces checkpointPrimitives hostPlan).take 4).map StairField13V3.Piece.H).flatten =
+    renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++
+      (beforeGroup ++ renameProgram fieldEquiv (WindowFieldCosts.group true 1 84)) := by
+  simp only [StairField13V3.entryPieces, List.take, List.map, List.flatten, StairField13V3.common,
+    StairField13V3.firstSlot, StairField13V3.groupSlot, beforeGroup,
+    WindowFieldCosts.group, ←placedShape, fieldRename_append, List.append_eq, List.append_nil, List.append_assoc]
+
+theorem tail10 : ((((StairField13V3.entryPieces checkpointPrimitives hostPlan).drop 14).take 10).map StairField13V3.Piece.H).flatten =
+    renameProgram fieldEquiv (StairSchedule.forwardLast checkpointPrimitives) ++
+      (StairSchedule.fieldRename FourScratchWindow.unprefix ++
+        (StairSchedule.paritySetup ++ (between ++ StairSchedule.paritySetup))) := by
+  simp only [StairField13V3.entryPieces, List.drop, List.take, List.map, List.flatten, StairField13V3.common,
+    StairField13V3.lowCommon, StairField13V3.groupSlot, between,
+    StairHostsSchedule.entryLowSuffix, StairHostsSchedule.entryTailSuffix, ←placedShape, fieldRename_append,
+    rename_append, List.append_eq, List.append_nil, List.append_assoc]
+
+theorem take24 : (((StairField13V3.entryPieces checkpointPrimitives hostPlan).take 24).map StairField13V3.Piece.H).flatten =
+    (((StairField13V3.entryPieces checkpointPrimitives hostPlan).take 14).map StairField13V3.Piece.H).flatten ++
+      ((((StairField13V3.entryPieces checkpointPrimitives hostPlan).drop 14).take 10).map StairField13V3.Piece.H).flatten := by
+  rw [show (24 : Nat) = 14 + 10 from rfl, List.take_add, List.map_append, List.flatten_append]
+end ECDSAAdd.Entrant.StairPacket.ExteriorDivPieces
+
+end
+
+section
+
 namespace ECDSAAdd.Entrant.StairPacket.ExteriorDivReady
 open Arithmetic MappedCompressed Secp256k1 StairConcreteAssembly Rolling1588Lifetime
 open StockArchiveBanks WindowStartStates ExteriorPorts ExteriorDivPieces WindowFieldMask WindowFieldJourney
@@ -30134,14 +30359,68 @@ theorem starts {s : State} (F : EntryFrame s) (m : List Bool) :
   rw [eq] at pair
   exact ExteriorEntryCut.group_run F k t _ _ pair
 
-theorem newShape : WindowMiddleContract.divHead = prefixW ++ WindowReturningTail.program pre between post WindowFieldParity.setup := by
-  simp only [WindowMiddleContract.divHead,WindowKernelPrograms.divBefore,corrected,field,prefixW,beginW,
+theorem newShape : WindowMiddleContract.divHead = prefixW ++ WindowReturningTail.program preCut between post WindowFieldParity.setup := by
+  simp only [WindowMiddleContract.divHead,WindowKernelPrograms.divBefore,correctedCut,prefixW,beginW,
     opening,pack,post,WindowReturningTail.program,Six505.rename_append,List.append_assoc]
 theorem oldShape : WindowMiddleContract.oldDivHead = prefixR ++ WindowReturningTail.program pre between post StairSchedule.paritySetup := by
   simp only [WindowMiddleContract.oldDivHead,Stair44Kernel.fieldD,ordinary,field,prefixR,refBegin,
     post,WindowReturningTail.program,List.append_assoc]
+theorem lead_prefix {t : State} (F : EntryFrame t) (Y : Program) (m : List Bool) :
+    run (Stair44Kernel.divLead ++ Y) m t =
+      run (renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++ Y) m t := by
+  have cnt : measurementCount Stair44Kernel.divLead =
+      measurementCount (renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives)) := by
+    rw [WindowStockHead.shapeD,(renameProgram_counts _ _).2,(renameProgram_counts _ _).2,measurementCount_append,
+      measurementCount_append,Stair44Kernel.open_count]
+  rw [run_append,run_append,WindowStockHead.leadD F,cnt]
+
+/-- The stock division head with the five cut rows. -/
+def oldCut := prefixR ++ WindowReturningTail.program preCut between post StairSchedule.paritySetup
+theorem oldCutShape : oldCut = prefixR ++ WindowReturningTail.program preCut between post StairSchedule.paritySetup := rfl
+
+/-- On every entry frame the cut head runs like the stock division head (with another tape). -/
+theorem back {s : State} (F : EntryFrame s) (m : List Bool) :
+    ∃ n, run oldCut m s = run WindowMiddleContract.oldDivHead n s := by
+  obtain ⟨n, h⟩ := PackCutEntryChain.entry_cut_runeq_gen F.x (StairOpenWiring.entryPlans F.x)
+    (StairLoanField7RR.entryReachTransportR_best StairOpenWiring.half760 F.x)
+    StairLoanField7Transport.entryGroupSub_best
+    (StairField13V3.entrySlotsClean_of _ _ _ (StairField13V3.entrySlots_of_v3 (StairField13V3.entrySlotsV3_of_parts
+      (StairField13V3Fresh.entryParts_of_clean
+        (StairField13V3Clean.entryClean_of_planR StairOpenWiring.entryPlans StairOpenWiring.half760)))))
+    (((((StairField13V3.entryPieces checkpointPrimitives hostPlan).drop 14).take 10).map StairField13V3.Piece.H).flatten ++ post) s ⟨F, rfl⟩ m
+  refine ⟨n, ?_⟩
+  have e1 : oldCut = Stair44Kernel.divLead ++ ((beforeGroup ++ renameProgram fieldEquiv (WindowFieldCosts.group true 1 84)) ++
+      (preCut ++ (StairSchedule.paritySetup ++ (between ++ (StairSchedule.paritySetup ++ post))))) := by
+    simp only [oldCut, prefixR, refBegin, WindowReturningTail.program, List.append_assoc]
+  have e2 : WindowMiddleContract.oldDivHead = Stair44Kernel.divLead ++ ((beforeGroup ++ renameProgram fieldEquiv (WindowFieldCosts.group true 1 84)) ++
+      (pre ++ (StairSchedule.paritySetup ++ (between ++ (StairSchedule.paritySetup ++ post))))) := by
+    rw [oldShape]
+    simp only [prefixR, refBegin, WindowReturningTail.program, List.append_assoc]
+  have c1 : renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++
+      ((beforeGroup ++ renameProgram fieldEquiv (WindowFieldCosts.group true 1 84)) ++
+      (preCut ++ (StairSchedule.paritySetup ++ (between ++ (StairSchedule.paritySetup ++ post))))) =
+      (((StairField13V3.entryPieces checkpointPrimitives hostPlan).take 4).map StairField13V3.Piece.H).flatten ++
+        (StairField2V3Entry.liftF (PackCutEntry.cutRow 87 62 425 450 13 85 4) ++
+        (StairField2V3Entry.liftF (PackCutEntry.cutRow 62 47 450 465 22 90 2) ++
+        (StairField2V3Entry.liftF (PackCutEntry.cutRow 47 32 465 480 30 93 2) ++
+        (StairField2V3Entry.liftF (PackCutEntry.cutRow 32 22 480 490 36 96 1) ++
+        (StairField2V3Entry.liftF (PackCutEntry.cutRow 22 12 490 500 41 98 1) ++
+          (((((StairField13V3.entryPieces checkpointPrimitives hostPlan).drop 14).take 10).map StairField13V3.Piece.H).flatten ++ post)))))) := by
+    rw [head4, tail10]
+    simp only [preCut, rawTailCut, StairField2V3Entry.liftF, placedShape, StairField13V3.rename_append, List.append_assoc]
+  have c2 : renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++
+      ((beforeGroup ++ renameProgram fieldEquiv (WindowFieldCosts.group true 1 84)) ++
+      (pre ++ (StairSchedule.paritySetup ++ (between ++ (StairSchedule.paritySetup ++ post))))) =
+      (((StairField13V3.entryPieces checkpointPrimitives hostPlan).take 14).map StairField13V3.Piece.H).flatten ++
+        (((((StairField13V3.entryPieces checkpointPrimitives hostPlan).drop 14).take 10).map StairField13V3.Piece.H).flatten ++ post) := by
+    rw [← List.append_assoc (((StairField13V3.entryPieces checkpointPrimitives hostPlan).take 14).map StairField13V3.Piece.H).flatten,
+      ← take24, Stair44DivisionCut.selected]
+    simp only [Stair44DivisionCut.beforeClose, ordinary, field, List.append_assoc]
+  rw [e1, e2, lead_prefix F, lead_prefix F, c1, c2]
+  exact h
+
 theorem entry : WindowMiddleContract.entry :=
-  WindowReturningTail.entryOfPrefix newShape oldShape preFree betweenFree postFree starts
+  WindowReturningTail.entryOfPrefixH back newShape oldCutShape preCutFree betweenFree postFree starts
 end ECDSAAdd.Entrant.StairPacket.ExteriorDivReady
 
 end
