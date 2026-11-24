@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.LeaveReductions
+import ECDSAAdd.Submission.Entrant.TickCutMixed
 import ECDSAAdd.Framework.RunAppendAgreement
 import ECDSAAdd.Submission.Entrant.BOptimizations
 import ECDSAAdd.Submission.Entrant.StairSideA
@@ -2223,6 +2223,112 @@ theorem rowCutOdd5 (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR L
 end ECDSAAdd.Entrant.PackCutEntryChain
 
 end
+
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.TickCutMainBridge
+open ECDSAAdd Arithmetic MappedCompressed IntegerPacket WideReference SkywalkRails Partial
+open ArchivePortAction ArchiveStockRows StockWindowTicket WindowFold WindowChain
+open Secp256k1 StockWindowW7
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+theorem selected_head (j : Fin 26) : TickCutMixed.Tail.selected j 0 1 = Shadow7.unrouted j 0 1 := by
+  simp only [TickCutMixed.Tail.selected, Nat.zero_ne_one, false_and, if_false]
+theorem selected_tail (j : Fin 26) : TickCutMixed.Tail.selected j 1 14 = TickCutMixed.Hosted.unroutedHigh j 1 14 := by
+  simp only [TickCutMixed.Tail.selected, show (1:Nat)=1 ∧ (14:Nat)=14 from ⟨rfl,rfl⟩, and_self, if_true]
+theorem nextWindow_eq (j : Fin 26) (d : Bool) : TickCutMixed.NativeJ7.nextWindow j d = NativeJ7.nextWindow j d := rfl
+theorem nextR_eq (d:Bool) (i k : Fin 26) (hk : k.val=i.val+1) :
+    (nextR TickCutMixed.params15 d i k).flatten=CRTBarrel.unleave k++TickCutMixed.NativeJ7.nextUnwind k d := by
+  have e:=prev_of i k hk
+  subst e
+  simp only [nextR,TickCutMixed.params15,CRTBarrel.params,Shadow7.params,ofParts,List.flatten_cons,List.flatten_nil,List.append_nil,
+    TickCutMixed.NativeJ7.nextUnwind,TickCutMixed.NativeJ7.unwind,TickCutMixed.Tail.unbodySelected,NativeJ7.fromArchive,NativeJ7.reverse,List.append_assoc]
+theorem firstR_eq (d:Bool) :
+    (firstR TickCutMixed.params15 d WindowParams.first++[CRTBarrel.params.portalInv (start WindowParams.first)]).flatten=
+      CRTBarrel.unleave WindowParams.first++(TickCutMixed.NativeFirstJ7.enteredUnwind WindowParams.first d++Shadow7.portalInvP (start WindowParams.first)) := by
+  simp only [firstR,TickCutMixed.params15,CRTBarrel.params,Shadow7.params,ofParts,List.cons_append,List.nil_append,List.flatten_cons,List.flatten_nil,
+    List.append_nil,TickCutMixed.NativeFirstJ7.enteredUnwind,TickCutMixed.NativeFirstJ7.unwind,TickCutMixed.Tail.unbodySelected,NativeFirstJ7.reverse,List.append_assoc]
+theorem interiorG (J : Nat) (hJ : J ≤ 24) (L : LeavesUpTo J) (d:Bool) (x p:Nat) (good:Bounds x p) (i k : Fin 26) (hk : k.val=i.val+1)
+    (h4 : WindowParams.first.val+1≤k.val) (h12 : k.val≤J) :
+    Checked (nextF CRTBarrel.params d i k).flatten (nextR TickCutMixed.params15 d i k).flatten
+      (ReadyW d x p (start k)) (ReadyW d x p (start k+15)) := by
+  rw [next_eq d i k hk,nextR_eq d i k hk]
+  apply pair (F:=NativeJ7.nextWindow k d) (F':=CRTBarrel.leave k) (R:=TickCutMixed.NativeJ7.nextUnwind k d) (R':=CRTBarrel.unleave k)
+  intro s m h
+  obtain ⟨k1',e0,raw,g,sg,pg,ps,pre⟩:=h
+  have same0:k1'=k:=Fin.ext (by have := e0; simp only [StairPacket.start] at this; omega)
+  rw [same0] at pre
+  let k0:=k
+  let v:=run (NativeJ7.nextWindow k0 d) m s
+  let n:=m.drop (measurementCount (NativeJ7.nextWindow k0 d))
+  let out:=run (Shadow7.leaveP k0) n v
+  let raw':=endRaw (start k0) raw v
+  let k1:Fin 26:=⟨k0.val+1,by omega⟩
+  have p1:NativeJ7.prev k1=k0:=prev_of k0 k1 rfl
+  have s1:start k1=start k0+15:=start_succ k0 k1 rfl
+  let flags:=LeaveJ7.Admission.flags (unsigned (start k0) x p) g sg
+  have hf1 : 0 ≤ WindowParams.first.val := by decide
+  have h2 : 1≤k0.val := by omega
+  have h19 : k0.val≤24 := by omega
+  have curr:=readInput (start k0) x p raw g sg pre.input
+  have scr:=L.scratch k0 h2 h19 d x p good raw s g sg pg ps m pre
+  have native:=TickCutMixed.NativeJ7.from_domain_matched k0 h2 h19 d x p good raw s m pre.domain g sg pre.cut curr scr pg ps _ pre.facts
+  obtain ⟨cut,facts⟩:=L.endpoint k0 k1 rfl h4 h12 d x p good raw s m n pre.domain g sg pre.cut curr scr pg ps _ pre.facts
+  have hin:=native.1
+  have carried:=stepInput_gen_shadow7 (start k0) (Shadow7.sbP (start k0)) x p (by simp only [StairPacket.start]; omega)
+    (by simp only [StairPacket.start]; omega) good raw v g sg pre.domain pre.input hin.farSmall
+  have lastPhase:out.phase=raw'.phase:=cutPhase cut
+  have prevPhase:s.phase=raw.phase:=cutPhase pre.cut
+  have ph:=lastPhase.trans ((endRaw_phase (start k0) x p (by simp only [StairPacket.start]; omega) good raw v
+    pre.domain).trans prevPhase.symm)
+  have canon:=unique_input pre.input (fixed_input _ _ _ (by simp only [StairPacket.start]; omega) good raw pre.domain)
+  have same:run (CRTBarrel.leave k0) n v=run (Shadow7.leaveP k0) n v:=(LeaveJ7.Admission.Inputs.crt_pair (by omega) (by omega) hin).1 n
+  show (run (CRTBarrel.leave k0) n v).phase=s.phase ∧ ReadyW d x p (start k+15) (run (CRTBarrel.leave k0) n v) ∧
+    (∀t,run (CRTBarrel.unleave k0) t (run (CRTBarrel.leave k0) n v)=v) ∧ (∀t,run (TickCutMixed.NativeJ7.nextUnwind k d) t v=s)
+  rw [same]
+  refine ⟨ph,⟨k1,s1,raw',flags.1,flags.2,g,sg,?_⟩,fun t=>by rw [← same]; exact L.roundtrip k0 (by omega) h19 v _ g sg hin n t,
+    native.2.2.2⟩
+  refine ⟨?_,?_,cut,?_,?_⟩
+  · rw [s1]; exact carried.1
+  · rw [s1]; exact carried.2
+  · rw [p1]; exact facts
+  · rw [p1]; exact canon
+theorem firstStepG (J : Nat) (L : LeavesUpTo J) (d:Bool) (x p:Nat) (good:Bounds x p) :
+    Checked (CRTBarrel.params.portal (start WindowParams.first) :: firstF CRTBarrel.params d WindowParams.first).flatten
+      (firstR TickCutMixed.params15 d WindowParams.first++[CRTBarrel.params.portalInv (start WindowParams.first)]).flatten
+      (BeforeW d x p) (ReadyW d x p (start WindowParams.first+15)) := by
+  rw [first_eq d,firstR_eq d]
+  apply pair (F:=Shadow7.portalP (start WindowParams.first)++NativeFirstJ7.enteredWindow WindowParams.first d) (F':=CRTBarrel.leave WindowParams.first)
+    (R:=TickCutMixed.NativeFirstJ7.enteredUnwind WindowParams.first d++Shadow7.portalInvP (start WindowParams.first)) (R':=CRTBarrel.unleave WindowParams.first)
+  intro s m h
+  obtain ⟨raw,stage,rfl⟩:=h
+  let v:=run (Shadow7.portalP (start WindowParams.first)++NativeFirstJ7.enteredWindow WindowParams.first d) m (pullState (OB5.sig (start WindowParams.first-1)) raw)
+  let n:=m.drop (measurementCount (Shadow7.portalP (start WindowParams.first)++NativeFirstJ7.enteredWindow WindowParams.first d))
+  let out:=run (Shadow7.leaveP WindowParams.first) n v
+  let raw':=endRaw (start WindowParams.first) raw v
+  obtain ⟨g,sg,input,hin,cut,facts⟩:=L.first d x p good raw m n stage
+  let flags:=LeaveJ7.Admission.flags (unsigned (start WindowParams.first) x p) g sg
+  have dom:=initial (start WindowParams.first) x p (by decide) d raw stage
+  have carried:=stepInput_gen_shadow7 (start WindowParams.first) (Shadow7.sbP (start WindowParams.first)) x p (by decide) (by decide) good raw v g sg dom input hin.farSmall
+  have base:out.phase=raw'.phase:=cutPhase cut
+  have ph:=base.trans (endRaw_phase (start WindowParams.first) x p (by decide) good raw v dom)
+  have back:=TickCutMixed.NativeFirstJ7.firstBack d x p good raw m stage
+  have same:run (CRTBarrel.leave WindowParams.first) n v=run (Shadow7.leaveP WindowParams.first) n v:=
+    (LeaveJ7.Admission.Inputs.crt_pair (by decide) (by decide) hin).1 n
+  show (run (CRTBarrel.leave WindowParams.first) n v).phase=(pullState (OB5.sig (start WindowParams.first-1)) raw).phase ∧
+    ReadyW d x p (start WindowParams.first+15) (run (CRTBarrel.leave WindowParams.first) n v) ∧
+    (∀t,run (CRTBarrel.unleave WindowParams.first) t (run (CRTBarrel.leave WindowParams.first) n v)=v) ∧
+    (∀t,run (TickCutMixed.NativeFirstJ7.enteredUnwind WindowParams.first d++Shadow7.portalInvP (start WindowParams.first)) t v=pullState (OB5.sig (start WindowParams.first-1)) raw)
+  rw [same]
+  exact ⟨ph,⟨firstNext,rfl,raw',flags.1,flags.2,g,sg,carried.1,carried.2,cut,facts,
+    unique_input input (fixed_input (start WindowParams.first) x p (by decide) good raw dom)⟩,
+    fun t=>by rw [← same]; exact L.roundtrip WindowParams.first (by decide) (by decide) v _ g sg hin n t,back.2⟩
+
+end ECDSAAdd.Entrant.StairPacket.TickCutMainBridge
+end
+
 
 
 /-! The odd-word half-cell (ercumentyildirim 3697b163, as carried by 3f26822d / e7f82313; restored through the
@@ -17929,12 +18035,12 @@ attribute [local irreducible] run wires
 /-- The three branches use the same expanded inner-S bank; the tail leaves the
 one live high bit on the carrier consumed by the following integer stage. -/
 def program (k : Fp) : Program :=
-  placedN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA ++
+  placedN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA ++
     StairEntryRehost.routed (k - (C163Low4Offsets.delta : Fp))
 
 abbrev hs := StairSqLoopA.hostDomain
-theorem coreOK : CoreOK L0 (coreN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA) :=
-  PDSplitLeafSquare.coreOK
+theorem coreOK : CoreOK L0 (coreN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA) :=
+  SplitLeafSquare.coreOK
 
 /-- On the following stage's physical carrier, the entire square executes the stock operation. -/
 theorem fullRunOf (P : Program) (hP : CoreOK L0 P) (k X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m1 m2 : List Bool)
@@ -18015,10 +18121,10 @@ private theorem suffix_eq (x : Wire) : suffixWire x = fastSuffix x := by
     StairPlaceFast.swB_eq,StairPlaceFast.swap_eq_sw,pmapR_fast]
 private theorem prefix_good : (compareLabels base (base 2400)).all
     (fun x => good (StairPlaceFast.ugB (fastPrefix x))) = true :=
-  PDSplitLeafSquare.ReplayCertificates.transferAll PDSplitLeafSquare.ReplayCertificates.tailPrefixGood rfl (fun _ => rfl)
+  SplitLeafSquare.ReplayCertificates.transferAll SplitLeafSquare.ReplayCertificates.tailPrefixGood rfl (fun _ => rfl)
 private theorem suffix_good : (E1Reflected.Square31.mS5 base (base 2400)).all
     (fun x => good (StairPlaceFast.ugB (fastSuffix x))) = true :=
-  PDSplitLeafSquare.ReplayCertificates.transferAll PDSplitLeafSquare.ReplayCertificates.tailSuffixGood rfl (fun _ => rfl)
+  SplitLeafSquare.ReplayCertificates.transferAll SplitLeafSquare.ReplayCertificates.tailSuffixGood rfl (fun _ => rfl)
 theorem allGood (k : Fp) (q : Wire) (hq : q ∈ wires (routed k)) : good (StairPlaceFast.ugB q) = true := by
   have h := List.mem_toFinset.mp (uses_labels k hq)
   simp only [labels,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at h
@@ -18113,23 +18219,21 @@ theorem changingTail (P : Program) (k : Fp) :
     t,m,g,et,em,StairSquareEntryR.entryRH_slots,Nat.add_assoc,and_self]
 
 theorem metrics (k : Fp) :
-    toffoliCount (program k) + 934 = toffoliCount (A161Generic.squareEntry L0 k) ∧
+    toffoliCount (program k) + 865 = toffoliCount (A161Generic.squareEntry L0 k) ∧
     measurementCount (program k) + 589 = measurementCount (A161Generic.squareEntry L0 k) ∧
-    Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 5490126 := by
-  have h : toffoliCount (program k) = toffoliCount (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) ∧
-      measurementCount (program k) = measurementCount (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) ∧
-      Challenge.gateSlots (program k) = Challenge.gateSlots (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) + 3 :=
+    Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 5490003 := by
+  have h : toffoliCount (program k) = toffoliCount (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) ∧
+      measurementCount (program k) = measurementCount (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) ∧
+      Challenge.gateSlots (program k) = Challenge.gateSlots (squareN SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA k) + 3 :=
     changingTail _ _
-  have c := PDSplitLeafSquare.square_counts k
-  have s := PDSplitLeafSquare.square_slots_le k
-  refine ⟨(congrArg (fun n : Nat => n + 934) h.1).trans c.1,
+  have c := SplitLeafSquare.square_counts k
+  have s := SplitLeafSquare.square_slots_le k
+  refine ⟨(congrArg (fun n : Nat => n + 865) h.1).trans c.1,
     (congrArg (fun n : Nat => n + 589) h.2.1).trans c.2, ?_⟩
-  have cap := h.2.2.le.trans (Nat.add_le_add_right s 3)
-  simp only [Nat.add_assoc] at cap
-  omega
+  simpa only [Nat.add_assoc] using h.2.2.le.trans (Nat.add_le_add_right s 3)
 
 theorem physical (k : Fp) : GatePhysical (program k) := by
-  have p := PDSplitLeafSquare.square_physical k
+  have p := SplitLeafSquare.square_physical k
   rw [squareN, gatePhysical_append] at p
   exact (gatePhysical_append _ _).mpr ⟨p.1, routedPhysical _⟩
 end ECDSAAdd.Entrant.Stair44Square
@@ -18184,29 +18288,29 @@ private theorem fixedUG : ∀ q ∈ hs, StairSiteAvoidance.UG q = q := by
   simp only [StairPlaceFast.ug_eqB]
   decide +kernel
 theorem piece (k : Fp) : StairSiteAvoidance.PieceOK hs StairSiteAvoidance.UG (program k) := by
-  have avC := PDSplitLeafSquare.brC_avoids
-  have avB := PDSplitLeafSquare.brB_avoids
-  have avA := PDSplitLeafSquare.brA_avoids
-  have hostsGood : ∀ h ∈ PDSplitLeafSquare.allowedWires,
+  have avC := SplitLeafSquare.brC_avoids
+  have avB := SplitLeafSquare.brB_avoids
+  have avA := SplitLeafSquare.brA_avoids
+  have hostsGood : ∀ h ∈ SplitLeafSquare.allowedWires,
       StairSiteAvoidance.UG (placeFn h) ∈ StairHoleSupport.recordArena ∧
         StairSiteAvoidance.UG (placeFn h) ∉ StairHoleSupport.oldHoles := by
-    have allG : PDSplitLeafSquare.allowedWires.all
+    have allG : SplitLeafSquare.allowedWires.all
         (fun w => Stair44TailBounds.good (StairPlaceFast.ugB (LT48K.placeF w))) = true := by
-      exact PDSplitLeafSquare.allowedPlacedGood
+      exact SplitLeafSquare.allowedPlacedGood
     intro h hh
     have hg := List.all_eq_true.mp allG h hh
     have hmap : StairSiteAvoidance.UG (placeFn h) = StairPlaceFast.ugB (LT48K.placeF h) := by
       rw [LT48K.placeFn_eq]; exact StairPlaceFast.ug_eqB _
     rw [hmap]
     exact ⟨(good_sites _ hg).1, (good_sites _ hg).2.1⟩
-  have arena := placedN_arenaB PDSplitLeafSquare.bodyAPlain PDSplitLeafSquare.bodyB
-    PDSplitLeafSquare.bodyCPlain PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA
-    PDSplitLeafSquare.allowedWires
-    PDSplitLeafSquare.bodyAPlain_coarse PDSplitLeafSquare.bodyAPlain_fine
-    PDSplitLeafSquare.bodyCPlain_fine PDSplitLeafSquare.bodyB_ok.support
-    PDSplitLeafSquare.bodyB_normFlag
-    PDSplitLeafSquare.brC_support PDSplitLeafSquare.brB_support
-    PDSplitLeafSquare.brA_support hostsGood
+  have arena := placedN_arenaB SplitLeafSquare.bodyAPlain SplitLeafSquare.bodyB
+    SplitLeafSquare.bodyCPlain SplitLeafSquare.brC SplitLeafSquare.brB SplitLeafSquare.brA
+    SplitLeafSquare.allowedWires
+    SplitLeafSquare.bodyAPlain_coarse SplitLeafSquare.bodyAPlain_fine
+    SplitLeafSquare.bodyCPlain_fine SplitLeafSquare.bodyB_ok.support
+    SplitLeafSquare.bodyB_normFlag
+    SplitLeafSquare.brC_support SplitLeafSquare.brB_support
+    SplitLeafSquare.brA_support hostsGood
   have unplaced := coreN_avoids hs _ _ _ avC avB avA
   apply StairSiteAvoidance.PieceOK.append _ (tailPiece _)
   refine ⟨arena, ?_⟩
@@ -18240,16 +18344,16 @@ private theorem fromValid {P : Program} (chk : allSites valid P = true) : PieceO
 
 theorem reverseTail : PieceOK holes PP reverseEnd := by
   unfold reverseEnd
-  exact ((fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl))).append
-    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.tickRSites (fun _ => rfl)))).append
-    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.inverseSites (fun _ => rfl)))
+  exact ((fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl))).append
+    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.tickRSites (fun _ => rfl)))).append
+    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.inverseSites (fun _ => rfl)))
 
 theorem forwardTail : PieceOK holes PP forwardEnd := by
   unfold forwardEnd
-  exact (((fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.mergedSites (fun _ => rfl))).append
-    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.packSites (fun _ => rfl)))).append
-    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.afterSites (fun _ => rfl)))).append
-    (fromValid (PDSplitLeafSquare.ReplayCertificates.transferSites PDSplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl)))
+  exact (((fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.mergedSites (fun _ => rfl))).append
+    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.packSites (fun _ => rfl)))).append
+    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.afterSites (fun _ => rfl)))).append
+    (fromValid (SplitLeafSquare.ReplayCertificates.transferSites SplitLeafSquare.PhaseReceipts.clearSites (fun _ => rfl)))
 
 theorem exitX (k : Nat) : PieceOK holes UG (Stair44PointMap.switchX (phasePlace (ParityXExitInverse23Kernel.x1N k))) := by
   apply Stair44OuterSites.fits
@@ -18326,24 +18430,24 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2167840 ∧ measurementCount (program C) ≤ 1519658 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167909 ∧ measurementCount (program C) ≤ 1519658 := by
   have h := StairCountsHosted.count_totals C
   change toffoliCount (concreteProgram C) ≤ 2168925 ∧ measurementCount (concreteProgram C) ≤ 1520247 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2167840 ∧ measurementCount [] ≤ 1519658
+    change toffoliCount [] ≤ 2167909 ∧ measurementCount [] ≤ 1519658
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
     have old := StairSquareFinal.square_counts StairSqLoopA.holes k
     have new := Stair44Square.metrics k
-    have ft := finite_sub tc (.some hc) cx cy 1085 (by
-      change toffoliCount (Stair44Square.program k) + 1085 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
+    have ft := finite_sub tc (.some hc) cx cy 1016 (by
+      change toffoliCount (Stair44Square.program k) + 1016 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
       rw [StairSquareFinal.squareEntryHL_layout]; omega)
     have fm := finite_sub mc (.some hc) cx cy 589 (by
       change measurementCount (Stair44Square.program k) + 589 = measurementCount (StairSquareFinal.squareEntryHL _ layout k)
       rw [StairSquareFinal.squareEntryHL_layout]; omega)
-    change toffoliCount _ + 1085 = toffoliCount _ at ft
+    change toffoliCount _ + 1016 = toffoliCount _ at ft
     change measurementCount _ + 589 = measurementCount _ at fm
     simp only [program,concreteProgram,hostedWrapper,(renameProgram_counts _ _).1,
       (renameProgram_counts _ _).2] at h ⊢
@@ -18370,13 +18474,13 @@ theorem slotBound (C : Point) : gateSlots (program C) ≤ 56350460 := by
       exact exitRestOf_slots_le checkpointPrimitives hostPlan _ _ v3WalkFacts
         (v3GroupFacts _) (v3BoundaryFacts _) layout cx.val
     have sq : gateSlots (Stair44Square.program (ReflectionE1.correction cx)) ≤
-        gateSlots (A161Generic.squareEntry layout (ReflectionE1.correction cx)) + 5490126 :=
+        gateSlots (A161Generic.squareEntry layout (ReflectionE1.correction cx)) + 5490003 :=
       (Stair44Square.metrics (ReflectionE1.correction cx)).2.2
-    have gen : gateSlots (generic cx cy) ≤ gateSlots (FlagExit.genericN layout cx cy) + (dE + dX) + 5490126 := by
+    have gen : gateSlots (generic cx cy) ≤ gateSlots (FlagExit.genericN layout cx cy) + (dE + dX) + 5490003 := by
       simp only [generic,FlagExit.genericN,FlagExit.secondStageN,Stair44PointMap.encodeY,
         Stair44PointMap.switchX,gateSlots_append,rename_gateSlots]
       omega
-    have whole : gateSlots (program C) ≤ gateSlots (AboveFieldPointDevelop.programQ C) + (dE + dX) + 5490126 := by
+    have whole : gateSlots (program C) ≤ gateSlots (AboveFieldPointDevelop.programQ C) + (dE + dX) + 5490003 := by
       simp only [C,program,finite,borrowGeneric,Stair44PointMap.encode,AboveFieldPointDevelop.programQ,
         AboveFieldPointDevelop.wrapperBorrow,AboveFieldPointDevelop.finiteBorrow,AboveFieldPointDevelop.middle,
         ControlPointEncodingDevelop.borrowGeneric,ControlPointEncodingDevelop.genericBlock,
@@ -19079,12 +19183,12 @@ def forward (d : Bool) (tail : Nat) : Program :=
 
 def backward (d : Bool) (tail : Nat) : Program :=
   renameProgram Stair44WalkMap.rest (Rolling1588.reverse d 421 tail ++
-    Shadow20.MixedWindow.reverseMixedCut d ++ Rolling1588.reverse d 16 29) ++
+    TickCutMixed.reverse d ++ Rolling1588.reverse d 16 29) ++
   renameProgram Stair44WalkMap.first (Rolling1588.reverse d 1 15)
 
 private theorem walk (c : Cost) (d : Bool) (tail f r : Nat)
     (hf : c.measure (Shadow20.MixedWindow.forwardMixedCut d)+f=c.measure (Rolling1588TickGap.forward d 45 376))
-    (hr : c.measure (Shadow20.MixedWindow.reverseMixedCut d)+r=c.measure (Rolling1588.reverse d 45 376)) :
+    (hr : c.measure (TickCutMixed.reverse d)+r=c.measure (Rolling1588.reverse d 45 376)) :
     c.measure (forward d tail)+f=c.measure (Stair44WalkRun.forward d (405+tail)) ∧
     c.measure (backward d tail)+r=c.measure (Stair44WalkRun.backward d (405+tail)) := by
   have a := StairRestSupport.forward_append d 29 16 (376+tail)
@@ -19103,7 +19207,7 @@ private theorem walk (c : Cost) (d : Bool) (tail f r : Nat)
   norm_num only []
   constructor <;> omega
 
-attribute [local irreducible] Shadow20.MixedWindow.forwardMixedCut Shadow20.MixedWindow.reverseMixedCut Rolling1588TickGap.forward Rolling1588.reverse
+attribute [local irreducible] Shadow20.MixedWindow.forwardMixedCut TickCutMixed.reverse Rolling1588TickGap.forward Rolling1588.reverse
   Stair44WalkRun.forward Stair44WalkRun.backward toffoliCount measurementCount forward backward
 
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
@@ -19111,34 +19215,34 @@ private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b
 theorem exactWalks (d : Bool) (tail : Nat) :
     toffoliCount (forward d tail)+(if d then 38415 else 38415)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 37983 else 37961)=
+    toffoliCount (backward d tail)+(if d then 38336 else 38314)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
     measurementCount (forward d tail)+(if d then 17040 else 17040)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
-    measurementCount (backward d tail)+(if d then 17436 else 17414)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
+    measurementCount (backward d tail)+(if d then 17083 else 17061)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
   have sf := StockWindowCosts420.stock420from45 d
-  have mcw := Shadow20.MixedWindow.mixedCut_counts d
+  have mcw := TickCutMixed.mixed_counts d
   cases d
   · simp only [Bool.false_eq_true, ↓reduceIte] at mcw ⊢
-    have t := walk tc false tail 38415 37961 (subEq 38415 mcw.1 sf.1 (by omega)) (subEq 37961 mcw.2.1 sf.2.2.1 (by omega))
-    have mv := walk mc false tail 17040 17414 (subEq 17040 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17414 mcw.2.2.2 sf.2.2.2 (by omega))
+    have t := walk tc false tail 38415 38314 (subEq 38415 mcw.1 sf.1 (by omega)) (subEq 38314 mcw.2.1 sf.2.2.1 (by omega))
+    have mv := walk mc false tail 17040 17061 (subEq 17040 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17061 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
   · simp only [↓reduceIte] at mcw ⊢
-    have t := walk tc true tail 38415 37983 (subEq 38415 mcw.1 sf.1 (by omega)) (subEq 37983 mcw.2.1 sf.2.2.1 (by omega))
-    have mv := walk mc true tail 17040 17436 (subEq 17040 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17436 mcw.2.2.2 sf.2.2.2 (by omega))
+    have t := walk tc true tail 38415 38336 (subEq 38415 mcw.1 sf.1 (by omega)) (subEq 38336 mcw.2.1 sf.2.2.1 (by omega))
+    have mv := walk mc true tail 17040 17083 (subEq 17040 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17083 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 38415 else 38415)=f) (hr : (if d then 37983 else 37961)=r) :
+    (hf : (if d then 38415 else 38415)=f) (hr : (if d then 38336 else 38314)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+(if d then 17040 else 17040)=mc.measure (Stair44WalkRun.forward d n) ∧
-    mc.measure (backward d tail)+(if d then 17436 else 17414)=mc.measure (Stair44WalkRun.backward d n) := by
+    mc.measure (backward d tail)+(if d then 17083 else 17061)=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
   exact exactWalks d tail
 
 theorem instMeasurements (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 17040 else 17040)=f) (hr : (if d then 17436 else 17414)=r) :
+    (hf : (if d then 17040 else 17040)=f) (hr : (if d then 17083 else 17061)=r) :
     mc.measure (forward d tail)+f=mc.measure (Stair44WalkRun.forward d n) ∧
     mc.measure (backward d tail)+r=mc.measure (Stair44WalkRun.backward d n) := by
   subst n; subst f; subst r
@@ -21573,15 +21677,15 @@ theorem forward45plus1_domain (d : Bool) : Covered (Shadow20.MixedWindow.forward
   intro q h
   rw [domain_eq]
   exact (Shadow20.MixedWindow.mixedCut_covered d).1 q h
-theorem reverse45plus1_domain (d : Bool) : Covered (Shadow20.MixedWindow.reverseMixedCut d) := by
+theorem reverse45plus1_domain (d : Bool) : Covered (TickCutMixed.reverse d) := by
   intro q h
   rw [domain_eq]
-  exact (Shadow20.MixedWindow.mixedCut_covered d).2 q h
+  exact TickCutMixed.covered d q h
 
 theorem forward45plus1_fits (d : Bool) : ∀ q ∈ wires (Shadow20.MixedWindow.forwardMixedCut d), Stair44PhaseSites.valid (Stair44WalkMap.rest q) = true :=
   fun q h => valid (forward45plus1_domain d q h)
 
-theorem reverse45plus1_fits (d : Bool) : ∀ q ∈ wires (Shadow20.MixedWindow.reverseMixedCut d), Stair44PhaseSites.valid (Stair44WalkMap.rest q) = true :=
+theorem reverse45plus1_fits (d : Bool) : ∀ q ∈ wires (TickCutMixed.reverse d), Stair44PhaseSites.valid (Stair44WalkMap.rest q) = true :=
   fun q h => valid (reverse45plus1_domain d q h)
 
 end ECDSAAdd.Entrant.StairPacket.PartialSites
@@ -21620,44 +21724,44 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+38415+37961+933=tc.measure Stair44Outer.divide+1072 := by
-  have k := kernels tc 38415 37961 868 1072 (WindowWalkCosts.inst true 4 409 38415 37983 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 38415 37961 rfl rfl rfl).2.1 (field_delta_tc_div 1072 fieldTcDiv)
+theorem tc_div : tc.measure divide+38415+38314+933=tc.measure Stair44Outer.divide+1072 := by
+  have k := kernels tc 38415 38314 868 1072 (WindowWalkCosts.inst true 4 409 38415 38336 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 38415 38314 rfl rfl rfl).2.1 (field_delta_tc_div 1072 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+38415+37983+890=tc.measure (Stair44Outer.multiply k)+962 :=
-  kernelsM tc k 38415 37983 890 962 (WindowWalkCosts.inst false 84 489 38415 37961 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 38415 37983 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+38415+38336+890=tc.measure (Stair44Outer.multiply k)+962 :=
+  kernelsM tc k 38415 38336 890 962 (WindowWalkCosts.inst false 84 489 38415 38314 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 38415 38336 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
 
-theorem mc_div : mc.measure divide+17040+17414+1573=mc.measure Stair44Outer.divide+652 := by
-  have k := kernels mc 17040 17414 1548 652 (WindowWalkCosts.instMeasurements true 4 409 17040 17436 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements false 85 490 17040 17414 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
+theorem mc_div : mc.measure divide+17040+17061+1573=mc.measure Stair44Outer.divide+652 := by
+  have k := kernels mc 17040 17061 1548 652 (WindowWalkCosts.instMeasurements true 4 409 17040 17083 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements false 85 490 17040 17061 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
   have e : mc.measure Rolling1588.ep + mc.measure Rolling1588.dp = 5 := by
     show measurementCount Rolling1588.ep + measurementCount Rolling1588.dp = 5
     exact PackCutCounts.mc_epdp
   omega
 
-theorem mc_mul (k : Nat) : mc.measure (multiply k)+17040+17436+1529=mc.measure (Stair44Outer.multiply k)+542 :=
-  kernelsM mc k 17040 17436 1529 542 (WindowWalkCosts.instMeasurements false 84 489 17040 17414 rfl rfl rfl).1
-    (WindowWalkCosts.instMeasurements true 4 409 17040 17436 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
+theorem mc_mul (k : Nat) : mc.measure (multiply k)+17040+17083+1529=mc.measure (Stair44Outer.multiply k)+542 :=
+  kernelsM mc k 17040 17083 1529 542 (WindowWalkCosts.instMeasurements false 84 489 17040 17061 rfl rfl rfl).1
+    (WindowWalkCosts.instMeasurements true 4 409 17040 17083 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+152563=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+70838=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 152563
+    toffoliCount (finite C cx cy)+153269=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+70132=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 153269
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 70838
+    finite_delta mc C cx cy 70132
       (OddOuterBridge.entryYAllOdd_mc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2015277 ∧
-    measurementCount (program C) ≤ 1448820 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2014640 ∧
+    measurementCount (program C) ≤ 1449526 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -21680,10 +21784,10 @@ set_option maxHeartbeats 1400000
 set_option maxRecDepth 14000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] toffoliCount gateSlots measurementCount wires renameProgram
-  Rolling1588TickGap.forward Rolling1588.reverse Shadow20.MixedWindow.forwardMixedCut Shadow20.MixedWindow.reverseMixedCut
+  Rolling1588TickGap.forward Rolling1588.reverse Shadow20.MixedWindow.forwardMixedCut TickCutMixed.reverse
 
 private theorem walk (c : Cost) (d : Bool) (tail f r n : Nat) (hn : 405+tail=n)
-    (hf : c.measure (Shadow20.MixedWindow.forwardMixedCut d) ≤ f) (hr : c.measure (Shadow20.MixedWindow.reverseMixedCut d) ≤ r) :
+    (hf : c.measure (Shadow20.MixedWindow.forwardMixedCut d) ≤ f) (hr : c.measure (TickCutMixed.reverse d) ≤ r) :
     c.measure (WindowWalkCosts.forward d tail) ≤ c.measure (Stair44WalkRun.forward d n)+f ∧
     c.measure (WindowWalkCosts.backward d tail) ≤ c.measure (Stair44WalkRun.backward d n)+r := by
   subst n
@@ -22095,6 +22199,12 @@ private theorem mixed_slots (d : Bool) :
     gateSlots (Shadow20.MixedWindow.reverseMixed d) ≤ 2610000 :=
   ⟨mixed_slots_F d, mixed_slots_R d⟩
 
+private theorem reverseH3_cap (d : Bool) :
+    gateSlots (TickCutMixed.reverse d) ≤ 2612471 := by
+  have old := (Shadow20.MixedWindow.mixedCut_slots_le d).2.trans (mixed_slots d).2
+  have extra := TickCutMixed.slots_le d
+  omega
+
 private theorem casts {P : Program} {n : Nat} (h : gateSlots P ≤ n) : slots.measure P ≤ n := h
 private theorem groupCap (d : Bool) (n : Nat)
     (hn : 22*(if d then 5322 else 6122)+(if d then 0 else 0)=n+(if d then 14280 else 11760)) :
@@ -22102,28 +22212,28 @@ private theorem groupCap (d : Bool) (n : Nat)
   have h := WindowFieldCosts.group_slots d
   omega
 private theorem div : slots.measure WindowCallerCosts.divide ≤
-    slots.measure Stair44Outer.divide+2710000+2610000+102804+7900 :=
-  kernels 2710000 2610000 102804
-    (walk slots true 4 2710000 2610000 409 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le true).1.trans (mixed_slots true).1)) (casts ((Shadow20.MixedWindow.mixedCut_slots_le true).2.trans (mixed_slots true).2))).1
-    (walk slots false 85 2710000 2610000 490 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le false).1.trans (mixed_slots false).1)) (casts ((Shadow20.MixedWindow.mixedCut_slots_le false).2.trans (mixed_slots false).2))).2
+    slots.measure Stair44Outer.divide+2710000+2612471+102804+7900 :=
+  kernels 2710000 2612471 102804
+    (walk slots true 4 2710000 2612471 409 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le true).1.trans (mixed_slots true).1)) (casts (reverseH3_cap true))).1
+    (walk slots false 85 2710000 2612471 490 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le false).1.trans (mixed_slots false).1)) (casts (reverseH3_cap false))).2
     (groupCap true 102804 rfl)
 
 private theorem mul (k : Nat) : slots.measure (WindowCallerCosts.multiply k) ≤
-    slots.measure (Stair44Outer.multiply k)+2710000+2610000+122924+8160 :=
-  kernelsM k 2710000 2610000 122924
-    (walk slots false 84 2710000 2610000 489 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le false).1.trans (mixed_slots false).1)) (casts ((Shadow20.MixedWindow.mixedCut_slots_le false).2.trans (mixed_slots false).2))).1
-    (walk slots true 4 2710000 2610000 409 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le true).1.trans (mixed_slots true).1)) (casts ((Shadow20.MixedWindow.mixedCut_slots_le true).2.trans (mixed_slots true).2))).2
+    slots.measure (Stair44Outer.multiply k)+2710000+2612471+122924+8160 :=
+  kernelsM k 2710000 2612471 122924
+    (walk slots false 84 2710000 2612471 489 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le false).1.trans (mixed_slots false).1)) (casts (reverseH3_cap false))).1
+    (walk slots true 4 2710000 2612471 409 rfl (casts ((Shadow20.MixedWindow.mixedCut_slots_le true).1.trans (mixed_slots true).1)) (casts (reverseH3_cap true))).2
     (groupCap false 122924 rfl)
 
-private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2710000+2610000+102804+7900)
-    (hm : b ≤ y+2710000+2610000+122924+8160) : a+b+7144 ≤ x+y+10888932 := by omega
+private theorem sum_caps {a b x y : Nat} (hd : a ≤ x+2710000+2612471+102804+7900)
+    (hm : b ≤ y+2710000+2612471+122924+8160) : a+b+7144 ≤ x+y+10893874 := by omega
 
 private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (WindowCallerCosts.finite C cx cy) ≤
-    slots.measure (Stair44Outer.finite C cx cy)+10888932 :=
-  finite_upper C cx cy 10888932 (sum_caps div (mul _))
+    slots.measure (Stair44Outer.finite C cx cy)+10893874 :=
+  finite_upper C cx cy 10893874 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 67239392 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 67244334 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -22547,7 +22657,7 @@ open Arithmetic MappedCompressed StairSiteAvoidance StairSiteEasy StairConcreteA
 open StairRestSupport
 set_option maxRecDepth 14000
 set_option maxHeartbeats 1000000
-attribute [local irreducible] wires renameProgram Shadow20.MixedWindow.forwardMixedCut Shadow20.MixedWindow.reverseMixedCut
+attribute [local irreducible] wires renameProgram Shadow20.MixedWindow.forwardMixedCut TickCutMixed.reverse
   Rolling1588TickGap.forward Rolling1588.reverse Stair44WalkMap.rest Stair44WalkMap.first
 
 abbrev GoodWindow (p : Program) :=
@@ -22577,7 +22687,7 @@ theorem walkF (d : Bool) (tail : Nat) (bound : 16+(405+tail)≤506)
   exact ⟨old.1,⟨old.2.1,native new⟩,old.2.2.2⟩
 
 theorem walkR (d : Bool) (tail : Nat) (bound : 16+(405+tail)≤506)
-    (new : GoodWindow (Shadow20.MixedWindow.reverseMixedCut d)) :
+    (new : GoodWindow (TickCutMixed.reverse d)) :
     PieceOK reserved PP (WindowWalkCosts.backward d tail) := by
   have old := weaken (Stair44PhaseSites.backward d (405+tail) bound)
   have a := StairRestSupport.reverse_append d 29 16 (376+tail)
@@ -22645,7 +22755,7 @@ private theorem fw (d : Bool) (tail n : Nat) (hn : 15+(405+tail)=n)
 
 private theorem bw (d : Bool) (tail n : Nat) (hn : 15+(405+tail)=n)
     (ref_ : Sound (Rolling1588.reverse d 1 n))
-    (p : GatePhysical (Shadow20.MixedWindow.reverseMixedCut d)) : Sound (WindowWalkCosts.backward d tail) := by
+    (p : GatePhysical (TickCutMixed.reverse d)) : Sound (WindowWalkCosts.backward d tail) := by
   subst n
   rw [reverse_append d 15 1 (405+tail)] at ref_
   obtain ⟨late,early⟩ := parts ref_
@@ -22654,14 +22764,14 @@ private theorem bw (d : Bool) (tail n : Nat) (hn : 15+(405+tail)=n)
   obtain ⟨ms,pre⟩ := parts late
   change Sound (Rolling1588.reverse d 45 (376+tail)) at ms
   rw [reverse_append d 376 45 tail] at ms
-  have patch : Sound (Shadow20.MixedWindow.reverseMixedCut d) := ⟨p,dom (PartialSites.reverse45plus1_domain d)⟩
+  have patch : Sound (TickCutMixed.reverse d) := ⟨p,dom (PartialSites.reverse45plus1_domain d)⟩
   have last : Sound (Rolling1588.reverse d 421 tail) := (parts ms).1
   exact sound_append (sound_rename _ rest.injective restDom (sound_append (sound_append last patch) pre))
     (sound_rename _ first.injective firstDom early)
 private theorem phase {P : Program} (h : Sound P) : GatePhysical (phasePlace P) :=
   rest_physical _ (sound_phaseHost h)
 
-variable (ff : ∀d,GatePhysical (Shadow20.MixedWindow.forwardMixedCut d)) (rr : ∀d,GatePhysical (Shadow20.MixedWindow.reverseMixedCut d))
+variable (ff : ∀d,GatePhysical (Shadow20.MixedWindow.forwardMixedCut d)) (rr : ∀d,GatePhysical (TickCutMixed.reverse d))
 
 include ff rr in
 theorem dividePhysical : GatePhysical WindowCallerCosts.divide := by
@@ -22844,21 +22954,21 @@ private theorem phase {P : Program} (v : PieceOK reserved PP P) :
     PieceOK reserved UG (Stair44Outer.phasePlace P) := ok_kernel (ok_phase v)
 
 theorem division (f : GoodWindow (Shadow20.MixedWindow.forwardMixedCut true))
-    (r : GoodWindow (Shadow20.MixedWindow.reverseMixedCut false)) :
+    (r : GoodWindow (TickCutMixed.reverse false)) :
     PieceOK reserved UG WindowCallerCosts.divide :=
   (((((phase (walkF true 4 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.pack)))).append
     (ok_kernel entryFieldCut)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.reverseTail)))).append
     (phase (walkR false 85 (by decide) r))).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.native)))
 
 theorem multiplication (k : Nat) (f : GoodWindow (Shadow20.MixedWindow.forwardMixedCut false))
-    (r : GoodWindow (Shadow20.MixedWindow.reverseMixedCut true)) :
+    (r : GoodWindow (TickCutMixed.reverse true)) :
     PieceOK reserved UG (WindowCallerCosts.multiply k) :=
   (((((phase (walkF false 84 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.forwardTail)))).append
     (ok_kernel exitField)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.unpack)))).append
     (phase (walkR true 4 (by decide) r))).append (weaken (Stair44PhaseSites.exitX k))
 
 theorem program_width (C : Point) (f : ∀d, GoodWindow (Shadow20.MixedWindow.forwardMixedCut d))
-    (r : ∀d,GoodWindow (Shadow20.MixedWindow.reverseMixedCut d)) :
+    (r : ∀d,GoodWindow (TickCutMixed.reverse d)) :
     Challenge.qubits (WindowCallerCosts.program C) ≤ 1543 := by
   apply width
   cases C with
@@ -22880,7 +22990,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowCallerCosts
 open Arithmetic Secp256k1
 
 theorem physical (C : Point) : GatePhysical (program C) :=
-  WindowPhysical.physical (fun d => (Shadow20.MixedWindow.mixedCut_physical d).1) (fun d => (Shadow20.MixedWindow.mixedCut_physical d).2) C
+  WindowPhysical.physical (fun d => (Shadow20.MixedWindow.mixedCut_physical d).1) (fun d => TickCutMixed.physical d) C
 
 end ECDSAAdd.Entrant.StairPacket.WindowCallerCosts
 
@@ -26604,8 +26714,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2015277 ∧
-    measurementCount (program C) ≤ 1448820 ∧ gateSlots (program C) ≤ 67239392 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2014640 ∧
+    measurementCount (program C) ≤ 1449526 ∧ gateSlots (program C) ≤ 67244334 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -26803,7 +26913,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2015277,1448820,1543,67239392⟩
+def bounds : Challenge.Bounds := ⟨2014640,1449526,1543,67244334⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -26812,7 +26922,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1448820
+    change measurementCount (normalizeProgram _) ≤ 1449526
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -26820,7 +26930,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 67239392
+    change gateSlots (normalizeProgram _) ≤ 67244334
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -27088,10 +27198,10 @@ namespace ECDSAAdd.Entrant.StairPacket.PartialSites
 open Arithmetic MappedCompressed Partial
 set_option maxRecDepth 20000
 attribute [local irreducible] wires domain
-theorem reverse_domain (d : Bool) : ∀ q ∈ wires (Shadow20.MixedWindow.reverseMixedCut d), domain q = true := by
+theorem reverse_domain (d : Bool) : ∀ q ∈ wires (TickCutMixed.reverse d), domain q = true := by
   intro q h
   rw [domain_eq]
-  exact (Shadow20.MixedWindow.mixedCut_covered d).2 q h
+  exact TickCutMixed.covered d q h
 
 theorem inside (n:Nat) (use:domain n=true):(16:Nat)≤n ∧ n≤1812:=by
   simp only [domain,Bool.or_eq_true,Bool.and_eq_true,decide_eq_true_eq,or_assoc] at use
@@ -27100,7 +27210,7 @@ theorem inside (n:Nat) (use:domain n=true):(16:Nat)≤n ∧ n≤1812:=by
 theorem range_pool (n:Nat) (lo:16 ≤ n) (hi:n≤1812):n∈skywalkPoolWires base:=by
   have hit:=StackOB5Base.base_pool (n-16) (by omega)
   simpa only [base,Nat.sub_add_cancel lo] using hit
-theorem pool_partial (d:Bool):wires (Shadow20.MixedWindow.reverseMixedCut d)⊆(skywalkPoolWires base).toFinset:=by
+theorem pool_partial (d:Bool):wires (TickCutMixed.reverse d)⊆(skywalkPoolWires base).toFinset:=by
   intro q h
   have b:=inside q (reverse_domain d q h)
   exact List.mem_toFinset.mpr (range_pool q b.1 b.2)
@@ -35266,7 +35376,7 @@ theorem admitted345 (d : Bool) (x p : Nat) (good : Bounds x p) (raw s : State) (
     let out := run (nextWindow345 d) m s
     LeaveJ7.Admission.Inputs j20 out (unsigned 345 x p) G S ∧
     out.phase = s.phase ∧
-    (∀ t, run (nextUnwind345 d) t out = s) := by
+    (∀ t, run (TickCutMixed.Reentry.nextUnwind345 d) t out = s) := by
   have nums := LeaveJ7.Admission.actualNumbers j20 (by decide) (by decide) x p good
   have old := actualNumbers20 k8 x p good
   have hist := WideReference.pulled_history j20 rfl domain
@@ -35278,7 +35388,7 @@ theorem admitted345 (d : Bool) (x p : Nat) (good : Bounds x p) (raw s : State) (
   have parity : (Z.a + Z.b) % 2 = 1 := encode_odd_sum G S _ _ (by omega)
   have ready := EnterJ7.ready_pending_at j20 raw s (unsigned 345 x p) G S m nums.farSmall cut input hist
   have scr := scratch_raw_clean345 d raw s m x p good domain _ _ _ Z parity ready.2.1 cut
-  have nw := next_window345 d raw s m (unsigned 345 x p) G S nums.odd nums.farSmall cut input hist scr
+  have nw := TickCutMixed.Reentry.next_window345 d raw s m (unsigned 345 x p) G S nums.odd nums.farSmall cut input hist scr
     (unsigned 325 x p) pg ps cross old.odd old.small.1 prior
   obtain ⟨_, _, _, _, tags⟩ := real_receipt345 d raw s m (unsigned 345 x p) G S nums.odd nums.farSmall
     cut input hist scr (unsigned 325 x p) pg ps cross old.odd old.small.1 prior
@@ -35484,7 +35594,7 @@ theorem cleared_holes345 (d : Bool) (x p : Nat) (good : Bounds x p) (raw s : Sta
   exact Shadow7.after_encoded j20 (withArchive345 d) (ArchiveJ20.codePorts k8) d row pre tape cframe
     ⟨150 + i.val, by omega⟩ (by dsimp; omega) q hi (codesOld345.2.2.1 q hq)
 
-attribute [local irreducible] run SkywalkNat.step Shadow.far nextWindow345 nextUnwind345 window345 withArchive345
+attribute [local irreducible] run SkywalkNat.step Shadow.far nextWindow345 TickCutMixed.Reentry.nextUnwind345 window345 withArchive345
   Shadow7.enterP Shadow7.body CRTBarrel.leave CRTBarrel.unleave Shadow7.leaveP in
 theorem endpoint345 (d : Bool) (x p : Nat) (good : Bounds x p) (raw s : State) (m n : List Bool)
     (domain : Domain 345 x p raw) (G S : Bool)
@@ -35512,7 +35622,7 @@ theorem endpoint345 (d : Bool) (x p : Nat) (good : Bounds x p) (raw s : State) (
     PastFacts j20 (ArchiveJ7.rawPorts j20) (Shadow7.sbP 345) (unsigned 345 x p) G S
       (HighBankSum.crossBit (LeaveJ7.TrueMiddle.d j20 (unsigned 345 x p))) out ∧
     (∀ r, run (CRTBarrel.unleave j20) r out = v) ∧
-    (∀ r, run (nextUnwind345 d) r v = s) := by
+    (∀ r, run (TickCutMixed.Reentry.nextUnwind345 d) r v = s) := by
   have nums := LeaveJ7.Admission.actualNumbers j20 (by decide) (by decide) x p good
   have old := actualNumbers20 k8 x p good
   have hist := WideReference.pulled_history j20 rfl domain
@@ -35647,7 +35757,7 @@ set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 
 attribute [local irreducible] run Shadow7.portalP Shadow7.portalInvP Shadow7.parkP Shadow7.parkInvP
-  Shadow7.enterP Shadow7.enterInvP Shadow7.routed Shadow7.unrouted
+  Shadow7.enterP Shadow7.enterInvP Shadow7.routed TickCutMixed.Tail.selected
   Shadow7.archiveLoadP Shadow7.archiveRestoreP Shadow7.exitLoadP Shadow7.exitRestoreP
   CRTBarrel.leave CRTBarrel.unleave leave150To20 leaveInv150To20 leave150To20Red leaveInv150To20Red
   enterP20 enterInvP20 routed20 unrouted20 leaveP20 leaveInvP20 leaveP20Red leaveInvP20Red
@@ -36088,11 +36198,11 @@ private theorem chunk1_checked (d : Bool) (x : Nat) (good : Bounds x p) :
     Checked
       ([Shadow7.portalP 45, Shadow7.enterP MixedWindow.j0, Shadow7.routed MixedWindow.j0 0 1,
         MixedWindow.packW d 45 45, Shadow7.routed MixedWindow.j0 1 14, CRTBarrel.leave MixedWindow.j0]).flatten
-      ([CRTBarrel.unleave MixedWindow.j0, Shadow7.unrouted MixedWindow.j0 1 14,
-        MixedWindow.unpackW d 45 45, Shadow7.unrouted MixedWindow.j0 0 1,
+      ([CRTBarrel.unleave MixedWindow.j0, TickCutMixed.Tail.selected MixedWindow.j0 1 14,
+        MixedWindow.unpackW d 45 45, TickCutMixed.Tail.selected MixedWindow.j0 0 1,
         Shadow7.enterInvP MixedWindow.j0, Shadow7.portalInvP 45]).flatten
       (BeforeW d x p) (fun s => ReadyW d x p 60 s ∧ SavedBefore d x p 0 s) := by
-  have h := StockWindowW7.firstStepG 24 StockWindowW7.leaves22 d x p good
+  have h := TickCutMainBridge.firstStepG 24 StockWindowW7.leaves22 d x p good
   intro s m hb
   obtain ⟨ph, post, undo⟩ := h s m hb
   exact ⟨ph, ⟨post, fun b hb0 => by omega⟩, undo⟩
@@ -36104,17 +36214,18 @@ private theorem chunk15_step (d : Bool) (x : Nat) (good : Bounds x p)
     (hb_ports : MixedGeo.bankPorts StockWindowChainP.ExitPorts420 bNew = ArchiveJ7.codePorts i)
     (hb_key : mixedKey x p bNew = value x p (start i) (Shadow7.sbP (start i)) (StockRowVectorW.crossW i))
     (hprev : ∀ b : MixedGeo.Bank, b.val < n → MixedGeo.endTick b + 15 ≤ start k) :
-    Checked (MixedWindow.block15F d i k).flatten (MixedWindow.block15R d i k).flatten
+    Checked (MixedWindow.block15F d i k).flatten (TickCutMixed.block15R d i k).flatten
       (fun s => ReadyW d x p (start k) s ∧ SavedBefore d x p n s)
       (fun s => ReadyW d x p (start k + 15) s ∧ SavedBefore d x p (n + 1) s) := by
-  have step := StockWindowW7.interiorG 24 (by decide) StockWindowW7.leaves22 d x p good i k hk h1 h24
+  have step := TickCutMainBridge.interiorG 24 (by decide) StockWindowW7.leaves22 d x p good i k hk h1 h24
   have hrec := StockWindowChainP.receiptS d x p good i k hk h1 h24
   have hfe : (MixedWindow.block15F d i k).flatten = (nextF CRTBarrel.params d i k).flatten := by
     simp only [MixedWindow.block15F, MixedWindow.packW, nextF, CRTBarrel.params, Shadow7.params, ofParts,
       List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
-  have hre : (MixedWindow.block15R d i k).flatten = (nextR CRTBarrel.params d i k).flatten := by
-    simp only [MixedWindow.block15R, MixedWindow.unpackW, nextR, CRTBarrel.params, Shadow7.params, ofParts,
-      List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+  have hre : (TickCutMixed.block15R d i k).flatten = (nextR TickCutMixed.params15 d i k).flatten := by
+    simp only [TickCutMixed.block15R, MixedWindow.unpackW, nextR, TickCutMixed.params15, CRTBarrel.params, Shadow7.params, ofParts,
+      List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc,
+      TickCutMainBridge.selected_head, TickCutMainBridge.selected_tail]
   rw [hfe, hre]
   intro s m ⟨hr, hs⟩
   obtain ⟨ph, post, undo⟩ := step s m hr
@@ -36132,7 +36243,7 @@ private theorem chunk15_step (d : Bool) (x : Nat) (good : Bounds x p)
 
 private theorem chunk2_checked (d : Bool) (x : Nat) (good : Bounds x p) :
     Checked (MixedWindow.prefixPairs.flatMap fun p => MixedWindow.block15F d p.1 p.2).flatten
-      (MixedWindow.prefixPairs.reverse.flatMap fun p => MixedWindow.block15R d p.1 p.2).flatten
+      (MixedWindow.prefixPairs.reverse.flatMap fun p => TickCutMixed.block15R d p.1 p.2).flatten
       (fun s => ReadyW d x p 60 s ∧ SavedBefore d x p 0 s)
       (fun s => ReadyW d x p 150 s ∧ SavedBefore d x p 6 s) := by
   have mk (n : Nat) (hn : n < 6) :=
@@ -36167,8 +36278,8 @@ private theorem chunk3_checked (d : Bool) (x : Nat) (good : Bounds x p) :
     Checked
       ([Shadow7.enterP MixedWindow.j7, Shadow7.routed MixedWindow.j7 0 1, MixedWindow.packW d 150 140,
         Shadow7.archiveLoadP MixedWindow.j6 d, Shadow7.routed MixedWindow.j7 1 14, leave150To20Red]).flatten
-      ([leaveInv150To20Red, Shadow7.unrouted MixedWindow.j7 1 14, Shadow7.archiveRestoreP MixedWindow.j6 d,
-        MixedWindow.unpackW d 150 140, Shadow7.unrouted MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten
+      ([leaveInv150To20Red, TickCutMixed.Tail.selected MixedWindow.j7 1 14, Shadow7.archiveRestoreP MixedWindow.j6 d,
+        MixedWindow.unpackW d 150 140, TickCutMixed.Tail.selected MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten
       (fun s => ReadyW d x p 150 s ∧ SavedBefore d x p 6 s)
       (fun s => Ready20 ⟨0, by decide⟩ d x p s ∧ SavedBefore d x p 7 s) := by
   have hfl : ([Shadow7.enterP MixedWindow.j7, Shadow7.routed MixedWindow.j7 0 1, MixedWindow.packW d 150 140,
@@ -36178,10 +36289,10 @@ private theorem chunk3_checked (d : Bool) (x : Nat) (good : Bounds x p) :
       MixedWindow.packW, show NativeJ7.prev MixedWindow.j7 = MixedWindow.j6 from rfl,
       show start MixedWindow.j7 = 150 from rfl,
       List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
-  have hrl : ([leaveInv150To20Red, Shadow7.unrouted MixedWindow.j7 1 14, Shadow7.archiveRestoreP MixedWindow.j6 d,
-      MixedWindow.unpackW d 150 140, Shadow7.unrouted MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten =
-      leaveInv150To20Red ++ NativeJ7.nextUnwind MixedWindow.j7 d := by
-    simp only [NativeJ7.nextUnwind, NativeJ7.unwind, Shadow7.unbody, NativeJ7.fromArchive, NativeJ7.reverse,
+  have hrl : ([leaveInv150To20Red, TickCutMixed.Tail.selected MixedWindow.j7 1 14, Shadow7.archiveRestoreP MixedWindow.j6 d,
+      MixedWindow.unpackW d 150 140, TickCutMixed.Tail.selected MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten =
+      leaveInv150To20Red ++ TickCutMixed.NativeJ7.nextUnwind MixedWindow.j7 d := by
+    simp only [TickCutMixed.NativeJ7.nextUnwind, TickCutMixed.NativeJ7.unwind, TickCutMixed.Tail.unbodySelected, NativeJ7.fromArchive, NativeJ7.reverse,
       MixedWindow.unpackW, show NativeJ7.prev MixedWindow.j7 = MixedWindow.j6 from rfl,
       show start MixedWindow.j7 = 150 from rfl,
       List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
@@ -36200,7 +36311,7 @@ private theorem chunk3_checked (d : Bool) (x : Nat) (good : Bounds x p) :
   have hist := WideReference.pulled_history MixedWindow.j7 rfl pre.domain
   have inp := readInput 150 x p raw g sg hinp150
   have scr := StockWindowW7.leaves22.scratch MixedWindow.j7 (by decide) (by decide) d x p good raw s g sg pg ps m pre
-  have nat := NativeJ7.from_domain_matched MixedWindow.j7 (by decide) (by decide) d x p good raw s m pre.domain g sg pre.cut (hs150.symm ▸ inp) scr pg ps _ pre.facts
+  have nat := TickCutMixed.NativeJ7.from_domain_matched MixedWindow.j7 (by decide) (by decide) d x p good raw s m pre.domain g sg pre.cut (hs150.symm ▸ inp) scr pg ps _ pre.facts
   have ep := endpoint150To20 d x p good raw s m (m.drop (measurementCount (NativeJ7.nextWindow MixedWindow.j7 d)))
     hdom150 g sg hcut150 inp scr pg ps _ pre.facts
   have carried := stepInput_gen_shadow7 150 (Shadow7.sbP 150) x p (by decide) (by decide) good raw
@@ -36278,6 +36389,7 @@ private theorem chunk3_checked (d : Bool) (x : Nat) (good : Bounds x p) :
           simp only [Wire] at *; split_ifs <;> omega)] at h15
         exact h15)
   · intro t
+    rw [TickCutMainBridge.nextWindow_eq] at nat
     rw [run_append, run_take, run_append, run_take, hred150.2 _ t, nat.2.2.2]
 
 private theorem endRaw_phase20 (s prevLen x p : Nat) (lim : s + 20 ≤ 512) (good : Bounds x p)
@@ -36294,9 +36406,9 @@ private theorem endTick20_eq :
 
 private theorem block20_flatten (d : Bool) (j : Fin 9) :
     (MixedWindow.block20F d j).flatten = nextWindow20 j d ++ leaveP20Red j ∧
-    (MixedWindow.block20R d j).flatten = leaveInvP20Red j ++ nextUnwind20 j d := by
-  unfold MixedWindow.block20F MixedWindow.block20R nextWindow20 window20 body20 withArchive20 packProg20 archLoad20
-    nextUnwind20 unwind20 unbody20 fromArchive20 packRev20 archRestore20 prev20
+    (TickCutMixed.block20R d j).flatten = leaveInvP20Red j ++ TickCutMixed.Wide.nextUnwind20 j d := by
+  unfold MixedWindow.block20F TickCutMixed.block20R nextWindow20 window20 body20 withArchive20 packProg20 archLoad20
+    TickCutMixed.Wide.nextUnwind20 TickCutMixed.Wide.unwind20 TickCutMixed.Wide.unbodySelected fromArchive20 packRev20 archRestore20 prev20
   by_cases h0 : j.val = 0
   · simp only [h0, ↓reduceDIte, ↓reduceIte, List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc,
       and_self]
@@ -36305,7 +36417,7 @@ private theorem block20_flatten (d : Bool) (j : Fin 9) :
 
 private theorem step20_next_checked (d : Bool) (x : Nat) (good : Bounds x p)
     (j k : Fin 9) (hk : k.val = j.val + 1) :
-    Checked (MixedWindow.block20F d j).flatten (MixedWindow.block20R d j).flatten
+    Checked (MixedWindow.block20F d j).flatten (TickCutMixed.block20R d j).flatten
       (fun s => Ready20 j d x p s ∧ SavedBefore d x p (7 + j.val) s)
       (fun s => Ready20 k d x p s ∧ SavedBefore d x p (7 + j.val + 1) s) := by
   have hj := j.isLt
@@ -36330,7 +36442,7 @@ private theorem step20_next_checked (d : Bool) (x : Nat) (good : Bounds x p)
     unfold PrevSmall20 prevTick20; split_ifs with h0
     · exact (LeaveJ7.Admission.actualNumbers MixedWindow.j7 (by decide) (by decide) x p good).farSmall
     · exact (actualNumbers20 (prev20 j) x p good).small.1
-  have adm := admitted20 j d x p good raw s m pre.domain g sg pre.cut inp scr
+  have adm := TickCutMixed.Leaf.admitted20 j d x p good raw s m pre.domain g sg pre.cut inp scr
     (unsigned (prevTick20 j) x p) pg ps (prevCross20 j x p) prevOdd prevSm pre.facts
   have ep := endpoint20_next j k hk d x p good raw s m (m.drop (measurementCount (nextWindow20 j d)))
     pre.domain g sg pre.cut inp scr (unsigned (prevTick20 j) x p) pg ps (prevCross20 j x p) prevOdd prevSm pre.facts
@@ -36388,7 +36500,7 @@ private theorem step20_next_checked (d : Bool) (x : Nat) (good : Bounds x p)
       hred20.2 _ t, adm.2.2.2.2]
 
 private theorem step20_last_checked (d : Bool) (x : Nat) (good : Bounds x p) :
-    Checked (MixedWindow.block20F d MixedWindow.k8).flatten (MixedWindow.block20R d MixedWindow.k8).flatten
+    Checked (MixedWindow.block20F d MixedWindow.k8).flatten (TickCutMixed.block20R d MixedWindow.k8).flatten
       (fun s => Ready20 MixedWindow.k8 d x p s ∧ SavedBefore d x p 15 s)
       (fun s => Ready345 d x p s ∧ SavedBefore d x p 16 s) := by
   rw [(block20_flatten d MixedWindow.k8).1, (block20_flatten d MixedWindow.k8).2]
@@ -36416,7 +36528,7 @@ private theorem step20_last_checked (d : Bool) (x : Nat) (good : Bounds x p) :
     hpt305.symm ▸ (actualNumbers20 (prev20 MixedWindow.k8) x p good).odd
   have prevSm : PrevSmall20 MixedWindow.k8 (unsigned (prevTick20 MixedWindow.k8) x p) :=
     hpt305.symm ▸ (actualNumbers20 (prev20 MixedWindow.k8) x p good).small.1
-  have adm := admitted20 MixedWindow.k8 d x p good raw s m pre.domain g sg pre.cut (hs325.symm ▸ inp) scr
+  have adm := TickCutMixed.Leaf.admitted20 MixedWindow.k8 d x p good raw s m pre.domain g sg pre.cut (hs325.symm ▸ inp) scr
     (unsigned (prevTick20 MixedWindow.k8) x p) pg ps (prevCross20 MixedWindow.k8 x p) prevOdd prevSm pre.facts
   have ep := endpoint20_reentry d x p good raw s m (m.drop (measurementCount (nextWindow20 MixedWindow.k8 d)))
     hdom325 g sg hcut325 inp scr (unsigned (prevTick20 MixedWindow.k8) x p) pg ps (prevCross20 MixedWindow.k8 x p) prevOdd prevSm pre.facts
@@ -36467,7 +36579,7 @@ private theorem step20_last_checked (d : Bool) (x : Nat) (good : Bounds x p) :
 
 private theorem chunk4_checked (d : Bool) (x : Nat) (good : Bounds x p) :
     Checked ((List.finRange 9).flatMap (MixedWindow.block20F d)).flatten
-      ((List.finRange 9).reverse.flatMap (MixedWindow.block20R d)).flatten
+      ((List.finRange 9).reverse.flatMap (TickCutMixed.block20R d)).flatten
       (fun s => Ready20 ⟨0, by decide⟩ d x p s ∧ SavedBefore d x p 7 s)
       (fun s => Ready345 d x p s ∧ SavedBefore d x p 16 s) := by
   have c := composition (step20_next_checked d x good ⟨0, by decide⟩ ⟨1, by decide⟩ rfl)
@@ -36491,9 +36603,9 @@ private theorem chunk5_checked (d : Bool) (x : Nat) (good : Bounds x p) :
       ([Shadow7.enterP MixedWindow.j20, Shadow7.routed MixedWindow.j20 0 1,
         MixedWindow.packW d 345 330, MixedWindow.packW d 345 335, archiveLoadP20 MixedWindow.k8 d,
         Shadow7.routed MixedWindow.j20 1 14, CRTBarrel.leave MixedWindow.j20]).flatten
-      ([CRTBarrel.unleave MixedWindow.j20, Shadow7.unrouted MixedWindow.j20 1 14,
+      ([CRTBarrel.unleave MixedWindow.j20, TickCutMixed.Tail.selected MixedWindow.j20 1 14,
         archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
-        Shadow7.unrouted MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten
+        TickCutMixed.Tail.selected MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten
       (fun s => Ready345 d x p s ∧ SavedBefore d x p 16 s)
       (fun s => ReadyW d x p 360 s ∧ SavedBefore d x p 17 s) := by
   have hfl : ([Shadow7.enterP MixedWindow.j20, Shadow7.routed MixedWindow.j20 0 1,
@@ -36502,11 +36614,11 @@ private theorem chunk5_checked (d : Bool) (x : Nat) (good : Bounds x p) :
       nextWindow345 d ++ CRTBarrel.leave MixedWindow.j20 := by
     simp only [nextWindow345, window345, Shadow7.body, withArchive345, packProg345,
       List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
-  have hrl : ([CRTBarrel.unleave MixedWindow.j20, Shadow7.unrouted MixedWindow.j20 1 14,
+  have hrl : ([CRTBarrel.unleave MixedWindow.j20, TickCutMixed.Tail.selected MixedWindow.j20 1 14,
       archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
-      Shadow7.unrouted MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten =
-      CRTBarrel.unleave MixedWindow.j20 ++ nextUnwind345 d := by
-    simp only [nextUnwind345, unwind345, Shadow7.unbody, fromArchive345, packRev345,
+      TickCutMixed.Tail.selected MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten =
+      CRTBarrel.unleave MixedWindow.j20 ++ TickCutMixed.Reentry.nextUnwind345 d := by
+    simp only [TickCutMixed.Reentry.nextUnwind345, TickCutMixed.Reentry.unwind345, TickCutMixed.Tail.unbodySelected, fromArchive345, packRev345,
       List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
   rw [hfl, hrl]
   intro s m ⟨⟨raw, g, sg, pg, ps, pre⟩, hs⟩
@@ -36552,7 +36664,7 @@ private theorem chunk5_checked (d : Bool) (x : Nat) (good : Bounds x p) :
 
 private theorem chunk6_checked (d : Bool) (x : Nat) (good : Bounds x p) :
     Checked (MixedWindow.suffixPairs.flatMap fun p => MixedWindow.block15F d p.1 p.2).flatten
-      (MixedWindow.suffixPairs.reverse.flatMap fun p => MixedWindow.block15R d p.1 p.2).flatten
+      (MixedWindow.suffixPairs.reverse.flatMap fun p => TickCutMixed.block15R d p.1 p.2).flatten
       (fun s => ReadyW d x p 360 s ∧ SavedBefore d x p 17 s)
       (fun s => ReadyW d x p 420 s ∧ SavedBefore d x p 21 s) := by
   have mk (r : Nat) (hr : r < 4) :=
@@ -36590,7 +36702,8 @@ private theorem chunk7_checked (d : Bool) (x : Nat) (good : Bounds x p) :
   have hre : ([Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410, MixedWindow.recvW 420,
       Shadow7.portalP 420, Shadow7.parkInvP 420]).flatten = (exitR CRTBarrel.params d 420).flatten := by
     simp only [exitR, CRTBarrel.params, Shadow7.params, ofParts, MixedWindow.recvW, MixedWindow.unpackW,
-      List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+      List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc,
+      TickCutMainBridge.selected_head, TickCutMainBridge.selected_tail]
   rw [hfe, hre]
   intro s m ⟨hr, hs⟩
   have e := StockWindowW7.exitLeaves420.step d x good s m hr
@@ -36611,14 +36724,14 @@ private theorem chunk7_checked (d : Bool) (x : Nat) (good : Bounds x p) :
       (bank_tick_match b).2.2.2.2.1 hend q (bank_cells_mem b q hq) s m)
 
 /-- End-to-end mixed 15/20-tick strong chain: phase preservation, all 22 saved archive keys,
-and exact roundtrip under `MixedWindow.reverseMixed d`. -/
+and exact roundtrip under `TickCutMixed.reverseUncut d`. -/
 theorem strong (d : Bool) (x : Nat) (good : Bounds x p) (raw : State) (m : List Bool)
     (stage : Rolling1588.Integer.Stage base d x p 45 raw.basis) :
     let start0 := pullState (OB5.sig 44) raw
     let out := run (MixedWindow.forwardMixed d) m start0
     out.phase = raw.phase ∧
     mixedFinal StockWindowChainP.ExitPorts420 d x p out ∧
-    ∀ n, run (MixedWindow.reverseMixed d) n out = start0 := by
+    ∀ n, run (TickCutMixed.reverseUncut d) n out = start0 := by
   have all := composition (chunk1_checked d x good)
     (composition (chunk2_checked d x good)
     (composition (chunk3_checked d x good)
@@ -36640,21 +36753,21 @@ theorem strong (d : Bool) (x : Nat) (good : Bounds x p) (raw : State) (m : List 
       ([Shadow7.parkP 420, Shadow7.portalInvP 420, MixedWindow.tickW 420, MixedWindow.packW d 420 410,
         Shadow7.exitLoadP 420 d]).flatten))))) := by
     simp only [MixedWindow.forwardMixed, MixedWindow.forwardL, List.flatten_append, List.append_assoc]
-  have hr : MixedWindow.reverseMixed d =
+  have hr : TickCutMixed.reverseUncut d =
       (((((([Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410, MixedWindow.recvW 420,
         Shadow7.portalP 420, Shadow7.parkInvP 420]).flatten ++
-      (MixedWindow.suffixPairs.reverse.flatMap fun p => MixedWindow.block15R d p.1 p.2).flatten) ++
-      ([CRTBarrel.unleave MixedWindow.j20, Shadow7.unrouted MixedWindow.j20 1 14,
+      (MixedWindow.suffixPairs.reverse.flatMap fun p => TickCutMixed.block15R d p.1 p.2).flatten) ++
+      ([CRTBarrel.unleave MixedWindow.j20, TickCutMixed.Tail.selected MixedWindow.j20 1 14,
         archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
-        Shadow7.unrouted MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten) ++
-      ((List.finRange 9).reverse.flatMap (MixedWindow.block20R d)).flatten) ++
-      ([leaveInv150To20Red, Shadow7.unrouted MixedWindow.j7 1 14, Shadow7.archiveRestoreP MixedWindow.j6 d,
-        MixedWindow.unpackW d 150 140, Shadow7.unrouted MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten) ++
-      (MixedWindow.prefixPairs.reverse.flatMap fun p => MixedWindow.block15R d p.1 p.2).flatten) ++
-      ([CRTBarrel.unleave MixedWindow.j0, Shadow7.unrouted MixedWindow.j0 1 14,
-        MixedWindow.unpackW d 45 45, Shadow7.unrouted MixedWindow.j0 0 1,
+        TickCutMixed.Tail.selected MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten) ++
+      ((List.finRange 9).reverse.flatMap (TickCutMixed.block20R d)).flatten) ++
+      ([leaveInv150To20Red, TickCutMixed.Tail.selected MixedWindow.j7 1 14, Shadow7.archiveRestoreP MixedWindow.j6 d,
+        MixedWindow.unpackW d 150 140, TickCutMixed.Tail.selected MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten) ++
+      (MixedWindow.prefixPairs.reverse.flatMap fun p => TickCutMixed.block15R d p.1 p.2).flatten) ++
+      ([CRTBarrel.unleave MixedWindow.j0, TickCutMixed.Tail.selected MixedWindow.j0 1 14,
+        MixedWindow.unpackW d 45 45, TickCutMixed.Tail.selected MixedWindow.j0 0 1,
         Shadow7.enterInvP MixedWindow.j0, Shadow7.portalInvP 45]).flatten := by
-    simp only [MixedWindow.reverseMixed, MixedWindow.reverseL, List.flatten_append, List.append_assoc]
+    simp only [TickCutMixed.reverseUncut, TickCutMixed.reverseL, List.flatten_append, List.append_assoc, TickCutMainBridge.selected_head, TickCutMainBridge.selected_tail]
   rw [hf, hr]
   exact all (pullState (OB5.sig 44) raw) m ⟨raw, stage, rfl⟩
 
@@ -38013,9 +38126,9 @@ theorem result (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
     let start0:=pullState (OB5.sig 44) raw
     let out:=run (Shadow20.MixedWindow.forwardMixedCut d) m start0
     out.phase=raw.phase ∧ Shadow20.MixedChain.mixedFinal StockWindowChainP.ExitPorts420 d x p out ∧
-      ∀n,run (Shadow20.MixedWindow.reverseMixedCut d) n out=start0 := by
+      ∀n,run (TickCutMixed.reverse d) n out=start0 := by
   have h := Shadow20.MixedChain.strong d x good raw m stage
-  rw [← (Shadow20.MixedWindow.mixedCut_run_eq d).1, ← (Shadow20.MixedWindow.mixedCut_run_eq d).2] at h
+  rw [← (Shadow20.MixedWindow.mixedCut_run_eq d).1, ← TickCutMixed.reverse_run_eq d] at h
   exact h
 
 end ECDSAAdd.Entrant.StairPacket.StockStrongChain
@@ -38922,7 +39035,7 @@ open Arithmetic MappedCompressed Secp256k1 WideReference StockArchiveBanks Stock
 set_option maxRecDepth 11000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run measurementCount Rolling1588TickGap.forward Rolling1588.reverse
-  Rolling1588.Integer.regularForward Rolling1588.Integer.regularReverse Shadow20.MixedWindow.forwardMixedCut Shadow20.MixedWindow.reverseMixedCut
+  Rolling1588.Integer.regularForward Rolling1588.Integer.regularReverse Shadow20.MixedWindow.forwardMixedCut TickCutMixed.reverse
 abbrev pool := (skywalkPoolWires base).toFinset
 def poolEq (a b:State):Prop:=∀q∈pool,a.basis q=b.basis q
 
@@ -39016,7 +39129,7 @@ open Arithmetic MappedCompressed Secp256k1 WideReference StockArchiveBanks Stock
 set_option maxRecDepth 10000
 set_option maxHeartbeats 3000000
 attribute [local irreducible] run measurementCount Rolling1588TickGap.forward Rolling1588.reverse
-  Rolling1588.Integer.regularForward Shadow20.MixedWindow.forwardMixedCut Shadow20.MixedWindow.reverseMixedCut
+  Rolling1588.Integer.regularForward Shadow20.MixedWindow.forwardMixedCut TickCutMixed.reverse
 
 def real (d:Bool) (raw:State):State:=run (Shadow20.MixedWindow.forwardMixedCut d) [] (pullState (OB5.sig 44) raw)
 def stock (d:Bool) (raw:State):State:=run (Rolling1588TickGap.forward d 45 376) [] (pullState (OB5.sig 44) raw)
@@ -39030,7 +39143,7 @@ theorem shadow (d:Bool) (x:Nat) (good:Bounds x p) (raw:State)
     ⟨e.1.trans cmp.1.symm,fun q off=>(e.2 q off).trans (cmp.2 q off).symm⟩
 theorem candidate_undo (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 45 raw.basis):
-    run (Shadow20.MixedWindow.reverseMixedCut d) m (real d raw)=pullState (OB5.sig 44) raw:=
+    run (TickCutMixed.reverse d) m (real d raw)=pullState (OB5.sig 44) raw:=
   (StockStrongChain.result d x good raw [] stage).2.2 m
 theorem stock_undo (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 45 raw.basis):
@@ -39041,7 +39154,7 @@ theorem inner (d:Bool) (x:Nat) (good:Bounds x p) (raw a ref:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 45 raw.basis) (norm:NewNormalized d x)
     (pair:Paired d x a ref (StockRowVector.rows x p))
     (agree:poolEq ref (stock d raw)):
-    run (Shadow20.MixedWindow.reverseMixedCut d) m a=run (Rolling1588.reverse d 45 376) m ref:=by
+    run (TickCutMixed.reverse d) m a=run (Rolling1588.reverse d 45 376) m ref:=by
   have ghost:=shadow d x good raw stage norm
   exact replay _ _ m a ref (real d raw) (stock d raw) _ (PartialSites.pool_partial d) (PartialSites.pool_old d 45 376 (by decide) (by decide))
     (fun q off=>pair.equality.2 q (fun h=>off (archives_pool q h))) pair.equality.1 ghost.equality.1
@@ -39074,7 +39187,7 @@ theorem tail_cancel (d:Bool) (x i h n:Nat) (good:Bounds x p) (lo:1 ≤ i) (bound
   have eq:=Rolling1588TickGap.forward_gen d x good.nonzero good.small h i lo cut raw [] stage
   exact transport _ _ _ _ _ eq (reverse_forward d x good (i+h) n (by omega) bound t [] m st)
 
-def backwards (d:Bool) (n:Nat):Program:=Rolling1588.reverse d 421 n++Shadow20.MixedWindow.reverseMixedCut d
+def backwards (d:Bool) (n:Nat):Program:=Rolling1588.reverse d 421 n++TickCutMixed.reverse d
 
 theorem result (d:Bool) (n x:Nat) (good:Bounds x p) (bound:421+n≤512) (raw a ref:State) (m:List Bool)
     (stage:Rolling1588.Integer.Stage base d x p 45 raw.basis) (norm:NewNormalized d x)
@@ -39154,7 +39267,7 @@ namespace ECDSAAdd.Entrant.StairPacket.StockPlacedBack
 open Arithmetic MappedCompressed Secp256k1 WideReference StockArchiveBanks StockWalkWindow StockInverseReplay FlagEntry
 set_option maxRecDepth 12000
 set_option maxHeartbeats 3000000
-attribute [local irreducible] run measurementCount Rolling1588TickGap.forward Rolling1588.reverse Shadow20.MixedWindow.reverseMixedCut
+attribute [local irreducible] run measurementCount Rolling1588TickGap.forward Rolling1588.reverse TickCutMixed.reverse
 theorem pull {d x a s rows} (h:Paired d x a s rows):
     Paired d x (pullState Stair44WalkMap.rest a) (pullState Stair44WalkMap.rest s) rows:=by
   refine ⟨⟨h.equality.1,?_⟩,h.labels,?_,?_⟩
@@ -39654,7 +39767,7 @@ theorem range_ok (q:Nat) (use:PartialSites.domain q=true):q∈callerDomain:=by
   have h:=PartialSites.inside q use
   have eq:base (q-16)=q:=by change q-16+16=q;exact Nat.sub_add_cancel h.1
   exact eq ▸ base_mem_caller (q-16) (Or.inl (by omega))
-theorem part (d:Bool):wires (Shadow20.MixedWindow.forwardMixedCut d)⊆callerDomain ∧ wires (Shadow20.MixedWindow.reverseMixedCut d)⊆callerDomain:=
+theorem part (d:Bool):wires (Shadow20.MixedWindow.forwardMixedCut d)⊆callerDomain ∧ wires (TickCutMixed.reverse d)⊆callerDomain:=
   ⟨fun q h=>range_ok q (forward_domain d _ h),fun q h=>range_ok q (reverse_domain d _ h)⟩
 
 theorem forward (d:Bool) (n:Nat) (bound:420+n≤504):wires (WindowWalkCosts.forward d n)⊆callerDomain:=by
