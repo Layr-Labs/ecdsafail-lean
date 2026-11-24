@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.LeaveReductions
+import ECDSAAdd.Submission.Entrant.TickCut
 
 /-!
 # FRED-CUT core (VAST3, 11-23)
@@ -11,7 +11,7 @@ the run is unchanged for every state and tape.
 
 set_option linter.unusedSimpArgs false
 
-namespace ECDSAAdd.Entrant.StairPacket.FredCut
+namespace ECDSAAdd.Entrant.StairPacket.PDFredCut
 open ECDSAAdd ECDSAAdd.Arithmetic
 
 /-! ## Generic layer -/
@@ -286,9 +286,10 @@ theorem lowClose_split (s : Nat) (hL : 1 ≤ Shadow7.lowsP s) :
   rw [hr, List.flatMap_append]
   simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
 
-theorem suffix_after (s : Nat) :
-    (Shadow7.leaveLowClose s ++ Shadow7.leaveClose s) <:+ KeptParity.afterRows s := by
-  unfold KeptParity.afterRows KeptParity.afterTail CRTBarrel.tailE1
+theorem suffix_after (k : Fin 26) (hk : k.val ≤ 24) :
+    (Shadow7.leaveLowClose (start k) ++ Shadow7.leaveClose (start k)) <:+ PBOps.after100 (start k) := by
+  rw [PBReceiver.after100_decomposed k hk]
+  unfold CRTBarrel.tailE1
   simp only [List.append_assoc, List.cons_append]
   repeat (first
     | (with_reducible exact List.suffix_refl _)
@@ -297,18 +298,18 @@ theorem suffix_after (s : Nat) :
 
 /-- The window leave (CRT barrel leave) as prefix ++ (two controlled swaps ++ leaveClose). -/
 theorem leave_shape (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (start k)) :
-    ∃ X, CRTBarrel.params.leave k = X ++ (GateMirror.forward
+    ∃ X, TickCut.params.leave k = X ++ (GateMirror.forward
       (Partial.cswapG (start k + 30) (Shadow7.b0P (start k) - 1 + (Shadow7.lowsP (start k) - 1))
           (Shadow7.a0P (start k) - 1 + (Shadow7.lowsP (start k) - 1)) ++
         Partial.cswapG (start k + 30) (Shadow7.b0P (start k) - 1 + Shadow7.lowsP (start k))
           (Shadow7.a0P (start k) - 1 + Shadow7.lowsP (start k))) ++
       GateMirror.forward (Shadow7.leaveClose (start k))) := by
-  obtain ⟨Z, hZ⟩ := suffix_after (start k)
+  obtain ⟨Z, hZ⟩ := suffix_after k hk
   obtain ⟨V, hV⟩ := lowClose_split (start k) hL
-  refine ⟨GateMirror.forward (CRTBarrel.beforeRow (start k)) ++ CRTBarrel.barrel (start k) false ++
+  refine ⟨GateMirror.forward (PBOps.before100 (start k)) ++ CRTBarrel.barrel (start k) false ++
     GateMirror.forward Z ++ GateMirror.forward V, ?_⟩
-  show CRTBarrel.leave k = _
-  unfold CRTBarrel.leave
+  show LeaveCutsCore150.leave k = _
+  unfold LeaveCutsCore150.leave
   simp only [if_pos hk]
   rw [← hZ, hV]
   simp only [GateMirror.forward, List.map_append, List.append_assoc]
@@ -317,7 +318,7 @@ theorem leave_shape (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (
 /-! ## pp7 window pieces -/
 open ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
 
-abbrev P : WindowFold.Pieces Program := CRTBarrel.params
+abbrev P : WindowFold.Pieces Program := TickCut.params
 
 def K (j : Fin 26) : Nat := (GateMirror.forward (Shadow7.leaveClose (start j))).length
 
@@ -467,13 +468,13 @@ def Dblk (s : Nat) : Program := GateMirror.inverse
 theorem tc_Dblk (s : Nat) : toffoliCount (Dblk s) = 2 := rfl
 
 theorem unleave_shape (k : Fin 26) (hk : k.val ≤ 24) (hL : 1 ≤ Shadow7.lowsP (start k)) :
-    ∃ R, CRTBarrel.params.leaveInv k = GateMirror.inverse (Shadow7.leaveClose (start k)) ++ (Dblk (start k) ++ R) := by
-  obtain ⟨Z, hZ⟩ := suffix_after (start k)
+    ∃ R, TickCut.params.leaveInv k = GateMirror.inverse (Shadow7.leaveClose (start k)) ++ (Dblk (start k) ++ R) := by
+  obtain ⟨Z, hZ⟩ := suffix_after k hk
   obtain ⟨V, hV⟩ := lowClose_split (start k) hL
   refine ⟨GateMirror.inverse V ++ GateMirror.inverse Z ++ CRTBarrel.barrel (start k) true ++
-    GateMirror.inverse (CRTBarrel.beforeRow (start k)), ?_⟩
-  show CRTBarrel.unleave k = _
-  unfold CRTBarrel.unleave
+    GateMirror.inverse (PBOps.before100 (start k)), ?_⟩
+  show LeaveCutsCore150.unleave k = _
+  unfold LeaveCutsCore150.unleave
   simp only [if_pos hk]
   rw [← hZ, hV]
   simp only [Dblk, inv_app, List.append_assoc]
@@ -897,75 +898,76 @@ theorem walk_wires_sub_rev (d : Bool) :
       wires (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) :=
   (rev_cut d).wires_sub
 
-end ECDSAAdd.Entrant.StairPacket.FredCut
+end ECDSAAdd.Entrant.StairPacket.PDFredCut
 
 /-! ## The caller's CRT window, with every boundary swap pair cancelled -/
 
 section
-namespace ECDSAAdd.Entrant.StairPacket.CRTWindow
+namespace ECDSAAdd.Entrant.StairPacket.PDFredWindow
+open TickCut
 open Arithmetic MappedCompressed WindowFold Baselines Challenge GateMirror Partial WindowParams
 
-/-- The CRT window walk on the cut pieces `FredCut.Pcut`. -/
-def forwardCut (d : Bool) : Program := forwardW FredCut.Pcut d first WindowParams7.rest7
+/-- The CRT window walk on the cut pieces `PDFredCut.Pcut`. -/
+def forwardCut (d : Bool) : Program := forwardW PDFredCut.Pcut d first WindowParams7.rest7
 
-def reverseCut (d : Bool) : Program := reverseW FredCut.Pcut d first WindowParams7.rest7
+def reverseCut (d : Bool) : Program := reverseW PDFredCut.Pcut d first WindowParams7.rest7
 
-theorem run_cut (d : Bool) : run (forwardCut d) = run (forwardW CRTBarrel.params d first WindowParams7.rest7) :=
-  funext fun m => funext fun s => FredCut.walk_run_eq d m s
+theorem run_cut (d : Bool) : run (forwardCut d) = run (forwardW TickCut.params d first WindowParams7.rest7) :=
+  funext fun m => funext fun s => PDFredCut.walk_run_eq d m s
 
-theorem run_cut_rev (d : Bool) : run (reverseCut d) = run (reverseW CRTBarrel.params d first WindowParams7.rest7) :=
-  funext fun m => funext fun s => FredCut.walk_run_eq_rev d m s
+theorem run_cut_rev (d : Bool) : run (reverseCut d) = run (reverseW TickCut.params d first WindowParams7.rest7) :=
+  funext fun m => funext fun s => PDFredCut.walk_run_eq_rev d m s
 
 theorem cut_toffoli (d : Bool) :
-    toffoliCount (forwardCut d) + 104 = toffoliCount (forwardW CRTBarrel.params d first WindowParams7.rest7) ∧
-    toffoliCount (reverseCut d) + 104 = toffoliCount (reverseW CRTBarrel.params d first WindowParams7.rest7) :=
-  ⟨(FredCut.fwd_cut d).tc_eq, (FredCut.rev_cut d).tc_eq⟩
+    toffoliCount (forwardCut d) + 104 = toffoliCount (forwardW TickCut.params d first WindowParams7.rest7) ∧
+    toffoliCount (reverseCut d) + 104 = toffoliCount (reverseW TickCut.params d first WindowParams7.rest7) :=
+  ⟨(PDFredCut.fwd_cut d).tc_eq, (PDFredCut.rev_cut d).tc_eq⟩
 
 theorem cut_measure (d : Bool) :
-    measurementCount (forwardCut d) = measurementCount (forwardW CRTBarrel.params d first WindowParams7.rest7) ∧
-    measurementCount (reverseCut d) = measurementCount (reverseW CRTBarrel.params d first WindowParams7.rest7) :=
-  ⟨FredCut.walk_mc_eq d, FredCut.walk_mc_eq_rev d⟩
+    measurementCount (forwardCut d) = measurementCount (forwardW TickCut.params d first WindowParams7.rest7) ∧
+    measurementCount (reverseCut d) = measurementCount (reverseW TickCut.params d first WindowParams7.rest7) :=
+  ⟨PDFredCut.walk_mc_eq d, PDFredCut.walk_mc_eq_rev d⟩
 
 section
 attribute [local irreducible] wires
 
 theorem cut_covered (d : Bool) : WindowCovered.CoveredW (forwardCut d) ∧ WindowCovered.CoveredW (reverseCut d) :=
-  ⟨fun q h => (window_covered d).1 q (FredCut.walk_wires_sub d h),
-    fun q h => (window_covered d).2 q (FredCut.walk_wires_sub_rev d h)⟩
+  ⟨fun q h => (window_covered d).1 q (PDFredCut.walk_wires_sub d h),
+    fun q h => (window_covered d).2 q (PDFredCut.walk_wires_sub_rev d h)⟩
 
 end
 
 theorem cut_physical (d : Bool) : GatePhysical (forwardCut d) ∧ GatePhysical (reverseCut d) :=
-  ⟨fun i h => (window_physical d).1 i ((FredCut.fwd_cut d).mem i h),
-    fun i h => (window_physical d).2 i ((FredCut.rev_cut d).mem i h)⟩
+  ⟨fun i h => (window_physical d).1 i ((PDFredCut.fwd_cut d).mem i h),
+    fun i h => (window_physical d).2 i ((PDFredCut.rev_cut d).mem i h)⟩
 
-theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2370994 ∧ gateSlots (forwardCut false) ≤ 2370994 :=
-  ⟨(FredCut.fwd_cut true).slots_le.trans ship_slots.1, (FredCut.fwd_cut false).slots_le.trans ship_slots.2.1⟩
+theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2370644 ∧ gateSlots (forwardCut false) ≤ 2370644 :=
+  ⟨(PDFredCut.fwd_cut true).slots_le.trans ship_slots.1, (PDFredCut.fwd_cut false).slots_le.trans ship_slots.2.1⟩
 
-theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2334224 ∧ gateSlots (reverseCut false) ≤ 2334224 :=
-  ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
+theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2336399 ∧ gateSlots (reverseCut false) ≤ 2336399 :=
+  ⟨(PDFredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (PDFredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
 
-theorem cut_toffoliF : toffoliCount (forwardCut true) = 127882 ∧ toffoliCount (forwardCut false) = 127882 := by
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 127907 ∧ toffoliCount (forwardCut false) = 127907 := by
   have a := (cut_toffoli true).1
   have b := (cut_toffoli false).1
   rw [ship_toffoliF_true] at a
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 128299 ∧ toffoliCount (reverseCut false) = 128324 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 127899 ∧ toffoliCount (reverseCut false) = 127924 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
   rw [ship_toffoliR_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_measureF : measurementCount (forwardCut true) = 66344 ∧ measurementCount (forwardCut false) = 66344 := by
+theorem cut_measureF : measurementCount (forwardCut true) = 66269 ∧ measurementCount (forwardCut false) = 66269 := by
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
-theorem cut_measureR : measurementCount (reverseCut true) = 65626 ∧ measurementCount (reverseCut false) = 65651 := by
+theorem cut_measureR : measurementCount (reverseCut true) = 65976 ∧ measurementCount (reverseCut false) = 66001 := by
   rw [(cut_measure true).2, (cut_measure false).2]
   exact ship_measureR
 
-end ECDSAAdd.Entrant.StairPacket.CRTWindow
+end ECDSAAdd.Entrant.StairPacket.PDFredWindow
 end
