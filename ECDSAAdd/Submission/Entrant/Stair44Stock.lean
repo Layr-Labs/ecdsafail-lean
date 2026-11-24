@@ -30,6 +30,7 @@ import ECDSAAdd.Arithmetic.SwapRegisters
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Submission.Entrant.StairSideA0
 import ECDSAAdd.Submission.Entrant.StairSideA
+import ECDSAAdd.Submission.Entrant.Window
 
 namespace ECDSAAdd.Entrant.StairPacket
 /-- The shadow window's blocks 1..22 start between ticks 90 and 405. -/
