@@ -19391,7 +19391,8 @@ theorem reverse_tick_counts (w : Nat → Wire) (i : Nat)
   have widths := W.compactSkywalkTick_width_bounds i (by omega)
   have due := reverseDue_eq_one i hi0
   have nt : ¬W.trimTick i := by unfold W.trimTick; omega
-  simp only [nt,if_false,Nat.add_zero] at a
+  have nh : ¬W.highTick i := by unfold W.highTick; omega
+  simp only [nt,nh,if_false,Nat.add_zero] at a
   rw [due]
   constructor <;> omega
 
@@ -23167,8 +23168,11 @@ theorem receiverTick_slots_formula (w : Nat → Wire) (i : Nat)
   have notTrim : ¬W.trimTick i := by
     unfold W.trimTick
     omega
+  have notHigh : ¬W.highTick i := by
+    unfold W.highTick
+    omega
   simp only [W.ReverseCarry.compactReceiverTick, notLast, if_false,
-    W.ReverseCarry.untick2, notTrim, W.ReverseCarry.receiverUntick,
+    W.ReverseCarry.untick2, notTrim, notHigh, W.ReverseCarry.receiverUntick,
     gateSlots_append, skywalkSignedHalf, gateSlots_cons, gateSlots_nil,
     instructionSlots, swapRegisters_gateSlots] at ⊢
   change gateSlots (W.compactSkywalkReverseExpand w i) +

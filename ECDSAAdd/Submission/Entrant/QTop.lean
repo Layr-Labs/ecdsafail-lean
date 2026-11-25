@@ -8117,13 +8117,13 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
                                                                                     
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153937 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153849 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500638 :=
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500726 :=
   (wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2.1.trans_le
     (ControlLoan1589.wrapper_measurements cx cy hc)
 
@@ -14433,7 +14433,7 @@ theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths)
     (D : Fp→Program) (S P : Program)
     (ds : ∀k,gateSlots (D k)≤20528872) (ss : gateSlots S≤8000000)
     (ps : gateSlots P≤20503872) (cx cy : Fp) :
-    gateSlots (gen L D S P cx cy)≤49207732 := by
+    gateSlots (gen L D S P cx cy)≤49208348 := by
   have add (k : Fp) : gateSlots (fastConstAdd L L.point.x k)≤15368 := by
     simpa only [fastConstAdd] using FastConst.fastAdd_gateSlots_le
       (g:=L.core.generic) 256 SquareReduction.c k.val
@@ -14549,7 +14549,7 @@ private theorem division_slots_bound (K : Program) (ks : gateSlots K≤20503872)
   omega
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49207732 :=
+    gateSlots (gen L cx cy)≤49208348 :=
   Offset.gen_slots L hw _ _ _
     (division_slots_bound ControlLoan1589.entryKernel ControlLoan1589.entryKernel_slots L hw)
     (ControlLoan1589BFSquare.slots L hw)
@@ -14644,19 +14644,19 @@ theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
                                                                                     
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152923 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152835 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589SumCleanupFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499753 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499841 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2
   have old:=ControlLoan1589SumCleanupFinal.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50010572 := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50011188 := by
   have generic:=gen_slots layout layout_widths cx cy
   have outer:=Edges.wrapper_slots layout layout_widths C cy (gen layout cx cy)
   omega
@@ -30202,13 +30202,29 @@ theorem oneStep_roundtrip (w : Nat → Wire) (isA : Bool) (hn : (skywalkPoolWire
       (mem _ (Or.inr (Or.inr (Or.inl (by rw [split.2]; simp)))))
     simp only [W.compactSkywalkTickLayout] at ra rb
     exact ⟨by rw [ra,la]; exact st.1,by rw [rb,lb]; exact st.2⟩
+  have atop : W.highTick i →
+      t.basis (w (i+W.compactSkywalkTickPreWidth i-1))=t.basis (w (i+W.compactSkywalkTickPreWidth i-2)) := by
+    intro hg
+    have st := W.compactSkywalkStage_atop w hn x p i hp0 hx0 hpo hp hgap hx hc hi hg raw hraw
+    have split := W.compactSkywalkTick_aMid_split w i hi
+    have mem (q : Wire) (h : q∈(W.compactSkywalkTickLayout w i).aMid ∨ q=(W.compactSkywalkTickLayout w i).aSign ∨
+        q∈(W.compactSkywalkTickLayout w i).bMid ∨ q=(W.compactSkywalkTickLayout w i).bSign) :
+        q∈(W.compactSkywalkTickLayout w i).wires := by
+      simp only [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh,
+        List.mem_cons,List.mem_append,List.mem_singleton]
+      itauto
+    have ra := read _ (mem _ (Or.inr (Or.inl rfl)))
+    have la := read (w (i+W.compactSkywalkTickPreWidth i-2))
+      (mem _ (Or.inl (by rw [split.1]; simp)))
+    simp only [W.compactSkywalkTickLayout] at ra
+    rw [ra,la]; exact st
   have clean : regValue (W.compactSkywalkTickLayout w i).carry t.basis=0 := by
     rw [regValue_congr _ t.basis raw.basis (by
       intro q hq
       exact read q (by simp only [SkywalkIntegerLayout.wires,List.mem_append,List.mem_cons]; itauto))]
     exact loc.2.2.2.2.2
   have rt := W.ReverseCarry.compactReceiverTick_roundtrip w i hi hn t []
-    (mD.drop (measurementCount (decodeBefore w isA i))) hh clean tops
+    (mD.drop (measurementCount (decodeBefore w isA i))) hh clean tops atop
   have dp : run (decodeBefore w isA i)
       (mD.take (measurementCount (decodeBefore w isA i)))
       (run (packAfter w isA i) [] (run (W.compactSkywalkTick w i) [] t))=
@@ -36766,19 +36782,19 @@ theorem generic_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
                                                                                 
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152169 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152081 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499965 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500053 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).2.1
   have old:=ControlLoan1589BFFinal.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50139199+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50139815+Rolling1588.slotGrowth := by
   have diff:=(wrapper_delta layout C cy _ _ (gen_delta layout cx cy)).2.2
   have old:=ControlLoan1589BFFinal.wrapper_slots C cx cy
   omega
