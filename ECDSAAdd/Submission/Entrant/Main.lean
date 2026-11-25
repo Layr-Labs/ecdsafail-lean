@@ -583,9 +583,9 @@ def exitFieldHosted (p : StairSchedule.StairPrimitives)
 /-- The division field's tail prefix with the five packet-cut odd rows. -/
 def entryTailPrefixCut : Program :=
   WindowFieldCosts.group84 true ++
-    (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4 ++
-    (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2 ++
-    (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2 ++
+    (PackCutOddMulti.cutRowOdd1Multi ++
+    (PackCutOddMulti.cutRowOdd2Multi ++
+    (PackCutOddMulti.cutRowOdd3Multi ++
     (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1 ++
     (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast checkpointPrimitives)))))
 
@@ -847,9 +847,9 @@ theorem tailPrefix_rows : entryTailPrefix checkpointPrimitives = WindowFieldCost
 theorem tail_sublist : entryTailPrefixCut.Sublist (entryTailPrefix checkpointPrimitives) := by
   rw [tailPrefix_rows]
   unfold entryTailPrefixCut
-  exact (List.Sublist.refl _).append ((PackCutOdd.row_subOdd 87 62 425 450 13 85 4 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp1).append
-    ((PackCutOdd.row_subOdd 62 47 450 465 22 90 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp2).append
-    ((PackCutOdd.row_subOdd 47 32 465 480 30 93 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp3).append
+  exact (List.Sublist.refl _).append (PackCutOddMulti.row1_multi_sub.append
+    (PackCutOddMulti.row2_multi_sub.append
+    (PackCutOddMulti.row3_multi_sub.append
     ((PackCutOdd.row_subOdd 32 22 480 490 36 96 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp4).append
     ((PackCutOdd.row_subOdd 22 12 490 500 41 98 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp5).append
     (List.Sublist.refl _))))))
@@ -887,10 +887,10 @@ theorem rowOdd_cost (c : Cost) (B N s f d first cc : Nat)
 
 theorem rows_cost (c : Cost) :
     c.measure (entryTailPrefix checkpointPrimitives) =
-      c.measure entryTailPrefixCut + 5 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
-  have r1 := rowOdd_cost c 87 62 425 450 13 85 4 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp1
-  have r2 := rowOdd_cost c 62 47 450 465 22 90 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp2
-  have r3 := rowOdd_cost c 47 32 465 480 30 93 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp3
+      c.measure entryTailPrefixCut + 10 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  have r1 := PackCutOddMulti.row1_multi_cost c
+  have r2 := PackCutOddMulti.row2_multi_cost c
+  have r3 := PackCutOddMulti.row3_multi_cost c
   have r4 := rowOdd_cost c 32 22 480 490 36 96 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp4
   have r5 := rowOdd_cost c 22 12 490 500 41 98 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp5
   rw [tailPrefix_rows]
@@ -899,7 +899,7 @@ theorem rows_cost (c : Cost) :
 
 theorem field_cut (c : Cost) :
     c.measure (entryFieldHosted checkpointPrimitives) =
-      c.measure entryFieldHostedCut + 5 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+      c.measure entryFieldHostedCut + 10 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
   have hr := rows_cost c
   simp only [entryFieldHosted, entryFieldHostedCut, entryLowPrefix, entryLowPrefixCut,
     StairSchedule.fieldRename, StairSchedule.parityRename, c.rename, c.append]
@@ -910,7 +910,7 @@ theorem kernels (c : Cost) (gainF gainR tailSave fieldExtra : Nat)
     (dR : c.measure (WindowWalkCosts.backward false 85)+gainR=c.measure (Stair44WalkRun.backward false 490))
     (h : c.measure (entryFieldHosted checkpointPrimitives)+tailSave=
       c.measure (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan)+fieldExtra) :
-    c.measure divide+gainF+gainR+tailSave+5 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp)=
+    c.measure divide+gainF+gainR+tailSave+10 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp)=
       c.measure Stair44Outer.divide+fieldExtra := by
   have hc := field_cut c
   simp only [divide,Stair44Outer.divide,phasePlace,kernelPlace,c.append,c.rename]
@@ -971,7 +971,7 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+39182+39071+1021=tc.measure Stair44Outer.divide+1050 := by
+theorem tc_div : tc.measure divide+39182+39071+1086=tc.measure Stair44Outer.divide+1050 := by
   have k := kernels tc 39182 39071 956 1050 (WindowWalkCosts.inst true 4 409 39182 39093 rfl rfl rfl).1
     (WindowWalkCosts.inst false 85 490 39182 39071 rfl rfl rfl).2.1 (field_delta_tc_div 1050 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
@@ -983,7 +983,7 @@ theorem tc_mul (k : Nat) : tc.measure (multiply k)+39182+39093+1068=tc.measure (
   kernelsM tc k 39182 39093 1068 962 (WindowWalkCosts.inst false 84 489 39182 39071 rfl rfl rfl).1
     (WindowWalkCosts.inst true 4 409 39182 39093 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
 
-theorem mc_div : mc.measure divide+17800+17787+1746=mc.measure Stair44Outer.divide+652 := by
+theorem mc_div : mc.measure divide+17800+17787+1771=mc.measure Stair44Outer.divide+652 := by
   have k := kernels mc 17800 17787 1721 652 (WindowWalkCosts.instMeasurements true 4 409 17800 17809 rfl rfl rfl).1
     (WindowWalkCosts.instMeasurements false 85 490 17778 17787 rfl rfl rfl).2 (field_delta_mc_div 652 fieldMcDiv)
   have e : mc.measure Rolling1588.ep + mc.measure Rolling1588.dp = 5 := by
@@ -996,19 +996,19 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+17778+17809+2046=mc.measure (
     (WindowWalkCosts.instMeasurements true 4 409 17800 17809 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+156605=toffoliCount (Stair44Outer.finite C cx cy) ∧
-    measurementCount (finite C cx cy)+73772=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 156605
+    toffoliCount (finite C cx cy)+156670=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    measurementCount (finite C cx cy)+73797=measurementCount (Stair44Outer.finite C cx cy) :=
+  ⟨finite_delta tc C cx cy 156670
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
-    finite_delta mc C cx cy 73772
+    finite_delta mc C cx cy 73797
       (OddOuterBridge.entryYAllOdd_mc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2011116 ∧
-    measurementCount (program C) ≤ 1445900 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2011051 ∧
+    measurementCount (program C) ≤ 1445875 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -5278,8 +5278,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2011116 ∧
-    measurementCount (program C) ≤ 1445900 ∧ gateSlots (program C) ≤ 67241790 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2011051 ∧
+    measurementCount (program C) ≤ 1445875 ∧ gateSlots (program C) ≤ 67241790 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -5477,7 +5477,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2011116,1445900,1543,67241790⟩
+def bounds : Challenge.Bounds := ⟨2011051,1445875,1543,67241790⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -5486,7 +5486,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1445900
+    change measurementCount (normalizeProgram _) ≤ 1445875
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -23423,136 +23423,105 @@ theorem pullIn_agree {a b : State} (h : AgreeRY a b) (P : Program)
   rw [run_pullIn_basis, run_pullIn_basis]
   exact (agreeRY_disjoint (liftF P) hP h m).2 _ hq
 
+private theorem prefix_notRY (B N s f n b : Nat) (hseg : StairPhysicalPrimitives.segmentOf (s + 1) = B)
+    (hsum : f - s - 1 = n + 1 + b)
+    (hnot : ∀ q ∈ wires (StairSchedule.forwardSegment cp B N s f), notRY q = true) :
+    ∀ q ∈ wires (liftF (StairConcreteAssembly.checkpointPrimitives.unpack B ++
+      StairConcreteAssembly.checkpointPrimitives.tickForward s ++
+      StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap B) (s + 1) n ++
+      TickRanges.tick (StairPhysicalPrimitives.midSegmentMap B) (s + 1 + n))), q ∉ ryWires := by
+  have hsub : (liftF (StairConcreteAssembly.checkpointPrimitives.unpack B ++
+      StairConcreteAssembly.checkpointPrimitives.tickForward s ++
+      StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap B) (s + 1) n ++
+      TickRanges.tick (StairPhysicalPrimitives.midSegmentMap B) (s + 1 + n))).Sublist
+      (liftF (StairSchedule.forwardSegment cp B N s f)) := by
+    have hf := PackCutOddMulti.forwardSegment_eq B N s f hseg
+    rw [hf, hsum, PackCutShape.movedForward_at]
+    simp only [List.append_assoc]
+    apply PackCutSub.rename_sub; apply PackCutSub.rename_sub; apply PackCutSub.rename_sub
+    exact (List.Sublist.refl _).append ((List.Sublist.refl _).append ((List.Sublist.refl _).append
+      ((List.Sublist.refl _).append (List.sublist_append_left _ _))))
+  intro q hq
+  exact disjoint_ryWires_liftF hnot q (PackCutSub.wires_sub hsub q hq)
+
 theorem oddRowCut1 {tStd : State} (F : EntryFrame tStd) (u : List Bool) (a : State)
     (hag : AgreeRY a (run (cut eps 4) u tStd)) (m : List Bool) :
-    ∃ m', run (liftF (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4)) m a =
+    ∃ m', run (liftF PackCutOddMulti.cutRowOdd1Multi) m a =
       run (liftF (StairSchedule.forwardSegment cp 87 62 425 450 ++
         OddFullPass.P1LifeLoan.hostedGroup hostPlan true 13 85 (4 + 1))) m' a := by
   have hH : run ((((entryPieces checkpointPrimitives hostPlan).take 4).map Piece.H).flatten) u tStd =
       run (cut eps 4) u tStd := by
-    unfold cut
-    exact Stair44HostedCut.entry 4 tStd ⟨F⟩ u
-  have hseg : StairSchedule.forwardSegment cp 87 62 425 450 = (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (425 + 1) (5 * 85 + 5 - (425 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85 + 5)) ++
-      (renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85))) PackCutTrip.E138 ++
-        renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85))) Rolling1588.ep ++
-        (StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1)))
-          (5 * 85 + 5 + 1) (450 - (5 * 85 + 5) - 1) ++ checkpointPrimitives.orient 450 ++
-          renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450) ++ checkpointPrimitives.pack 62)) := by
-    rw [PackCutShape.forwardSegment_row 87 62 425 450 85 (by decide) (by decide) (by decide) (by decide) (by decide)]
-    simp only [List.append_assoc]
-  have hP : ∀ q ∈ wires (liftF (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (425 + 1) (5 * 85 + 5 - (425 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85 + 5))), q ∉ ryWires := by
-    have hsub : (liftF (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (425 + 1) (5 * 85 + 5 - (425 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85 + 5))).Sublist (liftF (StairSchedule.forwardSegment cp 87 62 425 450)) := by
-      rw [hseg]
-      exact PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (List.sublist_append_left _ _)))
-    intro q hq
-    exact disjoint_ryWires_liftF forward425_notRY q (PackCutSub.wires_sub hsub q hq)
-  have hq : ∀ jj : Fin 10, fieldPlace ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85)) jj) ∉ ryWires := by
-    intro jj
-    exact (notRY_iff _).mp (by revert jj; decide)
-  obtain ⟨m', h⟩ := PackCutEntryChain.rowCutOdd1 F.x (StairOpenWiring.entryPlans F.x)
+    unfold cut; exact Stair44HostedCut.entry 4 tStd ⟨F⟩ u
+  have hP85 := prefix_notRY 87 62 425 450 4 19 (by decide) rfl forward425_notRY
+  have hP86 := prefix_notRY 87 62 425 450 9 14 (by decide) rfl forward425_notRY
+  have hP87 := prefix_notRY 87 62 425 450 14 9 (by decide) rfl forward425_notRY
+  have hP88 := prefix_notRY 87 62 425 450 19 4 (by decide) rfl forward425_notRY
+  have hq85 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w87 (5 * 85) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  have hq86 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w87 (5 * 86) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  have hq87 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w87 (5 * 87) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  have hq88 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w87 (5 * 88) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  obtain ⟨m', h⟩ := PackCutOddMulti.rowCutOdd1Multi F.x (StairOpenWiring.entryPlans F.x)
     (StairLoanField7RR.entryReachTransportR_best StairOpenWiring.half760 F.x)
     StairLoanField7Transport.entryGroupSub_best
     (StairField13V3.entrySlotsClean_of _ _ _ (StairField13V3.entrySlots_of_v3 (StairField13V3.entrySlotsV3_of_parts
       (StairField13V3Fresh.entryParts_of_clean
         (StairField13V3Clean.entryClean_of_planR StairOpenWiring.entryPlans StairOpenWiring.half760))))) tStd ⟨F, rfl⟩ u a
-    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP t1 _ (hq jj)) m
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP85 t1 _ (hq85 jj))
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP86 t1 _ (hq86 jj))
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP87 t1 _ (hq87 jj))
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP88 t1 _ (hq88 jj)) m
   exact ⟨m', by rw [liftF_run, liftF_run, h]⟩
 
 theorem oddRowCut2 {tStd : State} (F : EntryFrame tStd) (u : List Bool) (a : State)
     (hag : AgreeRY a (run (cut eps 6) u tStd)) (m : List Bool) :
-    ∃ m', run (liftF (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2)) m a =
+    ∃ m', run (liftF PackCutOddMulti.cutRowOdd2Multi) m a =
       run (liftF (StairSchedule.forwardSegment cp 62 47 450 465 ++
         OddFullPass.P1LifeLoan.hostedGroup hostPlan true 22 90 (2 + 1))) m' a := by
   have hH : run ((((entryPieces checkpointPrimitives hostPlan).take 6).map Piece.H).flatten) u tStd =
       run (cut eps 6) u tStd := by
-    unfold cut
-    exact Stair44HostedCut.entry 6 tStd ⟨F⟩ u
-  have hseg : StairSchedule.forwardSegment cp 62 47 450 465 = (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (450 + 1) (5 * 90 + 5 - (450 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90 + 5)) ++
-      (renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90))) PackCutTrip.E138 ++
-        renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90))) Rolling1588.ep ++
-        (StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1)))
-          (5 * 90 + 5 + 1) (465 - (5 * 90 + 5) - 1) ++ checkpointPrimitives.orient 465 ++
-          renameProgram (OB5.sig 465) (Rolling1588.Integer.packFirst base true 465) ++ checkpointPrimitives.pack 47)) := by
-    rw [PackCutShape.forwardSegment_row 62 47 450 465 90 (by decide) (by decide) (by decide) (by decide) (by decide)]
-    simp only [List.append_assoc]
-  have hP : ∀ q ∈ wires (liftF (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (450 + 1) (5 * 90 + 5 - (450 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90 + 5))), q ∉ ryWires := by
-    have hsub : (liftF (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (450 + 1) (5 * 90 + 5 - (450 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90 + 5))).Sublist (liftF (StairSchedule.forwardSegment cp 62 47 450 465)) := by
-      rw [hseg]
-      exact PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (List.sublist_append_left _ _)))
-    intro q hq
-    exact disjoint_ryWires_liftF forward450_notRY q (PackCutSub.wires_sub hsub q hq)
-  have hq : ∀ jj : Fin 10, fieldPlace ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90)) jj) ∉ ryWires := by
-    intro jj
-    exact (notRY_iff _).mp (by revert jj; decide)
-  obtain ⟨m', h⟩ := PackCutEntryChain.rowCutOdd2 F.x (StairOpenWiring.entryPlans F.x)
+    unfold cut; exact Stair44HostedCut.entry 6 tStd ⟨F⟩ u
+  have hP90 := prefix_notRY 62 47 450 465 4 9 (by decide) rfl forward450_notRY
+  have hP91 := prefix_notRY 62 47 450 465 9 4 (by decide) rfl forward450_notRY
+  have hq90 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w62 (5 * 90) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  have hq91 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w62 (5 * 91) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  obtain ⟨m', h⟩ := PackCutOddMulti.rowCutOdd2Multi F.x (StairOpenWiring.entryPlans F.x)
     (StairLoanField7RR.entryReachTransportR_best StairOpenWiring.half760 F.x)
     StairLoanField7Transport.entryGroupSub_best
     (StairField13V3.entrySlotsClean_of _ _ _ (StairField13V3.entrySlots_of_v3 (StairField13V3.entrySlotsV3_of_parts
       (StairField13V3Fresh.entryParts_of_clean
         (StairField13V3Clean.entryClean_of_planR StairOpenWiring.entryPlans StairOpenWiring.half760))))) tStd ⟨F, rfl⟩ u a
-    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP t1 _ (hq jj)) m
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP90 t1 _ (hq90 jj))
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP91 t1 _ (hq91 jj)) m
   exact ⟨m', by rw [liftF_run, liftF_run, h]⟩
 
 theorem oddRowCut3 {tStd : State} (F : EntryFrame tStd) (u : List Bool) (a : State)
     (hag : AgreeRY a (run (cut eps 8) u tStd)) (m : List Bool) :
-    ∃ m', run (liftF (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2)) m a =
+    ∃ m', run (liftF PackCutOddMulti.cutRowOdd3Multi) m a =
       run (liftF (StairSchedule.forwardSegment cp 47 32 465 480 ++
         OddFullPass.P1LifeLoan.hostedGroup hostPlan true 30 93 (2 + 1))) m' a := by
   have hH : run ((((entryPieces checkpointPrimitives hostPlan).take 8).map Piece.H).flatten) u tStd =
       run (cut eps 8) u tStd := by
-    unfold cut
-    exact Stair44HostedCut.entry 8 tStd ⟨F⟩ u
-  have hseg : StairSchedule.forwardSegment cp 47 32 465 480 = (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (465 + 1) (5 * 93 + 5 - (465 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93 + 5)) ++
-      (renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93))) PackCutTrip.E138 ++
-        renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93))) Rolling1588.ep ++
-        (StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1)))
-          (5 * 93 + 5 + 1) (480 - (5 * 93 + 5) - 1) ++ checkpointPrimitives.orient 480 ++
-          renameProgram (OB5.sig 480) (Rolling1588.Integer.packFirst base true 480) ++ checkpointPrimitives.pack 32)) := by
-    rw [PackCutShape.forwardSegment_row 47 32 465 480 93 (by decide) (by decide) (by decide) (by decide) (by decide)]
-    simp only [List.append_assoc]
-  have hP : ∀ q ∈ wires (liftF (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (465 + 1) (5 * 93 + 5 - (465 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93 + 5))), q ∉ ryWires := by
-    have hsub : (liftF (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
-        StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
-        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (465 + 1) (5 * 93 + 5 - (465 + 1)) ++
-        TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93 + 5))).Sublist (liftF (StairSchedule.forwardSegment cp 47 32 465 480)) := by
-      rw [hseg]
-      exact PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (List.sublist_append_left _ _)))
-    intro q hq
-    exact disjoint_ryWires_liftF forward465_notRY q (PackCutSub.wires_sub hsub q hq)
-  have hq : ∀ jj : Fin 10, fieldPlace ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93)) jj) ∉ ryWires := by
-    intro jj
-    exact (notRY_iff _).mp (by revert jj; decide)
-  obtain ⟨m', h⟩ := PackCutEntryChain.rowCutOdd3 F.x (StairOpenWiring.entryPlans F.x)
+    unfold cut; exact Stair44HostedCut.entry 8 tStd ⟨F⟩ u
+  have hP93 := prefix_notRY 47 32 465 480 4 9 (by decide) rfl forward465_notRY
+  have hP94 := prefix_notRY 47 32 465 480 9 4 (by decide) rfl forward465_notRY
+  have hq93 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w47 (5 * 93) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  have hq94 : ∀ jj : Fin 10, fieldPlace (History5.historyMap PackCutRows.w47 (5 * 94) jj) ∉ ryWires :=
+    fun jj => (notRY_iff _).mp (by revert jj; decide)
+  obtain ⟨m', h⟩ := PackCutOddMulti.rowCutOdd3Multi F.x (StairOpenWiring.entryPlans F.x)
     (StairLoanField7RR.entryReachTransportR_best StairOpenWiring.half760 F.x)
     StairLoanField7Transport.entryGroupSub_best
     (StairField13V3.entrySlotsClean_of _ _ _ (StairField13V3.entrySlots_of_v3 (StairField13V3.entrySlotsV3_of_parts
       (StairField13V3Fresh.entryParts_of_clean
         (StairField13V3Clean.entryClean_of_planR StairOpenWiring.entryPlans StairOpenWiring.half760))))) tStd ⟨F, rfl⟩ u a
-    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP t1 _ (hq jj)) m
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP93 t1 _ (hq93 jj))
+    (fun t1 jj => by rw [hH]; exact pullIn_agree hag _ hP94 t1 _ (hq94 jj)) m
   exact ⟨m', by rw [liftF_run, liftF_run, h]⟩
 
 theorem oddRowCut4 {tStd : State} (F : EntryFrame tStd) (u : List Bool) (a : State)
@@ -23646,7 +23615,7 @@ theorem oddRowCut5 {tStd : State} (F : EntryFrame tStd) (u : List Bool) (a : Sta
 
 /-- The odd division field's rows with the five packet-cut rows. -/
 def stockOddDivRawTailCut : Program :=
-  PackCutOdd.cutRowOdd 87 62 425 450 13 85 4 ++ (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2 ++ (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2 ++ (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1 ++ (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast cp))))
+  PackCutOddMulti.cutRowOdd1Multi ++ (PackCutOddMulti.cutRowOdd2Multi ++ (PackCutOddMulti.cutRowOdd3Multi ++ (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1 ++ (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast cp))))
 
 def stockOddDivPreCut : Program :=
   renameProgram ExteriorPorts.fieldEquiv stockOddDivRawTailCut ++
@@ -23782,7 +23751,7 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
   have step12 := step_disj 12 (by decide) _ e12_L (disjoint_ryWires_liftF forward490_notRY)
   have step13 := step_grp 13 12 41 98 2 (by decide) (show (eps[13]'(eL 13 (by decide))).L = grpL StairConcrete.bestLoans 41 98 2 from rfl) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by simp) (Or.inr (by simp)) pin13
   have stepCut1 : ∀ a b m', DivCut 4 a b →
-      ∃ b', DivCut 6 (run (liftF (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4)) m' a) b' := by
+      ∃ b', DivCut 6 (run (liftF PackCutOddMulti.cutRowOdd1Multi) m' a) b' := by
     rintro a b m' ⟨⟨u, rfl⟩, hrel⟩
     obtain ⟨m2, h⟩ := oddRowCut1 F u a hrel.1 m'
     have dA := step4 _ _ (m2.take (measurementCount (liftF (StairSchedule.forwardSegment cp 87 62 425 450)))) ⟨⟨u, rfl⟩, hrel⟩
@@ -23793,7 +23762,7 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
     rw [h, liftF_append, run_append, e]
     exact ⟨_, dB⟩
   have stepCut2 : ∀ a b m', DivCut 6 a b →
-      ∃ b', DivCut 8 (run (liftF (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2)) m' a) b' := by
+      ∃ b', DivCut 8 (run (liftF PackCutOddMulti.cutRowOdd2Multi) m' a) b' := by
     rintro a b m' ⟨⟨u, rfl⟩, hrel⟩
     obtain ⟨m2, h⟩ := oddRowCut2 F u a hrel.1 m'
     have dA := step6 _ _ (m2.take (measurementCount (liftF (StairSchedule.forwardSegment cp 62 47 450 465)))) ⟨⟨u, rfl⟩, hrel⟩
@@ -23804,7 +23773,7 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
     rw [h, liftF_append, run_append, e]
     exact ⟨_, dB⟩
   have stepCut3 : ∀ a b m', DivCut 8 a b →
-      ∃ b', DivCut 10 (run (liftF (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2)) m' a) b' := by
+      ∃ b', DivCut 10 (run (liftF PackCutOddMulti.cutRowOdd3Multi) m' a) b' := by
     rintro a b m' ⟨⟨u, rfl⟩, hrel⟩
     obtain ⟨m2, h⟩ := oddRowCut3 F u a hrel.1 m'
     have dA := step8 _ _ (m2.take (measurementCount (liftF (StairSchedule.forwardSegment cp 47 32 465 480)))) ⟨⟨u, rfl⟩, hrel⟩
@@ -23930,9 +23899,9 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
   have hodd24_shape : odd24 =
       (((((((((((((Stair44Kernel.divLead ++ stockOddDivBeforeGroup) ++
         renameProgram ExteriorPorts.fieldEquiv (WindowFieldCosts.ogroup true 1 84)) ++
-        liftF (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4)) ++
-        liftF (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2)) ++
-        liftF (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2)) ++
+        liftF PackCutOddMulti.cutRowOdd1Multi) ++
+        liftF PackCutOddMulti.cutRowOdd2Multi) ++
+        liftF PackCutOddMulti.cutRowOdd3Multi) ++
         liftF (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1)) ++
         liftF (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1)) ++
         liftF (StairSchedule.forwardLast cp)) ++
@@ -23945,9 +23914,9 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
     have hlt_eq (P : Program) : liftF P = renameProgram ExteriorPorts.fieldEquiv P :=
       ExteriorPorts.placedShape P
     have hraw : renameProgram ExteriorPorts.fieldEquiv stockOddDivRawTailCut =
-        liftF (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4) ++
-        liftF (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2) ++
-        liftF (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2) ++
+        liftF PackCutOddMulti.cutRowOdd1Multi ++
+        liftF PackCutOddMulti.cutRowOdd2Multi ++
+        liftF PackCutOddMulti.cutRowOdd3Multi ++
         liftF (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1) ++
         liftF (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1) ++
         liftF (StairSchedule.forwardLast cp) := by
@@ -23975,9 +23944,9 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
           (run (liftF (StairSchedule.forwardLast cp)) m14
           (run (liftF (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1)) m12
           (run (liftF (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1)) m10
-          (run (liftF (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2)) m8
-          (run (liftF (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2)) m6
-          (run (liftF (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4)) m4
+          (run (liftF PackCutOddMulti.cutRowOdd3Multi) m8
+          (run (liftF PackCutOddMulti.cutRowOdd2Multi) m6
+          (run (liftF PackCutOddMulti.cutRowOdd1Multi) m4
           (run (renameProgram ExteriorPorts.fieldEquiv (WindowFieldCosts.ogroup true 1 84)) m3 s3))))))))))) =
         run (cut eps 24) n24 tStd := by
     obtain ⟨b3, d3⟩ := h3
@@ -24025,9 +23994,9 @@ theorem stockOddDivHeadCut_eq_oldDivHead {tOdd tStd : State} (F : EntryFrame tSt
         run_append _ (liftF (StairSchedule.forwardLast cp)),
         run_append _ (liftF (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1)),
         run_append _ (liftF (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1)),
-        run_append _ (liftF (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2)),
-        run_append _ (liftF (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2)),
-        run_append _ (liftF (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4)),
+        run_append _ (liftF PackCutOddMulti.cutRowOdd3Multi),
+        run_append _ (liftF PackCutOddMulti.cutRowOdd2Multi),
+        run_append _ (liftF PackCutOddMulti.cutRowOdd1Multi),
         run_append _ (renameProgram ExteriorPorts.fieldEquiv (WindowFieldCosts.ogroup true 1 84))]
     exact hchain _ _ _ _ _ _ _ _ _ _ _ _ _ (hcut3 _)
   obtain ⟨n24, hn24⟩ := h24
@@ -28078,7 +28047,7 @@ theorem corrected : WindowParityCaller.entryFieldHosted cp =
     WindowCallerCosts.entryLowPrefix,WindowCallerCosts.entryTailPrefix,←placedShape,fieldRename_append,rename_append,List.append_assoc]
 
 /-- The odd field rows with the five packet-cut rows. -/
-def rawTailOddCut := PackCutOdd.cutRowOdd 87 62 425 450 13 85 4 ++ (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2 ++ (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2 ++ (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1 ++ (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast cp))))
+def rawTailOddCut := PackCutOddMulti.cutRowOdd1Multi ++ (PackCutOddMulti.cutRowOdd2Multi ++ (PackCutOddMulti.cutRowOdd3Multi ++ (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1 ++ (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1 ++ StairSchedule.forwardLast cp))))
 def preOddCut := renameProgram fieldEquiv rawTailOddCut ++ StairSchedule.fieldRename FourScratchWindow.unprefix
 def fieldOddCut (S G : Program) := (((beforeGroupOdd ++ renameProgram fieldEquiv G) ++ preOddCut) ++ S) ++ betweenOdd ++ S
 
@@ -28155,9 +28124,9 @@ theorem preOddCut_sub : preOddCut.Sublist preOdd := by
     simp only [rawTailOdd, List.append_assoc]
   unfold preOddCut preOdd
   rw [e]
-  exact (PackCutSub.rename_sub _ ((PackCutOdd.row_subOdd 87 62 425 450 13 85 4 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp1).append
-      ((PackCutOdd.row_subOdd 62 47 450 465 22 90 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp2).append
-      ((PackCutOdd.row_subOdd 47 32 465 480 30 93 2 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp3).append
+  exact (PackCutSub.rename_sub _ (PackCutOddMulti.row1_multi_sub.append
+      (PackCutOddMulti.row2_multi_sub.append
+      (PackCutOddMulti.row3_multi_sub.append
       ((PackCutOdd.row_subOdd 32 22 480 490 36 96 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp4).append
       ((PackCutOdd.row_subOdd 22 12 490 500 41 98 1 (by decide) (by decide) (by decide) (by decide) (by decide) PackCutRows.hdp5).append
       (List.Sublist.refl _))))))).append (List.Sublist.refl _)

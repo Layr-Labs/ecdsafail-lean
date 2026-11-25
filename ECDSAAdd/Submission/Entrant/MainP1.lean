@@ -3115,6 +3115,1410 @@ end ECDSAAdd.Entrant.PackCutEntryChain
 
 end
 
+section
+set_option maxRecDepth 200000
+set_option maxHeartbeats 6000000
+
+namespace ECDSAAdd.Entrant.PackCutOddMulti
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic.MappedCompressed
+open ECDSAAdd Arithmetic RecordedQuantum Challenge
+open MappedCompressed Secp256k1 BalancedField
+open PackCutRow PackCutShape PackCutTrip PackCutOdd PackCutRows PackCutBridge PackCutEntryChain
+open StairField2V3Replay StairField2V3Couple StairField2V3Entry
+open StairField2V3ExitPlanR StairField2V3EntryPlanR
+open StairLoanField7Transport StairLoanField7Values
+open StairField2V3Delta StairField13V3 StairLoanField7RR
+def oddGroupsCutPrefix (d first : Nat) : Nat → Nat → Program
+  | 0, rem => OddFullPass.P1LifeLoan.groups true d first rem
+  | k + 1, rem =>
+      renameProgram (shifted (Placement5.pi first)) (oddBasePacketTail d first) ++
+        oddGroupsCutPrefix d (first + 1) k rem
+
+def oddHostedCutPrefix (d first k rem : Nat) : Program :=
+  StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+    (StairConcreteAssembly.hostPlan.group true d first (k + rem))
+    (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d first k rem))
+
+theorem oddGroupsCutPrefix_succ (d first k rem : Nat) :
+    oddGroupsCutPrefix d first k (rem + 1) =
+      oddGroupsCutPrefix d first k 0 ++
+        (renameProgram (shifted (Placement5.pi (first + k))) (Rolling1588.onPacket (first + k) Rolling1588.dp) ++
+          oddGroupsCutPrefix d (first + k) 1 rem) := by
+  induction k generalizing first with
+  | zero =>
+    simp only [oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups, PacketSequence.program,
+      OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head, rename_app, List.nil_append,
+      Nat.add_zero, List.append_assoc]
+  | succ k ih =>
+    have h := ih (first + 1)
+    rw [show first + 1 + k = first + (k + 1) by omega] at h
+    simp only [oddGroupsCutPrefix, h, List.append_assoc]
+
+theorem oddGroupsCutPrefix_step (d first k rem : Nat) :
+    oddGroupsCutPrefix d first (k + 1) rem =
+      oddGroupsCutPrefix d first k 0 ++ oddGroupsCutPrefix d (first + k) 1 rem := by
+  induction k generalizing first with
+  | zero =>
+    simp only [oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups, PacketSequence.program,
+      List.nil_append, Nat.add_zero]
+  | succ k ih =>
+    have h := ih (first + 1)
+    rw [show first + 1 + k = first + (k + 1) by omega] at h
+    simp only [oddGroupsCutPrefix, h, List.append_assoc]
+
+theorem cutRowOdd_eq_prefix1 (B N s f d first c : Nat) :
+    cutRowOdd B N s f d first c =
+      (StairConcreteAssembly.checkpointPrimitives.unpack B ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward s ++
+        StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (s + 1) (5 * first + 5 - (s + 1)) ++
+        (TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (5 * first + 5) ++
+          renameProgram (MeasuredCodec5.label (History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (5 * first))) E138)) ++
+      (StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (5 * first + 5 + 1) (f - (5 * first + 5) - 1) ++
+        StairConcreteAssembly.checkpointPrimitives.orient f ++
+        renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++
+        StairConcreteAssembly.checkpointPrimitives.pack N) ++
+      oddHostedCutPrefix d first 1 c := by
+  have h1 : 1 + c = c + 1 := by omega
+  simp only [cutRowOdd, oddHostedCutPrefix, oddGroupsCutPrefix, h1, rename_app]
+
+theorem movedForward_split_due (w : Nat → Wire) (a n pkt : Nat)
+    (h1 : a ≤ 5 * pkt + 5) (h2 : 5 * pkt + 5 + 1 ≤ a + n)
+    (h5 : 5 * pkt + 5 ≠ 5) (hdue : History5.packDue (5 * pkt + 5) = true) (hp : pkt ≠ 0) :
+    let F := History5.historyMap w (5 * pkt)
+    StairReplay.movedForward w a n =
+      (StairReplay.movedForward w a (5 * pkt + 5 - a) ++
+        (TickRanges.tick w (5 * pkt + 5) ++ renameProgram (MeasuredCodec5.label F) E138)) ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++
+      StairReplay.movedForward w (5 * pkt + 5 + 1) (a + n - (5 * pkt + 5) - 1) := by
+  intro F
+  have hsplit : n = (5 * pkt + 5 - a) + 1 + (a + n - (5 * pkt + 5) - 1) := by omega
+  have hidx : a + (5 * pkt + 5 - a) = 5 * pkt + 5 := by omega
+  have hpf := packFirst_due w (5 * pkt + 5) h5 hdue (by omega)
+  have henc : Rolling1588.codeEncodeAt true (History5.historyMap w (5 * pkt + 5 - 5)) =
+      renameProgram (MeasuredCodec5.label F) E138 ++
+        renameProgram (MeasuredCodec5.label F) Rolling1588.ep := by
+    rw [show 5 * pkt + 5 - 5 = 5 * pkt by omega]
+    simp only [Rolling1588.codeEncodeAt, E138_ep, rename_app, F]
+  rw [hsplit, movedForward_at, hidx, hpf, henc]
+  simp only [List.append_assoc]
+
+def segChunkCut (w : Nat → Wire) (a pkt : Nat) : Program :=
+  StairReplay.movedForward w a (5 * pkt + 5 - a) ++
+    (TickRanges.tick w (5 * pkt + 5) ++
+      renameProgram (MeasuredCodec5.label (History5.historyMap w (5 * pkt))) E138)
+
+def segTail (w : Nat → Wire) (N a f : Nat) : Program :=
+  StairReplay.movedForward w a (f - a) ++
+    StairConcreteAssembly.checkpointPrimitives.orient f ++
+    renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++
+    StairConcreteAssembly.checkpointPrimitives.pack N
+
+
+def cutRowOdd1Multi : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w87
+  p.unpack 87 ++ p.tickForward 425 ++
+    segChunkCut w 426 85 ++
+    segChunkCut w 431 86 ++
+    segChunkCut w 436 87 ++
+    segChunkCut w 441 88 ++
+    segTail w 62 446 450 ++
+    oddHostedCutPrefix 13 85 4 1
+
+def cutRowOdd2Multi : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w62
+  p.unpack 62 ++ p.tickForward 450 ++
+    segChunkCut w 451 90 ++
+    segChunkCut w 456 91 ++
+    segTail w 47 461 465 ++
+    oddHostedCutPrefix 22 90 2 1
+
+def cutRowOdd3Multi : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w47
+  p.unpack 47 ++ p.tickForward 465 ++
+    segChunkCut w 466 93 ++
+    segChunkCut w 471 94 ++
+    segTail w 32 476 480 ++
+    oddHostedCutPrefix 30 93 2 1
+
+
+theorem cut_one_sub {A E M D B : Program} :
+    (A ++ M ++ B).Sublist (A ++ E ++ M ++ D ++ B) := by
+  simp only [List.append_assoc]
+  exact (List.Sublist.refl A).append
+    (((List.Sublist.refl M).append (List.sublist_append_right _ _)).trans (List.sublist_append_right _ _))
+
+theorem cut_one_cost (c : Stair44Resources.Cost) (A E M D B : Program) :
+    c.measure (A ++ E ++ M ++ D ++ B) = c.measure (A ++ M ++ B) + (c.measure E + c.measure D) := by
+  simp only [c.append]
+  omega
+
+theorem hdp_86 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 86))
+        (Rolling1588.onPacket 86 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 86))) Rolling1588.dp := by
+  decide +kernel
+
+theorem hdp_87 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 87))
+        (Rolling1588.onPacket 87 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 87))) Rolling1588.dp := by
+  decide +kernel
+
+theorem hdp_88 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 88))
+        (Rolling1588.onPacket 88 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 88))) Rolling1588.dp := by
+  decide +kernel
+
+theorem hdp_91 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+      (StairConcreteAssembly.hostPlan.group true 22 90 3)
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 91))
+        (Rolling1588.onPacket 91 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap w62 (5 * 91))) Rolling1588.dp := by
+  decide +kernel
+
+theorem hdp_94 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+      (StairConcreteAssembly.hostPlan.group true 30 93 3)
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 94))
+        (Rolling1588.onPacket 94 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap w47 (5 * 94))) Rolling1588.dp := by
+  decide +kernel
+
+
+theorem oddHostedCutPrefix_succ (d first k rem : Nat) :
+    oddHostedCutPrefix d first k (rem + 1) =
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d first k 0)) ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi (first + k)))
+          (Rolling1588.onPacket (first + k) Rolling1588.dp))) ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d (first + k) 1 rem)) := by
+  simp only [oddHostedCutPrefix, oddGroupsCutPrefix_succ, rename_app, rebindMany_append, List.append_assoc]
+
+theorem oddHostedCutPrefix_step (d first k rem : Nat) :
+    oddHostedCutPrefix d first (k + 1) rem =
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d first k 0)) ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d (first + k) 1 rem)) := by
+  have hsum : k + 1 + rem = k + (rem + 1) := by omega
+  simp only [oddHostedCutPrefix, oddGroupsCutPrefix_step, hsum, rename_app, rebindMany_append, List.append_assoc]
+
+theorem groups_split_add (d first k rem : Nat) :
+    OddFullPass.P1LifeLoan.groups true d first (k + rem) =
+      OddFullPass.P1LifeLoan.groups true d first k ++
+        OddFullPass.P1LifeLoan.groups true d (first + k) rem := by
+  induction k generalizing first with
+  | zero => simp [OddFullPass.P1LifeLoan.groups, PacketSequence.program]
+  | succ k ih =>
+    have h := ih (first + 1)
+    rw [show first + 1 + k = first + (k + 1) by omega] at h
+    rw [show k + 1 + rem = (k + rem) + 1 by omega]
+    simp only [OddFullPass.P1LifeLoan.groups, PacketSequence.program, h, List.append_assoc]
+
+def oddHostedCutSingle (d first k rem : Nat) : Program :=
+  StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+    (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+    (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true d first k ++
+      oddGroupsCutPrefix d (first + k) 1 rem))
+
+theorem cut_one_step (A0 M B : Program) (w : Nat → Wire) (pkt : Nat)
+    (hF : Function.Injective (History5.historyMap w (5 * pkt)))
+    (hM : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w (5 * pkt))), q ∉ wires M)
+    (x0 : State)
+    (hlegal : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w (5 * pkt)) (run A0 t1 x0).basis)
+    (m : List Bool) :
+    let F := History5.historyMap w (5 * pkt)
+    ∃ m', run ((A0 ++ renameProgram (MeasuredCodec5.label F) E138) ++ M ++ B) m x0 =
+      run ((A0 ++ renameProgram (MeasuredCodec5.label F) E138) ++
+        renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+        renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B) m' x0 := by
+  intro F
+  let W := (Finset.range 10).image (MeasuredCodec5.label F)
+  have hE : wires (renameProgram (MeasuredCodec5.label F) Rolling1588.ep) ⊆ W := by
+    intro q hq
+    rw [renameProgram_support] at hq
+    obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hq
+    exact Finset.mem_image.mpr ⟨i, supp.2.1 hi, rfl⟩
+  have hD : wires (renameProgram (MeasuredCodec5.label F) Rolling1588.dp) ⊆ W := by
+    intro q hq
+    rw [renameProgram_support] at hq
+    obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hq
+    exact Finset.mem_image.mpr ⟨i, supp.2.2 hi, rfl⟩
+  have trip : ∀ tA me md,
+      run (renameProgram (MeasuredCodec5.label F) Rolling1588.dp) md
+        (run (renameProgram (MeasuredCodec5.label F) Rolling1588.ep) me
+          (run (A0 ++ renameProgram (MeasuredCodec5.label F) E138) tA x0)) =
+      run (A0 ++ renameProgram (MeasuredCodec5.label F) E138) tA x0 := by
+    intro tA me md
+    rw [run_append]
+    exact placed_trip F hF _ (hlegal _) _ me md
+  exact row_cut (A0 ++ renameProgram (MeasuredCodec5.label F) E138) _ M _ B W hE hD hM x0 m trip
+
+def midRow2_91 : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w62
+  p.unpack 62 ++ p.tickForward 450 ++
+    segChunkCut w 451 91 ++
+    segTail w 47 461 465 ++
+    oddHostedCutSingle 22 90 1 1
+
+def midRow3_94 : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w47
+  p.unpack 47 ++ p.tickForward 465 ++
+    segChunkCut w 466 94 ++
+    segTail w 32 476 480 ++
+    oddHostedCutSingle 30 93 1 1
+
+def midRow1_88 : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w87
+  p.unpack 87 ++ p.tickForward 425 ++
+    segChunkCut w 426 88 ++
+    segTail w 62 446 450 ++
+    oddHostedCutSingle 13 85 3 1
+
+def midRow1_87 : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w87
+  p.unpack 87 ++ p.tickForward 425 ++
+    segChunkCut w 426 87 ++
+    segChunkCut w 441 88 ++
+    segTail w 62 446 450 ++
+    StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 2 ++
+        oddGroupsCutPrefix 13 87 2 1))
+
+def midRow1_86 : Program :=
+  let p := StairConcreteAssembly.checkpointPrimitives
+  let w := w87
+  p.unpack 87 ++ p.tickForward 425 ++
+    segChunkCut w 426 86 ++
+    segChunkCut w 436 87 ++
+    segChunkCut w 441 88 ++
+    segTail w 62 446 450 ++
+    StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 1 ++
+        oddGroupsCutPrefix 13 86 3 1))
+
+
+theorem hF_86 : Function.Injective (History5.historyMap w87 (5 * 86)) :=
+  (StairFirstTickV3.midSegmentMap_injective 87 hB87).comp (by decide)
+theorem hF_87 : Function.Injective (History5.historyMap w87 (5 * 87)) :=
+  (StairFirstTickV3.midSegmentMap_injective 87 hB87).comp (by decide)
+theorem hF_88 : Function.Injective (History5.historyMap w87 (5 * 88)) :=
+  (StairFirstTickV3.midSegmentMap_injective 87 hB87).comp (by decide)
+theorem hF_91 : Function.Injective (History5.historyMap w62 (5 * 91)) :=
+  (StairFirstTickV3.midSegmentMap_injective 62 hB62).comp (by decide)
+theorem hF_94 : Function.Injective (History5.historyMap w47 (5 * 94)) :=
+  (StairFirstTickV3.midSegmentMap_injective 47 hB47).comp (by decide)
+
+theorem hvirt_86 : ∀ j : Fin 10, ¬ StairFirstTickV3.virtualSites 87 (History5.historyMap w87 (startFor 87 + 1 + 9 - 5) j) := by
+  intro j; have hinj := StairFirstTickV3.midSegmentMap_injective 87 hB87
+  have hs : startFor 87 = 425 := by decide
+  show ¬ StairFirstTickV3.VWire w87 (startFor 87) (w87 (History5.historyId (startFor 87 + 1 + 9 - 5) j))
+  rw [hs]; apply StairFirstTickV3.not_vwire w87 hinj 425
+  have hj := j.isLt; unfold StairFirstTickV3.Virt History5.historyId; split_ifs <;> omega
+
+theorem hvirt_87 : ∀ j : Fin 10, ¬ StairFirstTickV3.virtualSites 87 (History5.historyMap w87 (startFor 87 + 1 + 14 - 5) j) := by
+  intro j; have hinj := StairFirstTickV3.midSegmentMap_injective 87 hB87
+  have hs : startFor 87 = 425 := by decide
+  show ¬ StairFirstTickV3.VWire w87 (startFor 87) (w87 (History5.historyId (startFor 87 + 1 + 14 - 5) j))
+  rw [hs]; apply StairFirstTickV3.not_vwire w87 hinj 425
+  have hj := j.isLt; unfold StairFirstTickV3.Virt History5.historyId; split_ifs <;> omega
+
+theorem hvirt_88 : ∀ j : Fin 10, ¬ StairFirstTickV3.virtualSites 87 (History5.historyMap w87 (startFor 87 + 1 + 19 - 5) j) := by
+  intro j; have hinj := StairFirstTickV3.midSegmentMap_injective 87 hB87
+  have hs : startFor 87 = 425 := by decide
+  show ¬ StairFirstTickV3.VWire w87 (startFor 87) (w87 (History5.historyId (startFor 87 + 1 + 19 - 5) j))
+  rw [hs]; apply StairFirstTickV3.not_vwire w87 hinj 425
+  have hj := j.isLt; unfold StairFirstTickV3.Virt History5.historyId; split_ifs <;> omega
+
+theorem hvirt_91 : ∀ j : Fin 10, ¬ StairFirstTickV3.virtualSites 62 (History5.historyMap w62 (startFor 62 + 1 + 9 - 5) j) := by
+  intro j; have hinj := StairFirstTickV3.midSegmentMap_injective 62 hB62
+  have hs : startFor 62 = 450 := by decide
+  show ¬ StairFirstTickV3.VWire w62 (startFor 62) (w62 (History5.historyId (startFor 62 + 1 + 9 - 5) j))
+  rw [hs]; apply StairFirstTickV3.not_vwire w62 hinj 450
+  have hj := j.isLt; unfold StairFirstTickV3.Virt History5.historyId; split_ifs <;> omega
+
+theorem hvirt_94 : ∀ j : Fin 10, ¬ StairFirstTickV3.virtualSites 47 (History5.historyMap w47 (startFor 47 + 1 + 9 - 5) j) := by
+  intro j; have hinj := StairFirstTickV3.midSegmentMap_injective 47 hB47
+  have hs : startFor 47 = 465 := by decide
+  show ¬ StairFirstTickV3.VWire w47 (startFor 47) (w47 (History5.historyId (startFor 47 + 1 + 9 - 5) j))
+  rw [hs]; apply StairFirstTickV3.not_vwire w47 hinj 465
+  have hj := j.isLt; unfold StairFirstTickV3.Virt History5.historyId; split_ifs <;> omega
+
+theorem hntgt_86 : ∀ j : Fin 10, ∀ ins ∈ TickRanges.tick w87 (startFor 87 + 1 + 9),
+    tgtW ins ≠ History5.historyMap w87 (startFor 87 + 1 + 9 - 5) j := by decide +kernel
+theorem hntgt_87 : ∀ j : Fin 10, ∀ ins ∈ TickRanges.tick w87 (startFor 87 + 1 + 14),
+    tgtW ins ≠ History5.historyMap w87 (startFor 87 + 1 + 14 - 5) j := by decide +kernel
+theorem hntgt_88 : ∀ j : Fin 10, ∀ ins ∈ TickRanges.tick w87 (startFor 87 + 1 + 19),
+    tgtW ins ≠ History5.historyMap w87 (startFor 87 + 1 + 19 - 5) j := by decide +kernel
+theorem hntgt_91 : ∀ j : Fin 10, ∀ ins ∈ TickRanges.tick w62 (startFor 62 + 1 + 9),
+    tgtW ins ≠ History5.historyMap w62 (startFor 62 + 1 + 9 - 5) j := by decide +kernel
+theorem hntgt_94 : ∀ j : Fin 10, ∀ ins ∈ TickRanges.tick w47 (startFor 47 + 1 + 9),
+    tgtW ins ≠ History5.historyMap w47 (startFor 47 + 1 + 9 - 5) j := by decide +kernel
+
+theorem hpk_86 : ∀ j : Fin 10, History5.historyMap w87 (startFor 87 + 1 + 9 - 5) j < base 4000 := by decide +kernel
+theorem hpk_87 : ∀ j : Fin 10, History5.historyMap w87 (startFor 87 + 1 + 14 - 5) j < base 4000 := by decide +kernel
+theorem hpk_88 : ∀ j : Fin 10, History5.historyMap w87 (startFor 87 + 1 + 19 - 5) j < base 4000 := by decide +kernel
+theorem hpk_91 : ∀ j : Fin 10, History5.historyMap w62 (startFor 62 + 1 + 9 - 5) j < base 4000 := by decide +kernel
+theorem hpk_94 : ∀ j : Fin 10, History5.historyMap w47 (startFor 47 + 1 + 9 - 5) j < base 4000 := by decide +kernel
+
+section
+attribute [local irreducible] wires StairPhysicalPrimitives.unpack StairPhysicalPrimitives.tickForward TickRanges.tick StairReplay.movedForward
+
+theorem hlow_gen (B N : Nat) (hpair : (B, N) ∈ StairField2V3Walk.rowPairs) (s f n b : Nat)
+    (hs : startFor B = s) (hN : startFor N = f) (hseg : StairPhysicalPrimitives.segmentOf (s + 1) = B)
+    (hsum : f - s - 1 = n + 1 + b) :
+    ∀ q ∈ wires (StairPhysicalPrimitives.unpack B ++ StairPhysicalPrimitives.tickForward (startFor B) ++
+      StairPhysicalPrimitives.middleForward (startFor B + 1) n ++
+      TickRanges.tick (StairPhysicalPrimitives.midSegmentMap B) (startFor B + 1 + n)),
+      q < base 4000 := by
+  intro q hq
+  apply StairField2V3SegSpec.seg_low B N hpair q
+  rw [StairField2V3SegSpec.segP_eq, hs, hN]
+  rw [hs] at hq
+  have e1 : StairPhysicalPrimitives.middleForward (s + 1) n =
+      StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap B) (s + 1) n := by
+    unfold StairPhysicalPrimitives.middleForward; rw [hseg]
+  have e2 : StairPhysicalPrimitives.middleForward (s + 1) (f - s - 1) =
+      StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap B) (s + 1) (n + 1 + b) := by
+    unfold StairPhysicalPrimitives.middleForward; rw [hseg, hsum]
+  rw [e1] at hq
+  rw [e2, PackCutShape.movedForward_at]
+  simp only [wires_append, Finset.mem_union] at hq ⊢
+  tauto
+end
+
+theorem hlow_86 : ∀ q ∈ wires (StairPhysicalPrimitives.unpack 87 ++ StairPhysicalPrimitives.tickForward (startFor 87) ++
+      StairPhysicalPrimitives.middleForward (startFor 87 + 1) 9 ++ TickRanges.tick w87 (startFor 87 + 1 + 9)),
+      q < base 4000 := hlow_gen 87 62 (by decide) 425 450 9 14 (by decide) (by decide) (by decide) rfl
+theorem hlow_87 : ∀ q ∈ wires (StairPhysicalPrimitives.unpack 87 ++ StairPhysicalPrimitives.tickForward (startFor 87) ++
+      StairPhysicalPrimitives.middleForward (startFor 87 + 1) 14 ++ TickRanges.tick w87 (startFor 87 + 1 + 14)),
+      q < base 4000 := hlow_gen 87 62 (by decide) 425 450 14 9 (by decide) (by decide) (by decide) rfl
+theorem hlow_88 : ∀ q ∈ wires (StairPhysicalPrimitives.unpack 87 ++ StairPhysicalPrimitives.tickForward (startFor 87) ++
+      StairPhysicalPrimitives.middleForward (startFor 87 + 1) 19 ++ TickRanges.tick w87 (startFor 87 + 1 + 19)),
+      q < base 4000 := hlow_gen 87 62 (by decide) 425 450 19 4 (by decide) (by decide) (by decide) rfl
+theorem hlow_91 : ∀ q ∈ wires (StairPhysicalPrimitives.unpack 62 ++ StairPhysicalPrimitives.tickForward (startFor 62) ++
+      StairPhysicalPrimitives.middleForward (startFor 62 + 1) 9 ++ TickRanges.tick w62 (startFor 62 + 1 + 9)),
+      q < base 4000 := hlow_gen 62 47 (by decide) 450 465 9 4 (by decide) (by decide) (by decide) rfl
+theorem hlow_94 : ∀ q ∈ wires (StairPhysicalPrimitives.unpack 47 ++ StairPhysicalPrimitives.tickForward (startFor 47) ++
+      StairPhysicalPrimitives.middleForward (startFor 47 + 1) 9 ++ TickRanges.tick w47 (startFor 47 + 1 + 9)),
+      q < base 4000 := hlow_gen 47 32 (by decide) 465 480 9 4 (by decide) (by decide) (by decide) rfl
+
+theorem tail_86 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 86))),
+    q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient 450 ++
+      renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450) ++
+      StairConcreteAssembly.checkpointPrimitives.pack 62) := avoid10 _ _ (by decide +kernel)
+theorem tail_87 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 87))),
+    q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient 450 ++
+      renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450) ++
+      StairConcreteAssembly.checkpointPrimitives.pack 62) := avoid10 _ _ (by decide +kernel)
+theorem tail_88 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 88))),
+    q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient 450 ++
+      renameProgram (OB5.sig 450) (Rolling1588.Integer.packFirst base true 450) ++
+      StairConcreteAssembly.checkpointPrimitives.pack 62) := avoid10 _ _ (by decide +kernel)
+theorem tail_91 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w62 (5 * 91))),
+    q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient 465 ++
+      renameProgram (OB5.sig 465) (Rolling1588.Integer.packFirst base true 465) ++
+      StairConcreteAssembly.checkpointPrimitives.pack 47) := avoid10 _ _ (by decide +kernel)
+theorem tail_94 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w47 (5 * 94))),
+    q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient 480 ++
+      renameProgram (OB5.sig 480) (Rolling1588.Integer.packFirst base true 480) ++
+      StairConcreteAssembly.checkpointPrimitives.pack 32) := avoid10 _ _ (by decide +kernel)
+
+theorem pkt_wires_disj (d first total k : Nat) (hd : d ≤ 43) (h42 : d ≠ 42) (hk : k < 102)
+    (q : Wire)
+    (hroles : q ∉ StairSchedule.exclusiveRoles.drop d)
+    (hhosts : q ∉ StairConcreteAssembly.hostPlan.group true d first total)
+    (hcells : ∀ i ∈ StairField2V3Groups.cellIds, OB5.sig 511 (base i) ≠ q)
+    (hholes : ∀ h < 204, OB5.sig 511 (base (Placement5.H h)) ≠ q)
+    (hhist : ∀ r : Fin 10, OB5.sig 511 (base (Placement5.pi k (History5.historyId (5 * k) r))) ≠ q) :
+    q ∉ wires (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+      (StairConcreteAssembly.hostPlan.group true d first total)
+      (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.packet true d k))) := by
+  intro hq
+  have h1 := OddFullPass.rebindMany_wires_sub _ _ _ hq
+  simp only [Finset.mem_union, List.mem_toFinset] at h1
+  rcases h1 with (h1 | h1) | h1
+  · have h2 := StairLoanGroupSupport.rename_sub (OB5.sig 511) _ _
+      (StairLoanGroupSupport.packet_sub true d k (by omega))
+      (StairLoanGroupSupport.rename_sub (OB5.sig 511) _ _
+        (OddFullPass.P1LifeLoan.packet_wires_sub true d k hd h42) h1)
+    rw [StairGroups.packet_zero] at h2
+    rw [renameProgram_support] at h2
+    obtain ⟨v, hv, rfl⟩ := Finset.mem_image.mp h2
+    have s1 := Rolling1588.packet_old_support true k hk hv
+    have s2 := ControlLoan1589.packet_support true k hk s1
+    rw [FrontierSW1591.packet_support_eq] at s2
+    have s3 := (OneFlagSW.selPacket_sel true k hk).sub.wires_sub s2
+    have s4 := OneFlagReplay.packet_subset_old true k s3
+    unfold Q6EndpointReplay.packet at s4
+    rw [renameProgram_support] at s4
+    obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp s4
+    have hcell : ∀ i, x = base i → ¬ Placement5.holeRegion i → i ∈ StairField2V3Groups.cellIds → False := by
+      intro i hxi hi hc
+      subst hxi
+      rcases StairField2V3Groups.pi_cases k i hk hi with h | h | h | h
+      · rw [shifted_base, h]; exact hcells i hc rfl
+      · have hrec := Placement5.hole_recover _ h
+        rw [shifted_base, ← hrec.2]; exact hholes _ hrec.1 rfl
+      · rw [shifted_base, h]; exact hcells 717 (by simp [StairField2V3Groups.cellIds]) rfl
+      · rw [shifted_base, h]; exact hcells 718 (by simp [StairField2V3Groups.cellIds]) rfl
+    simp only [Q6EndpointReplay.basePacket, wires_append, Finset.mem_union] at hx
+    rcases hx with (hdec | hbody) | henc
+    · obtain ⟨i, hi⟩ := History5.history_gate_mem base (5 * k) _ (Or.inr rfl) x hdec
+      subst hi; exact hhist i (by simp only [History5.historyMap, shifted_base])
+    · have hs := Q6EndpointReplay.body_support true k hk hbody
+      simp only [Q6EndpointReplay.readSites, Q6EndpointReplay.fieldSites, Finset.mem_union,
+        List.mem_toFinset, List.mem_cons, List.mem_map, Finset.mem_insert, Finset.mem_singleton] at hs
+      rcases hs with ((h2409 | ⟨i, hi, hxi⟩) | (h2400 | h2410)) | henc
+      · exact hcell 2409 h2409 StairField2V3Groups.fixed_not_hole.1 (by simp [StairField2V3Groups.cellIds])
+      · exact hcell i hxi.symm (StairField2V3Groups.cells_not_hole i hi) (by simp [StairField2V3Groups.cellIds, hi])
+      · exact hcell 2400 h2400 StairField2V3Groups.fixed_not_hole.2.1 (by simp [StairField2V3Groups.cellIds])
+      · exact hcell 2410 h2410 StairField2V3Groups.fixed_not_hole.2.2 (by simp [StairField2V3Groups.cellIds])
+      · obtain ⟨i, hi⟩ := History5.history_gate_mem base (5 * k) _ (Or.inl rfl) x henc
+        subst hi; exact hhist i (by simp only [History5.historyMap, shifted_base])
+    · obtain ⟨i, hi⟩ := History5.history_gate_mem base (5 * k) _ (Or.inl rfl) x henc
+      subst hi; exact hhist i (by simp only [History5.historyMap, shifted_base])
+  · exact hroles h1
+  · exact hhosts h1
+
+def checkPktDisj (d first total : Nat) (ks : List Nat) (F : Fin 10 → Wire) : Bool :=
+  let qs := (List.finRange 10).map (fun j => MeasuredCodec5.label F j.val)
+  let roles := StairSchedule.exclusiveRoles.drop d
+  let hosts := StairConcreteAssembly.hostPlan.group true d first total
+  let cells := StairField2V3Groups.cellIds.map (fun i => StairField2V3Groups.sigG (base i))
+  let holes := (List.range 204).map (fun h => StairField2V3Groups.sigG (base (Placement5.H h)))
+  qs.all (fun q =>
+    !(roles.contains q) &&
+    !(hosts.contains q) &&
+    !(cells.contains q) &&
+    !(holes.contains q) &&
+    ks.all (fun k =>
+      (List.finRange 10).all (fun r =>
+        StairField2V3Groups.sigG (base (StairField2V3Groups.piK k (History5.historyId (5 * k) r))) != q)))
+
+theorem checkPktDisj_sound (d first total : Nat) (ks : List Nat) (F : Fin 10 → Wire)
+    (hd : d ≤ 43) (h42 : d ≠ 42) (hks : ∀ k ∈ ks, k < 102)
+    (hchk : checkPktDisj d first total ks F = true) :
+    ∀ k ∈ ks, ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label F),
+      q ∉ wires (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first total)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.packet true d k))) := by
+  intro k hk q hq
+  simp only [Finset.mem_image, Finset.mem_range] at hq
+  obtain ⟨j, hj, rfl⟩ := hq
+  have hqmem : MeasuredCodec5.label F j ∈ (List.finRange 10).map (fun x => MeasuredCodec5.label F x.val) :=
+    List.mem_map.mpr ⟨⟨j, hj⟩, List.mem_finRange _, rfl⟩
+  have hall := List.all_eq_true.mp hchk _ hqmem
+  simp only [Bool.and_eq_true, Bool.not_eq_true', List.contains_eq_false_iff_not_mem] at hall
+  obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hall
+  apply pkt_wires_disj d first total k hd h42 (hks k hk) _ h1 h2
+  · intro i hi heq
+    apply h3
+    exact List.mem_map.mpr ⟨i, hi, by rw [StairField2V3Groups.sigG_eq, heq]⟩
+  · intro h hh heq
+    apply h4
+    exact List.mem_map.mpr ⟨h, List.mem_range.mpr hh, by rw [StairField2V3Groups.sigG_eq, heq]⟩
+  · intro r heq
+    have hk1 := List.all_eq_true.mp h5 k hk
+    have hr1 := List.all_eq_true.mp hk1 r (List.mem_finRange r)
+    rw [StairField2V3Groups.sigG_eq, ← StairField2V3Groups.piK_eq, heq] at hr1
+    simp at hr1
+
+theorem chk_86 : checkPktDisj 13 85 5 [85] (History5.historyMap w87 (5 * 86)) = true := by decide +kernel
+theorem chk_87 : checkPktDisj 13 85 5 [85, 86] (History5.historyMap w87 (5 * 87)) = true := by decide +kernel
+theorem chk_88 : checkPktDisj 13 85 5 [85, 86, 87] (History5.historyMap w87 (5 * 88)) = true := by decide +kernel
+theorem chk_91 : checkPktDisj 22 90 3 [90] (History5.historyMap w62 (5 * 91)) = true := by decide +kernel
+theorem chk_94 : checkPktDisj 30 93 3 [93] (History5.historyMap w47 (5 * 94)) = true := by decide +kernel
+
+theorem rebindMany_nil (rs hs : List Wire) : StairLoan.rebindMany rs hs [] = [] := by
+  induction rs generalizing hs with
+  | nil => rfl
+  | cons r rs ih =>
+    cases hs with
+    | nil => rfl
+    | cons hh hs => simp only [StairLoan.rebindMany, ih, renameProgram, List.map_nil]
+
+theorem hosted_groups_disj (d first total : Nat) (F : Fin 10 → Wire) :
+    ∀ (start n : Nat),
+    (∀ k, start ≤ k → k < start + n → ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label F),
+      q ∉ wires (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first total)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.packet true d k)))) →
+    ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label F),
+      q ∉ wires (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first total)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true d start n))) := by
+  intro start n
+  induction n generalizing start with
+  | zero =>
+    intro _ q _ hm
+    simp only [OddFullPass.P1LifeLoan.groups, PacketSequence.program, renameProgram, List.map_nil,
+      rebindMany_nil, wires] at hm
+    exact absurd hm (Finset.not_mem_empty q)
+  | succ n ih =>
+    intro h q hq hm
+    simp only [OddFullPass.P1LifeLoan.groups, PacketSequence.program, rename_app, rebindMany_append,
+      wires_append, Finset.mem_union] at hm
+    rcases hm with hm | hm
+    · exact h start (le_refl _) (by omega) q hq hm
+    · exact ih (start + 1) (fun k hk1 hk2 => h k (by omega) (by omega)) q hq hm
+
+theorem segChunkCut_sub (w : Nat → Wire) (a pkt : Nat)
+    (h1 : a ≤ 5 * pkt + 5) (h5 : 5 * pkt + 5 ≠ 5) (hdue : History5.packDue (5 * pkt + 5) = true) (hp : pkt ≠ 0) :
+    (segChunkCut w a pkt).Sublist (StairReplay.movedForward w a (5 * pkt + 5 + 1 - a)) := by
+  have hsp := movedForward_split_due w a (5 * pkt + 5 + 1 - a) pkt h1 (by omega) h5 hdue hp
+  rw [show a + (5 * pkt + 5 + 1 - a) - (5 * pkt + 5) - 1 = 0 by omega] at hsp
+  simp only [StairReplay.movedForward, List.append_nil] at hsp
+  rw [hsp]
+  exact List.sublist_append_left _ _
+
+theorem movedForward_split_chunk (w : Nat → Wire) (a n pkt : Nat)
+    (h1 : a ≤ 5 * pkt + 5) (h2 : 5 * pkt + 5 + 1 ≤ a + n)
+    (h5 : 5 * pkt + 5 ≠ 5) (hdue : History5.packDue (5 * pkt + 5) = true) (hp : pkt ≠ 0) :
+    StairReplay.movedForward w a n =
+      segChunkCut w a pkt ++
+      renameProgram (MeasuredCodec5.label (History5.historyMap w (5 * pkt))) Rolling1588.ep ++
+      StairReplay.movedForward w (5 * pkt + 5 + 1) (a + n - (5 * pkt + 5) - 1) :=
+  movedForward_split_due w a n pkt h1 h2 h5 hdue hp
+
+theorem forwardSegment_eq (B N s f : Nat) (hseg : StairPhysicalPrimitives.segmentOf (s + 1) = B) :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let w := StairPhysicalPrimitives.midSegmentMap B
+    StairSchedule.forwardSegment p B N s f =
+      p.unpack B ++ p.tickForward s ++
+      StairReplay.movedForward w (s + 1) (f - s - 1) ++
+      p.orient f ++
+      renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++
+      p.pack N := by
+  intro p w
+  have hm : p.middleForward (s + 1) (f - s - 1) = StairReplay.movedForward w (s + 1) (f - s - 1) := by
+    change StairReplay.movedForward (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (s + 1) (f - s - 1) = _
+    rw [hseg]
+  simp only [StairSchedule.forwardSegment, hm, List.append_assoc]
+
+theorem oddHostedGroup_split_at (d first k rem : Nat) :
+    OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true d first (k + (rem + 1)) =
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true d first k)) ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi (first + k)))
+          (Rolling1588.onPacket (first + k) Rolling1588.dp))) ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d (first + k) 1 rem)) := by
+  simp only [OddFullPass.P1LifeLoan.hostedGroup, OddFullPass.P1LifeLoan.placedGroups,
+    groups_split_add, oddGroupsCutPrefix_succ, OddFullPass.P1LifeLoan.groups, PacketSequence.program,
+    OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head, oddGroupsCutPrefix,
+    rename_app, rebindMany_append, List.append_assoc]
+
+theorem oddHostedCutSingle_eq (d first k rem : Nat) :
+    oddHostedCutSingle d first k rem =
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true d first k)) ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
+        (StairConcreteAssembly.hostPlan.group true d first (k + (rem + 1)))
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix d (first + k) 1 rem)) := by
+  simp only [oddHostedCutSingle, rename_app, rebindMany_append, List.append_assoc]
+
+
+theorem row2_step91_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w62 (5 * 91)
+    let A := p.unpack 62 ++ p.tickForward 450 ++ segChunkCut w62 451 91
+    let M := segTail w62 47 461 465 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+        (StairConcreteAssembly.hostPlan.group true 22 90 3)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 22 90 1))
+    let B := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+        (StairConcreteAssembly.hostPlan.group true 22 90 3)
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 22 91 1 1))
+    StairSchedule.forwardSegment p 62 47 450 465 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 22 90 3 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    midRow2_91 = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · rw [forwardSegment_eq 62 47 450 465 (by decide)]
+    have hsp := movedForward_split_chunk w62 451 (465 - 450 - 1) 91 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hgrp := oddHostedGroup_split_at 22 90 1 1
+    rw [show 90 + 1 = 91 from rfl, show 1 + (1 + 1) = 3 from rfl, hdp_91] at hgrp
+    simp only [segTail] at *
+    rw [hsp, hgrp]
+    simp only [List.append_assoc]
+  · simp only [midRow2_91, oddHostedCutSingle_eq, List.append_assoc]
+
+theorem row2_step90_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w62 (5 * 90)
+    let A := p.unpack 62 ++ p.tickForward 450 ++ segChunkCut w62 451 90
+    let M := segChunkCut w62 456 91 ++ segTail w62 47 461 465
+    let B := oddHostedCutPrefix 22 90 2 1
+    midRow2_91 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    cutRowOdd2Multi = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · have hsp := movedForward_split_chunk w62 451 (5 * 91 + 5 - 451) 90 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hdp := PackCutRows.hdp2
+    have hseg : StairPhysicalPrimitives.segmentOf (450 + 1) = 62 := by decide
+    rw [hseg] at hdp
+    have hgrp : oddHostedCutSingle 22 90 1 1 =
+        renameProgram (MeasuredCodec5.label (History5.historyMap w62 (5 * 90))) Rolling1588.dp ++
+        oddHostedCutPrefix 22 90 2 1 := by
+      have hdp' : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+          (StairConcreteAssembly.hostPlan.group true 22 90 3)
+          (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 90))
+            (Rolling1588.onPacket 90 Rolling1588.dp))) =
+        renameProgram (MeasuredCodec5.label (History5.historyMap w62 (5 * 90))) Rolling1588.dp := hdp
+      simp only [oddHostedCutSingle, oddHostedCutPrefix, oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups,
+        PacketSequence.program, OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head,
+        List.append_nil, List.nil_append, rename_app, rebindMany_append, List.append_assoc]
+      rw [show (1 : Nat) + (1 + 1) = 3 from rfl, show (2 : Nat) + 1 = 3 from rfl, hdp']
+    have hsp' : StairReplay.movedForward w62 451 (5 * 91 + 5 - 451) =
+        segChunkCut w62 451 90 ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w62 (5 * 90))) Rolling1588.ep ++
+        StairReplay.movedForward w62 456 4 := hsp
+    simp only [midRow2_91, segChunkCut] at hsp' ⊢
+    rw [hsp', hgrp]
+    simp only [List.append_assoc]
+  · simp only [cutRowOdd2Multi, List.append_assoc]
+
+theorem row2_multi_sub :
+    cutRowOdd2Multi.Sublist
+      (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 22 90 (2 + 1)) := by
+  obtain ⟨h1a, h1b⟩ := row2_step91_shape
+  obtain ⟨h2a, h2b⟩ := row2_step90_shape
+  have s1 : midRow2_91.Sublist _ := by rw [h1a, h1b]; exact cut_one_sub
+  have s2 : cutRowOdd2Multi.Sublist midRow2_91 := by rw [h2a, h2b]; exact cut_one_sub
+  exact s2.trans s1
+
+theorem row2_multi_cost (c : Stair44Resources.Cost) :
+    c.measure (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 22 90 (2 + 1)) =
+      c.measure cutRowOdd2Multi + 2 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  obtain ⟨h1a, h1b⟩ := row2_step91_shape
+  obtain ⟨h2a, h2b⟩ := row2_step90_shape
+  have c1 := cut_one_cost c _ _ _ _ _
+  rw [← h1a, ← h1b] at c1
+  have c2 := cut_one_cost c _ _ _ _ _
+  rw [← h2a, ← h2b] at c2
+  simp only [c.rename] at c1 c2
+  omega
+
+
+theorem row3_step94_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w47 (5 * 94)
+    let A := p.unpack 47 ++ p.tickForward 465 ++ segChunkCut w47 466 94
+    let M := segTail w47 32 476 480 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+        (StairConcreteAssembly.hostPlan.group true 30 93 3)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 30 93 1))
+    let B := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+        (StairConcreteAssembly.hostPlan.group true 30 93 3)
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 30 94 1 1))
+    StairSchedule.forwardSegment p 47 32 465 480 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 30 93 3 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    midRow3_94 = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · rw [forwardSegment_eq 47 32 465 480 (by decide)]
+    have hsp := movedForward_split_chunk w47 466 (480 - 465 - 1) 94 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hgrp := oddHostedGroup_split_at 30 93 1 1
+    rw [show 93 + 1 = 94 from rfl, show 1 + (1 + 1) = 3 from rfl, hdp_94] at hgrp
+    simp only [segTail] at *
+    rw [hsp, hgrp]
+    simp only [List.append_assoc]
+  · simp only [midRow3_94, oddHostedCutSingle_eq, List.append_assoc]
+
+theorem row3_step93_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w47 (5 * 93)
+    let A := p.unpack 47 ++ p.tickForward 465 ++ segChunkCut w47 466 93
+    let M := segChunkCut w47 471 94 ++ segTail w47 32 476 480
+    let B := oddHostedCutPrefix 30 93 2 1
+    midRow3_94 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    cutRowOdd3Multi = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · have hsp := movedForward_split_chunk w47 466 (5 * 94 + 5 - 466) 93 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hdp := PackCutRows.hdp3
+    have hseg : StairPhysicalPrimitives.segmentOf (465 + 1) = 47 := by decide
+    rw [hseg] at hdp
+    have hgrp : oddHostedCutSingle 30 93 1 1 =
+        renameProgram (MeasuredCodec5.label (History5.historyMap w47 (5 * 93))) Rolling1588.dp ++
+        oddHostedCutPrefix 30 93 2 1 := by
+      have hdp' : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+          (StairConcreteAssembly.hostPlan.group true 30 93 3)
+          (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 93))
+            (Rolling1588.onPacket 93 Rolling1588.dp))) =
+        renameProgram (MeasuredCodec5.label (History5.historyMap w47 (5 * 93))) Rolling1588.dp := hdp
+      simp only [oddHostedCutSingle, oddHostedCutPrefix, oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups,
+        PacketSequence.program, OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head,
+        List.append_nil, List.nil_append, rename_app, rebindMany_append, List.append_assoc]
+      rw [show (1 : Nat) + (1 + 1) = 3 from rfl, show (2 : Nat) + 1 = 3 from rfl, hdp']
+    have hsp' : StairReplay.movedForward w47 466 (5 * 94 + 5 - 466) =
+        segChunkCut w47 466 93 ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w47 (5 * 93))) Rolling1588.ep ++
+        StairReplay.movedForward w47 471 4 := hsp
+    simp only [midRow3_94, segChunkCut] at hsp' ⊢
+    rw [hsp', hgrp]
+    simp only [List.append_assoc]
+  · simp only [cutRowOdd3Multi, List.append_assoc]
+
+theorem row3_multi_sub :
+    cutRowOdd3Multi.Sublist
+      (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 30 93 (2 + 1)) := by
+  obtain ⟨h1a, h1b⟩ := row3_step94_shape
+  obtain ⟨h2a, h2b⟩ := row3_step93_shape
+  have s1 : midRow3_94.Sublist _ := by rw [h1a, h1b]; exact cut_one_sub
+  have s2 : cutRowOdd3Multi.Sublist midRow3_94 := by rw [h2a, h2b]; exact cut_one_sub
+  exact s2.trans s1
+
+theorem row3_multi_cost (c : Stair44Resources.Cost) :
+    c.measure (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 30 93 (2 + 1)) =
+      c.measure cutRowOdd3Multi + 2 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  obtain ⟨h1a, h1b⟩ := row3_step94_shape
+  obtain ⟨h2a, h2b⟩ := row3_step93_shape
+  have c1 := cut_one_cost c _ _ _ _ _
+  rw [← h1a, ← h1b] at c1
+  have c2 := cut_one_cost c _ _ _ _ _
+  rw [← h2a, ← h2b] at c2
+  simp only [c.rename] at c1 c2
+  omega
+
+
+theorem row1_step88_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w87 (5 * 88)
+    let A := p.unpack 87 ++ p.tickForward 425 ++ segChunkCut w87 426 88
+    let M := segTail w87 62 446 450 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 3))
+    let B := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 88 1 1))
+    StairSchedule.forwardSegment p 87 62 425 450 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 13 85 5 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    midRow1_88 = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · rw [forwardSegment_eq 87 62 425 450 (by decide)]
+    have hsp := movedForward_split_chunk w87 426 (450 - 425 - 1) 88 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hgrp := oddHostedGroup_split_at 13 85 3 1
+    rw [show 85 + 3 = 88 from rfl, show 3 + (1 + 1) = 5 from rfl, hdp_88] at hgrp
+    simp only [segTail] at *
+    rw [hsp, hgrp]
+    simp only [List.append_assoc]
+  · simp only [midRow1_88, oddHostedCutSingle_eq, List.append_assoc]
+
+theorem row1_step87_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w87 (5 * 87)
+    let A := p.unpack 87 ++ p.tickForward 425 ++ segChunkCut w87 426 87
+    let M := segChunkCut w87 441 88 ++ segTail w87 62 446 450 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 2))
+    let B := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 87 2 1))
+    midRow1_88 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    midRow1_87 = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · have hsp := movedForward_split_chunk w87 426 (5 * 88 + 5 - 426) 87 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hgrp : oddHostedCutSingle 13 85 3 1 =
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 2)) ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 87))) Rolling1588.dp ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 87 2 1)) := by
+      have hgs := groups_split_add 13 85 2 1
+      have hsum : (3 : Nat) + (1 + 1) = 5 := rfl
+      simp only [oddHostedCutSingle, hsum, hgs, oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups,
+        PacketSequence.program, OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head,
+        List.append_nil, List.nil_append, rename_app, rebindMany_append, List.append_assoc]
+      rw [show (85 : Nat) + 2 = 87 from rfl, hdp_87]
+    have hsp' : StairReplay.movedForward w87 426 (5 * 88 + 5 - 426) =
+        segChunkCut w87 426 87 ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 87))) Rolling1588.ep ++
+        StairReplay.movedForward w87 441 4 := hsp
+    simp only [midRow1_88, segChunkCut] at hsp' ⊢
+    rw [hsp', hgrp]
+    simp only [List.append_assoc]
+  · simp only [midRow1_87, rename_app, rebindMany_append, List.append_assoc]
+
+theorem row1_step86_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w87 (5 * 86)
+    let A := p.unpack 87 ++ p.tickForward 425 ++ segChunkCut w87 426 86
+    let M := segChunkCut w87 436 87 ++ segChunkCut w87 441 88 ++ segTail w87 62 446 450 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 1))
+    let B := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 86 3 1))
+    midRow1_87 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    midRow1_86 = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · have hsp := movedForward_split_chunk w87 426 (5 * 87 + 5 - 426) 86 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hgrp :
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 2 ++
+            oddGroupsCutPrefix 13 87 2 1)) =
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 1)) ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 86))) Rolling1588.dp ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 86 3 1)) := by
+      have hgs := groups_split_add 13 85 1 1
+      simp only [hgs, oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups,
+        PacketSequence.program, OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head,
+        List.append_nil, List.nil_append, rename_app, rebindMany_append, List.append_assoc]
+      rw [show (85 : Nat) + 1 = 86 from rfl, hdp_86]
+    have hsp' : StairReplay.movedForward w87 426 (5 * 87 + 5 - 426) =
+        segChunkCut w87 426 86 ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 86))) Rolling1588.ep ++
+        StairReplay.movedForward w87 436 4 := hsp
+    simp only [midRow1_87, segChunkCut] at hsp' ⊢
+    rw [hsp', hgrp]
+    simp only [List.append_assoc]
+  · simp only [midRow1_86, rename_app, rebindMany_append, List.append_assoc]
+
+theorem row1_step85_shape :
+    let p := StairConcreteAssembly.checkpointPrimitives
+    let F := History5.historyMap w87 (5 * 85)
+    let A := p.unpack 87 ++ p.tickForward 425 ++ segChunkCut w87 426 85
+    let M := segChunkCut w87 431 86 ++ segChunkCut w87 436 87 ++ segChunkCut w87 441 88 ++ segTail w87 62 446 450
+    let B := oddHostedCutPrefix 13 85 4 1
+    midRow1_86 =
+      A ++ renameProgram (MeasuredCodec5.label F) Rolling1588.ep ++ M ++
+      renameProgram (MeasuredCodec5.label F) Rolling1588.dp ++ B ∧
+    cutRowOdd1Multi = A ++ M ++ B := by
+  refine ⟨?_, ?_⟩
+  · have hsp := movedForward_split_chunk w87 426 (5 * 86 + 5 - 426) 85 (by decide) (by decide) (by decide) (by decide) (by decide)
+    have hdp := PackCutRows.hdp1
+    have hseg : StairPhysicalPrimitives.segmentOf (425 + 1) = 87 := by decide
+    rw [hseg] at hdp
+    have hgrp :
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 1 ++
+            oddGroupsCutPrefix 13 86 3 1)) =
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 85))) Rolling1588.dp ++
+        oddHostedCutPrefix 13 85 4 1 := by
+      have hdp' : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 85))
+            (Rolling1588.onPacket 85 Rolling1588.dp))) =
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 85))) Rolling1588.dp := hdp
+      simp only [oddHostedCutPrefix, oddGroupsCutPrefix, OddFullPass.P1LifeLoan.groups,
+        PacketSequence.program, OddFullPass.P1LifeLoan.packet, oddBasePacket_true_head,
+        List.append_nil, List.nil_append, rename_app, rebindMany_append, List.append_assoc]
+      rw [show (4 : Nat) + 1 = 5 from rfl, hdp']
+    have hsp' : StairReplay.movedForward w87 426 (5 * 86 + 5 - 426) =
+        segChunkCut w87 426 85 ++
+        renameProgram (MeasuredCodec5.label (History5.historyMap w87 (5 * 85))) Rolling1588.ep ++
+        StairReplay.movedForward w87 431 4 := hsp
+    simp only [midRow1_86, segChunkCut] at hsp' ⊢
+    rw [hsp', hgrp]
+    simp only [List.append_assoc]
+  · simp only [cutRowOdd1Multi, List.append_assoc]
+
+theorem row1_multi_sub :
+    cutRowOdd1Multi.Sublist
+      (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 13 85 (4 + 1)) := by
+  obtain ⟨h1a, h1b⟩ := row1_step88_shape
+  obtain ⟨h2a, h2b⟩ := row1_step87_shape
+  obtain ⟨h3a, h3b⟩ := row1_step86_shape
+  obtain ⟨h4a, h4b⟩ := row1_step85_shape
+  have s1 : midRow1_88.Sublist _ := by rw [h1a, h1b]; exact cut_one_sub
+  have s2 : midRow1_87.Sublist midRow1_88 := by rw [h2a, h2b]; exact cut_one_sub
+  have s3 : midRow1_86.Sublist midRow1_87 := by rw [h3a, h3b]; exact cut_one_sub
+  have s4 : cutRowOdd1Multi.Sublist midRow1_86 := by rw [h4a, h4b]; exact cut_one_sub
+  exact ((s4.trans s3).trans s2).trans s1
+
+theorem row1_multi_cost (c : Stair44Resources.Cost) :
+    c.measure (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 13 85 (4 + 1)) =
+      c.measure cutRowOdd1Multi + 4 * (c.measure Rolling1588.ep + c.measure Rolling1588.dp) := by
+  obtain ⟨h1a, h1b⟩ := row1_step88_shape
+  obtain ⟨h2a, h2b⟩ := row1_step87_shape
+  obtain ⟨h3a, h3b⟩ := row1_step86_shape
+  obtain ⟨h4a, h4b⟩ := row1_step85_shape
+  have c1 := cut_one_cost c _ _ _ _ _; rw [← h1a, ← h1b] at c1
+  have c2 := cut_one_cost c _ _ _ _ _; rw [← h2a, ← h2b] at c2
+  have c3 := cut_one_cost c _ _ _ _ _; rw [← h3a, ← h3b] at c3
+  have c4 := cut_one_cost c _ _ _ _ _; rw [← h4a, ← h4b] at c4
+  simp only [c.rename] at c1 c2 c3 c4
+  omega
+
+
+theorem segTail_disj (w : Nat → Wire) (hinj : Function.Injective w) (N pkt f : Nat)
+    (hf : f ≤ 512) (hlt : 5 * pkt + 5 < f)
+    (htail : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w (5 * pkt))),
+      q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient f ++
+        renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++
+        StairConcreteAssembly.checkpointPrimitives.pack N)) :
+    ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w (5 * pkt))),
+      q ∉ wires (segTail w N (5 * pkt + 5 + 1) f) := by
+  intro q hq hm
+  have mv := moved_disj w hinj pkt f hf hlt q hq
+  have tl := htail q hq
+  simp only [segTail, List.append_assoc, wires_append, Finset.mem_union] at hm tl
+  rcases hm with h | h
+  · exact mv h
+  · exact tl h
+
+theorem segChunkCut_disj_after (w : Nat → Wire) (hinj : Function.Injective w) (pkt a pkt2 f : Nat)
+    (hf : f ≤ 512) (ha : 5 * pkt + 5 + 1 ≤ a) (h1 : a ≤ 5 * pkt2 + 5) (h2 : 5 * pkt2 + 5 + 1 ≤ f)
+    (h5 : 5 * pkt2 + 5 ≠ 5) (hdue : History5.packDue (5 * pkt2 + 5) = true) (hp : pkt2 ≠ 0) :
+    ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w (5 * pkt))),
+      q ∉ wires (segChunkCut w a pkt2) := by
+  intro q hq hm
+  have hsub1 : (segChunkCut w a pkt2).Sublist (StairReplay.movedForward w a (5 * pkt2 + 5 + 1 - a)) :=
+    segChunkCut_sub w a pkt2 h1 h5 hdue hp
+  have hsub2 : (StairReplay.movedForward w a (5 * pkt2 + 5 + 1 - a)).Sublist
+      (StairReplay.movedForward w (5 * pkt + 5 + 1) (f - (5 * pkt + 5) - 1)) := by
+    have hs1 : f - (5 * pkt + 5) - 1 = (a - (5 * pkt + 5 + 1)) + ((5 * pkt2 + 5 + 1 - a) + (f - (5 * pkt2 + 5 + 1))) := by omega
+    rw [hs1, movedForward_add, movedForward_add]
+    rw [show 5 * pkt + 5 + 1 + (a - (5 * pkt + 5 + 1)) = a by omega]
+    exact (List.sublist_append_left _ _).trans (List.sublist_append_right _ _)
+  exact moved_disj w hinj pkt f hf (by omega) q hq (PackCutSub.wires_sub (hsub1.trans hsub2) q hm)
+
+theorem segTail_disj_after (w : Nat → Wire) (hinj : Function.Injective w) (N pkt a f : Nat)
+    (hf : f ≤ 512) (ha : 5 * pkt + 5 + 1 ≤ a) (haf : a ≤ f)
+    (htail : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w (5 * pkt))),
+      q ∉ wires (StairConcreteAssembly.checkpointPrimitives.orient f ++
+        renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++
+        StairConcreteAssembly.checkpointPrimitives.pack N)) :
+    ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w (5 * pkt))),
+      q ∉ wires (segTail w N a f) := by
+  intro q hq hm
+  have hsub : (StairReplay.movedForward w a (f - a)).Sublist
+      (StairReplay.movedForward w (5 * pkt + 5 + 1) (f - (5 * pkt + 5) - 1)) := by
+    have hs1 : f - (5 * pkt + 5) - 1 = (a - (5 * pkt + 5 + 1)) + (f - a) := by omega
+    rw [hs1, movedForward_add]
+    rw [show 5 * pkt + 5 + 1 + (a - (5 * pkt + 5 + 1)) = a by omega]
+    exact List.sublist_append_right _ _
+  have mv := moved_disj w hinj pkt f hf (by omega) q hq
+  have tl := htail q hq
+  simp only [segTail, List.append_assoc, wires_append, Finset.mem_union] at hm tl
+  rcases hm with h | h
+  · exact mv (PackCutSub.wires_sub hsub q h)
+  · exact tl h
+
+
+theorem rowCutOdd2Multi (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR Lb x) (gsub : EntryGroupSub Lb)
+    (slots : EntrySlotsClean P hp StairConcreteAssembly.EntryPre) (s : State) (hs : EntryPreX x s) (mP : List Bool)
+    (a : State)
+    (hagree90 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+          StairReplay.movedForward w62 451 4 ++
+          TickRanges.tick w62 455) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w62 (5 * 90) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+          StairReplay.movedForward w62 451 4 ++
+          TickRanges.tick w62 455) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 6).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w62 (5 * 90) j))
+    (hagree91 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+          StairReplay.movedForward w62 451 9 ++
+          TickRanges.tick w62 460) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w62 (5 * 91) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+          StairReplay.movedForward w62 451 9 ++
+          TickRanges.tick w62 460) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 6).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w62 (5 * 91) j))
+    (m : List Bool) :
+    ∃ m', run cutRowOdd2Multi m (StairField2V3Seg.pullIn a) =
+      run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 22 90 (2 + 1)) m' (StairField2V3Seg.pullIn a) := by
+  obtain ⟨t, hrel⟩ := rowStart2 x plan V gsub slots s hs mP
+  have hseg : StairPhysicalPrimitives.segmentOf (450 + 1) = 62 := by decide
+  have htl90 := PackCutRows.tail2; rw [hseg] at htl90
+  have hM90 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w62 (5 * 90))),
+      q ∉ wires (segChunkCut w62 456 91 ++ segTail w62 47 461 465) := by
+    intro q hq hm
+    rw [wires_append, Finset.mem_union] at hm
+    rcases hm with h | h
+    · exact segChunkCut_disj_after w62 (StairFirstTickV3.midSegmentMap_injective 62 hB62) 90 456 91 465
+        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segTail_disj_after w62 (StairFirstTickV3.midSegmentMap_injective 62 hB62) 47 90 461 465
+        (by decide) (by decide) (by decide) htl90 q hq h
+  have hM91 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w62 (5 * 91))),
+      q ∉ wires (segTail w62 47 461 465 ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+          (StairConcreteAssembly.hostPlan.group true 22 90 3)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 22 90 1))) := by
+    intro q hq hm
+    rw [wires_append, Finset.mem_union] at hm
+    rcases hm with h | h
+    · exact segTail_disj w62 (StairFirstTickV3.midSegmentMap_injective 62 hB62) 47 91 465
+        (by decide) (by decide) tail_91 q hq h
+    · exact hosted_groups_disj 22 90 3 _ 90 1 (fun k hk1 hk2 =>
+        checkPktDisj_sound 22 90 3 [90] _ (by decide) (by decide) (by decide) chk_91 k (by simp; omega)) q hq h
+  have hleg90 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w62 (5 * 90))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+        StairReplay.movedForward w62 451 4 ++ TickRanges.tick w62 455) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree90 t1)).mpr
+      (PackCutBridge.legal_prefix x 62 47 (by decide) (R2L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec1 t' (reach_of_x x R2 t' (V.r2 t' h'))) _ t hrel 4
+        (by decide) (by decide) (by decide) PackCutRows.hvirt2 PackCutRows.hntgt2 PackCutRows.hlow2 PackCutRows.hpk2 t1)
+  have hleg91 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w62 (5 * 91))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+        StairReplay.movedForward w62 451 9 ++ TickRanges.tick w62 460) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree91 t1)).mpr
+      (PackCutBridge.legal_prefix x 62 47 (by decide) (R2L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec1 t' (reach_of_x x R2 t' (V.r2 t' h'))) _ t hrel 9
+        (by decide) (by decide) (by decide) hvirt_91 hntgt_91 hlow_91 hpk_91 t1)
+  have hF90 := PackCutRows.hF2; rw [hseg] at hF90
+  obtain ⟨h2a, h2b⟩ := row2_step90_shape
+  obtain ⟨m1, hm1⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+      StairReplay.movedForward w62 451 4 ++ TickRanges.tick w62 455)
+    (segChunkCut w62 456 91 ++ segTail w62 47 461 465)
+    (oddHostedCutPrefix 22 90 2 1)
+    w62 90 hF90 hM90 (StairField2V3Seg.pullIn a) hleg90 m
+  simp only [segChunkCut, List.append_assoc] at h2a h2b hm1
+  rw [← h2b, ← h2a] at hm1
+  obtain ⟨h1a, h1b⟩ := row2_step91_shape
+  obtain ⟨m2, hm2⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 62 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 450 ++
+      StairReplay.movedForward w62 451 9 ++ TickRanges.tick w62 460)
+    (segTail w62 47 461 465 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+        (StairConcreteAssembly.hostPlan.group true 22 90 3)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 22 90 1)))
+    (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 22)
+      (StairConcreteAssembly.hostPlan.group true 22 90 3)
+      (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 22 91 1 1)))
+    w62 91 hF_91 hM91 (StairField2V3Seg.pullIn a) hleg91 m1
+  simp only [segChunkCut, List.append_assoc] at h1a h1b hm2
+  rw [← h1b, ← h1a] at hm2
+  exact ⟨m2, hm1.trans hm2⟩
+
+theorem rowCutOdd3Multi (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR Lb x) (gsub : EntryGroupSub Lb)
+    (slots : EntrySlotsClean P hp StairConcreteAssembly.EntryPre) (s : State) (hs : EntryPreX x s) (mP : List Bool)
+    (a : State)
+    (hagree93 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+          StairReplay.movedForward w47 466 4 ++
+          TickRanges.tick w47 470) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w47 (5 * 93) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+          StairReplay.movedForward w47 466 4 ++
+          TickRanges.tick w47 470) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 8).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w47 (5 * 93) j))
+    (hagree94 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+          StairReplay.movedForward w47 466 9 ++
+          TickRanges.tick w47 475) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w47 (5 * 94) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+          StairReplay.movedForward w47 466 9 ++
+          TickRanges.tick w47 475) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 8).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w47 (5 * 94) j))
+    (m : List Bool) :
+    ∃ m', run cutRowOdd3Multi m (StairField2V3Seg.pullIn a) =
+      run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 30 93 (2 + 1)) m' (StairField2V3Seg.pullIn a) := by
+  obtain ⟨t, hrel⟩ := rowStart3 x plan V gsub slots s hs mP
+  have hseg : StairPhysicalPrimitives.segmentOf (465 + 1) = 47 := by decide
+  have htl93 := PackCutRows.tail3; rw [hseg] at htl93
+  have hM93 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w47 (5 * 93))),
+      q ∉ wires (segChunkCut w47 471 94 ++ segTail w47 32 476 480) := by
+    intro q hq hm
+    rw [wires_append, Finset.mem_union] at hm
+    rcases hm with h | h
+    · exact segChunkCut_disj_after w47 (StairFirstTickV3.midSegmentMap_injective 47 hB47) 93 471 94 480
+        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segTail_disj_after w47 (StairFirstTickV3.midSegmentMap_injective 47 hB47) 32 93 476 480
+        (by decide) (by decide) (by decide) htl93 q hq h
+  have hM94 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w47 (5 * 94))),
+      q ∉ wires (segTail w47 32 476 480 ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+          (StairConcreteAssembly.hostPlan.group true 30 93 3)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 30 93 1))) := by
+    intro q hq hm
+    rw [wires_append, Finset.mem_union] at hm
+    rcases hm with h | h
+    · exact segTail_disj w47 (StairFirstTickV3.midSegmentMap_injective 47 hB47) 32 94 480
+        (by decide) (by decide) tail_94 q hq h
+    · exact hosted_groups_disj 30 93 3 _ 93 1 (fun k hk1 hk2 =>
+        checkPktDisj_sound 30 93 3 [93] _ (by decide) (by decide) (by decide) chk_94 k (by simp; omega)) q hq h
+  have hleg93 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w47 (5 * 93))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+        StairReplay.movedForward w47 466 4 ++ TickRanges.tick w47 470) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree93 t1)).mpr
+      (PackCutBridge.legal_prefix x 47 32 (by decide) (R3L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec2 t' (reach_of_x x R3 t' (V.r3 t' h'))) _ t hrel 4
+        (by decide) (by decide) (by decide) PackCutRows.hvirt3 PackCutRows.hntgt3 PackCutRows.hlow3 PackCutRows.hpk3 t1)
+  have hleg94 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w47 (5 * 94))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+        StairReplay.movedForward w47 466 9 ++ TickRanges.tick w47 475) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree94 t1)).mpr
+      (PackCutBridge.legal_prefix x 47 32 (by decide) (R3L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec2 t' (reach_of_x x R3 t' (V.r3 t' h'))) _ t hrel 9
+        (by decide) (by decide) (by decide) hvirt_94 hntgt_94 hlow_94 hpk_94 t1)
+  have hF93 := PackCutRows.hF3; rw [hseg] at hF93
+  obtain ⟨h2a, h2b⟩ := row3_step93_shape
+  obtain ⟨m1, hm1⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+      StairReplay.movedForward w47 466 4 ++ TickRanges.tick w47 470)
+    (segChunkCut w47 471 94 ++ segTail w47 32 476 480)
+    (oddHostedCutPrefix 30 93 2 1)
+    w47 93 hF93 hM93 (StairField2V3Seg.pullIn a) hleg93 m
+  simp only [segChunkCut, List.append_assoc] at h2a h2b hm1
+  rw [← h2b, ← h2a] at hm1
+  obtain ⟨h1a, h1b⟩ := row3_step94_shape
+  obtain ⟨m2, hm2⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 47 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 465 ++
+      StairReplay.movedForward w47 466 9 ++ TickRanges.tick w47 475)
+    (segTail w47 32 476 480 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+        (StairConcreteAssembly.hostPlan.group true 30 93 3)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 30 93 1)))
+    (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 30)
+      (StairConcreteAssembly.hostPlan.group true 30 93 3)
+      (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 30 94 1 1)))
+    w47 94 hF_94 hM94 (StairField2V3Seg.pullIn a) hleg94 m1
+  simp only [segChunkCut, List.append_assoc] at h1a h1b hm2
+  rw [← h1b, ← h1a] at hm2
+  exact ⟨m2, hm1.trans hm2⟩
+
+theorem rowCutOdd1Multi (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR Lb x) (gsub : EntryGroupSub Lb)
+    (slots : EntrySlotsClean P hp StairConcreteAssembly.EntryPre) (s : State) (hs : EntryPreX x s) (mP : List Bool)
+    (a : State)
+    (hagree85 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 4 ++
+          TickRanges.tick w87 430) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w87 (5 * 85) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 4 ++
+          TickRanges.tick w87 430) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 4).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w87 (5 * 85) j))
+    (hagree86 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 9 ++
+          TickRanges.tick w87 435) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w87 (5 * 86) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 9 ++
+          TickRanges.tick w87 435) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 4).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w87 (5 * 86) j))
+    (hagree87 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 14 ++
+          TickRanges.tick w87 440) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w87 (5 * 87) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 14 ++
+          TickRanges.tick w87 440) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 4).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w87 (5 * 87) j))
+    (hagree88 : ∀ t1 (j : Fin 10),
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 19 ++
+          TickRanges.tick w87 445) t1 (StairField2V3Seg.pullIn a)).basis (History5.historyMap w87 (5 * 88) j) =
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+          StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+          StairReplay.movedForward w87 426 19 ++
+          TickRanges.tick w87 445) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 4).map Piece.H).flatten mP s))).basis
+        (History5.historyMap w87 (5 * 88) j))
+    (m : List Bool) :
+    ∃ m', run cutRowOdd1Multi m (StairField2V3Seg.pullIn a) =
+      run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++
+        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 13 85 (4 + 1)) m' (StairField2V3Seg.pullIn a) := by
+  obtain ⟨t, hrel⟩ := rowStart1 x plan V gsub slots s hs mP
+  have hseg : StairPhysicalPrimitives.segmentOf (425 + 1) = 87 := by decide
+  have htl85 := PackCutRows.tail1; rw [hseg] at htl85
+  have hinj := StairFirstTickV3.midSegmentMap_injective 87 hB87
+  have hM85 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 85))),
+      q ∉ wires (segChunkCut w87 431 86 ++ segChunkCut w87 436 87 ++ segChunkCut w87 441 88 ++ segTail w87 62 446 450) := by
+    intro q hq hm
+    simp only [wires_append, Finset.mem_union] at hm
+    rcases hm with ((h | h) | h) | h
+    · exact segChunkCut_disj_after w87 hinj 85 431 86 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segChunkCut_disj_after w87 hinj 85 436 87 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segChunkCut_disj_after w87 hinj 85 441 88 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segTail_disj_after w87 hinj 62 85 446 450 (by decide) (by decide) (by decide) htl85 q hq h
+  have hM86 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 86))),
+      q ∉ wires (segChunkCut w87 436 87 ++ segChunkCut w87 441 88 ++ segTail w87 62 446 450 ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 1))) := by
+    intro q hq hm
+    simp only [wires_append, Finset.mem_union] at hm
+    rcases hm with ((h | h) | h) | h
+    · exact segChunkCut_disj_after w87 hinj 86 436 87 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segChunkCut_disj_after w87 hinj 86 441 88 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segTail_disj_after w87 hinj 62 86 446 450 (by decide) (by decide) (by decide) tail_86 q hq h
+    · exact hosted_groups_disj 13 85 5 _ 85 1 (fun k hk1 hk2 =>
+        checkPktDisj_sound 13 85 5 [85] _ (by decide) (by decide) (by decide) chk_86 k (by simp; omega)) q hq h
+  have hM87 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 87))),
+      q ∉ wires (segChunkCut w87 441 88 ++ segTail w87 62 446 450 ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 2))) := by
+    intro q hq hm
+    simp only [wires_append, Finset.mem_union] at hm
+    rcases hm with (h | h) | h
+    · exact segChunkCut_disj_after w87 hinj 87 441 88 450 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) q hq h
+    · exact segTail_disj_after w87 hinj 62 87 446 450 (by decide) (by decide) (by decide) tail_87 q hq h
+    · exact hosted_groups_disj 13 85 5 _ 85 2 (fun k hk1 hk2 =>
+        checkPktDisj_sound 13 85 5 [85, 86] _ (by decide) (by decide) (by decide) chk_87 k (by simp; omega)) q hq h
+  have hM88 : ∀ q ∈ (Finset.range 10).image (MeasuredCodec5.label (History5.historyMap w87 (5 * 88))),
+      q ∉ wires (segTail w87 62 446 450 ++
+        StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+          (StairConcreteAssembly.hostPlan.group true 13 85 5)
+          (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 3))) := by
+    intro q hq hm
+    rw [wires_append, Finset.mem_union] at hm
+    rcases hm with h | h
+    · exact segTail_disj w87 hinj 62 88 450 (by decide) (by decide) tail_88 q hq h
+    · exact hosted_groups_disj 13 85 5 _ 85 3 (fun k hk1 hk2 =>
+        checkPktDisj_sound 13 85 5 [85, 86, 87] _ (by decide) (by decide) (by decide) chk_88 k (by simp; omega)) q hq h
+  have hleg85 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w87 (5 * 85))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+        StairReplay.movedForward w87 426 4 ++ TickRanges.tick w87 430) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree85 t1)).mpr
+      (PackCutBridge.legal_prefix x 87 62 (by decide) (R1L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec0 t' (reach_of_x x R1 t' (V.r1 t' h'))) _ t hrel 4
+        (by decide) (by decide) (by decide) PackCutRows.hvirt1 PackCutRows.hntgt1 PackCutRows.hlow1 PackCutRows.hpk1 t1)
+  have hleg86 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w87 (5 * 86))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+        StairReplay.movedForward w87 426 9 ++ TickRanges.tick w87 435) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree86 t1)).mpr
+      (PackCutBridge.legal_prefix x 87 62 (by decide) (R1L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec0 t' (reach_of_x x R1 t' (V.r1 t' h'))) _ t hrel 9
+        (by decide) (by decide) (by decide) hvirt_86 hntgt_86 hlow_86 hpk_86 t1)
+  have hleg87 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w87 (5 * 87))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+        StairReplay.movedForward w87 426 14 ++ TickRanges.tick w87 440) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree87 t1)).mpr
+      (PackCutBridge.legal_prefix x 87 62 (by decide) (R1L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec0 t' (reach_of_x x R1 t' (V.r1 t' h'))) _ t hrel 14
+        (by decide) (by decide) (by decide) hvirt_87 hntgt_87 hlow_87 hpk_87 t1)
+  have hleg88 : ∀ t1, MeasuredCodec5.legalAt (History5.historyMap w87 (5 * 88))
+      (run (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++
+        StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+        StairReplay.movedForward w87 426 19 ++ TickRanges.tick w87 445) t1 (StairField2V3Seg.pullIn a)).basis :=
+    fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree88 t1)).mpr
+      (PackCutBridge.legal_prefix x 87 62 (by decide) (R1L Lb)
+        (fun t' h' => StairField2V3RecScratch.rec0 t' (reach_of_x x R1 t' (V.r1 t' h'))) _ t hrel 19
+        (by decide) (by decide) (by decide) hvirt_88 hntgt_88 hlow_88 hpk_88 t1)
+  have hF85 := PackCutRows.hF1; rw [hseg] at hF85
+  obtain ⟨h4a, h4b⟩ := row1_step85_shape
+  obtain ⟨m1, hm1⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+      StairReplay.movedForward w87 426 4 ++ TickRanges.tick w87 430)
+    (segChunkCut w87 431 86 ++ segChunkCut w87 436 87 ++ segChunkCut w87 441 88 ++ segTail w87 62 446 450)
+    (oddHostedCutPrefix 13 85 4 1)
+    w87 85 hF85 hM85 (StairField2V3Seg.pullIn a) hleg85 m
+  simp only [segChunkCut, List.append_assoc] at h4a h4b hm1
+  rw [← h4b, ← h4a] at hm1
+  obtain ⟨h3a, h3b⟩ := row1_step86_shape
+  obtain ⟨m2, hm2⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+      StairReplay.movedForward w87 426 9 ++ TickRanges.tick w87 435)
+    (segChunkCut w87 436 87 ++ segChunkCut w87 441 88 ++ segTail w87 62 446 450 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 1)))
+    (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 86 3 1)))
+    w87 86 hF_86 hM86 (StairField2V3Seg.pullIn a) hleg86 m1
+  simp only [segChunkCut, List.append_assoc] at h3a h3b hm2
+  rw [← h3b, ← h3a] at hm2
+  obtain ⟨h2a, h2b⟩ := row1_step87_shape
+  obtain ⟨m3, hm3⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+      StairReplay.movedForward w87 426 14 ++ TickRanges.tick w87 440)
+    (segChunkCut w87 441 88 ++ segTail w87 62 446 450 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 2)))
+    (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 87 2 1)))
+    w87 87 hF_87 hM87 (StairField2V3Seg.pullIn a) hleg87 m2
+  simp only [segChunkCut, List.append_assoc] at h2a h2b hm3
+  rw [← h2b, ← h2a] at hm3
+  obtain ⟨h1a, h1b⟩ := row1_step88_shape
+  obtain ⟨m4, hm4⟩ := cut_one_step
+    (StairConcreteAssembly.checkpointPrimitives.unpack 87 ++ StairConcreteAssembly.checkpointPrimitives.tickForward 425 ++
+      StairReplay.movedForward w87 426 19 ++ TickRanges.tick w87 445)
+    (segTail w87 62 446 450 ++
+      StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+        (StairConcreteAssembly.hostPlan.group true 13 85 5)
+        (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true 13 85 3)))
+    (StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 13)
+      (StairConcreteAssembly.hostPlan.group true 13 85 5)
+      (renameProgram (OB5.sig 511) (oddGroupsCutPrefix 13 88 1 1)))
+    w87 88 hF_88 hM88 (StairField2V3Seg.pullIn a) hleg88 m3
+  simp only [segChunkCut, List.append_assoc] at h1a h1b hm4
+  rw [← h1b, ← h1a] at hm4
+  exact ⟨m4, ((hm1.trans hm2).trans hm3).trans hm4⟩
+end ECDSAAdd.Entrant.PackCutOddMulti
+end
+
 
 -- ==== b60: field bank 13 (window block at tick 60): `starts` of StairSideA begins at 16; packet 13 is safe too ====
 section
