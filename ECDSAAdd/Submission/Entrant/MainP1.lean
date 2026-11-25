@@ -14408,14 +14408,14 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127281 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127281 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=127348 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=127373 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65990 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=66015 ∧
-    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65672 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65697 := by
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127270 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127270 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=127337 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=127362 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65520 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65545 ∧
+    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65202 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65227 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
     (counts true first WindowParams7.rest7).2.2.1,(counts false first WindowParams7.rest7).2.2.1,(counts true first WindowParams7.rest7).2.2.2,
     (counts false first WindowParams7.rest7).2.2.2]
@@ -14495,24 +14495,24 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127281 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127270 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127281 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127270 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 127348 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 127337 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 127373 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 127362 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65990 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 66015 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65520 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65545 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
-theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65672 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65697 :=
+theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65202 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65227 :=
   ship_counts.2.2.2.2.2.2
 
 theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2419194 ∧ gateSlots (forward45plus1 false) ≤ 2419194 :=
@@ -14563,25 +14563,25 @@ theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2419194 ∧ gateSlots (forw
 theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2403696 ∧ gateSlots (reverseCut false) ≤ 2403696 :=
   ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
 
-theorem cut_toffoliF : toffoliCount (forwardCut true) = 127177 ∧ toffoliCount (forwardCut false) = 127177 := by
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 127166 ∧ toffoliCount (forwardCut false) = 127166 := by
   have a := (cut_toffoli true).1
   have b := (cut_toffoli false).1
   rw [ship_toffoliF_true] at a
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 127244 ∧ toffoliCount (reverseCut false) = 127269 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 127233 ∧ toffoliCount (reverseCut false) = 127258 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
   rw [ship_toffoliR_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_measureF : measurementCount (forwardCut true) = 65990 ∧ measurementCount (forwardCut false) = 66015 := by
+theorem cut_measureF : measurementCount (forwardCut true) = 65520 ∧ measurementCount (forwardCut false) = 65545 := by
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
-theorem cut_measureR : measurementCount (reverseCut true) = 65672 ∧ measurementCount (reverseCut false) = 65697 := by
+theorem cut_measureR : measurementCount (reverseCut true) = 65202 ∧ measurementCount (reverseCut false) = 65227 := by
   rw [(cut_measure true).2, (cut_measure false).2]
   exact ship_measureR
 
@@ -30461,8 +30461,8 @@ theorem changingTail (P : Program) (k : Fp) :
     t,m,g,et,em,StairSquareEntryR.entryRH_slots,Nat.add_assoc,and_self]
 
 theorem metrics (k : Fp) :
-    toffoliCount (program k) + 934 = toffoliCount (A161Generic.squareEntry L0 k) ∧
-    measurementCount (program k) + 589 = measurementCount (A161Generic.squareEntry L0 k) ∧
+    toffoliCount (program k) + 1053 = toffoliCount (A161Generic.squareEntry L0 k) ∧
+    measurementCount (program k) + 814 = measurementCount (A161Generic.squareEntry L0 k) ∧
     Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 5490126 := by
   have h : toffoliCount (program k) = toffoliCount (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) ∧
       measurementCount (program k) = measurementCount (squareN PDSplitLeafSquare.brC PDSplitLeafSquare.brB PDSplitLeafSquare.brA k) ∧
@@ -30666,25 +30666,25 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2167840 ∧ measurementCount (program C) ≤ 1519658 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167721 ∧ measurementCount (program C) ≤ 1519433 := by
   have h := StairCountsHosted.count_totals C
   change toffoliCount (concreteProgram C) ≤ 2168925 ∧ measurementCount (concreteProgram C) ≤ 1520247 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2167840 ∧ measurementCount [] ≤ 1519658
+    change toffoliCount [] ≤ 2167721 ∧ measurementCount [] ≤ 1519433
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
     have old := StairSquareFinal.square_counts StairSqLoopA.holes k
     have new := Stair44Square.metrics k
-    have ft := finite_sub tc (.some hc) cx cy 1085 (by
-      change toffoliCount (Stair44Square.program k) + 1085 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
+    have ft := finite_sub tc (.some hc) cx cy 1204 (by
+      change toffoliCount (Stair44Square.program k) + 1204 = toffoliCount (StairSquareFinal.squareEntryHL _ layout k)
       rw [StairSquareFinal.squareEntryHL_layout]; omega)
-    have fm := finite_sub mc (.some hc) cx cy 589 (by
-      change measurementCount (Stair44Square.program k) + 589 = measurementCount (StairSquareFinal.squareEntryHL _ layout k)
+    have fm := finite_sub mc (.some hc) cx cy 814 (by
+      change measurementCount (Stair44Square.program k) + 814 = measurementCount (StairSquareFinal.squareEntryHL _ layout k)
       rw [StairSquareFinal.squareEntryHL_layout]; omega)
-    change toffoliCount _ + 1085 = toffoliCount _ at ft
-    change measurementCount _ + 589 = measurementCount _ at fm
+    change toffoliCount _ + 1204 = toffoliCount _ at ft
+    change measurementCount _ + 814 = measurementCount _ at fm
     simp only [program,concreteProgram,hostedWrapper,(renameProgram_counts _ _).1,
       (renameProgram_counts _ _).2] at h ⊢
     exact ⟨by omega, by omega⟩
