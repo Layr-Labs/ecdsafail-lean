@@ -5,6 +5,9 @@ name: Warm verifier cache
 # imported commit. Rewarm after eviction with `gh workflow run warm-cache.yml --ref master`.
 on:
   workflow_dispatch:
+  schedule:
+    # Keep the trusted cache warm across eviction/TTL without manual rewarms.
+    - cron: "0 4 * * *"
   push:
     branches: [master]
     paths:
