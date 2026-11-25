@@ -1,4 +1,13 @@
 import ECDSAAdd.Submission.Entrant.Prelude
+import ECDSAAdd.Math.SkywalkTrace
+import ECDSAAdd.Framework.MeasuredLocality
+import ECDSAAdd.Framework.Cost
+import ECDSAAdd.Arithmetic.SignedRecordProgram
+import ECDSAAdd.Submission.Entrant.MainPart07Core
+import ECDSAAdd.Framework.GateInverse
+import ECDSAAdd.Arithmetic.SkywalkIntegerTick
+import ECDSAAdd.Arithmetic.SignedWord
+import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Framework.WireRenamePool
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Framework.RunAppendAgreement
@@ -10,7 +19,6 @@ import Mathlib.Tactic
 import ECDSAAdd.Framework.Syntax
 import ECDSAAdd.Framework.Semantics
 import ECDSAAdd.Framework.RecordPadding
-import ECDSAAdd.Submission.Entrant.CRT
 
 -- ==== module OddField (folded into this module for the replay memory budget) ====
 section
@@ -8841,17 +8849,22 @@ def lowCorrectionOdd (L : BalancedConvert.Layout) : List MappedBit :=
   (List.range 255).map fun i =>
     { wire := if halfCOdd.testBit i then some L.flag else none, flip := false }
 
+/-- Upper 252 bits of `lowCorrectionOdd`: bits `0..2` of `halfCOdd = 2^255 + 2^31 + 488` are zero,
+    so the low 3 adder layers carry `0` identically and can be skipped (-3 T, -3 M each). -/
+def lowCorrectionOdd3 (L : BalancedConvert.Layout) : List MappedBit :=
+  (lowCorrectionOdd L).drop 3
+
 /-- Canonical `u` to `oddWord (u / 2)`. -/
 def centerOdd (L : BalancedConvert.Layout) : Program :=
   [.CX (HalfConvert.lowBit L) L.flag, .CX L.flag (HalfConvert.lowBit L)] ++
     rotateRight L.word ++ [.X L.flag] ++
-    mappedAdd (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin ++
+    mappedAdd (lowCorrectionOdd3 L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin ++
     [.CX L.flag L.msb, .CX L.msb L.flag]
 
 /-- `oddWord (u / 2)` to canonical `u`: exact inverse of `centerOdd`. -/
 def canonicalOdd (L : BalancedConvert.Layout) : Program :=
   [.CX L.msb L.flag, .CX L.flag L.msb] ++
-    mappedSub (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin ++
+    mappedSub (lowCorrectionOdd3 L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin ++
     [.X L.flag] ++ rotateLeft L.word ++
     [.CX L.flag (HalfConvert.lowBit L), .CX (HalfConvert.lowBit L) L.flag]
 
@@ -8895,6 +8908,29 @@ theorem lowCorrectionOdd_sources (L : BalancedConvert.Layout) (w : Wire)
   cases hf : halfCOdd.testBit i
   · simp [hf] at hw
   · simpa [hf] using hw
+
+theorem lowCorrectionOdd3_length (L : BalancedConvert.Layout) :
+    (lowCorrectionOdd3 L).length = 252 := by
+  simp [lowCorrectionOdd3, lowCorrectionOdd]
+
+private def lowVirtualOdd3 (b : Bool) : Nat :=
+  (List.range' 3 252).foldr (fun i n => (if halfCOdd.testBit i then b else false).toNat + 2 * n) 0
+
+private theorem lowVirtualOdd3_value (b : Bool) :
+    lowVirtualOdd3 b = if b then 268435517 else 0 := by
+  cases b <;> decide
+
+theorem lowCorrectionOdd3_value (L : BalancedConvert.Layout) (s : BasisState) :
+    mappedValue (lowCorrectionOdd3 L) s = if s L.flag then 268435517 else 0 := by
+  have hdrop : (List.range 255).drop 3 = List.range' 3 252 := by decide
+  rw [lowCorrectionOdd3, lowCorrectionOdd, ← List.map_drop, hdrop, correctionOdd_list]
+  exact lowVirtualOdd3_value _
+
+theorem lowCorrectionOdd3_sources (L : BalancedConvert.Layout) (w : Wire)
+    (hw : w ∈ mappedWires (lowCorrectionOdd3 L)) : w = L.flag := by
+  apply lowCorrectionOdd_sources L w
+  obtain ⟨b, hb, hw⟩ := List.mem_flatMap.mp hw
+  exact List.mem_flatMap.mpr ⟨b, List.mem_of_mem_drop hb, hw⟩
 
 private theorem p_eq :
     p = 115792089237316195423570985008687907853269984665640564039457584007908834671663 := by
@@ -8983,18 +9019,18 @@ theorem lowCorrection_cons (L : BalancedConvert.Layout) :
   have hb0Std : HalfConvert.halfC.testBit 0 = true := by decide
   simp only [HalfConvert.lowCorrection, hrange, List.map_cons, List.tail_cons, hb0Std, if_true]
 
-/-- Depth-0 counts: 254 T and 254 M (saving 43 T and 43 M over `canon760Loan` / `center760Loan`). -/
+/-- Depth-0 drop-3 counts: 251 T and 251 M (saving 46 T and 46 M over `canon760Loan` / `center760Loan`). -/
 theorem canon760OddLoan_counts :
-    toffoliCount canon760OddLoan = 254 ∧ measurementCount canon760OddLoan = 254 := by
+    toffoliCount canon760OddLoan = 251 ∧ measurementCount canon760OddLoan = 251 := by
   have len := converterLayout760_facts.widths
-  have msub := mappedSub_counts (lowCorrectionOdd converterLayout760) converterLayout760.low
-    (converterLayout760.carry.take 254) converterLayout760.cin
-    (by rw [lowCorrectionOdd_length, len.1]) (by simp [List.length_take, len.1, len.2])
+  have msub := mappedSub_counts (lowCorrectionOdd3 converterLayout760) (converterLayout760.low.drop 3)
+    ((converterLayout760.carry.take 254).drop 3) converterLayout760.cin
+    (by rw [lowCorrectionOdd3_length]; simp [len.1]) (by simp [List.length_take, len.1, len.2])
   have rot := rotate_counts converterLayout760.word
   have rc := StairLoan.rebindMany_counts canonRoles yHosts43 (canonicalOdd converterLayout760)
   rw [canon760OddLoan, rc.1, rc.2]
   simp only [canonicalOdd, toffoliCount_append, measurementCount_append, msub.1, msub.2,
-    rot.2.2.1, rot.2.2.2, len.1]
+    rot.2.2.1, rot.2.2.2, List.length_drop, len.1]
   have h1 : toffoliCount ([Instr.CX converterLayout760.msb converterLayout760.flag,
       Instr.CX converterLayout760.flag converterLayout760.msb] : Program) = 0 ∧
       measurementCount ([Instr.CX converterLayout760.msb converterLayout760.flag,
@@ -9008,16 +9044,16 @@ theorem canon760OddLoan_counts :
   omega
 
 theorem center760OddLoan_counts :
-    toffoliCount center760OddLoan = 254 ∧ measurementCount center760OddLoan = 254 := by
+    toffoliCount center760OddLoan = 251 ∧ measurementCount center760OddLoan = 251 := by
   have len := converterLayout760_facts.widths
-  have madd := mappedAdd_counts (lowCorrectionOdd converterLayout760) converterLayout760.low
-    (converterLayout760.carry.take 254) converterLayout760.cin
-    (by rw [lowCorrectionOdd_length, len.1]) (by simp [List.length_take, len.1, len.2])
+  have madd := mappedAdd_counts (lowCorrectionOdd3 converterLayout760) (converterLayout760.low.drop 3)
+    ((converterLayout760.carry.take 254).drop 3) converterLayout760.cin
+    (by rw [lowCorrectionOdd3_length]; simp [len.1]) (by simp [List.length_take, len.1, len.2])
   have rot := rotate_counts converterLayout760.word
   have rc := StairLoan.rebindMany_counts canonRoles yHosts43 (centerOdd converterLayout760)
   rw [center760OddLoan, rc.1, rc.2]
   simp only [centerOdd, toffoliCount_append, measurementCount_append, madd.1, madd.2,
-    rot.1, rot.2.1, len.1]
+    rot.1, rot.2.1, List.length_drop, len.1]
   have h1 : toffoliCount ([Instr.CX (HalfConvert.lowBit converterLayout760) converterLayout760.flag,
       Instr.CX converterLayout760.flag (HalfConvert.lowBit converterLayout760)] : Program) = 0 ∧
       measurementCount ([Instr.CX (HalfConvert.lowBit converterLayout760) converterLayout760.flag,
@@ -9028,6 +9064,37 @@ theorem center760OddLoan_counts :
       Instr.CX converterLayout760.msb converterLayout760.flag] : Program) = 0 ∧
       measurementCount ([Instr.CX converterLayout760.flag converterLayout760.msb,
       Instr.CX converterLayout760.msb converterLayout760.flag] : Program) = 0 := ⟨rfl, rfl⟩
+  omega
+
+private theorem mappedAdd_slots_cin :
+    ∀ (bs : List MappedBit) (ys cs : List Wire) (c1 c2 : Wire),
+      gateSlots (mappedAdd bs ys cs c1) = gateSlots (mappedAdd bs ys cs c2)
+  | [], _, _, _, _ => rfl
+  | [b], [y], _, c1, c2 => by
+    cases b with | mk w fl => cases w <;> cases fl <;> rfl
+  | b :: b' :: bs, y :: y' :: ys, c :: cs, c1, c2 => by
+    have h1 : gateSlots (mappedMajority b y c1 c) = gateSlots (mappedMajority b y c2 c) := by
+      cases b with | mk w fl => cases w <;> cases fl <;> rfl
+    have h2 : gateSlots (mappedEraseCarry b y c1 c) = gateSlots (mappedEraseCarry b y c2 c) := by
+      cases b with | mk w fl => cases w <;> cases fl <;> rfl
+    have h3 : gateSlots (mappedSum b y c1) = gateSlots (mappedSum b y c2) := by
+      cases b with | mk w fl => cases w <;> cases fl <;> rfl
+    simp only [mappedAdd, gateSlots_append, h1, h2, h3]
+  | [_], [], _, _, _ => rfl
+  | [_], _ :: _ :: _, _, _, _ => rfl
+  | _ :: _ :: _, [], _, _, _ => rfl
+  | _ :: _ :: _, [_], _, _, _ => rfl
+  | _ :: _ :: _, _ :: _ :: _, [], _, _ => rfl
+
+private theorem mappedAdd_slots_drop3 (bs : List MappedBit) (ys cs : List Wire) (cin : Wire)
+    (hb : 4 ≤ bs.length) (hy : 4 ≤ ys.length) (hc : 3 ≤ cs.length) :
+    gateSlots (mappedAdd (bs.drop 3) (ys.drop 3) (cs.drop 3) cin) ≤
+      gateSlots (mappedAdd bs ys cs cin) := by
+  rcases bs with _ | ⟨b0, _ | ⟨b1, _ | ⟨b2, _ | ⟨b3, bs'⟩⟩⟩⟩; all_goals try (simp at hb)
+  rcases ys with _ | ⟨y0, _ | ⟨y1, _ | ⟨y2, _ | ⟨y3, ys'⟩⟩⟩⟩; all_goals try (simp at hy)
+  rcases cs with _ | ⟨c0, _ | ⟨c1, _ | ⟨c2, cs'⟩⟩⟩; all_goals try (simp at hc)
+  simp only [List.drop_succ_cons, List.drop_zero, mappedAdd, gateSlots_append]
+  rw [mappedAdd_slots_cin (b3 :: bs') (y3 :: ys') cs' c2 cin]
   omega
 
 private theorem mappedAdd_slots_le_loan (d : Nat) (roles : List Wire)
@@ -9090,8 +9157,12 @@ theorem center760OddLoan_slots_le :
     (by simp [mappedMajority, majority, gateSlots, instructionSlots])
     (by simp [mappedEraseCarry, eraseCarry, gateSlots, instructionSlots])
     (by simp [mappedSum, gateSlots, instructionSlots])
+  have hdrop := mappedAdd_slots_drop3 (lowCorrectionOdd converterLayout760) converterLayout760.low
+    (converterLayout760.carry.take 254) converterLayout760.cin
+    (by rw [lowCorrectionOdd_length]; decide) (by rw [len.1]; decide) (by simp [List.length_take, len.2])
+  rw [lowCorrectionOdd_cons, htail, hlow, hcar] at hdrop
   rw [center760OddLoan, OddFullPass.rebindMany_slots]
-  simp only [centerOdd, center760Loan, centerLoan, gateSlots_append]
+  simp only [centerOdd, center760Loan, centerLoan, lowCorrectionOdd3, gateSlots_append]
   rw [lowCorrectionOdd_cons]
   conv_rhs => rw [lowCorrection_cons]
   rw [htail, hlow, hcar]
@@ -9117,8 +9188,21 @@ theorem canon760OddLoan_slots_le :
     (by simp [mappedMajority, majority, gateSlots, instructionSlots])
     (by simp [mappedEraseCarry, eraseCarry, gateSlots, instructionSlots])
     (by simp [mappedSum, gateSlots, instructionSlots])
+  have hdrop := mappedAdd_slots_drop3 (lowCorrectionOdd converterLayout760) converterLayout760.low
+    (converterLayout760.carry.take 254) converterLayout760.cin
+    (by rw [lowCorrectionOdd_length]; decide) (by rw [len.1]; decide) (by simp [List.length_take, len.2])
+  rw [lowCorrectionOdd_cons, htail, hlow, hcar] at hdrop
+  have hnr : gateSlots (notRegister (converterLayout760.low.drop 3)) ≤ gateSlots (notRegister converterLayout760.low) := by
+    have hgs : ∀ xs : List Wire, gateSlots (notRegister xs) = xs.length := by
+      intro xs; induction xs with
+      | nil => rfl
+      | cons x xs ih =>
+        change gateSlots ([Instr.X x] ++ notRegister xs) = xs.length + 1
+        rw [gateSlots_append, ih]; simp [gateSlots, instructionSlots]; omega
+    rw [hgs, hgs]; simp
+  rw [hlow] at hnr
   rw [canon760OddLoan, OddFullPass.rebindMany_slots]
-  simp only [canonicalOdd, canon760Loan, canonicalLoan, StairLoan.mappedSubLoan, mappedSub, gateSlots_append]
+  simp only [canonicalOdd, canon760Loan, canonicalLoan, lowCorrectionOdd3, StairLoan.mappedSubLoan, mappedSub, gateSlots_append]
   rw [lowCorrectionOdd_cons]
   conv_rhs => rw [lowCorrection_cons]
   rw [htail, hlow, hcar]
@@ -9137,15 +9221,29 @@ private theorem lowOdd_bits_away :
     refine ⟨⟨some converterLayout760.flag, false⟩, ?_, by simp⟩
     rw [lowCorrection_cons]; exact List.mem_cons_self)
 
+private theorem lowOdd3_nodup :
+    (converterLayout760.cin :: (converterLayout760.low.drop 3 ++ (converterLayout760.carry.take 254).drop 3)).Nodup :=
+  converterLayout760_facts.nodup.sublist (List.Sublist.cons₂ _ (List.Sublist.append (List.drop_sublist _ _) (List.drop_sublist _ _)))
+
+private theorem lowOdd3_bits_away :
+    ∀ b ∈ lowCorrectionOdd3 converterLayout760, ∀ q ∈ b.wire,
+      q ∉ converterLayout760.cin :: converterLayout760.low.drop 3 ++ (converterLayout760.carry.take 254).drop 3 := by
+  intro b hb q hq bad
+  apply lowOdd_bits_away b (List.mem_of_mem_drop hb) q hq
+  simp only [List.mem_cons, List.mem_append] at bad ⊢
+  rcases bad with (rfl | hlo) | hca
+  · exact Or.inl (Or.inl rfl)
+  · exact Or.inl (Or.inr (List.mem_of_mem_drop hlo))
+  · exact Or.inr (List.mem_of_mem_drop hca)
+
 theorem canon760OddLoan_physical : GatePhysical canon760OddLoan := by
-  have f := converterLayout760_facts
-  have hnr : GatePhysical (notRegister converterLayout760.low) := by
+  have hnr : GatePhysical (notRegister (converterLayout760.low.drop 3)) := by
     intro g hg; obtain ⟨q, _, rfl⟩ := List.mem_map.mp hg; simp [PhysicalInstr, ProperGate]
-  have ma : GatePhysical (mappedAdd (lowCorrectionOdd converterLayout760)
-      converterLayout760.low (converterLayout760.carry.take 254) converterLayout760.cin) :=
-    mappedAdd_physical _ _ _ _ f.nodup lowOdd_bits_away
-  have ms : GatePhysical (mappedSub (lowCorrectionOdd converterLayout760)
-      converterLayout760.low (converterLayout760.carry.take 254) converterLayout760.cin) := by
+  have ma : GatePhysical (mappedAdd (lowCorrectionOdd3 converterLayout760)
+      (converterLayout760.low.drop 3) ((converterLayout760.carry.take 254).drop 3) converterLayout760.cin) :=
+    mappedAdd_physical _ _ _ _ lowOdd3_nodup lowOdd3_bits_away
+  have ms : GatePhysical (mappedSub (lowCorrectionOdd3 converterLayout760)
+      (converterLayout760.low.drop 3) ((converterLayout760.carry.take 254).drop 3) converterLayout760.cin) := by
     simp only [mappedSub, gatePhysical_append]; exact ⟨⟨hnr, ma⟩, hnr⟩
   have hbase := StairBoundaryLoan.record_converters_physical.2
   rw [StairBoundaryLoan.canon760_eq] at hbase
@@ -9156,10 +9254,9 @@ theorem canon760OddLoan_physical : GatePhysical canon760OddLoan := by
   exact StairLoan.rebindMany_physical canonRoles yHosts43 _ hcore
 
 theorem center760OddLoan_physical : GatePhysical center760OddLoan := by
-  have f := converterLayout760_facts
-  have ma : GatePhysical (mappedAdd (lowCorrectionOdd converterLayout760)
-      converterLayout760.low (converterLayout760.carry.take 254) converterLayout760.cin) :=
-    mappedAdd_physical _ _ _ _ f.nodup lowOdd_bits_away
+  have ma : GatePhysical (mappedAdd (lowCorrectionOdd3 converterLayout760)
+      (converterLayout760.low.drop 3) ((converterLayout760.carry.take 254).drop 3) converterLayout760.cin) :=
+    mappedAdd_physical _ _ _ _ lowOdd3_nodup lowOdd3_bits_away
   have hbase := StairBoundaryLoan.record_converters_physical.1
   rw [StairBoundaryLoan.center760_eq] at hbase
   simp only [HalfConvert.center, gatePhysical_append] at hbase
@@ -9246,39 +9343,66 @@ theorem rebindMany_wires_sub_erase (rs hs : List Wire) (P : Program)
           · exact Or.inl ⟨hvp, ⟨hvr, hvnr⟩⟩
           · exact Or.inr (Or.inr hvh')
 
-private theorem canonicalOdd_wires_sub_gen (L : BalancedConvert.Layout) (len : L.Widths) :
-    wires (canonicalOdd L) ⊆ wires (HalfConvert.canonical L) := by
+private theorem mappedAdd_carry_in :
+    ∀ (bs : List MappedBit) (ys cs : List Wire) (cin : Wire),
+      bs.length = ys.length → cs.length + 1 = ys.length →
+      ∀ c ∈ cs, c ∈ wires (mappedAdd bs ys cs cin)
+  | [], ys, _, _, hb, hc, _, _ => by cases ys <;> simp at hb hc
+  | [_], [_], [], _, _, _, _, hm => by simp at hm
+  | b :: b' :: bs, y :: y' :: ys, c :: cs, cin, hb, hc, q, hq => by
+    simp only [mappedAdd, wires_append, Finset.mem_union]
+    rcases List.mem_cons.mp hq with rfl | hq
+    · left; left; left
+      cases b with | mk w fl => cases w <;> cases fl <;> simp [mappedMajority, majority, borrowMajority, wires, Instr.wires]
+    · left; left; right
+      exact mappedAdd_carry_in (b' :: bs) (y' :: ys) cs c (by simpa using hb) (by simpa using hc) q hq
+  | [_], [], _, _, hb, _, _, _ => by simp at hb
+  | [_], _ :: _ :: _, _, _, hb, _, _, _ => by simp at hb
+  | [_], [_], _ :: _, _, _, hc, _, _ => by simp at hc
+  | _ :: _ :: _, [], _, _, hb, _, _, _ => by simp at hb
+  | _ :: _ :: _, [_], _, _, hb, _, _, _ => by simp at hb
+  | _ :: _ :: _, _ :: _ :: _, [], _, _, hc, _, _ => by simp at hc
+
+private theorem mappedAdd_low_cin_in (L : BalancedConvert.Layout) (len : L.Widths) :
+    L.cin ∈ wires (mappedAdd (HalfConvert.lowCorrection L) L.low (L.carry.take 254) L.cin) := by
   rcases hlow : L.low with _ | ⟨y0, _ | ⟨y1, ys⟩⟩
   · have := len.1; rw [hlow] at this; simp at this
   · have := len.1; rw [hlow] at this; simp at this
   rcases hcar : L.carry.take 254 with _ | ⟨c0, cs⟩
   · have : (L.carry.take 254).length = 254 := by simp [List.length_take, len.2]
     rw [hcar] at this; simp at this
-  have hsub : wires (mappedSub (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin) ⊆
-      wires (mappedSub (HalfConvert.lowCorrection L) L.low (L.carry.take 254) L.cin) := by
-    rw [lowCorrectionOdd_cons]
-    conv_rhs => rw [lowCorrection_cons]
-    rw [hlow, hcar]
-    cases hbs : (HalfConvert.lowCorrection L).tail with
-    | nil => simp [mappedSub, mappedAdd]
-    | cons b1 bs' =>
-      intro x hx
-      simp only [mappedSub, mappedAdd, wires_append, Finset.mem_union] at hx ⊢
-      have hmaj : wires (mappedMajority { wire := none, flip := false } y0 L.cin c0) ⊆
-          wires (mappedMajority { wire := some L.flag, flip := false } y0 L.cin c0) := by
-        intro z hz; simp [mappedMajority, majority, wires, Instr.wires] at hz ⊢; tauto
-      have her : wires (mappedEraseCarry { wire := none, flip := false } y0 L.cin c0) ⊆
-          wires (mappedEraseCarry { wire := some L.flag, flip := false } y0 L.cin c0) := by
-        intro z hz; simp [mappedEraseCarry, eraseCarry, wires, Instr.wires, correctionWires] at hz ⊢; tauto
-      have hsm : wires (mappedSum { wire := none, flip := false } y0 L.cin) ⊆
-          wires (mappedSum { wire := some L.flag, flip := false } y0 L.cin) := by
-        intro z hz; simp [mappedSum, wires, Instr.wires] at hz ⊢; tauto
-      tauto
+  rw [lowCorrection_cons]
+  cases hbs : (HalfConvert.lowCorrection L).tail with
+  | nil =>
+    have hl := HalfConvert.lowCorrection_length L
+    rw [lowCorrection_cons, hbs] at hl; simp [len.1] at hl
+  | cons b1 bs' =>
+    simp only [mappedAdd, wires_append, Finset.mem_union]
+    left; left; left
+    simp [mappedMajority, majority, wires, Instr.wires]
+
+private theorem canonicalOdd_wires_sub_gen (L : BalancedConvert.Layout) (len : L.Widths) :
+    wires (canonicalOdd L) ⊆ wires (HalfConvert.canonical L) := by
   intro q hq
   simp only [canonicalOdd, HalfConvert.canonical, wires_append, Finset.mem_union] at hq ⊢
   rcases hq with (((h | h) | h) | h) | h
   · exact Or.inl (Or.inl (Or.inl h))
-  · exact Or.inl (Or.inl (Or.inr (hsub h)))
+  · have hm := mappedSub_wires_subset _ _ _ _ h
+    simp only [List.mem_toFinset, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hm
+    rcases hm with ((hsrc | hlow) | hcar) | rfl
+    · have hf := lowCorrectionOdd3_sources L q hsrc
+      subst hf; exact Or.inl (Or.inl (Or.inl (by simp [wires, Instr.wires])))
+    · left; left; right
+      simp only [mappedSub, wires_append, Finset.mem_union]
+      exact Or.inl (Or.inl (by rw [notRegister_wires]; exact List.mem_toFinset.mpr (List.mem_of_mem_drop hlow)))
+    · left; left; right
+      simp only [mappedSub, wires_append, Finset.mem_union]
+      exact Or.inl (Or.inr (mappedAdd_carry_in _ _ _ _
+        (by rw [HalfConvert.lowCorrection_length, len.1]) (by simp [List.length_take, len.1, len.2])
+        q (List.mem_of_mem_drop hcar)))
+    · left; left; right
+      simp only [mappedSub, wires_append, Finset.mem_union]
+      exact Or.inl (Or.inr (mappedAdd_low_cin_in L len))
   · have hf : q = L.flag := by simpa [wires, Instr.wires] using h
     subst hf; exact Or.inl (Or.inl (Or.inl (by simp [wires, Instr.wires])))
   · exact Or.inl (Or.inr h)
@@ -9286,32 +9410,6 @@ private theorem canonicalOdd_wires_sub_gen (L : BalancedConvert.Layout) (len : L
 
 private theorem centerOdd_wires_sub_gen (L : BalancedConvert.Layout) (len : L.Widths) :
     wires (centerOdd L) ⊆ wires (HalfConvert.center L) := by
-  rcases hlow : L.low with _ | ⟨y0, _ | ⟨y1, ys⟩⟩
-  · have := len.1; rw [hlow] at this; simp at this
-  · have := len.1; rw [hlow] at this; simp at this
-  rcases hcar : L.carry.take 254 with _ | ⟨c0, cs⟩
-  · have : (L.carry.take 254).length = 254 := by simp [List.length_take, len.2]
-    rw [hcar] at this; simp at this
-  have hadd : wires (mappedAdd (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin) ⊆
-      wires (mappedAdd (HalfConvert.lowCorrection L) L.low (L.carry.take 254) L.cin) := by
-    rw [lowCorrectionOdd_cons]
-    conv_rhs => rw [lowCorrection_cons]
-    rw [hlow, hcar]
-    cases hbs : (HalfConvert.lowCorrection L).tail with
-    | nil => simp [mappedAdd]
-    | cons b1 bs' =>
-      intro x hx
-      simp only [mappedAdd, wires_append, Finset.mem_union] at hx ⊢
-      have hmaj : wires (mappedMajority { wire := none, flip := false } y0 L.cin c0) ⊆
-          wires (mappedMajority { wire := some L.flag, flip := false } y0 L.cin c0) := by
-        intro z hz; simp [mappedMajority, majority, wires, Instr.wires] at hz ⊢; tauto
-      have her : wires (mappedEraseCarry { wire := none, flip := false } y0 L.cin c0) ⊆
-          wires (mappedEraseCarry { wire := some L.flag, flip := false } y0 L.cin c0) := by
-        intro z hz; simp [mappedEraseCarry, eraseCarry, wires, Instr.wires, correctionWires] at hz ⊢; tauto
-      have hsm : wires (mappedSum { wire := none, flip := false } y0 L.cin) ⊆
-          wires (mappedSum { wire := some L.flag, flip := false } y0 L.cin) := by
-        intro z hz; simp [mappedSum, wires, Instr.wires] at hz ⊢; tauto
-      tauto
   intro q hq
   simp only [centerOdd, HalfConvert.center, wires_append, Finset.mem_union] at hq ⊢
   rcases hq with (((h | h) | h) | h) | h
@@ -9319,7 +9417,20 @@ private theorem centerOdd_wires_sub_gen (L : BalancedConvert.Layout) (len : L.Wi
   · exact Or.inl (Or.inl (Or.inr h))
   · have hf : q = L.flag := by simpa [wires, Instr.wires] using h
     subst hf; exact Or.inr (by simp [wires, Instr.wires])
-  · exact Or.inl (Or.inr (hadd h))
+  · have hm := mappedAdd_wires_subset _ _ _ _ h
+    simp only [List.mem_toFinset, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hm
+    rcases hm with ((hsrc | hlow) | hcar) | rfl
+    · have hf := lowCorrectionOdd3_sources L q hsrc
+      subst hf; exact Or.inr (by simp [wires, Instr.wires])
+    · left; left; right
+      rw [(rotate_wires L.word).1, if_neg (by simp [BalancedConvert.Layout.word, len.1])]
+      exact List.mem_toFinset.mpr (by simp [BalancedConvert.Layout.word, List.mem_of_mem_drop hlow])
+    · left; right
+      exact mappedAdd_carry_in _ _ _ _
+        (by rw [HalfConvert.lowCorrection_length, len.1]) (by simp [List.length_take, len.1, len.2])
+        q (List.mem_of_mem_drop hcar)
+    · left; right
+      exact mappedAdd_low_cin_in L len
   · exact Or.inr h
 
 private theorem canonical_wires_in_layout (L : BalancedConvert.Layout) (hw : L.Widths) :
@@ -9593,7 +9704,7 @@ theorem centerOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.w
   let st1 := run [.CX a L.flag, .CX L.flag a] [] s
   let st2 := run (rotateRight L.word) [] st1
   let st2x := run [.X L.flag] [] st2
-  let st3 := run (mappedAdd (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin) m st2x
+  let st3 := run (mappedAdd (lowCorrectionOdd3 L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin) m st2x
   let st4 := run [.CX L.flag L.msb, .CX L.msb L.flag] [] st3
   have hrun : run (centerOdd L) m s = st4 := by
     have hmc4 : measurementCount [.CX L.flag L.msb, .CX L.msb L.flag] = 0 := rfl
@@ -9661,16 +9772,55 @@ theorem centerOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.w
     have cb := List.count_pos_iff.mpr bad
     simp only [BalancedConvert.Layout.word, List.count_cons, List.count_append, beq_self_eq_true, if_true] at hc0 cb
     omega
-  have hp3 := mappedAdd_correct (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin
-    hlowNd hsrcAway (by rw [lowCorrectionOdd_length, hw.1]) (by simp [List.length_take, hw.1, hw.2])
-    st2x m hclean2x
+  have hlowNd3 : (L.cin :: (L.low.drop 3 ++ (L.carry.take 254).drop 3)).Nodup :=
+    hlowNd.sublist (List.Sublist.cons₂ _ (List.Sublist.append (List.drop_sublist _ _) (List.drop_sublist _ _)))
+  have hsrcAway3 : ∀ q ∈ mappedWires (lowCorrectionOdd3 L),
+      q ∉ L.cin :: (L.low.drop 3 ++ (L.carry.take 254).drop 3) := by
+    intro q hq bad
+    apply hsrcAway q (by
+      obtain ⟨b, hb, hbw⟩ := List.mem_flatMap.mp hq
+      exact List.mem_flatMap.mpr ⟨b, List.mem_of_mem_drop hb, hbw⟩)
+    simp only [List.mem_cons, List.mem_append] at bad ⊢
+    rcases bad with rfl | hlo | hca
+    · exact Or.inl rfl
+    · exact Or.inr (Or.inl (List.mem_of_mem_drop hlo))
+    · exact Or.inr (Or.inr (List.mem_of_mem_drop hca))
+  have hp3 := mappedAdd_correct (lowCorrectionOdd3 L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin
+    hlowNd3 hsrcAway3 (by rw [lowCorrectionOdd3_length]; simp [hw.1]) (by simp [List.length_take, hw.1, hw.2])
+    st2x m (fun q hq => hclean2x q (List.mem_of_mem_drop hq))
+  have hp3_out : ∀ q, q ∉ L.low → st3.basis q = st2x.basis q :=
+    fun q hq => hp3.2.1 q (fun h => hq (List.mem_of_mem_drop h))
+  have hlowSplit : ∀ u : BasisState, regValue L.low u = regValue (L.low.take 3) u + 8 * regValue (L.low.drop 3) u := by
+    intro u
+    have htd : L.low = L.low.take 3 ++ L.low.drop 3 := (List.take_append_drop 3 L.low).symm
+    conv_lhs => rw [htd]
+    rw [regValue_append, List.length_take, hw.1]
+    simp only [Nat.min_eq_left (by decide : 3 ≤ 255)]
+    ring
+  have htake3_eq : regValue (L.low.take 3) st3.basis = regValue (L.low.take 3) st2x.basis := by
+    apply regValue_congr
+    intro q hq
+    apply hp3.2.1 q
+    intro hdrop
+    have hndL : L.low.Nodup := (List.nodup_append'.mp (List.nodup_cons.mp hlowNd).2).1
+    rw [← List.take_append_drop 3 L.low] at hndL
+    exact (List.nodup_append'.mp hndL).2.2 hq hdrop
   have hv3 : regValue L.low st3.basis = (if !s.basis a then 2147484136 else 0) + R := by
-    rw [hp3.2.2, lowCorrectionOdd_value, hflag2x, hlow2x, hcin2x, hw.1, h255]
+    have hsp3 := hlowSplit st3.basis
+    have hsp2 := hlowSplit st2x.basis
+    have hlt3 : regValue (L.low.take 3) st2x.basis < 8 := by
+      have := regValue_lt (L.low.take 3) st2x.basis
+      rw [List.length_take, hw.1] at this; simpa using this
+    have hd3 := hp3.2.2
+    rw [lowCorrectionOdd3_value, hflag2x, hcin2x, List.length_drop, hw.1] at hd3
+    rw [hsp3, htake3_eq, hd3]
+    rw [hlow2x] at hsp2
     cases hk : s.basis a <;> simp only [hk, Bool.not_false, Bool.not_true, Bool.false_eq_true,
-      if_false, if_true, Bool.toNat_false, Nat.add_zero, Nat.zero_add] at hxvSplit ⊢ <;> omega
+      if_false, if_true, Bool.toNat_false, Nat.add_zero, Nat.zero_add] at hxvSplit ⊢ <;>
+      norm_num only [Nat.reduceSub, Nat.reducePow] at * <;> omega
   have hflag3 : st3.basis L.flag = !s.basis a :=
-    (hp3.2.1 _ (fun h => hflagWord (by simp [BalancedConvert.Layout.word, h]))).trans hflag2x
-  have hmsb3 : st3.basis L.msb = false := (hp3.2.1 _ hmsbLow).trans hmsb2x
+    (hp3_out _ (fun h => hflagWord (by simp [BalancedConvert.Layout.word, h]))).trans hflag2x
+  have hmsb3 : st3.basis L.msb = false := (hp3_out _ hmsbLow).trans hmsb2x
   have hs4 : st4.phase = st3.phase ∧ st4.basis L.msb = st3.basis L.flag ∧ st4.basis L.flag = false ∧
       (∀ q, q ≠ L.flag → q ≠ L.msb → st4.basis q = st3.basis q) :=
     cx_swap_run L.flag L.msb hfm st3 hmsb3
@@ -9685,7 +9835,7 @@ theorem centerOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.w
     · have qa : q ≠ a := fun e => hq (e ▸ haWord)
       have qm : q ≠ L.msb := fun e => hq (by simp [BalancedConvert.Layout.word, e])
       have ql : q ∉ L.low := fun h => hq (by simp [BalancedConvert.Layout.word, h])
-      rw [hs4.2.2.2 q qf qm, hp3.2.1 q ql,
+      rw [hs4.2.2.2 q qf qm, hp3_out q ql,
         hx2.2.2 q qf,
         hf2 q hq, hs1.2.2.2 q qa qf]
   refine ⟨hs4.1.trans (hp3.1.trans (hr2.1.trans hs1.1)), ?_,
@@ -9761,7 +9911,7 @@ theorem canonicalOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : 
     rw [hx, how, hmsbS] at hspS
     cases he : decide (y.val % 2 = 0) <;> simp [he] at hspS <;> omega
   let st1 := run [.CX L.msb L.flag, .CX L.flag L.msb] [] s
-  let st2 := run (mappedSub (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin) m st1
+  let st2 := run (mappedSub (lowCorrectionOdd3 L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin) m st1
   let st2x := run [.X L.flag] [] st2
   let st3 := run (rotateLeft L.word) [] st2x
   let st4 := run [.CX L.flag a, .CX a L.flag] [] st3
@@ -9800,19 +9950,53 @@ theorem canonicalOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : 
     have cb := List.count_pos_iff.mpr bad
     simp only [BalancedConvert.Layout.word, List.count_cons, List.count_append, beq_self_eq_true, if_true] at hc0 cb
     omega
-  have hp2 := mappedSub_correct (lowCorrectionOdd L) L.low (L.carry.take 254) L.cin
-    hlowNd hsrcAway (by rw [lowCorrectionOdd_length, hw.1]) (by simp [List.length_take, hw.1, hw.2])
-    st1 m hclean1 hcin1
+  have hlowNd3 : (L.cin :: (L.low.drop 3 ++ (L.carry.take 254).drop 3)).Nodup :=
+    hlowNd.sublist (List.Sublist.cons₂ _ (List.Sublist.append (List.drop_sublist _ _) (List.drop_sublist _ _)))
+  have hsrcAway3 : ∀ q ∈ mappedWires (lowCorrectionOdd3 L),
+      q ∉ L.cin :: (L.low.drop 3 ++ (L.carry.take 254).drop 3) := by
+    intro q hq bad
+    apply hsrcAway q (by
+      obtain ⟨b, hb, hbw⟩ := List.mem_flatMap.mp hq
+      exact List.mem_flatMap.mpr ⟨b, List.mem_of_mem_drop hb, hbw⟩)
+    simp only [List.mem_cons, List.mem_append] at bad ⊢
+    rcases bad with rfl | hlo | hca
+    · exact Or.inl rfl
+    · exact Or.inr (Or.inl (List.mem_of_mem_drop hlo))
+    · exact Or.inr (Or.inr (List.mem_of_mem_drop hca))
+  have hp2 := mappedSub_correct (lowCorrectionOdd3 L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin
+    hlowNd3 hsrcAway3 (by rw [lowCorrectionOdd3_length]; simp [hw.1]) (by simp [List.length_take, hw.1, hw.2])
+    st1 m (fun q hq => hclean1 q (List.mem_of_mem_drop hq)) hcin1
+  have hp2_out : ∀ q, q ∉ L.low → st2.basis q = st1.basis q :=
+    fun q hq => hp2.2.1 q (fun h => hq (List.mem_of_mem_drop h))
+  have hlowSplit : ∀ u : BasisState, regValue L.low u = regValue (L.low.take 3) u + 8 * regValue (L.low.drop 3) u := by
+    intro u
+    have htd : L.low = L.low.take 3 ++ L.low.drop 3 := (List.take_append_drop 3 L.low).symm
+    conv_lhs => rw [htd]
+    rw [regValue_append, List.length_take, hw.1]
+    simp only [Nat.min_eq_left (by decide : 3 ≤ 255)]
+    ring
+  have htake3_eq : regValue (L.low.take 3) st2.basis = regValue (L.low.take 3) st1.basis := by
+    apply regValue_congr
+    intro q hq
+    apply hp2.2.1 q
+    intro hdrop
+    have hndL : L.low.Nodup := (List.nodup_append'.mp (List.nodup_cons.mp hlowNd).2).1
+    rw [← List.take_append_drop 3 L.low] at hndL
+    exact (List.nodup_append'.mp hndL).2.2 hq hdrop
   have hv2 : regValue L.low st2.basis = y.val / 2 := by
-    rw [hp2.2.2, lowCorrectionOdd_value, hs1.2.1, hmsbS, hlow1, hlowSVal, hw.1]
-    have hsm : y.val / 2 < 2 ^ 255 := by omega
-    by_cases he : y.val % 2 = 0
-    · simp only [he, decide_true, if_true]
-      rw [show y.val / 2 + 2147484136 + 2 ^ 255 - 2147484136 = y.val / 2 + 2 ^ 255 by omega,
-        Nat.add_mod_right, Nat.mod_eq_of_lt hsm]
-    · simp only [he, decide_false, Bool.false_eq_true, if_false, Nat.add_zero, Nat.sub_zero]
-      rw [Nat.add_mod_right, Nat.mod_eq_of_lt hsm]
-  have hmsb2 : st2.basis L.msb = false := (hp2.2.1 _ hmsbLow).trans hs1.2.2.1
+    have hsp2 := hlowSplit st2.basis
+    have hsp1 := hlowSplit st1.basis
+    have hlt3 : regValue (L.low.take 3) st1.basis < 8 := by
+      have := regValue_lt (L.low.take 3) st1.basis
+      rw [List.length_take, hw.1] at this; simpa using this
+    have hd2 := hp2.2.2
+    rw [lowCorrectionOdd3_value, hs1.2.1, hmsbS, List.length_drop, hw.1] at hd2
+    rw [hlow1, hlowSVal] at hsp1
+    rw [hsp2, htake3_eq, hd2]
+    by_cases he : y.val % 2 = 0 <;>
+      simp only [he, decide_true, decide_false, Bool.false_eq_true, if_true, if_false, Nat.add_zero, Nat.sub_zero] at hsp1 ⊢ <;>
+      norm_num only [Nat.reduceSub, Nat.reducePow] at * <;> omega
+  have hmsb2 : st2.basis L.msb = false := (hp2_out _ hmsbLow).trans hs1.2.2.1
   have hx2 := x_gate_run L.flag st2
   have hword2x : regValue L.word st2x.basis = y.val / 2 := by
     have hsp : regValue L.word st2x.basis = regValue L.low st2x.basis + 2 ^ 255 * (if st2x.basis L.msb then 1 else 0) := by
@@ -9823,7 +10007,7 @@ theorem canonicalOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : 
     rw [hsp, hl, hv2, hm]; simp
   have hflag2x : st2x.basis L.flag = decide (y.val % 2 = 1) := by
     have hf2 : st2.basis L.flag = decide (y.val % 2 = 0) :=
-      (hp2.2.1 _ (fun h => hflagWord (by simp [BalancedConvert.Layout.word, h]))).trans (hs1.2.1.trans hmsbS)
+      (hp2_out _ (fun h => hflagWord (by simp [BalancedConvert.Layout.word, h]))).trans (hs1.2.1.trans hmsbS)
     change (run [.X L.flag] [] st2).basis L.flag = _
     rw [hx2.2.1, hf2]
     by_cases he : y.val % 2 = 0
@@ -9854,7 +10038,7 @@ theorem canonicalOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : 
       have ql : q ∉ L.low := fun h => hq (by simp [BalancedConvert.Layout.word, h])
       rw [hs4.2.2.2 q qf qa, hf3 q hq,
         hx2.2.2 q qf,
-        hp2.2.1 q ql, hs1.2.2.2 q qm qf]
+        hp2_out q ql, hs1.2.2.2 q qm qf]
   refine ⟨hs4.1.trans (hr3.1.trans (hp2.1.trans hs1.1)), ?_,
     fun q hq => (hframe q (work_not_word L hn q hq)).trans (hc q hq), hframe⟩
   have hrest4 : regValue (restLow ++ [L.msb]) st4.basis = regValue (restLow ++ [L.msb]) st3.basis :=
@@ -9959,9 +10143,30 @@ def decisionOddLoan44 (L : BalancedCircuit.Layout) : Program :=
     TerminalGraph.compareSelected (L.ylow.drop 1) (L.low.drop 1) c0 L.sign L.parity (InverseTailC.third / 2) ++
     [.CX L.sign L.parity, .CX y0 c0, .X c0] ++ (prepOddClean L).reverse
 
+/-- Single carry step into clean `rNext`: `rNext := maj(yPrev, yCur ^^ s, rCur)`.
+    Uses 1 CCX, 0 measurements, 8 gate slots, and leaves `s, yPrev, yCur, rCur` unchanged. -/
+def rawCarryStep (s yPrev yCur rCur rNext : Wire) : Program :=
+  [.CX s yCur, .CX rCur yPrev, .CX rCur yCur, .CCX yPrev yCur rNext,
+   .CX rCur rNext, .CX rCur yCur, .CX rCur yPrev, .CX s yCur]
+
+/-- Recursive out-of-place carry-and-sum sweep into clean `rs`:
+    computes `r[i] := (y[i-1] + (y[i] ^^ s) + carry_i) % 2` using `rs` itself for carries
+    (`rs.length - 1` CCX, `0` measurements, `0` carry ancillas). -/
+def rawAddClean (s : Wire) : List Wire → List Wire → Program
+  | [y0, y1], [r1] => [.CX y0 r1, .CX y1 r1, .CX s r1]
+  | y0 :: y1 :: y2 :: ys, r1 :: r2 :: rs =>
+      rawCarryStep s y0 y1 r1 r2 ++
+        rawAddClean s (y1 :: y2 :: ys) (r2 :: rs) ++
+        [.CX y0 r1, .CX y1 r1, .CX s r1]
+  | _, _ => []
+
+/-- Clean-`R` out-of-place `R := (if B then 3*Y + 1 else Y) mod 2^256` using `L.r` itself as the
+    carry register (0 carry wires, 0 measurements, 254 T — saving 45 T and 299 M vs `rawLoan44`). -/
 def rawOddLoan44 (L : BalancedCircuit.Layout) : Program :=
-  InverseTailC.double L ++ [.CX L.sign L.r0, .X L.sign] ++
-    signedAddLoan44 L ++ [.X L.sign]
+  copyRegister none L.y L.r ++
+    [.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 1 0), .CX L.sign (L.r.getD 1 0)] ++
+    rawAddClean L.sign L.y (L.r.drop 1) ++
+    [.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 0 0), .CX L.sign (L.r.getD 0 0)]
 
 def tailProgramOddLoan44 (L : BalancedCircuit.Layout) : Program :=
   decisionOddLoan44 L ++ rawOddLoan44 L ++ correctionLoan44 L ++
@@ -10076,9 +10281,66 @@ private theorem compareChain_some_counts : ∀ (c : Wire) (xs ys carry : List Wi
   | _, _ :: _, _ :: _, [], _, _, _, hc => by simp at hc
   | _, [], [], _ :: _, _, _, _, hc => by simp at hc
 
+private theorem rawAddClean_counts (s : Wire) : ∀ (ys rs : List Wire),
+    rs.length + 1 = ys.length → 1 ≤ rs.length →
+    toffoliCount (rawAddClean s ys rs) = rs.length - 1 ∧
+    measurementCount (rawAddClean s ys rs) = 0
+  | [], _, h, _ => by simp at h
+  | [_], rs, h, h1 => by cases rs <;> simp at h h1
+  | _ :: _ :: _, [], _, h1 => by simp at h1
+  | [_, _], [_], _, _ => ⟨rfl, rfl⟩
+  | [_, _], _ :: _ :: _, h, _ => by simp at h
+  | _ :: _ :: _ :: _, [_], h, _ => by simp at h
+  | y0 :: y1 :: y2 :: ys, r1 :: r2 :: rs, h, _ => by
+    have ih := rawAddClean_counts s (y1 :: y2 :: ys) (r2 :: rs) (by simp at h ⊢; omega) (by simp)
+    have hst : toffoliCount (rawCarryStep s y0 y1 r1 r2) = 1 ∧
+        measurementCount (rawCarryStep s y0 y1 r1 r2) = 0 := ⟨rfl, rfl⟩
+    have hcx : toffoliCount ([Instr.CX y0 r1, .CX y1 r1, .CX s r1] : Program) = 0 ∧
+        measurementCount ([Instr.CX y0 r1, .CX y1 r1, .CX s r1] : Program) = 0 := ⟨rfl, rfl⟩
+    constructor
+    · rw [rawAddClean, toffoliCount_append, toffoliCount_append, hst.1, ih.1, hcx.1]
+      simp only [List.length_cons]; omega
+    · rw [rawAddClean, measurementCount_append, measurementCount_append, hst.2, ih.2, hcx.2]
+
+private theorem rawOddLoan44_counts (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    toffoliCount (rawOddLoan44 L) = 254 ∧ measurementCount (rawOddLoan44 L) = 0 := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have hc := copyRegister_counts none L.y L.r (w.2.2.1.trans w.2.1.symm)
+  simp only [Option.isSome, Bool.false_eq_true, if_false] at hc
+  have hca := rawAddClean_counts L.sign L.y (L.r.drop 1) (by simp [w.2.1, w.2.2.1]) (by simp [w.2.1])
+  simp only [List.length_drop, w.2.1] at hca
+  have h3a : toffoliCount ([Instr.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 1 0), .CX L.sign (L.r.getD 1 0)] : Program) = 0 ∧
+      measurementCount ([Instr.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 1 0), .CX L.sign (L.r.getD 1 0)] : Program) = 0 := ⟨rfl, rfl⟩
+  have h3b : toffoliCount ([Instr.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 0 0), .CX L.sign (L.r.getD 0 0)] : Program) = 0 ∧
+      measurementCount ([Instr.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 0 0), .CX L.sign (L.r.getD 0 0)] : Program) = 0 := ⟨rfl, rfl⟩
+  constructor
+  · rw [rawOddLoan44, toffoliCount_append, toffoliCount_append, toffoliCount_append,
+      hc.1, h3a.1, hca.1, h3b.1]
+  · rw [rawOddLoan44, measurementCount_append, measurementCount_append, measurementCount_append,
+      hc.2, h3a.2, hca.2, h3b.2]
+
+private theorem rawLoan44_counts (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    toffoliCount (rawLoan44 L) = 299 ∧ measurementCount (rawLoan44 L) = 299 := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have hmal := StairLoan.mappedAddLoan_counts 44 roles44 (mappedRead L.y false) L.r (L.carry.take 255) L.sign
+    (by simp [mappedRead_length, w.2.1, w.2.2.1]) (by simp [List.length_take, hw.2.2, w.2.1])
+    (by simp [List.length_take, hw.2.2])
+  have hma := mappedAdd_counts (mappedRead L.y false) L.r (L.carry.take 255) L.sign
+    (by simp [mappedRead_length, w.2.1, w.2.2.1]) (by simp [List.length_take, hw.2.2, w.2.1])
+  simp only [List.length_take, hw.2.2] at hma
+  have hdb : toffoliCount (InverseTailC.double L) = 0 ∧ measurementCount (InverseTailC.double L) = 0 := by
+    simp only [InverseTailC.double, toffoliCount_append, measurementCount_append,
+      (rotate_counts L.r).2.2.1, (rotate_counts L.r).2.2.2, toffoliCount, measurementCount]
+    exact ⟨trivial, trivial⟩
+  have hsc := signComplement_counts L.sign L.y
+  have hx1 : toffoliCount ([Instr.X L.sign] : Program) = 0 ∧ measurementCount ([Instr.X L.sign] : Program) = 0 := ⟨rfl, rfl⟩
+  simp only [rawLoan44, signedAddLoan44, toffoliCount_append, measurementCount_append, hdb.1, hdb.2,
+    hsc.1, hsc.2, hmal.1, hmal.2, hma.1, hma.2, hx1.1, hx1.2]
+  omega
+
 theorem tailProgramOddLoan44_counts (L : BalancedCircuit.Layout) (hw : L.Widths) :
-    toffoliCount (tailProgramOddLoan44 L) + 45 = toffoliCount (tailProgramLoan44 L) ∧
-    measurementCount (tailProgramOddLoan44 L) + 45 = measurementCount (tailProgramLoan44 L) := by
+    toffoliCount (tailProgramOddLoan44 L) + 90 = toffoliCount (tailProgramLoan44 L) ∧
+    measurementCount (tailProgramOddLoan44 L) + 344 = measurementCount (tailProgramLoan44 L) := by
   have w := BalancedCleanup.widths L.toLayout hw
   have po := prepOddClean_counts L hw
   have ps := StairEndpointLoan44.prep_counts L hw
@@ -10106,17 +10368,19 @@ theorem tailProgramOddLoan44_counts (L : BalancedCircuit.Layout) (hw : L.Widths)
       measurementCount ([Instr.X (L.low.getD 0 0), Instr.CX (L.ylow.getD 0 0) (L.low.getD 0 0)] : Program) = 0 := ⟨rfl, rfl⟩
   have hpost0 : toffoliCount ([Instr.CX L.sign L.parity, Instr.CX (L.ylow.getD 0 0) (L.low.getD 0 0), Instr.X (L.low.getD 0 0)] : Program) = 0 ∧
       measurementCount ([Instr.CX L.sign L.parity, Instr.CX (L.ylow.getD 0 0) (L.low.getD 0 0), Instr.X (L.low.getD 0 0)] : Program) = 0 := ⟨rfl, rfl⟩
+  have hrawN := rawOddLoan44_counts L hw
+  have hrawO := rawLoan44_counts L hw
   simp only [tailProgramOddLoan44, tailProgramLoan44, decisionOddLoan44, decisionLoan44,
-    rawOddLoan44, rawLoan44, toffoliCount_append, measurementCount_append,
+    toffoliCount_append, measurementCount_append,
     toffoliCount_reverse, measurementCount_reverse, po.1, po.2, ps.1, ps.2,
-    hcs.1, hcs.2, hcl.1, hcl.2, hlt.1, hlt.2,
+    hcs.1, hcs.2, hcl.1, hcl.2, hlt.1, hlt.2, hrawN.1, hrawN.2, hrawO.1, hrawO.2,
     hcx0.1, hcx0.2, hcx1.1, hcx1.2, hx1.1, hx1.2, hcx2.1, hcx2.2, hcx3.1, hcx3.2,
     hpre0.1, hpre0.2, hpost0.1, hpost0.2, List.length_drop, hw.2.1]
   omega
 
 theorem endPacket760OddLoan44_counts :
-    toffoliCount endPacket760OddLoan44 + 45 = toffoliCount (endPacket760Loan44 false) ∧
-    measurementCount endPacket760OddLoan44 + 45 = measurementCount (endPacket760Loan44 false) := by
+    toffoliCount endPacket760OddLoan44 + 90 = toffoliCount (endPacket760Loan44 false) ∧
+    measurementCount endPacket760OddLoan44 + 344 = measurementCount (endPacket760Loan44 false) := by
   have hw := Q6EndpointCell.ports_widths base (base 2409)
   have hc := tailProgramOddLoan44_counts (Q6EndpointCell.ports base (base 2409)) hw
   simp only [endPacket760OddLoan44, endPacket760Loan44, endPacketLoan44, rawEndLoan44,
@@ -10150,11 +10414,96 @@ private theorem compareSelected_slots_le : ∀ (xs carry : List Wire) (cin ctl t
     omega
   | _ :: _ :: _, [], _, _, _, _ => by simp [TerminalGraph.compareSelected, gateSlots]
 
+private theorem rawAddClean_slots (s : Wire) : ∀ (ys rs : List Wire),
+    gateSlots (rawAddClean s ys rs) ≤ 11 * rs.length
+  | [y0, y1], [r1] => by
+    have h : gateSlots ([Instr.CX y0 r1, .CX y1 r1, .CX s r1] : Program) = 3 := rfl
+    simp only [rawAddClean, h, List.length_singleton]; omega
+  | y0 :: y1 :: y2 :: ys, r1 :: r2 :: rs => by
+    have ih := rawAddClean_slots s (y1 :: y2 :: ys) (r2 :: rs)
+    have hst : gateSlots (rawCarryStep s y0 y1 r1 r2) = 8 := rfl
+    have hcx : gateSlots ([Instr.CX y0 r1, .CX y1 r1, .CX s r1] : Program) = 3 := rfl
+    simp only [rawAddClean, gateSlots_append, hst, hcx, List.length_cons] at ih ⊢; omega
+  | [], _ => by simp [rawAddClean, gateSlots]
+  | [_], _ => by simp [rawAddClean, gateSlots]
+  | [_, _], [] => by simp [rawAddClean, gateSlots]
+  | [_, _], _ :: _ :: _ => by simp [rawAddClean, gateSlots]
+  | _ :: _ :: _ :: _, [] => by simp [rawAddClean, gateSlots]
+  | _ :: _ :: _ :: _, [_] => by simp [rawAddClean, gateSlots]
+
+private theorem copyRegister_none_slots : ∀ (xs ys : List Wire),
+    gateSlots (copyRegister none xs ys) ≤ xs.length
+  | [], _ => by simp [copyRegister, gateSlots]
+  | _ :: _, [] => by simp [copyRegister, gateSlots]
+  | x :: xs, y :: ys => by
+    have ih := copyRegister_none_slots xs ys
+    simp only [copyRegister, copyGate, gateSlots_append, List.length_cons]
+    have h1 : gateSlots ([Instr.CX x y] : Program) = 1 := rfl
+    rw [h1]; omega
+
+private theorem mappedAdd_read_slots_ge : ∀ (xs ys cs : List Wire) (cin : Wire),
+    xs.length = ys.length → cs.length + 1 = ys.length →
+    12 * cs.length ≤ gateSlots (mappedAdd (mappedRead xs false) ys cs cin)
+  | [], ys, _, _, hx, hc => by cases ys <;> simp at hx hc
+  | [_], [_], [], _, _, _ => by simp [gateSlots]
+  | x :: x' :: xs, y :: y' :: ys, c :: cs, cin, hx, hc => by
+    have ih := mappedAdd_read_slots_ge (x' :: xs) (y' :: ys) cs c (by simpa using hx) (by simpa using hc)
+    have h1 : gateSlots (mappedMajority { wire := some x, flip := false } y cin c) = 6 := rfl
+    have h2 : gateSlots (mappedEraseCarry { wire := some x, flip := false } y cin c) = 4 := rfl
+    have h3 : gateSlots (mappedSum { wire := some x, flip := false } y cin) = 2 := rfl
+    simp only [mappedRead, List.map_cons, mappedAdd, gateSlots_append, h1, h2, h3, List.length_cons] at ih ⊢
+    omega
+  | [_], [], _, _, hx, _ => by simp at hx
+  | [_], _ :: _ :: _, _, _, hx, _ => by simp at hx
+  | [_], [_], _ :: _, _, _, hc => by simp at hc
+  | _ :: _ :: _, [], _, _, hx, _ => by simp at hx
+  | _ :: _ :: _, [_], _, _, hx, _ => by simp at hx
+  | _ :: _ :: _, _ :: _ :: _, [], _, _, hc => by simp at hc
+
+private theorem signComplement_slots (q : Wire) : ∀ (xs : List Wire),
+    gateSlots (signComplement q xs) = xs.length
+  | [] => rfl
+  | x :: xs => by
+    have ih := signComplement_slots q xs
+    change gateSlots ([Instr.CX q x] ++ signComplement q xs) = xs.length + 1
+    rw [gateSlots_append, ih]; simp [gateSlots, instructionSlots]; omega
+
+private theorem notRegister_slots : ∀ (xs : List Wire),
+    gateSlots (notRegister xs) = xs.length
+  | [] => rfl
+  | x :: xs => by
+    have ih := notRegister_slots xs
+    change gateSlots ([Instr.X x] ++ notRegister xs) = xs.length + 1
+    rw [gateSlots_append, ih]; simp [gateSlots, instructionSlots]; omega
+
+private theorem compareChain_slots_ge (control : Option Wire) :
+    ∀ (xs ys cs : List Wire) (cin target : Wire),
+      xs.length = ys.length → cs.length = ys.length →
+      10 * ys.length ≤ gateSlots (compareChain control xs ys cs cin target)
+  | [], [], [], _, _, _, _ => by simp
+  | a :: as, b :: bs, c :: cs, cin, target, hx, hc => by
+    have ih := compareChain_slots_ge control as bs cs c target (by simpa using hx) (by simpa using hc)
+    have h1 : gateSlots (majority a b cin c) = 6 := rfl
+    have h2 : gateSlots (eraseCarry a b cin c) = 4 := rfl
+    simp only [compareChain, gateSlots_append, h1, h2, List.length_cons] at ih ⊢
+    omega
+  | [], _ :: _, _, _, _, hx, _ => by simp at hx
+  | _ :: _, [], _, _, _, hx, _ => by simp at hx
+  | _ :: _, _ :: _, [], _, _, _, hc => by simp at hc
+  | [], [], _ :: _, _, _, _, hc => by simp at hc
+
+private theorem emitLoan_slots_ge (d : Nat) (roles : List Wire) (ls : List StairLoan.CarryLayer) (p : Program) :
+    gateSlots (StairLoan.emitSweep ls p) ≤ gateSlots (StairLoan.emitLoan d roles ls p) := by
+  rw [StairLoan.emitSweep_split (d + 1) ls p]
+  simp only [StairLoan.emitLoan, gateSlots_append, OddFullPass.rebindMany_slots]
+  omega
+
 theorem tailProgramOddLoan44_slots_le :
     gateSlots (tailProgramOddLoan44 endpointL) ≤ gateSlots (tailProgramLoan44 endpointL) + 2 := by
   let L := endpointL
   show gateSlots (tailProgramOddLoan44 L) ≤ gateSlots (tailProgramLoan44 L) + 2
   have hw : L.Widths := Q6EndpointCell.ports_widths base (base 2409)
+  have w := BalancedCleanup.widths L.toLayout hw
   have hprep : gateSlots (prepOddClean L) ≤ gateSlots (InverseTailC.prep L) := by
     simp only [prepOddClean, InverseTailC.prep, gateSlots_append]; omega
   have hrev : gateSlots (prepOddClean L).reverse ≤ gateSlots (InverseTailC.prep L).reverse := by
@@ -10165,17 +10514,42 @@ theorem tailProgramOddLoan44_slots_le :
       L.sign L.parity (InverseTailC.third / 2)
     have hlen : (L.ylow.drop 1).length = 254 := by simp [hw.2.1]
     omega
-  have hold : 2810 ≤ gateSlots (compareLtLoan44 L) := by decide +kernel
-  simp only [tailProgramOddLoan44, tailProgramLoan44, decisionOddLoan44, decisionLoan44,
-    rawOddLoan44, rawLoan44, gateSlots_append]
-  have h1 : gateSlots ([Instr.CX L.sign L.r0, Instr.X L.sign] : Program) = 2 := rfl
-  have h2 : gateSlots ([Instr.X L.sign] : Program) = 1 := rfl
+  have hold : 2810 ≤ gateSlots (compareLtLoan44 L) := by
+    have hcc := compareChain_slots_ge (some L.sign) L.ylow L.low (L.carry.take 255) L.one L.parity
+      (hw.2.1.trans w.1.symm) (by simp [List.length_take, hw.2.2, w.1])
+    have hel := emitLoan_slots_ge 44 roles44
+      (ctlLayers L.ylow L.low (L.carry.take 255) L.one)
+      (ctlTop (some L.sign) L.parity L.ylow L.low (L.carry.take 255) L.one)
+    rw [← compareChain_as_ctlSweep] at hel
+    have hnr := notRegister_slots (L.one :: L.low)
+    simp only [compareLtLoan44, ctlLoan, gateSlots_append, hnr, List.length_cons, w.1] at hcc ⊢
+    omega
+  have hrawNew : gateSlots (rawOddLoan44 L) ≤ 3067 := by
+    have hc := copyRegister_none_slots L.y L.r
+    have h1 := rawAddClean_slots L.sign L.y (L.r.drop 1)
+    have h3a : gateSlots ([Instr.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 1 0), .CX L.sign (L.r.getD 1 0)] : Program) = 3 := rfl
+    have h3b : gateSlots ([Instr.X L.sign, .CX (L.y.getD 0 0) (L.r.getD 0 0), .CX L.sign (L.r.getD 0 0)] : Program) = 3 := rfl
+    simp only [rawOddLoan44, gateSlots_append, h3a, h3b]
+    simp only [List.length_drop, w.2.1, w.2.2.1] at hc h1
+    omega
+  have holdRaw : 3067 ≤ gateSlots (rawLoan44 L) := by
+    have hma := mappedAdd_read_slots_ge L.y L.r (L.carry.take 255) L.sign (w.2.2.1.trans w.2.1.symm)
+      (by simp [List.length_take, hw.2.2, w.2.1])
+    have hel := emitLoan_slots_ge 44 roles44
+      (StairLoan.mappedLayers (mappedRead L.y false) L.r (L.carry.take 255) L.sign)
+      (StairLoan.mappedTop (mappedRead L.y false) L.r (L.carry.take 255) L.sign)
+    rw [← StairLoan.mappedAdd_as_sweep] at hel
+    have hcl : (L.carry.take 255).length = 255 := by simp [List.length_take, hw.2.2]
+    have hsc := signComplement_slots L.sign L.y
+    simp only [rawLoan44, signedAddLoan44, StairLoan.mappedAddLoan, gateSlots_append, hsc, w.2.2.1]
+    omega
+  simp only [tailProgramOddLoan44, tailProgramLoan44, decisionOddLoan44, decisionLoan44, gateSlots_append]
   have h3 : gateSlots ([Instr.CX L.r0 L.parity, Instr.CX (L.ylow.headD L.ymsb) L.parity, Instr.CX L.sign L.parity] : Program) = 3 := rfl
   have h4 : gateSlots ([Instr.CX L.r0 L.parity, Instr.CX (L.ylow.headD L.ymsb) L.parity] : Program) = 2 := rfl
   have h5 : gateSlots ([Instr.X (L.low.getD 0 0), Instr.CX (L.ylow.getD 0 0) (L.low.getD 0 0)] : Program) = 2 := rfl
   have h6 : gateSlots ([Instr.CX L.sign L.parity, Instr.CX (L.ylow.getD 0 0) (L.low.getD 0 0), Instr.X (L.low.getD 0 0)] : Program) = 3 := rfl
   have h7 : gateSlots ([Instr.CX L.sign L.parity] : Program) = 1 := rfl
-  rw [h1, h2, h3, h4, h5, h6, h7]
+  rw [h3, h4, h5, h6, h7]
   omega
 
 theorem endPacket760OddLoan44_slots_le :
@@ -10325,35 +10699,84 @@ theorem tailProgramOddLoan44_wires_sub (L : BalancedCircuit.Layout) (hw : L.Widt
     · rw [OddFullPass.mem_wires_iff_flatMap] at h4
       simp only [List.flatMap_cons, List.flatMap_nil, OddFullPass.instrWiresList,
         List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h4
-      rcases h4 with (rfl | rfl) | (rfl | rfl) | rfl
+      rcases h4 with (rfl | rfl) | ((rfl | rfl) | rfl)
       · exact hinDec _ (Or.inr (Or.inr (Or.inl rfl)))
       · exact hinDec _ (Or.inr (Or.inr (Or.inr rfl)))
       · exact hinDec _ (Or.inl hy0Mem)
       · exact hinDec _ (Or.inr (Or.inl hc0Mem))
       · exact hinDec _ (Or.inr (Or.inl hc0Mem))
     · simp only [decisionLoan44, wires_append, Finset.mem_union]; exact Or.inr (hrev h5)
-  · left; left; right
-    simp only [rawOddLoan44, rawLoan44, wires_append, Finset.mem_union] at hr ⊢
+  · left; left; left
+    have hcaW : ∀ (s : Wire) (ys rs : List Wire), wires (rawAddClean s ys rs) ⊆ (s :: (ys ++ rs)).toFinset := by
+      intro s ys; induction ys with
+      | nil => intro rs; simp [rawAddClean, wires]
+      | cons y0 ys ih =>
+        cases ys with
+        | nil => intro rs; simp [rawAddClean, wires]
+        | cons y1 ys =>
+          cases ys with
+          | nil =>
+            intro rs; cases rs with
+            | nil => simp [rawAddClean, wires]
+            | cons r1 rs =>
+              cases rs with
+              | nil => intro z hz; simp [rawAddClean, wires, Instr.wires] at hz ⊢; tauto
+              | cons _ _ => simp [rawAddClean, wires]
+          | cons y2 ys =>
+            intro rs; cases rs with
+            | nil => simp [rawAddClean, wires]
+            | cons r1 rs =>
+              cases rs with
+              | nil => simp [rawAddClean, wires]
+              | cons r2 rs =>
+                intro z hz
+                simp only [rawAddClean, wires_append, Finset.mem_union] at hz
+                rcases hz with (hst | hrec) | hcx
+                · simp [rawCarryStep, wires, Instr.wires] at hst ⊢; tauto
+                · have h := ih (r2 :: rs) hrec; simp at h ⊢; tauto
+                · simp [wires, Instr.wires] at hcx ⊢; tauto
+    have hy0M : L.y.getD 0 0 ∈ L.y := by
+      have hlt : 0 < L.y.length := by omega
+      rw [List.getD_eq_getElem _ _ hlt]; exact List.getElem_mem hlt
+    have hr0M : L.r.getD 0 0 ∈ L.r := by
+      have hlt : 0 < L.r.length := by omega
+      rw [List.getD_eq_getElem _ _ hlt]; exact List.getElem_mem hlt
+    have hr1M : L.r.getD 1 0 ∈ L.r := by
+      have hlt : 1 < L.r.length := by omega
+      rw [List.getD_eq_getElem _ _ hlt]; exact List.getElem_mem hlt
+    simp only [rawOddLoan44, wires_append, Finset.mem_union] at hr
     rcases hr with ((h | h) | h) | h
-    · exact Or.inl (Or.inl (Or.inl h))
+    · simp only [decisionLoan44, InverseTailC.prep, wires_append, Finset.mem_union]
+      exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl h)))))
     · rw [OddFullPass.mem_wires_iff_flatMap] at h
       simp only [List.flatMap_cons, List.flatMap_nil, OddFullPass.instrWiresList,
         List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-      rcases h with (rfl | rfl) | rfl
-      · exact Or.inl (Or.inl (Or.inr (by simp [wires, Instr.wires])))
-      · left; left; left
-        simp only [InverseTailC.double, wires_append, Finset.mem_union]
-        right
-        rw [(rotate_wires L.r).2, if_neg (by rw [w.2.1]; decide)]
-        exact List.mem_toFinset.mpr (by simp [BalancedCleanup.Layout.r, BalancedCleanup.Layout.low])
-      · exact Or.inl (Or.inl (Or.inr (by simp [wires, Instr.wires])))
-    · exact Or.inl (Or.inr h)
-    · exact Or.inr h
+      rcases h with rfl | ((rfl | rfl) | (rfl | rfl))
+      · exact hinDec _ (Or.inr (Or.inr (Or.inl rfl)))
+      · exact hinDec _ (Or.inl hy0M)
+      · exact hinDec _ (Or.inr (Or.inl hr1M))
+      · exact hinDec _ (Or.inr (Or.inr (Or.inl rfl)))
+      · exact hinDec _ (Or.inr (Or.inl hr1M))
+    · have hsub := hcaW L.sign L.y (L.r.drop 1) h
+      simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at hsub
+      rcases hsub with rfl | hy | hr'
+      · exact hinDec _ (Or.inr (Or.inr (Or.inl rfl)))
+      · exact hinDec _ (Or.inl hy)
+      · exact hinDec _ (Or.inr (Or.inl (List.mem_of_mem_drop hr')))
+    · rw [OddFullPass.mem_wires_iff_flatMap] at h
+      simp only [List.flatMap_cons, List.flatMap_nil, OddFullPass.instrWiresList,
+        List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with rfl | ((rfl | rfl) | (rfl | rfl))
+      · exact hinDec _ (Or.inr (Or.inr (Or.inl rfl)))
+      · exact hinDec _ (Or.inl hy0M)
+      · exact hinDec _ (Or.inr (Or.inl hr0M))
+      · exact hinDec _ (Or.inr (Or.inr (Or.inl rfl)))
+      · exact hinDec _ (Or.inr (Or.inl hr0M))
   · exact Or.inl (Or.inr hc)
   · rw [OddFullPass.mem_wires_iff_flatMap] at ht
     simp only [List.flatMap_cons, List.flatMap_nil, OddFullPass.instrWiresList,
       List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at ht
-    rcases ht with (rfl | rfl) | (rfl | rfl) | (rfl | rfl)
+    rcases ht with (rfl | rfl) | ((rfl | rfl) | (rfl | rfl))
     · exact Or.inr (by simp [wires, Instr.wires])
     · exact Or.inr (by simp [wires, Instr.wires])
     · exact Or.inr (by simp [wires, Instr.wires])
@@ -10421,6 +10844,56 @@ private theorem compareSelected_physical : ∀ (xs carry : List Wire) (cin ctl t
     exact ⟨⟨h.1, compareSelected_physical (x' :: xs) cs c ctl target (k / 2) hnd'⟩, h.2⟩
   | _ :: _ :: _, [], _, _, _, _, _ => by simp [TerminalGraph.compareSelected, GatePhysical]
 
+private theorem rawAddClean_physical (s : Wire) : ∀ (ys rs : List Wire),
+    (s :: (ys ++ rs)).Nodup → GatePhysical (rawAddClean s ys rs)
+  | [], _, _ => by simp [rawAddClean, GatePhysical]
+  | [_], _, _ => by simp [rawAddClean, GatePhysical]
+  | [_, _], [], _ => by simp [rawAddClean, GatePhysical]
+  | [_, _], _ :: _ :: _, _ => by simp [rawAddClean, GatePhysical]
+  | _ :: _ :: _ :: _, [], _ => by simp [rawAddClean, GatePhysical]
+  | _ :: _ :: _ :: _, [_], _ => by simp [rawAddClean, GatePhysical]
+  | [y0, y1], [r1], hnd => by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.cons_append, List.nil_append,
+      or_false, not_or, ← ne_eq] at hnd
+    rcases hnd with ⟨⟨h1, h2, h3⟩, ⟨h4, h5⟩, h6, _⟩
+    intro g hg
+    simp only [rawAddClean, List.mem_cons, List.not_mem_nil, or_false] at hg
+    rcases hg with rfl | rfl | rfl
+    · exact h5
+    · exact h6
+    · exact h3
+  | y0 :: y1 :: y2 :: ys, r1 :: r2 :: rs, hnd => by
+    have hnd5 : [s, y0, y1, r1, r2].Nodup :=
+      hnd.sublist (List.Sublist.cons₂ _ (List.Sublist.append
+        (List.Sublist.cons₂ _ (List.Sublist.cons₂ _ (List.nil_sublist _)))
+        (List.Sublist.cons₂ _ (List.Sublist.cons₂ _ (List.nil_sublist _)))))
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, ← ne_eq] at hnd5
+    rcases hnd5 with ⟨⟨h1, h2, h3, h4⟩, ⟨h5, h6, h7⟩, ⟨h8, h9⟩, h10, _⟩
+    have hst : GatePhysical (rawCarryStep s y0 y1 r1 r2) := by
+      intro g hg
+      simp only [rawCarryStep, List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact h2
+      · exact h6.symm
+      · exact h8.symm
+      · exact ⟨h7, h9⟩
+      · exact h10
+      · exact h8.symm
+      · exact h6.symm
+      · exact h2
+    have hcx : GatePhysical [.CX y0 r1, .CX y1 r1, .CX s r1] := by
+      intro g hg
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with rfl | rfl | rfl
+      · exact h6
+      · exact h8
+      · exact h3
+    have hnd' : (s :: ((y1 :: y2 :: ys) ++ (r2 :: rs))).Nodup :=
+      hnd.sublist (List.Sublist.cons₂ _ (List.Sublist.append
+        (List.sublist_cons_self _ _) (List.sublist_cons_self _ _)))
+    simp only [rawAddClean, gatePhysical_append]
+    exact ⟨⟨hst, rawAddClean_physical s (y1 :: y2 :: ys) (r2 :: rs) hnd'⟩, hcx⟩
+
 theorem endPacket760OddLoan44_physical : GatePhysical endPacket760OddLoan44 := by
   let L := Q6EndpointCell.ports base (base 2409)
   have hn : L.wires.Nodup := Rolling1588Lifetime.half_ports_nodup
@@ -10438,14 +10911,35 @@ theorem endPacket760OddLoan44_physical : GatePhysical endPacket760OddLoan44 := b
   have hcsP : GatePhysical (TerminalGraph.compareSelected (L.ylow.drop 1) (L.low.drop 1)
       (L.low.getD 0 0) L.sign L.parity (InverseTailC.third / 2)) :=
     compareSelected_physical _ _ _ _ _ _ (PeakNodup.nodup_of_mask _ (by decide +kernel))
+  have hndRaw : (L.sign :: (L.y ++ L.r.drop 1)).Nodup :=
+    PeakNodup.nodup_of_mask _ (by decide +kernel)
+  have hrawP : GatePhysical (rawOddLoan44 L) := by
+    have h0cp : GatePhysical (copyRegister none L.y L.r) := by
+      have h0' := h0
+      simp only [tailProgramLoan44, decisionLoan44, InverseTailC.prep, gatePhysical_append] at h0'
+      exact h0'.1.1.1.1.1.1.1.1.1
+    have hd1 : L.y.getD 0 0 ≠ L.r.getD 1 0 := by decide +kernel
+    have hd2 : L.sign ≠ L.r.getD 1 0 := by decide +kernel
+    have hd3 : L.y.getD 0 0 ≠ L.r.getD 0 0 := by decide +kernel
+    have hd4 : L.sign ≠ L.r.getD 0 0 := by decide +kernel
+    rw [rawOddLoan44, gatePhysical_append, gatePhysical_append, gatePhysical_append]
+    refine ⟨⟨⟨h0cp, ?_⟩, rawAddClean_physical L.sign L.y (L.r.drop 1) hndRaw⟩, ?_⟩
+    · intro g hg; simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with rfl | rfl | rfl
+      · trivial
+      · exact hd1
+      · exact hd2
+    · intro g hg; simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with rfl | rfl | rfl
+      · trivial
+      · exact hd3
+      · exact hd4
   have ht : GatePhysical (tailProgramOddLoan44 L) := by
-    simp only [tailProgramLoan44, decisionLoan44, rawLoan44, gatePhysical_append] at h0
-    simp only [tailProgramOddLoan44, decisionOddLoan44, rawOddLoan44, gatePhysical_append]
-    refine ⟨⟨⟨⟨⟨⟨⟨hpp, ?_⟩, hcsP⟩, ?_⟩, hrevP _ hpp⟩,
-      ⟨⟨⟨h0.1.1.2.1.1.1, ?_⟩, h0.1.1.2.1.2⟩, h0.1.1.2.2⟩⟩, h0.1.2⟩, ?_⟩
+    simp only [tailProgramLoan44, decisionLoan44, gatePhysical_append] at h0
+    simp only [tailProgramOddLoan44, decisionOddLoan44, gatePhysical_append]
+    refine ⟨⟨⟨⟨⟨⟨⟨hpp, ?_⟩, hcsP⟩, ?_⟩, hrevP _ hpp⟩, hrawP⟩, h0.1.2⟩, ?_⟩
     · intro g hg; simp at hg; rcases hg with rfl | rfl <;> simp [PhysicalInstr, ProperGate, hyc, hyc']
     · intro g hg; simp at hg; rcases hg with rfl | rfl | rfl <;> simp [PhysicalInstr, ProperGate, hsp, hyc, hyc']
-    · intro g hg; simp at hg; rcases hg with rfl | rfl <;> simp [PhysicalInstr, ProperGate, hsr]
     · have he := h0.2
       intro g hg
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
@@ -10463,86 +10957,6 @@ theorem endPacket760OddLoan44_physical : GatePhysical endPacket760OddLoan44 := b
   exact gatePhysical_rename _ (Equiv.injective _) _
     (gatePhysical_rename _ (Equiv.injective _) _
       (ControlLoan1589.loanWindow_physical _ _ _ _ (by decide +kernel) hfull))
-
-/-- Loan drop for `rawOddLoan44` (uses `StairLoan.mappedAddLoan_run_eq`). -/
-theorem rawOddLoan44_run_eq (s : State) (a b : List Bool)
-    (clean : ∀ q ∈ endpointL.carry.take 255, s.basis q = false) :
-    run (rawOddLoan44 endpointL) a s = run (rawOdd endpointL) b s := by
-  let L := endpointL
-  have hw : L.Widths := Q6EndpointCell.ports_widths base (base 2409)
-  have w := BalancedCleanup.widths L.toLayout hw
-  let A : Program := InverseTailC.double L ++ [.CX L.sign L.r0, .X L.sign] ++ signComplement L.sign L.y
-  let R : Program := signComplement L.sign L.y ++ [.X L.sign]
-  have newShape : rawOddLoan44 L = A ++
-      StairLoan.mappedAddLoan 44 roles44 (mappedRead L.y false) L.r (L.carry.take 255) L.sign ++ R := by
-    simp only [rawOddLoan44, signedAddLoan44, A, R, List.append_assoc]
-  have oldShape : rawOdd L = A ++
-      mappedAdd (mappedRead L.y false) L.r (L.carry.take 255) L.sign ++ R := by
-    simp only [rawOdd, signedAdd, addInPlace_eq_mapped, A, R, List.append_assoc]
-  rw [newShape, oldShape]
-  have headZero : measurementCount A = 0 := by
-    simp only [A, InverseTailC.double, measurementCount_append,
-      (rotate_counts L.r).2.2.2, (signComplement_counts _ _).2, measurementCount]
-  have tailZero : measurementCount R = 0 := by
-    simp only [R, measurementCount_append, (signComplement_counts _ _).2, measurementCount]
-  have cleanA : ∀ q ∈ L.carry.take 255, (run A [] s).basis q = false := by
-    intro q hq
-    have hndC : ((L.carry.take 255) ++ (L.sign :: (L.r ++ L.y))).Nodup :=
-      PeakNodup.nodup_of_mask _ (by decide +kernel)
-    have hdis := (List.nodup_append'.mp hndC).2.2 hq
-    have hm : q ∉ L.r ∧ q ∉ L.y ∧ q ≠ L.sign :=
-      ⟨fun h => hdis (List.mem_cons_of_mem _ (List.mem_append_left _ h)),
-       fun h => hdis (List.mem_cons_of_mem _ (List.mem_append_right _ h)),
-       fun h => hdis (h ▸ List.mem_cons_self)⟩
-    rw [run_preserves_outside A [] s q ?_]
-    · exact clean q hq
-    intro used
-    simp only [A, InverseTailC.double, wires_append, Finset.mem_union] at used
-    rcases used with (((cx | rot) | g) | sc)
-    · rw [OddFullPass.mem_wires_iff_flatMap] at cx
-      simp only [List.flatMap_cons, List.flatMap_nil, OddFullPass.instrWiresList,
-        List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at cx
-      rcases cx with rfl | rfl
-      · exact hm.2.1 (by simp [BalancedCleanup.Layout.y])
-      · exact hm.1 (by simp [BalancedCleanup.Layout.r])
-    · rw [(rotate_wires L.r).2, if_neg (by rw [w.2.1]; decide)] at rot
-      exact hm.1 (List.mem_toFinset.mp rot)
-    · rw [OddFullPass.mem_wires_iff_flatMap] at g
-      simp only [List.flatMap_cons, List.flatMap_nil, OddFullPass.instrWiresList,
-        List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at g
-      rcases g with (rfl | rfl) | rfl
-      · exact hm.2.2 rfl
-      · exact hm.1 (by simp [BalancedCleanup.Layout.r, BalancedCleanup.Layout.low])
-      · exact hm.2.2 rfl
-    · have hs := signComplement_wires_subset L.sign L.y sc
-      simp only [List.mem_toFinset, List.mem_cons] at hs
-      exact hs.elim hm.2.2 hm.2.1
-  have hnd : (L.sign :: (L.r ++ L.carry.take 255)).Nodup := PeakNodup.nodup_of_mask _ (by decide +kernel)
-  have ha : ∀ q ∈ mappedWires (mappedRead L.y false), q ∉ L.sign :: (L.r ++ L.carry.take 255) := by
-    have hndY : (L.y ++ (L.sign :: (L.r ++ L.carry.take 255))).Nodup :=
-      PeakNodup.nodup_of_mask _ (by decide +kernel)
-    intro q hq
-    have hy : q ∈ L.y := by
-      obtain ⟨b, hb, hbw⟩ := List.mem_flatMap.mp hq
-      obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hb
-      simp at hbw; exact hbw ▸ hy
-    exact (List.nodup_append'.mp hndY).2.2 hy
-  have htail : ∀ q ∈ roles44.take 44, q ∈ (L.carry.take 255).drop (44 + 1) := by
-    have hchk : (roles44.take 44).all (fun w => decide (w ∈ (L.carry.take 255).drop 45)) = true := by
-      decide +kernel
-    intro q hq; exact of_decide_eq_true (List.all_eq_true.mp hchk q hq)
-  have mid : ∀ x y,
-      run (StairLoan.mappedAddLoan 44 roles44 (mappedRead L.y false) L.r (L.carry.take 255) L.sign) x (run A [] s) =
-        run (mappedAdd (mappedRead L.y false) L.r (L.carry.take 255) L.sign) y (run A [] s) :=
-    fun x y => StairLoan.mappedAddLoan_run_eq 44 roles44 (mappedRead L.y false) L.r (L.carry.take 255) L.sign
-      (run A [] s) x y hnd ha (by simp [mappedRead, w.2.1, w.2.2.1])
-      (by simp [List.length_take, w.2.1, hw.2.2]) (by simp [List.length_take, hw.2.2])
-      cleanA htail
-  have tail : ∀ x y,
-      run R x (run (StairLoan.mappedAddLoan 44 roles44 (mappedRead L.y false) L.r (L.carry.take 255) L.sign) [] (run A [] s)) =
-        run R y (run (StairLoan.mappedAddLoan 44 roles44 (mappedRead L.y false) L.r (L.carry.take 255) L.sign) [] (run A [] s)) :=
-    fun x y => FifthCarry.no_records R tailZero _ x y
-  exact StairLoan.run_sandwich_independent A _ _ R s a b headZero mid tail
 
 section
 set_option maxRecDepth 8192
@@ -11248,6 +11662,470 @@ theorem programOdd_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
 
 
 
+private def rawMaj (a b c : Bool) : Bool := (a && b) || (a && c) || (b && c)
+
+private theorem rawCarryStep_run (s yPrev yCur rCur rNext : Wire)
+    (hnd : [s, yPrev, yCur, rCur, rNext].Nodup)
+    (st : State) (hzero : st.basis rNext = false) :
+    run (rawCarryStep s yPrev yCur rCur rNext) [] st =
+      ⟨st.phase, writeBit st.basis rNext (rawMaj (st.basis yPrev) (st.basis yCur ^^ st.basis s) (st.basis rCur))⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, ← ne_eq] at hnd
+  rcases hnd with ⟨⟨h1, h2, h3, h4⟩, ⟨h5, h6, h7⟩, ⟨h8, h9⟩, h10, _⟩
+  let b0 := st.basis
+  let b1 := writeBit b0 yCur (b0 yCur ^^ b0 s)
+  let b2 := writeBit b1 yPrev (b1 yPrev ^^ b1 rCur)
+  let b3 := writeBit b2 yCur (b2 yCur ^^ b2 rCur)
+  let b4 := writeBit b3 rNext (b3 rNext ^^ (b3 yPrev && b3 yCur))
+  let b5 := writeBit b4 rNext (b4 rNext ^^ b4 rCur)
+  let b6 := writeBit b5 yCur (b5 yCur ^^ b5 rCur)
+  let b7 := writeBit b6 yPrev (b6 yPrev ^^ b6 rCur)
+  let b8 := writeBit b7 yCur (b7 yCur ^^ b7 s)
+  have hb : run (rawCarryStep s yPrev yCur rCur rNext) [] st = ⟨st.phase, b8⟩ := rfl
+  rw [hb]
+  have hb1 : b1 yCur = (b0 yCur ^^ b0 s) ∧ b1 yPrev = b0 yPrev ∧ b1 rCur = b0 rCur ∧ b1 rNext = false ∧ b1 s = b0 s := by
+    simp [b1, b0, writeBit, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+      h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm, hzero]
+  have hb2 : b2 yCur = (b0 yCur ^^ b0 s) ∧ b2 yPrev = (b0 yPrev ^^ b0 rCur) ∧ b2 rCur = b0 rCur ∧ b2 rNext = false ∧ b2 s = b0 s := by
+    simp [b2, writeBit, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+      h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm, hb1]
+  have hb3 : b3 yCur = (b0 yCur ^^ b0 s ^^ b0 rCur) ∧ b3 yPrev = (b0 yPrev ^^ b0 rCur) ∧ b3 rCur = b0 rCur ∧ b3 rNext = false ∧ b3 s = b0 s := by
+    simp [b3, writeBit, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+      h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm, hb2]
+  have hb4 : b4 yCur = (b0 yCur ^^ b0 s ^^ b0 rCur) ∧ b4 yPrev = (b0 yPrev ^^ b0 rCur) ∧ b4 rCur = b0 rCur ∧
+      b4 rNext = ((b0 yPrev ^^ b0 rCur) && (b0 yCur ^^ b0 s ^^ b0 rCur)) ∧ b4 s = b0 s := by
+    simp [b4, writeBit, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+      h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm, hb3]
+  have hb5 : b5 yCur = (b0 yCur ^^ b0 s ^^ b0 rCur) ∧ b5 yPrev = (b0 yPrev ^^ b0 rCur) ∧ b5 rCur = b0 rCur ∧
+      b5 rNext = rawMaj (b0 yPrev) (b0 yCur ^^ b0 s) (b0 rCur) ∧ b5 s = b0 s := by
+    refine ⟨by simp [b5, writeBit, h9, h9.symm, hb4], by simp [b5, writeBit, h7, h7.symm, hb4],
+      by simp [b5, writeBit, h10, h10.symm, hb4], ?_, by simp [b5, writeBit, h4, h4.symm, hb4]⟩
+    simp only [b5, writeBit, Function.update_self, hb4.2.2.2.1, hb4.2.2.1, rawMaj]
+    cases b0 s <;> cases b0 yPrev <;> cases b0 yCur <;> cases b0 rCur <;> rfl
+  have hb6 : b6 yCur = (b0 yCur ^^ b0 s) ∧ b6 yPrev = (b0 yPrev ^^ b0 rCur) ∧ b6 rCur = b0 rCur ∧
+      b6 rNext = rawMaj (b0 yPrev) (b0 yCur ^^ b0 s) (b0 rCur) ∧ b6 s = b0 s := by
+    refine ⟨?_, by simp [b6, writeBit, h5, h5.symm, hb5], by simp [b6, writeBit, h8, h8.symm, hb5],
+      by simp [b6, writeBit, h9, h9.symm, hb5], by simp [b6, writeBit, h2, h2.symm, hb5]⟩
+    simp only [b6, writeBit, Function.update_self, hb5.1, hb5.2.2.1]
+    cases b0 s <;> cases b0 yCur <;> cases b0 rCur <;> rfl
+  have hb7 : b7 yCur = (b0 yCur ^^ b0 s) ∧ b7 yPrev = b0 yPrev ∧ b7 rCur = b0 rCur ∧
+      b7 rNext = rawMaj (b0 yPrev) (b0 yCur ^^ b0 s) (b0 rCur) ∧ b7 s = b0 s := by
+    refine ⟨by simp [b7, writeBit, h5, h5.symm, hb6], ?_, by simp [b7, writeBit, h6, h6.symm, hb6],
+      by simp [b7, writeBit, h7, h7.symm, hb6], by simp [b7, writeBit, h1, h1.symm, hb6]⟩
+    simp only [b7, writeBit, Function.update_self, hb6.2.1, hb6.2.2.1]
+    cases b0 yPrev <;> cases b0 rCur <;> rfl
+  have hb8 : b8 yCur = b0 yCur ∧ b8 yPrev = b0 yPrev ∧ b8 rNext = rawMaj (b0 yPrev) (b0 yCur ^^ b0 s) (b0 rCur) := by
+    refine ⟨?_, by simp [b8, writeBit, h5, h5.symm, hb7], by simp [b8, writeBit, h9, h9.symm, hb7]⟩
+    simp only [b8, writeBit, Function.update_self, hb7.1, hb7.2.2.2.2]
+    cases b0 s <;> cases b0 yCur <;> rfl
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases hq1 : q = rNext
+    · subst hq1; simp [b0, writeBit, hb8.2.2]
+    · by_cases hq2 : q = yCur
+      · subst hq2; simp [b0, writeBit, hq1, hb8.1]
+      · by_cases hq3 : q = yPrev
+        · subst hq3; simp [b0, writeBit, hq1, hb8.2.1]
+        · simp [b8, b7, b6, b5, b4, b3, b2, b1, b0, writeBit, hq1, hq2, hq3]
+
+private theorem rawAddClean_correct (s : Wire) :
+    ∀ (ys rs : List Wire),
+      rs.length + 1 = ys.length → 1 ≤ rs.length →
+      (s :: (ys ++ rs)).Nodup →
+      ∀ (st : State) (m : List Bool),
+        (∀ r ∈ rs.tail, st.basis r = false) →
+        let u := run (rawAddClean s ys rs) m st
+        u.phase = st.phase ∧
+        regValue rs u.basis =
+          (regValue ys.dropLast st.basis +
+            regValue ys.tail (fun q => st.basis q ^^ st.basis s) +
+            (st.basis (rs.headD 0)).toNat) % 2 ^ rs.length ∧
+        ∀ q, q ∉ rs → u.basis q = st.basis q
+  | [], _, h, _, _, _, _, _ => by simp at h
+  | [_], rs, h, h1, _, _, _, _ => by cases rs <;> simp at h h1
+  | _ :: _ :: _, [], _, h1, _, _, _, _ => by simp at h1
+  | [_, _], _ :: _ :: _, h, _, _, _, _, _ => by simp at h
+  | _ :: _ :: _ :: _, [_], h, _, _, _, _, _ => by simp at h
+  | [y0, y1], [r1], _, _, hnd, st, m, _ => by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.cons_append, List.nil_append,
+      or_false, not_or, ← ne_eq] at hnd
+    rcases hnd with ⟨⟨h1, h2, h3⟩, ⟨h4, h5⟩, h6, _⟩
+    dsimp only
+    rw [FifthCarry.no_records (rawAddClean s [y0, y1] [r1]) rfl st m []]
+    refine ⟨by simp [rawAddClean, run], ?_, ?_⟩
+    · simp only [rawAddClean, run, writeBit, Function.update_apply, regValue, List.dropLast, List.tail, List.headD,
+        List.length_singleton, h3, h5, h6, h3.symm, h5.symm, h6.symm, ↓reduceIte]
+      cases hs : st.basis s <;> cases hy0 : st.basis y0 <;> cases hy1 : st.basis y1 <;> cases hr1 : st.basis r1 <;>
+        simp [hs, hy0, hy1, hr1, Bool.toNat]
+    · intro q hq
+      have hqr : q ≠ r1 := by simpa using hq
+      simp [rawAddClean, run, writeBit, Function.update_apply, hqr]
+  | y0 :: y1 :: y2 :: ys, r1 :: r2 :: rs, hlen, _, hnd, st, m, hclean => by
+    have hnd5 : [s, y0, y1, r1, r2].Nodup :=
+      hnd.sublist (List.Sublist.cons₂ _ (List.Sublist.append
+        (List.Sublist.cons₂ _ (List.Sublist.cons₂ _ (List.nil_sublist _)))
+        (List.Sublist.cons₂ _ (List.Sublist.cons₂ _ (List.nil_sublist _)))))
+    have hnd' : (s :: ((y1 :: y2 :: ys) ++ (r2 :: rs))).Nodup :=
+      hnd.sublist (List.Sublist.cons₂ _ (List.Sublist.append
+        (List.sublist_cons_self _ _) (List.sublist_cons_self _ _)))
+    have hmc0 := (rawAddClean_counts s (y1 :: y2 :: ys) (r2 :: rs) (by simp at hlen ⊢; omega) (by simp)).2
+    have hst1 := rawCarryStep_run s y0 y1 r1 r2 hnd5 st (hclean r2 (by simp))
+    let st1 := run (rawCarryStep s y0 y1 r1 r2) [] st
+    have hst1_eq : st1 = ⟨st.phase, writeBit st.basis r2 (rawMaj (st.basis y0) (st.basis y1 ^^ st.basis s) (st.basis r1))⟩ := hst1
+    have hrnd : (r1 :: r2 :: rs).Nodup := (List.nodup_append'.mp (List.nodup_cons.mp hnd).2).2.1
+    have hr1NotTail : r1 ∉ r2 :: rs := (List.nodup_cons.mp hrnd).1
+    have hr2NotRs : r2 ∉ rs := (List.nodup_cons.mp (List.nodup_cons.mp hrnd).2).1
+    have hclean1 : ∀ r ∈ (r2 :: rs).tail, st1.basis r = false := by
+      intro r hr
+      have hr_rs : r ∈ rs := hr
+      have hrNe : r ≠ r2 := fun e => hr2NotRs (e ▸ hr_rs)
+      rw [hst1_eq]; simp [writeBit, hrNe, hclean r (List.mem_cons_of_mem _ hr_rs)]
+    have hrec := rawAddClean_correct s (y1 :: y2 :: ys) (r2 :: rs) (by simp at hlen ⊢; omega) (by simp)
+      hnd' st1 [] hclean1
+    let st2 := run (rawAddClean s (y1 :: y2 :: ys) (r2 :: rs)) [] st1
+    let st3 := run [.CX y0 r1, .CX y1 r1, .CX s r1] [] st2
+    have hrun : run (rawAddClean s (y0 :: y1 :: y2 :: ys) (r1 :: r2 :: rs)) m st = st3 := by
+      have hmAll : measurementCount (rawAddClean s (y0 :: y1 :: y2 :: ys) (r1 :: r2 :: rs)) = 0 :=
+        (rawAddClean_counts s (y0 :: y1 :: y2 :: ys) (r1 :: r2 :: rs) hlen (by simp)).2
+      have hmStep : measurementCount (rawCarryStep s y0 y1 r1 r2) = 0 := rfl
+      rw [FifthCarry.no_records _ hmAll st m []]
+      simp only [rawAddClean, List.append_assoc, run_append, run_take, hmStep, hmc0, measurementCount,
+        List.take_zero, List.drop_zero, st3, st2, st1]
+    dsimp only; rw [hrun]
+    have h5 := hnd5
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, ← ne_eq] at h5
+    rcases h5 with ⟨⟨hs_y0, hs_y1, hs_r1, hs_r2⟩, ⟨hy0_y1, hy0_r1, hy0_r2⟩, ⟨hy1_r1, hy1_r2⟩, hr1_r2, _⟩
+    have hdis_sy : ∀ q ∈ s :: y0 :: y1 :: y2 :: ys, q ∉ r1 :: r2 :: rs := by
+      intro q hq bad
+      have hc := List.nodup_iff_count.mp hnd q
+      have c1 := List.count_pos_iff.mpr hq
+      have c2 := List.count_pos_iff.mpr bad
+      simp only [List.count_cons, List.count_append] at hc c1 c2; omega
+    have hst2_s : st2.basis s = st.basis s := by
+      rw [hrec.2.2 s (fun h => hdis_sy s (by simp) (List.mem_cons_of_mem _ h)), hst1_eq]
+      simp [writeBit, hs_r2]
+    have hst2_y0 : st2.basis y0 = st.basis y0 := by
+      rw [hrec.2.2 y0 (fun h => hdis_sy y0 (by simp) (List.mem_cons_of_mem _ h)), hst1_eq]
+      simp [writeBit, hy0_r2]
+    have hst2_y1 : st2.basis y1 = st.basis y1 := by
+      rw [hrec.2.2 y1 (fun h => hdis_sy y1 (by simp) (List.mem_cons_of_mem _ h)), hst1_eq]
+      simp [writeBit, hy1_r2]
+    have hst2_r1 : st2.basis r1 = st.basis r1 := by
+      rw [hrec.2.2 r1 hr1NotTail, hst1_eq]
+      simp [writeBit, hr1_r2]
+    have hst3_eq : st3 = ⟨st2.phase, writeBit st2.basis r1 (st.basis r1 ^^ st.basis y0 ^^ st.basis y1 ^^ st.basis s)⟩ := by
+      apply State.extensionality
+      · simp [st3, run]
+      · funext q
+        simp only [st3, run, writeBit, Function.update_apply,
+          hy0_r1, hy1_r1, hs_r1, hy0_r1.symm, hy1_r1.symm, hs_r1.symm, ↓reduceIte]
+        by_cases hq : q = r1
+        · subst hq; simp [hst2_r1, hst2_y0, hst2_y1, hst2_s]
+        · simp [hq]
+    have hst1_ys : regValue (y1 :: y2 :: ys).dropLast st1.basis = regValue (y1 :: y2 :: ys).dropLast st.basis := by
+      apply regValue_congr; intro q hq
+      have hqm : q ∈ y1 :: y2 :: ys := (List.dropLast_sublist _).subset hq
+      have hqne : q ≠ r2 := fun e => hdis_sy q (by simp [hqm]) (e ▸ List.mem_cons_of_mem _ List.mem_cons_self)
+      rw [hst1_eq]; simp [writeBit, hqne]
+    have hst1_yt : regValue (y1 :: y2 :: ys).tail (fun q => st1.basis q ^^ st1.basis s) =
+        regValue (y1 :: y2 :: ys).tail (fun q => st.basis q ^^ st.basis s) := by
+      apply regValue_congr; intro q hq
+      have hqm : q ∈ y1 :: y2 :: ys := List.mem_of_mem_tail hq
+      have hqne : q ≠ r2 := fun e => hdis_sy q (by simp [hqm]) (e ▸ List.mem_cons_of_mem _ List.mem_cons_self)
+      rw [hst1_eq]; simp [writeBit, hqne, hs_r2]
+    have hst1_r2 : st1.basis ((r2 :: rs).headD 0) = rawMaj (st.basis y0) (st.basis y1 ^^ st.basis s) (st.basis r1) := by
+      rw [hst1_eq]; simp [List.headD, writeBit]
+    have hst3_tail : regValue (r2 :: rs) st3.basis = regValue (r2 :: rs) st2.basis := by
+      apply regValue_congr; intro q hq
+      have hqne : q ≠ r1 := fun e => hr1NotTail (e ▸ hq)
+      rw [hst3_eq]; simp [writeBit, hqne]
+    refine ⟨(by rw [hst3_eq]; exact hrec.1.trans (by rw [hst1_eq])), ?_, ?_⟩
+    · change (if st3.basis r1 then 1 else 0) + 2 * regValue (r2 :: rs) st3.basis = _
+      rw [hst3_tail, hrec.2.1, hst1_ys, hst1_yt, hst1_r2]
+      have hsr1 : st3.basis r1 = (st.basis r1 ^^ st.basis y0 ^^ st.basis y1 ^^ st.basis s) := by
+        rw [hst3_eq]; simp [writeBit]
+      rw [hsr1]
+      have hdl : (y0 :: y1 :: y2 :: ys).dropLast = y0 :: (y1 :: y2 :: ys).dropLast := rfl
+      have htl : (y0 :: y1 :: y2 :: ys).tail = y1 :: (y1 :: y2 :: ys).tail := rfl
+      rw [hdl, htl]
+      change (if st.basis r1 ^^ st.basis y0 ^^ st.basis y1 ^^ st.basis s then 1 else 0) +
+          2 * ((regValue (y1 :: y2 :: ys).dropLast st.basis +
+                regValue (y1 :: y2 :: ys).tail (fun q => st.basis q ^^ st.basis s) +
+                (rawMaj (st.basis y0) (st.basis y1 ^^ st.basis s) (st.basis r1)).toNat) % 2 ^ (r2 :: rs).length) =
+        (((if st.basis y0 then 1 else 0) + 2 * regValue (y1 :: y2 :: ys).dropLast st.basis) +
+         ((if (st.basis y1 ^^ st.basis s) then 1 else 0) + 2 * regValue (y1 :: y2 :: ys).tail (fun q => st.basis q ^^ st.basis s)) +
+         (st.basis r1).toNat) % 2 ^ (r1 :: r2 :: rs).length
+      set A := regValue (y1 :: y2 :: ys).dropLast st.basis
+      set B := regValue (y1 :: y2 :: ys).tail (fun q => st.basis q ^^ st.basis s)
+      set k := (r2 :: rs).length
+      have hpow : 2 ^ (r1 :: r2 :: rs).length = 2 * 2 ^ k := by simp [k, pow_succ, Nat.mul_comm]
+      have hmod2 : ∀ (c x M : Nat), c < 2 → c + 2 * (x % M) = (c + 2 * x) % (2 * M) := by
+        intro c x M hc
+        rcases Nat.eq_zero_or_pos M with rfl | hM
+        · simp
+        · have hlt : x % M < M := Nat.mod_lt x hM
+          have h1 : c + 2 * x = (c + 2 * (x % M)) + (2 * M) * (x / M) := by
+            have hdiv := Nat.div_add_mod x M
+            linarith
+          have hlt2 : c + 2 * (x % M) < 2 * M := by omega
+          conv_rhs => rw [h1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt2]
+      have hmod0 (x : Nat) : 0 + 2 * (x % 2 ^ k) = (0 + 2 * x) % (2 * 2 ^ k) := hmod2 0 x (2 ^ k) (by decide)
+      have hmod1 (x : Nat) : 1 + 2 * (x % 2 ^ k) = (1 + 2 * x) % (2 * 2 ^ k) := hmod2 1 x (2 ^ k) (by decide)
+      rw [hpow]
+      cases st.basis s <;> cases st.basis y0 <;> cases st.basis y1 <;> cases st.basis r1 <;>
+        simp only [rawMaj, Bool.not_false, Bool.not_true, Bool.xor_false, Bool.xor_true, Bool.and_false, Bool.and_true,
+          Bool.false_and, Bool.true_and, Bool.or_false, Bool.or_true, Bool.false_or, Bool.true_or,
+          Bool.toNat_false, Bool.toNat_true, ↓reduceIte, Bool.false_eq_true] <;>
+        ((first | rw [hmod0] | rw [hmod1]); congr 1; omega)
+    · intro q hq
+      have hq1 : q ≠ r1 := fun e => hq (e ▸ List.mem_cons_self)
+      have hq2 : q ∉ r2 :: rs := fun h => hq (List.mem_cons_of_mem _ h)
+      have hq2ne : q ≠ r2 := fun e => hq2 (e ▸ List.mem_cons_self)
+      rw [hst3_eq]; simp only [writeBit, Function.update_of_ne hq1]
+      rw [hrec.2.2 q hq2, hst1_eq]; simp [writeBit, hq2ne]
+
+private theorem rawOdd_arith (M Y : Nat) (hM : 0 < M) (hY : Y < 2 * M) (sb yb : Bool)
+    (hy0 : yb.toNat = Y % 2) :
+    (yb ^^ sb).toNat + 2 * ((Y % M +
+        (if sb then Y / 2 else (2 * M - 1 - Y) / 2) +
+        (yb ^^ !sb).toNat) % M) =
+      (if sb then 3 * Y + 1 else Y) % (2 * M) := by
+  have hmod2 : ∀ (c x : Nat), c < 2 → c + 2 * (x % M) = (c + 2 * x) % (2 * M) := by
+    intro c x hc
+    have hlt : x % M < M := Nat.mod_lt x hM
+    have h1 : c + 2 * x = (c + 2 * (x % M)) + (2 * M) * (x / M) := by
+      have hdiv := Nat.div_add_mod x M
+      linarith
+    have hlt2 : c + 2 * (x % M) < 2 * M := by omega
+    conv_rhs => rw [h1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt2]
+  cases sb <;> cases yb <;>
+    simp only [Bool.not_false, Bool.not_true, Bool.xor_false, Bool.xor_true,
+      Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true, ↓reduceIte] at hy0 ⊢
+  · rw [hmod2 0 _ (by decide)]
+    by_cases hYM : Y < M
+    · have hYmod : Y % M = Y := Nat.mod_eq_of_lt hYM
+      rw [hYmod, show 0 + 2 * (Y + (2 * M - 1 - Y) / 2 + 1) = Y + 2 * M by omega, Nat.add_mod_right]
+    · have hYmod : Y % M = Y - M := by rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [hYmod, show 0 + 2 * (Y - M + (2 * M - 1 - Y) / 2 + 1) = Y by omega]
+  · rw [hmod2 1 _ (by decide)]
+    by_cases hYM : Y < M
+    · have hYmod : Y % M = Y := Nat.mod_eq_of_lt hYM
+      rw [hYmod, show 1 + 2 * (Y + (2 * M - 1 - Y) / 2 + 0) = Y + 2 * M by omega, Nat.add_mod_right]
+    · have hYmod : Y % M = Y - M := by rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [hYmod, show 1 + 2 * (Y - M + (2 * M - 1 - Y) / 2 + 0) = Y by omega]
+  · rw [hmod2 1 _ (by decide)]
+    by_cases hYM : Y < M
+    · have hYmod : Y % M = Y := Nat.mod_eq_of_lt hYM
+      rw [hYmod, show 1 + 2 * (Y + Y / 2 + 0) = 3 * Y + 1 by omega]
+    · have hYmod : Y % M = Y - M := by rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [hYmod, ← Nat.add_mod_right _ (2 * M)]
+      congr 1; omega
+  · rw [hmod2 0 _ (by decide)]
+    by_cases hYM : Y < M
+    · have hYmod : Y % M = Y := Nat.mod_eq_of_lt hYM
+      rw [hYmod, show 0 + 2 * (Y + Y / 2 + 1) = 3 * Y + 1 by omega]
+    · have hYmod : Y % M = Y - M := by rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [hYmod, ← Nat.add_mod_right _ (2 * M)]
+      congr 1; omega
+
+private theorem rawOddLoan44_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (s : State) (m : List Bool) (heq : regValue L.r s.basis = regValue L.y s.basis) :
+    (run (rawOddLoan44 L) m s).phase = s.phase ∧
+    regValue L.r (run (rawOddLoan44 L) m s).basis =
+      (if s.basis L.sign then 3 * regValue L.y s.basis + 1 else regValue L.y s.basis) % 2 ^ 256 ∧
+    ∀ a, a ∉ L.r → (run (rawOddLoan44 L) m s).basis a = s.basis a := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have yr := InverseTailC.yrND hn
+  have hsgR : L.sign ∉ L.r := fun h => InverseTailC.flagAway (L := L) hn L.sign (by simp) (by simp [h])
+  have hsgY : L.sign ∉ L.y := fun h => InverseTailC.flagAway (L := L) hn L.sign (by simp) (by simp [h])
+  have hndSYR : (L.sign :: (L.y ++ L.r)).Nodup :=
+    List.nodup_cons.mpr ⟨by simp [hsgY, hsgR], yr⟩
+  have hndRaw : (L.sign :: (L.y ++ L.r.drop 1)).Nodup :=
+    hndSYR.sublist (List.Sublist.cons₂ _ (List.Sublist.append (List.Sublist.refl _) (List.drop_sublist _ _)))
+  obtain ⟨r0, r1, rs2, hr_sp⟩ : ∃ r0 r1 rs2, L.r = r0 :: r1 :: rs2 := by
+    cases h : L.r with
+    | nil => have := w.2.1; rw [h] at this; simp at this
+    | cons a l => cases l with
+      | nil => have := w.2.1; rw [h] at this; simp at this
+      | cons b bs => exact ⟨a, b, bs, rfl⟩
+  obtain ⟨y0, ys1, hy_sp⟩ : ∃ y0 ys1, L.y = y0 :: ys1 := by
+    cases h : L.y with
+    | nil => have := w.2.2.1; rw [h] at this; simp at this
+    | cons a l => exact ⟨a, l, rfl⟩
+  have hgetY0 : L.y.getD 0 0 = y0 := by rw [hy_sp]; rfl
+  have hgetR0 : L.r.getD 0 0 = r0 := by rw [hr_sp]; rfl
+  have hgetR1 : L.r.getD 1 0 = r1 := by rw [hr_sp]; rfl
+  have hdropR : L.r.drop 1 = r1 :: rs2 := by rw [hr_sp]; rfl
+  have hmc : measurementCount (rawOddLoan44 L) = 0 := (rawOddLoan44_counts L hw).2
+  have hmc_cp : measurementCount (copyRegister none L.y L.r) = 0 :=
+    (copyRegister_counts none L.y L.r (w.2.2.1.trans w.2.1.symm)).2
+  have hmc_ca : measurementCount (rawAddClean L.sign L.y (L.r.drop 1)) = 0 :=
+    (rawAddClean_counts L.sign L.y (L.r.drop 1) (by simp [w.2.1, w.2.2.1]) (by simp [w.2.1])).2
+  let st1 := run (copyRegister none L.y L.r) [] s
+  let st2 := run [.X L.sign, .CX y0 r1, .CX L.sign r1] [] st1
+  let st3 := run (rawAddClean L.sign L.y (L.r.drop 1)) [] st2
+  let st4 := run [.X L.sign, .CX y0 r0, .CX L.sign r0] [] st3
+  have hrun : run (rawOddLoan44 L) m s = st4 := by
+    rw [FifthCarry.no_records (rawOddLoan44 L) hmc s m []]
+    simp only [rawOddLoan44, hgetY0, hgetR0, hgetR1, List.append_assoc, run_append, run_take,
+      hmc_cp, hmc_ca, measurementCount, List.take_zero, List.drop_zero, st4, st3, st2, st1]
+  rw [hrun]
+  have hcp := copyRegister_correct none L.y L.r (w.2.2.1.trans w.2.1.symm) yr (by simp) s []
+  have hst1_r0 : regValue L.r st1.basis = 0 := by
+    have h := hcp.2.2; simp only [copyValue, heq, Nat.xor_self] at h; exact h
+  have hst1_rclean : ∀ q ∈ L.r, st1.basis q = false := (regValue_zero L.r st1.basis).mp hst1_r0
+  have hst1_out : ∀ q, q ∉ L.r → st1.basis q = s.basis q := hcp.2.1
+  have hnd4 : [L.sign, y0, r0, r1].Nodup := by
+    have hsub : [L.sign, y0, r0, r1].Sublist (L.sign :: (L.y ++ L.r)) := by
+      rw [hy_sp, hr_sp]
+      exact List.Sublist.cons₂ _ (List.Sublist.append
+        (List.Sublist.cons₂ _ (List.nil_sublist _))
+        (List.Sublist.cons₂ _ (List.Sublist.cons₂ _ (List.nil_sublist _))))
+    exact hndSYR.sublist hsub
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, ← ne_eq] at hnd4
+  rcases hnd4 with ⟨⟨hs_y0, hs_r0, hs_r1⟩, ⟨hy0_r0, hy0_r1⟩, hr0_r1, _⟩
+  have hst1_s : st1.basis L.sign = s.basis L.sign := hst1_out L.sign hsgR
+  have hst1_y0 : st1.basis y0 = s.basis y0 :=
+    hst1_out y0 (InverseTailC.y_away_r hn y0 (by rw [hy_sp]; simp))
+  have hst1_r0b : st1.basis r0 = false := hst1_rclean r0 (by rw [hr_sp]; simp)
+  have hst1_r1b : st1.basis r1 = false := hst1_rclean r1 (by rw [hr_sp]; simp)
+  have hst2_eq : st2 = ⟨st1.phase, writeBit (writeBit st1.basis L.sign (!s.basis L.sign)) r1 (s.basis y0 ^^ !s.basis L.sign)⟩ := by
+    apply State.extensionality
+    · simp [st2, run]
+    · funext q
+      simp only [st2, run, writeBit, Function.update_apply,
+        hs_y0, hs_r1, hy0_r1, hs_y0.symm, hs_r1.symm, hy0_r1.symm, ↓reduceIte, hst1_s, hst1_y0, hst1_r1b]
+      by_cases hq1 : q = r1
+      · subst hq1; simp [hs_r1.symm]
+      · by_cases hq2 : q = L.sign
+        · subst hq2; simp [hq1]
+        · simp [hq1, hq2]
+  have hclean2 : ∀ r ∈ (L.r.drop 1).tail, st2.basis r = false := by
+    intro r hr
+    rw [hdropR] at hr
+    have hr_rs2 : r ∈ rs2 := hr
+    have hr_mem : r ∈ L.r := by rw [hr_sp]; simp [hr_rs2]
+    have hr_ne_s : r ≠ L.sign := fun e => hsgR (e ▸ hr_mem)
+    have hr_ne_r1 : r ≠ r1 := by
+      have rnd : (r0 :: r1 :: rs2).Nodup := hr_sp ▸ (List.nodup_append'.mp yr).2.1
+      exact fun e => (List.nodup_cons.mp (List.nodup_cons.mp rnd).2).1 (e ▸ hr_rs2)
+    rw [hst2_eq]; simp [writeBit, hr_ne_r1, hr_ne_s, hst1_rclean r hr_mem]
+  have hca := rawAddClean_correct L.sign L.y (L.r.drop 1) (by simp [w.2.1, w.2.2.1]) (by simp [w.2.1])
+    hndRaw st2 [] hclean2
+  have hst2_s : st2.basis L.sign = !s.basis L.sign := by rw [hst2_eq]; simp [writeBit, hs_r1]
+  have hst2_r0 : st2.basis r0 = false := by rw [hst2_eq]; simp [writeBit, hr0_r1, hs_r0.symm, hst1_r0b]
+  have hst2_r1 : st2.basis ((L.r.drop 1).headD 0) = (s.basis y0 ^^ !s.basis L.sign) := by
+    rw [hdropR, hst2_eq]; simp [List.headD, writeBit]
+  have hst2_y : ∀ q ∈ L.y, st2.basis q = s.basis q := by
+    intro q hq
+    have qr : q ∉ L.r := InverseTailC.y_away_r hn q hq
+    have qs : q ≠ L.sign := fun e => hsgY (e ▸ hq)
+    have qr1 : q ≠ r1 := fun e => qr (by rw [hr_sp]; simp [e])
+    rw [hst2_eq]; simp [writeBit, qr1, qs, hst1_out q qr]
+  have hr0NotDrop : r0 ∉ L.r.drop 1 := by
+    rw [hdropR]
+    have rnd : (r0 :: r1 :: rs2).Nodup := hr_sp ▸ (List.nodup_append'.mp yr).2.1
+    exact (List.nodup_cons.mp rnd).1
+  have hst3_s : st3.basis L.sign = !s.basis L.sign :=
+    (hca.2.2 L.sign (fun h => hsgR (List.mem_of_mem_drop h))).trans hst2_s
+  have hst3_y0 : st3.basis y0 = s.basis y0 :=
+    (hca.2.2 y0 (fun h => InverseTailC.y_away_r hn y0 (by rw [hy_sp]; simp) (List.mem_of_mem_drop h))).trans
+      (hst2_y y0 (by rw [hy_sp]; simp))
+  have hst3_r0 : st3.basis r0 = false := (hca.2.2 r0 hr0NotDrop).trans hst2_r0
+  have hst4_eq : st4 = ⟨st3.phase, writeBit (writeBit st3.basis L.sign (s.basis L.sign)) r0 (s.basis y0 ^^ s.basis L.sign)⟩ := by
+    apply State.extensionality
+    · simp [st4, run]
+    · funext q
+      simp only [st4, run, writeBit, Function.update_apply,
+        hs_y0, hs_r0, hy0_r0, hs_y0.symm, hs_r0.symm, hy0_r0.symm, ↓reduceIte, hst3_s, hst3_y0, hst3_r0, Bool.not_not]
+      by_cases hq1 : q = r0
+      · subst hq1; simp [hs_r0.symm]
+      · by_cases hq2 : q = L.sign
+        · subst hq2; simp [hq1]
+        · simp [hq1, hq2]
+  have hst4_drop : regValue (L.r.drop 1) st4.basis = regValue (L.r.drop 1) st3.basis := by
+    apply regValue_congr; intro q hq
+    have qr0 : q ≠ r0 := fun e => hr0NotDrop (e ▸ hq)
+    have qs : q ≠ L.sign := fun e => hsgR (e ▸ List.mem_of_mem_drop hq)
+    rw [hst4_eq]; simp [writeBit, qr0, qs]
+  refine ⟨(by rw [hst4_eq]; exact hca.1.trans (by rw [hst2_eq]; exact hcp.1)), ?_, ?_⟩
+  · have hys_dl : regValue L.y.dropLast st2.basis = regValue L.y s.basis % 2 ^ 255 := by
+      have hly : L.y = L.y.dropLast ++ [L.ymsb] := by
+        simp [BalancedCleanup.Layout.y]
+      have hlen_dl : L.y.dropLast.length = 255 := by
+        have := w.2.2.1; simp [this]
+      have hcg : regValue L.y.dropLast st2.basis = regValue L.y.dropLast s.basis :=
+        regValue_congr _ _ _ (fun q hq => hst2_y q ((List.dropLast_sublist _).subset hq))
+      rw [hcg]
+      have hlt : regValue L.y.dropLast s.basis < 2 ^ 255 := by
+        have := regValue_lt L.y.dropLast s.basis; rwa [hlen_dl] at this
+      conv_rhs => rw [hly]
+      rw [regValue_append, hlen_dl, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
+    have hys_tl : regValue L.y.tail (fun q => st2.basis q ^^ st2.basis L.sign) =
+        if s.basis L.sign then regValue L.y s.basis / 2 else (2 ^ 256 - 1 - regValue L.y s.basis) / 2 := by
+      have hcg : regValue L.y.tail (fun q => st2.basis q ^^ st2.basis L.sign) =
+          regValue L.y.tail (fun q => s.basis q ^^ !s.basis L.sign) :=
+        regValue_congr _ _ _ (fun q hq => by rw [hst2_y q (List.mem_of_mem_tail hq), hst2_s])
+      rw [hcg, InverseTailC.regValue_xor]
+      have hlt : regValue L.y.tail s.basis = regValue L.y s.basis / 2 := by
+        rw [hy_sp]
+        change regValue ys1 s.basis = ((if s.basis y0 then 1 else 0) + 2 * regValue ys1 s.basis) / 2
+        cases s.basis y0 <;> (simp only [Bool.false_eq_true, ↓reduceIte]; omega)
+      have htl_len : L.y.tail.length = 255 := by simp [w.2.2.1]
+      have hylt : regValue L.y s.basis < 2 ^ 256 := by
+        have := regValue_lt L.y s.basis; rwa [w.2.2.1] at this
+      rw [hlt, htl_len]
+      cases s.basis L.sign
+      · simp only [Bool.not_false, ↓reduceIte, Bool.false_eq_true]
+        have hpow : (2 : Nat) ^ 256 = 2 * 2 ^ 255 := by
+          rw [show (256 : Nat) = 255 + 1 from rfl, pow_succ, Nat.mul_comm]
+        rw [hpow] at hylt ⊢
+        generalize (2 : Nat) ^ 255 = M at hylt ⊢
+        omega
+      · simp only [Bool.not_true, ↓reduceIte, Bool.false_eq_true]
+    have hy0_mod : (s.basis y0).toNat = regValue L.y s.basis % 2 := by
+      rw [hy_sp]; change _ = ((if s.basis y0 then 1 else 0) + 2 * regValue ys1 s.basis) % 2
+      cases s.basis y0 <;> simp
+    have hRsplit : regValue L.r st4.basis = (st4.basis r0).toNat + 2 * regValue (L.r.drop 1) st4.basis := by
+      rw [hr_sp, List.drop_succ_cons, List.drop_zero]
+      change (if st4.basis r0 then 1 else 0) + 2 * regValue (r1 :: rs2) st4.basis = _
+      cases st4.basis r0 <;> simp
+    have hst4_r0 : st4.basis r0 = (s.basis y0 ^^ s.basis L.sign) := by rw [hst4_eq]; simp [writeBit]
+    rw [hRsplit, hst4_r0, hst4_drop, hca.2.1, hys_dl, hys_tl, hst2_r1, List.length_drop, w.2.1]
+    have hMpos : 0 < (2 : Nat) ^ 255 := Nat.two_pow_pos 255
+    have hpow : (2 : Nat) ^ 256 = 2 * 2 ^ 255 := by
+      rw [show (256 : Nat) = 255 + 1 from rfl, pow_succ, Nat.mul_comm]
+    have hYlt : regValue L.y s.basis < 2 * 2 ^ 255 := by
+      have := regValue_lt L.y s.basis; rw [w.2.2.1, hpow] at this; exact this
+    rw [hpow, show (256 - 1 : Nat) = 255 from rfl]
+    exact rawOdd_arith (2 ^ 255) (regValue L.y s.basis) hMpos hYlt (s.basis L.sign) (s.basis y0) hy0_mod
+  · intro a ha
+    have ha_drop : a ∉ L.r.drop 1 := fun h => ha (List.mem_of_mem_drop h)
+    have ha_r0 : a ≠ r0 := fun e => ha (by rw [hr_sp]; simp [e])
+    have ha_r1 : a ≠ r1 := fun e => ha (by rw [hr_sp]; simp [e])
+    by_cases has : a = L.sign
+    · subst has; rw [hst4_eq]; simp [writeBit, hs_r0]
+    · rw [hst4_eq]; simp only [writeBit, Function.update_of_ne ha_r0, Function.update_of_ne has]
+      rw [hca.2.2 a ha_drop, hst2_eq]
+      simp only [writeBit, Function.update_of_ne ha_r1, Function.update_of_ne has]
+      exact hst1_out a ha
+
+/-- Direct equivalence of clean-`R` `rawOddLoan44` with `rawOdd` (polymorphic in `L`). -/
+theorem rawOddLoan44_run_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (s : State) (a b : List Bool)
+    (heq : regValue L.r s.basis = regValue L.y s.basis)
+    (clean : ∀ q ∈ L.carry.take 255, s.basis q = false) :
+    run (rawOddLoan44 L) a s = run (rawOdd L) b s := by
+  have h1 := rawOddLoan44_correct L hw hn s a heq
+  have h2 := rawOdd_correct L hw hn s b heq clean
+  apply State.extensionality
+  · exact h1.1.trans h2.1.symm
+  · funext q
+    by_cases hq : q ∈ L.r
+    · exact (regValue_eq_iff L.r _ _).mp (h1.2.1.trans h2.2.1.symm) q hq
+    · exact (h1.2.2 q hq).trans (h2.2.2 q hq).symm
+
+
 section ConcreteEnd44
 private theorem tailProgramOddLoan44_eq (X : Layout) :
     tailProgramOddLoan44 X =
@@ -11281,6 +12159,19 @@ private theorem loanWindow_eq (g flag c : Wire) (P : Program) :
     ControlLoan1589.loanWindow g flag c P =
       [.CX g flag, .CX flag g] ++ (renameProgram (Equiv.swap c g) P ++ ([.CX flag g] ++ [.measureX flag [] [.Z g]])) := by
   unfold ControlLoan1589.loanWindow; simp only [List.append_assoc, List.cons_append, List.nil_append]
+
+private theorem loanWindow_run_eq (g flag c : Wire) (P : Program) (s u : State) (rec : List Bool)
+    (hu : u = run ([.CX g flag, .CX flag g] : Program) [] s)
+    (hreb : run (renameProgram (Equiv.swap c g) P) rec u = run P rec u) :
+    run (ControlLoan1589.loanWindow g flag c P) rec s =
+      run [.measureX flag [] [.Z g]] (rec.drop (measurementCount (renameProgram (Equiv.swap c g) P)))
+        (run [.CX flag g] [] (run P rec u)) := by
+  have h0a : measurementCount ([.CX g flag, .CX flag g] : Program) = 0 := by
+    unfold measurementCount; rfl
+  have h0b : measurementCount ([.CX flag g] : Program) = 0 := by
+    unfold measurementCount; rfl
+  rw [loanWindow_eq, run_append, h0a, List.take_zero, List.drop_zero, ← hu,
+      run_append, run_take, hreb, run_append, h0b, List.take_zero, List.drop_zero]
 
 attribute [local irreducible] tailBorrowedOddLoan44 ControlLoan1589.loanWindow
 attribute [local irreducible] run measurementCount tailProgramOddLoan44 programOdd halfOddLoan44 paddedOddLoan44 endPacket760OddLoan44 decisionOddLoan44 decisionOdd rawOddLoan44 rawOdd correctionLoan44 InverseTailC.correction
@@ -11319,9 +12210,6 @@ theorem tailProgramOddLoan44_run_eq
     rw [hs1]; exact decisionOdd_correct L hw hn Y hy s [] (hR.trans hY.symm) hY ho c0
   have c1 : ∀ q ∈ L.carry.take 255, st1.basis q = false := fun q hq => by
     rw [h1]; simp [writeBit, hpr q hq, c0 q hq]
-  have rEq : ∀ a b, run (rawOddLoan44 L) a st1 = run (rawOdd L) b st1 :=
-    fun a b => rawOddLoan44_run_eq st1 a b c1
-  obtain ⟨s2, hs2⟩ : ∃ s2 : State, s2 = run (rawOdd L) [] st1 := ⟨_, rfl⟩
   have h1r : regValue L.r st1.basis = regValue L.y st1.basis := by
     have pr : L.parity ∉ L.r := by decide +kernel
     have py : L.parity ∉ L.y := by decide +kernel
@@ -11329,6 +12217,9 @@ theorem tailProgramOddLoan44_run_eq
     rw [regValue_congr L.r _ s.basis (fun a ha => by simp [writeBit, show a ≠ L.parity from fun e => pr (e ▸ ha)]),
         regValue_congr L.y _ s.basis (fun a ha => by simp [writeBit, show a ≠ L.parity from fun e => py (e ▸ ha)]),
         hR, hY]
+  have rEq : ∀ a b, run (rawOddLoan44 L) a st1 = run (rawOdd L) b st1 :=
+    fun a b => rawOddLoan44_run_eq L hw hn st1 a b h1r c1
+  obtain ⟨s2, hs2⟩ : ∃ s2 : State, s2 = run (rawOdd L) [] st1 := ⟨_, rfl⟩
   have h2 := rawOdd_correct L hw hn st1 [] h1r c1
   have c2 : ∀ q ∈ L.carry.take 255, s2.basis q = false := by
     intro q hq; rw [hs2]; exact (h2.2.2 q (hcr q hq)).trans (c1 q hq)
@@ -11555,16 +12446,7 @@ theorem endPacket760OddLoan44_frame (X : Fp) (s : State) (m : List Bool)
     have hc_out : (run (paddedOddLoan44 L (base 512)) rec u).basis c = false := (hmid.2.2 c hcR).trans uc
     have hg_out : (run (paddedOddLoan44 L (base 512)) rec u).basis g = false := (hmid.2.2 g hgR).trans ug
     have hreb := FieldFrameOB5.rebind_swap_run c g (paddedOddLoan44 L (base 512)) u rec uc ug hc_out hg_out
-    have hlw : run (ControlLoan1589.loanWindow g flag c (paddedOddLoan44 L (base 512))) rec s =
-        run [.measureX flag [] [.Z g]] (rec.drop (measurementCount (renameProgram (Equiv.swap c g) (paddedOddLoan44 L (base 512)))))
-          (run [.CX flag g] [] (run (paddedOddLoan44 L (base 512)) rec u)) := by
-      have hlwSh : ControlLoan1589.loanWindow g flag c (paddedOddLoan44 L (base 512)) =
-          [.CX g flag, .CX flag g] ++ (renameProgram (Equiv.swap c g) (paddedOddLoan44 L (base 512)) ++ ([.CX flag g] ++ [.measureX flag [] [.Z g]])) :=
-        loanWindow_eq g flag c (paddedOddLoan44 L (base 512))
-      rw [hlwSh, run_append, show measurementCount ([.CX g flag, .CX flag g] : Program) = 0 from by simp [measurementCount],
-        List.take_zero, List.drop_zero, ← uDef, run_append, run_take, run_append,
-        show measurementCount ([.CX flag g] : Program) = 0 from by simp [measurementCount], List.take_zero, List.drop_zero]
-      rw [hreb]
+    have hlw := loanWindow_run_eq g flag c (paddedOddLoan44 L (base 512)) s u rec uDef hreb
 
     obtain ⟨w, wDef⟩ : ∃ w : State, w = run (paddedOddLoan44 L (base 512)) rec u := ⟨_, rfl⟩
     have hmid' : w.phase = u.phase ∧ regValue L.r w.basis = oddWord ((if u.basis L.sign then 1 else 3) * X) ∧
@@ -11629,21 +12511,6 @@ end
 
 end ECDSAAdd.Entrant.OddFullPass.InverseTailCOdd
 end
-
--- (fold) closing the scopes this module left open at its end
-end
-
-end
-
--- ==== module OddFieldB (folded into this module for the replay memory budget) ====
-section
-/-! # Odd-word field replay, part (module split of OddField for replay) -/
-
--- file-level opens of OddField
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic MappedCompressed
-open StairRestSupport ArchiveFieldScratch StairArchiveRelease
-
-section
 
 -- ============================================================================
 -- Section 4: Odd-word division endpoint (`CompareDecoderOdd`)
@@ -14395,18 +15262,11 @@ end
 
 end ECDSAAdd.Entrant.OddFullPass.CompareDecoderOdd
 end
-end
 
-end
-
--- ==== module OddFieldC (folded into this module for the replay memory budget) ====
-section
--- ==== LiteralTop (GordoAR 0459d6f7) ====
+-- ==== begin LiteralTop (credited to GordoAR 0459d6f7) ====
 section
 namespace ECDSAAdd.Entrant.LiteralTop
 open Arithmetic MappedCompressed BalancedField BalancedCircuit
-open MeasuredCodec5 (sim run_sim bitsOf)
-open CodecBitSliceVerify (packBits pack_testBit)
 
 private def stock (u v : Bool) : Program :=
   mappedAdd [⟨none,u⟩, ⟨none,v⟩] [0,1] [3] 2
@@ -14416,7 +15276,7 @@ def top (u v : Bool) (a b cin : Wire) : Program :=
     (if v then [.X b] else []) ++ mappedSum ⟨none,u⟩ a cin
 
 private theorem table : ∀ (u v : Bool) (x : Fin 8) (m ph : Bool),
-    sim (stock u v) [m] ph x.val = sim (top u v 0 1 2) [m] ph x.val := by
+    MeasuredCodec5.sim (stock u v) [m] ph x.val = MeasuredCodec5.sim (top u v 0 1 2) [m] ph x.val := by
   decide +kernel
 
 private theorem oneBit (p : Program) (h : measurementCount p ≤ 1) (m : List Bool) (s : State) :
@@ -14428,13 +15288,13 @@ private theorem oneBit (p : Program) (h : measurementCount p ≤ 1) (m : List Bo
     rw [← run_take p (b::t) s, ← run_take p [b] s]
     interval_cases z : measurementCount p <;> rfl
 
-private theorem pack_lt (xs : List Bool) : packBits xs < 2^xs.length := by
+private theorem pack_lt (xs : List Bool) : CodecBitSliceVerify.packBits xs < 2^xs.length := by
   induction xs with
   | nil => decide
   | cons b bs ih =>
     cases b with
-    | false => change 2 * packBits bs < 2 ^ (bs.length + 1); rw [Nat.pow_succ]; omega
-    | true => change 2 * packBits bs + 1 < 2 ^ (bs.length + 1); rw [Nat.pow_succ]; omega
+    | false => change 2 * CodecBitSliceVerify.packBits bs < 2 ^ (bs.length + 1); rw [Nat.pow_succ]; omega
+    | true => change 2 * CodecBitSliceVerify.packBits bs + 1 < 2 ^ (bs.length + 1); rw [Nat.pow_succ]; omega
 
 theorem top_correct (u v : Bool) (f : Wire → Wire)
     (hf : ∀ a ∈ Finset.range 4, ∀ b ∈ Finset.range 4, f a = f b → a = b)
@@ -14444,14 +15304,14 @@ theorem top_correct (u v : Bool) (f : Wire → Wire)
   have len : bs.length = 3 := by simp [bs]
   have valueBound := pack_lt bs
   rw [len] at valueBound
-  let x : Fin 8 := ⟨packBits bs, valueBound⟩
+  let x : Fin 8 := ⟨CodecBitSliceVerify.packBits bs, valueBound⟩
   apply run_rename_eq_of_eq f (Finset.range 4) hf _ _
     (by cases u <;> cases v <;> decide) (by cases u <;> cases v <;> decide)
-    m m ⟨s.phase,bitsOf x.val⟩ s rfl
+    m m ⟨s.phase,MeasuredCodec5.bitsOf x.val⟩ s rfl
   · intro i hi
     have bound : i < 4 := Finset.mem_range.mp hi
-    change (packBits bs).testBit i = s.basis (f i)
-    rw [pack_testBit]
+    change (CodecBitSliceVerify.packBits bs).testBit i = s.basis (f i)
+    rw [CodecBitSliceVerify.pack_testBit]
     by_cases small : i < 3
     · simp [bs,small]
     · have eq : i = 3 := Nat.le_antisymm (Nat.le_of_lt_succ bound) (Nat.le_of_not_gt small)
@@ -14459,7 +15319,7 @@ theorem top_correct (u v : Bool) (f : Wire → Wire)
       simp [List.getElem?_eq_none len.le,zero]
   · rw [oneBit (stock u v) (by cases u <;> cases v <;> decide) m,
         oneBit (top u v 0 1 2) (by cases u <;> cases v <;> decide) m,
-        run_sim,run_sim,table u v x]
+        MeasuredCodec5.run_sim,MeasuredCodec5.run_sim,table u v x]
 
 theorem top_counts (u v : Bool) : toffoliCount (top u v 0 1 2) = 1 ∧
     measurementCount (top u v 0 1 2) = 0 ∧ 3 ∉ wires (top u v 0 1 2) := by
@@ -15113,6 +15973,10 @@ theorem shortPhysical (d : Nat) (dir : Bool) : GatePhysical (short d (constant d
   · simp [GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate]
 
 end ECDSAAdd.Entrant.LiteralTop
+
+end
+-- ==== end LiteralTop ====
+end
 end
 
 -- ==== FoldTop (carry-free top-2-bit fold/unfold tile, -170 T / -340 M) ====
@@ -15742,12 +16606,9 @@ theorem unfoldSub_760_run_eq (d : Nat) (hd : d ≤ 43) (s : State) (m n : List B
 end ECDSAAdd.Entrant.FoldTop
 end
 
-/-! # Odd-word field replay, part (module split of OddField for replay) -/
-
--- file-level opens of OddField
+section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic MappedCompressed
 open StairRestSupport ArchiveFieldScratch StairArchiveRelease
-
 section
 
 -- ============================================================================
@@ -18603,840 +19464,9 @@ end
 
 end
 
--- ==== module FredCut (folded into this module for the replay memory budget) ====
+-- ==== begin folded SquareCut ====
 section
-/-!
-# FRED-CUT core (VAST3, 11-23) — ported (harvest-opus) from ercumentyildirim a7d65b7b (commit 841b74b)
-onto the 18-module layout: leave tail from `DeadJoin.after7`, rows from the tree's `leaveLowClose` range,
-symbolic portal / exit wires.
-
-Each window boundary `leave_k → enter_{k+1}` (and `portal → enter_0`, `leave_24 → park → portalInv`) carries the
-same two controlled swaps at the tail of the first piece and at the head of the second; the gates between them
-never touch the swaps' wires.  The swaps are measurement-free and self-inverse, so both copies can be dropped:
-the run is unchanged for every state and tape.
--/
-
 set_option linter.unusedSimpArgs false
-
-namespace ECDSAAdd.Entrant.StairPacket.FredCut
-open ECDSAAdd ECDSAAdd.Arithmetic
-
-/-! ## Generic layer -/
-
-/-- One controlled swap `c ? (a ↔ b)` as three CNOT/Toffoli instructions (`GateMirror.cswapG` mirrored). -/
-def cs (c a b : Wire) : Program := [.CX b a, .CCX c a b, .CX b a]
-
-theorem cs_measure (c a b : Wire) : measurementCount (cs c a b) = 0 := rfl
-
-theorem cs_run (c a b : Wire) (hca : c ≠ a) (hcb : c ≠ b) (hab : a ≠ b) (m : List Bool) (t : State) :
-    run (cs c a b) m t =
-      ⟨t.phase, fun q => if t.basis c then (if q = a then t.basis b else if q = b then t.basis a else t.basis q)
-        else t.basis q⟩ := by
-  have hba : b ≠ a := Ne.symm hab
-  simp only [cs, run, writeBit]
-  congr 1
-  funext q
-  simp only [Function.update_apply, if_neg hba, if_neg hca, if_neg hcb, if_neg hab, if_true]
-  by_cases hqa : q = a
-  · subst hqa
-    simp only [if_true, if_neg hab]
-    cases t.basis c <;> cases t.basis q <;> cases t.basis b <;> rfl
-  · by_cases hqb : q = b
-    · subst hqb
-      simp only [if_neg hqa, if_true]
-      cases t.basis c <;> cases t.basis a <;> cases t.basis q <;> rfl
-    · simp only [if_neg hqa, if_neg hqb]
-      cases t.basis c <;> rfl
-
-/-- Two controlled swaps on disjoint pairs under one control. -/
-def S2 (c a b a' b' : Wire) : Program := cs c a b ++ cs c a' b'
-
-theorem S2_measure (c a b a' b' : Wire) : measurementCount (S2 c a b a' b') = 0 := rfl
-
-theorem S2_inv (c a b a' b' : Wire) (hca : c ≠ a) (hcb : c ≠ b) (hab : a ≠ b) (hca' : c ≠ a') (hcb' : c ≠ b')
-    (hab' : a' ≠ b') (h1 : a ≠ a') (h2 : a ≠ b') (h3 : b ≠ a') (h4 : b ≠ b')
-    (t : State) (m1 m2 : List Bool) : run (S2 c a b a' b') m2 (run (S2 c a b a' b') m1 t) = t := by
-  simp only [S2, run_append, cs_measure, List.take_zero, List.drop_zero]
-  rw [cs_run c a b hca hcb hab, cs_run c a' b' hca' hcb' hab', cs_run c a b hca hcb hab,
-    cs_run c a' b' hca' hcb' hab']
-  apply State.extensionality
-  · rfl
-  · funext q
-    have e1 := hca.symm; have e2 := hcb.symm; have e3 := hab.symm; have e4 := hca'.symm; have e5 := hcb'.symm
-    have e6 := hab'.symm; have e7 := h1.symm; have e8 := h2.symm; have e9 := h3.symm; have e10 := h4.symm
-    by_cases hc : t.basis c
-    · by_cases hqa : q = a
-      · subst hqa
-        simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10]
-      · by_cases hqb : q = b
-        · subst hqb
-          simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa]
-        · by_cases hqa' : q = a'
-          · subst hqa'
-            simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa,
-              hqb]
-          · by_cases hqb' : q = b'
-            · subst hqb'
-              simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10,
-                hqa, hqb, hqa']
-            · simp [hc, hca, hcb, hca', hcb', hqa, hqb, hqa', hqb']
-    · simp [hc, hca, hcb, hca', hcb']
-
-/-- Cancellation of a measurement-free block pair around a middle `M` that never touches `W ⊇ wires E`: the
-middle commutes past `E` (disjoint wires), then `D` undoes `E`. -/
-theorem cancel_free (E M D : Program) (W : Finset Wire)
-    (hE : wires E ⊆ W) (hM : ∀ q ∈ W, q ∉ wires M)
-    (inv : ∀ t (a b : List Bool), run D b (run E a t) = t)
-    (x : State) (me mm md : List Bool) :
-    run D md (run M mm (run E me x)) = run M mm x := by
-  have dis : Disjoint (wires M) (wires E) :=
-    Finset.disjoint_left.mpr (fun q hqM hqE => hM q (hE hqE) hqM)
-  rw [run_disjoint_commute M E dis mm me x]
-  exact inv _ _ _
-
-/-- FRED cancellation: a measurement-free self-inverse block `S` on both sides of a middle `M` that never touches
-`wires S` can be dropped, for every state and tape. -/
-theorem fred_cancel (S M Y : Program) (hM : ∀ q ∈ wires S, q ∉ wires M)
-    (h0 : measurementCount S = 0) (inv : ∀ t (a b : List Bool), run S b (run S a t) = t)
-    (m : List Bool) (s : State) :
-    run (S ++ (M ++ (S ++ Y))) m s = run (M ++ Y) m s := by
-  rw [run_append S, h0, List.take_zero, List.drop_zero, run_append M, run_append S, h0, List.take_zero,
-    List.drop_zero, run_append M]
-  congr 1
-  exact cancel_free S M S (wires S) (Finset.Subset.refl _) hM inv s [] _ []
-
-/-- The same with an arbitrary prefix. -/
-theorem fred_cancel_pre (X S M Y : Program) (hM : ∀ q ∈ wires S, q ∉ wires M)
-    (h0 : measurementCount S = 0) (inv : ∀ t (a b : List Bool), run S b (run S a t) = t)
-    (m : List Bool) (s : State) :
-    run (X ++ (S ++ (M ++ (S ++ Y)))) m s = run (X ++ (M ++ Y)) m s := by
-  rw [run_append X, run_append X]
-  exact fred_cancel S M Y hM h0 inv _ _
-
-/-! ## Piece-list cuts -/
-
-/-- `Cut n ps ps'`: `ps'` is `ps` with `n` boundary block pairs removed (each block 2 Toffolis).  `pair`: the tail block `E` of one piece (followed by
-that piece's suffix `M1`) and the head block `D` of the next piece (preceded by its prefix `M2`) cancel around
-`M1 ++ M2`; `triple`: the same across one whole intermediate piece `Q`.  Blocks are measurement-free, act inside
-`W`, `D` undoes `E`, and the gates between them avoid `W`. -/
-inductive Cut : Nat → List Program → List Program → Prop
-  | nil : Cut 0 [] []
-  | keep (p : Program) {n : Nat} {ps ps' : List Program} : Cut n ps ps' → Cut n (p :: ps) (p :: ps')
-  | pair (A E M1 M2 D B : Program) (W : Finset Wire) {n : Nat} {ps ps' : List Program}
-      (hE : wires E ⊆ W) (hD : wires D ⊆ W) (hM : ∀ q ∈ W, q ∉ wires (M1 ++ M2))
-      (mE : measurementCount E = 0) (mD : measurementCount D = 0)
-      (tE : toffoliCount E = 2) (tD : toffoliCount D = 2)
-      (inv : ∀ t (a b : List Bool), run D b (run E a t) = t) :
-      Cut n ps ps' → Cut (n+1) ((A ++ (E ++ M1)) :: (M2 ++ (D ++ B)) :: ps) ((A ++ M1) :: (M2 ++ B) :: ps')
-  | triple (A E M1 Q M2 D B : Program) (W : Finset Wire) {n : Nat} {ps ps' : List Program}
-      (hE : wires E ⊆ W) (hD : wires D ⊆ W) (hM : ∀ q ∈ W, q ∉ wires (M1 ++ (Q ++ M2)))
-      (mE : measurementCount E = 0) (mD : measurementCount D = 0)
-      (tE : toffoliCount E = 2) (tD : toffoliCount D = 2)
-      (inv : ∀ t (a b : List Bool), run D b (run E a t) = t) :
-      Cut n ps ps' → Cut (n+1) ((A ++ (E ++ M1)) :: Q :: (M2 ++ (D ++ B)) :: ps) ((A ++ M1) :: Q :: (M2 ++ B) :: ps')
-
-theorem app_congr (X T T' : Program) (h : ∀ m s, run T m s = run T' m s) (m : List Bool) (s : State) :
-    run (X ++ T) m s = run (X ++ T') m s := by
-  rw [run_append, run_append, h]
-
-/-- Core block cancellation with a prefix and a run-equal suffix. -/
-theorem block_cancel (A E M D Y Y' : Program) (W : Finset Wire)
-    (hE : wires E ⊆ W) (_hD : wires D ⊆ W) (hM : ∀ q ∈ W, q ∉ wires M)
-    (mE : measurementCount E = 0) (mD : measurementCount D = 0)
-    (inv : ∀ t (a b : List Bool), run D b (run E a t) = t)
-    (hY : ∀ m s, run Y' m s = run Y m s) (m : List Bool) (s : State) :
-    run (A ++ (M ++ Y')) m s = run (A ++ (E ++ (M ++ (D ++ Y)))) m s := by
-  rw [run_append A (M ++ Y'), run_append A (E ++ (M ++ (D ++ Y)))]
-  generalize run A (m.take (measurementCount A)) s = t
-  generalize m.drop (measurementCount A) = m'
-  rw [run_append M Y', run_append E (M ++ (D ++ Y)), mE, List.take_zero, List.drop_zero,
-    run_append M (D ++ Y), run_append D Y, mD, List.take_zero, List.drop_zero, hY,
-    cancel_free E M D W hE hM inv t [] _ []]
-
-theorem Cut.run_eq {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') (m : List Bool) (s : State) :
-    run ps'.flatten m s = run ps.flatten m s := by
-  induction h generalizing m s with
-  | nil => rfl
-  | keep p _ ih =>
-    simp only [List.flatten_cons]
-    exact app_congr p _ _ (fun m s => ih m s) m s
-  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, List.append_assoc]
-    have h := block_cancel A E (M1 ++ M2) D (B ++ _) (B ++ _) W hE hD hM mE mD inv
-      (fun m s => app_congr B _ _ (fun m s => ih m s) m s) m s
-    simpa only [List.append_assoc] using h
-  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, List.append_assoc]
-    have h := block_cancel A E (M1 ++ (Q ++ M2)) D (B ++ _) (B ++ _) W hE hD hM mE mD inv
-      (fun m s => app_congr B _ _ (fun m s => ih m s) m s) m s
-    simpa only [List.append_assoc] using h
-
-
-theorem Cut.mc_eq {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    measurementCount ps'.flatten = measurementCount ps.flatten := by
-  induction h with
-  | nil => rfl
-  | keep p _ ih => simp only [List.flatten_cons, measurementCount_append, ih]
-  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, measurementCount_append, ih, mE, mD]; omega
-  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, measurementCount_append, ih, mE, mD]; omega
-
-theorem Cut.wires_sub {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    wires ps'.flatten ⊆ wires ps.flatten := by
-  induction h with
-  | nil => exact Finset.Subset.refl _
-  | keep p _ ih =>
-    simp only [List.flatten_cons, wires_append]
-    exact Finset.union_subset_union (Finset.Subset.refl _) ih
-  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, wires_append]
-    intro q hq
-    simp only [Finset.mem_union] at hq ⊢
-    rcases hq with ((hq | hq) | (hq | hq) | hq) <;> tauto
-  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, wires_append]
-    intro q hq
-    simp only [Finset.mem_union] at hq ⊢
-    rcases hq with ((hq | hq) | hq | (hq | hq) | hq) <;> tauto
-
-/-- Each cancelled pair removes two blocks of two Toffolis. -/
-theorem Cut.tc_eq {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    toffoliCount ps'.flatten + 4 * n = toffoliCount ps.flatten := by
-  induction h with
-  | nil => rfl
-  | keep p _ ih => simp only [List.flatten_cons, toffoliCount_append]; omega
-  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, toffoliCount_append]; omega
-  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, toffoliCount_append]; omega
-
-/-- Every instruction of the cut list is an instruction of the original. -/
-theorem Cut.mem {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    ∀ i ∈ ps'.flatten, i ∈ ps.flatten := by
-  induction h with
-  | nil => exact fun _ h => h
-  | keep p _ ih =>
-    intro i hi
-    simp only [List.flatten_cons, List.mem_append] at hi ⊢
-    have := ih i
-    tauto
-  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    intro i hi
-    simp only [List.flatten_cons, List.mem_append] at hi ⊢
-    have := ih i
-    tauto
-  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    intro i hi
-    simp only [List.flatten_cons, List.mem_append] at hi ⊢
-    have := ih i
-    tauto
-
-theorem Cut.slots_le {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Challenge.gateSlots ps'.flatten ≤ Challenge.gateSlots ps.flatten := by
-  induction h with
-  | nil => exact le_refl _
-  | keep p _ ih => simp only [List.flatten_cons, Challenge.gateSlots_append]; omega
-  | pair A E M1 M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, Challenge.gateSlots_append]; omega
-  | triple A E M1 Q M2 D B W hE hD hM mE mD tE tD inv _ ih =>
-    simp only [List.flatten_cons, Challenge.gateSlots_append]; omega
-
-/-- The two swaps in the other order undo the block too. -/
-theorem S2_inv_swap (c a b a' b' : Wire) (hca : c ≠ a) (hcb : c ≠ b) (hab : a ≠ b) (hca' : c ≠ a') (hcb' : c ≠ b')
-    (hab' : a' ≠ b') (h1 : a ≠ a') (h2 : a ≠ b') (h3 : b ≠ a') (h4 : b ≠ b')
-    (t : State) (m1 m2 : List Bool) : run (S2 c a' b' a b) m2 (run (S2 c a b a' b') m1 t) = t := by
-  simp only [S2, run_append, cs_measure, List.take_zero, List.drop_zero]
-  rw [cs_run c a b hca hcb hab, cs_run c a' b' hca' hcb' hab', cs_run c a' b' hca' hcb' hab',
-    cs_run c a b hca hcb hab]
-  apply State.extensionality
-  · rfl
-  · funext q
-    have e1 := hca.symm; have e2 := hcb.symm; have e3 := hab.symm; have e4 := hca'.symm; have e5 := hcb'.symm
-    have e6 := hab'.symm; have e7 := h1.symm; have e8 := h2.symm; have e9 := h3.symm; have e10 := h4.symm
-    by_cases hc : t.basis c
-    · by_cases hqa : q = a
-      · subst hqa
-        simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10]
-      · by_cases hqb : q = b
-        · subst hqb
-          simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa]
-        · by_cases hqa' : q = a'
-          · subst hqa'
-            simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, hqa,
-              hqb]
-          · by_cases hqb' : q = b'
-            · subst hqb'
-              simp [hc, hca, hcb, hca', hcb', hab, hab', h1, h2, h3, h4, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10,
-                hqa, hqb, hqa']
-            · simp [hc, hca, hcb, hca', hcb', hqa, hqb, hqa', hqb']
-    · simp [hc, hca, hcb, hca', hcb']
-
-
-/-! ## pp7 shapes -/
-/-! ## pp7 window pieces -/
-open ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
-
-abbrev P : WindowFold.Pieces Program := CRTBarrel.params
-
-def K (j : Fin 26) : Nat := (GateMirror.forward (Shadow7.leaveClose (start j))).length
-
-def leaveC (j : Fin 26) : Program :=
-  if j.val ≤ 24 then (P.leave j).take ((P.leave j).length - K j - 6) ++ (P.leave j).drop ((P.leave j).length - K j)
-  else P.leave j
-def unleaveC (j : Fin 26) : Program :=
-  if j.val ≤ 24 then (P.leaveInv j).take (K j) ++ (P.leaveInv j).drop (K j + 6) else P.leaveInv j
-def enterC (j : Fin 26) : Program := (P.enter j).drop 6
-def enterInvC (j : Fin 26) : Program := (P.enterInv j).take ((P.enterInv j).length - 6)
-def portalC (t : Nat) : Program := (P.portal t).take ((P.portal t).length - 6)
-def portalInvC (t : Nat) : Program := (P.portalInv t).drop 6
-
-def Pcut : WindowFold.Pieces Program where
-  enter := enterC
-  enterInv := enterInvC
-  leave := leaveC
-  leaveInv := unleaveC
-  load := P.load
-  restore := P.restore
-  portal := portalC
-  portalInv := portalInvC
-  park := P.park
-  parkInv := P.parkInv
-  exitLoad := P.exitLoad
-  exitRestore := P.exitRestore
-  routed := P.routed
-  unrouted := P.unrouted
-  pack := P.pack
-  unpack := P.unpack
-  tick := P.tick
-  receiver := P.receiver
-
-attribute [irreducible] enterC enterInvC leaveC unleaveC portalC portalInvC
-
-theorem Pcut_enter (j : Fin 26) : Pcut.enter j = enterC j := rfl
-theorem Pcut_enterInv (j : Fin 26) : Pcut.enterInv j = enterInvC j := rfl
-theorem Pcut_leave (j : Fin 26) : Pcut.leave j = leaveC j := rfl
-theorem Pcut_leaveInv (j : Fin 26) : Pcut.leaveInv j = unleaveC j := rfl
-theorem Pcut_portal (t : Nat) : Pcut.portal t = portalC t := rfl
-theorem Pcut_portalInv (t : Nat) : Pcut.portalInv t = portalInvC t := rfl
-theorem Pcut_park (t : Nat) : Pcut.park t = P.park t := rfl
-theorem Pcut_parkInv (t : Nat) : Pcut.parkInv t = P.parkInv t := rfl
-
-/-- The leave's tail block, as a program. -/
-def Eblk (s : Nat) : Program := GateMirror.forward
-  (Partial.cswapG (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 2)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 2)) ++
-   Partial.cswapG (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)))
-
-theorem Eblk_S2 (s : Nat) : Eblk s = S2 (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 2))
-    (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 2)) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1))
-    (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1)) := rfl
-
-theorem tc_Eblk (s : Nat) : toffoliCount (Eblk s) = 2 := rfl
-
-theorem leaveC_eq (j : Fin 26) (hj : j.val ≤ 24) (X : Program)
-    (hX : P.leave j = X ++ (Eblk (start j) ++ GateMirror.forward (Shadow7.leaveClose (start j)))) :
-    Pcut.leave j = X ++ GateMirror.forward (Shadow7.leaveClose (start j)) := by
-  rw [Pcut_leave]
-  have hE : (Eblk (start j)).length = 6 := rfl
-  unfold leaveC
-  rw [if_pos hj, hX]
-  simp only [List.length_append, hE, K]
-  rw [show X.length + (6 + (GateMirror.forward (Shadow7.leaveClose (start j))).length) -
-      (GateMirror.forward (Shadow7.leaveClose (start j))).length - 6 = X.length by omega,
-    show X.length + (6 + (GateMirror.forward (Shadow7.leaveClose (start j))).length) -
-      (GateMirror.forward (Shadow7.leaveClose (start j))).length = X.length + 6 by omega]
-  rw [List.take_left' rfl, ← List.append_assoc, List.drop_left' (by simp [hE])]
-
-/-- Forward boundary leave_k → enter_{k+1}. -/
-theorem bnd_fwd (k : Nat) (hk : k < 24)
-    (hhead : (P.enter ⟨k+1, by omega⟩).take 6 = Eblk (start ⟨k, by omega⟩))
-    (hL : 2 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
-    (havoid : ∀ q ∈ wires (Eblk (start ⟨k, by omega⟩)),
-      q ∉ wires (GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++ []))
-    (inv : ∀ t (a b : List Bool), run (Eblk (start ⟨k, by omega⟩)) b (run (Eblk (start ⟨k, by omega⟩)) a t) = t)
-    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Cut (n+1) (P.leave ⟨k, by omega⟩ :: P.enter ⟨k+1, by omega⟩ :: ps)
-      (Pcut.leave ⟨k, by omega⟩ :: Pcut.enter ⟨k+1, by omega⟩ :: ps') := by
-  obtain ⟨X, hX⟩ := leave_shape ⟨k, by omega⟩ (by simp; omega) hL
-  have hX' : P.leave ⟨k, by omega⟩ = X ++ (Eblk (start ⟨k, by omega⟩) ++
-      GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩))) := hX
-  have hC := leaveC_eq ⟨k, by omega⟩ (by simp; omega) X hX'
-  have hEn : P.enter ⟨k+1, by omega⟩ = [] ++ (Eblk (start ⟨k, by omega⟩) ++ enterC ⟨k+1, by omega⟩) := by
-    rw [← hhead]; simp only [List.nil_append, enterC, List.take_append_drop]
-  have hEnC : Pcut.enter ⟨k+1, by omega⟩ = [] ++ enterC ⟨k+1, by omega⟩ := by
-    rw [Pcut_enter, List.nil_append]
-  rw [hX', hC, hEn, hEnC]
-  exact Cut.pair X _ _ [] _ _ (wires (Eblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) (Finset.Subset.refl _)
-    havoid rfl rfl (tc_Eblk _) (tc_Eblk _) inv h
-
-/-- Forward boundary portal → enter_0. -/
-theorem bnd_portal (t : Nat) (j : Fin 26)
-    (hhead : (P.enter j).take 6 = (P.portal t).drop ((P.portal t).length - 6))
-    (inv : ∀ u (a b : List Bool), run ((P.portal t).drop ((P.portal t).length - 6)) b
-      (run ((P.portal t).drop ((P.portal t).length - 6)) a u) = u)
-    (m0 : measurementCount ((P.portal t).drop ((P.portal t).length - 6)) = 0)
-    (t0 : toffoliCount ((P.portal t).drop ((P.portal t).length - 6)) = 2)
-    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Cut (n+1) (P.portal t :: P.enter j :: ps) (Pcut.portal t :: Pcut.enter j :: ps') := by
-  have h1 : P.portal t = portalC t ++ ((P.portal t).drop ((P.portal t).length - 6) ++ []) := by
-    simp only [portalC, List.append_nil, List.take_append_drop]
-  have h2 : Pcut.portal t = portalC t ++ [] := by
-    rw [Pcut_portal, List.append_nil]
-  have h3 : P.enter j = [] ++ ((P.portal t).drop ((P.portal t).length - 6) ++ enterC j) := by
-    rw [← hhead]; simp only [List.nil_append, enterC, List.take_append_drop]
-  have h4 : Pcut.enter j = [] ++ enterC j := by
-    rw [Pcut_enter, List.nil_append]
-  rw [h1, h2, h3, h4]
-  exact Cut.pair _ _ [] [] _ _ (wires ((P.portal t).drop ((P.portal t).length - 6))) (Finset.Subset.refl _)
-    (Finset.Subset.refl _) (by intro q _; simp [wires]) m0 m0 t0 t0 inv h
-
-/-- Forward exit boundary leave_24 → park → portalInv. -/
-theorem bnd_exit (k : Nat) (hk : k ≤ 24) (e : Nat)
-    (hL : 2 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
-    (havoid : ∀ q ∈ wires (Eblk (start ⟨k, by omega⟩)),
-      q ∉ wires (GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++ (P.park e ++ [])))
-    (hsub : wires ((P.portalInv e).take 6) ⊆ wires (Eblk (start ⟨k, by omega⟩)))
-    (inv : ∀ u (a b : List Bool), run ((P.portalInv e).take 6) b (run (Eblk (start ⟨k, by omega⟩)) a u) = u)
-    (mD : measurementCount ((P.portalInv e).take 6) = 0)
-    (tD : toffoliCount ((P.portalInv e).take 6) = 2)
-    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Cut (n+1) (P.leave ⟨k, by omega⟩ :: P.park e :: P.portalInv e :: ps)
-      (Pcut.leave ⟨k, by omega⟩ :: Pcut.park e :: Pcut.portalInv e :: ps') := by
-  obtain ⟨X, hX⟩ := leave_shape ⟨k, by omega⟩ (by simp; omega) hL
-  have hX' : P.leave ⟨k, by omega⟩ = X ++ (Eblk (start ⟨k, by omega⟩) ++
-      GateMirror.forward (Shadow7.leaveClose (start ⟨k, by omega⟩))) := hX
-  have hC := leaveC_eq ⟨k, by omega⟩ (by simp; omega) X hX'
-  have hPI : P.portalInv e = [] ++ ((P.portalInv e).take 6 ++ portalInvC e) := by
-    simp only [List.nil_append, portalInvC, List.take_append_drop]
-  have hPIC : Pcut.portalInv e = [] ++ portalInvC e := by
-    rw [Pcut_portalInv, List.nil_append]
-  have hPark : Pcut.park e = P.park e := Pcut_park e
-  rw [hX', hC, hPI, hPIC, hPark]
-  exact Cut.triple X _ _ (P.park e) [] _ _ (wires (Eblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) hsub
-    havoid rfl mD (tc_Eblk _) tD inv h
-
-theorem tc_Dblk (s : Nat) : toffoliCount (Dblk s) = 2 := rfl
-
-theorem unleaveC_eq (j : Fin 26) (hj : j.val ≤ 24) (R : Program)
-    (hR : P.leaveInv j = GateMirror.inverse (Shadow7.leaveClose (start j)) ++ (Dblk (start j) ++ R)) :
-    Pcut.leaveInv j = GateMirror.inverse (Shadow7.leaveClose (start j)) ++ R := by
-  rw [Pcut_leaveInv]
-  have hD : (Dblk (start j)).length = 6 := rfl
-  have hK : (GateMirror.inverse (Shadow7.leaveClose (start j))).length = K j := by
-    simp only [K, GateMirror.inverse, GateMirror.forward, List.length_reverse, List.length_map]
-  unfold unleaveC
-  rw [if_pos hj, hR, ← hK, List.take_left' rfl]
-  rw [show (GateMirror.inverse (Shadow7.leaveClose (start j))).length + 6 =
-      (GateMirror.inverse (Shadow7.leaveClose (start j)) ++ Dblk (start j)).length by simp [hD]]
-  rw [← List.append_assoc, List.drop_left' rfl]
-
-/-- Reverse boundary enterInv_{k+1} → leaveInv_k. -/
-theorem bnd_rev (k : Nat) (hk : k < 24)
-    (htail : (P.enterInv ⟨k+1, by omega⟩).drop ((P.enterInv ⟨k+1, by omega⟩).length - 6) = Dblk (start ⟨k, by omega⟩))
-    (hL : 2 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
-    (havoid : ∀ q ∈ wires (Dblk (start ⟨k, by omega⟩)),
-      q ∉ wires ([] ++ GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩))))
-    (inv : ∀ u (a b : List Bool), run (Dblk (start ⟨k, by omega⟩)) b (run (Dblk (start ⟨k, by omega⟩)) a u) = u)
-    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Cut (n+1) (P.enterInv ⟨k+1, by omega⟩ :: P.leaveInv ⟨k, by omega⟩ :: ps)
-      (Pcut.enterInv ⟨k+1, by omega⟩ :: Pcut.leaveInv ⟨k, by omega⟩ :: ps') := by
-  obtain ⟨R, hR⟩ := unleave_shape ⟨k, by omega⟩ (by simp; omega) hL
-  have hR' : P.leaveInv ⟨k, by omega⟩ = GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++
-      (Dblk (start ⟨k, by omega⟩) ++ R) := hR
-  have hC := unleaveC_eq ⟨k, by omega⟩ (by simp; omega) R hR'
-  have h1 : P.enterInv ⟨k+1, by omega⟩ = enterInvC ⟨k+1, by omega⟩ ++ (Dblk (start ⟨k, by omega⟩) ++ []) := by
-    rw [← htail]; simp only [enterInvC, List.append_nil, List.take_append_drop]
-  have h2 : Pcut.enterInv ⟨k+1, by omega⟩ = enterInvC ⟨k+1, by omega⟩ ++ [] := by
-    rw [Pcut_enterInv, List.append_nil]
-  rw [h1, h2, hR', hC]
-  exact Cut.pair _ _ [] _ _ R (wires (Dblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) (Finset.Subset.refl _)
-    havoid rfl rfl (tc_Dblk _) (tc_Dblk _) inv h
-
-/-- Reverse exit boundary portal → parkInv → leaveInv_24. -/
-theorem bnd_rev_exit (k : Nat) (hk : k ≤ 24) (e : Nat)
-    (htail : (P.portal e).drop ((P.portal e).length - 6) = Eblk (start ⟨k, by omega⟩))
-    (hL : 2 ≤ Shadow7.lowsP (start ⟨k, by omega⟩))
-    (havoid : ∀ q ∈ wires (Eblk (start ⟨k, by omega⟩)),
-      q ∉ wires ([] ++ (P.parkInv e ++ GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩)))))
-    (hsub : wires (Dblk (start ⟨k, by omega⟩)) ⊆ wires (Eblk (start ⟨k, by omega⟩)))
-    (inv : ∀ u (a b : List Bool), run (Dblk (start ⟨k, by omega⟩)) b (run (Eblk (start ⟨k, by omega⟩)) a u) = u)
-    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Cut (n+1) (P.portal e :: P.parkInv e :: P.leaveInv ⟨k, by omega⟩ :: ps)
-      (Pcut.portal e :: Pcut.parkInv e :: Pcut.leaveInv ⟨k, by omega⟩ :: ps') := by
-  obtain ⟨R, hR⟩ := unleave_shape ⟨k, by omega⟩ (by simp; omega) hL
-  have hR' : P.leaveInv ⟨k, by omega⟩ = GateMirror.inverse (Shadow7.leaveClose (start ⟨k, by omega⟩)) ++
-      (Dblk (start ⟨k, by omega⟩) ++ R) := hR
-  have hC := unleaveC_eq ⟨k, by omega⟩ (by simp; omega) R hR'
-  have h1 : P.portal e = portalC e ++ (Eblk (start ⟨k, by omega⟩) ++ []) := by
-    rw [← htail]; simp only [portalC, List.append_nil, List.take_append_drop]
-  have h2 : Pcut.portal e = portalC e ++ [] := by
-    rw [Pcut_portal, List.append_nil]
-  have h3 : Pcut.parkInv e = P.parkInv e := Pcut_parkInv e
-  rw [h1, h2, h3, hR', hC]
-  exact Cut.triple _ _ [] (P.parkInv e) _ _ R (wires (Eblk (start ⟨k, by omega⟩))) (Finset.Subset.refl _) hsub
-    havoid rfl rfl (tc_Eblk _) (tc_Dblk _) inv h
-
-/-- Reverse end boundary enterInv_0 → portalInv. -/
-theorem bnd_rev_end (j : Fin 26) (t : Nat)
-    (hhead : (P.portalInv t).take 6 = (P.enterInv j).drop ((P.enterInv j).length - 6))
-    (inv : ∀ u (a b : List Bool), run ((P.enterInv j).drop ((P.enterInv j).length - 6)) b
-      (run ((P.enterInv j).drop ((P.enterInv j).length - 6)) a u) = u)
-    (m0 : measurementCount ((P.enterInv j).drop ((P.enterInv j).length - 6)) = 0)
-    (t0 : toffoliCount ((P.enterInv j).drop ((P.enterInv j).length - 6)) = 2)
-    {n : Nat} {ps ps' : List Program} (h : Cut n ps ps') :
-    Cut (n+1) (P.enterInv j :: P.portalInv t :: ps) (Pcut.enterInv j :: Pcut.portalInv t :: ps') := by
-  have h1 : P.enterInv j = enterInvC j ++ ((P.enterInv j).drop ((P.enterInv j).length - 6) ++ []) := by
-    simp only [enterInvC, List.append_nil, List.take_append_drop]
-  have h2 : Pcut.enterInv j = enterInvC j ++ [] := by
-    rw [Pcut_enterInv, List.append_nil]
-  have h3 : P.portalInv t = [] ++ ((P.enterInv j).drop ((P.enterInv j).length - 6) ++ portalInvC t) := by
-    rw [← hhead]; simp only [List.nil_append, portalInvC, List.take_append_drop]
-  have h4 : Pcut.portalInv t = [] ++ portalInvC t := by
-    rw [Pcut_portalInv, List.nil_append]
-  rw [h1, h2, h3, h4]
-  exact Cut.pair _ _ [] [] _ _ (wires ((P.enterInv j).drop ((P.enterInv j).length - 6))) (Finset.Subset.refl _)
-    (Finset.Subset.refl _) (by intro q _; simp [wires]) m0 m0 t0 t0 inv h
-
-
-/-! ## List-based wire checks (cheap kernel decides) -/
-
-def cwl : List Correction → List Wire
-  | [] => []
-  | .Z t :: cs => t :: cwl cs
-  | .CZ a b :: cs => a :: b :: cwl cs
-
-def iwl : Instr → List Wire
-  | .X t => [t]
-  | .CX c t => [c, t]
-  | .CCX a b t => [a, b, t]
-  | .measureX t c0 c1 => t :: (cwl c0 ++ cwl c1)
-
-def wl : Program → List Wire
-  | [] => []
-  | i :: p => iwl i ++ wl p
-
-theorem mem_cwl (q : Wire) (cs : List Correction) : q ∈ correctionWires cs ↔ q ∈ cwl cs := by
-  induction cs with
-  | nil => simp [correctionWires, cwl]
-  | cons c cs ih => cases c <;> simp [correctionWires, cwl, ih]
-
-theorem mem_iwl (q : Wire) (i : Instr) : q ∈ i.wires ↔ q ∈ iwl i := by
-  cases i <;> simp [Instr.wires, iwl, mem_cwl, or_assoc]
-
-theorem mem_wl (q : Wire) (P : Program) : q ∈ wires P ↔ q ∈ wl P := by
-  induction P with
-  | nil => simp [wires, wl]
-  | cons i p ih => simp [wires, wl, mem_iwl, ih]
-
-theorem avoid_of_check (E M : Program) (h : (wl E).all (fun q => !((wl M).contains q)) = true) :
-    ∀ q ∈ wires E, q ∉ wires M := by
-  intro q hq hm
-  rw [mem_wl] at hq hm
-  have h1 := List.all_eq_true.mp h q hq
-  have h2 : q ∉ wl M := by simpa using h1
-  exact h2 hm
-
-theorem sub_of_check (D E : Program) (h : (wl D).all (fun q => (wl E).contains q) = true) :
-    wires D ⊆ wires E := by
-  intro q hq
-  rw [mem_wl] at hq ⊢
-  have h1 := List.all_eq_true.mp h q hq
-  simpa using h1
-
-/-! ## Block facts -/
-
-def dist5 (c a b a' b' : Wire) : Prop :=
-  c ≠ a ∧ c ≠ b ∧ a ≠ b ∧ c ≠ a' ∧ c ≠ b' ∧ a' ≠ b' ∧ a ≠ a' ∧ a ≠ b' ∧ b ≠ a' ∧ b ≠ b'
-
-instance (c a b a' b' : Wire) : Decidable (dist5 c a b a' b') := by unfold dist5; infer_instance
-
-theorem inv_of_eq (X : Program) (c a b a' b' : Wire) (hX : X = S2 c a b a' b') (hd : dist5 c a b a' b') :
-    ∀ t (m1 m2 : List Bool), run X m2 (run X m1 t) = t := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hd
-  intro t m1 m2; subst hX; exact S2_inv c a b a' b' h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 t m1 m2
-
-theorem inv_swap_of_eq (X Y : Program) (c a b a' b' : Wire) (hX : X = S2 c a b a' b') (hY : Y = S2 c a' b' a b)
-    (hd : dist5 c a b a' b') : ∀ t (m1 m2 : List Bool), run Y m2 (run X m1 t) = t := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hd
-  intro t m1 m2; subst hX; subst hY; exact S2_inv_swap c a b a' b' h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 t m1 m2
-
-theorem S2_measure0 (X : Program) (c a b a' b' : Wire) (hX : X = S2 c a b a' b') : measurementCount X = 0 := by
-  subst hX; rfl
-
-theorem Dblk_S2 (s : Nat) : Dblk s = S2 (s+30) (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 1)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 1))
-    (Shadow7.b0P s - 1 + (Shadow7.lowsP s - 2)) (Shadow7.a0P s - 1 + (Shadow7.lowsP s - 2)) := rfl
-
-theorem rest7_eq : WindowParams7.rest7 = ([⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩, ⟨4, by decide⟩, ⟨5, by decide⟩, ⟨6, by decide⟩, ⟨7, by decide⟩, ⟨8, by decide⟩, ⟨9, by decide⟩, ⟨10, by decide⟩, ⟨11, by decide⟩, ⟨12, by decide⟩, ⟨13, by decide⟩, ⟨14, by decide⟩, ⟨15, by decide⟩, ⟨16, by decide⟩, ⟨17, by decide⟩, ⟨18, by decide⟩, ⟨19, by decide⟩, ⟨20, by decide⟩, ⟨21, by decide⟩, ⟨22, by decide⟩, ⟨23, by decide⟩, ⟨24, by decide⟩] : List (Fin 26)) := by
-  decide
-
-set_option maxHeartbeats 4000000 in
-theorem fwd_cut (d : Bool) :
-    Cut 26 (WindowFold.forwardL P d WindowParams.first WindowParams7.rest7)
-      (WindowFold.forwardL Pcut d WindowParams.first WindowParams7.rest7) := by
-  rw [rest7_eq]
-  simp only [WindowFold.forwardL, WindowFold.firstF, WindowFold.chainF, WindowFold.nextF, WindowFold.exitF,
-    List.cons_append, List.nil_append]
-  apply bnd_portal (start WindowParams.first) WindowParams.first (by decide +kernel)
-    (inv_of_eq _ (start WindowParams.first + 15) (801 + Shadow7.sbP (start WindowParams.first)) (Shadow7.a0P (start WindowParams.first) - 1) (801 + Shadow7.sbP (start WindowParams.first) + 1) (Shadow7.a0P (start WindowParams.first) - 1 + 1) (by decide +kernel) (by decide +kernel))
-    (S2_measure0 _ (start WindowParams.first + 15) (801 + Shadow7.sbP (start WindowParams.first)) (Shadow7.a0P (start WindowParams.first) - 1) (801 + Shadow7.sbP (start WindowParams.first) + 1) (Shadow7.a0P (start WindowParams.first) - 1 + 1) (by decide +kernel)) (by decide +kernel)
-  apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 0 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 1 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 2 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 3 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 4 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 5 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 6 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 7 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 8 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 9 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 10 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 11 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 12 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 13 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 14 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 15 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 16 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 17 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 18 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 19 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 20 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 21 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 22 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_fwd 23 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_exit 24 (by decide) _ (by decide +kernel) (avoid_of_check _ _ (by decide +kernel)) (sub_of_check _ _ (by decide +kernel))
-    (inv_swap_of_eq _ _ _ _ _ _ _ (Eblk_S2 _) (by decide +kernel) (by decide +kernel))
-    (by decide +kernel) (by decide +kernel)
-  apply Cut.keep; apply Cut.keep; apply Cut.keep
-  exact Cut.nil
-
-set_option maxHeartbeats 4000000 in
-theorem rev_cut (d : Bool) :
-    Cut 26 (WindowFold.reverseL P d WindowParams.first WindowParams7.rest7)
-      (WindowFold.reverseL Pcut d WindowParams.first WindowParams7.rest7) := by
-  rw [rest7_eq]
-  simp only [WindowFold.reverseL, WindowFold.exitR, WindowFold.chainR, WindowFold.nextR, WindowFold.firstR,
-    List.cons_append, List.nil_append, List.append_assoc]
-  apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev_exit 24 (by decide) _ (by decide +kernel) (by decide +kernel)
-    (avoid_of_check _ _ (by decide +kernel)) (sub_of_check _ _ (by decide +kernel)) (inv_swap_of_eq _ _ _ _ _ _ _ (Eblk_S2 _) (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 23 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 22 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 21 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 20 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 19 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 18 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 17 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 16 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 15 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 14 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 13 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 12 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 11 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 10 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 9 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 8 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 7 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 6 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 5 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 4 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 3 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 2 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 1 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev 0 (by decide) (by decide +kernel) (by decide +kernel) (avoid_of_check _ _ (by decide +kernel))
-    (inv_of_eq _ _ _ _ _ _ (Dblk_S2 _) (by decide +kernel))
-  apply Cut.keep; apply Cut.keep; apply Cut.keep
-  apply bnd_rev_end WindowParams.first (start WindowParams.first) (by decide +kernel)
-    (inv_of_eq _ (start WindowParams.first + 15) (801 + Shadow7.sbP (start WindowParams.first) + 1) (Shadow7.a0P (start WindowParams.first) - 1 + 1) (801 + Shadow7.sbP (start WindowParams.first)) (Shadow7.a0P (start WindowParams.first) - 1) (by decide +kernel) (by decide +kernel))
-    (S2_measure0 _ (start WindowParams.first + 15) (801 + Shadow7.sbP (start WindowParams.first) + 1) (Shadow7.a0P (start WindowParams.first) - 1 + 1) (801 + Shadow7.sbP (start WindowParams.first)) (Shadow7.a0P (start WindowParams.first) - 1) (by decide +kernel)) (by decide +kernel)
-  exact Cut.nil
-
-
-/-! ## Per-piece count deltas (for the ledger) -/
-
-theorem tc_S2 (c a b a' b' : Wire) : toffoliCount (S2 c a b a' b') = 2 := rfl
-
-theorem tail_counts (X : Program) (hE : ∃ c a b a' b', X.drop (X.length - 6) = S2 c a b a' b') :
-    toffoliCount X = toffoliCount (X.take (X.length - 6)) + 2 ∧
-      measurementCount X = measurementCount (X.take (X.length - 6)) := by
-  obtain ⟨c, a, b, a', b', h⟩ := hE
-  have e := List.take_append_drop (X.length - 6) X
-  have t1 : toffoliCount X = toffoliCount (X.take (X.length - 6)) + toffoliCount (X.drop (X.length - 6)) := by
-    rw [← toffoliCount_append, e]
-  have m1 : measurementCount X = measurementCount (X.take (X.length - 6)) +
-      measurementCount (X.drop (X.length - 6)) := by
-    rw [← measurementCount_append, e]
-  rw [h, tc_S2] at t1
-  rw [h, S2_measure0 _ c a b a' b' rfl] at m1
-  exact ⟨t1, by omega⟩
-
-theorem head_counts (X : Program) (hE : ∃ c a b a' b', X.take 6 = S2 c a b a' b') :
-    toffoliCount X = toffoliCount (X.drop 6) + 2 ∧ measurementCount X = measurementCount (X.drop 6) := by
-  obtain ⟨c, a, b, a', b', h⟩ := hE
-  have e := List.take_append_drop 6 X
-  have t1 : toffoliCount X = toffoliCount (X.take 6) + toffoliCount (X.drop 6) := by
-    rw [← toffoliCount_append, e]
-  have m1 : measurementCount X = measurementCount (X.take 6) + measurementCount (X.drop 6) := by
-    rw [← measurementCount_append, e]
-  rw [h, tc_S2] at t1
-  rw [h, S2_measure0 _ c a b a' b' rfl] at m1
-  exact ⟨by omega, by omega⟩
-
-
-theorem enter_counts (j : Fin 26) (hE : ∃ c a b a' b', (P.enter j).take 6 = S2 c a b a' b') :
-    toffoliCount (P.enter j) = toffoliCount (Pcut.enter j) + 2 ∧
-      measurementCount (P.enter j) = measurementCount (Pcut.enter j) := by
-  rw [Pcut_enter, enterC]
-  exact head_counts _ hE
-
-theorem leave_counts (k : Fin 26) (hk : k.val ≤ 24) (hL : 2 ≤ Shadow7.lowsP (start k)) :
-    toffoliCount (P.leave k) = toffoliCount (Pcut.leave k) + 2 ∧
-      measurementCount (P.leave k) = measurementCount (Pcut.leave k) := by
-  obtain ⟨X, hX⟩ := leave_shape k hk hL
-  have hX' : P.leave k = X ++ (Eblk (start k) ++ GateMirror.forward (Shadow7.leaveClose (start k))) := hX
-  rw [leaveC_eq k hk X hX', hX']
-  simp only [toffoliCount_append, measurementCount_append, Eblk_S2, tc_S2,
-    S2_measure0 _ _ _ _ _ _ rfl]
-  constructor <;> omega
-
-theorem leaveInv_counts (k : Fin 26) (hk : k.val ≤ 24) (hL : 2 ≤ Shadow7.lowsP (start k)) :
-    toffoliCount (P.leaveInv k) = toffoliCount (Pcut.leaveInv k) + 2 ∧
-      measurementCount (P.leaveInv k) = measurementCount (Pcut.leaveInv k) := by
-  obtain ⟨R, hR⟩ := unleave_shape k hk hL
-  have hR' : P.leaveInv k = GateMirror.inverse (Shadow7.leaveClose (start k)) ++ (Dblk (start k) ++ R) := hR
-  rw [unleaveC_eq k hk R hR', hR']
-  simp only [toffoliCount_append, measurementCount_append, Dblk_S2, tc_S2,
-    S2_measure0 _ _ _ _ _ _ rfl]
-  constructor <;> omega
-
-/-- FRED-CUT on the window walk: the cut walk has the same run as the original, for every state and tape. -/
-theorem walk_run_eq (d : Bool) (m : List Bool) (s : State) :
-    run (WindowFold.forwardW Pcut d WindowParams.first WindowParams7.rest7) m s =
-      run (WindowFold.forwardW P d WindowParams.first WindowParams7.rest7) m s :=
-  (fwd_cut d).run_eq m s
-
-theorem walk_run_eq_rev (d : Bool) (m : List Bool) (s : State) :
-    run (WindowFold.reverseW Pcut d WindowParams.first WindowParams7.rest7) m s =
-      run (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) m s :=
-  (rev_cut d).run_eq m s
-
-
-theorem walk_mc_eq (d : Bool) :
-    measurementCount (WindowFold.forwardW Pcut d WindowParams.first WindowParams7.rest7) =
-      measurementCount (WindowFold.forwardW P d WindowParams.first WindowParams7.rest7) :=
-  (fwd_cut d).mc_eq
-
-theorem walk_mc_eq_rev (d : Bool) :
-    measurementCount (WindowFold.reverseW Pcut d WindowParams.first WindowParams7.rest7) =
-      measurementCount (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) :=
-  (rev_cut d).mc_eq
-
-theorem walk_wires_sub (d : Bool) :
-    wires (WindowFold.forwardW Pcut d WindowParams.first WindowParams7.rest7) ⊆
-      wires (WindowFold.forwardW P d WindowParams.first WindowParams7.rest7) :=
-  (fwd_cut d).wires_sub
-
-theorem walk_wires_sub_rev (d : Bool) :
-    wires (WindowFold.reverseW Pcut d WindowParams.first WindowParams7.rest7) ⊆
-      wires (WindowFold.reverseW P d WindowParams.first WindowParams7.rest7) :=
-  (rev_cut d).wires_sub
-
-end ECDSAAdd.Entrant.StairPacket.FredCut
 
 /-! ### Native unpadded 65-bit diagonal squaring leaves (`Diag65`, replacing `SquareCut`, -119 T / -225 M) -/
 
@@ -30152,4 +30182,4 @@ theorem allowedPlacedGood : allowedWires.all (fun w =>
 end ECDSAAdd.Entrant.PDSplitLeafSquare
 
 end
-
+-- ==== end folded SquareCut ====
