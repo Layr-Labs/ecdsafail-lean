@@ -5485,8 +5485,14 @@ private theorem roundtrip_from (w : Nat → Wire) (start : Nat) (sign : Bool)
       intro ht
       unfold W.trimTick at ht
       omega
+    have atop : W.highTick i →
+        s.basis (w (i+W.compactSkywalkTickPreWidth i-1))=
+          s.basis (w (i+W.compactSkywalkTickPreWidth i-2)) := by
+      intro hg
+      unfold W.highTick at hg
+      omega
     have one := W.ReverseCarry.compactReceiverTick_roundtrip w i (by omega) hn s []
-      (mr.drop (measurementCount R)) input.2.2.2.2.1 input.2.2.2.2.2 top
+      (mr.drop (measurementCount R)) input.2.2.2.2.1 input.2.2.2.2.2 top atop
     have tickEq := tick_run_eq w start i sign z hi (by omega) hn hz hzo s
       (mf.take (measurementCount P)) hs f0
     have one' : run U (mr.drop (measurementCount R)) (run P
