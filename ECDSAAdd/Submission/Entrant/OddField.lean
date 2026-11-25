@@ -21306,6 +21306,297 @@ theorem clearC_slots (Q : KRegs) :
   omega
 end ECDSAAdd.Entrant.DI4Square
 
+namespace ECDSAAdd.Entrant.DI5DiagonalGeometry
+open ECDSAAdd Arithmetic DiagSq DI4Square
+set_option autoImplicit false
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs true
+set_option linter.unusedVariables true
+
+/-- The old ten structural fields plus two small layout facts. No whole-program
+resource equalities, support subset, or physicality are decided here. -/
+def Geometry (xs dst carry : List Wire) (cin : Wire) : Prop :=
+  let n := xs.length
+  let c := carry.getD (2*n-2) 0
+  let top := dst.getD (2*n-1) 0
+  let label := xs.getD (n-1) 0
+  let bit : MappedBit := ⟨some (xs.getD (n-2) 0),true⟩
+  let y := dst.getD (2*n-2) 0
+  let ci := carry.getD (2*n-3) 0
+  dAddZ2 xs dst carry cin = diagP xs dst carry cin ++ mappedMajority bit y ci c ++ [.CX c top] ++ diagB xs dst carry cin ∧
+  [y,ci,c].Nodup ∧ (∀q∈bit.wire,q∉[y,ci,c]) ∧ top≠c ∧
+  c∉wires (diagPre xs dst carry cin) ∧ top∉wires (diagPre xs dst carry cin) ∧
+  label∉wires (diagPre xs dst carry cin) ∧
+  (∀a∈diagFrames xs dst carry,a.Good) ∧
+  (∀a∈diagFrames xs dst carry,c≠a.c ∧ top≠a.c ∧ label≠a.c) ∧
+  top∉wires (diagB xs dst carry cin) ∧
+  label∈wires (diagP xs dst carry cin) ∧ label≠c
+
+instance (xs dst carry : List Wire) (cin : Wire) : Decidable (Geometry xs dst carry cin) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- One complemented-source majority becomes two CNOTs. Long prefix/suffix
+programs stay opaque; label support is witnessed once in the shared prefix. -/
+theorem replace_top_resources (P B : Program) (bitWire y ci c top label : Wire)
+    (hlP : label∈wires P) (hlc : label≠c) (htc : top≠c)
+    (oldPhysical : GatePhysical
+      (P ++ mappedMajority ⟨some bitWire,true⟩ y ci c ++ [.CX c top] ++ B)) :
+    wires (P ++ [.CX label c,.CX top c] ++ [.CX c top] ++ B) ⊆
+      wires (P ++ mappedMajority ⟨some bitWire,true⟩ y ci c ++ [.CX c top] ++ B) ∧
+    GatePhysical (P ++ [.CX label c,.CX top c] ++ [.CX c top] ++ B) ∧
+    toffoliCount (P ++ [.CX label c,.CX top c] ++ [.CX c top] ++ B)+1 =
+      toffoliCount (P ++ mappedMajority ⟨some bitWire,true⟩ y ci c ++ [.CX c top] ++ B) ∧
+    measurementCount (P ++ [.CX label c,.CX top c] ++ [.CX c top] ++ B) =
+      measurementCount (P ++ mappedMajority ⟨some bitWire,true⟩ y ci c ++ [.CX c top] ++ B) ∧
+    Challenge.gateSlots (P ++ [.CX label c,.CX top c] ++ [.CX c top] ++ B) ≤
+      Challenge.gateSlots (P ++ mappedMajority ⟨some bitWire,true⟩ y ci c ++ [.CX c top] ++ B) := by
+  have support : wires [.CX label c,.CX top c] ⊆ wires P ∪ wires [.CX c top] := by
+    intro q hq
+    simp [wires,Instr.wires] at hq ⊢
+    aesop
+  have physical : GatePhysical [.CX label c,.CX top c] := by
+    simp [GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate,hlc,htc]
+  have oldT : toffoliCount (mappedMajority ⟨some bitWire,true⟩ y ci c)=1 := rfl
+  have newT : toffoliCount [.CX label c,.CX top c]=0 := rfl
+  have oldM : measurementCount (mappedMajority ⟨some bitWire,true⟩ y ci c)=0 := rfl
+  have newM : measurementCount [.CX label c,.CX top c]=0 := rfl
+  have oldS : Challenge.gateSlots (mappedMajority ⟨some bitWire,true⟩ y ci c)=8 := rfl
+  have newS : Challenge.gateSlots [.CX label c,.CX top c]=2 := rfl
+  refine ⟨?_,?_,?_,?_,?_⟩
+  · intro q hq
+    have localSupport := @support q
+    simp only [wires_append,Finset.mem_union] at hq ⊢
+    simp only [Finset.mem_union] at localSupport
+    tauto
+  · simp only [gatePhysical_append] at oldPhysical ⊢
+    tauto
+  · simp only [toffoliCount_append,oldT,newT]
+    omega
+  · simp only [measurementCount_append,oldM,newM]
+  · simp only [Challenge.gateSlots_append,oldS,newS]
+    omega
+
+/-- Reconstruct the unchanged public diagShape from geometry and imported
+physicality, deriving its trailing five resource fields algebraically. -/
+theorem shape_of_geometry (xs dst carry : List Wire) (cin : Wire)
+    (geometry : Geometry xs dst carry cin)
+    (oldPhysical : GatePhysical (dAddZ2 xs dst carry cin)) :
+    diagShape xs dst carry cin := by
+  obtain ⟨split,hn,ha,hct,hcp,htp,hlp,hg,hqc,htB,labelMem,labelNe⟩ := geometry
+  have old : GatePhysical (diagP xs dst carry cin ++
+      mappedMajority ⟨some (xs.getD (xs.length-2) 0),true⟩
+        (dst.getD (2*xs.length-2) 0) (carry.getD (2*xs.length-3) 0) (carry.getD (2*xs.length-2) 0) ++
+      [.CX (carry.getD (2*xs.length-2) 0) (dst.getD (2*xs.length-1) 0)] ++
+      diagB xs dst carry cin) := by
+    rw [←split]
+    exact oldPhysical
+  have resources := replace_top_resources (diagP xs dst carry cin) (diagB xs dst carry cin)
+    (xs.getD (xs.length-2) 0) (dst.getD (2*xs.length-2) 0)
+    (carry.getD (2*xs.length-3) 0) (carry.getD (2*xs.length-2) 0)
+    (dst.getD (2*xs.length-1) 0) (xs.getD (xs.length-1) 0)
+    labelMem labelNe hct old
+  have result :
+      wires (diagTop xs dst carry cin) ⊆ wires (dAddZ2 xs dst carry cin) ∧
+      GatePhysical (diagTop xs dst carry cin) ∧
+      toffoliCount (diagTop xs dst carry cin)+1=toffoliCount (dAddZ2 xs dst carry cin) ∧
+      measurementCount (diagTop xs dst carry cin)=measurementCount (dAddZ2 xs dst carry cin) ∧
+      Challenge.gateSlots (diagTop xs dst carry cin)≤Challenge.gateSlots (dAddZ2 xs dst carry cin) := by
+    simpa only [diagTop,split] using resources
+  exact ⟨split,hn,ha,hct,hcp,htp,hlp,hg,hqc,htB,
+    result.1,result.2.1,result.2.2.1,result.2.2.2.1,result.2.2.2.2⟩
+
+/-- The original clear-side physicality provides both old diagonals once.
+Only Geometry remains as a concrete layout certificate. -/
+theorem active_of_W_geometry (R : KRegs) (w : R.W) (hn : R.all.Nodup)
+    (lo : Geometry R.lo R.dlo R.carry R.cin)
+    (hi : Geometry R.hi R.dhi R.carry R.cin) : DI4Square.Active R := by
+  have physical := RawClearSquare.clear_physical R w hn
+  simp only [RawClearSquare.clear,gatePhysical_append] at physical
+  have low : GatePhysical (dAddZ2 R.lo R.dlo R.carry R.cin) := by tauto
+  have high : GatePhysical (dAddZ2 R.hi R.dhi R.carry R.cin) := by tauto
+  exact ⟨shape_of_geometry _ _ _ _ lo low,shape_of_geometry _ _ _ _ hi high⟩
+
+end ECDSAAdd.Entrant.DI5DiagonalGeometry
+
+namespace ECDSAAdd.Entrant.DI5DiagonalGeometry
+open ECDSAAdd Arithmetic DiagSq DI4Square
+set_option autoImplicit false
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs true
+set_option linter.unusedVariables true
+
+/-- The remaining large prefix/tail Finsets are replaced by linear scans of
+individual instructions. All four negative wire checks inspect one instruction at a time. -/
+def CoreGeometry (xs dst carry : List Wire) (cin : Wire) : Prop :=
+  let n := xs.length
+  let c := carry.getD (2*n-2) 0
+  let top := dst.getD (2*n-1) 0
+  let label := xs.getD (n-1) 0
+  let bit : MappedBit := ⟨some (xs.getD (n-2) 0),true⟩
+  let y := dst.getD (2*n-2) 0
+  let ci := carry.getD (2*n-3) 0
+  dAddZ2 xs dst carry cin = diagP xs dst carry cin ++ mappedMajority bit y ci c ++ [.CX c top] ++ diagB xs dst carry cin ∧
+  [y,ci,c].Nodup ∧ (∀q∈bit.wire,q∉[y,ci,c]) ∧ top≠c ∧
+  (∀i∈diagPre xs dst carry cin,c∉i.wires) ∧
+  (∀i∈diagPre xs dst carry cin,top∉i.wires) ∧
+  (∀i∈diagPre xs dst carry cin,label∉i.wires) ∧
+  (∀a∈diagFrames xs dst carry,a.Good) ∧
+  (∀a∈diagFrames xs dst carry,c≠a.c ∧ top≠a.c ∧ label≠a.c) ∧
+  (∀i∈diagB xs dst carry cin,top∉i.wires) ∧
+  (diagP xs dst carry cin).any (fun i => decide (label∈i.wires))=true ∧ label≠c
+
+instance (xs dst carry : List Wire) (cin : Wire) : Decidable (CoreGeometry xs dst carry cin) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+theorem not_wires_of_each (P : Program) (q : Wire) (h : ∀i∈P,q∉i.wires) : q∉wires P := by
+  induction P with
+  | nil => simp [wires]
+  | cons i P ih =>
+    simp only [wires,Finset.mem_union,not_or]
+    exact ⟨h i List.mem_cons_self,ih (fun j hj => h j (List.mem_cons_of_mem _ hj))⟩
+
+theorem mem_wires_of_any (P : Program) (q : Wire)
+    (h : P.any (fun i => decide (q∈i.wires))=true) : q∈wires P := by
+  induction P with
+  | nil => simp at h
+  | cons i P ih =>
+    simp only [List.any_cons,Bool.or_eq_true,decide_eq_true_eq] at h
+    simp only [wires,Finset.mem_union]
+    rcases h with here | later
+    · exact Or.inl here
+    · exact Or.inr (ih later)
+
+theorem geometry_of_core (xs dst carry : List Wire) (cin : Wire)
+    (core : CoreGeometry xs dst carry cin) : Geometry xs dst carry cin := by
+  obtain ⟨split,hn,ha,hct,hcp,htp,hlp,hg,hqc,htB,labelMem,labelNe⟩ := core
+  exact ⟨split,hn,ha,hct,not_wires_of_each _ _ hcp,
+    not_wires_of_each _ _ htp,not_wires_of_each _ _ hlp,hg,hqc,
+    not_wires_of_each _ _ htB,mem_wires_of_any _ _ labelMem,labelNe⟩
+
+theorem active_of_W_core (R : KRegs) (w : R.W) (hn : R.all.Nodup)
+    (lo : CoreGeometry R.lo R.dlo R.carry R.cin)
+    (hi : CoreGeometry R.hi R.dhi R.carry R.cin) : DI4Square.Active R :=
+  active_of_W_geometry R w hn (geometry_of_core _ _ _ _ lo) (geometry_of_core _ _ _ _ hi)
+
+end ECDSAAdd.Entrant.DI5DiagonalGeometry
+
+namespace ECDSAAdd.Entrant.DI4C7Fast
+open ECDSAAdd Arithmetic DI4LastCarry
+set_option autoImplicit false
+set_option maxHeartbeats 2000000
+set_option maxRecDepth 8192
+
+/-- The structural/local geometry part of Shape. Its tail check inspects each
+instruction separately and never constructs the whole suffix's wire Finset. -/
+def CoreData (xs ys cs : List Wire) (ci label : Wire) : Prop :=
+  let n := ys.length
+  let c := cs.getD (n-2) 0
+  let top := ys.getD (n-1) 0
+  let x := xs.getD (n-1) 0
+  let bit : MappedBit := ⟨some (xs.getD (n-2) 0),false⟩
+  let y := ys.getD (n-2) 0
+  let cin := cs.getD (n-3) 0
+  old xs ys cs ci = pre xs ys cs ci ++ mappedMajority bit y cin c ++
+    [.CX x top,.CX c top] ++ tail xs ys cs ci ∧
+  [y,cin,c].Nodup ∧ (∀q∈bit.wire,q∉[y,cin,c]) ∧ top≠c ∧ x≠c ∧
+  (∀a∈frames xs ys cs ci,a.Good) ∧
+  (∀a∈frames xs ys cs ci,c≠a.c ∧ top≠a.c ∧ label≠a.c ∧ x≠a.c) ∧
+  (∀i∈tail xs ys cs ci,top∉i.wires)
+
+instance (xs ys cs : List Wire) (ci label : Wire) : Decidable (CoreData xs ys cs ci label) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+def Geometry (R : KRegs) : Prop :=
+  CoreData (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+    (R.S.getD (R.S.length-1) 0)
+
+instance (R : KRegs) : Decidable (Geometry R) :=
+  inferInstanceAs (Decidable (CoreData _ _ _ _ _))
+
+theorem not_wires_of_each (P : Program) (q : Wire) (h : ∀i∈P,q∉i.wires) : q∉wires P := by
+  induction P with
+  | nil => simp [wires]
+  | cons i P ih =>
+    simp only [wires,Finset.mem_union,not_or]
+    exact ⟨h i List.mem_cons_self,ih (fun j hj => h j (List.mem_cons_of_mem _ hj))⟩
+
+/-- Generic local-splice wire transport. Long surrounding programs are opaque. -/
+theorem splice_wires (A B D : Program) (x top c label : Wire) :
+    wires (A ++ [.CX label c,.CX top c] ++ [.CX x top,.CX c top] ++ D) ⊆
+      insert label (wires (A ++ B ++ [.CX x top,.CX c top] ++ D)) := by
+  intro q hq
+  simp only [wires_append] at hq ⊢
+  simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
+    Finset.mem_singleton,Finset.notMem_empty,or_false] at hq ⊢
+  tauto
+
+theorem two_cx_tc (a b c d : Wire) : toffoliCount [.CX a b,.CX c d]=0 := rfl
+theorem two_cx_mc (a b c d : Wire) : measurementCount [.CX a b,.CX c d]=0 := rfl
+theorem two_cx_slots (a b c d : Wire) : Challenge.gateSlots [.CX a b,.CX c d]=2 := rfl
+
+/-- All expensive resource fields follow from the existing physical program and
+the local split; no large-program wire/properness/count decision is evaluated. -/
+theorem shape_of_core (xs ys cs : List Wire) (ci label : Wire)
+    (hc : CoreData xs ys cs ci label)
+    (hp : GatePhysical (old xs ys cs ci))
+    (hlc : label≠cs.getD (ys.length-2) 0) : Shape xs ys cs ci label := by
+  obtain ⟨he,hn,ha,hct,hxc,hg,hq,hB⟩ := hc
+  refine ⟨he,hn,ha,hct,hxc,hg,hq,not_wires_of_each _ _ hB,?_,?_,?_,?_,?_⟩
+  · simpa only [program,he] using
+      splice_wires (pre xs ys cs ci)
+        (mappedMajority ⟨some (xs.getD (ys.length-2) 0),false⟩
+          (ys.getD (ys.length-2) 0) (cs.getD (ys.length-3) 0) (cs.getD (ys.length-2) 0))
+        (tail xs ys cs ci) (xs.getD (ys.length-1) 0) (ys.getD (ys.length-1) 0)
+        (cs.getD (ys.length-2) 0) label
+  · rw [he] at hp
+    simp only [gatePhysical_append] at hp
+    have hnew : GatePhysical [.CX label (cs.getD (ys.length-2) 0),
+        .CX (ys.getD (ys.length-1) 0) (cs.getD (ys.length-2) 0)] := by
+      intro i hi
+      rcases List.mem_cons.mp hi with rfl|hi
+      · exact hlc
+      · rcases List.mem_cons.mp hi with rfl|hi
+        · exact hct
+        · cases hi
+    simp only [program,gatePhysical_append]
+    exact ⟨⟨⟨hp.1.1.1,hnew⟩,hp.1.2⟩,hp.2⟩
+  · have hb := (mappedBit_counts ⟨some (xs.getD (ys.length-2) 0),false⟩
+        (ys.getD (ys.length-2) 0) (cs.getD (ys.length-3) 0) (cs.getD (ys.length-2) 0)).1
+    simp only [program,he,toffoliCount_append,two_cx_tc,hb]
+    omega
+  · have hb := (mappedBit_counts ⟨some (xs.getD (ys.length-2) 0),false⟩
+        (ys.getD (ys.length-2) 0) (cs.getD (ys.length-3) 0) (cs.getD (ys.length-2) 0)).2.1
+    simp only [program,he,measurementCount_append,two_cx_mc,hb]
+  · have hb : Challenge.gateSlots
+        (mappedMajority ⟨some (xs.getD (ys.length-2) 0),false⟩
+          (ys.getD (ys.length-2) 0) (cs.getD (ys.length-3) 0) (cs.getD (ys.length-2) 0))=6 := rfl
+    simp only [program,he,Challenge.gateSlots_append,two_cx_slots,hb]
+    omega
+
+theorem label_ne_carry (R : KRegs) (w : R.W) (hn : R.all.Nodup) :
+    R.S.getD (R.S.length-1) 0 ≠
+      (R.carry.take (R.T.length-1)).getD (R.T.length-2) 0 := by
+  have hs : 1≤R.S.length := by
+    have := w.S;have := w.hh;have := w.h4;omega
+  have hm := RawClearCarryIntegration.getD_mem R.S (R.S.length-1) (by omega)
+  have hc := (DI4LastCarry.members R w).1
+  have hd : ∀q∈R.S,q∉R.carry := kdis hn (fun q => by
+    simp only [KRegs.all,List.count_cons,List.count_append]
+    omega)
+  intro he
+  rw [←he] at hc
+  exact hd _ hm hc
+
+/-- First staging lemma: geometry contains only structural and per-instruction
+checks; W/Nodup supply old physicality and the new label/target separation. -/
+theorem active_of_geometry (R : KRegs) (w : R.W) (hn : R.all.Nodup)
+    (geometry : Geometry R) : DI4LastCarry.Active R :=
+  shape_of_core _ _ _ _ _ geometry (R.c7g_physical hn) (label_ne_carry R w hn)
+
+end ECDSAAdd.Entrant.DI4C7Fast
+
 
 end
 
@@ -21606,18 +21897,18 @@ theorem clearC_clean (Q : KRegs) (w : Q.W) (he : Q.bank.length = 2 * Q.h) (hh : 
     (hT0 : regValue Q.T s.basis = 2 * regValue Q.lo s.basis * regValue Q.hi s.basis)
     (hz0 : regValue Q.z s.basis = 0) (hp0 : regValue Q.pad s.basis = 0)
     (hc0 : regValue Q.carry s.basis = 0) (hi0 : s.basis Q.cin = false) :
-    (run (LowZero18Diagonal.clearC Q) m s).phase = s.phase ∧
-    regValue Q.dst (run (LowZero18Diagonal.clearC Q) m s).basis = 0 ∧
-    regValue Q.T (run (LowZero18Diagonal.clearC Q) m s).basis = 0 ∧
-    ∀ q, q ∉ Q.dst → q ∉ Q.T → (run (LowZero18Diagonal.clearC Q) m s).basis q = s.basis q := by
+    (run (DI4Square.clearC Q) m s).phase = s.phase ∧
+    regValue Q.dst (run (DI4Square.clearC Q) m s).basis = 0 ∧
+    regValue Q.T (run (DI4Square.clearC Q) m s).basis = 0 ∧
+    ∀ q, q ∉ Q.dst → q ∉ Q.T → (run (DI4Square.clearC Q) m s).basis q = s.basis q := by
   have hI : Q.invC (regValue Q.bank s.basis) s.basis := by
     refine ⟨hS0, ?_⟩
     rw [hT0, Q.lo_mod w, Q.hi_div w]
-  have r := RawClearSquare.diag_sq_cl_clear Q w he hh hn Q.z (fun _ h => h) s m hd0 hI hp0 hc0 hz0 hi0
+  have r := DI4Square.diag_sq_cl_clear Q w he hh hn Q.z (fun _ h => h) s m hd0 hI hp0 hc0 hz0 hi0
   have hST := (regValue_append Q.S Q.T _).symm.trans r.2.2.1
   have hST0 := Nat.add_eq_zero_iff.mp hST
-  have hS1 : regValue Q.S (run (LowZero18Diagonal.clearC Q) m s).basis = 0 := hST0.1
-  have hT1 : regValue Q.T (run (LowZero18Diagonal.clearC Q) m s).basis = 0 :=
+  have hS1 : regValue Q.S (run (DI4Square.clearC Q) m s).basis = 0 := hST0.1
+  have hT1 : regValue Q.T (run (DI4Square.clearC Q) m s).basis = 0 :=
     (Nat.mul_eq_zero.mp hST0.2).resolve_left (Nat.ne_of_gt (Nat.two_pow_pos _))
   refine ⟨r.1, r.2.1, hT1, ?_⟩
   intro q hd hT
@@ -21630,9 +21921,10 @@ theorem makeC_physical (Q : KRegs) (w : Q.W) (hn : Q.all.Nodup) :
   (gatePhysical_append _ _).mpr ⟨LowZero18Diagonal.make_physical Q w hn, Q.scl1591_physical w hn⟩
 
 theorem clearC_physical (Q : KRegs) (w : Q.W) (hn : Q.all.Nodup) :
-    GatePhysical (LowZero18Diagonal.clearC Q) :=
+    GatePhysical (DI4Square.clearC Q) :=
   (gatePhysical_append _ _).mpr
-    ⟨Q.smkT_physical w hn (Q.piece_physical hn).1, LowZero18Diagonal.clear_physical Q w hn⟩
+    ⟨Q.smkT_physical w hn (Q.piece_physical hn).1,
+      (DI4Square.clear_resources Q).2.1 (RawClearSquare.clear_physical Q w hn)⟩
 
 theorem makeC_support (Q : KRegs) (w : Q.W) :
     wires (LowZero18Diagonal.makeC Q) ⊆ Q.all.toFinset := by
@@ -21640,9 +21932,9 @@ theorem makeC_support (Q : KRegs) (w : Q.W) :
   exact Finset.union_subset (LowZero18Diagonal.make_support Q w) (Q.scl1591_support w)
 
 theorem clearC_support (Q : KRegs) (w : Q.W) :
-    wires (LowZero18Diagonal.clearC Q) ⊆ Q.all.toFinset := by
-  rw [LowZero18Diagonal.clearC, RawClearSquare.clearC, wires_append]
-  exact Finset.union_subset (Q.smkT_support w (Q.piece_support w).1) (LowZero18Diagonal.clear_support Q w)
+    wires (DI4Square.clearC Q) ⊆ Q.all.toFinset := by
+  rw [DI4Square.clearC, wires_append]
+  exact Finset.union_subset (Q.smkT_support w (Q.piece_support w).1) (DI4Square.clear_support Q w)
 
 theorem makeC_counts (Q : KRegs) (w : Q.W) (he : Q.bank.length = 2 * Q.h) :
     toffoliCount (LowZero18Diagonal.makeC Q) = DiagSq.cost Q - 11 - DiagSq.parR Q ∧
@@ -25863,23 +26155,34 @@ def cleanScratch : List Wire :=
 def leafQ2Make : Program :=
   if c.n = 128 then LowZero18Diagonal.makeC c.Q2 else Diag65.makeC65 c.Q2
 
-def leafQ2Clear : Program :=
+def leafQ2ClearRef : Program :=
   if c.n = 128 then LowZero18Diagonal.clearC c.Q2 else Diag65.clearC65 c.Q2
+
+def leafQ2Clear : Program :=
+  if c.n = 128 then DI4Square.clearC c.Q2 else Diag65.clearC65 c.Q2
 
 def leafQ5Make : Program :=
   if c.n = 128 then Diag65.makeC65 c.Q5 else LowZero18Diagonal.makeC c.Q5
 
-def leafQ5Clear : Program :=
+def leafQ5ClearRef : Program :=
   if c.n = 128 then Diag65.clearC65 c.Q5 else LowZero18Diagonal.clearC c.Q5
+
+def leafQ5Clear : Program :=
+  if c.n = 128 then Diag65.clearC65 c.Q5 else DI4Square.clearC c.Q5
 
 def make : Program :=
   LowZero18Diagonal.makeC c.Q1 ++ c.leafQ2Make ++ c.R.smk ++
     c.leafQ5Make ++ c.R.m6h ++ c.R.m7k ++ c.R.scl1591 ++ c.R8.m8z
 
-def clear : Program :=
+def clearRef : Program :=
   c.R8.c8z ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
+    c.leafQ5ClearRef ++ c.R.scl1591 ++
+    c.leafQ2ClearRef ++ LowZero18Diagonal.clearC c.Q1
+
+def clear : Program :=
+  DI4Merge.safe c.R8 ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
     c.leafQ5Clear ++ c.R.scl1591 ++
-    c.leafQ2Clear ++ LowZero18Diagonal.clearC c.Q1
+    c.leafQ2Clear ++ DI4Square.clearC c.Q1
 
 end SplitCfg
 
@@ -26297,7 +26600,7 @@ theorem cfg_physical (c : SplitCfg) (v : CfgValid c) :
       pQ5M⟩, p6⟩, c.R.m7k_physical wR nR⟩, c.R.scl1591_physical wR nR⟩,
       c.R8.m8z_physical nR8⟩
   · simp only [SplitCfg.clear, gatePhysical_append]
-    exact ⟨⟨⟨⟨⟨⟨⟨c.R8.c8z_physical wR8 nR8, c.R.smkT_physical wR nR pR.1⟩,
+    exact ⟨⟨⟨⟨⟨⟨⟨(DI4Merge.safe_resources c.R8).2.1 (c.R8.c8g_physical nR8), c.R.smkT_physical wR nR pR.1⟩,
       c.R.c7t_physical nR⟩, pc6⟩, pQ5C⟩,
       c.R.scl1591_physical wR nR⟩, pQ2C⟩, clearC_physical c.Q1 w1 n1⟩
 
@@ -26538,7 +26841,7 @@ theorem cfg_support (c : SplitCfg) (v : CfgValid c) :
       sQ5M⟩, (c.R.m6h_wires_smk wR).trans (Finset.union_subset sM6 sSmk)⟩,
       (c.R.m7k_wires wR).trans sM7⟩, sScl⟩, (c.R8.m8z_wires wR8).trans sM8⟩
   · simp only [SplitCfg.clear, wires_append, Finset.union_subset_iff]
-    exact ⟨⟨⟨⟨⟨⟨⟨(c.R8.c8z_wires wR8).trans sC8, sSmkT⟩, c.R.c7t_wires.trans sC7⟩,
+    exact ⟨⟨⟨⟨⟨⟨⟨(DI4Merge.safe_resources c.R8).1.trans (Finset.union_subset (c.R8.c8g_wires.trans sC8) (by intro q hq; exact mBank (List.mem_toFinset.mp hq))), sSmkT⟩, c.R.c7t_wires.trans sC7⟩,
       (c.R.c6h_wires wR).trans sC6⟩, sQ5C⟩, sScl⟩,
       sQ2C⟩, (clearC_support c.Q1 w1).trans sQ1⟩
 
@@ -27267,7 +27570,7 @@ theorem cfg_clear_correct (c : SplitCfg) (v : CfgValid c) (s : State) (m : List 
       rw [L1, show c.R.bank.length = c.n from v.bankLen, show c.R.h = 64 from rfl] at h; exact h
   have realStep (P : Program) (hp : wires P ⊆ c.realAll.toFinset) : ∀ q ∈ wires P, q < 20000 :=
     fun q hq => v.realLt q (List.mem_toFinset.mp (hp hq))
-  have sup_parts : (∀ q ∈ wires c.R8.c8z, q < 20000) ∧ (∀ q ∈ wires c.R.smkT, q < 20000) ∧
+  have sup_parts : (∀ q ∈ wires (DI4Merge.safe c.R8), q < 20000) ∧ (∀ q ∈ wires c.R.smkT, q < 20000) ∧
       (∀ q ∈ wires c.R.c7t, q < 20000) ∧ (∀ q ∈ wires c.R.c6h, q < 20000) ∧
       (∀ q ∈ wires c.R.scl1591, q < 20000) := by
     as_aux_lemma =>
@@ -27275,18 +27578,18 @@ theorem cfg_clear_correct (c : SplitCfg) (v : CfgValid c) (s : State) (m : List 
       simp only [SplitCfg.clear, wires_append, Finset.union_subset_iff] at sc
       exact ⟨realStep _ sc.1.1.1.1.1.1.1, realStep _ sc.1.1.1.1.1.1.2, realStep _ sc.1.1.1.1.1.2,
         realStep _ sc.1.1.1.1.2, realStep _ sc.1.1.2⟩
-  obtain ⟨a7, r8, e8⟩ := kseq (c.R8.c8z ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
+  obtain ⟨a7, r8, e8⟩ := kseq (DI4Merge.safe c.R8 ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
     c.leafQ5Clear ++ c.R.scl1591 ++ c.leafQ2Clear)
-    (LowZero18Diagonal.clearC c.Q1) m s
-  obtain ⟨a6, r7, e7⟩ := kseq (c.R8.c8z ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
+    (DI4Square.clearC c.Q1) m s
+  obtain ⟨a6, r7, e7⟩ := kseq (DI4Merge.safe c.R8 ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
     c.leafQ5Clear ++ c.R.scl1591) c.leafQ2Clear a7 s
-  obtain ⟨a5, r6, e6⟩ := kseq (c.R8.c8z ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
+  obtain ⟨a5, r6, e6⟩ := kseq (DI4Merge.safe c.R8 ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h ++
     c.leafQ5Clear) c.R.scl1591 a6 s
-  obtain ⟨a4, r5, e5⟩ := kseq (c.R8.c8z ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h)
+  obtain ⟨a4, r5, e5⟩ := kseq (DI4Merge.safe c.R8 ++ c.R.smkT ++ c.R.c7t ++ c.R.c6h)
     c.leafQ5Clear a5 s
-  obtain ⟨a3, r4, e4⟩ := kseq (c.R8.c8z ++ c.R.smkT ++ c.R.c7t) c.R.c6h a4 s
-  obtain ⟨a2, r3, e3⟩ := kseq (c.R8.c8z ++ c.R.smkT) c.R.c7t a3 s
-  obtain ⟨r1, r2, e2⟩ := kseq c.R8.c8z c.R.smkT a2 s
+  obtain ⟨a3, r4, e4⟩ := kseq (DI4Merge.safe c.R8 ++ c.R.smkT ++ c.R.c7t) c.R.c6h a4 s
+  obtain ⟨a2, r3, e3⟩ := kseq (DI4Merge.safe c.R8 ++ c.R.smkT) c.R.c7t a3 s
+  obtain ⟨r1, r2, e2⟩ := kseq (DI4Merge.safe c.R8) c.R.smkT a2 s
   dsimp only
   rw [SplitCfg.clear, e8, e7, e6, e5, e4, e3, e2]
   have mLo {q : Wire} (h : q ∈ c.R.lo) : q ∈ c.bank := List.mem_of_mem_take (show q ∈ c.bank.take 64 from h)
@@ -27332,7 +27635,17 @@ theorem cfg_clear_correct (c : SplitCfg) (v : CfgValid c) (s : State) (m : List 
         (by rw [show c.R8.T = c.T from rfl, hT]; ring) (c.R8.T_ne wR8)]
       rfl)
     hi0
-  generalize hs1 : run c.R8.c8z r1 s = s1 at p1 f1 v1 ⊢
+  have hMerge : run (DI4Merge.safe c.R8) r1 s = run c.R8.c8z r1 s := by
+    rw [← DI4Merge.c8g_eq_c8z c.R8 wR8]
+    apply DI4Merge.safe_eq c.R8 wR8 nR8 s r1
+    · exact hd0
+    · change regValue c.T s.basis = 2 * regValue c.R.lo s.basis * regValue c.R.hi s.basis
+      rw [ha, hb]; exact hT
+    · exact KRegs.xz hS0 (fun q hq => List.mem_of_mem_take hq)
+    · exact hcar0
+    · exact hi0
+  rw [← hMerge] at p1 f1 v1
+  generalize hs1 : run (DI4Merge.safe c.R8) r1 s = s1 at p1 f1 v1 ⊢
   have s1_F (q : Wire) (hd : q ∉ c.dst) : s1.basis q = s.basis q :=
     f1 q (fun h => hd (List.mem_of_mem_drop (show q ∈ c.dst.drop 64 from h)))
   have st1_dmid : regValue c.R8.dmid s1.basis = a ^ 2 / 2 ^ 64 + 2 ^ 64 * b ^ 2 := by
@@ -27811,7 +28124,7 @@ theorem cfg_clear_correct (c : SplitCfg) (v : CfgValid c) (s : State) (m : List 
     s7_pad0
     ((regValue_zero _ _).mpr (fun q h => (regValue_zero _ _).mp s7_car0 q (List.mem_of_mem_take h)))
     s7_cin0
-  generalize hs8 : run (LowZero18Diagonal.clearC c.Q1) r8 s7 = s8 at st8 ⊢
+  generalize hs8 : run (DI4Square.clearC c.Q1) r8 s7 = s8 at st8 ⊢
   have s8_F (q : Wire) (hd : q ∉ c.R.dlo) (hT1' : q ∉ c.T1) : s8.basis q = s7.basis q := st8.2.2.2 q hd hT1'
   refine ⟨st8.1.trans (st7.1.trans (loc6.1.trans (st6_zh.1.trans (st5.1.trans (loc4.1.trans (st4_zh.1.trans (loc3.1.trans (st3_zh.1.trans (loc2.1.trans (st2_zh.1.trans p1)))))))))),
     ?_, ?_, ?_⟩
@@ -27851,9 +28164,9 @@ theorem cfg_clear_correct (c : SplitCfg) (v : CfgValid c) (s : State) (m : List 
 theorem cfg_counts_H (c : SplitCfg) (v : CfgValid c) (hn : c.n = 128) (src dst : List Wire)
     (hs : src.length = 128) (hd : dst.length = 256) :
     let oldK := LowZero18LowK.kg K0 E0 src dst
-    toffoliCount c.make + toffoliCount c.clear + 438 =
+    toffoliCount c.make + toffoliCount c.clearRef + 438 =
       toffoliCount (LowZero18Square.make K0 oldK) + toffoliCount (LowZero18Square.clear K0 oldK) ∧
-    measurementCount c.make + measurementCount c.clear + 272 =
+    measurementCount c.make + measurementCount c.clearRef + 272 =
       measurementCount (LowZero18Square.make K0 oldK) + measurementCount (LowZero18Square.clear K0 oldK) := by
   have wR := cfg_R_W c v; have wR8 := cfg_R8_W c v
   have w1 := cfg_Q1_W c v; have w2 := cfg_Q2_W128 c v hn; have w5 := cfg_Q5_W65 c v hn
@@ -27900,9 +28213,9 @@ theorem cfg_counts_H (c : SplitCfg) (v : CfgValid c) (hn : c.n = 128) (src dst :
     simp only [SplitCfg.make, SplitCfg.leafQ2Make, SplitCfg.leafQ5Make, hn, if_true, LowZero18KG.make, K,
       toffoliCount_append, measurementCount_append, m8z_eq.1, m8z_eq.2.1]
     exact ⟨by ring, by ring⟩
-  have hNewC : toffoliCount c.clear = toffoliCount (LowZero18KG.clear K) ∧
-      measurementCount c.clear = measurementCount (LowZero18KG.clear K) := by
-    simp only [SplitCfg.clear, SplitCfg.leafQ2Clear, SplitCfg.leafQ5Clear, hn, if_true, LowZero18KG.clear, K,
+  have hNewC : toffoliCount c.clearRef = toffoliCount (LowZero18KG.clear K) ∧
+      measurementCount c.clearRef = measurementCount (LowZero18KG.clear K) := by
+    simp only [SplitCfg.clearRef, SplitCfg.leafQ2ClearRef, SplitCfg.leafQ5ClearRef, hn, if_true, LowZero18KG.clear, K,
       toffoliCount_append, measurementCount_append, m8z_eq.2.2.1, m8z_eq.2.2.2]
     exact ⟨by ring, by ring⟩
   have c_eq32 (A B : KRegs) (wA : A.W) (wB : B.W) (hA : A.h = 32) (hB : B.h = 32)
@@ -27995,9 +28308,9 @@ theorem cfg_counts_H (c : SplitCfg) (v : CfgValid c) (hn : c.n = 128) (src dst :
 theorem cfg_counts_S (c : SplitCfg) (v : CfgValid c) (hn : c.n = 129) (src dst : List Wire)
     (hs : src.length = 129) (hd : dst.length = 258) :
     let oldK := LowZero18LowK.kg K0 E0 src dst
-    toffoliCount c.make + toffoliCount c.clear + 437 =
+    toffoliCount c.make + toffoliCount c.clearRef + 437 =
       toffoliCount (LowZero18Square.make K0 oldK) + toffoliCount (LowZero18Square.clear K0 oldK) ∧
-    measurementCount c.make + measurementCount c.clear + 270 =
+    measurementCount c.make + measurementCount c.clearRef + 270 =
       measurementCount (LowZero18Square.make K0 oldK) + measurementCount (LowZero18Square.clear K0 oldK) := by
   have wR := cfg_R_W c v; have wR8 := cfg_R8_W c v
   have w1 := cfg_Q1_W c v; have w2 := cfg_Q2_W65 c v hn; have w5 := cfg_Q5_W129 c v hn
@@ -28045,9 +28358,9 @@ theorem cfg_counts_S (c : SplitCfg) (v : CfgValid c) (hn : c.n = 129) (src dst :
     simp only [SplitCfg.make, SplitCfg.leafQ2Make, SplitCfg.leafQ5Make, hne, if_false, LowZero18KG.make, K,
       toffoliCount_append, measurementCount_append, m8z_eq.1, m8z_eq.2.1]
     exact ⟨by ring, by ring⟩
-  have hNewC : toffoliCount c.clear = toffoliCount (LowZero18KG.clear K) ∧
-      measurementCount c.clear = measurementCount (LowZero18KG.clear K) := by
-    simp only [SplitCfg.clear, SplitCfg.leafQ2Clear, SplitCfg.leafQ5Clear, hne, if_false, LowZero18KG.clear, K,
+  have hNewC : toffoliCount c.clearRef = toffoliCount (LowZero18KG.clear K) ∧
+      measurementCount c.clearRef = measurementCount (LowZero18KG.clear K) := by
+    simp only [SplitCfg.clearRef, SplitCfg.leafQ2ClearRef, SplitCfg.leafQ5ClearRef, hne, if_false, LowZero18KG.clear, K,
       toffoliCount_append, measurementCount_append, m8z_eq.2.2.1, m8z_eq.2.2.2]
     exact ⟨by ring, by ring⟩
   have c_eq (A B : KRegs) (wA : A.W) (wB : B.W) (h : Nat) (hA : A.h = h) (hB : B.h = h)
@@ -28198,26 +28511,154 @@ private theorem diagC_slots_bound (R : KRegs) (w : R.W) (he : R.bank.length = 2 
     Challenge.gateSlots_append] at dt ⊢
   clear * - dt ot ms sc sk; omega
 
+
+private theorem clear_slots_le_clearRef (c : SplitCfg) (v : CfgValid c) :
+    Challenge.gateSlots c.clear ≤ Challenge.gateSlots c.clearRef := by
+  have wR8 := cfg_R8_W c v
+  have h8 : Challenge.gateSlots (DI4Merge.safe c.R8) ≤ Challenge.gateSlots c.R8.c8z := by
+    rw [← DI4Merge.c8g_eq_c8z c.R8 wR8]
+    exact (DI4Merge.safe_resources c.R8).2.2.2
+  have h1 := DI4Square.clearC_slots c.Q1
+  have h2 : Challenge.gateSlots c.leafQ2Clear ≤ Challenge.gateSlots c.leafQ2ClearRef := by
+    by_cases hn : c.n = 128
+    · simp only [SplitCfg.leafQ2Clear, SplitCfg.leafQ2ClearRef, hn, if_true]
+      exact DI4Square.clearC_slots c.Q2
+    · simp only [SplitCfg.leafQ2Clear, SplitCfg.leafQ2ClearRef, hn, if_false]; exact le_rfl
+  have h5 : Challenge.gateSlots c.leafQ5Clear ≤ Challenge.gateSlots c.leafQ5ClearRef := by
+    by_cases hn : c.n = 128
+    · simp only [SplitCfg.leafQ5Clear, SplitCfg.leafQ5ClearRef, hn, if_true]; exact le_rfl
+    · simp only [SplitCfg.leafQ5Clear, SplitCfg.leafQ5ClearRef, hn, if_false]
+      exact DI4Square.clearC_slots c.Q5
+  simp only [SplitCfg.clear, SplitCfg.clearRef, Challenge.gateSlots_append]
+  omega
+
+theorem cfgA_Q1_c7_active : DI4LastCarry.Active cfgA.Q1 :=
+  DI4C7Fast.active_of_geometry cfgA.Q1 (cfg_Q1_W cfgA cfgA_valid).1 (cfg_nodups cfgA cfgA_valid).2.2.1
+    (by simp only [cfgA_fast, SplitCfg.Q1_fast]; decide +kernel)
+
+theorem cfgA_Q2_c7_active : DI4LastCarry.Active cfgA.Q2 :=
+  DI4C7Fast.active_of_geometry cfgA.Q2 (cfg_Q2_W128 cfgA cfgA_valid rfl).1 (cfg_nodups cfgA cfgA_valid).2.2.2.1
+    (by simp only [cfgA_fast, SplitCfg.Q2_fast]; decide +kernel)
+
+theorem cfgA_Q1_active : DI4Square.Active cfgA.Q1 :=
+  DI5DiagonalGeometry.active_of_W_core cfgA.Q1 (cfg_Q1_W cfgA cfgA_valid).1 (cfg_nodups cfgA cfgA_valid).2.2.1
+    (by simp only [cfgA_fast, SplitCfg.Q1_fast]; decide +kernel)
+    (by simp only [cfgA_fast, SplitCfg.Q1_fast]; decide +kernel)
+
+theorem cfgA_Q2_active : DI4Square.Active cfgA.Q2 :=
+  DI5DiagonalGeometry.active_of_W_core cfgA.Q2 (cfg_Q2_W128 cfgA cfgA_valid rfl).1 (cfg_nodups cfgA cfgA_valid).2.2.2.1
+    (by simp only [cfgA_fast, SplitCfg.Q2_fast]; decide +kernel)
+    (by simp only [cfgA_fast, SplitCfg.Q2_fast]; decide +kernel)
+
+theorem cfgA_clear_delta :
+    toffoliCount cfgA.clear + 12 = toffoliCount cfgA.clearRef ∧
+    measurementCount cfgA.clear = measurementCount cfgA.clearRef := by
+  have q1 := DI4Square.clearC_delta cfgA.Q1 cfgA_Q1_active
+    (DI4Merge.active_of_W cfgA.Q1 (cfg_Q1_W cfgA cfgA_valid).1 (cfg_nodups cfgA cfgA_valid).2.2.1) cfgA_Q1_c7_active
+  have q2 := DI4Square.clearC_delta cfgA.Q2 cfgA_Q2_active
+    (DI4Merge.active_of_W cfgA.Q2 (cfg_Q2_W128 cfgA cfgA_valid rfl).1 (cfg_nodups cfgA cfgA_valid).2.2.2.1) cfgA_Q2_c7_active
+  have cm := DI4Merge.safe_tc cfgA.R8 (DI4Merge.active_of_W cfgA.R8 (cfg_R8_W cfgA cfgA_valid) (cfg_nodups cfgA cfgA_valid).2.1)
+  have cmm := (DI4Merge.safe_resources cfgA.R8).2.2.1
+  rw [DI4Merge.c8g_eq_c8z cfgA.R8 (cfg_R8_W cfgA cfgA_valid)] at cm cmm
+  have m1 := DI4Square.clearC_measurements cfgA.Q1
+  have m2 := DI4Square.clearC_measurements cfgA.Q2
+  simp only [SplitCfg.clear, SplitCfg.clearRef, SplitCfg.leafQ2Clear, SplitCfg.leafQ2ClearRef,
+    SplitCfg.leafQ5Clear, SplitCfg.leafQ5ClearRef, show cfgA.n = 128 from rfl, if_true,
+    toffoliCount_append, measurementCount_append]
+  exact ⟨by omega, by omega⟩
+
+theorem cfgB_Q1_c7_active : DI4LastCarry.Active cfgB.Q1 :=
+  DI4C7Fast.active_of_geometry cfgB.Q1 (cfg_Q1_W cfgB cfgB_valid).1 (cfg_nodups cfgB cfgB_valid).2.2.1
+    (by simp only [cfgB_fast, SplitCfg.Q1_fast]; decide +kernel)
+
+theorem cfgB_Q2_c7_active : DI4LastCarry.Active cfgB.Q2 :=
+  DI4C7Fast.active_of_geometry cfgB.Q2 (cfg_Q2_W128 cfgB cfgB_valid rfl).1 (cfg_nodups cfgB cfgB_valid).2.2.2.1
+    (by simp only [cfgB_fast, SplitCfg.Q2_fast]; decide +kernel)
+
+theorem cfgB_Q1_active : DI4Square.Active cfgB.Q1 :=
+  DI5DiagonalGeometry.active_of_W_core cfgB.Q1 (cfg_Q1_W cfgB cfgB_valid).1 (cfg_nodups cfgB cfgB_valid).2.2.1
+    (by simp only [cfgB_fast, SplitCfg.Q1_fast]; decide +kernel)
+    (by simp only [cfgB_fast, SplitCfg.Q1_fast]; decide +kernel)
+
+theorem cfgB_Q2_active : DI4Square.Active cfgB.Q2 :=
+  DI5DiagonalGeometry.active_of_W_core cfgB.Q2 (cfg_Q2_W128 cfgB cfgB_valid rfl).1 (cfg_nodups cfgB cfgB_valid).2.2.2.1
+    (by simp only [cfgB_fast, SplitCfg.Q2_fast]; decide +kernel)
+    (by simp only [cfgB_fast, SplitCfg.Q2_fast]; decide +kernel)
+
+theorem cfgB_clear_delta :
+    toffoliCount cfgB.clear + 12 = toffoliCount cfgB.clearRef ∧
+    measurementCount cfgB.clear = measurementCount cfgB.clearRef := by
+  have q1 := DI4Square.clearC_delta cfgB.Q1 cfgB_Q1_active
+    (DI4Merge.active_of_W cfgB.Q1 (cfg_Q1_W cfgB cfgB_valid).1 (cfg_nodups cfgB cfgB_valid).2.2.1) cfgB_Q1_c7_active
+  have q2 := DI4Square.clearC_delta cfgB.Q2 cfgB_Q2_active
+    (DI4Merge.active_of_W cfgB.Q2 (cfg_Q2_W128 cfgB cfgB_valid rfl).1 (cfg_nodups cfgB cfgB_valid).2.2.2.1) cfgB_Q2_c7_active
+  have cm := DI4Merge.safe_tc cfgB.R8 (DI4Merge.active_of_W cfgB.R8 (cfg_R8_W cfgB cfgB_valid) (cfg_nodups cfgB cfgB_valid).2.1)
+  have cmm := (DI4Merge.safe_resources cfgB.R8).2.2.1
+  rw [DI4Merge.c8g_eq_c8z cfgB.R8 (cfg_R8_W cfgB cfgB_valid)] at cm cmm
+  have m1 := DI4Square.clearC_measurements cfgB.Q1
+  have m2 := DI4Square.clearC_measurements cfgB.Q2
+  simp only [SplitCfg.clear, SplitCfg.clearRef, SplitCfg.leafQ2Clear, SplitCfg.leafQ2ClearRef,
+    SplitCfg.leafQ5Clear, SplitCfg.leafQ5ClearRef, show cfgB.n = 128 from rfl, if_true,
+    toffoliCount_append, measurementCount_append]
+  exact ⟨by omega, by omega⟩
+
+theorem cfgC_Q1_c7_active : DI4LastCarry.Active cfgC.Q1 :=
+  DI4C7Fast.active_of_geometry cfgC.Q1 (cfg_Q1_W cfgC cfgC_valid).1 (cfg_nodups cfgC cfgC_valid).2.2.1
+    (by simp only [cfgC_fast, SplitCfg.Q1_fast]; decide +kernel)
+
+theorem cfgC_Q5_c7_active : DI4LastCarry.Active cfgC.Q5 :=
+  DI4C7Fast.active_of_geometry cfgC.Q5 (cfg_Q5_W129 cfgC cfgC_valid rfl).1 (cfg_nodups cfgC cfgC_valid).2.2.2.2
+    (by simp only [cfgC_fast, SplitCfg.Q5_fast]; decide +kernel)
+
+theorem cfgC_Q1_active : DI4Square.Active cfgC.Q1 :=
+  DI5DiagonalGeometry.active_of_W_core cfgC.Q1 (cfg_Q1_W cfgC cfgC_valid).1 (cfg_nodups cfgC cfgC_valid).2.2.1
+    (by simp only [cfgC_fast, SplitCfg.Q1_fast]; decide +kernel)
+    (by simp only [cfgC_fast, SplitCfg.Q1_fast]; decide +kernel)
+
+theorem cfgC_Q5_active : DI4Square.Active cfgC.Q5 :=
+  DI5DiagonalGeometry.active_of_W_core cfgC.Q5 (cfg_Q5_W129 cfgC cfgC_valid rfl).1 (cfg_nodups cfgC cfgC_valid).2.2.2.2
+    (by simp only [cfgC_fast, SplitCfg.Q5_fast]; decide +kernel)
+    (by simp only [cfgC_fast, SplitCfg.Q5_fast]; decide +kernel)
+
+theorem cfgC_clear_delta :
+    toffoliCount cfgC.clear + 12 = toffoliCount cfgC.clearRef ∧
+    measurementCount cfgC.clear = measurementCount cfgC.clearRef := by
+  have q1 := DI4Square.clearC_delta cfgC.Q1 cfgC_Q1_active
+    (DI4Merge.active_of_W cfgC.Q1 (cfg_Q1_W cfgC cfgC_valid).1 (cfg_nodups cfgC cfgC_valid).2.2.1) cfgC_Q1_c7_active
+  have q5 := DI4Square.clearC_delta cfgC.Q5 cfgC_Q5_active
+    (DI4Merge.active_of_W cfgC.Q5 (cfg_Q5_W129 cfgC cfgC_valid rfl).1 (cfg_nodups cfgC cfgC_valid).2.2.2.2) cfgC_Q5_c7_active
+  have cm := DI4Merge.safe_tc cfgC.R8 (DI4Merge.active_of_W cfgC.R8 (cfg_R8_W cfgC cfgC_valid) (cfg_nodups cfgC cfgC_valid).2.1)
+  have cmm := (DI4Merge.safe_resources cfgC.R8).2.2.1
+  rw [DI4Merge.c8g_eq_c8z cfgC.R8 (cfg_R8_W cfgC cfgC_valid)] at cm cmm
+  have m1 := DI4Square.clearC_measurements cfgC.Q1
+  have m5 := DI4Square.clearC_measurements cfgC.Q5
+  simp only [SplitCfg.clear, SplitCfg.clearRef, SplitCfg.leafQ2Clear, SplitCfg.leafQ2ClearRef,
+    SplitCfg.leafQ5Clear, SplitCfg.leafQ5ClearRef, show cfgC.n = 129 from rfl,
+    show (129 : Nat) ≠ 128 from by decide, if_false,
+    toffoliCount_append, measurementCount_append]
+  exact ⟨by omega, by omega⟩
+
 theorem cfg_slots_bound (c : SplitCfg) (v : CfgValid c) :
     Challenge.gateSlots c.make + Challenge.gateSlots c.clear ≤ 1830000 := by
+  have hcl := clear_slots_le_clearRef c v
   have wR := cfg_R_W c v; have wR8 := cfg_R8_W c v
   have w1 := cfg_Q1_W c v
   have q1 := diagC_slots_bound c.Q1 w1.1 w1.2 (by change 32 ≤ 33; decide)
-  have q2 : Challenge.gateSlots c.leafQ2Make + Challenge.gateSlots c.leafQ2Clear ≤ 601600 := by
+  have q2 : Challenge.gateSlots c.leafQ2Make + Challenge.gateSlots c.leafQ2ClearRef ≤ 601600 := by
     rcases v.hn with hn | hn
     · have w2 := cfg_Q2_W128 c v hn
-      simp only [SplitCfg.leafQ2Make, SplitCfg.leafQ2Clear, hn, if_true]
+      simp only [SplitCfg.leafQ2Make, SplitCfg.leafQ2ClearRef, hn, if_true]
       exact diagC_slots_bound c.Q2 w2.1 w2.2.1 (by omega)
     · have hne : c.n ≠ 128 := by omega
-      simp only [SplitCfg.leafQ2Make, SplitCfg.leafQ2Clear, hne, if_false]
+      simp only [SplitCfg.leafQ2Make, SplitCfg.leafQ2ClearRef, hne, if_false]
       exact Diag65.diag65_slots_bound c.Q2 (cfg_Q2_W65 c v hn)
-  have q5 : Challenge.gateSlots c.leafQ5Make + Challenge.gateSlots c.leafQ5Clear ≤ 601600 := by
+  have q5 : Challenge.gateSlots c.leafQ5Make + Challenge.gateSlots c.leafQ5ClearRef ≤ 601600 := by
     rcases v.hn with hn | hn
-    · simp only [SplitCfg.leafQ5Make, SplitCfg.leafQ5Clear, hn, if_true]
+    · simp only [SplitCfg.leafQ5Make, SplitCfg.leafQ5ClearRef, hn, if_true]
       exact Diag65.diag65_slots_bound c.Q5 (cfg_Q5_W65 c v hn)
     · have hne : c.n ≠ 128 := by omega
       have w5 := cfg_Q5_W129 c v hn
-      simp only [SplitCfg.leafQ5Make, SplitCfg.leafQ5Clear, hne, if_false]
+      simp only [SplitCfg.leafQ5Make, SplitCfg.leafQ5ClearRef, hne, if_false]
       exact diagC_slots_bound c.Q5 w5.1 w5.2.1 (by omega)
   have m8 := m8z_slots_eq c.R wR; have m8' := m8z_slots_eq c.R8 wR8
   have c8 := c8z_slots_eq c.R wR; have c8' := c8z_slots_eq c.R8 wR8
@@ -28227,17 +28668,16 @@ theorem cfg_slots_bound (c : SplitCfg) (v : CfgValid c) :
     { LowZero18LowK.kgH K0 E0 c.src c.dst with
       R := c.R, X1 := [], X2 := [], X5 := [],
       Q1 := LowZero18Diagonal.makeC c.Q1, Q1c := LowZero18Diagonal.clearC c.Q1,
-      Q2 := c.leafQ2Make, Q2c := c.leafQ2Clear,
-      Q5 := c.leafQ5Make, Q5c := c.leafQ5Clear,
+      Q2 := c.leafQ2Make, Q2c := c.leafQ2ClearRef,
+      Q5 := c.leafQ5Make, Q5c := c.leafQ5ClearRef,
       I1 := fun _ _ => True, I2 := fun _ _ => True, I5 := fun _ _ => True }
   have st := LowZero18KG.steps_slots2 K wR
   have hM : Challenge.gateSlots c.make = Challenge.gateSlots (LowZero18KG.make K) := by
     simp only [SplitCfg.make, LowZero18KG.make, K, Challenge.gateSlots_append, m8, m8', hd8]; ring
-  have hC : Challenge.gateSlots c.clear = Challenge.gateSlots (LowZero18KG.clear K) := by
-    simp only [SplitCfg.clear, LowZero18KG.clear, K, Challenge.gateSlots_append, c8, c8', hd8]; ring
-  rw [hM, hC]
-  dsimp only [K] at st ⊢
-  clear * - q1 q2 q5 ad st; omega
+  have hC : Challenge.gateSlots c.clearRef = Challenge.gateSlots (LowZero18KG.clear K) := by
+    simp only [SplitCfg.clearRef, LowZero18KG.clear, K, Challenge.gateSlots_append, c8, c8', hd8]; ring
+  dsimp only [K] at st hM hC
+  clear * - hcl q1 q2 q5 ad st hM hC; omega
 
 end SplitSlots
 
@@ -31488,10 +31928,18 @@ private theorem move_slots (a b : List Wire) : Challenge.gateSlots (ParkCopy.mov
   simp only [ParkCopy.move, Challenge.gateSlots_append, Baselines.copyRegister_gateSlots, Nat.min_comm]; omega
 
 theorem brA_counts :
-    toffoliCount brA + 355 = toffoliCount (recBrA A109SignResearch.body) ∧
+    toffoliCount brA + 367 = toffoliCount (recBrA A109SignResearch.body) ∧
     measurementCount brA + 272 = measurementCount (recBrA A109SignResearch.body) := by
-  have hk := cfg_counts_H cfgA cfgA_valid rfl K0.core.low (K0.core.product.take 256)
+  have hk0 := cfg_counts_H cfgA cfgA_valid rfl K0.core.low (K0.core.product.take 256)
     (K0.core.low_length hwK.core) (by rw [List.length_take, hwK.core.product]; decide)
+  have hdA := cfgA_clear_delta
+  have hk : toffoliCount cfgA.make + toffoliCount cfgA.clear + 450 =
+      toffoliCount (LowZero18Square.make K0 (LowZero18LowK.kg K0 E0 K0.core.low (K0.core.product.take 256))) +
+        toffoliCount (LowZero18Square.clear K0 (LowZero18LowK.kg K0 E0 K0.core.low (K0.core.product.take 256))) ∧
+      measurementCount cfgA.make + measurementCount cfgA.clear + 272 =
+      measurementCount (LowZero18Square.make K0 (LowZero18LowK.kg K0 E0 K0.core.low (K0.core.product.take 256))) +
+        measurementCount (LowZero18Square.clear K0 (LowZero18LowK.kg K0 E0 K0.core.low (K0.core.product.take 256))) :=
+    ⟨by omega, by omega⟩
   have hb := bodyA_counts
   have hbl : K0.core.low.length = 128 := K0.core.low_length hwK.core
   have hbk : (K0.inputBank.take 128).length = 128 := by simp [(K0.measured_bank_widths hwK).1]
@@ -31518,7 +31966,6 @@ theorem brA_counts :
   have mv8 := move_counts ((K0.inputBank.take 128).drop 120) parkHostsA8 (by simp [hbk, parkHostsA8_length])
   have mv8b := move_counts parkHostsA8 ((K0.inputBank.take 128).drop 120) (by simp [hbk, parkHostsA8_length])
   simp only [Option.isSome_some, ite_true, List.length_take, hbl, hbk, hosts10_length, parkHostsA8_length] at cr118 cr120 em118 em120 dm10 dm8
-  dsimp only at hk
   simp only [brA, withSplitPark, recBrA, A161Low4Branch.branch, ParkCopy10.withLowK2P10,
     ParkCopy10.pA, ParkCopy10.pM, ParkCopy10.pE1, ParkCopy10.pD, ParkCopy10.pMI, ParkCopy10.pB,
     ParkCopy10.pC1, ParkCopy10.pMO, ParkCopy10.pCL, ParkCopy10.pE, R2SqEp760.bodySwap,
@@ -31528,10 +31975,18 @@ theorem brA_counts :
     by clear * - hk hb hc hc118m hc120m cr118 cr120 em118 em120 dm10 dm8 mv10 mv10b mv8 mv8b; omega⟩
 
 theorem brB_counts :
-    toffoliCount brB + 345 = toffoliCount (recBrB B95PaddedResearch.body) ∧
+    toffoliCount brB + 357 = toffoliCount (recBrB B95PaddedResearch.body) ∧
     measurementCount brB + 272 = measurementCount (recBrB B95PaddedResearch.body) := by
-  have hk := cfg_counts_H cfgB cfgB_valid rfl K0.core.high (K0.core.product.take 256)
+  have hk0 := cfg_counts_H cfgB cfgB_valid rfl K0.core.high (K0.core.product.take 256)
     (K0.core.high_length hwK.core) (by rw [List.length_take, hwK.core.product]; decide)
+  have hdB := cfgB_clear_delta
+  have hk : toffoliCount cfgB.make + toffoliCount cfgB.clear + 450 =
+      toffoliCount (LowZero18Square.make K0 (LowZero18LowK.kg K0 E0 K0.core.high (K0.core.product.take 256))) +
+        toffoliCount (LowZero18Square.clear K0 (LowZero18LowK.kg K0 E0 K0.core.high (K0.core.product.take 256))) ∧
+      measurementCount cfgB.make + measurementCount cfgB.clear + 272 =
+      measurementCount (LowZero18Square.make K0 (LowZero18LowK.kg K0 E0 K0.core.high (K0.core.product.take 256))) +
+        measurementCount (LowZero18Square.clear K0 (LowZero18LowK.kg K0 E0 K0.core.high (K0.core.product.take 256))) :=
+    ⟨by omega, by omega⟩
   have hb := bodyB_counts
   have hbl : K0.core.high.length = 128 := K0.core.high_length hwK.core
   have hbk : (K0.inputBank.take 128).length = 128 := by simp [(K0.measured_bank_widths hwK).1]
@@ -31558,7 +32013,6 @@ theorem brB_counts :
   have mv7 := move_counts ((K0.inputBank.take 128).drop 121) parkHostsB7 (by simp [hbk, parkHostsB7_length])
   have mv7b := move_counts parkHostsB7 ((K0.inputBank.take 128).drop 121) (by simp [hbk, parkHostsB7_length])
   simp only [Option.isSome_some, ite_true, List.length_take, hbl, hbk, parkHostsB7_length, ParkCopy.hosts_length] at cr119 cr121 em119 em121 dm9 dm7
-  dsimp only at hk
   simp only [brB, withSplitPark, recBrB, ParkCopy.withLowK2P,
     ParkCopy.pA, ParkCopy.pM, ParkCopy.pE1, ParkCopy.pD, ParkCopy.pMI, ParkCopy.pB,
     ParkCopy.pC1, ParkCopy.pMO, ParkCopy.pCL, ParkCopy.pE, R2SqEp760.bodySwap,
@@ -31568,10 +32022,18 @@ theorem brB_counts :
     by clear * - hk hb hc hc119m hc121m cr119 cr121 em119 em121 dm9 dm7 mv9 mv9b mv7 mv7b; omega⟩
 
 theorem brC_counts :
-    toffoliCount brC + 353 = toffoliCount (recBrC C105SignResearch.body) ∧
+    toffoliCount brC + 365 = toffoliCount (recBrC C105SignResearch.body) ∧
     measurementCount brC + 270 = measurementCount (recBrC C105SignResearch.body) := by
-  have hk := cfg_counts_S cfgC cfgC_valid rfl K0.core.sum K0.core.product
+  have hk0 := cfg_counts_S cfgC cfgC_valid rfl K0.core.sum K0.core.product
     (K0.core.sum_length hwK.core) hwK.core.product
+  have hdC := cfgC_clear_delta
+  have hk : toffoliCount cfgC.make + toffoliCount cfgC.clear + 449 =
+      toffoliCount (LowZero18Square.make K0 (LowZero18LowK.kg K0 E0 K0.core.sum K0.core.product)) +
+        toffoliCount (LowZero18Square.clear K0 (LowZero18LowK.kg K0 E0 K0.core.sum K0.core.product)) ∧
+      measurementCount cfgC.make + measurementCount cfgC.clear + 270 =
+      measurementCount (LowZero18Square.make K0 (LowZero18LowK.kg K0 E0 K0.core.sum K0.core.product)) +
+        measurementCount (LowZero18Square.clear K0 (LowZero18LowK.kg K0 E0 K0.core.sum K0.core.product)) :=
+    ⟨by omega, by omega⟩
   have hb := bodyC_counts
   have srcCount (q : Wire) : K0.core.sum.count q ≤ (K0.core.y ++ [K0.core.sumCarry]).count q := by
     have h1 := (List.take_sublist 128 (K0.core.y.drop 128)).count_le q
@@ -31583,7 +32045,6 @@ theorem brC_counts :
     (by rw [K0.core.sum_length hwK.core, hwK.core.product]) hext.len hall
   have hcl := SumSavedSquare.clear_counts K0 hwK E0 K0.core.sum K0.core.product hext.len (K0.core.sum_length hwK.core) sp hall
   have hbl : K0.core.sum.length = 129 := K0.core.sum_length hwK.core
-  dsimp only at hk
   simp only [brC, withSplitPark, recBrC, SumSavedCBranch.branch, SumSavedPark.withLowK2S, SumSavedPark.pCL,
     ParkCopyS.pA, ParkCopyS.pM, ParkCopyS.pE1, ParkCopyS.pD, ParkCopyS.pMI, ParkCopyS.pB,
     ParkCopyS.pC1, ParkCopyS.pMO, ParkCopyS.pE, R2SqEp760.bodySwap,
@@ -31592,7 +32053,7 @@ theorem brC_counts :
   exact ⟨by clear * - hk hb hcl; omega, by clear * - hk hb hcl; omega⟩
 
 theorem square_counts (k : Fp) :
-    toffoliCount (squareN brC brB brA k) + 1053 = toffoliCount (A161Generic.squareEntry L0 k) ∧
+    toffoliCount (squareN brC brB brA k) + 1089 = toffoliCount (A161Generic.squareEntry L0 k) ∧
     measurementCount (squareN brC brB brA k) + 814 = measurementCount (A161Generic.squareEntry L0 k) := by
   have cA := brA_counts; have cB := brB_counts; have cC := brC_counts
   have e1 : toffoliCount (StairSquareEntryR.entryRH (k - (C163Low4Offsets.delta : Fp))) =

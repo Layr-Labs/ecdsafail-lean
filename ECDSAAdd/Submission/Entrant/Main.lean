@@ -1020,7 +1020,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2010102 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2010066 ∧
     measurementCount (program C) ≤ 1446078 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -5291,7 +5291,7 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2010102 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2010066 ∧
     measurementCount (program C) ≤ 1446078 ∧ gateSlots (program C) ≤ 67241868 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -5490,7 +5490,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2010102,1446078,1543,67241868⟩
+def bounds : Challenge.Bounds := ⟨2010066,1446078,1543,67241868⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
