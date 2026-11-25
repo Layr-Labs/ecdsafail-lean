@@ -4433,6 +4433,63 @@ theorem barrel20_result (j : Fin 9) (mir : Bool) (slot : Fin 22) (v : Nat) (s : 
 end ECDSAAdd.Entrant.StairPacket.Shadow20
 end
 
+namespace ECDSAAdd.Entrant.StairPacket
+open Arithmetic PortalAnd
+
+set_option linter.unusedSimpArgs false
+
+theorem near_one_bit_less (half limb mag len : Nat) (nonempty : 1 ≤ len)
+    (size : (2*half)*2^len = 4*limb) (near : mag < 2*limb) :
+    mag < (2*half)*2^(len-1) := by
+  have exponent : len = len-1+1 := by omega
+  have doubleSize : (2*half)*2^len = 2*((2*half)*2^(len-1)) := by
+    conv_lhs => rw [exponent,Nat.pow_succ]
+    ring
+  omega
+
+theorem shorten_flag_latch (out seed far low : Wire)
+    (data : List Wire) (pairs : List (Wire × Wire)) (s : State) (m : List Bool)
+    (half mag : Nat) (hp : 0 < half) (hl : 1 ≤ data.length)
+    (layout : (out :: seed :: sites pairs).Nodup)
+    (shape : digits seed pairs = seed :: low :: data)
+    (clean : ∀ p ∈ pairs, s.basis p.2 = false)
+    (near : s.basis far = false → mag < (2*half)*2^(data.length-1))
+    (long : s.basis out = decide (half ≤ mag))
+    (orientation : s.basis seed = (s.basis out && s.basis far))
+    (bottom : s.basis low = decide (half ≤ mag % (2*half)))
+    (upper : regValue data s.basis = (mag / (2*half)) % 2^data.length) :
+    run (latch true none out seed (pairs.take data.length)) m s =
+      ⟨s.phase,writeBit s.basis out false⟩ := by
+  let n := data.length-1
+  have hn : n ≤ data.length := Nat.sub_le _ _
+  have sub : List.Sublist (pairs.take data.length) pairs := List.take_sublist _ _
+  have sitesSub : List.Sublist (sites (pairs.take data.length)) (sites pairs) := sub.flatMap _
+  have shorterLayout : (out :: seed :: sites (pairs.take data.length)).Nodup :=
+    ((sitesSub.cons_cons seed).cons_cons out).nodup layout
+  have shorterDigits : digits seed (pairs.take data.length) = seed :: low :: data.take n := by
+    have body : pairs.map Prod.fst = low :: data := (List.cons.inj shape).2
+    have len : data.length = n+1 := by dsimp [n]; omega
+    simp only [digits,List.map_take,body]
+    conv_lhs => rw [len]
+    rfl
+  have shortValue : regValue (data.take n) s.basis = (mag / (2*half)) % 2^n := by
+    rw [CuccaroStreamedSquareWideLayout.regValue_take_mod _ _ hn, upper,
+      Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 hn)]
+  have width : half ≤ (2*half)*2^n := by
+    have p : 1 ≤ 2^n := Nat.one_le_two_pow
+    have h := Nat.mul_le_mul_left (2*half) p
+    omega
+  have runShort := run_latch true none out seed (pairs.take data.length)
+    shorterLayout (by simp) s m (fun p used => clean p (sub.subset used))
+  simp only [active,Option.elim_none,Bool.true_and] at runShort
+  rw [runShort,shorterDigits]
+  simp only [List.any_cons,LeaveCompanion.any_positive,shortValue,bottom,orientation,long]
+  rw [LeaveCompanion.lower_nonzero half _ mag hp,LeaveCompanion.retain_flag half _ mag _ width near]
+  simp
+
+end ECDSAAdd.Entrant.StairPacket
+
+
 section
 
 /-! Join-word halves (`wordGM = wordPre ++ wordPost`), used by the reduced 20-tick and transition leaves. -/
@@ -4859,11 +4916,11 @@ def leaveStoreMapped20 (s : Nat) : List Gate :=
   let H := liveW20 s - L
   let hi := (List.range H).map fun i => bankW20 s (L + i)
   let seq := fun i => if i = 0 then top else bankW20 s (L + i - 1)
-  let seq2 := (List.range L).map (b0P20 s - 1 + ·)
+  let seq2 := (List.range (L-1)).map (b0P20 s - 1 + ·)
   [.x 1558, .x top] ++ xsG hi ++
   chainG (storeWire20 s) seq [.cx (storeWire20 s (H + 1)) 1557, .x 1557] 0 (H + 1) ++
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++
-  xsG seq2 ++ chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+  xsG seq2 ++ chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + (L-1)) 1556, .x 1556] 0 (L-1) ++
   xsG seq2.reverse ++ [.x 1558]
 
 /-- Segment 15: restore `g` wires and close low A/B rails. -/
@@ -4957,8 +5014,8 @@ theorem counts_leaveBefore20 (s : Nat) (hw : 1 ≤ wpP20 s) :
 
 theorem counts_leaveAfter20 (s : Nat) (hL1 : 2 ≤ lowsP20 s) (hL2 : lowsP20 s ≤ 22)
     (hLW : lowsP20 s ≤ liveW20 s) (hn : 2 ≤ nextWp20 s) :
-    Counts (leaveAfter20 s) (lowsP20 s + 10) (liveW20 s + 2 * lowsP20 s)
-      (liveW20 s + lowsP20 s + 63) (4 * liveW20 s + 9 * lowsP20 s + 297 + 3 * nextWp20 s) := by
+    Counts (leaveAfter20 s) (lowsP20 s + 10) (liveW20 s + 2 * lowsP20 s - 1)
+      (liveW20 s + lowsP20 s + 62) (4 * liveW20 s + 9 * lowsP20 s + 293 + 3 * nextWp20 s) := by
   have c8 : Counts (fix8P20 s) 0 0 0 4 := ⟨rfl, rfl, rfl, rfl⟩
   have cg : Counts (glueG3_20 s) 1 0 0 3 := ⟨rfl, rfl, rfl, rfl⟩
   have c9 : Counts (leaveJoinMove20 s) 9 0 22 (136 - lowsP20 s) := by
@@ -4991,7 +5048,7 @@ theorem counts_leaveAfter20 (s : Nat) (hL1 : 2 ≤ lowsP20 s) (hL2 : lowsP20 s �
     have h4 := counts_addG ((List.range (lowsP20 s - 1 - 1)).map (1559 + ·)) ((List.range (lowsP20 s - 1)).map (b0P20 s + ·)) 1558 (by simp; omega)
     have h5 : Counts [.pop (b0P20 s - 1) 1557 1558, .cx (a0P20 s - 1) 1557, .x 1557] 0 0 1 3 := ⟨rfl, rfl, rfl, rfl⟩
     exact ((((((h1.app h1b).app h2).app h3).app h4).app h3).app h5).congr (by simp) (by simp; omega) (by simp; omega) (by simp; omega)
-  have c14 : Counts (leaveStoreMapped20 s) 0 (liveW20 s + 2) (liveW20 s + 1) (4 * liveW20 s + 13) := by
+  have c14 : Counts (leaveStoreMapped20 s) 0 (liveW20 s + 1) (liveW20 s) (4 * liveW20 s + 9) := by
     unfold leaveStoreMapped20
     let L := lowsP20 s
     let H := liveW20 s - L
@@ -5001,10 +5058,10 @@ theorem counts_leaveAfter20 (s : Nat) (hL1 : 2 ≤ lowsP20 s) (hL2 : lowsP20 s �
       (⟨rfl, rfl, rfl, rfl⟩ : Counts [.cx (storeWire20 s (H + 1)) 1557, .x 1557] 0 0 0 2) 0 (H + 1)
     have h4 := counts_xsG ((List.range H).map fun i => bankW20 s (L + i)).reverse
     have h5 : Counts [.x (a0P20 s + L - 2), .x 1558, .make 1556 1557 1558, .x 1558] 0 1 0 4 := ⟨rfl, rfl, rfl, rfl⟩
-    have h6 := counts_xsG ((List.range L).map (b0P20 s - 1 + ·))
+    have h6 := counts_xsG ((List.range (L-1)).map (b0P20 s - 1 + ·))
     have h7 := counts_chainG (1558 + ·) (b0P20 s - 1 + ·)
-      (⟨rfl, rfl, rfl, rfl⟩ : Counts [.cx (1558 + L) 1556, .x 1556] 0 0 0 2) 0 L
-    have h8 := counts_xsG ((List.range L).map (b0P20 s - 1 + ·)).reverse
+      (⟨rfl, rfl, rfl, rfl⟩ : Counts [.cx (1558 + (L-1)) 1556, .x 1556] 0 0 0 2) 0 (L-1)
+    have h8 := counts_xsG ((List.range (L-1)).map (b0P20 s - 1 + ·)).reverse
     have h9 : Counts [.x 1558] 0 0 0 1 := ⟨rfl, rfl, rfl, rfl⟩
     have a1 := h1.app h2
     have a2 := a1.app h3
@@ -5036,12 +5093,12 @@ theorem counts_leaveAfter20 (s : Nat) (hL1 : 2 ≤ lowsP20 s) (hL2 : lowsP20 s �
 
 theorem leave20_counts (j : Fin 9) :
     let s := start20 j
-    toffoliCount (leaveP20 j) = wpP20 s + liveW20 s + 3 * lowsP20 s + 133 + barrel20T s false ∧
-    toffoliCount (leaveInvP20 j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 175 + barrel20T s true ∧
-    measurementCount (leaveP20 j) = wpP20 s + liveW20 s + lowsP20 s + 120 + barrel20M s false ∧
-    measurementCount (leaveInvP20 j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 78 + barrel20M s true ∧
-    gateSlots (leaveP20 j) = 6 * wpP20 s + 5 * liveW20 s + 10 * lowsP20 s + 848 + 3 * nextWp20 s + barrel20Slots s false ∧
-    gateSlots (leaveInvP20 j) = 6 * wpP20 s + 5 * liveW20 s + 11 * lowsP20 s + 806 + 3 * nextWp20 s + barrel20Slots s true := by
+    toffoliCount (leaveP20 j) = wpP20 s + liveW20 s + 3 * lowsP20 s + 132 + barrel20T s false ∧
+    toffoliCount (leaveInvP20 j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 174 + barrel20T s true ∧
+    measurementCount (leaveP20 j) = wpP20 s + liveW20 s + lowsP20 s + 119 + barrel20M s false ∧
+    measurementCount (leaveInvP20 j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 77 + barrel20M s true ∧
+    gateSlots (leaveP20 j) = 6 * wpP20 s + 5 * liveW20 s + 10 * lowsP20 s + 843 + 3 * nextWp20 s + barrel20Slots s false ∧
+    gateSlots (leaveInvP20 j) = 6 * wpP20 s + 5 * liveW20 s + 11 * lowsP20 s + 801 + 3 * nextWp20 s + barrel20Slots s true := by
   have hg := geom20_facts j
   have hnw : ∀ k : Fin 9, 74 ≤ nextWp20 (start20 k) := by decide
   obtain ⟨bt1, bt2, bm1, bm2, bs1, bs2⟩ := (counts_leaveBefore20 (start20 j) (by omega)).programs
@@ -5365,9 +5422,9 @@ def tailE1_20 (s : Nat) : List Gate :=
   let top := a0P20 s + L - 2
   let H := liveW20 s - L
   let hi := (List.range H).map fun i => bankW20 s (L + i)
-  let seq2 := (List.range L).map (b0P20 s - 1 + ·)
+  let seq2 := (List.range (L-1)).map (b0P20 s - 1 + ·)
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-  chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+  chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + (L-1)) 1556, .x 1556] 0 (L-1) ++
   xsG seq2.reverse ++ [.x 1558] ++ leaveLowClose20 s ++ leaveClose20 s
 
 def afterRow20 (s : Nat) : List Gate :=
@@ -5433,24 +5490,37 @@ theorem leaveAfter20_split4_red (s : Nat) (hL : lowsP20 s ≤ 21) :
   rw [hw, hch]
   simp only [List.append_assoc, List.cons_append, List.nil_append]
 
+private theorem replace_four_counts
+    (a b c d e x₁ x₂ x₃ x₄ y₁ y₂ y₃ y₄ : List Gate) {cc mk pop slots : Nat}
+    (old : Counts (a ++ (x₁ ++ (b ++ (x₂ ++ (c ++ (x₃ ++ (d ++ (x₄ ++ e)))))))) cc mk pop slots)
+    (removed : Counts (x₁ ++ x₂ ++ x₃ ++ x₄) 3 1 0 8)
+    (added : Counts (y₁ ++ y₂ ++ y₃ ++ y₄) 0 1 2 11) :
+    Counts (a ++ y₁ ++ b ++ y₂ ++ c ++ y₃ ++ d ++ y₄ ++ e) (cc - 3) mk (pop + 2) (slots + 3) := by
+  obtain ⟨o₁, o₂, o₃, o₄⟩ := old
+  obtain ⟨r₁, r₂, r₃, r₄⟩ := removed
+  obtain ⟨n₁, n₂, n₃, n₄⟩ := added
+  constructor <;> simp only [List.countP_append, List.length_append] at * <;> omega
+
 private theorem counts_beforeRow20 (s : Nat) (hw : 1 ≤ wpP20 s) :
     Counts (beforeRow20 s) 42 (wpP20 s + 78) (wpP20 s + 59) (5 * wpP20 s + 434) := by
-  have h0 := counts_leaveBefore20 s hw
-  rw [leaveBefore20_split4 s] at h0
-  obtain ⟨hc, hm, hp, hl⟩ := h0
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [beforeRow20, cell21_20, shortCell20, List.countP_append, List.countP_cons, List.countP_nil, isCCX,
-      Bool.false_eq_true, ↓reduceIte, Nat.add_zero, Nat.zero_add] at hc ⊢; omega
-  · simp only [beforeRow20, cell21_20, shortCell20, List.countP_append, List.countP_cons, List.countP_nil, isMake,
-      Bool.false_eq_true, ↓reduceIte, Nat.add_zero, Nat.zero_add] at hm ⊢; omega
-  · simp only [beforeRow20, cell21_20, shortCell20, List.countP_append, List.countP_cons, List.countP_nil, isPop,
-      Bool.false_eq_true, ↓reduceIte, Nat.add_zero, Nat.zero_add] at hp ⊢; omega
-  · simp only [beforeRow20, cell21_20, shortCell20, List.length_append, List.length_cons, List.length_nil] at hl ⊢; omega
+  let h := sbP20 s
+  have old := counts_leaveBefore20 s hw
+  rw [leaveBefore20_split4 s] at old
+  have changed := replace_four_counts (firstRows20 s h) (headEnd20 s h)
+    (headA1_20 s) (headC0_20 s) (headC1_20 s)
+    (cell21_20 s h) [.ccx (s + 35) (h + 807) (s + h + 57)]
+    [.make (h + 1582) (h + 1583) 1559]
+    [.cx (a0P20 s - 1 + 0) (e0P20 s + 6), .ccx (tagsP20.getD 0 0) (e0P20 s + 6) (a0P20 s - 1 + 0),
+      .cx (a0P20 s - 1 + 0) (e0P20 s + 6)]
+    (shortCell20 s h) [.pop (s + 35) (h + 807) (s + h + 57)] [.cx (h + 1583) 1559]
+    [.make (tagsP20.getD 0 0) (a0P20 s - 1) (e0P20 s + 6), .cx (e0P20 s + 6) (a0P20 s - 1)]
+    old ⟨rfl, rfl, rfl, rfl⟩ ⟨rfl, rfl, rfl, rfl⟩
+  exact changed.congr rfl rfl (by omega) (by omega)
 
 private theorem counts_afterRow20 (s : Nat) (hL1 : 2 ≤ lowsP20 s) (hL2 : lowsP20 s ≤ 21)
     (hLW : lowsP20 s ≤ liveW20 s) (hn : 2 ≤ nextWp20 s) :
-    Counts (afterRow20 s) (lowsP20 s + 10) (liveW20 s + 2 * lowsP20 s - 1)
-      (liveW20 s + lowsP20 s + 60) (4 * liveW20 s + 9 * lowsP20 s + 294 + 3 * nextWp20 s) := by
+    Counts (afterRow20 s) (lowsP20 s + 10) (liveW20 s + 2 * lowsP20 s - 2)
+      (liveW20 s + lowsP20 s + 59) (4 * liveW20 s + 9 * lowsP20 s + 290 + 3 * nextWp20 s) := by
   have h0 := counts_leaveAfter20 s hL1 (by omega) hLW hn
   rw [leaveAfter20_split4_red s hL2] at h0
   obtain ⟨hc, hm, hp, hl⟩ := h0
@@ -5462,12 +5532,12 @@ private theorem counts_afterRow20 (s : Nat) (hL1 : 2 ≤ lowsP20 s) (hL2 : lowsP
 
 theorem leave20Red_counts (j : Fin 9) :
     let s := start20 j
-    toffoliCount (leaveP20Red j) = wpP20 s + liveW20 s + 3 * lowsP20 s + 129 + barrel20T s false ∧
-    toffoliCount (leaveInvP20Red j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 171 + barrel20T s true ∧
-    measurementCount (leaveP20Red j) = wpP20 s + liveW20 s + lowsP20 s + 119 + barrel20M s false ∧
-    measurementCount (leaveInvP20Red j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 77 + barrel20M s true ∧
-    gateSlots (leaveP20Red j) = 6 * wpP20 s + 5 * liveW20 s + 10 * lowsP20 s + 847 + 3 * nextWp20 s + barrel20Slots s false ∧
-    gateSlots (leaveInvP20Red j) = 6 * wpP20 s + 5 * liveW20 s + 11 * lowsP20 s + 805 + 3 * nextWp20 s + barrel20Slots s true := by
+    toffoliCount (leaveP20Red j) = wpP20 s + liveW20 s + 3 * lowsP20 s + 128 + barrel20T s false ∧
+    toffoliCount (leaveInvP20Red j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 170 + barrel20T s true ∧
+    measurementCount (leaveP20Red j) = wpP20 s + liveW20 s + lowsP20 s + 118 + barrel20M s false ∧
+    measurementCount (leaveInvP20Red j) = wpP20 s + liveW20 s + 2 * lowsP20 s + 76 + barrel20M s true ∧
+    gateSlots (leaveP20Red j) = 6 * wpP20 s + 5 * liveW20 s + 10 * lowsP20 s + 842 + 3 * nextWp20 s + barrel20Slots s false ∧
+    gateSlots (leaveInvP20Red j) = 6 * wpP20 s + 5 * liveW20 s + 11 * lowsP20 s + 800 + 3 * nextWp20 s + barrel20Slots s true := by
   have hg := geom20_facts j
   have hnw : ∀ k : Fin 9, 74 ≤ nextWp20 (start20 k) ∧ lowsP20 (start20 k) ≤ 21 := by decide
   obtain ⟨bt1, bt2, bm1, bm2, bs1, bs2⟩ := (counts_beforeRow20 (start20 j) (by omega)).programs
@@ -5918,11 +5988,11 @@ def leaveStoreMapped150 : List Gate :=
   let H := Shadow7.liveW 150 - L
   let hi := (List.range H).map fun i => Shadow7.bankW 150 (L + i)
   let seq := fun i => if i = 0 then top else Shadow7.bankW 150 (L + i - 1)
-  let seq2 := (List.range L).map (Shadow7.b0P 150 - 1 + ·)
+  let seq2 := (List.range (L - 1)).map (Shadow7.b0P 150 - 1 + ·)
   [.x 1558, .x top] ++ xsG hi ++
   chainG (Shadow7.storeW 150) seq [.cx (Shadow7.storeW 150 (H + 1)) 1557, .x 1557] 0 (H + 1) ++
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++
-  xsG seq2 ++ chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+  xsG seq2 ++ chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + (L - 1)) 1556, .x 1556] 0 (L - 1) ++
   xsG seq2.reverse ++ [.x 1558]
 
 def leaveLowClose150 : List Gate :=
@@ -5954,9 +6024,9 @@ def leaveInv150To20 : Program :=
 
 private theorem leave150_sum_counts :
     (CRTBarrel.before 150).countP isCCX + leaveAfter150To20.countP isCCX = 52 ∧
-    (CRTBarrel.before 150).countP isMake + leaveAfter150To20.countP isMake = 236 ∧
-    (CRTBarrel.before 150).countP isPop + leaveAfter150To20.countP isPop = 258 ∧
-    (CRTBarrel.before 150).length + leaveAfter150To20.length = 1579 := by
+    (CRTBarrel.before 150).countP isMake + leaveAfter150To20.countP isMake = 235 ∧
+    (CRTBarrel.before 150).countP isPop + leaveAfter150To20.countP isPop = 257 ∧
+    (CRTBarrel.before 150).length + leaveAfter150To20.length = 1575 := by
   decide +kernel
 
 private theorem before150_proper_cov :
@@ -5977,12 +6047,12 @@ private theorem leaveAfter150_ok :
 
 attribute [local irreducible] CRTBarrel.barrel GateMirror.forward inverse toffoliCount measurementCount gateSlots in
 theorem leave150To20_counts :
-    toffoliCount leave150To20 = 477 ∧
-    toffoliCount leaveInv150To20 = 499 ∧
-    measurementCount leave150To20 = 296 ∧
-    measurementCount leaveInv150To20 = 274 ∧
-    gateSlots leave150To20 = 13398 ∧
-    gateSlots leaveInv150To20 = 13372 := by
+    toffoliCount leave150To20 = 476 ∧
+    toffoliCount leaveInv150To20 = 498 ∧
+    measurementCount leave150To20 = 295 ∧
+    measurementCount leaveInv150To20 = 273 ∧
+    gateSlots leave150To20 = 13393 ∧
+    gateSlots leaveInv150To20 = 13367 := by
   have hs := leave150_sum_counts
   have cb : Counts (CRTBarrel.before 150) ((CRTBarrel.before 150).countP isCCX)
       ((CRTBarrel.before 150).countP isMake) ((CRTBarrel.before 150).countP isPop)
@@ -6081,9 +6151,9 @@ def tailE1_150 : List Gate :=
   let top := Shadow7.a0P 150 + L - 2
   let H := Shadow7.liveW 150 - L
   let hi := (List.range H).map fun i => Shadow7.bankW 150 (L + i)
-  let seq2 := (List.range L).map (Shadow7.b0P 150 - 1 + ·)
+  let seq2 := (List.range (L - 1)).map (Shadow7.b0P 150 - 1 + ·)
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-  chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+  chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + (L - 1)) 1556, .x 1556] 0 (L - 1) ++
   xsG seq2.reverse ++ [.x 1558] ++ leaveLowClose150 ++ leaveClose150To20
 
 def afterRow150 : List Gate :=
@@ -6100,9 +6170,9 @@ def leaveInv150To20Red : Program :=
 
 private theorem leave150Red_sum_counts :
     (CRTBarrel.before 150).countP isCCX + afterRow150.countP isCCX = 52 ∧
-    (CRTBarrel.before 150).countP isMake + afterRow150.countP isMake = 235 ∧
-    (CRTBarrel.before 150).countP isPop + afterRow150.countP isPop = 255 ∧
-    (CRTBarrel.before 150).length + afterRow150.length = 1576 := by
+    (CRTBarrel.before 150).countP isMake + afterRow150.countP isMake = 234 ∧
+    (CRTBarrel.before 150).countP isPop + afterRow150.countP isPop = 254 ∧
+    (CRTBarrel.before 150).length + afterRow150.length = 1572 := by
   decide +kernel
 
 private theorem leave150Red_gates_ok :
@@ -6112,12 +6182,12 @@ private theorem leave150Red_gates_ok :
 
 attribute [local irreducible] CRTBarrel.barrel GateMirror.forward inverse toffoliCount measurementCount gateSlots in
 theorem leave150To20Red_counts :
-    toffoliCount leave150To20Red = 476 ∧
-    toffoliCount leaveInv150To20Red = 496 ∧
-    measurementCount leave150To20Red = 293 ∧
-    measurementCount leaveInv150To20Red = 273 ∧
-    gateSlots leave150To20Red = 13392 ∧
-    gateSlots leaveInv150To20Red = 13368 := by
+    toffoliCount leave150To20Red = 475 ∧
+    toffoliCount leaveInv150To20Red = 495 ∧
+    measurementCount leave150To20Red = 292 ∧
+    measurementCount leaveInv150To20Red = 272 ∧
+    gateSlots leave150To20Red = 13387 ∧
+    gateSlots leaveInv150To20Red = 13363 := by
   have hs := leave150Red_sum_counts
   have cb : Counts (CRTBarrel.before 150) ((CRTBarrel.before 150).countP isCCX)
       ((CRTBarrel.before 150).countP isMake) ((CRTBarrel.before 150).countP isPop)
@@ -6383,16 +6453,16 @@ def reverseMixed (d : Bool) : Program := (reverseL d).flatten
 
 private theorem leave15_counts (j : Fin 26) (hj : j.val ≤ 24) :
     toffoliCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 97 +
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 96 +
         CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 128 +
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 127 +
         CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 +
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 +
         CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
-      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 57 +
+      Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 56 +
         CRTBarrel.barrelM (start j) true := by
   obtain ⟨h1, h2, h3, h4, _, _⟩ := CRTWindow.leave_metrics j (Nat.zero_le _) hj
   exact ⟨h1, h2, h3, h4⟩
@@ -6442,11 +6512,11 @@ private theorem block15F_counts (d : Bool) (i j : Fin 26) (hj : j.val ≤ 24)
     (h5 : start j - 10 ≠ 5) (hd : History5.packDue (start j - 10) = true) :
     ((block15F d i j).map toffoliCount).sum =
       56 + 30 * (Shadow7.smallBits j + 16) +
-      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 97 +
+      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 96 +
         CRTBarrel.barrelT (start j) false) ∧
     ((block15F d i j).map measurementCount).sum =
       (if d then 54 else 55) + 15 * (Shadow7.smallBits j + 16) +
-      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 +
+      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 +
         CRTBarrel.barrelM (start j) false) := by
   have e := Shadow7.enter_counts j
   have r0 := WindowFold7.routed_counts j 0 1 (by decide)
@@ -6469,11 +6539,11 @@ private theorem block15R_counts (d : Bool) (i j : Fin 26) (hj : j.val ≤ 24)
     (h5 : start j - 10 ≠ 5) (hd : History5.packDue (start j - 10) = true) :
     ((block15R d i j).map toffoliCount).sum + 14 =
       (if d then 67 else 68) + 15 * (2 * (Shadow7.smallBits j + 16) - 1) +
-      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 128 +
+      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 127 +
         CRTBarrel.barrelT (start j) true) ∧
     ((block15R d i j).map measurementCount).sum =
       (if d then 48 else 49) + 15 * (Shadow7.smallBits j + 16) +
-      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 57 +
+      (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 56 +
         CRTBarrel.barrelM (start j) true) + 14 := by
   have e := Shadow7.enter_counts j
   have r0 := WindowFold7.routed_counts j 0 1 (by decide)
@@ -6490,22 +6560,22 @@ private theorem block15R_counts (d : Bool) (i j : Fin 26) (hj : j.val ≤ 24)
 def b20TF (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then 56 else 65) + 40 * (sbP20 s + 21) +
-  (wpP20 s + liveW20 s + 3 * lowsP20 s + 129 + barrel20T s false)
+  (wpP20 s + liveW20 s + 3 * lowsP20 s + 128 + barrel20T s false)
 
 def b20TR (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 67 else 68) else (if d then 78 else 79)) + 20 * (2 * (sbP20 s + 21) - 1) +
-  (wpP20 s + liveW20 s + 2 * lowsP20 s + 171 + barrel20T s true)
+  (wpP20 s + liveW20 s + 2 * lowsP20 s + 170 + barrel20T s true)
 
 def b20MF (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 54 else 55) else (if d then 58 else 59)) + 20 * (sbP20 s + 21) +
-  (wpP20 s + liveW20 s + lowsP20 s + 119 + barrel20M s false)
+  (wpP20 s + liveW20 s + lowsP20 s + 118 + barrel20M s false)
 
 def b20MR (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 48 else 49) else (if d then 50 else 51)) + 20 * (sbP20 s + 21) +
-  (wpP20 s + liveW20 s + 2 * lowsP20 s + 77 + barrel20M s true)
+  (wpP20 s + liveW20 s + 2 * lowsP20 s + 76 + barrel20M s true)
 
 private theorem block20F_counts (d : Bool) (j : Fin 9) :
     ((block20F d j).map toffoliCount).sum = b20TF j ∧
@@ -6565,22 +6635,22 @@ private theorem block20R_counts (d : Bool) (j : Fin 9) :
 
 def b15TF (j : Fin 26) : Nat :=
   56 + 30 * (Shadow7.smallBits j + 16) +
-  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 97 +
+  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 96 +
     CRTBarrel.barrelT (start j) false)
 
 def b15TR (d : Bool) (j : Fin 26) : Nat :=
   (if d then 67 else 68) + 15 * (2 * (Shadow7.smallBits j + 16) - 1) +
-  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 128 +
+  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 127 +
     CRTBarrel.barrelT (start j) true)
 
 def b15MF (d : Bool) (j : Fin 26) : Nat :=
   (if d then 54 else 55) + 15 * (Shadow7.smallBits j + 16) +
-  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 +
+  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 +
     CRTBarrel.barrelM (start j) false)
 
 def b15MR (d : Bool) (j : Fin 26) : Nat :=
   (if d then 48 else 49) + 15 * (Shadow7.smallBits j + 16) +
-  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 57 +
+  (Shadow7.wpP (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 56 +
     CRTBarrel.barrelM (start j) true)
 
 private theorem sum_flatMap_eq {α : Type} (m : Program → Nat) (f : α → List Program) (g : α → Nat)
@@ -6594,41 +6664,41 @@ private theorem sum_flatMap_eq {α : Type} (m : Program → Nat) (f : α → Lis
 
 private theorem mixed_sum_vals (d : Bool) :
     (4 * Shadow7.wpP 45 - 2 + 6 + 30 * (Shadow7.smallBits j0 + 16) + 9 +
-      (Shadow7.wpP 45 + Shadow7.liveW 45 + 3 * Shadow7.lowsP 45 + 97 + CRTBarrel.barrelT 45 false)) +
+      (Shadow7.wpP 45 + Shadow7.liveW 45 + 3 * Shadow7.lowsP 45 + 96 + CRTBarrel.barrelT 45 false)) +
     (prefixPairs.map (fun p => b15TF p.2)).sum +
-    (6 + 30 * (Shadow7.smallBits j7 + 16) + 9 + 41 + 476) +
+    (6 + 30 * (Shadow7.smallBits j7 + 16) + 9 + 41 + 475) +
     ((List.finRange 9).map b20TF).sum +
     (6 + 30 * (Shadow7.smallBits j20 + 16) + 9 + 9 + 41 +
-      (Shadow7.wpP 345 + Shadow7.liveW 345 + 3 * Shadow7.lowsP 345 + 97 + CRTBarrel.barrelT 345 false)) +
+      (Shadow7.wpP 345 + Shadow7.liveW 345 + 3 * Shadow7.lowsP 345 + 96 + CRTBarrel.barrelT 345 false)) +
     (suffixPairs.map (fun p => b15TF p.2)).sum +
-    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 127083 ∧
+    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 127061 ∧
     (4 * Shadow7.wpP 45 - 7 + 2 + 15 * (Shadow7.smallBits j0 + 16) + 4 +
-      (Shadow7.wpP 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 88 + CRTBarrel.barrelM 45 false)) +
+      (Shadow7.wpP 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 87 + CRTBarrel.barrelM 45 false)) +
     (prefixPairs.map (fun p => b15MF d p.2)).sum +
-    (2 + 15 * (Shadow7.smallBits j7 + 16) + 4 + (if d then 48 else 49) + 293) +
+    (2 + 15 * (Shadow7.smallBits j7 + 16) + 4 + (if d then 48 else 49) + 292) +
     ((List.finRange 9).map (b20MF d)).sum +
     (2 + 15 * (Shadow7.smallBits j20 + 16) + 4 + 4 + (if d then 48 else 49) +
-      (Shadow7.wpP 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 88 + CRTBarrel.barrelM 345 false)) +
+      (Shadow7.wpP 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 87 + CRTBarrel.barrelM 345 false)) +
     (suffixPairs.map (fun p => b15MF d p.2)).sum +
-    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65813 else 65835) ∧
+    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65791 else 65813) ∧
     ((if d then 50 else 51) + 11 + WindowParams.recvT 420 + (4 * Shadow7.wpP 420 - 2) + 0) +
     (suffixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
-    ((Shadow7.wpP 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 128 + CRTBarrel.barrelT 345 true) +
+    ((Shadow7.wpP 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 127 + CRTBarrel.barrelT 345 true) +
       15 * (2 * (Shadow7.smallBits j20 + 16) - 1) + (if d then 50 else 51) + 11 + 11 + 6) +
     ((List.finRange 9).reverse.map (b20TR d)).sum +
-    (496 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
+    (495 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
     (prefixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
-    ((Shadow7.wpP 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 128 + CRTBarrel.barrelT 45 true) +
-      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 127358 else 127380) ∧
+    ((Shadow7.wpP 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 127 + CRTBarrel.barrelT 45 true) +
+      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 127336 else 127358) ∧
     ((if d then 43 else 44) + 2 + WindowParams.recvM 420 + (4 * Shadow7.wpP 420 - 7) + 0) +
     (suffixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
-    ((Shadow7.wpP 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 57 + CRTBarrel.barrelM 345 true) +
+    ((Shadow7.wpP 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 56 + CRTBarrel.barrelM 345 true) +
       15 * (Shadow7.smallBits j20 + 16) + (if d then 43 else 44) + 2 + 2 + 3) +
     ((List.finRange 9).reverse.map (b20MR d)).sum +
-    (273 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
+    (272 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
     (prefixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
-    ((Shadow7.wpP 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 57 + CRTBarrel.barrelM 45 true) +
-      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 65272 else 65294) := by
+    ((Shadow7.wpP 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 56 + CRTBarrel.barrelM 45 true) +
+      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 65250 else 65272) := by
   cases d <;> decide +kernel
 
 attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shadow7.enterInvP
@@ -6638,10 +6708,10 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   archiveLoadP20 archiveRestoreP20 leave150To20Red leaveInv150To20Red archiveLoad150To20 archiveRestore150To20
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forwardMixed d) = 127083 ∧
-    toffoliCount (reverseMixed d) = (if d then 127316 else 127338) ∧
-    measurementCount (forwardMixed d) = (if d then 65813 else 65835) ∧
-    measurementCount (reverseMixed d) = (if d then 65314 else 65336) := by
+    toffoliCount (forwardMixed d) = 127061 ∧
+    toffoliCount (reverseMixed d) = (if d then 127294 else 127316) ∧
+    measurementCount (forwardMixed d) = (if d then 65791 else 65813) ∧
+    measurementCount (reverseMixed d) = (if d then 65292 else 65314) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
   have hfM := measure_flatten measurementCount measurementCount_append (forwardL d)
@@ -9739,10 +9809,17 @@ theorem pack_codes20 (j : Fin 9) (d : Bool) :
       (fun q => hist20_in_support j (by simp [h0]; omega) (by simp [h0]; omega) q)
     exact ⟨⟨p1.1, p2.1⟩, ⟨p2.2, p1.2⟩⟩
 
-private theorem watch20_disj_all : ∀ j : Fin 9,
-    (watch20 j).all (fun q => decide (q ∉ support20 j)) = true ∧
-    (watch20 j).all (fun q => decide (q ∉ prevRawHead20 j)) = true := by
+private theorem watch20_masks : ∀ j : Fin 9,
+    StairLoan.maskOf (watch20 j) &&& StairLoan.maskOf (support20 j) = 0 ∧
+    StairLoan.maskOf (watch20 j) &&& StairLoan.maskOf (prevRawHead20 j) = 0 := by
   decide +kernel
+
+private theorem watch20_disj_all : ∀ j : Fin 9,
+    (∀ q ∈ watch20 j, q ∉ support20 j) ∧
+    (∀ q ∈ watch20 j, q ∉ prevRawHead20 j) := by
+  intro j
+  exact ⟨StairBoundaryLoan.disjoint_of_maskAnd_k4a _ _ (watch20_masks j).1,
+    StairBoundaryLoan.disjoint_of_maskAnd_k4a _ _ (watch20_masks j).2⟩
 
 theorem pack_retains20 (j : Fin 9) (d back : Bool) (s : State) (m : List Bool) :
     ∀ q ∈ watch20 j, (run (if back then packRev20 j d else packProg20 j d) m s).basis q = s.basis q := by
@@ -9753,7 +9830,7 @@ theorem pack_retains20 (j : Fin 9) (d back : Bool) (s : State) (m : List Bool) :
     cases back
     · exact (pack_codes20 j d).1 used
     · exact (pack_codes20 j d).2 used
-  exact (of_decide_eq_true (List.all_eq_true.mp (watch20_disj_all j).1 q hq)) (List.mem_toFinset.mp seen)
+  exact (watch20_disj_all j).1 q hq (List.mem_toFinset.mp seen)
 
 def PackLegal20 (j : Fin 9) (b : BasisState) : Prop :=
   if j.val = 0 then MeasuredCodec5.legalAt (hist20 165 150) b
@@ -9951,7 +10028,7 @@ theorem retain_watch20 (j : Fin 9) (d : Bool) (row : Nat) (s t : State)
   · obtain ⟨k, rfl⟩ := mem
     have hk : 23 ≤ k.val := by
       by_contra! bad
-      exact (of_decide_eq_true (List.all_eq_true.mp (watch20_disj_all j).2 _ h)) (prevRawHead_mem j k bad)
+      exact (watch20_disj_all j).2 _ h (prevRawHead_mem j k bad)
     rw [clean k hk h, prevScratch_code j k hk, frame, archive_blank _ _ (by dsimp; omega), Nat.zero_testBit]
   · exact outside _ (fun k eq => mem ⟨k, eq⟩)
 
@@ -12047,9 +12124,9 @@ private theorem suffix_after150 :
     [.cx (Shadow7.a0P 150 + lows150 - 2) 1559] ++ chainMid150 ++ [.cx (Shadow7.a0P 150 + lows150 - 2) 1559] ++
     (let L := lows150; let top := Shadow7.a0P 150 + L - 2; let H := Shadow7.liveW 150 - L
      let hi := (List.range H).map fun i => Shadow7.bankW 150 (L + i)
-     let seq2 := (List.range L).map (Shadow7.b0P 150 - 1 + ·)
+     let seq2 := (List.range (L - 1)).map (Shadow7.b0P 150 - 1 + ·)
      xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-     chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+     chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + (L - 1)) 1556, .x 1556] 0 (L - 1) ++
      xsG seq2.reverse ++ [.x 1558]), ?_⟩
   unfold afterRow150 tailE1_150; simp only [List.append_assoc]
 
@@ -12091,9 +12168,9 @@ private theorem suffix_after20 (s : Nat) :
     [.cx (a0P20 s + lowsP20 s - 2) 1559] ++ chainMid20 s ++ [.cx (a0P20 s + lowsP20 s - 2) 1559] ++
     (let L := lowsP20 s; let top := a0P20 s + L - 2; let H := liveW20 s - L
      let hi := (List.range H).map fun i => bankW20 s (L + i)
-     let seq2 := (List.range L).map (b0P20 s - 1 + ·)
+     let seq2 := (List.range (L-1)).map (b0P20 s - 1 + ·)
      xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-     chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+     chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + (L-1)) 1556, .x 1556] 0 (L-1) ++
      xsG seq2.reverse ++ [.x 1558]), ?_⟩
   unfold afterRow20 tailE1_20; simp only [List.append_assoc]
 
@@ -12629,10 +12706,10 @@ theorem mixedCut_run_eq (d : Bool) :
    funext fun m => funext fun s => (MixedFredCut.rev_mixed_cut d).run_eq m s⟩
 
 theorem mixedCut_counts (d : Bool) :
-    toffoliCount (forwardMixedCut d) = 126991 ∧
-    toffoliCount (reverseMixedCut d) = (if d then 127224 else 127246) ∧
-    measurementCount (forwardMixedCut d) = (if d then 65813 else 65835) ∧
-    measurementCount (reverseMixedCut d) = (if d then 65314 else 65336) := by
+    toffoliCount (forwardMixedCut d) = 126969 ∧
+    toffoliCount (reverseMixedCut d) = (if d then 127202 else 127224) ∧
+    measurementCount (forwardMixedCut d) = (if d then 65791 else 65813) ∧
+    measurementCount (reverseMixedCut d) = (if d then 65292 else 65314) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
   have htr := (MixedFredCut.rev_mixed_cut d).tc_eq
@@ -13327,10 +13404,10 @@ theorem resource_delta (d : Bool) :
   simpa only [pieces_old,pieces_new,pieces_saving,reverse,MixedWindow.reverseMixedCut] using h
 
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forward d) = 126991 ∧
-    toffoliCount (reverse d) = (if d then 127053 else 127075) ∧
-    measurementCount (forward d) = (if d then 65813 else 65835) ∧
-    measurementCount (reverse d) = (if d then 65485 else 65507) := by
+    toffoliCount (forward d) = 126969 ∧
+    toffoliCount (reverse d) = (if d then 127031 else 127053) ∧
+    measurementCount (forward d) = (if d then 65791 else 65813) ∧
+    measurementCount (reverse d) = (if d then 65463 else 65485) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d
   cases d <;> simp only [Bool.false_eq_true,↓reduceIte,forward] at old h ⊢ <;>
@@ -15244,15 +15321,28 @@ private theorem g3_ne20 : ∀ j : Fin 9,
     b0P20 (start20 j) - 1 ≠ e0P20 (start20 j) + 6 ∧ b0P20 (start20 j) - 1 ≠ bankW20 (start20 j) 0 ∧
     b0P20 (start20 j) - 1 ≠ tagsP20.getD 0 0 := by decide +kernel
 
-private theorem g3_off_join : ∀ j : Fin 9,
-    (b0P20 (start20 j) - 1 : Wire) ∉ wires (GateMirror.forward (leaveJoinMove20 (start20 j))) := by decide +kernel
+private theorem g3_off_join_all : ∀ j : Fin 9,
+    (GateMirror.forward (leaveJoinMove20 (start20 j))).all
+      (fun i => decide ((b0P20 (start20 j) - 1 : Wire) ∉ i.wires)) = true := by
+  decide +kernel
+
+private theorem g3_off_join (j : Fin 9) :
+    (b0P20 (start20 j) - 1 : Wire) ∉ wires (GateMirror.forward (leaveJoinMove20 (start20 j))) :=
+  CompareDecoder.BoundaryLoan.not_mem_wires_of_all _ _ (g3_off_join_all j)
 
 private theorem g3_off_fix10 : ∀ j : Fin 9,
     (b0P20 (start20 j) - 1 : Wire) ∉ wires (GateMirror.forward (fix10P20 (start20 j))) := by decide +kernel
 
-private theorem g3_off_rest : ∀ j : Fin 9,
+private theorem g3_off_rest_all : ∀ j : Fin 9,
+    (GateMirror.forward (leaveFix11_20 (start20 j) ++ leaveFix12_20 (start20 j) ++
+      lowSign20 (start20 j))).all
+      (fun i => decide ((b0P20 (start20 j) - 1 : Wire) ∉ i.wires)) = true := by
+  decide +kernel
+
+private theorem g3_off_rest (j : Fin 9) :
     (b0P20 (start20 j) - 1 : Wire) ∉ wires (GateMirror.forward
-      (leaveFix11_20 (start20 j) ++ leaveFix12_20 (start20 j) ++ lowSign20 (start20 j))) := by decide +kernel
+      (leaveFix11_20 (start20 j) ++ leaveFix12_20 (start20 j) ++ lowSign20 (start20 j))) :=
+  CompareDecoder.BoundaryLoan.not_mem_wires_of_all _ _ (g3_off_rest_all j)
 
 private theorem live20_ne_b0 : ∀ j : Fin 9, ∀ i < wpP20 (start20 j) + 20,
     live20 j i ≠ b0P20 (start20 j) - 1 := by decide +kernel
@@ -16199,6 +16289,15 @@ def pendingPairs20 (j : Fin 9) : List (Wire × Wire) :=
 def clearFlagPairs20 (j : Fin 9) : List (Wire × Wire) :=
   (List.range (lowsP20 (start20 j))).map fun k => (b0P20 (start20 j) - 1 + k, 1559 + k)
 
+private def shortPairs20 (j : Fin 9) : List (Wire × Wire) :=
+  (clearFlagPairs20 j).take (smallM20 j).length
+
+private theorem shortPairs20_eq (j : Fin 9) :
+    shortPairs20 j = (List.range (lowsP20 (start20 j)-1)).map
+      (fun k => (b0P20 (start20 j)-1+k,1559+k)) := by
+  simp only [shortPairs20,clearFlagPairs20,smallM20,List.length_map,List.length_range,
+    ← List.map_take,List.take_range,Nat.min_eq_left (Nat.sub_le _ _)]
+
 def low20 (j : Fin 9) : List (Wire × Wire) :=
   (List.range (lowsP20 (start20 j))).map fun i => (a0P20 (start20 j) - 1 + i, b0P20 (start20 j) - 1 + i)
 
@@ -16270,8 +16369,8 @@ private theorem pending20_fst (j : Fin 9) :
   congr 1
 
 private theorem clearFlag20_fst (j : Fin 9) :
-    (clearFlagPairs20 j).map Prod.fst = (List.range (lowsP20 (start20 j))).map (b0P20 (start20 j) - 1 + ·) := by
-  simp only [clearFlagPairs20, List.map_map]; rfl
+    (shortPairs20 j).map Prod.fst = (List.range (lowsP20 (start20 j)-1)).map (b0P20 (start20 j) - 1 + ·) := by
+  simp only [shortPairs20_eq, List.map_map]; rfl
 
 theorem lowStore20_parts (j : Fin 9) :
     GateMirror.forward (leaveLowStore20 (start20 j)) =
@@ -16288,7 +16387,7 @@ theorem lowStore20_parts (j : Fin 9) :
 theorem storeMapped20_parts (j : Fin 9) :
     GateMirror.forward (leaveStoreMapped20 (start20 j)) =
       latch true none 1557 1558 (pendingPairs20 j) ++
-        ([.CCX 1556 1557 1558] ++ latch true none 1556 1558 (clearFlagPairs20 j)) := by
+        ([.CCX 1556 1557 1558] ++ latch true none 1556 1558 (shortPairs20 j)) := by
   have ch1 : GateMirror.forward (chainG (storeWire20 (start20 j))
       (fun i => if i = 0 then a0P20 (start20 j) + lowsP20 (start20 j) - 2 else bankW20 (start20 j) (lowsP20 (start20 j) + i - 1))
       [.cx (storeWire20 (start20 j) (liveW20 (start20 j) - lowsP20 (start20 j) + 1)) 1557, .x 1557]
@@ -16300,14 +16399,14 @@ theorem storeMapped20_parts (j : Fin 9) :
     simp only [Nat.zero_add, storeWire20_zero] at h
     exact h
   have ch2 : GateMirror.forward (chainG (fun i => (1558 + i : Wire)) (fun i => b0P20 (start20 j) - 1 + i)
-      [.cx (1558 + lowsP20 (start20 j)) 1556, .x 1556] 0 (lowsP20 (start20 j))) =
-      PortalAnd.chain true none 1556 1558 (clearFlagPairs20 j) := by
+      [.cx (1558 + (lowsP20 (start20 j)-1)) 1556, .x 1556] 0 (lowsP20 (start20 j)-1)) =
+      PortalAnd.chain true none 1556 1558 (shortPairs20 j) := by
     have h := forward_chainG20 (fun i => (1558 + i : Wire)) (fun i => b0P20 (start20 j) - 1 + i)
-      1556 0 (lowsP20 (start20 j))
+      1556 0 (lowsP20 (start20 j)-1)
     simp only [Nat.zero_add] at h
-    have e : (List.range (lowsP20 (start20 j))).map (fun k => (b0P20 (start20 j) - 1 + k, (1558 + (k + 1) : Wire))) =
-        clearFlagPairs20 j := by
-      simp only [clearFlagPairs20]; apply List.map_congr_left; intro k _
+    have e : (List.range (lowsP20 (start20 j)-1)).map (fun k => (b0P20 (start20 j) - 1 + k, (1558 + (k + 1) : Wire))) =
+        shortPairs20 j := by
+      simp only [shortPairs20_eq]; apply List.map_congr_left; intro k _
       simp only [Prod.mk.injEq, true_and]; unfold Wire; omega
     rw [← e]; exact h
   have fc (g : Gate) (gs : List Gate) : GateMirror.forward (g :: gs) = front g :: GateMirror.forward gs := rfl
@@ -16639,14 +16738,13 @@ private theorem nextFlag20_orientation (j : Fin 9) (a : SkywalkNat.State) (sign 
 
 private theorem nextFlag20_boundNear (j : Fin 9) (a : SkywalkNat.State) (sign : Nat)
     (near : ¬ far (nextSb20 (start20 j)) (nextLen20 j) a) :
-    a.u - sign < (2 * 2 ^ sbP20 (start20 j)) * 2 ^ (smallM20 j).length := by
+    a.u - sign < (2 * 2 ^ sbP20 (start20 j)) * 2 ^ ((smallM20 j).length-1) := by
   have hg := geom20_facts j; dsimp only at hg
   have tg := tail20_geom j; dsimp only at tg
   have lo : (a.u + a.v) / limb (nextSb20 (start20 j)) (nextLen20 j) < 2 := Nat.lt_of_not_ge near
   have lim := (Nat.div_lt_iff_lt_mul (by unfold limb; positivity)).mp lo
   unfold limb at lim
   have hlen : (smallM20 j).length = lowsP20 (start20 j) - 1 := by simp [smallM20]
-  rw [hlen]
   have he : 2 * 2 ^ sbP20 (start20 j) * 2 ^ (lowsP20 (start20 j) - 1) =
       2 * (2 * 2 ^ (nextSb20 (start20 j) + nextLen20 j)) := by
     rw [show 2 * 2 ^ sbP20 (start20 j) * 2 ^ (lowsP20 (start20 j) - 1) =
@@ -16654,7 +16752,10 @@ private theorem nextFlag20_boundNear (j : Fin 9) (a : SkywalkNat.State) (sign : 
         show 2 * (2 * 2 ^ (nextSb20 (start20 j) + nextLen20 j)) = 2 ^ (nextSb20 (start20 j) + nextLen20 j + 2) by
           rw [Nat.pow_succ, Nat.pow_succ]; ring]
     congr 1; omega
-  rw [he]; omega
+  have positive : ∀ k : Fin 9, 1 ≤ (smallM20 k).length := by decide
+  apply near_one_bit_less _ (2 ^ (nextSb20 (start20 j) + nextLen20 j)) _ _ (positive j)
+  · rw [hlen,he]; omega
+  · omega
 
 private theorem clearFlag20_digits (j : Fin 9) :
     PortalAnd.digits 1558 (clearFlagPairs20 j) = 1558 :: (b0P20 (start20 j) - 1) :: smallM20 j := by
@@ -17068,21 +17169,15 @@ theorem beforeStore20_result (j : Fin 9) (s : State) (m : List Bool) (z : Skywal
       dsimp only [b1, writeBit]; rw [Function.update_of_ne (by decide : (1556 : Wire) ≠ 1557)]
     have h57 : b1 1557 = nf := by dsimp only [b1, writeBit]; rw [Function.update_self]
     simp only [run, h58, Bool.false_xor, h56, h57, hside, b2]
-  have hst3 (mm : List Bool) : run (latch true none 1556 1558 (clearFlagPairs20 j)) mm ⟨u.phase, b2⟩ =
+  have hst3 (mm : List Bool) : run (latch true none 1556 1558 (shortPairs20 j)) mm ⟨u.phase, b2⟩ =
       ⟨u.phase, writeBit b2 1556 false⟩ := by
     have hb2_keep (q : Wire) (h7 : q ≠ 1557) (h8 : q ≠ 1558) : b2 q = u.basis q := by
       simp only [b2, b1, writeBit, Function.update_of_ne h8, Function.update_of_ne h7]
     have hclean2 : ∀ p ∈ clearFlagPairs20 j, b2 p.2 = false := fun p hp => by
       have hr := (pending20_targets_clean_range j).2 p hp
       exact (hb2_keep _ (by unfold Wire at *; omega) (by unfold Wire at *; omega)).trans (hclean_clr p hp)
-    have hr := run_latch true none 1556 1558 (clearFlagPairs20 j) (clearFlag20_layout j) (by simp) ⟨u.phase, b2⟩ mm hclean2
-    simp only [active, Option.elim_none, Bool.true_and] at hr
-    rw [hr, clearFlag20_digits j]
     have htwo : 2 * 2 ^ sbP20 (start20 j) = 2 ^ (sbP20 (start20 j) + 1) := by rw [Nat.pow_succ, Nat.mul_comm]
     have hlen : (smallM20 j).length = lowsP20 (start20 j) - 1 := by simp [smallM20]
-    have hwidth : 2 ^ sbP20 (start20 j) ≤ (2 * 2 ^ sbP20 (start20 j)) * 2 ^ (smallM20 j).length := by
-      have p1 : 1 ≤ 2 ^ (smallM20 j).length := Nat.one_le_two_pow
-      have p2 := Nat.mul_le_mul_left (2 * 2 ^ sbP20 (start20 j)) p1; omega
     have hbot : b2 (b0P20 (start20 j) - 1) = decide (2 ^ sbP20 (start20 j) ≤ mag % (2 * 2 ^ sbP20 (start20 j))) := by
       rw [hb2_keep _ nb.1 nb.2, hu_keep _ nb.1 nb.2, fB, cB,
         LeaveCompanion.thresholdBit _ _ (Nat.two_pow_pos _)]
@@ -17095,7 +17190,7 @@ theorem beforeStore20_result (j : Fin 9) (s : State) (m : List Bool) (z : Skywal
       rw [hreg, hsmM_val, htwo, hlen]
     have h57b : b2 1557 = nf := by
       simp only [b2, b1, writeBit, Function.update_of_ne (by decide : (1557 : Wire) ≠ 1558), Function.update_self]
-    have hnear : b2 1557 = false → mag < (2 * 2 ^ sbP20 (start20 j)) * 2 ^ (smallM20 j).length := fun hf0 => by
+    have hnear : b2 1557 = false → mag < (2 * 2 ^ sbP20 (start20 j)) * 2 ^ ((smallM20 j).length-1) := fun hf0 => by
       have : nf = false := h57b ▸ hf0
       exact nextFlag20_boundNear j a sign.toNat (by simpa [nf] using this)
     have h56b : b2 1556 = decide (2 ^ sbP20 (start20 j) ≤ mag) :=
@@ -17103,10 +17198,10 @@ theorem beforeStore20_result (j : Fin 9) (s : State) (m : List Bool) (z : Skywal
     have h58b : b2 1558 = (b2 1556 && b2 1557) := by
       have h1 : b2 1558 = nside := by simp only [b2, writeBit, Function.update_self]
       rw [h1, h56b, h57b, ← h1556_u, hside]
-    simp only [List.any_cons, LeaveCompanion.any_positive, hup, hbot, h58b, h56b]
-    rw [LeaveCompanion.lower_nonzero (2 ^ sbP20 (start20 j)) _ mag (Nat.two_pow_pos _),
-      LeaveCompanion.retain_flag (2 ^ sbP20 (start20 j)) _ mag _ hwidth (by rwa [h57b] at hnear)]
-    simp only [Bool.xor_self]
+    have positive : ∀ k : Fin 9, 1 ≤ (smallM20 k).length := by decide
+    exact shorten_flag_latch 1556 1558 1557 (b0P20 (start20 j)-1) (smallM20 j) (clearFlagPairs20 j)
+      ⟨u.phase,b2⟩ mm (2^sbP20 (start20 j)) mag (Nat.two_pow_pos _) (positive j)
+      (clearFlag20_layout j) (clearFlag20_digits j) hclean2 hnear h56b h58b hbot hup
   have hout_eq : run (beforeStore20 j) m s = ⟨u.phase, writeBit b2 1556 false⟩ := by
     rw [beforeStore20, run_append, run_take, run_append, run_take, hu_run,
       storeMapped20_parts j, run_append, run_take, hst1, run_append, run_take, hst2, hst3]
@@ -17779,7 +17874,7 @@ private theorem leaveAfter20_inBox (j : Fin 9) : inBox20 j (leaveAfter20 (start2
     have hseq1 : ∀ k, 0 ≤ k → k < 0 + (liveW20 (start20 j) - lowsP20 (start20 j) + 1) →
         leaveBox20 (start20 j) (if k = 0 then a0P20 (start20 j) + lowsP20 (start20 j) - 2 else bankW20 (start20 j) (lowsP20 (start20 j) + k - 1)) := by
       intro k _ hk; split_ifs; exact htopA; exact bankW20_inBox j _ (by omega)
-    have hseq2 : ∀ q ∈ (List.range (lowsP20 (start20 j))).map (b0P20 (start20 j) - 1 + ·), leaveBox20 (start20 j) q := by
+    have hseq2 : ∀ q ∈ (List.range (lowsP20 (start20 j)-1)).map (b0P20 (start20 j) - 1 + ·), leaveBox20 (start20 j) q := by
       intro q hq; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq; rw [List.mem_range] at hi
       unfold leaveBox20; right; right; left; unfold Wire; omega
     have h56 : leaveBox20 (start20 j) 1556 := by unfold leaveBox20; right; right; right; left; decide
@@ -17790,7 +17885,7 @@ private theorem leaveAfter20_inBox (j : Fin 9) : inBox20 j (leaveAfter20 (start2
       rcases hg' with rfl | rfl <;> simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq
       · rcases hq with rfl | rfl; exact hst _ (le_refl _); exact h57
       · exact hq ▸ h57
-    have ht2 : inBox20 j [.cx (1558 + lowsP20 (start20 j)) 1556, .x 1556] := fun g hg' q hq => by
+    have ht2 : inBox20 j [.cx (1558 + (lowsP20 (start20 j)-1)) 1556, .x 1556] := fun g hg' q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg'
       rcases hg' with rfl | rfl <;> simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq
       · rcases hq with rfl | rfl
@@ -19794,7 +19889,7 @@ private theorem leaveAfter20_bound (j : Fin 9) : AllW (leaveBound20 (start20 j))
     have hhi : ∀ r ∈ (List.range (liveW20 (start20 j) - lowsP20 (start20 j))).map (fun i => bankW20 (start20 j) (lowsP20 (start20 j) + i)),
         leaveBound20 (start20 j) r := by
       intro r hr; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hr; rw [List.mem_range] at hi; exact hbk _ (by omega)
-    have hseq2 : ∀ r ∈ (List.range (lowsP20 (start20 j))).map (b0P20 (start20 j) - 1 + ·), leaveBound20 (start20 j) r := by
+    have hseq2 : ∀ r ∈ (List.range (lowsP20 (start20 j)-1)).map (b0P20 (start20 j) - 1 + ·), leaveBound20 (start20 j) r := by
       intro r hr; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hr; rw [List.mem_range] at hi; unfold leaveBound20 Wire; omega
     have hsw : ∀ i, i ≤ liveW20 (start20 j) - lowsP20 (start20 j) + 1 → leaveBound20 (start20 j) (storeWire20 (start20 j) i) := by
       intro i hi; unfold leaveBound20 storeWire20; dsimp only; split_ifs <;> (unfold Wire; omega)
@@ -21193,9 +21288,9 @@ private def storePart1_20 (s : Nat) : List Gate :=
 
 private def storePart2_20 (s : Nat) : List Gate :=
   let L := lowsP20 s
-  let seq2 := (List.range L).map (b0P20 s - 1 + ·)
+  let seq2 := (List.range (L-1)).map (b0P20 s - 1 + ·)
   [.x 1558] ++ xsG seq2 ++
-  chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + L) 1556, .x 1556] 0 L ++
+  chainG (1558 + ·) (b0P20 s - 1 + ·) [.cx (1558 + (L-1)) 1556, .x 1556] 0 (L-1) ++
   xsG seq2.reverse ++ [.x 1558]
 
 private def storeAllow1_20 (s : Nat) : Nat :=
