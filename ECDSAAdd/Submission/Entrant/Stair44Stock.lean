@@ -14127,49 +14127,7 @@ def postDense (g s : Bool) (uv : Nat×Nat) : Nat := bitRun forwardDense (preDens
 def checkInput (uv : Nat×Nat) : Bool :=
   [false,true].all fun g=>[false,true].all fun s=>decide (postDense g s uv∈rowInputs)
 
-section
-open CodecBitSliceVerify
-set_option exponentiation.threshold 512
-private def initialColumns : Cols := [397858589127829313724305798517456672080364920637878173952371181514527597610026700426444, 380306004313366255765825006974663458885700681034939865265471302756765152317833126661315, 154808789543902456701778350748341043871959588188648593157678609499097527099310185429168, 138898706368078103941149405263051657305470239418254213368601298593483297370286259223424, 138836071120165973958542576547850903918753960203995575252492246950265844999032932108416, 138836070164398771157893275059517052964483366104972284511098439634434192614520378656896, 358487166245387871220338037205833355572412142033088146321667783343874477662088936851584, 265239059418552875816203865678304448053576613758585449301580787676351731740017800284288, 0, 0, 117017232096420386389557241172157381214755469762407852174992674136394344694700248871740, 61923515817560982679569772532881824848292861510334052724697269190354384850713586098912, 58036347590857809163085944398183352286375641892780348050791288202827239898065691405856, 58021044481322488157744346595549014935140988994535246085637776971004536684958580613664, 58021044247808441640432505409577538122799845924932869721178304545819526531336221368864, 439302192161978200570587652529691742088736266537657150405743179589178916623288996340256, 66309764854638218954050966419576112013394153439646362325395196919087932935004450071072, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-private def finalColumns : Cols := [397858589127829313724305798517456672080364920637878173952371181514527597610026700426444, 29254308024105096597467985904655355324440399338230514478166464596270742153655956275215, 1935109869298780708671315172538272082535317521215429968494480509585752866888451420415, 7588434569934338551601417763106674634997760526986094874863836565954168127619076095, 115792089210356248756420345235948791723818631960482241809990487184577513127935, 25380260785616428785455141708600598732300052718150654916979805126655, 497323236409786642130001987361204411315001009088747118708163924175008842095553570406400, 0, 0, 0, 25380260785616428785455141708600598732300052718150654916979805126655, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 334511179307167060498348290471013714971590560, 5613622435415353886880815828200389943195749255742720, 6170647974737765047714591261790336194408219451150122070279802880, 18497802855953582397393443575426878007432515831840693519795119718400, 331548824273191094752808096280291537207386767528024334948419863066237903305118570250240, 0, 0, 0, 0, 0]
-
-private def columnWord (cols : Cols) (r : Fin 288) : Nat :=
-  packBits (cols.map (fun x => x.testBit r.val))
-
-private theorem columnWord_rel (cols : Cols) (r : Fin 288) : Rel cols (columnWord cols r) r.val := by
-  intro q
-  rw [columnWord, pack_testBit, List.getElem?_map]
-  unfold CodecBitSliceVerify.get
-  cases h : cols[q]? <;> simp
-
-private theorem initial_eq : (TerminalFiveDomain.pairs.flatMap fun uv =>
-    [preDense false false uv, preDense false true uv, preDense true false uv, preDense true true uv]) =
-    (List.finRange 288).map (columnWord initialColumns) := by decide +kernel
-
-private theorem final_mem : ∀ r : Fin 288, columnWord finalColumns r ∈ rowInputs := by decide +kernel
-
-private theorem dense_checked : CodecBitSliceVerify.eval (2^288-1) forwardDense initialColumns =
-    (true, finalColumns) := by decide +kernel
-
-private theorem dense_targets : ∀ i ∈ forwardDense, target i < initialColumns.length := by decide +kernel
-theorem inputTable : TerminalFiveDomain.pairs.all checkInput=true := by
-
-  simp only [List.all_eq_true, checkInput, decide_eq_true_eq]
-  intro uv member g _ s _
-  have covered : preDense g s uv ∈ (List.finRange 288).map (columnWord initialColumns) := by
-    rw [←initial_eq]
-    apply List.mem_flatMap.mpr
-    exact ⟨uv, member, by cases g <;> cases s <;> simp⟩
-  obtain ⟨r, _, eq⟩ := List.mem_map.mp covered
-  have step := CodecBitSliceVerify.eval_sound (2^288-1) r.val
-    (by rw [Nat.testBit_two_pow_sub_one]; exact decide_eq_true r.isLt)
-    forwardDense initialColumns _ dense_targets
-    (columnWord_rel _ r) (congrArg Prod.fst dense_checked)
-  have output := LegalColumnProof.row_equal step.2 (columnWord_rel finalColumns r)
-    (congrArg Prod.snd dense_checked)
-  rw [postDense, ←eq, output]
-  exact final_mem r
-end
+theorem inputTable : TerminalFiveDomain.pairs.all checkInput=true := by decide +kernel
 
 end ECDSAAdd.Entrant.TerminalFiveBridge
 
@@ -24704,107 +24662,13 @@ def oout (xS : Bool) (v : Nat) : Nat :=
   ofBits [v.testBit 0, v.testBit 1, v.testBit 2, v.testBit 3, v.testBit 4, !xS,
     false, false, false, false, false, false, false]
 
-theorem ofBits_testBit : ∀ (bs : List Bool) (q : Nat), (ofBits bs).testBit q = bs.getD q false
-  | [], q => by simp [ofBits]
-  | b :: bs, q => by
-    have hb : b.toNat ≤ 1 := by cases b <;> simp
-    cases q with
-    | zero =>
-      rw [Nat.testBit_zero]
-      cases b <;> simp [ofBits, Nat.add_mul_mod_self_left]
-    | succ q =>
-      rw [Nat.testBit_succ, show ofBits (b :: bs) / 2 = ofBits bs by simp only [ofBits]; omega]
-      simpa using ofBits_testBit bs q
-
-section
-open CodecBitSliceVerify (Cols Rel target)
-private def side (x : Nat) (b : Bool) : Nat :=
-  if b then x else CertificateBits.mask 5 ^^^ x
-
-private theorem side_bit (x : Nat) (b : Bool) (v : Fin 32) :
-    (side x b).testBit v.val = (x.testBit v.val == b) := by
-  cases b <;> simp [side, Nat.testBit_xor, CertificateBits.mask_bit 5 _ v.isLt]
-
-private theorem opposite_side (a b : Bool) : (a == !b) = (a != b) := by
-  cases a <;> cases b <;> rfl
-
-private def patterns (role a s b : Bool) : Nat × Nat × Nat :=
-  let h := CertificateBits.input 5 0
-  let x := CertificateBits.input 5 1
-  let y := CertificateBits.input 5 2
-  (h &&& side x (if role then a else !a) &&& side y s,
-   h &&& side x a &&& side y (if role then !s else !b),
-   h &&& side x (if role then !a else a) &&& side y b)
-
-private def sourceColumns (role a s b yc y2c e : Bool) : Cols :=
-  let (pS,pA,pB) := patterns role a s b
-  let y := CertificateBits.input 5 3
-  let c := CertificateBits.input 5 4
-  [CertificateBits.input 5 0, CertificateBits.input 5 1, CertificateBits.input 5 2, y,c,0,
-   c &&& pS, c &&& pA &&& side y yc, c &&& pB &&& side y y2c,
-   if e then c &&& pA &&& side y (!yc) else 0, 0,0,0]
-
-private def resultColumns (role a s b : Bool) : Cols :=
-  [CertificateBits.input 5 0, CertificateBits.input 5 1, CertificateBits.input 5 2,
-   CertificateBits.input 5 3, CertificateBits.input 5 4,
-   CertificateBits.mask 5 ^^^ (patterns role a s b).1, 0,0,0,0,0,0,0]
-
-private def rowWord (cols : Cols) (v : Fin 32) : Nat :=
-  ofBits (cols.map (fun x => x.testBit v.val))
-
-private theorem rowWord_rel (cols : Cols) (v : Fin 32) : Rel cols (rowWord cols v) v.val := by
-  intro q
-  rw [rowWord, ofBits_testBit]
-  change (((cols.map (fun x => x.testBit v.val))[q]?).getD false) = ((cols[q]?).getD 0).testBit v.val
-  rw [List.getElem?_map]
-  cases h : cols[q]? <;> simp
-
-private def tailProgram (role a s b yc y2c e : Bool) : Program :=
-  if role then otail1 a s b yc y2c e else otail2 a s b yc y2c e
-
-private theorem tailColumns_checked : ∀ role a s b yc y2c e : Bool,
-    let p := tailProgram role a s b yc y2c e
-    let cols := sourceColumns role a s b yc y2c e
-    p.all (fun i => decide (target i < cols.length)) = true ∧
-      CodecBitSliceVerify.eval (CertificateBits.mask 5) p cols = (true, resultColumns role a s b) := by
-  decide +kernel
-
-private theorem scalar_tail (role a s b yc y2c e : Bool) (v : Fin 32) :
-    let p := tailProgram role a s b yc y2c e
-    let src := rowWord (sourceColumns role a s b yc y2c e) v
-    safe p src = true ∧ bitRun p src = rowWord (resultColumns role a s b) v := by
-  obtain ⟨bound, done⟩ := tailColumns_checked role a s b yc y2c e
-  let cols := sourceColumns role a s b yc y2c e
-  let p := tailProgram role a s b yc y2c e
-  have check := CodecBitSliceVerify.eval_sound (CertificateBits.mask 5) v.val
-    (CertificateBits.mask_bit 5 _ v.isLt) p cols _ (fun i hi =>
-      of_decide_eq_true (List.all_eq_true.mp bound i hi)) (rowWord_rel cols v)
-    (congrArg Prod.fst done)
-  exact ⟨check.1, LegalColumnProof.row_equal check.2 (rowWord_rel _ v) (congrArg Prod.snd done)⟩
-
-private theorem rowPair (role a s b yc y2c e : Bool) (v : Fin 32) :
-    let h := v.val.testBit 0
-    let x := v.val.testBit 1
-    let y := v.val.testBit 2
-    let pS := if role then oxS1 a s h x y else oxS2 a s h x y
-    let pA := if role then oxA1 a s h x y else oxA2 a b h x y
-    let pB := if role then oxB1 a b h x y else oxB2 a b h x y
-    rowWord (sourceColumns role a s b yc y2c e) v = oin pS pA pB yc y2c e v.val ∧
-      rowWord (resultColumns role a s b) v = oout pS v.val := by
-  cases role <;> cases e <;>
-    simp [sourceColumns, resultColumns, patterns, rowWord, oin, oout, oxS1, oxS2, oxA1, oxA2,
-      oxB1, oxB2, side_bit, opposite_side, Nat.testBit_and, Nat.testBit_xor,
-      CertificateBits.input_bit 5 _ _ v.isLt, CertificateBits.mask_bit 5 _ v.isLt]
-
 theorem otail1_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xS := oxS1 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xA := oxA1 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     let xB := oxB1 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     safe (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = true ∧
       bitRun (otail1 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val := by
-  intro a s b y z e v
-  obtain ⟨src, dst⟩ := rowPair true a s b y z e v
-  simpa only [tailProgram, if_true, src, dst] using scalar_tail true a s b y z e v
+  decide +kernel
 
 theorem otail2_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xS := oxS2 a1 s2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
@@ -24812,10 +24676,7 @@ theorem otail2_ok : ∀ a1 s2 b2 yc y2c e : Bool, ∀ v : Fin 32,
     let xB := oxB2 a1 b2 (v.val.testBit 0) (v.val.testBit 1) (v.val.testBit 2)
     safe (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = true ∧
       bitRun (otail2 a1 s2 b2 yc y2c e) (oin xS xA xB yc y2c e v.val) = oout xS v.val := by
-  intro a s b y z e v
-  obtain ⟨src, dst⟩ := rowPair false a s b y z e v
-  simpa only [tailProgram, Bool.false_eq_true, if_false, src, dst, oxA1, oxA2] using scalar_tail false a s b y z e v
-end
+  decide +kernel
 
 theorem predec_counts (b1 s2 yc : Bool) :
     toffoliCount (predec1 b1 s2 yc) = 3 ∧ measurementCount (predec1 b1 s2 yc) = 0 ∧
@@ -25109,6 +24970,20 @@ set_option linter.unusedSimpArgs false
 
 section OutTail
 open Challenge
+
+/-! ### Bits of a little-endian word -/
+
+theorem ofBits_testBit : ∀ (bs : List Bool) (q : Nat), (ofBits bs).testBit q = bs.getD q false
+  | [], q => by simp [ofBits]
+  | b :: bs, q => by
+    have hb : b.toNat ≤ 1 := by cases b <;> simp
+    cases q with
+    | zero =>
+      rw [Nat.testBit_zero]
+      cases b <;> simp [ofBits, Nat.add_mul_mod_self_left]
+    | succ q =>
+      rw [Nat.testBit_succ, show ofBits (b :: bs) / 2 = ofBits bs by simp only [ofBits]; omega]
+      simpa using ofBits_testBit bs q
 
 /-! ### The output tail's match bits and its two roles -/
 
@@ -72885,11 +72760,11 @@ def leaveStoreMapped (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 2; let H := Shadow7.liveW s - L
   let hi := (List.range H).map (fun i => Shadow7.bankW s (L+i))
   let seq := fun i => if i = 0 then top else Shadow7.bankW s (L+i-1)
-  let seq2 := (List.range (L - 1)).map (Shadow7.b0P s - 1 + ·)
+  let seq2 := (List.range L).map (Shadow7.b0P s - 1 + ·)
   [.x 1558, .x top] ++ xsG hi ++
   chainG (Shadow7.storeW s) seq [.cx (Shadow7.storeW s (H+1)) 1557, .x 1557] 0 (H+1) ++
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++
-  xsG seq2 ++ chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+(L-1)) 1556, .x 1556] 0 (L-1) ++
+  xsG seq2 ++ chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+L) 1556, .x 1556] 0 L ++
   xsG seq2.reverse ++ [.x 1558]
 
 def leaveLowClose (s : Nat) : List Gate :=
@@ -76505,15 +76380,15 @@ theorem counts_leaveLowStore (s : Nat) (hL : 2 ≤ lowsP s) :
     b).app (⟨rfl, rfl, rfl, rfl⟩ : Counts [.pop (b0P s - 1) 1557 1558, .cx (a0P s - 1) 1557, .x 1557] 0 0 1 3)).congr
     (by simp) (by first | omega | (simp <;> omega)) (by first | omega | (simp <;> omega)) (by first | omega | (simp <;> omega))
 
-theorem counts_leaveStoreMapped (s : Nat) (hL : lowsP s ≤ liveW s) (hpos : 1 ≤ lowsP s) :
-    Counts (leaveStoreMapped s) 0 (liveW s + 1) (liveW s) (4*liveW s + 9) := by
+theorem counts_leaveStoreMapped (s : Nat) (hL : lowsP s ≤ liveW s) :
+    Counts (leaveStoreMapped s) 0 (liveW s + 2) (liveW s + 1) (4*liveW s + 13) := by
   let L := lowsP s; let top := a0P s + L - 2; let H := liveW s - L
   let hi := (List.range H).map (fun i => bankW s (L+i))
   let seq := fun i => if i = 0 then top else bankW s (L+i-1)
-  let seq2 := (List.range (L - 1)).map (b0P s - 1 + ·)
+  let seq2 := (List.range L).map (b0P s - 1 + ·)
   have c1 := counts_chainG (storeW s) seq (⟨rfl, rfl, rfl, rfl⟩ : Counts [.cx (storeW s (H+1)) 1557, .x 1557] 0 0 0 2) 0 (H+1)
   have c2 := counts_chainG (1558 + ·) (b0P s - 1 + ·)
-    (⟨rfl, rfl, rfl, rfl⟩ : Counts [.cx (1558+(L-1)) 1556, .x 1556] 0 0 0 2) 0 (L-1)
+    (⟨rfl, rfl, rfl, rfl⟩ : Counts [.cx (1558+L) 1556, .x 1556] 0 0 0 2) 0 L
   have x1 := counts_xsG hi
   have x2 := counts_xsG hi.reverse
   have x3 := counts_xsG seq2
@@ -76542,14 +76417,14 @@ theorem counts_glueG3 (s : Nat) : Counts (glueG3 s) 1 0 0 3 := ⟨rfl, rfl, rfl,
 /-- The whole leave, for every block start `s` with a sane geometry. -/
 theorem counts_leaveOps (s : Nat) (hw : 4 ≤ wpP s) (hL1 : 2 ≤ lowsP s) (hL2 : lowsP s ≤ 17)
     (hn : 3 ≤ wpP (s+15)) (hLW : lowsP s ≤ liveW s) :
-    Counts (leaveOps s) (4*wpP s + lowsP s + 79) (wpP s + liveW s + 2*lowsP s + 57) (wpP s + liveW s + lowsP s + 89)
-      (17*wpP s + 4*liveW s + 9*lowsP s + 628 + 3*wpP (s+15)) := by
+    Counts (leaveOps s) (4*wpP s + lowsP s + 79) (wpP s + liveW s + 2*lowsP s + 58) (wpP s + liveW s + lowsP s + 90)
+      (17*wpP s + 4*liveW s + 9*lowsP s + 632 + 3*wpP (s+15)) := by
   have := (((((((((((((((((Shadow7.counts_fix0P s (sbP s)).app (counts_leaveFix1 s (sbP s))).app
     (Shadow7.counts_fix2P s (sbP s))).app (counts_leaveFix3 s (sbP s))).app (counts_leaveFix4 s (sbP s))).app
     (Shadow7.counts_fix5P s (sbP s))).app (counts_leaveAdjust s (by omega))).app (counts_leaveBarrel s)).app
     (Shadow7.counts_fix8P s (sbP s))).app (counts_glueG3 s)).app (counts_leaveJoin s hL2)).app (Shadow7.counts_fix10P s (sbP s))).app
     (counts_leaveFix11 s (sbP s))).app (counts_leaveFix12 s (sbP s))).app (counts_leaveLowStore s hL1)).app
-    (counts_leaveStoreMapped s hLW (by omega))).app (counts_leaveLowClose s)).app (counts_leaveClose s hn)
+    (counts_leaveStoreMapped s hLW)).app (counts_leaveLowClose s)).app (counts_leaveClose s hn)
   exact this.congr (by omega) (by omega) (by omega) (by omega)
 
 /-- The portal at tick `t` (threshold 2, store from bit 2). Same totals as the threshold-3 portal:
@@ -76664,24 +76539,24 @@ theorem counts_leaveJoinMove (s : Nat) (hL : lowsP s ≤ 17) : Counts (leaveJoin
 
 theorem counts_leaveMoveOps (s : Nat) (hw : 4 ≤ wpP s) (hL1 : 2 ≤ lowsP s) (hL2 : lowsP s ≤ 17)
     (hn : 3 ≤ wpP (s+15)) (hLW : lowsP s ≤ liveW s) :
-    Counts (leaveMoveOps s) (4*wpP s + lowsP s + 55) (wpP s + liveW s + 2*lowsP s + 57) (wpP s + liveW s + lowsP s + 89)
-      (17*wpP s + 4*liveW s + 9*lowsP s + 636 + 3*wpP (s+15)) := by
+    Counts (leaveMoveOps s) (4*wpP s + lowsP s + 55) (wpP s + liveW s + 2*lowsP s + 58) (wpP s + liveW s + lowsP s + 90)
+      (17*wpP s + 4*liveW s + 9*lowsP s + 640 + 3*wpP (s+15)) := by
   have := (((((((((((((((((Shadow7.counts_fix0P s (sbP s)).app (counts_leaveFix1 s (sbP s))).app
     (Shadow7.counts_fix2P s (sbP s))).app (counts_leaveFix3 s (sbP s))).app (counts_leaveFix4 s (sbP s))).app
     (counts_leaveFix5Move s (sbP s))).app (counts_leaveAdjust s (by omega))).app (counts_leaveBarrel s)).app
     (Shadow7.counts_fix8P s (sbP s))).app (counts_glueG3 s)).app (counts_leaveJoinMove s hL2)).app (Shadow7.counts_fix10P s (sbP s))).app
     (counts_leaveFix11 s (sbP s))).app (counts_leaveFix12 s (sbP s))).app (counts_leaveLowStore s hL1)).app
-    (counts_leaveStoreMapped s hLW (by omega))).app (counts_leaveLowClose s)).app (counts_leaveClose s hn)
+    (counts_leaveStoreMapped s hLW)).app (counts_leaveLowClose s)).app (counts_leaveClose s hn)
   have base := counts_leaveOps s hw hL1 hL2 hn hLW
   exact this.congr (by omega) (by omega) (by omega) (by omega)
 
 theorem leaveMove_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
-    toffoliCount (leaveMoveP j) = 5*wpP (start j) + liveW (start j) + 3*lowsP (start j) + 112 ∧
-    toffoliCount (leaveMoveInvP j) = 5*wpP (start j) + liveW (start j) + 2*lowsP (start j) + 144 ∧
-    measurementCount (leaveMoveP j) = wpP (start j) + liveW (start j) + lowsP (start j) + 89 ∧
-    measurementCount (leaveMoveInvP j) = wpP (start j) + liveW (start j) + 2*lowsP (start j) + 57 ∧
-    gateSlots (leaveMoveP j) = 18*wpP (start j) + 5*liveW (start j) + 10*lowsP (start j) + 725 + 3*wpP (start j + 15) ∧
-    gateSlots (leaveMoveInvP j) = 18*wpP (start j) + 5*liveW (start j) + 11*lowsP (start j) + 693 + 3*wpP (start j + 15) := by
+    toffoliCount (leaveMoveP j) = 5*wpP (start j) + liveW (start j) + 3*lowsP (start j) + 113 ∧
+    toffoliCount (leaveMoveInvP j) = 5*wpP (start j) + liveW (start j) + 2*lowsP (start j) + 145 ∧
+    measurementCount (leaveMoveP j) = wpP (start j) + liveW (start j) + lowsP (start j) + 90 ∧
+    measurementCount (leaveMoveInvP j) = wpP (start j) + liveW (start j) + 2*lowsP (start j) + 58 ∧
+    gateSlots (leaveMoveP j) = 18*wpP (start j) + 5*liveW (start j) + 10*lowsP (start j) + 730 + 3*wpP (start j + 15) ∧
+    gateSlots (leaveMoveInvP j) = 18*wpP (start j) + 5*liveW (start j) + 11*lowsP (start j) + 698 + 3*wpP (start j + 15) := by
   obtain ⟨g1,g2,g3,g4,g5⟩ := window_geom j h0 (by omega)
   obtain ⟨t1,t2,m1,m2,s1,s2⟩ := (counts_leaveMoveOps (start j) (by omega) (by omega) (by omega) (by omega) g5).programs
   refine ⟨?_,?_,?_,?_,?_,?_⟩
@@ -77328,19 +77203,19 @@ theorem storeMapped_ok {s : Nat} (h1 : 45 ≤ s) (h2 : s ≤ 405) :
     exact (bank_out _ (by ((try unfold Wire at *); omega)) (by ((try unfold Wire at *); omega))).1
   have hir_out : ∀ y ∈ ((List.range (liveW s - lowsP s)).map (fun i => bankW s (lowsP s + i))).reverse, ¬ midZ s y :=
     fun y hy => hi_out y (List.mem_reverse.mp hy)
-  have s2_out : ∀ y ∈ (List.range (lowsP s - 1)).map (b0P s - 1 + ·), ¬ midZ s y := by
+  have s2_out : ∀ y ∈ (List.range (lowsP s)).map (b0P s - 1 + ·), ¬ midZ s y := by
     intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi
     unfold midZ; ((try unfold Wire at *); omega)
-  have s2r_out : ∀ y ∈ ((List.range (lowsP s - 1)).map (b0P s - 1 + ·)).reverse, ¬ midZ s y :=
+  have s2r_out : ∀ y ∈ ((List.range (lowsP s)).map (b0P s - 1 + ·)).reverse, ¬ midZ s y :=
     fun y hy => s2_out y (List.mem_reverse.mp hy)
   have st_in : ∀ k, 0 < k → k ≤ 0 + (liveW s - lowsP s + 1) → midZ s (storeW s k) := by
     intro k a b; have sc := storeW_cases h1 h2 k; unfold midZ; ((try unfold Wire at *); omega)
   have st_inj : ∀ k k', 0 < k → k ≤ 0 + (liveW s - lowsP s + 1) → 0 < k' → k' ≤ 0 + (liveW s - lowsP s + 1) →
       storeW s k = storeW s k' → k = k' := by
     intro k k' _ _ _ _ e; have a := storeW_cases h1 h2 k; have b := storeW_cases h1 h2 k'; ((try unfold Wire at *); omega)
-  have c2_in : ∀ k, 0 < k → k ≤ 0 + (lowsP s - 1) → midZ s (1558 + k) := by
+  have c2_in : ∀ k, 0 < k → k ≤ 0 + lowsP s → midZ s (1558 + k) := by
     intro k a b; unfold midZ; ((try unfold Wire at *); omega)
-  have c2_inj : ∀ k k', 0 < k → k ≤ 0 + (lowsP s - 1) → 0 < k' → k' ≤ 0 + (lowsP s - 1) →
+  have c2_inj : ∀ k k', 0 < k → k ≤ 0 + lowsP s → 0 < k' → k' ≤ 0 + lowsP s →
       (1558 + k : Wire) = 1558 + k' → k = k' := by
     intro k k' _ _ _ _ e; ((try unfold Wire at *); omega)
   have top_out : ¬ midZ s (a0P s + lowsP s - 2) := by unfold midZ; ((try unfold Wire at *); omega)
@@ -77356,8 +77231,8 @@ theorem storeMapped_ok {s : Nat} (h1 : 45 ≤ s) (h2 : s ≤ 405) :
       [.cx (storeW s (liveW s - lowsP s + 1)) 1557, .x 1557] 0 (liveW s - lowsP s + 1) (midZ s) st_in st_inj
       (safe_lit (fun g hg => by simp at hg; rcases hg with rfl|rfl <;> rfl)
         (fun g hg => by simp at hg; rcases hg with rfl|rfl <;> simp only [target, chainZ] <;> intro h <;> unfold midZ at h <;> ((try unfold Wire at *); omega)))
-    have ch2 := safe_chainG (fun k => (1558 + k : Wire)) (fun k => b0P s - 1 + k) [.cx (1558 + (lowsP s - 1)) 1556, .x 1556]
-      0 (lowsP s - 1) (midZ s) c2_in c2_inj
+    have ch2 := safe_chainG (fun k => (1558 + k : Wire)) (fun k => b0P s - 1 + k) [.cx (1558 + lowsP s) 1556, .x 1556]
+      0 (lowsP s) (midZ s) c2_in c2_inj
       (safe_lit (fun g hg => by simp at hg; rcases hg with rfl|rfl <;> rfl)
         (fun g hg => by simp at hg; rcases hg with rfl|rfl <;> simp only [target, chainZ] <;> intro h <;> unfold midZ at h <;> ((try unfold Wire at *); omega)))
     have x58 : Safe [GateMirror.Gate.x 1558] (midZ s) (midZ s) :=
@@ -78086,7 +77961,7 @@ theorem leaveOps_box (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
       fun gs h => allW_iff_flat.mpr h
     have hi : ∀ y ∈ (List.range (liveW s - lowsP s)).map (fun i => bankW s (lowsP s + i)), leaveBox s y := by
       intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bank _ (by ((try unfold Wire at *); omega))
-    have s2 : ∀ y ∈ (List.range (lowsP s - 1)).map (b0P s - 1 + ·), leaveBox s y := by
+    have s2 : ∀ y ∈ (List.range (lowsP s)).map (b0P s - 1 + ·), leaveBox s y := by
       intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bside i (by ((try unfold Wire at *); omega))
     refine allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append
       ?_ (allW_xsG _ hi)) ?_) (allW_xsG _ (fun y h => hi y (List.mem_reverse.mp h)))) ?_) (allW_xsG _ s2)) ?_)
@@ -79006,7 +78881,7 @@ theorem leaveOps_box2 (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
       fun gs h => allW_iff_flat2.mpr h
     have hi : ∀ y ∈ (List.range (Shadow7.liveW s - Shadow7.lowsP s)).map (fun i => Shadow7.bankW s (Shadow7.lowsP s + i)), Shadow7.leaveBox2 s y := by
       intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bank _ (by ((try unfold Wire at *); omega))
-    have s2 : ∀ y ∈ (List.range (Shadow7.lowsP s - 1)).map (Shadow7.b0P s - 1 + ·), Shadow7.leaveBox2 s y := by
+    have s2 : ∀ y ∈ (List.range (Shadow7.lowsP s)).map (Shadow7.b0P s - 1 + ·), Shadow7.leaveBox2 s y := by
       intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bside i (by ((try unfold Wire at *); omega))
     refine allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append
       ?_ (allW_xsG _ hi)) ?_) (allW_xsG _ (fun y h => hi y (List.mem_reverse.mp h)))) ?_) (allW_xsG _ s2)) ?_)
@@ -79170,7 +79045,7 @@ theorem gadgets_free (s : Nat) (w1 : 45 ≤ s) (w2 : s ≤ 405) :
       fun gs h => allW_iff_flat.mpr h
     have hi : ∀ y ∈ (List.range (Shadow7.liveW s - Shadow7.lowsP s)).map (fun i => Shadow7.bankW s (Shadow7.lowsP s + i)), hfree s y := by
       intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bank _ (by ((try unfold Wire at *); omega))
-    have s2 : ∀ y ∈ (List.range (Shadow7.lowsP s - 1)).map (Shadow7.b0P s - 1 + ·), hfree s y := by
+    have s2 : ∀ y ∈ (List.range (Shadow7.lowsP s)).map (Shadow7.b0P s - 1 + ·), hfree s y := by
       intro y hy; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy; rw [List.mem_range] at hi; exact bside i (by ((try unfold Wire at *); omega))
     refine allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append (allW_append
       ?_ (allW_xsG _ hi)) ?_) (allW_xsG _ (fun y h => hi y (List.mem_reverse.mp h)))) ?_) (allW_xsG _ s2)) ?_)
