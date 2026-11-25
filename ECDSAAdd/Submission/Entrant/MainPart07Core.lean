@@ -1,3 +1,4 @@
+import Mathlib.Data.Nat.Pairing
 import ECDSAAdd.Submission.Entrant.DeadCarry
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MappedSignedSquare
@@ -13714,6 +13715,36 @@ pool-B wires at stage 506; earlier ticks already use them. -/
 
 set_option maxRecDepth 30000
 set_option maxHeartbeats 0
+
+namespace ECDSAAdd.Entrant.CoverageBits
+abbrev Row := Bool × Bool × Nat × Nat
+def index (r : Row) : Nat := 4 * Nat.pair r.2.2.1 r.2.2.2 + 2 * r.1.toNat + r.2.1.toNat
+
+private theorem index_inj : Function.Injective index := by
+  rintro ⟨a,b,u,v⟩ ⟨c,d,w,z⟩ h
+  cases a <;> cases b <;> cases c <;> cases d <;> simp [index] at h ⊢ <;> omega
+
+def members : List Row → Nat
+  | [] => 0
+  | x :: xs => 2 ^ index x ||| members xs
+
+theorem member_of_bit (rows : List Row) (r : Row)
+    (h : (members rows).testBit (index r) = true) : r ∈ rows := by
+  induction rows with
+  | nil => simp [members] at h
+  | cons x xs ih =>
+    simp only [members, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true,
+      decide_eq_true_eq] at h
+    rcases h with h | h
+    · exact List.mem_cons.mpr (Or.inl (index_inj h).symm)
+    · exact List.mem_cons_of_mem _ (ih h)
+
+theorem cover {cheap hit good target : Bool}
+    (h : (!cheap || hit || !good) = true) (lookup : hit = true → target = true) :
+    (!(cheap && good) || target) = true := by
+  cases cheap <;> cases hit <;> cases good <;> simp_all
+end ECDSAAdd.Entrant.CoverageBits
+
 namespace ECDSAAdd.Entrant.Five506
 open Arithmetic MappedCompressed Secp256k1 History5
 
@@ -14533,22 +14564,6 @@ def enc (r : Bool × Bool × Nat × Nat) : Nat := encN_t8 (pre506 r.1 r.2.1 r.2.
 
 def checkRow (r : Bool × Bool × Nat × Nat) : Bool := agree508 cand ref2 (enc r)
 
-theorem table0 : rows0.all checkRow = true := by decide +kernel
-theorem table1 : rows1.all checkRow = true := by decide +kernel
-theorem table2 : rows2.all checkRow = true := by decide +kernel
-theorem table3 : rows3.all checkRow = true := by decide +kernel
-theorem table4 : rows4.all checkRow = true := by decide +kernel
-theorem table5 : rows5.all checkRow = true := by decide +kernel
-theorem table6 : rows6.all checkRow = true := by decide +kernel
-theorem table7 : rows7.all checkRow = true := by decide +kernel
-theorem table8 : rows8.all checkRow = true := by decide +kernel
-theorem table9 : rows9.all checkRow = true := by decide +kernel
-theorem table10 : rows10.all checkRow = true := by decide +kernel
-theorem table11 : rows11.all checkRow = true := by decide +kernel
-
-theorem table : rows.all checkRow = true := by
-  simp only [rows, List.all_append, table0, table1, table2, table3, table4, table5, table6, table7, table8, table9, table10, table11, Bool.and_self]
-
 theorem tick_counts : toffoliCount tick506 = 10 ∧ measurementCount tick506 = 6 ∧
     Challenge.gateSlots tick506 = 108 := by decide +kernel
 
@@ -14637,19 +14652,134 @@ theorem pre_supp (g s : Bool) (u v : Nat) : ∀ q, pre506 g s u v q = true → q
   simp only [sites,List.mem_cons,List.not_mem_nil,or_false,not_or] at hn
   simp_all [pre506]
 
+namespace Packed
+open CodecBitSliceVerify MeasuredCodec5
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySimpa false
+
+private abbrev Row := Bool × Bool × Nat × Nat
+private def label (q : Nat) : Wire := (sites[q]?).getD 0
+private def candidate : Program := renameProgram (fun q => sites.idxOf q) cand
+private def reference : Program := renameProgram (fun q => sites.idxOf q) ref2
+private def rowAt (r : Fin 288) : Row := (rows[r.val]?).getD (false,false,0,0)
+private def input (r : Row) (q : Wire) : Bool := pre506 r.1 r.2.1 r.2.2.1 r.2.2.2 (label q)
+private def rowInput (r : Fin 288) : Nat := packBits ((List.range 37).map (input (rowAt r)))
+private def inputColumns : Cols := (List.range 37).map fun q => packBits (rows.map (input · q))
+
+private theorem rows_length : rows.length = 288 := by decide +kernel
+private theorem input_length : inputColumns.length = 37 := by simp [inputColumns]
+
+private theorem input_rel (r : Fin 288) : Rel inputColumns (rowInput r) r.val := by
+  intro q
+  by_cases hq : q < 37
+  · have hr : r.val < rows.length := by rw [rows_length]; exact r.isLt
+    simp only [rowInput, inputColumns, CodecBitSliceVerify.get, pack_testBit, List.getElem?_map,
+      List.getElem?_range hq, List.getElem?_eq_getElem hr, rowAt, Option.map_some, Option.getD_some]
+  · have n : 37 ≤ q := Nat.le_of_not_gt hq
+    have a : ((List.range 37).map (input (rowAt r))).length ≤ q := by simpa using n
+    have b : inputColumns.length ≤ q := by simpa only [input_length] using n
+    simp only [rowInput, CodecBitSliceVerify.get, pack_testBit,
+      List.getElem?_eq_none a, List.getElem?_eq_none b,
+      Option.getD_none, Nat.zero_testBit]
+
+private theorem row_compat (r : Fin 288) (q : Fin 37) :
+    pre506 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2 (label q.val) =
+      bitsOf (rowInput r) q.val := by
+  simp only [bitsOf, rowInput, pack_testBit, List.getElem?_map, List.getElem?_range q.isLt,
+    Option.map_some, Option.getD_some, input]
+
+private theorem packed_checked :
+    (eval (2^288-1) candidate inputColumns).1 = true ∧
+    (eval (2^288-1) reference inputColumns).1 = true ∧
+    (eval (2^288-1) candidate inputColumns).2 = (eval (2^288-1) reference inputColumns).2 := by
+  decide +kernel
+
+private theorem mask_bits (r : Fin 288) : (2^288-1 : Nat).testBit r.val = true := by
+  rw [Nat.testBit_two_pow_sub_one]
+  exact decide_eq_true r.isLt
+
+private theorem label_inj : ∀ a ∈ Finset.range 37, ∀ b ∈ Finset.range 37, label a = label b → a = b := by
+  have finite : ∀ a b : Fin 37, label a = label b → a = b := by decide +kernel
+  intro a ha b hb equal
+  exact congrArg Fin.val (finite ⟨a,Finset.mem_range.mp ha⟩ ⟨b,Finset.mem_range.mp hb⟩ equal)
+
+private theorem candidate_remap : renameProgram label candidate = cand := by decide +kernel
+private theorem reference_remap : renameProgram label reference = ref2 := by decide +kernel
+
+theorem candidate_targets : ∀i∈candidate,target i < inputColumns.length := by
+  rw [input_length]
+  decide +kernel
+
+theorem reference_targets : ∀i∈reference,target i < inputColumns.length := by
+  rw [input_length]
+  decide +kernel
+
+attribute [local irreducible] safe bitRun
+
+theorem row_all (r : Fin 288) : safe candidate (rowInput r)=true ∧
+    safe reference (rowInput r)=true ∧ bitRun candidate (rowInput r)=bitRun reference (rowInput r) := by
+  have hp:=eval_sound (2^288-1) r.val (mask_bits r) candidate inputColumns
+    (rowInput r) candidate_targets (input_rel r) packed_checked.1
+  have hq:=eval_sound (2^288-1) r.val (mask_bits r) reference inputColumns
+    (rowInput r) reference_targets (input_rel r) packed_checked.2.1
+  refine ⟨hp.1,hq.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  exact (hp.2 q).trans ((congrArg (fun s : Cols => (get s q).testBit r.val) packed_checked.2.2).trans
+    (hq.2 q).symm)
+
+theorem compact_run (r : Fin 288) (m n : List Bool) (ph : Bool) :
+    run candidate m ⟨ph,bitsOf (rowInput r)⟩ = run reference n ⟨ph,bitsOf (rowInput r)⟩ := by
+  have h:=row_all r
+  rw [run_sim candidate m ph (rowInput r),sim_safe candidate _ h.1 m ph,
+    run_sim reference n ph (rowInput r),sim_safe reference _ h.2.1 n ph,h.2.2]
+
+theorem candidate_support : wires candidate ⊆ Finset.range 37 :=
+  support_of_check candidate 37 (by decide +kernel)
+theorem reference_support : wires reference ⊆ Finset.range 37 :=
+  support_of_check reference 37 (by decide +kernel)
+
+theorem sample_index (r : Fin 288) (m n : List Bool) :
+    run cand m ⟨false,pre506 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2⟩ =
+      run ref2 n ⟨false,pre506 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2⟩ := by
+  let raw : State := ⟨false,pre506 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2⟩
+  let logical : State := ⟨false,bitsOf (rowInput r)⟩
+  have input : ∀q∈Finset.range 37, logical.basis q=raw.basis (label q) := by
+    intro q hq
+    exact (row_compat r ⟨q,Finset.mem_range.mp hq⟩).symm
+  have hc := run_rename_pool label (Finset.range 37) label_inj candidate candidate_support m logical raw rfl input
+  have hr := run_rename_pool label (Finset.range 37) label_inj reference reference_support n logical raw rfl input
+  have same := compact_run r m n false
+  have eq : run (renameProgram label candidate) m raw = run (renameProgram label reference) n raw := by
+    apply State.extensionality
+    · exact hc.1.trans ((congrArg State.phase same).trans hr.1.symm)
+    · funext q
+      by_cases hq : q ∈ (Finset.range 37).image label
+      · obtain ⟨j,hj,rfl⟩ := Finset.mem_image.mp hq
+        exact (hc.2 j hj).trans ((congrArg (fun s : State => s.basis j) same).trans (hr.2 j hj).symm)
+      · exact (run_rename_pool_outside label (Finset.range 37) candidate candidate_support m raw q hq).trans
+          (run_rename_pool_outside label (Finset.range 37) reference reference_support n raw q hq).symm
+  simpa only [candidate_remap,reference_remap,raw] using eq
+
+theorem sample_fast (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (m n : List Bool) :
+    run cand m ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ =
+      run ref2 n ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ := by
+  obtain ⟨i, hi, hir⟩ := List.getElem_of_mem hr
+  let k : Fin 288 := ⟨i,by simpa only [rows_length] using hi⟩
+  have hrow : rowAt k = r := by
+    change (rows[i]?).getD (false,false,0,0) = r
+    simp only [List.getElem?_eq_getElem hi,Option.getD_some,hir]
+  simpa only [hrow] using sample_index k m n
+
+
+
+end Packed
+
 theorem sample (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (m n : List Bool) :
-    run cand m ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ = run ref2 n ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ := by
-  have ht := table
-  rw [List.all_eq_true] at ht
-  have h := ht r hr
-  unfold checkRow agree508 at h
-  rw [tb_enc_t8 (pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) sites (pre_supp _ _ _ _)]
-  change run cand m ⟨false,tbN_t8 (enc r)⟩ = run ref2 n ⟨false,tbN_t8 (enc r)⟩
-  cases hq : phaseClean508 ref2 (enc r) with
-  | none => simp [hq] at h
-  | some v =>
-    simp only [hq,decide_eq_true_eq] at h
-    rw [CompactCertificates.checked_run cand _ v h m,CompactCertificates.checked_run ref2 _ v hq n]
+    run cand m ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ = run ref2 n ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ :=
+  Packed.sample_fast r hr m n
 
 theorem on_site (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (st : State)
     (bits : ∀ q ∈ sites, st.basis q = pre506 r.1 r.2.1 r.2.2.1 r.2.2.2 q) (m n : List Bool) :
@@ -14788,39 +14918,73 @@ def cv (v : Nat) : Bool :=
   (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || decide ((g,s,u,v) ∈ rows)
 
-theorem cv0 : cv 0 = true := by decide +kernel
-theorem cv1 : cv 1 = true := by decide +kernel
-theorem cv2 : cv 2 = true := by decide +kernel
-theorem cv3 : cv 3 = true := by decide +kernel
-theorem cv4 : cv 4 = true := by decide +kernel
-theorem cv5 : cv 5 = true := by decide +kernel
-theorem cv6 : cv 6 = true := by decide +kernel
-theorem cv7 : cv 7 = true := by decide +kernel
-theorem cv8 : cv 8 = true := by decide +kernel
-theorem cv9 : cv 9 = true := by decide +kernel
-theorem cv10 : cv 10 = true := by decide +kernel
-theorem cv11 : cv 11 = true := by decide +kernel
-theorem cv12 : cv 12 = true := by decide +kernel
-theorem cv13 : cv 13 = true := by decide +kernel
-theorem cv14 : cv 14 = true := by decide +kernel
-theorem cv15 : cv 15 = true := by decide +kernel
-theorem cv16 : cv 16 = true := by decide +kernel
-theorem cv17 : cv 17 = true := by decide +kernel
-theorem cv18 : cv 18 = true := by decide +kernel
-theorem cv19 : cv 19 = true := by decide +kernel
-theorem cv20 : cv 20 = true := by decide +kernel
-theorem cv21 : cv 21 = true := by decide +kernel
-theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
-theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
-theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
-theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
-theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
-theorem cv32 : cv 32 = true := by decide +kernel
+
+private def rowWordMask : Nat := 0xf000000000000000000000000000000f000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000f0000000000000000000000000000f0000000000000000000000000000000000000000000000000000000f00000000000000000000000000f00000000000000000000000000f000000000000000000000000000000000000000000000000000f000000000000000000000000f000000000000000000000000f00000000000000000000000000000000000000000000000f0000000000000000000000f0000000000000000000000f0000000000000000000000000000000000000000000f00000000000000000000f00000000000000000000f000000000000000000000000000000000000000f000000000000000000f000000000000000000f00000000000000000000000000000000000f0000000000000000f0000000000000000f0000000000000000000000000000000f0000000000000ff000000000000f0f0000000000000000000000000f0f0000000000fff000000000000f000000000000000000000f0f00000000fff00000000f0f0000000000000000000f0000000ff000000f0f00000000000f0f0f0ffffff00f000f000000000f0f0ffff00f0f0000000f0ff00f000f0f0
+private theorem rowWordMask_eq : CoverageBits.members rows = rowWordMask := by decide +kernel
+private def siteWord : Nat := 0xf78000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fc0000000000000000000000000000000000000000000000000000000000000003fc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+private theorem siteWord_eq : encN_t8 (fun _ => true) MorningFour.sites = siteWord := by decide +kernel
+private theorem projected (x : Nat) :
+    encN_t8 (tbN_t8 x) MorningFour.sites = (x &&& siteWord) := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have bit (f : BasisState) : (encN_t8 f MorningFour.sites).testBit q =
+      (decide (q ∈ MorningFour.sites) && f q) :=
+    (foldl_tb_t8 f MorningFour.sites 0 q).trans (by simp)
+  rw [← siteWord_eq, Nat.testBit_and]
+  simp only [bit, tbN_t8]
+  cases (x.testBit q) <;> cases (decide (q ∈ MorningFour.sites)) <;> rfl
+private def fastGood (r : CoverageBits.Row) : Bool :=
+  decide (((runN_t8 tick506 [] (false, enc r)).2 &&& siteWord) ∈ legalCodes)
+private theorem fastGood_eq (r : CoverageBits.Row) : fastGood r = goodRow r := by
+  simp only [fastGood, goodRow, projected]
+private theorem hit_sound (r : CoverageBits.Row)
+    (h : rowWordMask.testBit (CoverageBits.index r) = true) : decide (r ∈ rows) = true := by
+  rw [← rowWordMask_eq] at h
+  have mem := CoverageBits.member_of_bit rows r h
+  exact decide_eq_true mem
+private def cvFast (v : Nat) : Bool :=
+  (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1)) ||
+      rowWordMask.testBit (CoverageBits.index (g,s,u,v)) || !fastGood (g,s,u,v)
+theorem cv_of_checked {v : Nat} (h : cvFast v = true) : cv v = true := by
+  simp only [cvFast, List.all_eq_true, fastGood_eq] at h
+  simp only [cv, List.all_eq_true]
+  intro u hu g hg s hs
+  exact CoverageBits.cover (h u hu g hg s hs) (hit_sound (g,s,u,v))
+
+theorem cv0 : cv 0 = true := cv_of_checked (by decide +kernel)
+theorem cv1 : cv 1 = true := cv_of_checked (by decide +kernel)
+theorem cv2 : cv 2 = true := cv_of_checked (by decide +kernel)
+theorem cv3 : cv 3 = true := cv_of_checked (by decide +kernel)
+theorem cv4 : cv 4 = true := cv_of_checked (by decide +kernel)
+theorem cv5 : cv 5 = true := cv_of_checked (by decide +kernel)
+theorem cv6 : cv 6 = true := cv_of_checked (by decide +kernel)
+theorem cv7 : cv 7 = true := cv_of_checked (by decide +kernel)
+theorem cv8 : cv 8 = true := cv_of_checked (by decide +kernel)
+theorem cv9 : cv 9 = true := cv_of_checked (by decide +kernel)
+theorem cv10 : cv 10 = true := cv_of_checked (by decide +kernel)
+theorem cv11 : cv 11 = true := cv_of_checked (by decide +kernel)
+theorem cv12 : cv 12 = true := cv_of_checked (by decide +kernel)
+theorem cv13 : cv 13 = true := cv_of_checked (by decide +kernel)
+theorem cv14 : cv 14 = true := cv_of_checked (by decide +kernel)
+theorem cv15 : cv 15 = true := cv_of_checked (by decide +kernel)
+theorem cv16 : cv 16 = true := cv_of_checked (by decide +kernel)
+theorem cv17 : cv 17 = true := cv_of_checked (by decide +kernel)
+theorem cv18 : cv 18 = true := cv_of_checked (by decide +kernel)
+theorem cv19 : cv 19 = true := cv_of_checked (by decide +kernel)
+theorem cv20 : cv 20 = true := cv_of_checked (by decide +kernel)
+theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
+theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
+theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
+theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
+theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
+theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
+theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
+theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
+theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
+theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
+theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
+theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
 
 theorem rows_complete : ∀ v, v < 33 → ∀ u, u < 33 → ∀ g s : Bool,
     (u+v ≤ 32 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
@@ -18078,27 +18242,62 @@ def cv (v : Nat) : Bool :=
   (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || rowFast (g,s,u,v)
 
-theorem cv0 : cv 0 = true := by decide +kernel
-theorem cv1 : cv 1 = true := by decide +kernel
-theorem cv2 : cv 2 = true := by decide +kernel
-theorem cv3 : cv 3 = true := by decide +kernel
-theorem cv4 : cv 4 = true := by decide +kernel
-theorem cv5 : cv 5 = true := by decide +kernel
-theorem cv6 : cv 6 = true := by decide +kernel
-theorem cv7 : cv 7 = true := by decide +kernel
-theorem cv8 : cv 8 = true := by decide +kernel
-theorem cv9 : cv 9 = true := by decide +kernel
-theorem cv10 : cv 10 = true := by decide +kernel
-theorem cv11 : cv 11 = true := by decide +kernel
-theorem cv12 : cv 12 = true := by decide +kernel
-theorem cv13 : cv 13 = true := by decide +kernel
-theorem cv14 : cv 14 = true := by decide +kernel
-theorem cv15 : cv 15 = true := by decide +kernel
-theorem cv16 : cv 16 = true := by decide +kernel
-theorem cv17 : cv 17 = true := by decide +kernel
-theorem cv18 : cv 18 = true := by decide +kernel
-theorem cv19 : cv 19 = true := by decide +kernel
-theorem cv20 : cv 20 = true := by decide +kernel
+
+private def rowWordMask : Nat := 0xf00000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000f000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000f0000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000f00000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000f000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000f0000000000000000000000000000000000f0000000000000000000000000000000000000f00000000000000000000000000000f00f00000000000000000000000000000f00000000000000000000000000000000f00000000000000000000000000000000000f0000000000000000000000000f0f00f0000000000000000000000000fff000000000000000000000000000000f000000000000000000000000000000000f00000000000000000000000f0f00f00000000000000000000000fff00000000000000000000000000f0f0000000000000000000000000000000f00000000000000000000000f00f0000000000000000000000ff000000000000000000000000f0f00000000000000000000000000000f0000000000000000000f0f00f0000000000000000000fff000000000000000000000000f000000000000000000000000000f00000000000000000f0f00f00000000000000000fff00000000000000000000f0f0000000000000000000000000f00000000000000000f00f0000000000000000ff000000000000000000f0f00000000000000000000000f0f0f00000f0f0f0f00f0f0f00000f0f0fff000000000000000000f000000000000000000000f0f0f000f0f0f0f00f0f0f000f0f0fff00000000000000f0f0000000000000000000f0f000f00000f00f0f000f00f0ff0000000000f0f0f00000000000000000f0f0f0f0f0f00f0f0fffffff000000f0f000f000000000000000f0f0f0f0f00f0fffffff0000f000f0f0000000000000f0f000f00f0ff0ff00f0f0f0f00000000000f0f0f0ffffff00f000f000000000f0f0ffff00f0f0000000f0ff00f000f0f0
+private theorem rowWordMask_eq : CoverageBits.members rows = rowWordMask := by decide +kernel
+private def siteWord : Nat := 0x1f7c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffc0000000000000000000000000000000000000000000000000000000000000003fe0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+private theorem siteWord_eq : encN_t8 (fun _ => true) Five506.sites = siteWord := by decide +kernel
+private theorem projected (x : Nat) :
+    encN_t8 (tbN_t8 x) Five506.sites = (x &&& siteWord) := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have bit (f : BasisState) : (encN_t8 f Five506.sites).testBit q =
+      (decide (q ∈ Five506.sites) && f q) :=
+    (foldl_tb_t8 f Five506.sites 0 q).trans (by simp)
+  rw [← siteWord_eq, Nat.testBit_and]
+  simp only [bit, tbN_t8]
+  cases (x.testBit q) <;> cases (decide (q ∈ Five506.sites)) <;> rfl
+private def fastGood (r : CoverageBits.Row) : Bool :=
+  legalFingerprint ((runN_t8 tick505 [] (false, enc r)).2 &&& siteWord)
+private theorem fastGood_eq (r : CoverageBits.Row) : fastGood r = goodRow r := by
+  simp only [fastGood, goodRow, projected]
+private theorem rows_indexed : rows.all rowFast = true := by decide +kernel
+private theorem hit_sound (r : CoverageBits.Row)
+    (h : rowWordMask.testBit (CoverageBits.index r) = true) : rowFast r = true := by
+  rw [← rowWordMask_eq] at h
+  have mem := CoverageBits.member_of_bit rows r h
+  exact List.all_eq_true.mp rows_indexed r mem
+private def cvFast (v : Nat) : Bool :=
+  (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1)) ||
+      rowWordMask.testBit (CoverageBits.index (g,s,u,v)) || !fastGood (g,s,u,v)
+theorem cv_of_checked {v : Nat} (h : cvFast v = true) : cv v = true := by
+  simp only [cvFast, List.all_eq_true, fastGood_eq] at h
+  simp only [cv, List.all_eq_true]
+  intro u hu g hg s hs
+  exact CoverageBits.cover (h u hu g hg s hs) (hit_sound (g,s,u,v))
+
+theorem cv0 : cv 0 = true := cv_of_checked (by decide +kernel)
+theorem cv1 : cv 1 = true := cv_of_checked (by decide +kernel)
+theorem cv2 : cv 2 = true := cv_of_checked (by decide +kernel)
+theorem cv3 : cv 3 = true := cv_of_checked (by decide +kernel)
+theorem cv4 : cv 4 = true := cv_of_checked (by decide +kernel)
+theorem cv5 : cv 5 = true := cv_of_checked (by decide +kernel)
+theorem cv6 : cv 6 = true := cv_of_checked (by decide +kernel)
+theorem cv7 : cv 7 = true := cv_of_checked (by decide +kernel)
+theorem cv8 : cv 8 = true := cv_of_checked (by decide +kernel)
+theorem cv9 : cv 9 = true := cv_of_checked (by decide +kernel)
+theorem cv10 : cv 10 = true := cv_of_checked (by decide +kernel)
+theorem cv11 : cv 11 = true := cv_of_checked (by decide +kernel)
+theorem cv12 : cv 12 = true := cv_of_checked (by decide +kernel)
+theorem cv13 : cv 13 = true := cv_of_checked (by decide +kernel)
+theorem cv14 : cv 14 = true := cv_of_checked (by decide +kernel)
+theorem cv15 : cv 15 = true := cv_of_checked (by decide +kernel)
+theorem cv16 : cv 16 = true := cv_of_checked (by decide +kernel)
+theorem cv17 : cv 17 = true := cv_of_checked (by decide +kernel)
+theorem cv18 : cv 18 = true := cv_of_checked (by decide +kernel)
+theorem cv19 : cv 19 = true := cv_of_checked (by decide +kernel)
+theorem cv20 : cv 20 = true := cv_of_checked (by decide +kernel)
 
 end ECDSAAdd.Entrant.Six505
 end
