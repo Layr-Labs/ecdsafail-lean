@@ -6,6 +6,7 @@ import ECDSAAdd.Submission.Entrant.Stair44Stock
 import Mathlib.Tactic
 import ECDSAAdd.Framework.WireRenamePool
 import ECDSAAdd.Submission.Entrant.CRT
+import ECDSAAdd.Submission.Entrant.SquareCut
 import ECDSAAdd.Submission.Entrant.OddField
 import ECDSAAdd.Framework.RecordedPaths
 import ECDSAAdd.Framework.MeasuredLocality
