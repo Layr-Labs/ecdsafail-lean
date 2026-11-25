@@ -12,7 +12,7 @@ import ECDSAAdd.Arithmetic.DisjointPrograms
 import ECDSAAdd.Challenge.Contract
 import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
-import ECDSAAdd.Submission.Entrant.KnownZeroArithmetic
+import ECDSAAdd.Submission.Entrant.Fold98
 
 -- BOptimizationsCore = BOptimizationsCore ++ ACCache
 -- ==== begin BOptimizationsCore ====
