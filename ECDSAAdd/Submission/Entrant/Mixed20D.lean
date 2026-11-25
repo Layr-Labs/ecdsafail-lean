@@ -1380,13 +1380,13 @@ def fix2Core (s h : Nat) : List Gate :=
   let latchPop := ((List.range 18).map fun i => .pop (1557 + i) (h + 788 + i) (1558 + i)).reverse ++
     [.pop (h + 786) (h + 787) 1557]
   let glue : List Gate := [.make (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576,
-    .cx (h + 1583) 1576, .ccx 1576 1575 1556, .cx (h + 1583) 1576,
+    .cx (h + 1583) 1576, .make 1576 1575 1556, .cx (h + 1583) 1576,
     .pop (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576]
   let maskMake := (List.range 19).map fun i => .make (h + 786 + i) (1557 + i) (1558 + i)
   let maskPop := ((List.range 18).map fun i =>
     [.pop (h + 787 + i) (1558 + i) (1559 + i), .cx (1558 + i) (h + 787 + i)]).reverse.flatten
   let erasePop := (List.range 19).map fun i => .pop 1556 (s + h + 37 + i) (h + 787 + i)
-  xsG bs ++ latchMake ++ [.cx 1575 1556, .x 1556] ++ glue ++ latchPop ++ xsG bs.reverse ++
+  xsG bs ++ latchMake ++ glue ++ [.cx 1575 1556, .x 1556] ++ latchPop ++ xsG bs.reverse ++
   [.x 1557, .cx (s + h + 36) 1557] ++ maskMake ++ [.cx 1576 (h + 805)] ++ maskPop ++ erasePop ++
   [.pop (h + 786) 1557 1558, .cx (s + h + 36) 1557, .x 1557]
 
@@ -1437,7 +1437,7 @@ def fix2Prefix (h : Nat) : List Gate :=
   let bs := (List.range 20).map (h + 786 + ·)
   let latchMake := .make (h + 786) (h + 787) 1557 ::
     ((List.range 18).map fun i => .make (1557 + i) (h + 788 + i) (1558 + i))
-  xsG bs ++ latchMake ++ [.cx 1575 1556, .x 1556]
+  xsG bs ++ latchMake
 
 def fix2Tail (s h : Nat) : List Gate :=
   let bs := (List.range 20).map (h + 786 + ·)
@@ -1454,18 +1454,20 @@ def fix2Tail (s h : Nat) : List Gate :=
 theorem originalFix2Parts (s h : Nat) :
     let wire := g2Wire s h
     fix2P20 s h = fix2Prefix h ++
-      [.ccx (wire 0) (wire 1) (wire 2), .make (wire 3) (wire 4) (wire 5),
+      [.cx (wire 1) (wire 2), .x (wire 2),
+       .ccx (wire 0) (wire 1) (wire 2), .make (wire 3) (wire 4) (wire 5),
        .ccx (wire 5) (wire 1) (wire 2), .pop (wire 3) (wire 4) (wire 5)] ++
       fix2Tail s h := by
-  simp only [fix2P20, fix2Prefix, fix2Tail, g2Wire, List.append_assoc]
+  simp only [fix2P20, fix2Prefix, fix2Tail, g2Wire, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem normalizedFix2CoreParts (s h : Nat) :
     let wire := g2Wire s h
     fix2Core s h = fix2Prefix h ++
-      [.make (wire 3) (wire 4) (wire 5), .cx (wire 0) (wire 5), .ccx (wire 5) (wire 1) (wire 2),
-       .cx (wire 0) (wire 5), .pop (wire 3) (wire 4) (wire 5)] ++
+      [.make (wire 3) (wire 4) (wire 5), .cx (wire 0) (wire 5), .make (wire 5) (wire 1) (wire 2),
+       .cx (wire 0) (wire 5), .pop (wire 3) (wire 4) (wire 5),
+       .cx (wire 1) (wire 2), .x (wire 2)] ++
       fix2Tail s h := by
-  simp only [fix2Core, fix2Prefix, fix2Tail, g2Wire, List.append_assoc]
+  simp only [fix2Core, fix2Prefix, fix2Tail, g2Wire, List.append_assoc, List.cons_append, List.nil_append]
 
 def commonEntry (s : Nat) : List Gate :=
   let h := sbP20 s
@@ -1545,12 +1547,14 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 2500000
 
 private def oldG2Gates (w : Wire → Wire) : List Gate :=
-  [.ccx (w 0) (w 1) (w 2), .make (w 3) (w 4) (w 5),
+  [.cx (w 1) (w 2), .x (w 2),
+   .ccx (w 0) (w 1) (w 2), .make (w 3) (w 4) (w 5),
    .ccx (w 5) (w 1) (w 2), .pop (w 3) (w 4) (w 5)]
 
 private def newG2Gates (w : Wire → Wire) : List Gate :=
-  [.make (w 3) (w 4) (w 5), .cx (w 0) (w 5), .ccx (w 5) (w 1) (w 2),
-   .cx (w 0) (w 5), .pop (w 3) (w 4) (w 5)]
+  [.make (w 3) (w 4) (w 5), .cx (w 0) (w 5), .make (w 5) (w 1) (w 2),
+   .cx (w 0) (w 5), .pop (w 3) (w 4) (w 5),
+   .cx (w 1) (w 2), .x (w 2)]
 
 private def entryHead (s : Nat) : List Gate :=
   let h := sbP20 s
@@ -1603,9 +1607,9 @@ private theorem g2AllW {P : Wire → Prop} (w : Wire → Wire) (old : AllW P (ol
   have h5 := hFar (w 5) (by simp [Gate.wires])
   intro g hg q hq
   simp only [newG2Gates, List.mem_cons, List.not_mem_nil, or_false] at hg
-  rcases hg with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq <;>
-    rcases hq with rfl | rfl | rfl <;> assumption
+  rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq
+  all_goals first | (subst hq; assumption) | (rcases hq with rfl | rfl | rfl <;> assumption)
 
 private theorem copyAllW {P : Wire → Prop} (s : Nat)
     (a : P (a0P20 s - 1)) (b : P (b0P20 s - 1)) : AllW P (copyCompanion s) := by
@@ -1627,7 +1631,6 @@ theorem allWNormalizedBefore {P : Wire → Prop} (s : Nat) (old : AllW P (TrimHi
     simp only [fix2Tail, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, true_or, or_true]
   have bAt : .x (h + 786) ∈ fix2Prefix h := by
     unfold fix2Prefix
-    apply List.mem_append_left
     apply List.mem_append_left
     change .x (h + 786) ∈ ((List.range 20).map (h + 786 + ·)).map Gate.x
     exact List.mem_map.mpr ⟨h + 786, List.mem_map.mpr ⟨0, by simp, by simp⟩, rfl⟩
@@ -1833,13 +1836,15 @@ def countedUnleave (j : Fin 9) : Program :=
   inverse (afterRow s) ++ barrel20 s true ++ inverse (beforeRow s)
 
 private def oldG2 (s h : Nat) : List Gate :=
-  [.ccx (h + 1583) 1575 1556, .make (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576,
+  [.cx 1575 1556, .x 1556,
+   .ccx (h + 1583) 1575 1556, .make (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576,
     .ccx 1576 1575 1556, .pop (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576]
 
 private def newG2 (s h : Nat) : List Gate :=
   [.make (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576,
-    .cx (h + 1583) 1576, .ccx 1576 1575 1556, .cx (h + 1583) 1576,
-    .pop (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576]
+    .cx (h + 1583) 1576, .make 1576 1575 1556, .cx (h + 1583) 1576,
+    .pop (h + 1582) (OB5.sig (s + 19) (s + 1044)) 1576,
+    .cx 1575 1556, .x 1556]
 
 private def sharedFix2 (s h : Nat) (glue : List Gate) : List Gate :=
   let bs := (List.range 20).map (h + 786 + ·)
@@ -1851,7 +1856,7 @@ private def sharedFix2 (s h : Nat) (glue : List Gate) : List Gate :=
   let maskPop := ((List.range 18).map fun i =>
     [.pop (h + 787 + i) (1558 + i) (1559 + i), .cx (1558 + i) (h + 787 + i)]).reverse.flatten
   let erasePop := (List.range 19).map fun i => .pop 1556 (s + h + 37 + i) (h + 787 + i)
-  xsG bs ++ latchMake ++ [.cx 1575 1556, .x 1556] ++ glue ++ latchPop ++ xsG bs.reverse ++
+  xsG bs ++ latchMake ++ glue ++ latchPop ++ xsG bs.reverse ++
   [.x 1557, .cx (s + h + 36) 1557] ++ maskMake ++ [.cx 1576 (h + 805)] ++ maskPop ++ erasePop ++
   [.pop (h + 786) 1557 1558, .cx (s + h + 36) 1557, .x 1557]
 
@@ -1859,19 +1864,17 @@ private def firstCopy (s h : Nat) : List Gate := [.cx (s + h + 36) (h + 786)]
 
 private theorem oldFix2Shape (s h : Nat) :
     fix2P20 s h = sharedFix2 s h (oldG2 s h) := by
-  unfold fix2P20 sharedFix2 oldG2
-  rfl
+  simp only [fix2P20, sharedFix2, oldG2, List.append_assoc, List.cons_append, List.nil_append]
 
 private theorem newFix2Shape (s h : Nat) :
     fix2Core s h = sharedFix2 s h (newG2 s h) := by
-  unfold fix2Core sharedFix2 newG2
-  rfl
+  simp only [fix2Core, sharedFix2, newG2, List.append_assoc, List.cons_append, List.nil_append]
 
 private theorem oldG2Counts (s h : Nat) :
-    Counts (oldG2 s h) 2 1 1 4 := ⟨rfl, rfl, rfl, rfl⟩
+    Counts (oldG2 s h) 2 1 1 6 := ⟨rfl, rfl, rfl, rfl⟩
 
 private theorem newG2Counts (s h : Nat) :
-    Counts (newG2 s h) 1 1 1 5 := ⟨rfl, rfl, rfl, rfl⟩
+    Counts (newG2 s h) 0 2 1 7 := ⟨rfl, rfl, rfl, rfl⟩
 
 private theorem copyCounts (s h : Nat) :
     Counts (firstCopy s h) 0 0 0 1 := ⟨rfl, rfl, rfl, rfl⟩
@@ -1911,11 +1914,11 @@ attribute [local irreducible] beforeRow TrimHigh.beforeWideTrim afterRow afterRo
 
 theorem normalizedCounts (j : Fin 9) :
     toffoliCount (countedLeave j) + 2 = toffoliCount (leaveP20BaselineRed j) ∧
-    toffoliCount (countedUnleave j) + 2 = toffoliCount (leaveInvP20BaselineRed j) ∧
+    toffoliCount (countedUnleave j) + 3 = toffoliCount (leaveInvP20BaselineRed j) ∧
     measurementCount (countedLeave j) = measurementCount (leaveP20BaselineRed j) ∧
-    measurementCount (countedUnleave j) = measurementCount (leaveInvP20BaselineRed j) ∧
+    measurementCount (countedUnleave j) = measurementCount (leaveInvP20BaselineRed j) + 1 ∧
     gateSlots (countedLeave j) = gateSlots (leaveP20BaselineRed j) ∧
-    gateSlots (countedUnleave j) = gateSlots (leaveInvP20BaselineRed j) := by
+    gateSlots (countedUnleave j) = gateSlots (leaveInvP20BaselineRed j) + 1 := by
   simp only [countedLeave, countedUnleave, leaveP20BaselineRed, leaveInvP20BaselineRed,
     toffoliCount_append, measurementCount_append, gateSlots_append, toffoli_forward,
     toffoli_inverse, meas_forward, meas_inverse, slots_forward, slots_inverse]
@@ -1942,11 +1945,11 @@ end WideSelectorNormalized
 theorem leave20Red_counts (j : Fin 9) :
     let s := start20 j
     toffoliCount (leaveP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 3 * lowsP20 s + 126 + barrel20T s false ∧
-    toffoliCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 168 + barrel20T s true ∧
+    toffoliCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 167 + barrel20T s true ∧
     measurementCount (leaveP20Red j) = TrimHigh.adjustWidth s + liveW20 s + lowsP20 s + 118 + barrel20M s false ∧
-    measurementCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 76 + barrel20M s true ∧
+    measurementCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 77 + barrel20M s true ∧
     gateSlots (leaveP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 10 * lowsP20 s + 842 + 3 * nextWp20 s + barrel20Slots s false ∧
-    gateSlots (leaveInvP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 11 * lowsP20 s + 800 + 3 * nextWp20 s + barrel20Slots s true := by
+    gateSlots (leaveInvP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 11 * lowsP20 s + 801 + 3 * nextWp20 s + barrel20Slots s true := by
   have old := leave20BaselineRed_counts j
   have diff := WideSelectorNormalized.normalizedCounts j
   have f : WideSelectorNormalized.countedLeave j = leaveP20Red j := rfl
@@ -1955,7 +1958,7 @@ theorem leave20Red_counts (j : Fin 9) :
   dsimp only at old ⊢
   obtain ⟨tF, tR, mF, mR, sF, sR⟩ := old
   obtain ⟨dtF, dtR, dmF, dmR, dsF, dsR⟩ := diff
-  exact ⟨by omega, by omega, dmF.trans mF, dmR.trans mR, dsF.trans sF, dsR.trans sR⟩
+  exact ⟨by omega, by omega, dmF.trans mF, by omega, dsF.trans sF, by omega⟩
 
 private theorem red20_patches_proper : ∀ j : Fin 9,
     let s := start20 j; let h := sbP20 s; let top := a0P20 s + lowsP20 s - 2
@@ -2973,7 +2976,7 @@ def b20TF (j : Fin 9) : Nat :=
 def b20TR (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 67 else 68) else (if d then 78 else 79)) + 20 * (2 * (sbP20 s + 21) - 1) +
-  (TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 168 + barrel20T s true)
+  (TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 167 + barrel20T s true)
 
 def b20MF (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
@@ -2983,7 +2986,7 @@ def b20MF (d : Bool) (j : Fin 9) : Nat :=
 def b20MR (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 48 else 49) else (if d then 50 else 51)) + 20 * (sbP20 s + 21) +
-  (TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 76 + barrel20M s true)
+  (TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 77 + barrel20M s true)
 
 private theorem block20F_counts (d : Bool) (j : Fin 9) :
     ((block20F d j).map toffoliCount).sum = b20TF j ∧
@@ -3097,7 +3100,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (457 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
     (prefixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 125 + CRTBarrel.barrelT 45 true) +
-      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126757 else 126779) ∧
+      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126748 else 126770) ∧
     ((if d then 43 else 44) + 2 + WindowParams.recvM 420 + (4 * Shadow7.wpP 420 - 7) + 0) +
     (suffixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 57 + CRTBarrel.barrelM 345 true) +
@@ -3106,7 +3109,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (262 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
     (prefixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 57 + CRTBarrel.barrelM 45 true) +
-      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64987 else 65009) := by
+      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64996 else 65018) := by
   cases d <;> decide +kernel
 
 attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shadow7.enterInvP
@@ -3117,9 +3120,9 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
     toffoliCount (forwardMixed d) = 126691 ∧
-    toffoliCount (reverseMixed d) = (if d then 126715 else 126737) ∧
+    toffoliCount (reverseMixed d) = (if d then 126706 else 126728) ∧
     measurementCount (forwardMixed d) = (if d then 65319 else 65341) ∧
-    measurementCount (reverseMixed d) = (if d then 65029 else 65051) := by
+    measurementCount (reverseMixed d) = (if d then 65038 else 65060) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
   have hfM := measure_flatten measurementCount measurementCount_append (forwardL d)
@@ -9115,9 +9118,9 @@ theorem mixedCut_run_eq (d : Bool) :
 
 theorem mixedCut_counts (d : Bool) :
     toffoliCount (forwardMixedCut d) = 126599 ∧
-    toffoliCount (reverseMixedCut d) = (if d then 126623 else 126645) ∧
+    toffoliCount (reverseMixedCut d) = (if d then 126614 else 126636) ∧
     measurementCount (forwardMixedCut d) = (if d then 65319 else 65341) ∧
-    measurementCount (reverseMixedCut d) = (if d then 65029 else 65051) := by
+    measurementCount (reverseMixedCut d) = (if d then 65038 else 65060) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
   have htr := (MixedFredCut.rev_mixed_cut d).tc_eq
@@ -9813,9 +9816,9 @@ theorem resource_delta (d : Bool) :
 
 theorem mixed_counts (d : Bool) :
     toffoliCount (forward d) = 126599 ∧
-    toffoliCount (reverse d) = (if d then 126452 else 126474) ∧
+    toffoliCount (reverse d) = (if d then 126443 else 126465) ∧
     measurementCount (forward d) = (if d then 65319 else 65341) ∧
-    measurementCount (reverse d) = (if d then 65200 else 65222) := by
+    measurementCount (reverse d) = (if d then 65209 else 65231) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d
   cases d <;> simp only [Bool.false_eq_true,↓reduceIte,forward] at old h ⊢ <;>
@@ -19098,91 +19101,154 @@ open GateMirror
 set_option maxHeartbeats 2500000
 
 def old : List Gate :=
-  [.ccx 0 1 2, .make 3 4 5, .ccx 5 1 2, .pop 3 4 5]
+  [.cx 1 2, .x 2, .ccx 0 1 2, .make 3 4 5, .ccx 5 1 2, .pop 3 4 5]
 
 def replacement : List Gate :=
-  [.make 3 4 5, .cx 0 5, .ccx 5 1 2, .cx 0 5, .pop 3 4 5]
+  [.make 3 4 5, .cx 0 5, .make 5 1 2, .cx 0 5, .pop 3 4 5, .cx 1 2, .x 2]
 
-private def oldForward : Program := [.CCX 0 1 2, .CCX 3 4 5, .CCX 5 1 2]
-private def oldInverse : Program := [.CCX 3 4 5, .CCX 5 1 2, .CCX 0 1 2]
+private def oldPrefix : Program := [.CX 1 2, .X 2, .CCX 0 1 2, .CCX 3 4 5, .CCX 5 1 2]
 private def newPrefix : Program := [.CCX 3 4 5, .CX 0 5, .CCX 5 1 2, .CX 0 5]
 
-private theorem prefix_eq (s : State) (m : List Bool) :
-    run oldForward m s = run newPrefix m s ∧
-    run oldInverse m s = run newPrefix m s := by
-  constructor <;> apply State.extensionality
-  · rfl
-  · funext q
-    by_cases out : q = 2
-    · subst q
-      cases hs : s.basis 0 <;> cases hz : s.basis 1 <;> cases ht : s.basis 2 <;>
-        cases hf : s.basis 3 <;> cases hr : s.basis 4 <;> cases hc : s.basis 5 <;>
-        simp [oldForward, newPrefix, run, writeBit, hs, hz, ht, hf, hr, hc]
-    · by_cases scratch : q = 5
-      · subst q
-        simp [oldForward, newPrefix, run, writeBit]
-      · simp [oldForward, newPrefix, run, writeBit, out, scratch]
-  · rfl
-  · funext q
-    by_cases out : q = 2
-    · subst q
-      cases hs : s.basis 0 <;> cases hz : s.basis 1 <;> cases ht : s.basis 2 <;>
-        cases hf : s.basis 3 <;> cases hr : s.basis 4 <;> cases hc : s.basis 5 <;>
-        simp [oldInverse, newPrefix, run, writeBit, hs, hz, ht, hf, hr, hc]
-    · by_cases scratch : q = 5
-      · subst q
-        simp [oldInverse, newPrefix, run, writeBit]
-      · simp [oldInverse, newPrefix, run, writeBit, out, scratch]
-
-theorem forward_eq (s : State) (m : List Bool) :
-    run (GateMirror.forward old) m s = run (GateMirror.forward replacement) m s := by
-  change run (oldForward ++ [erase 3 4 5]) m s = run (newPrefix ++ [erase 3 4 5]) m s
-  simp only [run_append, show measurementCount oldForward = 0 from rfl,
-    show measurementCount newPrefix = 0 from rfl, List.take_zero, (prefix_eq s []).1]
-
-private theorem swapMeasure (s : State) (m : List Bool) :
-    run [erase 3 4 5, .CCX 0 1 2] m s = run [.CCX 0 1 2, erase 3 4 5] m s := by
+private theorem swapTail (s : State) (m : List Bool) :
+    run [erase 3 4 5, .CX 1 2, .X 2] m s = run [.CX 1 2, .X 2, erase 3 4 5] m s := by
   have withHead (b : Bool) (tail : List Bool) :
-      run [erase 3 4 5, .CCX 0 1 2] (b :: tail) s =
-        run [.CCX 0 1 2, erase 3 4 5] (b :: tail) s := by
+      run [erase 3 4 5, .CX 1 2, .X 2] (b :: tail) s =
+        run [.CX 1 2, .X 2, erase 3 4 5] (b :: tail) s := by
     cases b <;> apply State.extensionality
     all_goals first
       | rfl
       | funext q
-        by_cases two : q = 2
+        by_cases h2 : q = 2
         · subst q; rfl
-        · by_cases five : q = 5
+        · by_cases h5 : q = 5
           · subst q; rfl
-          · simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, two, five]
+          · simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, h2, h5]
   cases m with
   | nil => exact withHead false []
   | cons b tail => exact withHead b tail
 
-theorem inverse_eq (s : State) (m : List Bool) :
-    run (inverse old) m s = run (inverse replacement) m s := by
-  have oldOrder : run (inverse old) m s = run (oldInverse ++ [erase 3 4 5]) m s := by
-    let head : Program := [.CCX 3 4 5, .CCX 5 1 2]
-    change run (head ++ [erase 3 4 5, .CCX 0 1 2]) m s =
-      run (head ++ [.CCX 0 1 2, erase 3 4 5]) m s
-    rw [run_append, run_append, swapMeasure]
-  rw [oldOrder]
-  change run (oldInverse ++ [erase 3 4 5]) m s = run (newPrefix ++ [erase 3 4 5]) m s
-  simp only [run_append, show measurementCount oldInverse = 0 from rfl,
-    show measurementCount newPrefix = 0 from rfl, List.take_zero, (prefix_eq s []).2]
+private theorem fwd_prefix_eq (s : State) (m : List Bool) :
+    run oldPrefix m s = run (newPrefix ++ [.CX 1 2, .X 2]) m s := by
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases out : q = 2
+    · subst q
+      cases hs : s.basis 0 <;> cases hz : s.basis 1 <;> cases ht : s.basis 2 <;>
+        cases hf : s.basis 3 <;> cases hr : s.basis 4 <;> cases hc : s.basis 5 <;>
+        simp [oldPrefix, newPrefix, run, writeBit, hs, hz, ht, hf, hr, hc]
+    · by_cases scratch : q = 5
+      · subst q
+        simp [oldPrefix, newPrefix, run, writeBit]
+      · simp [oldPrefix, newPrefix, run, writeBit, out, scratch]
 
-theorem placed_eq (wire : Wire → Wire)
+theorem forward_eq (s : State) (m : List Bool) :
+    run (GateMirror.forward old) m s = run (GateMirror.forward replacement) m s := by
+  have h1 : GateMirror.forward old = oldPrefix ++ [erase 3 4 5] := rfl
+  have h2 : GateMirror.forward replacement = newPrefix ++ [erase 3 4 5, .CX 1 2, .X 2] := rfl
+  rw [h1, h2, run_append, run_append, swapTail]
+  have h3 : newPrefix ++ [.CX 1 2, .X 2, erase 3 4 5] = (newPrefix ++ [.CX 1 2, .X 2]) ++ [erase 3 4 5] := rfl
+  rw [← run_append newPrefix [.CX 1 2, .X 2, erase 3 4 5], h3, run_append]
+  simp only [show measurementCount oldPrefix = 0 from rfl,
+    show measurementCount (newPrefix ++ [.CX 1 2, .X 2]) = 0 from rfl,
+    List.take_zero, List.drop_zero, fwd_prefix_eq s []]
+
+private theorem undo_x (t : Wire) (s : State) (m : List Bool) :
+    run [.X t] m (run [.X t] [] s) = s := by
+  apply State.extensionality; · rfl
+  · funext q; by_cases h : q = t <;> simp [run, writeBit, h]
+
+private theorem undo_cx (a t : Wire) (h : a ≠ t) (s : State) (m : List Bool) :
+    run [.CX a t] m (run [.CX a t] [] s) = s := by
+  apply State.extensionality; · rfl
+  · funext q; by_cases hq : q = t <;> simp [run, writeBit, h, hq]
+
+private theorem undo_make (a b t : Wire) (ha : a ≠ t) (hb : b ≠ t) (s : State)
+    (ht : s.basis t = false) (m : List Bool) :
+    run [erase a b t] m (run [.CCX a b t] [] s) = s := by
+  cases e : m.head?.getD false <;> apply State.extensionality
+  · simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ht, e]
+  · funext q; by_cases hq : q = t <;>
+      simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ht, e, hq]
+  · simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ha, hb, ht, e]
+  · funext q; by_cases hq : q = t <;>
+      simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ha, hb, ht, e, hq]
+
+private theorem undo_pop (a b t : Wire) (ha : a ≠ t) (hb : b ≠ t) (s : State)
+    (hv : s.basis t = (s.basis a && s.basis b)) (m n : List Bool) :
+    run [.CCX a b t] n (run [erase a b t] m s) = s := by
+  cases e : m.head?.getD false <;> apply State.extensionality
+  · simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ha, hb, hv, e]
+  · funext q; by_cases hq : q = t <;>
+      simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ha, hb, hv, e, hq]
+  · simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ha, hb, hv, e]
+  · funext q; by_cases hq : q = t <;>
+      simp [run, erase, measureAndCorrect, ECDSAAdd.correct, writeBit, ha, hb, hv, e, hq]
+
+theorem inverse_roundtrip (s : State) (h2 : s.basis 2 = false) (h5 : s.basis 5 = false)
+    (m n : List Bool) :
+    run (inverse replacement) n (run (GateMirror.forward replacement) m s) = s := by
+  let s1 := run [.CCX 3 4 5] [] s
+  let s2 := run [.CX 0 5] [] s1
+  let s3 := run [.CCX 5 1 2] [] s2
+  let s4 := run [.CX 0 5] [] s3
+  have hs2_2 : s2.basis 2 = false := by simp [s2, s1, run, writeBit, h2]
+  have hs4_5 : s4.basis 5 = (s4.basis 3 && s4.basis 4) := by
+    simp [s4, s3, s2, s1, run, writeBit, h5]
+  have hfwd : run (GateMirror.forward replacement) m s =
+      run [.X 2] [] (run [.CX 1 2] [] (run [erase 3 4 5] m s4)) := by
+    change run ([.CCX 3 4 5] ++ ([.CX 0 5] ++ ([.CCX 5 1 2] ++ ([.CX 0 5] ++
+      ([erase 3 4 5] ++ ([.CX 1 2] ++ [.X 2])))))) m s = _
+    simp only [run_append, run_take, measurementCount, List.take_zero, List.drop_zero, s1, s2, s3, s4]
+    rfl
+  rw [hfwd]
+  change run ([.X 2] ++ ([.CX 1 2] ++ ([.CCX 3 4 5] ++ ([.CX 0 5] ++
+    ([erase 5 1 2] ++ ([.CX 0 5] ++ [erase 3 4 5])))))) n _ = s
+  simp only [run_append, measurementCount, List.drop_zero]
+  rw [undo_x 2, undo_cx 1 2 (by decide), undo_pop 3 4 5 (by decide) (by decide) s4 hs4_5,
+    undo_cx 0 5 (by decide), undo_make 5 1 2 (by decide) (by decide) s2 hs2_2,
+    undo_cx 0 5 (by decide), undo_make 3 4 5 (by decide) (by decide) s h5]
+
+theorem placed_forward_eq (wire : Wire → Wire)
     (unique : ∀ a ∈ Finset.range 6, ∀ b ∈ Finset.range 6, wire a = wire b → a = b)
     (s : State) (m : List Bool) :
     run (renameProgram wire (GateMirror.forward old)) m s =
-      run (renameProgram wire (GateMirror.forward replacement)) m s ∧
-    run (renameProgram wire (inverse old)) m s =
-      run (renameProgram wire (inverse replacement)) m s := by
+      run (renameProgram wire (GateMirror.forward replacement)) m s := by
   let t : State := ⟨s.phase, fun q => s.basis (wire q)⟩
-  constructor
-  · exact run_rename_eq_of_eq wire (Finset.range 6) unique _ _ (by decide) (by decide)
-      m m t s rfl (fun _ _ => rfl) (forward_eq t m)
-  · exact run_rename_eq_of_eq wire (Finset.range 6) unique _ _ (by decide) (by decide)
-      m m t s rfl (fun _ _ => rfl) (inverse_eq t m)
+  exact run_rename_eq_of_eq wire (Finset.range 6) unique _ _ (by decide) (by decide)
+    m m t s rfl (fun _ _ => rfl) (forward_eq t m)
+
+theorem placed_inverse_roundtrip (wire : Wire → Wire)
+    (unique : ∀ a ∈ Finset.range 6, ∀ b ∈ Finset.range 6, wire a = wire b → a = b)
+    (s : State) (h2 : s.basis (wire 2) = false) (h5 : s.basis (wire 5) = false)
+    (n : List Bool) :
+    run (renameProgram wire (inverse replacement)) n
+      (run (renameProgram wire (GateMirror.forward replacement)) [] s) = s := by
+  let p := GateMirror.forward replacement ++ inverse replacement
+  have hp : renameProgram wire p =
+      renameProgram wire (GateMirror.forward replacement) ++ renameProgram wire (inverse replacement) :=
+    List.map_append
+  have hmc : measurementCount (renameProgram wire (GateMirror.forward replacement)) = 1 := by
+    rw [(renameProgram_counts wire _).2]; rfl
+  have hid : run (renameProgram wire p) (false :: n) s = run (renameProgram wire []) [] s := by
+    let t : State := ⟨s.phase, fun q => s.basis (wire q)⟩
+    have ht : run p (false :: n) t = run [] [] t := by
+      rw [show p = GateMirror.forward replacement ++ inverse replacement from rfl, run_append,
+        show measurementCount (GateMirror.forward replacement) = 1 from rfl]
+      exact inverse_roundtrip t h2 h5 [false] n
+    exact run_rename_eq_of_eq wire (Finset.range 6) unique p [] (by decide) (by decide)
+      (false :: n) [] t s rfl (fun _ _ => rfl) ht
+  have hnil : run (renameProgram wire (GateMirror.forward replacement)) [false] s =
+      run (renameProgram wire (GateMirror.forward replacement)) [] s := by
+    let t : State := ⟨s.phase, fun q => s.basis (wire q)⟩
+    have ht : run (GateMirror.forward replacement) [false] t =
+        run (GateMirror.forward replacement) [] t := by
+      simp [GateMirror.forward, replacement, front, erase, run, measureAndCorrect]
+    exact run_rename_eq_of_eq wire (Finset.range 6) unique _ _ (by decide) (by decide)
+      [false] [] t s rfl (fun _ _ => rfl) ht
+  rw [hp, run_append, hmc] at hid
+  simpa only [List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_zero,
+    hnil, renameProgram, List.map_nil, run] using hid
 
 end ECDSAAdd.Entrant.StairPacket.Shadow20.WideSelectorG2
 
@@ -19872,26 +19938,25 @@ theorem sameEntry (j : Fin 9) :
     let old := beforeEntry start
     let new := beforeEntryG2 start
     (∀ m s, run (GateMirror.forward old) m s = run (GateMirror.forward new) m s) ∧
-    (∀ m s, run (inverse old) m s = run (inverse new) m s) ∧
-    measurementCount (GateMirror.forward old) = measurementCount (GateMirror.forward new) ∧
-    measurementCount (inverse old) = measurementCount (inverse new) := by
+    measurementCount (GateMirror.forward old) = measurementCount (GateMirror.forward new) := by
   let start := start20 j
   let cutoff := sbP20 start
   let w := g2Wire start cutoff
   let old : List Gate :=
-    [.ccx (w 0) (w 1) (w 2), .make (w 3) (w 4) (w 5),
+    [.cx (w 1) (w 2), .x (w 2),
+     .ccx (w 0) (w 1) (w 2), .make (w 3) (w 4) (w 5),
      .ccx (w 5) (w 1) (w 2), .pop (w 3) (w 4) (w 5)]
   let new : List Gate :=
-    [.make (w 3) (w 4) (w 5), .cx (w 0) (w 5), .ccx (w 5) (w 1) (w 2),
-     .cx (w 0) (w 5), .pop (w 3) (w 4) (w 5)]
+    [.make (w 3) (w 4) (w 5), .cx (w 0) (w 5), .make (w 5) (w 1) (w 2),
+     .cx (w 0) (w 5), .pop (w 3) (w 4) (w 5),
+     .cx (w 1) (w 2), .x (w 2)]
   have distinct : ∀ a ∈ Finset.range 6, ∀ b ∈ Finset.range 6, w a = w b → a = b := by
     intro a ha b hb eq
     exact congrArg Fin.val (g2WireInj j ⟨a, Finset.mem_range.mp ha⟩
       ⟨b, Finset.mem_range.mp hb⟩ eq)
   have phaseLocal (m : List Bool) (s : State) :
-      run (GateMirror.forward old) m s = run (GateMirror.forward new) m s ∧
-      run (inverse old) m s = run (inverse new) m s := by
-    exact WideSelectorG2.placed_eq w distinct s m
+      run (GateMirror.forward old) m s = run (GateMirror.forward new) m s :=
+    WideSelectorG2.placed_forward_eq w distinct s m
   let head := commonEntry start ++ ((fix0P20 start cutoff).drop 67 ++ leaveFix1_20 start) ++
     fix2Prefix cutoff
   let tail := fix2Tail start cutoff
@@ -19905,22 +19970,15 @@ theorem sameEntry (j : Fin 9) :
     simp only [beforeEntryG2, head, cutoff, newFix, List.append_assoc]
   have sameF : measurementCount (GateMirror.forward old) =
       measurementCount (GateMirror.forward new) := rfl
-  have sameR : measurementCount (inverse old) = measurementCount (inverse new) := rfl
   have oldF : GateMirror.forward (beforeEntry start) =
       GateMirror.forward head ++ GateMirror.forward old ++ GateMirror.forward tail := by
     rw [oldCut, forward_app (head ++ old) tail, forward_app head old]
   have newF : GateMirror.forward (beforeEntryG2 start) =
       GateMirror.forward head ++ GateMirror.forward new ++ GateMirror.forward tail := by
     rw [newCut, forward_app (head ++ new) tail, forward_app head new]
-  have oldR : inverse (beforeEntry start) = inverse tail ++ inverse old ++ inverse head := by
-    rw [oldCut, inv_app (head ++ old) tail, inv_app head old, List.append_assoc]
-  have newR : inverse (beforeEntryG2 start) = inverse tail ++ inverse new ++ inverse head := by
-    rw [newCut, inv_app (head ++ new) tail, inv_app head new, List.append_assoc]
   dsimp only
-  rw [oldF, newF, oldR, newR]
-  exact ⟨replaceContext _ _ _ _ (fun m s => (phaseLocal m s).1) sameF,
-    replaceContext _ _ _ _ (fun m s => (phaseLocal m s).2) sameR,
-    measureContext _ _ _ _ sameF, measureContext _ _ _ _ sameR⟩
+  rw [oldF, newF]
+  exact ⟨replaceContext _ _ _ _ phaseLocal sameF, measureContext _ _ _ _ sameF⟩
 
 theorem companionOff (j : Fin 9) :
     let s := start20 j
@@ -20352,7 +20410,7 @@ theorem normalizedForward (j : Fin 9) (s : State) (m : List Bool)
   have countMiddle :
       measurementCount (copy ++ mid ++ rows ++ copy) = measurementCount (mid ++ oldGlue ++ rows) := by
     simp only [measurementCount_append, countGlue, countCopy, Nat.zero_add, Nat.add_zero]
-  obtain ⟨entry, _, countEntry, _⟩ := sameEntry j
+  obtain ⟨entry, countEntry⟩ := sameEntry j
   obtain ⟨freeP, _, freeQ, _⟩ := companionOff j
   have middleEq :
       run (copy ++ mid ++ rows ++ copy) rest first = run (mid ++ oldGlue ++ rows) rest first := by
@@ -20380,7 +20438,7 @@ attribute [local irreducible] run in
 theorem normalizedReturn (j : Fin 9) (initial first finished : State) (tape undoTape : List Bool)
     (value : Bool)
     (undoEntry : let s := start20 j
-      ∀ n, run (inverse (beforeEntry s)) n first = initial)
+      ∀ n, run (inverse (beforeEntryG2 s)) n first = initial)
     (undoMiddle : let s := start20 j
       ∀ m n, run (beforeJoinInv s) n (run (beforeJoin s) m first) = first)
     (undoRows : let s := start20 j
@@ -20417,10 +20475,43 @@ theorem normalizedReturn (j : Fin 9) (initial first finished : State) (tape undo
   have undoCenter := undoRecordedXor (beforeJoin s) (GateMirror.forward (joinCore s))
     (beforeJoinInv s) (inverse (joinCore s)) tape (undoTape.drop (measurementCount after))
     first value a b (lowDistinct j) freeQ freeQInv freeP undoMiddle undoRows atJoin
-  have undoFirst (n : List Bool) : run entry n first = initial :=
-    ((sameEntry j).2.1 n first).symm.trans (undoEntry n)
   rw [shape]
-  exact restoreRecordedCenter after middle entry undoTape finished _ first initial undoTail undoCenter undoFirst
+  exact restoreRecordedCenter after middle entry undoTape finished _ first initial undoTail undoCenter undoEntry
+
+def g2FullHead (s : Nat) : List Gate :=
+  let h := sbP20 s
+  firstRows20 s h ++ cell21_20 s h ++ headEnd20 s h ++ lastScanToffoli s ++
+    ((fix0P20 s h).drop 67 ++ leaveFix1_20 s ++ fix2Prefix h)
+
+def g2RedHead (s : Nat) : List Gate :=
+  let h := sbP20 s
+  commonEntry s ++ ((fix0P20 s h).drop 67 ++ leaveFix1_20 s ++ fix2Prefix h)
+
+def g2OldBlock (s : Nat) : List Gate :=
+  let w := g2Wire s (sbP20 s)
+  [.cx (w 1) (w 2), .x (w 2), .ccx (w 0) (w 1) (w 2), .make (w 3) (w 4) (w 5),
+   .ccx (w 5) (w 1) (w 2), .pop (w 3) (w 4) (w 5)]
+
+def g2NewBlock (s : Nat) : List Gate :=
+  let w := g2Wire s (sbP20 s)
+  [.make (w 3) (w 4) (w 5), .cx (w 0) (w 5), .make (w 5) (w 1) (w 2),
+   .cx (w 0) (w 5), .pop (w 3) (w 4) (w 5), .cx (w 1) (w 2), .x (w 2)]
+
+theorem fullBeforeEntry_g2Split (s : Nat) :
+    fullBeforeEntry s = g2FullHead s ++ (g2OldBlock s ++ fix2Tail s (sbP20 s)) := by
+  simp only [fullBeforeEntry, g2FullHead, g2OldBlock, headA1_20, originalFix2Parts, List.append_assoc]
+
+theorem beforeEntry_g2Split (s : Nat) :
+    beforeEntry s = g2RedHead s ++ (g2OldBlock s ++ fix2Tail s (sbP20 s)) := by
+  simp only [beforeEntry, g2RedHead, g2OldBlock, headA1_20, originalFix2Parts, List.append_assoc]
+
+theorem beforeEntryG2_g2Split (s : Nat) :
+    beforeEntryG2 s = g2RedHead s ++ (g2NewBlock s ++ fix2Tail s (sbP20 s)) := by
+  simp only [beforeEntryG2, g2RedHead, g2NewBlock, normalizedFix2CoreParts, List.append_assoc]
+
+theorem g2FullHeadKeeps1556_1576 : ∀ j : Fin 9,
+    (g2FullHead (start20 j)).all (fun g => decide (GateMirror.target g ≠ 1556 ∧ GateMirror.target g ≠ 1576)) = true := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.Shadow20.WideSelectorAssembly
 
@@ -20850,6 +20941,65 @@ theorem leaveP20Red_pair (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 :
   have undoEntry (n : List Bool) : run (inverse (beforeEntry sc)) n entered = s := by
     rw [← firstForward []]
     exact firstPair.2 [] n
+  have undoEntryG2 (n : List Bool) : run (inverse (beforeEntryG2 sc)) n entered = s := by
+    let w := g2Wire sc b
+    let fullHead := g2FullHead sc
+    let redHead := g2RedHead sc
+    let oldBlk := g2OldBlock sc
+    let newBlk := g2NewBlock sc
+    let tail := fix2Tail sc b
+    have vSplit : Valid s (fullHead ++ (oldBlk ++ tail)) := fullBeforeEntry_g2Split sc ▸ firstValid
+    obtain ⟨_, oldTailValid⟩ := vSplit.parts
+    obtain ⟨oldValid, tailValid⟩ := oldTailValid.parts
+    let uHead := run (GateMirror.forward fullHead) [] s
+    let uMid := run (GateMirror.forward oldBlk) [] uHead
+    have hEntered : entered = run (GateMirror.forward tail) [] uMid := by
+      change run (GateMirror.forward (entryLeave20 sc)) [] s = _
+      rw [← fullBeforeEntryIsEntry sc, fullBeforeEntry_g2Split sc, run_nil_append, run_nil_append]
+    have h1556 : uHead.basis (w 2) = false :=
+      (keeps_of_targets fullHead 1556
+        (fun g hg' => (of_decide_eq_true (List.all_eq_true.mp (g2FullHeadKeeps1556_1576 j) g hg')).1) [] s).trans
+        (h.scratch 1556 (by simp))
+    have h1576 : uHead.basis (w 5) = false :=
+      (keeps_of_targets fullHead 1576
+        (fun g hg' => (of_decide_eq_true (List.all_eq_true.mp (g2FullHeadKeeps1556_1576 j) g hg')).2) [] s).trans
+        (h.zero 1576 (by simp only [watched20, List.mem_append, List.mem_range'_1]; right; omega))
+    have wInj : ∀ a ∈ Finset.range 6, ∀ b' ∈ Finset.range 6, w a = w b' → a = b' := by
+      intro a ha b' hb' eq
+      exact congrArg Fin.val (g2WireInj j ⟨a, Finset.mem_range.mp ha⟩ ⟨b', Finset.mem_range.mp hb'⟩ eq)
+    have hOldFwd : renameProgram w (GateMirror.forward WideSelectorG2.old) = GateMirror.forward oldBlk := rfl
+    have hNewFwd : renameProgram w (GateMirror.forward WideSelectorG2.replacement) = GateMirror.forward newBlk := rfl
+    have hNewInv : renameProgram w (inverse WideSelectorG2.replacement) = inverse newBlk := rfl
+    have hMidNew : uMid = run (GateMirror.forward newBlk) [] uHead := by
+      change run (GateMirror.forward oldBlk) [] uHead = _
+      rw [← hOldFwd, ← hNewFwd]
+      exact WideSelectorG2.placed_forward_eq w wInj uHead []
+    have hUndoNew (t : List Bool) : run (inverse newBlk) t uMid = uHead := by
+      rw [hMidNew, ← hNewFwd, ← hNewInv]
+      exact WideSelectorG2.placed_inverse_roundtrip w wInj uHead h1556 h1576 t
+    have hUndoTail (t : List Bool) : run (inverse tail) t entered = uMid := by
+      rw [hEntered]; exact tailValid.undo_run [] t
+    have hUndoOld (t : List Bool) : run (inverse oldBlk) t uMid = uHead :=
+      oldValid.undo_run [] t
+    have hG2Inv : inverse (beforeEntryG2 sc) = inverse tail ++ (inverse newBlk ++ inverse redHead) := by
+      rw [beforeEntryG2_g2Split sc, inv_app, inv_app, List.append_assoc]
+    have hOldInv : inverse (beforeEntry sc) = inverse tail ++ (inverse oldBlk ++ inverse redHead) := by
+      rw [beforeEntry_g2Split sc, inv_app, inv_app, List.append_assoc]
+    let n3 := (n.drop (measurementCount (inverse tail))).drop (measurementCount (inverse newBlk))
+    let t0 := List.replicate (measurementCount (inverse tail)) false ++
+      (List.replicate (measurementCount (inverse oldBlk)) false ++ n3)
+    have hStep3 : run (inverse redHead) n3 uHead = s := by
+      have h0 := undoEntry t0
+      rw [hOldInv, run_append (inverse tail), run_append (inverse oldBlk), hUndoTail, hUndoOld] at h0
+      have hd1 : t0.drop (measurementCount (inverse tail)) =
+          List.replicate (measurementCount (inverse oldBlk)) false ++ n3 :=
+        List.drop_left' List.length_replicate
+      have hd2 : (List.replicate (measurementCount (inverse oldBlk)) false ++ n3).drop
+          (measurementCount (inverse oldBlk)) = n3 :=
+        List.drop_left' List.length_replicate
+      rwa [hd1, hd2] at h0
+    rw [hG2Inv, run_append (inverse tail), run_append (inverse newBlk), hUndoTail, hUndoNew]
+    exact hStep3
 
   refine ⟨fun m => (movedForward m).trans ((hred_eq m).trans (hold_eq m).symm), ?_⟩
   intro m n
@@ -20868,7 +21018,7 @@ theorem leaveP20Red_pair (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 :
   have fixedJoin (t : List Bool) : run q t glued = joined := joinPair.1 t
   have reached : run p tp entered = edge := fixedEdge tp
   apply normalizedReturn j s entered (run (normalizedLeave j) m s) midTape n (glueValue sc edge)
-    undoEntry undoBeforeJoin undoJoin
+    undoEntryG2 undoBeforeJoin undoJoin
   · change ∀ l, run (inverse (afterRest sc)) l (run (normalizedLeave j) m s) =
       run q tq (xorBit (b0P20 sc - 1) (glueValue sc edge) (run p tp entered))
     rw [reached, ← gluedEq, fixedJoin]
