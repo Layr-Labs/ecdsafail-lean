@@ -2470,14 +2470,61 @@ def place (s q : Nat) : Wire :=
   if q < n then Shadow7.bankW s q else if q < n+16 then Partial.tagsP.getD (q-n) 1560
   else Shadow7.poolW s (17 + (q-n-16)%10)
 
-def barrel (s : Nat) (mirror : Bool) : Program :=
-  renameProgram (place s) (logical (barrelWidth s) mirror)
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
-def barrelT (s : Nat) (_mirror : Bool) : Nat := (measuredCosts (barrelWidth s)).1
-def barrelM (s : Nat) (_mirror : Bool) : Nat := (measuredCosts (barrelWidth s)).2.1
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic Challenge CRTBarrel
+abbrev width : Nat := 31
+abbrev retained : Nat := 17
+abbrev quotientBits : Nat := 14
+def factors : List (Nat × Nat) := [(7,1),(11,1),(31,1),(257,1)]
+def productModulus : Nat := 134415
+
+def encoding : List (Wire × Wire) := [(30, 24), (30, 23), (30, 21), (30, 16), (30, 15), (30, 14), (30, 13), (29, 23), (29, 22), (29, 20), (29, 15), (29, 14), (29, 13), (29, 12), (28, 22), (28, 21), (28, 19), (28, 14), (28, 13), (28, 12), (28, 11), (27, 21), (27, 20), (27, 18), (27, 13), (27, 12), (27, 11), (27, 10), (26, 20), (26, 19), (26, 17), (26, 12), (26, 11), (26, 10), (26, 9), (25, 19), (25, 18), (25, 16), (25, 11), (25, 10), (25, 9), (25, 8), (24, 18), (24, 17), (24, 15), (24, 10), (24, 9), (24, 8), (24, 7), (23, 17), (23, 16), (23, 14), (23, 9), (23, 8), (23, 7), (23, 6), (22, 16), (22, 15), (22, 13), (22, 8), (22, 7), (22, 6), (22, 5), (21, 15), (21, 14), (21, 12), (21, 7), (21, 6), (21, 5), (21, 4), (20, 14), (20, 13), (20, 11), (20, 6), (20, 5), (20, 4), (20, 3), (19, 13), (19, 12), (19, 10), (19, 5), (19, 4), (19, 3), (19, 2), (18, 12), (18, 11), (18, 9), (18, 4), (18, 3), (18, 2), (18, 1), (17, 11), (17, 10), (17, 8), (17, 3), (17, 2), (17, 1), (17, 0), (16, 15), (16, 14), (16, 13), (16, 12), (16, 11), (16, 9), (16, 8), (16, 2), (16, 0), (15, 16), (15, 13), (15, 11), (15, 8), (15, 1), (15, 0), (14, 15), (14, 13), (14, 10), (14, 9), (14, 8), (14, 0), (13, 16), (13, 14), (13, 9), (13, 7), (13, 6), (13, 5), (13, 4), (13, 3), (13, 2), (13, 1), (13, 0), (12, 15), (12, 13), (12, 11), (12, 10), (12, 9), (12, 6), (12, 4), (12, 2), (12, 0), (11, 14), (11, 12), (11, 9), (11, 5), (11, 4), (11, 1), (11, 0), (10, 13), (10, 11), (10, 9), (10, 4), (10, 0), (9, 12), (9, 10), (9, 3), (9, 2), (9, 1), (9, 0), (8, 13), (8, 12), (8, 4), (8, 3), (8, 2), (8, 1), (8, 0), (7, 16), (7, 15), (7, 14), (7, 12), (7, 9), (7, 8), (7, 4), (7, 2), (7, 1), (7, 0), (6, 15), (6, 11), (6, 10), (6, 8), (6, 7), (6, 4), (6, 1), (6, 0), (5, 14), (5, 10), (5, 9), (5, 8), (5, 7), (5, 6), (5, 4), (5, 0), (4, 13), (4, 10), (4, 8), (4, 7), (4, 5), (4, 1), (3, 12), (3, 11), (3, 10), (3, 8), (3, 5), (3, 0), (2, 11), (2, 10), (2, 9), (2, 7), (2, 6), (2, 5), (2, 4), (2, 3), (2, 1), (2, 0), (1, 10), (1, 9), (1, 6), (1, 3), (0, 9), (0, 5), (0, 2)]
+def quotientParity : List (List Wire) := [[0, 1, 2, 3, 4, 6, 9, 13, 14, 16], [1, 3, 4, 5, 7, 10, 11, 12, 13, 15, 16], [0, 2, 4, 6, 8, 11, 13, 16], [0, 1, 3, 7, 9, 10, 11, 14, 15, 16], [1, 4, 5, 8, 10, 12, 13, 14, 16], [0, 2, 6, 9, 10, 13, 15, 16], [0, 1, 2, 3, 5, 7, 9, 11, 12, 13, 16], [1, 2, 3, 4, 6, 8, 9, 12, 14, 15, 16], [0, 3, 4, 7, 9, 13, 14, 16], [0, 1, 2, 4, 5, 8, 10, 11, 12, 13, 15, 16], [1, 3, 6, 11, 13, 16], [0, 4, 5, 7, 9, 10, 11, 14, 15, 16], [0, 1, 2, 6, 8, 10, 12, 13, 14, 16], [1, 2, 3, 7, 9, 10, 13, 15, 16]]
+def paritySites (i : Nat) : List Wire := quotientParity.getD i []
+def selectorSites (i : Nat) : List Wire := ((List.range 16).drop (i+1)).map (31+·)
+
+def mixControls (i : Nat) : Program :=
+  (selectorSites i).map (fun q => .CX q 55) ++
+    (paritySites i).tail.map (fun q => .CX q ((paritySites i).headD 0))
+
+def correction (mir : Bool) (i : Nat) : Program :=
+  let prep := mixControls i
+  let a := (paritySites i).headD 0
+  let q := retained + i
+  prep ++ [if mir then .measureX q [] [.CZ 55 a] else .CCX 55 a q] ++ prep.reverse
+
+def corrections (mir : Bool) : Program :=
+  (List.range quotientBits).flatMap (correction mir)
+
+def logicalResidue (mir : Bool) : Program :=
+  let basis := encoding.map (fun (a,b) => Instr.CX a b)
+  let residues := CRTBarrel.components width mir 0 factors
+  basis ++ (if mir then corrections mir ++ residues else residues ++ corrections mir) ++ basis.reverse
+
+def bounds (mir : Bool) : Nat × Nat × Nat :=
+  if mir then (28, 17, 1360) else (42, 3, 1346)
+
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
+def logicalAt (s : Nat) (mirror : Bool) : Program :=
+  if s = 45 then CRTResidueS45.logicalResidue mirror else logical (barrelWidth s) mirror
+
+def barrel (s : Nat) (mirror : Bool) : Program :=
+  renameProgram (place s) (logicalAt s mirror)
+
+def barrelT (s : Nat) (mir : Bool) : Nat :=
+  if s = 45 then (CRTResidueS45.bounds mir).1 else (measuredCosts (barrelWidth s)).1
+
+def barrelM (s : Nat) (mir : Bool) : Nat :=
+  if s = 45 then (CRTResidueS45.bounds mir).2.1 else (measuredCosts (barrelWidth s)).2.1
+
 def barrelSlots (s : Nat) (mirror : Bool) : Nat :=
-  let v := (measuredCosts (barrelWidth s)).2.2
-  if mirror then v.2 else v.1
+  if s = 45 then (CRTResidueS45.bounds mirror).2.2 else
+    let v := (measuredCosts (barrelWidth s)).2.2
+    if mirror then v.2 else v.1
 
 def beforeReference (s : Nat) : List GateMirror.Gate :=
   let b := Shadow7.sbP s
@@ -4229,6 +4276,23 @@ end ECDSAAdd.Entrant.StairPacket.CRTBarrel.Resources
 end
 -- ==== end CRTResources ====
 
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic Challenge CRTBarrel
+set_option maxRecDepth 30000
+theorem geometry :
+    CRTBarrel.barrelWidth 45 = width ∧ Shadow7.wpP 45 = retained ∧
+      CRTBarrel.place 45 55 = 1623 := by decide +kernel
+
+set_option profiler true in
+theorem costs (mir : Bool) :
+    let p := logicalResidue mir
+    (toffoliCount p,measurementCount p,gateSlots p) = bounds mir := by
+  cases mir <;> decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+end
+
 -- ==== begin CRTBarrelMetrics ====
 section
 
@@ -4257,12 +4321,29 @@ theorem barrel_metrics (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir 
     toffoliCount (barrel (start j) mir) = barrelT (start j) mir ∧
     measurementCount (barrel (start j) mir) = barrelM (start j) mir ∧
     Challenge.gateSlots (barrel (start j) mir) = barrelSlots (start j) mir := by
-  have hn := usedWidth j lo hi
-  have h : count (barrel (start j) mir) = listedPrice (barrelWidth (start j)) mir := by
-    unfold barrel
-    rw [renamed, logical_count _ _ (fun pair hm => field_count _ (schedule_fields _ hn pair hm) _),
-        window_price _ hn]
-  exact ⟨congrArg Count.t h, congrArg Count.m h, congrArg Count.slots h⟩
+  by_cases hit : start j = 45
+  · have mapped :
+        (toffoliCount (barrel (start j) mir), measurementCount (barrel (start j) mir),
+          Challenge.gateSlots (barrel (start j) mir)) = CRTResidueS45.bounds mir := by
+      rw [barrel,logicalAt,if_pos hit]
+      have counts := renamed (place (start j)) (CRTResidueS45.logicalResidue mir)
+      have casted := congrArg (fun x : Count => (x.t,x.m,x.slots)) counts
+      exact casted.trans (CRTResidueS45.costs mir)
+    refine ⟨?_, ?_, ?_⟩
+    · rw [barrelT,if_pos hit]
+      exact congrArg Prod.fst mapped
+    · rw [barrelM,if_pos hit]
+      exact congrArg (fun x => x.2.1) mapped
+    · rw [barrelSlots,if_pos hit]
+      exact congrArg (fun x => x.2.2) mapped
+  · have hn := usedWidth j lo hi
+    have h : count (barrel (start j) mir) = listedPrice (barrelWidth (start j)) mir := by
+      unfold barrel logicalAt
+      rw [if_neg hit,renamed,logical_count _ _ (fun pair hm => field_count _ (schedule_fields _ hn pair hm) _),
+          window_price _ hn]
+    exact ⟨by simpa only [barrelT,if_neg hit] using congrArg Count.t h,
+      by simpa only [barrelM,if_neg hit] using congrArg Count.m h,
+      by simpa only [barrelSlots,if_neg hit] using congrArg Count.slots h⟩
 
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
@@ -4768,9 +4849,28 @@ theorem logical_fits (n : Nat) (hn : UsedWidth n) (mir : Bool) : Fits (· < n+26
   exact fits_append (fits_append basis (components_fits n mir 0 (schedule n)
     (by rw [schedule_extent n hn]; omega) (schedule_fields n hn))) (fits_reverse basis)
 
+def residueFitsCheck (mir : Bool) : Bool :=
+  (CRTResidueS45.logicalResidue mir).all fun i =>
+    physicalBit i && decide (∀ q ∈ i.wires, q < 57)
+
+private theorem residueFitsChecked (mir : Bool) : residueFitsCheck mir = true := by
+  cases mir <;> decide +kernel
+
+theorem logicalAt_fits (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool) :
+    Fits (· < barrelWidth (start j)+26) (logicalAt (start j) mir) := by
+  by_cases hit : start j = 45
+  · rw [logicalAt,if_pos hit,hit,CRTResidueS45.geometry.1]
+    intro i hi
+    have ok := List.all_eq_true.mp (residueFitsChecked mir) i hi
+    simp only [Bool.and_eq_true] at ok
+    obtain ⟨physical,cover⟩ := ok
+    refine ⟨?_, of_decide_eq_true cover⟩
+    cases i <;> simp_all [physicalBit,PhysicalInstr,ProperGate]
+  · simpa only [logicalAt,if_neg hit] using logical_fits _ (usedWidth j lo hi) mir
+
 theorem barrel_phys (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool) :
     GatePhysical (barrel (start j) mir) := by
-  have logicalOK := logical_fits _ (usedWidth j lo hi) mir
+  have logicalOK := logicalAt_fits j lo hi mir
   have physicalOK := fits_rename (T := fun _ => True) (place (start j)) _ logicalOK
     (fun _ _ => trivial) (place_inj j lo hi)
   exact fun i hit => (physicalOK i hit).1
@@ -6160,11 +6260,12 @@ namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
 open Placement Matrix Partial
 
 /-- Slot zero has no tag; slot k+1 selects k. The mirror enters on the forward image. -/
-theorem barrel_result_of_matrix (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool)
+theorem barrel_result_of_rows (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool)
     (slot : Fin 17) (v : Nat) (s : State) (tape : List Bool)
-    (basisOK : CoordinatesOK (barrelWidth (start j)))
-    (action : ActionOK (barrelWidth (start j)) slot.val mir)
-    (small : v < 2^(barrelWidth (start j) - (slot.val - 1)))
+    (dim : Nat) (small : v < 2^dim)
+    (shift : run (logicalAt (start j) mir) tape
+      (frame (plain (barrelWidth (start j)) dim (entryShift mir slot.val)) v.testBit dim slot.val s.phase) =
+      frame (plain (barrelWidth (start j)) dim (exitShift mir slot.val)) v.testBit dim slot.val s.phase)
     (input : HighBankBarrel.holds (Shadow7.bankW (start j)) (barrelWidth (start j))
       (v <<< entryShift mir slot.val) s)
     (tag : ∀ k : Fin 16, s.basis (tagsP.getD k.val 1560) = decide (slot.val = k.val+1))
@@ -6172,14 +6273,13 @@ theorem barrel_result_of_matrix (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 
     HighBankBarrel.Result (Shadow7.bankW (start j)) (barrelWidth (start j))
       (v <<< exitShift mir slot.val) s (run (barrel (start j) mir) tape s) := by
   let n := barrelWidth (start j)
-  let dim := n - (slot.val - 1)
-  let P := logical n mir
+  let P := logicalAt (start j) mir
   let f := place (start j)
   let S := Finset.range (n+26)
   let before := entryShift mir slot.val
   let after := exitShift mir slot.val
   have sv : v < 2^dim := small
-  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support (logical_fits _ (usedWidth j lo hi) _) _ hw)
+  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support (logicalAt_fits j lo hi mir) _ hw)
   have inj : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b :=
     fun a ha b hb => place_inj j lo hi a (Finset.mem_range.mp ha) b (Finset.mem_range.mp hb)
   have bank (k i : Nat) (ik : i < n) :
@@ -6205,8 +6305,6 @@ theorem barrel_result_of_matrix (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 
        by_cases low : q<n
        · rw [bank before q low,placed q low]; exact (input q low).symm
        · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq))
-  have shift := logical_action n (usedWidth j lo hi) mir slot.val
-    (by have := slot.isLt; omega) basisOK action v.testBit s.phase tape
   change run P tape (frame (plain n dim before) _ _ _ _) = frame (plain n dim after) _ _ _ _ at shift
   rw [shift] at result
   change HighBankBarrel.Result (Shadow7.bankW (start j)) n (v <<< after) s (run (renameProgram f P) tape s)
@@ -7306,6 +7404,682 @@ end ECDSAAdd.Entrant.StairPacket.CRTBarrel.Packed
 end
 -- ==== end CRTTemplateAction ====
 
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic Challenge CRTBarrel CRTBarrel.Matrix
+set_option maxRecDepth 30000
+set_option maxHeartbeats 3000000
+set_option linter.unusedSimpArgs false
+theorem selectorIsThreshold : ∀ (slot : Fin 17) (i : Fin 14),
+    CRTBarrel.xorAt (CRTBarrel.flags width slot.val) (selectorSites i.val) =
+      decide (i.val < slot.val - 1) := by
+  decide +kernel
+
+theorem coordinateWires :
+    (∀ a ∈ encoding, a.1 < width ∧ a.2 < width ∧ a.1 ≠ a.2) ∧
+    (∀ i : Fin 14, (paritySites i.val).Nodup ∧ (paritySites i.val).length > 0 ∧
+      ∀ q ∈ paritySites i.val, q < retained) := by decide +kernel
+
+def dim (slot : Nat) := min retained (width - (slot - 1))
+def coded (slot k : Nat) : Rows := applyOps encoding (CRTBarrel.plain width (dim slot) k)
+def rowParity (rs : Rows) (i : Nat) : Nat :=
+  (paritySites i).foldl (fun a q => a ^^^ Matrix.read rs q) 0
+
+def boundaryRows (rs : Rows) (slot : Nat) : Rows :=
+  (List.range quotientBits).foldl
+    (fun a i => a.setIfInBounds (retained + i)
+      (Matrix.read rs (retained + i) ^^^ (if i < slot - 1 then rowParity rs i else 0))) rs
+
+def encodedRows : Rows := #[1840700269, 920350134, 490370281, 659463482, 1318926964, 1662567985, 623462994, 692736660, 831283992, 2147483647, 715827882, 1288490188, 143165576, 1894838512, 547397792, 1086374080, 8421504, 629276672, 1258553344, 369623040, 739246080, 1478492160, 809500672, 1619001344, 1090519040, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824]
+
+private theorem encodedRows_check :
+    applyOps encoding (CRTBarrel.Matrix.units width) = encodedRows := by
+  apply Array.toList_inj.mp
+  decide +kernel
+
+def fastCoded (slot k : Nat) : Rows :=
+  encodedRows.map (CRTBarrel.clipShift (dim slot) k)
+
+private theorem coded_fast (slot k : Nat) : coded slot k = fastCoded slot k := by
+  unfold coded CRTBarrel.plain fastCoded
+  rw [CRTBarrel.Matrix.apply_map _ _ (CRTBarrel.clip_zero ..) (CRTBarrel.clip_xor (dim slot) k), encodedRows_check]
+
+private theorem fastZeroInput : ∀ (slot : Fin 17) (i : Fin 14),
+    Matrix.read (fastCoded slot.val 0) (retained+i.val) = 0 := by decide +kernel
+
+private theorem fastReversePrepared : ∀ (slot : Fin 17) (i : Fin 14),
+    let r := fastCoded slot.val (slot.val - 1)
+    Matrix.read r (retained + i.val) =
+      if i.val < slot.val - 1 then rowParity r i.val else 0 := by
+  decide +kernel
+
+theorem zeroInput : ∀ (slot : Fin 17) (i : Fin 14),
+    Matrix.read (coded slot.val 0) (retained+i.val) = 0 := by
+  intro slot i
+  simpa only [coded_fast] using fastZeroInput slot i
+
+theorem reversePrepared : ∀ (slot : Fin 17) (i : Fin 14),
+    let r := coded slot.val (slot.val - 1)
+    Matrix.read r (retained + i.val) =
+      if i.val < slot.val - 1 then rowParity r i.val else 0 := by
+  intro slot i
+  simpa only [coded_fast] using fastReversePrepared slot i
+
+-- Equivalent scalar matrix step. The arithmetic reads only the active selector.
+def fastField (rs : Rows) (p : Nat) (mir : Bool) (slot off : Nat) : Rows :=
+  Array.ofFn fun q : Fin rs.size =>
+    if off ≤ q.val ∧ q.val < off + CRTBarrel.fieldDegree p then
+      CRTBarrel.fastScalar p mir slot (fun j => Matrix.read rs (off+j)) (q.val-off)
+    else Matrix.read rs q.val
+
+private theorem scalar_eq_fast (rs : Rows) (p : Nat) (mir : Bool) (slot off : Nat) :
+    CRTBarrel.scalarRows rs p mir slot off = fastField rs p mir slot off := by
+  simp only [CRTBarrel.scalarRows,fastField,CRTBarrel.scalar_fast]
+
+private theorem primary_one_fast (r : Rows) (off p slot : Nat) (mir : Bool) :
+    CRTBarrel.primaryRows r off p 1 slot mir = fastField r p mir slot off := by
+  cases mir <;> simp [CRTBarrel.primaryRows,CRTBarrel.scalars,CRTBarrel.triRows,
+    CRTBarrel.stageRows,CRTBarrel.oriented,show List.range 4 = [0,1,2,3] from rfl,
+    show List.range 1 = [0] from rfl,scalar_eq_fast]
+
+def fastComponents (mir : Bool) (slot : Nat) (r : Rows) : Rows :=
+  fastField (fastField (fastField (fastField r 7 mir slot 0) 11 mir slot 2) 31 mir slot 5)
+    257 mir slot 9
+
+private theorem components_eq_fast (mir : Bool) (slot : Nat) (r : Rows) :
+    CRTBarrel.componentRows mir slot 0 factors r = fastComponents mir slot r := by
+  have h7 : CRTBarrel.fieldDegree 7 = 2 := by decide +kernel
+  have h11 : CRTBarrel.fieldDegree 11 = 3 := by decide +kernel
+  have h31 : CRTBarrel.fieldDegree 31 = 4 := by decide +kernel
+  simp [factors,CRTBarrel.componentRows,primary_one_fast,fastComponents,h7,h11,h31]
+
+private theorem fast_forward_rows : ∀ (slot : Fin 17),
+    (boundaryRows (fastComponents false slot.val (fastCoded slot.val 0)) slot.val).toList =
+      (fastCoded slot.val (slot.val-1)).toList := by
+  decide +kernel
+
+private theorem fast_reverse_rows : ∀ (slot : Fin 17),
+    (fastComponents true slot.val (boundaryRows (fastCoded slot.val (slot.val-1)) slot.val)).toList =
+      (fastCoded slot.val 0).toList := by
+  decide +kernel
+
+attribute [local irreducible] componentRows fastComponents CRTResidueS45.coded fastCoded boundaryRows
+
+theorem forward_rows_export (slot : Fin 17) :
+    boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
+      coded slot.val (slot.val-1) := by
+  let k := slot.val - 1
+  let r := coded slot.val 0
+  let fastR := fastCoded slot.val 0
+  let applyForward (rows : Rows) := boundaryRows (fastComponents false slot.val rows) slot.val
+  have head : boundaryRows (componentRows false slot.val 0 factors r) slot.val = applyForward r :=
+    congrArg (fun w => boundaryRows w slot.val) (components_eq_fast false slot.val r)
+  have codedInput : r = fastR := coded_fast slot.val 0
+  have step : applyForward fastR = fastCoded slot.val k :=
+    Array.toList_inj.mp (fast_forward_rows slot)
+  have decodedOutput : fastCoded slot.val k = coded slot.val k := (coded_fast slot.val k).symm
+  exact head.trans ((congrArg applyForward codedInput).trans (step.trans decodedOutput))
+
+theorem reverse_rows_export (slot : Fin 17) :
+    componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val) =
+      coded slot.val 0 := by
+  let k := slot.val - 1
+  let r := coded slot.val k
+  let fastR := fastCoded slot.val k
+  let applyReverse (rows : Rows) := fastComponents true slot.val (boundaryRows rows slot.val)
+  have head : componentRows true slot.val 0 factors (boundaryRows r slot.val) = applyReverse r :=
+    components_eq_fast true slot.val (boundaryRows r slot.val)
+  have codedInput : r = fastR := coded_fast slot.val k
+  have step : applyReverse fastR = fastCoded slot.val 0 :=
+    Array.toList_inj.mp (fast_reverse_rows slot)
+  have decodedOutput : fastCoded slot.val 0 = coded slot.val 0 := (coded_fast slot.val 0).symm
+  exact head.trans ((congrArg applyReverse codedInput).trans (step.trans decodedOutput))
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTResiduePulse
+open Arithmetic CRTBarrel
+
+private theorem xor_write (bits : BasisState) (xs : List Wire) (t : Wire) (b : Bool)
+    (apart : t ∉ xs) :
+    xorAt (writeBit bits t b) xs = xorAt bits xs := by
+  induction xs with
+  | nil => rfl
+  | cons a xs ih =>
+    have ha : a ≠ t := fun e => apart (by simp [e])
+    have ht : t ∉ xs := fun hh => apart (List.mem_cons_of_mem _ hh)
+    simp only [xorAt,writeBit,Function.update_of_ne ha]
+    exact congrArg (Bool.xor (bits a)) (ih ht)
+
+private theorem xor_append (bits : BasisState) (a b : List Wire) :
+    xorAt bits (a ++ b) = (xorAt bits a ^^ xorAt bits b) := by
+  induction a with
+  | nil => simp [xorAt]
+  | cons h t ih => simp [xorAt,ih]
+
+private theorem xor_reverse (bits : BasisState) (xs : List Wire) :
+    xorAt bits xs.reverse = xorAt bits xs := by
+  induction xs with
+  | nil => rfl
+  | cons a xs ih =>
+    rw [List.reverse_cons,xor_append,ih]
+    simp [xorAt,Bool.xor_comm]
+
+private theorem selector_restored (bits : BasisState) (t a q : Wire)
+    (ta : t ≠ a) (tq : t ≠ q) (aq : a ≠ q) (x y z : Bool) :
+    writeBit (writeBit (writeBit (writeBit (writeBit bits t x) a y) q z) a (bits a))
+      t (bits t) = writeBit bits q z := by
+  funext k
+  by_cases ht : k = t
+  · subst k; simp [writeBit,Function.update_of_ne tq]
+  by_cases ha : k = a
+  · subst k; simp [writeBit,Function.update_of_ne ta.symm,Function.update_of_ne aq]
+  by_cases hq : k = q
+  · subst k; simp [writeBit,Function.update_of_ne tq.symm,Function.update_of_ne aq.symm]
+  simp [writeBit,Function.update_of_ne ht,Function.update_of_ne ha,Function.update_of_ne hq]
+
+private theorem erase_eq_ccx (a b q : Wire) (s : State) (tape : List Bool)
+    (ha : a ≠ q) (hb : b ≠ q)
+    (prepared : s.basis q = (s.basis a && s.basis b)) :
+    run [.measureX q [] [.CZ a b]] tape s = run [.CCX a b q] [] s := by
+  change run [GateMirror.front (.pop a b q)] tape s = _
+  rw [GateMirror.head_default (.pop a b q) s prepared (by simp [GateMirror.proper, ha, hb]) tape]
+  simp [GateMirror.transition,GateMirror.front,GateMirror.erase,run,measureAndCorrect,ECDSAAdd.correct,prepared]
+
+/-- A selector parity and a data parity act on a separate quotient bit.
+The reverse gate erases a prepared bit and preserves the incoming phase on every tape. -/
+theorem run_pulse (tags data : List Wire) (t a q : Wire) (mir : Bool)
+    (ph : Bool) (bits : BasisState) (tape : List Bool)
+    (ta : t ≠ a) (tq : t ≠ q) (aq : a ≠ q)
+    (tt : t ∉ tags) (atags : a ∉ tags) (qt : q ∉ tags)
+    (td : t ∉ data) (ad : a ∉ data) (qd : q ∉ data)
+    (clear : bits t = false)
+    (prepared : mir = true → bits q = (xorAt bits tags && (bits a ^^ xorAt bits data))) :
+    run ((toggles tags t ++ toggles data a) ++
+        [if mir then .measureX q [] [.CZ t a] else .CCX t a q] ++
+        (toggles tags t ++ toggles data a).reverse) tape ⟨ph,bits⟩ =
+      ⟨ph, writeBit bits q (bits q ^^ (xorAt bits tags && (bits a ^^ xorAt bits data)))⟩ := by
+  let sel := xorAt bits tags
+  let val := bits a ^^ xorAt bits data
+  let out := bits q ^^ (sel && val)
+  let s1 := writeBit bits t sel
+  let s2 := writeBit s1 a val
+  let s3 := writeBit s2 q out
+  let s4 := writeBit s3 a (bits a)
+  have sa : s1 a = bits a := by simp [s1,writeBit,Function.update_of_ne ta.symm]
+  have st : s2 t = sel := by simp [s2,s1,writeBit,Function.update_of_ne ta]
+  have pa : s2 a = val := by simp [s2,writeBit]
+  have sq : s2 q = bits q := by
+    simp [s2,s1,writeBit,Function.update_of_ne aq.symm,Function.update_of_ne tq.symm]
+  have forward (m : List Bool) :
+      run (toggles tags t ++ toggles data a) m ⟨ph,bits⟩ = ⟨ph,s2⟩ := by
+    rw [run_append,run_take,run_toggles _ _ tt,clear,Bool.false_xor]
+    change run (toggles data a) _ ⟨ph,s1⟩ = _
+    rw [run_toggles _ _ ad,sa]
+    simp only [s1,s2,sel,val,xor_write _ _ _ _ td]
+  have center (m : List Bool) :
+      run [if mir then .measureX q [] [.CZ t a] else .CCX t a q] m ⟨ph,s2⟩ = ⟨ph,s3⟩ := by
+    cases hm : mir
+    · simp [run,s3,out,sq,st,pa]
+    · have hp : s2 q = (s2 t && s2 a) := by rw [sq,st,pa]; exact prepared hm
+      simpa [hm,run,s3,out,sq,st,pa] using erase_eq_ccx t a q ⟨ph,s2⟩ m tq aq hp
+  have data_parity : xorAt s3 data = xorAt bits data := by
+    simp only [s3,s2,s1,xor_write _ _ _ _ qd,xor_write _ _ _ _ ad,xor_write _ _ _ _ td]
+  have tags_parity : xorAt s4 tags = sel := by
+    simp only [s4,s3,s2,s1,sel,xor_write _ _ _ _ atags,xor_write _ _ _ _ qt,xor_write _ _ _ _ tt]
+  have unwind (m : List Bool) :
+      run (toggles tags t ++ toggles data a).reverse m ⟨ph,s3⟩ =
+        ⟨ph,writeBit bits q out⟩ := by
+    rw [List.reverse_append]
+    simp only [toggles,←List.map_reverse]
+    change run (toggles data.reverse a ++ toggles tags.reverse t) _ _ = _
+    have ad' : a ∉ data.reverse := by simpa using ad
+    have tt' : t ∉ tags.reverse := by simpa using tt
+    rw [run_append,run_take,run_toggles _ _ ad',xor_reverse,data_parity]
+    have sv : s3 a = val := by simp [s3,writeBit,Function.update_of_ne aq,pa]
+    have restored : (val ^^ xorAt bits data) = bits a := by
+      change ((bits a ^^ xorAt bits data) ^^ xorAt bits data) = bits a
+      rw [Bool.xor_assoc,Bool.xor_self]
+      exact Bool.xor_false _
+    rw [sv,restored]
+    change run (toggles tags.reverse t) _ ⟨ph,s4⟩ = _
+    rw [run_toggles _ _ tt',xor_reverse,tags_parity]
+    have sw : s4 t = sel := by
+      simp [s4,s3,writeBit,Function.update_of_ne ta,Function.update_of_ne tq,st]
+    rw [sw,Bool.xor_self,← clear]
+    exact congrArg (State.mk ph) (selector_restored _ _ _ _ ta tq aq _ _ _)
+  rw [List.append_assoc,run_append,run_take,forward,run_append,run_take,center,unwind]
+
+end ECDSAAdd.Entrant.StairPacket.CRTResiduePulse
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic Challenge CRTBarrel CRTBarrel.Matrix
+set_option maxRecDepth 30000
+set_option maxHeartbeats 120000
+-- Insert in the witness namespace after the closed finite row checks.
+open CRTBarrel.Placement CRTBarrel.Matrix
+
+-- Insert in the witness namespace after the closed finite row checks.
+open CRTBarrel.Placement CRTBarrel.Matrix
+
+-- Insert in the witness namespace after the closed finite row checks.
+open CRTBarrel.Placement CRTBarrel.Matrix
+
+private theorem coded_size (slot k : Nat) : (coded slot k).size = width := by
+  simp [coded]
+
+private theorem boundary_size (initial : Rows) (slot : Nat) :
+    (boundaryRows initial slot).size = initial.size := by
+  let step := fun (r : Rows) i => r.setIfInBounds (retained+i)
+    (Matrix.read initial (retained+i) ^^^ (if i < slot-1 then rowParity initial i else 0))
+  have sizes (todo : List Nat) (r : Rows) : (todo.foldl step r).size = r.size := by
+    induction todo generalizing r with
+    | nil => rfl
+    | cons i tail ih =>
+      simp only [List.foldl_cons,ih,step,Array.size_setIfInBounds]
+  exact sizes (List.range quotientBits) initial
+
+private theorem parity_row_eval (rs : Rows) (word : Nat → Bool) (d slot : Nat) (ph : Bool)
+    (xs : List Wire) (within : ∀ q ∈ xs, q < rs.size) (initial : Nat) :
+    rowValue word (xs.foldl (fun z q => z ^^^ Matrix.read rs q) initial) d =
+      (rowValue word initial d ^^ xorAt (frame rs word d slot ph).basis xs) := by
+  induction xs generalizing initial with
+  | nil => simp [xorAt]
+  | cons a tail ih =>
+    have ha := within a (by simp)
+    have ht : ∀ q ∈ tail, q < rs.size := fun q h => within q (List.mem_cons_of_mem _ h)
+    simp only [List.foldl_cons,xorAt]
+    rw [ih ht, rowValue_xor]
+    simp only [frame,Matrix.basis,if_pos ha,Bool.xor_assoc]
+
+private theorem read_set_away (rs : Rows) (i j y : Nat) (away : i ≠ j) :
+    Matrix.read (rs.setIfInBounds i y) j = Matrix.read rs j := by
+  simp [Matrix.read,away]
+
+private theorem parity_read_agree (a b : Rows) (i : Nat)
+    (same : ∀ q ∈ paritySites i, Matrix.read a q = Matrix.read b q) :
+    rowParity a i = rowParity b i := by
+  have eqFold (qs : List Wire) (z : Nat) (agree : ∀ q ∈ qs, Matrix.read a q = Matrix.read b q) :
+      qs.foldl (fun x q => x ^^^ Matrix.read a q) z =
+        qs.foldl (fun x q => x ^^^ Matrix.read b q) z := by
+    induction qs generalizing z with
+    | nil => rfl
+    | cons q qs ih =>
+      simp only [List.foldl_cons]
+      rw [agree q (by simp)]
+      exact ih _ (fun w h => agree w (List.mem_cons_of_mem _ h))
+  exact eqFold _ 0 same
+
+private theorem frame_set (rs : Rows) (x : Nat → Bool) (d slot q row : Nat) (ph : Bool)
+    (hq : q < rs.size) :
+    frame (rs.setIfInBounds q row) x d slot ph =
+      ⟨ph,writeBit (frame rs x d slot ph).basis q (rowValue x row d)⟩ := by
+  apply congrArg (State.mk ph)
+  funext k
+  by_cases eq : k = q
+  · subst k
+    simp [frame,Matrix.basis,Matrix.read,writeBit,hq]
+  · simp [frame,Matrix.basis,Matrix.read,writeBit,
+      Function.update_of_ne eq,Ne.symm eq]
+
+private theorem selector_bounds (i : Nat) :
+    ∀ k ∈ selectorSites i, width ≤ k ∧ k < width+16 := by
+  intro q hq
+  obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hq
+  have lt := List.mem_range.mp (List.mem_of_mem_drop hk)
+  exact ⟨Nat.le_add_right 31 k,Nat.add_lt_add_left lt 31⟩
+
+private theorem selector_parity (rs : Rows) (sz : rs.size = width)
+    (slot : Fin 17) (i : Fin 14) (word : Nat → Bool) (d : Nat) (ph : Bool) :
+    xorAt (frame rs word d slot.val ph).basis (selectorSites i.val) = decide (i.val < slot.val - 1) := by
+  have agrees : ∀ k ∈ selectorSites i.val,
+      (frame rs word d slot.val ph).basis k = flags width slot.val k := fun k hk => by
+    have outside := Nat.not_lt.mpr (selector_bounds _ k hk).1
+    simp [frame,Matrix.basis,sz,outside]
+  have same (xs : List Wire) (sameBits : ∀ k ∈ xs,
+      (frame rs word d slot.val ph).basis k = flags width slot.val k) :
+      xorAt (frame rs word d slot.val ph).basis xs = xorAt (flags width slot.val) xs := by
+    induction xs with
+    | nil => rfl
+    | cons a t ih =>
+      exact congrArg₂ Bool.xor (sameBits a (by simp))
+        (ih (fun q h => sameBits q (List.mem_cons_of_mem _ h)))
+  rw [same _ agrees,selectorIsThreshold]
+
+
+attribute [local irreducible] run
+
+private theorem correction_run (rs : Rows) (sz : rs.size = width) (slot : Fin 17)
+    (i : Fin 14) (mir : Bool) (word : Nat → Bool) (d : Nat) (ph : Bool) (tape : List Bool)
+    (prepared : mir = true → Matrix.read rs (retained+i.val) =
+      if i.val < slot.val-1 then rowParity rs i.val else 0) :
+    run (correction mir i.val) tape (frame rs word d slot.val ph) =
+      frame (rs.setIfInBounds (retained+i.val)
+        (Matrix.read rs (retained+i.val) ^^^
+          (if i.val < slot.val-1 then rowParity rs i.val else 0))) word d slot.val ph := by
+  let q : Wire := retained+i.val
+  let ps := paritySites i.val
+  let a : Wire := ps.headD 0
+  let ts := selectorSites i.val
+  obtain ⟨nodup,nonempty,low⟩ := coordinateWires.2 i
+  change ps.length > 0 at nonempty
+  have coords : ps = a :: ps.tail := by
+    cases h : ps with
+    | nil => simp [h] at nonempty
+    | cons u us => simp [a,h]
+  have aqSites : a ∈ ps := by rw [coords]; simp
+  have lowA : a < retained := low a aqSites
+  have lowD : ∀ k ∈ ps.tail, k < retained := fun k h => low k (List.mem_of_mem_tail h)
+  have tagB : ∀ k ∈ ts, width ≤ k ∧ k < width+16 := selector_bounds i.val
+  have hi := i.isLt
+  have qBound : q < rs.size := by
+    rw [sz]
+    change 17 + i.val < 31
+    omega
+  have aApart : a ≠ q :=
+    Nat.ne_of_lt (Nat.lt_of_lt_of_le lowA (Nat.le_add_right retained i.val))
+  have apartData : a ∉ ps.tail := by
+    change ps.Nodup at nodup
+    have fixed : (a :: ps.tail).Nodup := coords ▸ nodup
+    exact (List.nodup_cons.mp fixed).1
+  have clear : (frame rs word d slot.val ph).basis 55 = false := by
+    simp [frame,Matrix.basis,flags,sz,width]
+  have reg (k : Nat) (hk : k < rs.size) :
+      (frame rs word d slot.val ph).basis k = rowValue word (Matrix.read rs k) d := by
+    simp [frame,Matrix.basis,hk]
+  have parity : ((frame rs word d slot.val ph).basis a ^^
+      xorAt (frame rs word d slot.val ph).basis ps.tail) = rowValue word (rowParity rs i.val) d := by
+    have inside : ∀ k ∈ ps, k < rs.size := fun k h => by
+      rw [sz]
+      exact Nat.lt_trans (low k h) (by decide : retained < width)
+    have check := parity_row_eval rs word d slot.val ph ps inside 0
+    rw [CRTBarrel.Field.rowValue_zero,Bool.false_xor] at check
+    change rowValue word (rowParity rs i.val) d = _ at check
+    let bits := (frame rs word d slot.val ph).basis
+    have expose : xorAt bits ps = (bits a ^^ xorAt bits ps.tail) :=
+      (congrArg (xorAt bits) coords).trans rfl
+    exact expose.symm.trans check.symm
+  have on := selector_parity rs sz slot i word d ph
+  have enables : (xorAt (frame rs word d slot.val ph).basis ts &&
+    ((frame rs word d slot.val ph).basis a ^^ xorAt (frame rs word d slot.val ph).basis ps.tail)) =
+      rowValue word (if i.val < slot.val-1 then rowParity rs i.val else 0) d := by
+    rw [on,parity]
+    by_cases h : i.val < slot.val-1 <;> simp [h,CRTBarrel.Field.rowValue_zero]
+  have prep : mir = true → (frame rs word d slot.val ph).basis q =
+      (xorAt (frame rs word d slot.val ph).basis ts &&
+         ((frame rs word d slot.val ph).basis a ^^ xorAt (frame rs word d slot.val ph).basis ps.tail)) := by
+    intro hm
+    rw [reg q qBound,enables]
+    exact congrArg (fun z => rowValue word z d) (prepared hm)
+  have q31 : q < width := by simpa only [sz] using qBound
+  have tq1 : (55 : Wire) ≠ q := Nat.ne_of_gt (Nat.lt_trans q31 (by decide : width < 55))
+  have ta1 : (55 : Wire) ≠ a := Nat.ne_of_gt (Nat.lt_trans lowA (by decide : retained < 55))
+  have pulse := CRTResiduePulse.run_pulse ts ps.tail 55 a q mir ph
+      (frame rs word d slot.val ph).basis tape
+      ta1 tq1 aApart
+      (fun h => Nat.not_lt_of_ge (by decide : width+16 ≤ 55) (tagB 55 h).2)
+      (fun h => Nat.not_lt_of_ge (tagB a h).1 (Nat.lt_trans lowA (by decide : retained < width)))
+      (fun h => Nat.not_lt_of_ge (tagB q h).1 q31)
+      (fun h => Nat.not_lt_of_ge (by decide : retained ≤ 55) (lowD 55 h))
+      apartData (fun h => Nat.not_lt_of_ge (Nat.le_add_right retained i.val) (lowD q h))
+      clear prep
+  let bits := (frame rs word d slot.val ph).basis
+  let delta := if i.val < slot.val-1 then rowParity rs i.val else 0
+  let result (bit : Bool) := State.mk ph (writeBit bits q bit)
+  have resultBit : (bits q ^^ (xorAt bits ts && (bits a ^^ xorAt bits ps.tail))) =
+      rowValue word (Matrix.read rs q ^^^ delta) d :=
+    (congrArg₂ Bool.xor (reg q qBound) enables).trans (rowValue_xor word (Matrix.read rs q) delta d).symm
+  have stateEq := congrArg result resultBit
+  have matrixEq := frame_set rs word d slot.val q (Matrix.read rs q ^^^ delta) ph qBound
+  exact pulse.trans (stateEq.trans matrixEq.symm)
+
+
+
+private theorem corrections_run (initial : Rows) (sz : initial.size = width) (slot : Fin 17)
+    (mir : Bool) (x : Nat → Bool) (d : Nat) (ph : Bool) (tape : List Bool)
+    (prepared : mir = true → ∀ i : Fin 14, Matrix.read initial (retained+i.val) =
+      if i.val < slot.val-1 then rowParity initial i.val else 0) :
+    run (corrections mir) tape (frame initial x d slot.val ph) =
+      frame (boundaryRows initial slot.val) x d slot.val ph := by
+  let update := fun (rs : Rows) (i : Nat) =>
+    rs.setIfInBounds (retained+i)
+      (Matrix.read initial (retained+i) ^^^
+        if i < slot.val-1 then rowParity initial i else 0)
+  have go (xs : List Nat) (rs : Rows) (tape : List Bool) (nd : xs.Nodup)
+      (bound : ∀ i ∈ xs, i < 14) (size : rs.size = width)
+      (lower : ∀ q < retained, Matrix.read rs q = Matrix.read initial q)
+      (upper : ∀ i ∈ xs, Matrix.read rs (retained+i) = Matrix.read initial (retained+i)) :
+      run (xs.flatMap (correction mir)) tape (frame rs x d slot.val ph) =
+        frame (xs.foldl update rs) x d slot.val ph := by
+    induction xs generalizing rs tape with
+    | nil => simp only [List.flatMap_nil,List.foldl_nil,run]
+    | cons i todo ih =>
+      have hi := bound i (by simp)
+      have parity : rowParity rs i = rowParity initial i :=
+        parity_read_agree _ _ _ (fun q h => lower q ((coordinateWires.2 ⟨i,hi⟩).2.2 _ h))
+      have top := upper i (by simp)
+      have correct := correction_run rs size slot ⟨i,hi⟩ mir x d ph tape
+        (fun hm => by
+          simpa only [top,parity] using prepared hm ⟨i,hi⟩)
+      simp only [top,parity] at correct
+      change run (correction mir i) tape (frame rs x d slot.val ph) =
+        frame (update rs i) x d slot.val ph at correct
+      simp only [List.flatMap_cons,List.foldl_cons,run_append,run_take]
+      rw [correct]
+      refine ih (update rs i) _ (List.nodup_cons.mp nd).2
+        (fun k hk => bound k (List.mem_cons_of_mem _ hk)) (by simp [update,size]) ?_ ?_
+      · intro q hq
+        have sep : retained+i ≠ q := Nat.ne_of_gt (Nat.lt_of_lt_of_le hq (Nat.le_add_right retained i))
+        simpa only [update,read_set_away _ _ _ _ sep] using lower q hq
+      · intro j hj
+        have away : i ≠ j := fun e => (List.nodup_cons.mp nd).1 (e ▸ hj)
+        have sep : retained+i ≠ retained+j := fun e => away (Nat.add_left_cancel e)
+        simpa only [update,read_set_away _ _ _ _ sep] using
+          upper j (List.mem_cons_of_mem _ hj)
+  exact go (List.range quotientBits) initial tape List.nodup_range
+    (fun _ h => List.mem_range.mp h) sz (fun _ _ => rfl) (fun _ _ => rfl)
+
+
+
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic CRTBarrel CRTBarrel.Matrix
+set_option maxHeartbeats 100000
+attribute [local irreducible] run
+
+theorem encode_run (slot : Fin 17) (shift : Nat) (x : Nat → Bool)
+    (ph : Bool) (tape : List Bool) :
+    run (cnotProgram encoding) tape
+      (frame (CRTBarrel.plain width (dim slot.val) shift) x (dim slot.val) slot.val ph) =
+      frame (coded slot.val shift) x (dim slot.val) slot.val ph := by
+  let d := dim slot.val
+  let src := CRTBarrel.plain width d shift
+  let dst := coded slot.val shift
+  have srcSize : src.size = width := CRTBarrel.plain_size width d shift
+  have codedByOps : applyOps encoding src = dst := rfl
+  have dstSize : dst.size = width :=
+    codedByOps ▸ (applyOps_size encoding src).trans srcSize
+  let mkState (rs : Rows) (n : Nat) := State.mk ph (Matrix.basis rs x d (flags n slot.val))
+  have entry : frame src x d slot.val ph = mkState src width :=
+    congrArg (mkState src) srcSize
+  have output : frame dst x d slot.val ph = mkState dst width :=
+    congrArg (mkState dst) dstSize
+  have fit (pair : Wire × Wire) (h : pair ∈ encoding) :
+      pair.1 < src.size ∧ pair.2 < src.size := by
+    rw [srcSize]
+    exact ⟨(coordinateWires.1 pair h).1,(coordinateWires.1 pair h).2.1⟩
+  have action :
+      run (cnotProgram encoding) tape (mkState src width) = mkState (applyOps encoding src) width :=
+    Matrix.run_ops encoding src x d (flags width slot.val) ph tape fit
+  have inputRun := congrArg (run (cnotProgram encoding) tape) entry
+  exact inputRun.trans (action.trans ((congrArg (fun r => mkState r width) codedByOps).trans output.symm))
+
+
+theorem decode_run (slot : Fin 17) (shift : Nat) (x : Nat → Bool)
+    (ph : Bool) (tape : List Bool) :
+    run (cnotProgram encoding).reverse tape
+      (frame (coded slot.val shift) x (dim slot.val) slot.val ph) =
+      frame (CRTBarrel.plain width (dim slot.val) shift) x (dim slot.val) slot.val ph := by
+  let s := frame (CRTBarrel.plain width (dim slot.val) shift) x (dim slot.val) slot.val ph
+  have encoded := encode_run slot shift x ph []
+  have undo := reverse_cnots encoding (fun a h => (coordinateWires.1 a h).2.2) s [] tape
+  have rev : cnotProgram encoding.reverse = (cnotProgram encoding).reverse := List.map_reverse
+  have preserved := congrArg (run (cnotProgram encoding).reverse tape) encoded
+  rw [rev] at undo
+  exact preserved.symm.trans undo
+
+
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Placement
+set_option maxHeartbeats 100000
+attribute [local irreducible] run
+
+theorem fields_run (r : Rows) (sz : r.size = width) (mir : Bool) (slot : Fin 17)
+    (d : Nat) (x : Nat → Bool) (ph : Bool) (tape : List Bool) :
+    run (components width mir 0 factors) tape (frame r x d slot.val ph) =
+      frame (componentRows mir slot.val 0 factors r) x d slot.val ph := by
+  have support : extent factors ≤ width := by decide +kernel
+  have bound : 0+extent factors ≤ r.size := by
+    rw [sz,Nat.zero_add]
+    exact support
+  have used : ∀ pm ∈ factors, CRTBarrel.UsedField pm.1 := by decide +kernel
+  have small : slot.val < 32 := Nat.lt_trans slot.isLt (by decide)
+  let inlet := frame r x d slot.val ph
+  have eqProgram : components width mir 0 factors = components r.size mir 0 factors :=
+    congrArg (fun n => components n mir 0 factors) sz.symm
+  have transport := congrArg (fun p => run p tape inlet) eqProgram
+  exact transport.trans (frame_components r mir 0 slot.val d factors small bound used x ph tape)
+
+
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic CRTBarrel CRTBarrel.Matrix
+set_option maxHeartbeats 100000
+attribute [local irreducible] run frame components componentRows CRTResidueS45.coded
+  CRTBarrel.plain corrections boundaryRows cnotProgram
+
+def residueFrame (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (rows : Rows) : State :=
+  frame rows x (dim slot.val) slot.val ph
+
+private theorem run_four (a b c d : Program) (s0 s1 s2 s3 s4 : State)
+    (tape : List Bool) (ha : ∀ m, run a m s0 = s1) (hb : ∀ m, run b m s1 = s2)
+    (hc : ∀ m, run c m s2 = s3) (hd : ∀ m, run d m s3 = s4) :
+    run (a ++ (b ++ (c ++ d))) tape s0 = s4 := by
+  simp only [run_append,ha,hb,hc,hd]
+
+private theorem forward_rows (slot : Fin 17) :
+    boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
+      coded slot.val (slot.val-1) :=
+  forward_rows_export slot
+
+
+private theorem forward_program :
+    logicalResidue false =
+      cnotProgram encoding ++ (components width false 0 factors ++
+        (corrections false ++ (cnotProgram encoding).reverse)) := by
+  simp only [logicalResidue,cnotProgram,Bool.false_eq_true,if_false,List.append_assoc]
+
+
+theorem logical_forward_stages (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (tape : List Bool)
+    (encode : ∀ m, run (cnotProgram encoding) m
+      (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) =
+      residueFrame slot x ph (coded slot.val 0))
+    (scalar : ∀ m, run (components width false 0 factors) m (residueFrame slot x ph (coded slot.val 0)) =
+      residueFrame slot x ph (componentRows false slot.val 0 factors (coded slot.val 0)))
+    (correct : ∀ m, run (corrections false) m
+      (residueFrame slot x ph (componentRows false slot.val 0 factors (coded slot.val 0))) =
+      residueFrame slot x ph (boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val))
+    (decode : ∀ m, run (cnotProgram encoding).reverse m
+      (residueFrame slot x ph (coded slot.val (slot.val-1))) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) :
+    run (logicalResidue false) tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1)) := by
+  have corrected (m : List Bool) := (correct m).trans (congrArg (residueFrame slot x ph) (forward_rows slot))
+  have stages := run_four _ _ _ _ _ _ _ _ _ tape encode scalar corrected decode
+  have shape := congrArg (fun p =>
+    run p tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0))) forward_program
+  exact shape.trans stages
+
+
+private theorem reverse_program :
+    logicalResidue true =
+      cnotProgram encoding ++ (corrections true ++
+        (components width true 0 factors ++ (cnotProgram encoding).reverse)) := by
+  simp only [logicalResidue,cnotProgram,if_true,List.append_assoc]
+
+
+theorem logical_reverse_stages (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (tape : List Bool)
+    (encode : ∀ m, run (cnotProgram encoding) m
+      (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) =
+      residueFrame slot x ph (coded slot.val (slot.val-1)))
+    (correct : ∀ m, run (corrections true) m (residueFrame slot x ph (coded slot.val (slot.val-1))) =
+      residueFrame slot x ph (boundaryRows (coded slot.val (slot.val-1)) slot.val))
+    (scalar : ∀ m, run (components width true 0 factors) m
+      (residueFrame slot x ph (boundaryRows (coded slot.val (slot.val-1)) slot.val)) =
+      residueFrame slot x ph (componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val)))
+    (decode : ∀ m, run (cnotProgram encoding).reverse m (residueFrame slot x ph (coded slot.val 0)) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) :
+    run (logicalResidue true) tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0) := by
+  have reduced (m : List Bool) := (scalar m).trans (congrArg (residueFrame slot x ph) (reverse_rows_export slot))
+  have stages := run_four _ _ _ _ _ _ _ _ _ tape encode correct reduced decode
+  have shape := congrArg (fun p =>
+    run p tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1)))) reverse_program
+  exact shape.trans stages
+
+
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic CRTBarrel CRTBarrel.Matrix
+attribute [local irreducible] run frame components componentRows CRTResidueS45.coded
+  CRTBarrel.plain corrections boundaryRows cnotProgram
+theorem logical_run (slot : Fin 17) (mir : Bool) (x : Nat → Bool)
+    (ph : Bool) (tape : List Bool) :
+    run (logicalResidue mir) tape (frame (CRTBarrel.plain width (dim slot.val) (entryShift mir slot.val))
+      x (dim slot.val) slot.val ph) =
+      frame (CRTBarrel.plain width (dim slot.val) (exitShift mir slot.val))
+        x (dim slot.val) slot.val ph := by
+  let k := slot.val - 1
+  let unshifted := coded slot.val 0
+  let shifted := coded slot.val k
+  have uSize : unshifted.size = width := coded_size slot.val 0
+  have sSize : shifted.size = width := coded_size slot.val k
+  cases mir
+  · have enters : entryShift false slot.val = 0 := rfl
+    have exits : exitShift false slot.val = k := rfl
+    rw [enters,exits]
+    let core := componentRows false slot.val 0 factors unshifted
+    have coreSize : core.size = width := (componentRows_size ..).trans uSize
+    exact logical_forward_stages slot x ph tape (encode_run slot 0 x ph)
+      (fields_run unshifted uSize false slot (dim slot.val) x ph)
+      (fun m => corrections_run core coreSize slot false x (dim slot.val) ph m (by
+        intro impossible
+        cases impossible))
+      (decode_run slot k x ph)
+  · have enters : entryShift true slot.val = k := rfl
+    have exits : exitShift true slot.val = 0 := rfl
+    rw [enters,exits]
+    let clear := boundaryRows shifted slot.val
+    have clearSize : clear.size = width := (boundary_size ..).trans sSize
+    exact logical_reverse_stages slot x ph tape (encode_run slot k x ph)
+      (fun t => corrections_run shifted sSize slot true x (dim slot.val) ph t
+        (fun _ => reversePrepared slot))
+      (fields_run clear clearSize true slot (dim slot.val) x ph)
+      (decode_run slot 0 x ph)
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+end
+
 -- ==== begin CRTBarrelCorrect ====
 section
 
@@ -7318,6 +8092,7 @@ open Partial
 restores every forward image. Both preserve the exterior and the incoming phase on every tape. -/
 theorem barrel_result (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir : Bool)
     (slot : Fin 17) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^Shadow7.wpP (start j))
     (small : v < 2^(barrelWidth (start j) - (slot.val - 1)))
     (input : HighBankBarrel.holds (Shadow7.bankW (start j)) (barrelWidth (start j))
       (v <<< entryShift mir slot.val) s)
@@ -7327,8 +8102,28 @@ theorem barrel_result (j : Fin 26) (lo : 0 ≤ j.val) (hi : j.val ≤ 24) (mir :
       (v <<< exitShift mir slot.val) s (run (barrel (start j) mir) tape s) := by
   let n := barrelWidth (start j)
   have hn : UsedWidth n := usedWidth j lo hi
-  exact barrel_result_of_matrix j lo hi mir slot v s tape (coordinates_checked n hn)
-    (Packed.template_action n hn slot mir) small input tag scratch
+  by_cases hit : start j = 45
+  · have nw : n = CRTResidueS45.width := by simpa only [n,hit] using CRTResidueS45.geometry.1
+    have inlet : v < 2^CRTResidueS45.retained := by
+      simpa only [hit,CRTResidueS45.geometry.2] using admitted
+    have pad : v < 2^(CRTResidueS45.width - (slot.val-1)) := by
+      simpa only [hit,CRTResidueS45.geometry.1] using small
+    have fit : v < 2^(CRTResidueS45.dim slot.val) := by
+      unfold CRTResidueS45.dim
+      rcases Nat.le_total CRTResidueS45.retained (CRTResidueS45.width - (slot.val-1)) with h | h
+      · simpa only [Nat.min_eq_left h] using inlet
+      · simpa only [Nat.min_eq_right h] using pad
+    refine barrel_result_of_rows j lo hi mir slot v s tape _ fit ?_ input tag scratch
+    change run (logicalAt (start j) mir) tape
+       (frame (plain n (CRTResidueS45.dim slot.val) (entryShift mir slot.val)) _ _ _ _) =
+       frame (plain n (CRTResidueS45.dim slot.val) (exitShift mir slot.val)) _ _ _ _
+    rw [logicalAt,if_pos hit,nw]
+    exact CRTResidueS45.logical_run slot mir v.testBit s.phase tape
+  · refine barrel_result_of_rows j lo hi mir slot v s tape _ small ?_ input tag scratch
+    unfold logicalAt
+    rw [if_neg hit]
+    exact logical_action n hn mir slot.val (by have := slot.isLt; omega)
+      (coordinates_checked n hn) (Packed.template_action n hn slot mir) v.testBit s.phase tape
 
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel
 

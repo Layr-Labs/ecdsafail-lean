@@ -10059,7 +10059,7 @@ theorem barrel_pair (j : Fin 26) (lo : 0≤j.val) (hi : j.val≤24) (s : State) 
       fun i hi' => by simpa [entryShift] using bank i (Nat.lt_of_lt_of_le hi' bw_le)
     have hi_s : ∀ i, barrelWidth (start j) ≤ i → i < Shadow7.wpP (start j) + 15 → s.basis (Shadow7.bankW (start j) i) = false :=
       fun i hge hi' => (bank i hi').trans (Nat.testBit_lt_two_pow (lt_of_lt_of_le v_lt_bw (Nat.pow_le_pow_right (by decide : 0 < 2) hge)))
-    have res := barrel_result j lo (by omega) false slot v s m narrow bank_bw tags scratch
+    have res := barrel_result j lo (by omega) false slot v s m small narrow bank_bw tags scratch
     exact unique (lift _ s _ vshift_lt_bw hi_s (by simpa only [exitShift,Bool.false_eq_true,if_false] using res)) old
   · intro n
     obtain ⟨w1,w2⟩ := start_win7 j (Nat.zero_le _) (by omega)
@@ -10085,7 +10085,7 @@ theorem barrel_pair (j : Fin 26) (lo : 0≤j.val) (hi : j.val≤24) (s : State) 
       fun i hi' => by simpa [entryShift] using old.bits i (Nat.lt_of_lt_of_le hi' bw_le)
     have hi_out : ∀ i, barrelWidth (start j) ≤ i → i < Shadow7.wpP (start j) + 15 → out.basis (Shadow7.bankW (start j) i) = false :=
       fun i hge hi' => (old.bits i hi').trans (Nat.testBit_lt_two_pow (lt_of_lt_of_le vshift_lt_bw (Nat.pow_le_pow_right (by decide : 0 < 2) hge)))
-    have restored := barrel_result j lo (by omega) true slot v out n narrow old_bw ot os
+    have restored := barrel_result j lo (by omega) true slot v out n small narrow old_bw ot os
     have expected : HighBankBarrel.Result (Shadow7.bankW (start j)) (Shadow7.wpP (start j)+15) v out s :=
       ⟨bank,old.phase.symm,fun q hq => (old.frame q hq).symm⟩
     exact unique (lift _ out _ v_lt_bw hi_out (by simpa [exitShift,out] using restored)) expected
@@ -15554,14 +15554,14 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127207 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127207 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=127249 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=127274 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65218 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65243 ∧
-    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=64925 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=64950 := by
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127190 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127190 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=127218 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=127243 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65210 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65235 ∧
+    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=64931 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=64956 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
     (counts true first WindowParams7.rest7).2.2.1,(counts false first WindowParams7.rest7).2.2.1,(counts true first WindowParams7.rest7).2.2.2,
     (counts false first WindowParams7.rest7).2.2.2]
@@ -15641,24 +15641,24 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127207 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127190 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127207 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127190 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 127249 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 127218 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 127274 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 127243 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65218 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65243 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65210 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65235 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
-theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 64925 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 64950 :=
+theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 64931 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 64956 :=
   ship_counts.2.2.2.2.2.2
 
 theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2419219 ∧ gateSlots (forward45plus1 false) ≤ 2419219 :=
@@ -15709,25 +15709,25 @@ theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2419219 ∧ gateSlots (forw
 theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2403746 ∧ gateSlots (reverseCut false) ≤ 2403746 :=
   ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
 
-theorem cut_toffoliF : toffoliCount (forwardCut true) = 127103 ∧ toffoliCount (forwardCut false) = 127103 := by
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 127086 ∧ toffoliCount (forwardCut false) = 127086 := by
   have a := (cut_toffoli true).1
   have b := (cut_toffoli false).1
   rw [ship_toffoliF_true] at a
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 127145 ∧ toffoliCount (reverseCut false) = 127170 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 127114 ∧ toffoliCount (reverseCut false) = 127139 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
   rw [ship_toffoliR_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_measureF : measurementCount (forwardCut true) = 65218 ∧ measurementCount (forwardCut false) = 65243 := by
+theorem cut_measureF : measurementCount (forwardCut true) = 65210 ∧ measurementCount (forwardCut false) = 65235 := by
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
-theorem cut_measureR : measurementCount (reverseCut true) = 64925 ∧ measurementCount (reverseCut false) = 64950 := by
+theorem cut_measureR : measurementCount (reverseCut true) = 64931 ∧ measurementCount (reverseCut false) = 64956 := by
   rw [(cut_measure true).2, (cut_measure false).2]
   exact ship_measureR
 
