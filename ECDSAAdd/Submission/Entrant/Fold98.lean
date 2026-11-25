@@ -9438,243 +9438,21 @@ theorem fresh_all_hosts : ∀u∈hosts88,u∉L.core.cin::(hiReg L++ga++FullBTemp
 
 theorem specials_nd : (L.core.sumCarry::FullBTemp.hostR L::FullBTemp.hostP L::loans88).Nodup := by decide +kernel
 
--- Peak memory: compileS? hosts88 p0 is evaluated one 256-instruction piece per declaration.
-theorem peak_lac_len : List.length BData301.p0 = 9751 := by decide +kernel
-theorem peak_lac_long0 : ¬ (List.length BData301.p0) ≤ 1024 := by decide +kernel
-theorem peak_lac_long1 : ¬ (List.length (List.drop 1024 BData301.p0)) ≤ 1024 := by decide +kernel
-theorem peak_lac_long2 : ¬ (List.length (List.drop 1024 (List.drop 1024 BData301.p0))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long3 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long4 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long5 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long6 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long7 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_long8 : ¬ (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_short9 : (List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ≤ 1024 := by decide +kernel
-theorem peak_lac_seg0_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 BData301.p0)))+1) (List.take 256 (List.take 1024 BData301.p0))).map (fun cm => cm.out) =
-  some (LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg0_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 BData301.p0))))+1) (List.take 256 (List.drop 256 (List.take 1024 BData301.p0)))).map (fun cm => cm.out) =
-  some (LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg0_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0)))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0))))).map (fun cm => cm.out) =
-  some (LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg0_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0)))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0))))).map (fun cm => cm.out) =
-  some (LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 BData301.p0)).map (fun cm => cm.out) =
-  some ((LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) ++ ((LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) ++ ((LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) ++ ((LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg0_2 peak_lac_seg0_3)))
-  rw [show (List.take 256 (List.take 1024 BData301.p0)) ++ ((List.take 256 (List.drop 256 (List.take 1024 BData301.p0))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0)))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 BData301.p0))))))) = (List.take 1024 BData301.p0) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 BData301.p0; omega)
-theorem peak_lac_seg1_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 BData301.p0))))+1) (List.take 256 (List.take 1024 (List.drop 1024 BData301.p0)))).map (fun cm => cm.out) =
-  some (LowAccMiddleLiteral.chunk8 ++ (LowAccMiddleLiteral.chunk9)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg1_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))).map (fun cm => cm.out) =
-  some (LowAccMiddleLiteral.chunk10 ++ (LowAccMiddleLiteral.chunk11)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg1_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
-  some ((List.take 94 LowAccMiddleLiteral.chunk12)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg1_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
-  some ((List.drop 94 LowAccMiddleLiteral.chunk12) ++ ((List.take 9 LowAccMiddleLiteral.chunk13))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 BData301.p0))).map (fun cm => cm.out) =
-  some ((LowAccMiddleLiteral.chunk8 ++ (LowAccMiddleLiteral.chunk9)) ++ ((LowAccMiddleLiteral.chunk10 ++ (LowAccMiddleLiteral.chunk11)) ++ (((List.take 94 LowAccMiddleLiteral.chunk12)) ++ (((List.drop 94 LowAccMiddleLiteral.chunk12) ++ ((List.take 9 LowAccMiddleLiteral.chunk13))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg1_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg1_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg1_2 peak_lac_seg1_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 BData301.p0))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 BData301.p0)))))))) = (List.take 1024 (List.drop 1024 BData301.p0)) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 BData301.p0); omega)
-theorem peak_lac_seg2_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))).map (fun cm => cm.out) =
-  some ((List.drop 9 LowAccMiddleLiteral.chunk13) ++ ((List.take 72 LowAccMiddleLiteral.chunk14))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg2_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
-  some ((List.drop 72 LowAccMiddleLiteral.chunk14) ++ (LowAccMiddleLiteral.chunk15 ++ ((List.take 72 LowAccMiddleLiteral.chunk16)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg2_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
-  some ((List.drop 72 LowAccMiddleLiteral.chunk16) ++ (LowAccMiddleLiteral.chunk17 ++ ((List.take 72 LowAccMiddleLiteral.chunk18)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg2_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
-  some ((List.drop 72 LowAccMiddleLiteral.chunk18) ++ (LowAccMiddleLiteral.chunk19 ++ ((List.take 72 LowAccMiddleLiteral.chunk20)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))).map (fun cm => cm.out) =
-  some (((List.drop 9 LowAccMiddleLiteral.chunk13) ++ ((List.take 72 LowAccMiddleLiteral.chunk14))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk14) ++ (LowAccMiddleLiteral.chunk15 ++ ((List.take 72 LowAccMiddleLiteral.chunk16)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk16) ++ (LowAccMiddleLiteral.chunk17 ++ ((List.take 72 LowAccMiddleLiteral.chunk18)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk18) ++ (LowAccMiddleLiteral.chunk19 ++ ((List.take 72 LowAccMiddleLiteral.chunk20)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg2_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg2_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg2_2 peak_lac_seg2_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 BData301.p0))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 BData301.p0)); omega)
-theorem peak_lac_seg3_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
-  some ((List.drop 72 LowAccMiddleLiteral.chunk20) ++ (LowAccMiddleLiteral.chunk21 ++ ((List.take 44 LowAccMiddleLiteral.chunk22)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg3_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
-  some ((List.drop 44 LowAccMiddleLiteral.chunk22) ++ ((List.take 112 LowAccMiddleLiteral.chunk23))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg3_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk23) ++ (LowAccMiddleLiteral.chunk24 ++ ((List.take 112 LowAccMiddleLiteral.chunk25)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg3_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk25) ++ (LowAccMiddleLiteral.chunk26 ++ ((List.take 112 LowAccMiddleLiteral.chunk27)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))).map (fun cm => cm.out) =
-  some (((List.drop 72 LowAccMiddleLiteral.chunk20) ++ (LowAccMiddleLiteral.chunk21 ++ ((List.take 44 LowAccMiddleLiteral.chunk22)))) ++ (((List.drop 44 LowAccMiddleLiteral.chunk22) ++ ((List.take 112 LowAccMiddleLiteral.chunk23))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk23) ++ (LowAccMiddleLiteral.chunk24 ++ ((List.take 112 LowAccMiddleLiteral.chunk25)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk25) ++ (LowAccMiddleLiteral.chunk26 ++ ((List.take 112 LowAccMiddleLiteral.chunk27)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg3_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg3_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg3_2 peak_lac_seg3_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))); omega)
-theorem peak_lac_seg4_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk27) ++ (LowAccMiddleLiteral.chunk28 ++ ((List.take 112 LowAccMiddleLiteral.chunk29)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg4_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk29) ++ (LowAccMiddleLiteral.chunk30 ++ ((List.take 112 LowAccMiddleLiteral.chunk31)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg4_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk31) ++ (LowAccMiddleLiteral.chunk32 ++ ((List.take 112 LowAccMiddleLiteral.chunk33)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg4_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk33) ++ (LowAccMiddleLiteral.chunk34 ++ ((List.take 112 LowAccMiddleLiteral.chunk35)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg4 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))).map (fun cm => cm.out) =
-  some (((List.drop 112 LowAccMiddleLiteral.chunk27) ++ (LowAccMiddleLiteral.chunk28 ++ ((List.take 112 LowAccMiddleLiteral.chunk29)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk29) ++ (LowAccMiddleLiteral.chunk30 ++ ((List.take 112 LowAccMiddleLiteral.chunk31)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk31) ++ (LowAccMiddleLiteral.chunk32 ++ ((List.take 112 LowAccMiddleLiteral.chunk33)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk33) ++ (LowAccMiddleLiteral.chunk34 ++ ((List.take 112 LowAccMiddleLiteral.chunk35)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg4_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg4_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg4_2 peak_lac_seg4_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))); omega)
-theorem peak_lac_seg5_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk35) ++ (LowAccMiddleLiteral.chunk36 ++ ((List.take 112 LowAccMiddleLiteral.chunk37)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg5_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk37) ++ (LowAccMiddleLiteral.chunk38 ++ ((List.take 112 LowAccMiddleLiteral.chunk39)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg5_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk39) ++ (LowAccMiddleLiteral.chunk40 ++ ((List.take 112 LowAccMiddleLiteral.chunk41)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg5_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk41) ++ (LowAccMiddleLiteral.chunk42 ++ ((List.take 112 LowAccMiddleLiteral.chunk43)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg5 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))).map (fun cm => cm.out) =
-  some (((List.drop 112 LowAccMiddleLiteral.chunk35) ++ (LowAccMiddleLiteral.chunk36 ++ ((List.take 112 LowAccMiddleLiteral.chunk37)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk37) ++ (LowAccMiddleLiteral.chunk38 ++ ((List.take 112 LowAccMiddleLiteral.chunk39)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk39) ++ (LowAccMiddleLiteral.chunk40 ++ ((List.take 112 LowAccMiddleLiteral.chunk41)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk41) ++ (LowAccMiddleLiteral.chunk42 ++ ((List.take 112 LowAccMiddleLiteral.chunk43)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg5_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg5_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg5_2 peak_lac_seg5_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))); omega)
-theorem peak_lac_seg6_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
-  some ((List.drop 112 LowAccMiddleLiteral.chunk43) ++ (LowAccMiddleLiteral.chunk44 ++ ((List.take 17 LowAccMiddleLiteral.chunk45)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg6_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
-  some ((List.take 101 (List.drop 17 LowAccMiddleLiteral.chunk45))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg6_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 101 (List.drop 17 LowAccMiddleLiteral.chunk45)) ++ ((List.take 86 LowAccMiddleLiteral.chunk46))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg6_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 86 LowAccMiddleLiteral.chunk46) ++ (LowAccMiddleLiteral.chunk47 ++ ((List.take 56 LowAccMiddleLiteral.chunk48)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg6 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))).map (fun cm => cm.out) =
-  some (((List.drop 112 LowAccMiddleLiteral.chunk43) ++ (LowAccMiddleLiteral.chunk44 ++ ((List.take 17 LowAccMiddleLiteral.chunk45)))) ++ (((List.take 101 (List.drop 17 LowAccMiddleLiteral.chunk45))) ++ (((List.drop 101 (List.drop 17 LowAccMiddleLiteral.chunk45)) ++ ((List.take 86 LowAccMiddleLiteral.chunk46))) ++ (((List.drop 86 LowAccMiddleLiteral.chunk46) ++ (LowAccMiddleLiteral.chunk47 ++ ((List.take 56 LowAccMiddleLiteral.chunk48)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg6_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg6_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg6_2 peak_lac_seg6_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))); omega)
-theorem peak_lac_seg7_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk48) ++ (LowAccMiddleLiteral.chunk49 ++ ((List.take 56 LowAccMiddleLiteral.chunk50)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg7_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk50) ++ (LowAccMiddleLiteral.chunk51 ++ ((List.take 56 LowAccMiddleLiteral.chunk52)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg7_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk52) ++ (LowAccMiddleLiteral.chunk53 ++ ((List.take 56 LowAccMiddleLiteral.chunk54)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg7_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk54) ++ (LowAccMiddleLiteral.chunk55 ++ ((List.take 56 LowAccMiddleLiteral.chunk56)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg7 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))).map (fun cm => cm.out) =
-  some (((List.drop 56 LowAccMiddleLiteral.chunk48) ++ (LowAccMiddleLiteral.chunk49 ++ ((List.take 56 LowAccMiddleLiteral.chunk50)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk50) ++ (LowAccMiddleLiteral.chunk51 ++ ((List.take 56 LowAccMiddleLiteral.chunk52)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk52) ++ (LowAccMiddleLiteral.chunk53 ++ ((List.take 56 LowAccMiddleLiteral.chunk54)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk54) ++ (LowAccMiddleLiteral.chunk55 ++ ((List.take 56 LowAccMiddleLiteral.chunk56)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg7_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg7_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg7_2 peak_lac_seg7_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))); omega)
-theorem peak_lac_seg8_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk56) ++ (LowAccMiddleLiteral.chunk57 ++ ((List.take 56 LowAccMiddleLiteral.chunk58)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg8_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk58) ++ (LowAccMiddleLiteral.chunk59 ++ ((List.take 56 LowAccMiddleLiteral.chunk60)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg8_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))))+1) (List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk60) ++ (LowAccMiddleLiteral.chunk61 ++ ((List.take 56 LowAccMiddleLiteral.chunk62)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg8_3 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk62) ++ (LowAccMiddleLiteral.chunk63 ++ ((List.take 56 LowAccMiddleLiteral.chunk64)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg8 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 (1024+1) (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
-  some (((List.drop 56 LowAccMiddleLiteral.chunk56) ++ (LowAccMiddleLiteral.chunk57 ++ ((List.take 56 LowAccMiddleLiteral.chunk58)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk58) ++ (LowAccMiddleLiteral.chunk59 ++ ((List.take 56 LowAccMiddleLiteral.chunk60)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk60) ++ (LowAccMiddleLiteral.chunk61 ++ ((List.take 56 LowAccMiddleLiteral.chunk62)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk62) ++ (LowAccMiddleLiteral.chunk63 ++ ((List.take 56 LowAccMiddleLiteral.chunk64)))))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg8_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg8_1 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg8_2 peak_lac_seg8_3)))
-  rw [show (List.take 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.take 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 256 (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))))) = (List.take 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) from by simp only [List.take_append_drop]] at h
-  exact PeakChunkS.chunk_fuel _ _ _ _ h (by have := List.length_take_le 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))); omega)
-theorem peak_lac_seg9_0 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))+1) (List.take 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk64) ++ (LowAccMiddleLiteral.chunk65 ++ ((List.take 56 LowAccMiddleLiteral.chunk66)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg9_1 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.take 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.take 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk66) ++ (LowAccMiddleLiteral.chunk67 ++ ((List.take 56 LowAccMiddleLiteral.chunk68)))) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg9_2 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))+1) (List.drop 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))))).map (fun cm => cm.out) =
-  some ((List.drop 56 LowAccMiddleLiteral.chunk68)) := by
-  apply PeakChunkS.out_sound
-  decide +kernel
-theorem peak_lac_seg9 : (ZeroSetDevelop.compileFuelS LowAccCarryDevelop.hosts88 ((List.length (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))+1) (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))).map (fun cm => cm.out) =
-  some (((List.drop 56 LowAccMiddleLiteral.chunk64) ++ (LowAccMiddleLiteral.chunk65 ++ ((List.take 56 LowAccMiddleLiteral.chunk66)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk66) ++ (LowAccMiddleLiteral.chunk67 ++ ((List.take 56 LowAccMiddleLiteral.chunk68)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk68))))) := by
-  have h := (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg9_0 (PeakChunkS.parts2 _ _ _ _ _ peak_lac_seg9_1 peak_lac_seg9_2))
-  rw [show (List.take 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0)))))))))) ++ ((List.take 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))) ++ ((List.drop 256 (List.drop 256 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))))))) = (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 (List.drop 1024 BData301.p0))))))))) from by simp only [List.take_append_drop]] at h
-  exact h
+private theorem someOfProgramEq {actual : Option Program} {expected : Program}
+    (h : actual.elim false (ParkAProgramBool.programEq expected) = true) :
+    actual = some expected := by
+  cases actual with
+  | none => cases h
+  | some actual =>
+      exact congrArg some (ParkAProgramBool.programEq_sound expected actual h).symm
+
 theorem peak_lac_map : (ZeroSetDevelop.compileS? hosts88 BData301.p0).map (fun cm => cm.out) =
-  some LowAccMiddleLiteral.output := by
- have e : (ZeroSetDevelop.compileS? hosts88 BData301.p0).map (fun cm => cm.out) =
-   some (((LowAccMiddleLiteral.chunk0 ++ (LowAccMiddleLiteral.chunk1)) ++ ((LowAccMiddleLiteral.chunk2 ++ (LowAccMiddleLiteral.chunk3)) ++ ((LowAccMiddleLiteral.chunk4 ++ (LowAccMiddleLiteral.chunk5)) ++ ((LowAccMiddleLiteral.chunk6 ++ (LowAccMiddleLiteral.chunk7)))))) ++ (((LowAccMiddleLiteral.chunk8 ++ (LowAccMiddleLiteral.chunk9)) ++ ((LowAccMiddleLiteral.chunk10 ++ (LowAccMiddleLiteral.chunk11)) ++ (((List.take 94 LowAccMiddleLiteral.chunk12)) ++ (((List.drop 94 LowAccMiddleLiteral.chunk12) ++ ((List.take 9 LowAccMiddleLiteral.chunk13))))))) ++ ((((List.drop 9 LowAccMiddleLiteral.chunk13) ++ ((List.take 72 LowAccMiddleLiteral.chunk14))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk14) ++ (LowAccMiddleLiteral.chunk15 ++ ((List.take 72 LowAccMiddleLiteral.chunk16)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk16) ++ (LowAccMiddleLiteral.chunk17 ++ ((List.take 72 LowAccMiddleLiteral.chunk18)))) ++ (((List.drop 72 LowAccMiddleLiteral.chunk18) ++ (LowAccMiddleLiteral.chunk19 ++ ((List.take 72 LowAccMiddleLiteral.chunk20)))))))) ++ ((((List.drop 72 LowAccMiddleLiteral.chunk20) ++ (LowAccMiddleLiteral.chunk21 ++ ((List.take 44 LowAccMiddleLiteral.chunk22)))) ++ (((List.drop 44 LowAccMiddleLiteral.chunk22) ++ ((List.take 112 LowAccMiddleLiteral.chunk23))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk23) ++ (LowAccMiddleLiteral.chunk24 ++ ((List.take 112 LowAccMiddleLiteral.chunk25)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk25) ++ (LowAccMiddleLiteral.chunk26 ++ ((List.take 112 LowAccMiddleLiteral.chunk27)))))))) ++ ((((List.drop 112 LowAccMiddleLiteral.chunk27) ++ (LowAccMiddleLiteral.chunk28 ++ ((List.take 112 LowAccMiddleLiteral.chunk29)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk29) ++ (LowAccMiddleLiteral.chunk30 ++ ((List.take 112 LowAccMiddleLiteral.chunk31)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk31) ++ (LowAccMiddleLiteral.chunk32 ++ ((List.take 112 LowAccMiddleLiteral.chunk33)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk33) ++ (LowAccMiddleLiteral.chunk34 ++ ((List.take 112 LowAccMiddleLiteral.chunk35)))))))) ++ ((((List.drop 112 LowAccMiddleLiteral.chunk35) ++ (LowAccMiddleLiteral.chunk36 ++ ((List.take 112 LowAccMiddleLiteral.chunk37)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk37) ++ (LowAccMiddleLiteral.chunk38 ++ ((List.take 112 LowAccMiddleLiteral.chunk39)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk39) ++ (LowAccMiddleLiteral.chunk40 ++ ((List.take 112 LowAccMiddleLiteral.chunk41)))) ++ (((List.drop 112 LowAccMiddleLiteral.chunk41) ++ (LowAccMiddleLiteral.chunk42 ++ ((List.take 112 LowAccMiddleLiteral.chunk43)))))))) ++ ((((List.drop 112 LowAccMiddleLiteral.chunk43) ++ (LowAccMiddleLiteral.chunk44 ++ ((List.take 17 LowAccMiddleLiteral.chunk45)))) ++ (((List.take 101 (List.drop 17 LowAccMiddleLiteral.chunk45))) ++ (((List.drop 101 (List.drop 17 LowAccMiddleLiteral.chunk45)) ++ ((List.take 86 LowAccMiddleLiteral.chunk46))) ++ (((List.drop 86 LowAccMiddleLiteral.chunk46) ++ (LowAccMiddleLiteral.chunk47 ++ ((List.take 56 LowAccMiddleLiteral.chunk48)))))))) ++ ((((List.drop 56 LowAccMiddleLiteral.chunk48) ++ (LowAccMiddleLiteral.chunk49 ++ ((List.take 56 LowAccMiddleLiteral.chunk50)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk50) ++ (LowAccMiddleLiteral.chunk51 ++ ((List.take 56 LowAccMiddleLiteral.chunk52)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk52) ++ (LowAccMiddleLiteral.chunk53 ++ ((List.take 56 LowAccMiddleLiteral.chunk54)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk54) ++ (LowAccMiddleLiteral.chunk55 ++ ((List.take 56 LowAccMiddleLiteral.chunk56)))))))) ++ ((((List.drop 56 LowAccMiddleLiteral.chunk56) ++ (LowAccMiddleLiteral.chunk57 ++ ((List.take 56 LowAccMiddleLiteral.chunk58)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk58) ++ (LowAccMiddleLiteral.chunk59 ++ ((List.take 56 LowAccMiddleLiteral.chunk60)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk60) ++ (LowAccMiddleLiteral.chunk61 ++ ((List.take 56 LowAccMiddleLiteral.chunk62)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk62) ++ (LowAccMiddleLiteral.chunk63 ++ ((List.take 56 LowAccMiddleLiteral.chunk64)))))))) ++ ((((List.drop 56 LowAccMiddleLiteral.chunk64) ++ (LowAccMiddleLiteral.chunk65 ++ ((List.take 56 LowAccMiddleLiteral.chunk66)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk66) ++ (LowAccMiddleLiteral.chunk67 ++ ((List.take 56 LowAccMiddleLiteral.chunk68)))) ++ (((List.drop 56 LowAccMiddleLiteral.chunk68))))))))))))))) := by
-  delta ZeroSetDevelop.compileS?
-  rw [peak_lac_len]
-  exact (PeakChunkS.step _ 9751 _ _ _ peak_lac_long0 peak_lac_seg0
-   (PeakChunkS.step _ 9750 _ _ _ peak_lac_long1 peak_lac_seg1
-   (PeakChunkS.step _ 9749 _ _ _ peak_lac_long2 peak_lac_seg2
-   (PeakChunkS.step _ 9748 _ _ _ peak_lac_long3 peak_lac_seg3
-   (PeakChunkS.step _ 9747 _ _ _ peak_lac_long4 peak_lac_seg4
-   (PeakChunkS.step _ 9746 _ _ _ peak_lac_long5 peak_lac_seg5
-   (PeakChunkS.step _ 9745 _ _ _ peak_lac_long6 peak_lac_seg6
-   (PeakChunkS.step _ 9744 _ _ _ peak_lac_long7 peak_lac_seg7
-   (PeakChunkS.step _ 9743 _ _ _ peak_lac_long8 peak_lac_seg8
-   (PeakChunkS.last _ 9742 _ _ peak_lac_short9 peak_lac_seg9))))))))))
- rw [e, Option.some.injEq]
- delta LowAccMiddleLiteral.output
- simp only [List.append_assoc, PeakChunkS.take_drop_app, List.take_append_drop]
+    some LowAccMiddleLiteral.output := by
+  have h : (ZeroSetDevelop.owCompile (ZeroSetDevelop.owMask hosts88) BData301.p0).elim false
+      (ParkAProgramBool.programEq LowAccMiddleLiteral.output) = true := by
+    decide +kernel
+  exact (ZeroSetDevelop.owCompile_eq hosts88 _ (ZeroSetDevelop.owMask_testBit _) BData301.p0).symm.trans
+    (someOfProgramEq h)
 
 theorem success_literal : (ZeroSetDevelop.compileS? hosts88 BData301.p0).isSome=true :=
  PeakChunkS.isSome_of_map peak_lac_map
@@ -62240,7 +62018,20 @@ open ECDSAAdd
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryLoopAnchor.build SixCarryLoopAnchor.output LocalSevenCore.core
-theorem build_length : SixCarryLoopAnchor.build.length=4009 := by decide +kernel
+private theorem mappedLength {α β : Type} {p : List α} {f : α → β} {q : List β} {n : Nat}
+    (h : p.map f = q) (count : q.length = n) : p.length = n := by
+  rw [← count, ← h, List.length_map]
+
+private theorem lengthOfThree {x y z : Program} {a b c : Nat}
+    (hx : x.length = a) (hy : y.length = b) (hz : z.length = c) :
+    (x ++ y ++ z).length = a + b + c := by
+  simp only [List.length_append, hx, hy, hz, Nat.add_assoc]
+
+open SixCarryLoopAnchor in
+theorem build_length : SixCarryLoopAnchor.build.length=4009 := by
+  unfold SixCarryLoopAnchor.build
+  exact lengthOfThree (mappedLength peak_anchor_pre peak_anchor_pre_len)
+    (mappedLength peak_anchor_mid peak_anchor_mid_len) (mappedLength peak_anchor_post peak_anchor_post_len)
 
 theorem output_length : SixCarryLoopAnchor.output.length=8783 := LocalSevenOutputLength.length
 
@@ -66838,8 +66629,34 @@ theorem inside_spec(ranges:List (Nat×Nat)) (u:Wire):inside ranges u=true ↔ u�
  simp [inside,sites,List.mem_flatMap,List.mem_range'_1]
 def copyRanges:List (Nat×Nat):=[(4115,256),(4501,256)]
 def knownRanges:List (Nat×Nat):=[(2,256),(4373,128),(4757,4),(4762,1),(4764,126)]
-theorem copy_sites_checked:((sites copyRanges).all (C163Touch.touched copyW))=true:=by decide +kernel
-theorem known_sites_checked:((sites knownRanges).all (fun u=>known.contains u))=true:=by decide +kernel
+private theorem covered {a b : List Wire}
+    (h : StairLoan.maskOf a &&& StairLoan.maskOf b = StairLoan.maskOf a) (u : Wire)
+    (hu : u ∈ a) : u ∈ b := by
+  have ha : (StairLoan.maskOf a).testBit u = true := by
+    rw [StairLoan.testBit_maskOf]
+    exact decide_eq_true hu
+  have both := congrArg (fun v : Nat => v.testBit u) h
+  change (StairLoan.maskOf a &&& StairLoan.maskOf b).testBit u = (StairLoan.maskOf a).testBit u at both
+  rw [Nat.testBit_and, ha, Bool.true_and] at both
+  exact StairLoan.mem_of_maskOf both
+
+theorem known_sites_checked : ((sites knownRanges).all (fun u => known.contains u)) = true := by
+  have check : StairLoan.maskOf (sites knownRanges) &&& StairLoan.maskOf known =
+      StairLoan.maskOf (sites knownRanges) := by decide +kernel
+  exact List.all_eq_true.mpr (fun u hu => List.contains_iff_mem.mpr (covered check u hu))
+
+private abbrev copySrc := (negRot L).src
+private abbrev copyDst := L.foldDestination (negRot L)
+
+theorem copy_sites_checked : ((sites copyRanges).all (C163Touch.touched copyW)) = true := by
+  have check : StairLoan.maskOf (sites copyRanges) &&& StairLoan.maskOf (copySrc ++ copyDst) =
+      StairLoan.maskOf (sites copyRanges) := by decide +kernel
+  have len : copySrc.length = copyDst.length := by decide +kernel
+  have used : copySrc.isEmpty = false := by decide +kernel
+  refine List.all_eq_true.mpr (fun u hu => (C163Touch.touched_spec _ _).mpr ?_)
+  change u ∈ wires (copyRegister none copySrc copyDst)
+  rw [copyRegister_wires _ _ _ len, used]
+  exact List.mem_toFinset.mpr (covered check u hu)
 
 theorem copy_fast (u:Wire) (h:inside copyRanges u=true):u∈wires copyW:=
  (C163Touch.touched_spec _ _).mp (List.all_eq_true.mp copy_sites_checked u ((inside_spec _ _).mp h))
@@ -76394,50 +76211,50 @@ attribute [local irreducible] run wires toffoliCount measurementCount Challenge.
   Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
   Rolling1588TickGap.forward Five506.tick506 Five506.cand
 
-theorem cv21 : cv 21 = true := by decide +kernel
-theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
-theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
-theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
-theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
-theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
-theorem cv32 : cv 32 = true := by decide +kernel
-theorem cv33 : cv 33 = true := by decide +kernel
-theorem cv34 : cv 34 = true := by decide +kernel
-theorem cv35 : cv 35 = true := by decide +kernel
-theorem cv36 : cv 36 = true := by decide +kernel
-theorem cv37 : cv 37 = true := by decide +kernel
-theorem cv38 : cv 38 = true := by decide +kernel
-theorem cv39 : cv 39 = true := by decide +kernel
-theorem cv40 : cv 40 = true := by decide +kernel
-theorem cv41 : cv 41 = true := by decide +kernel
-theorem cv42 : cv 42 = true := by decide +kernel
-theorem cv43 : cv 43 = true := by decide +kernel
-theorem cv44 : cv 44 = true := by decide +kernel
-theorem cv45 : cv 45 = true := by decide +kernel
-theorem cv46 : cv 46 = true := by decide +kernel
-theorem cv47 : cv 47 = true := by decide +kernel
-theorem cv48 : cv 48 = true := by decide +kernel
-theorem cv49 : cv 49 = true := by decide +kernel
-theorem cv50 : cv 50 = true := by decide +kernel
-theorem cv51 : cv 51 = true := by decide +kernel
-theorem cv52 : cv 52 = true := by decide +kernel
-theorem cv53 : cv 53 = true := by decide +kernel
-theorem cv54 : cv 54 = true := by decide +kernel
-theorem cv55 : cv 55 = true := by decide +kernel
-theorem cv56 : cv 56 = true := by decide +kernel
-theorem cv57 : cv 57 = true := by decide +kernel
-theorem cv58 : cv 58 = true := by decide +kernel
-theorem cv59 : cv 59 = true := by decide +kernel
-theorem cv60 : cv 60 = true := by decide +kernel
-theorem cv61 : cv 61 = true := by decide +kernel
-theorem cv62 : cv 62 = true := by decide +kernel
-theorem cv63 : cv 63 = true := by decide +kernel
-theorem cv64 : cv 64 = true := by decide +kernel
+theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
+theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
+theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
+theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
+theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
+theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
+theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
+theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
+theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
+theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
+theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
+theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
+theorem cv33 : cv 33 = true := cv_of_checked (by decide +kernel)
+theorem cv34 : cv 34 = true := cv_of_checked (by decide +kernel)
+theorem cv35 : cv 35 = true := cv_of_checked (by decide +kernel)
+theorem cv36 : cv 36 = true := cv_of_checked (by decide +kernel)
+theorem cv37 : cv 37 = true := cv_of_checked (by decide +kernel)
+theorem cv38 : cv 38 = true := cv_of_checked (by decide +kernel)
+theorem cv39 : cv 39 = true := cv_of_checked (by decide +kernel)
+theorem cv40 : cv 40 = true := cv_of_checked (by decide +kernel)
+theorem cv41 : cv 41 = true := cv_of_checked (by decide +kernel)
+theorem cv42 : cv 42 = true := cv_of_checked (by decide +kernel)
+theorem cv43 : cv 43 = true := cv_of_checked (by decide +kernel)
+theorem cv44 : cv 44 = true := cv_of_checked (by decide +kernel)
+theorem cv45 : cv 45 = true := cv_of_checked (by decide +kernel)
+theorem cv46 : cv 46 = true := cv_of_checked (by decide +kernel)
+theorem cv47 : cv 47 = true := cv_of_checked (by decide +kernel)
+theorem cv48 : cv 48 = true := cv_of_checked (by decide +kernel)
+theorem cv49 : cv 49 = true := cv_of_checked (by decide +kernel)
+theorem cv50 : cv 50 = true := cv_of_checked (by decide +kernel)
+theorem cv51 : cv 51 = true := cv_of_checked (by decide +kernel)
+theorem cv52 : cv 52 = true := cv_of_checked (by decide +kernel)
+theorem cv53 : cv 53 = true := cv_of_checked (by decide +kernel)
+theorem cv54 : cv 54 = true := cv_of_checked (by decide +kernel)
+theorem cv55 : cv 55 = true := cv_of_checked (by decide +kernel)
+theorem cv56 : cv 56 = true := cv_of_checked (by decide +kernel)
+theorem cv57 : cv 57 = true := cv_of_checked (by decide +kernel)
+theorem cv58 : cv 58 = true := cv_of_checked (by decide +kernel)
+theorem cv59 : cv 59 = true := cv_of_checked (by decide +kernel)
+theorem cv60 : cv 60 = true := cv_of_checked (by decide +kernel)
+theorem cv61 : cv 61 = true := cv_of_checked (by decide +kernel)
+theorem cv62 : cv 62 = true := cv_of_checked (by decide +kernel)
+theorem cv63 : cv 63 = true := cv_of_checked (by decide +kernel)
+theorem cv64 : cv 64 = true := cv_of_checked (by decide +kernel)
 
 theorem rows_complete : ∀ v, v < 65 → ∀ u, u < 65 → ∀ g s : Bool,
     (u+v ≤ 64 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by

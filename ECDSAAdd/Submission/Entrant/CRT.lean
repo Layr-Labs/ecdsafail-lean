@@ -1810,32 +1810,6 @@ namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
 def fieldDegree (p : Nat) : Nat := Nat.log2 p
 
-def mulX (p d a : Nat) : Nat :=
-  let b := 2 * a
-  if b.testBit d then b ^^^ p else b
-
-def powers (p d n : Nat) : Array Nat := Id.run do
-  let mut a := 1
-  let mut out := #[]
-  for _ in [:n] do
-    out := out.push a
-    a := mulX p d a
-  return out
-
-def residues (n : Nat) : Array Nat := Id.run do
-  let mut rows := #[]
-  for (p, m) in schedule n do
-    let d := fieldDegree p
-    let cols := powers p d n
-    for j in [:m] do
-      for k in [:d] do
-        let mut row := 0
-        for i in [:n] do
-          if (i &&& j) == j && cols[i]!.testBit k then
-            row := row ||| (1 <<< i)
-        rows := rows.push row
-  return rows
-
 def selected (n mask : Nat) : List Nat := (List.range n).filter (fun i => mask.testBit i)
 
 def elimStep (n i : Nat) (row : Nat × Nat) : List (Nat × Nat) :=
@@ -2568,9 +2542,67 @@ def afterWord (s : Nat) : List Gate :=
   leaveFix12 s (Shadow7.sbP s) ++ Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++
   Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
+private abbrev middleTarget (s q : Wire) : Prop :=
+  q ≠ Shadow7.a0P s - 1 + 16 ∧ q ≠ Shadow7.e0P s + 3 ∧ q ≠ Shadow7.e0P s + 4 ∧
+  q ≠ Shadow7.e0P s + 6 ∧ q ≠ 1559
+
+private theorem middle_sites_checked : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let n := Shadow7.wpP s
+    middleTarget s 1613 ∧
+    (List.range (n + 15)).all (fun i => decide (middleTarget s (Shadow7.bankW s i))) = true ∧
+    (List.range (n - 1)).all (fun i => decide (middleTarget s (Shadow7.poolW s i))) = true := by
+  decide +kernel
+
+private theorem middle_sites (j : Fin 26) (h : j.val ≤ 24) :
+    let s := start j
+    AllAT (fun _ => True) (middleTarget s) (Shadow7.leaveAdjustCore s) ∧
+    AllAT (fun _ => True) (middleTarget s) (Shadow7.leaveBarrel s) := by
+  let s := start j
+  obtain ⟨control, bank_sites, pool_sites⟩ := middle_sites_checked j h
+  have bank (i : Nat) (used : i < Shadow7.wpP s + 15) :
+      middleTarget s (Shadow7.bankW s i) :=
+    of_decide_eq_true (List.all_eq_true.mp bank_sites i (List.mem_range.mpr used))
+  change AllAT _ _ (Shadow7.leaveAdjustCore s) ∧ AllAT _ _ (Shadow7.leaveBarrel s)
+  constructor
+  · unfold Shadow7.leaveAdjustCore
+    apply allAT_adjustG
+    · intro w hw
+      obtain ⟨i, index, rfl⟩ := List.mem_map.mp hw
+      rw [List.mem_range] at index
+      exact ⟨trivial, bank i (by omega)⟩
+    · intro w hw
+      obtain ⟨i, index, rfl⟩ := List.mem_map.mp hw
+      exact ⟨trivial, of_decide_eq_true (List.all_eq_true.mp pool_sites i index)⟩
+    · trivial
+    · trivial
+  · have stage (xs : List Wire) (d n : Nat) (bound : n + d ≤ Shadow7.wpP s + 15) :
+        AllAT (fun _ => True) (middleTarget s) (stageG 1613 (Shadow7.bankW s) xs d n) :=
+      allAT_stageG _ _ _ _ _ ⟨trivial, control⟩ (fun _ _ => trivial)
+        (fun i used => ⟨⟨trivial, bank i (by omega)⟩, ⟨trivial, bank (i + d) (by omega)⟩⟩)
+    unfold Shadow7.leaveBarrel
+    exact allAT_append (allAT_append (allAT_append (stage _ _ _ (by omega))
+      (stage _ _ _ (by omega))) (stage _ _ _ (by omega))) (stage _ _ _ (by omega))
+
+private theorem post_local_checked : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let h := Shadow7.sbP s
+    (leaveFix3 s h ++ leaveFix4 s h ++ Shadow7.leaveFix5Move s h ++
+      [Gate.cx (Shadow7.e0P s + 6) (Shadow7.e0P s + 3)] ++ Shadow7.fix8P s h ++
+      Shadow7.glueG3 s ++ keptG (tagsP.getD · 0) (fun i => Shadow7.a0P s - 1 + i) 1613 0 8 ++
+      wordOpen 1614 (cols16 s)).all (fun g => decide (target g ≠ Shadow7.a0P s - 1 + 16)) = true := by
+  decide +kernel
+
 theorem post_keeps_checked : ∀ j : Fin 26, j.val≤24 →
     (postEntry (start j)).all (fun g => decide (target g ≠ Shadow7.a0P (start j) - 1 + 16)) = true := by
-  decide +kernel
+  intro j hi
+  obtain ⟨adj, bar⟩ := middle_sites j hi
+  have all (gs : List Gate) (sites : AllAT (fun _ => True) (middleTarget (start j)) gs) :
+      gs.all (fun g => decide (target g ≠ Shadow7.a0P (start j) - 1 + 16)) = true :=
+    List.all_eq_true.mpr (fun g hg => decide_eq_true (sites g hg).2.1)
+  simp only [postEntry, Shadow7.leaveAdjust, List.all_append]
+  rw [all (Shadow7.leaveAdjustCore (start j)) adj, all (Shadow7.leaveBarrel (start j)) bar]
+  simpa only [List.all_append, Bool.and_true] using post_local_checked j hi
 
 
 theorem pair_layout_checked : ∀ j : Fin 26, j.val≤24 →
@@ -2608,10 +2640,6 @@ def afterShort (s : Nat) : List Gate :=
   Shadow7.fix10P s (Shadow7.sbP s) ++ leaveFix11 s (Shadow7.sbP s) ++ leaveFix12 s (Shadow7.sbP s) ++
   Shadow7.leaveLowStore s ++ Shadow7.leaveStoreMapped s ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
-theorem shortened_shape (s : Nat) : shortenedOps s = CRTBarrel.beforeReference s ++
-    (Shadow7.leaveBarrel s ++ afterShort s) := by
-  simp only [shortenedOps,postEntry,afterWord,afterShort,LeaveJ7.entryOps,
-    CRTBarrel.beforeReference,wordOpenClose,List.append_assoc]
 
 def scanTail (s : Nat) : List Gate :=
   leaveFix1 s (Shadow7.sbP s) ++ Shadow7.fix2P s (Shadow7.sbP s) ++ postEntry s ++ afterWord s
@@ -2647,9 +2675,58 @@ theorem scan_shortened_shape (s : Nat) : scanShortenedOps s = beforeScan s ++
   simp only [scanShortenedOps,scanTail,postEntry,afterWord,beforeScan,beforeScanTail,afterShort,
     wordOpenClose,List.append_assoc]
 
+private theorem check_tail_congr (f u c l : Wire) (before left right : List Gate)
+    (same : ∀ n shifted, FlagLeave.check f u c l n shifted left = FlagLeave.check f u c l n shifted right)
+    (n : Nat) (shifted : Bool) :
+    FlagLeave.check f u c l n shifted (before ++ left) = FlagLeave.check f u c l n shifted (before ++ right) := by
+  induction before generalizing n shifted with
+  | nil => exact same n shifted
+  | cons g before ih => cases n <;> simp only [List.cons_append, FlagLeave.check, ih]
+
+private theorem check_middle (s : Nat) (middle tail : List Gate)
+    (sites : AllAT (fun _ => True) (middleTarget s) middle) (n : Nat) (shifted : Bool) :
+    FlagLeave.check (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) (Shadow7.e0P s + 6) 1559 n shifted (middle ++ tail) =
+      FlagLeave.check (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) (Shadow7.e0P s + 6) 1559 n shifted tail := by
+  induction middle generalizing n shifted with
+  | nil => rfl
+  | cons g middle ih =>
+    cases n with
+    | zero => simp only [FlagLeave.check]
+    | succ n =>
+      obtain ⟨_, hf, hu, hc, hl⟩ := (sites g List.mem_cons_self).2
+      have miss : FlagLeave.hit (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 g ≠ true := by
+        intro hit
+        rcases of_decide_eq_true hit with rfl | rfl <;> exact hl rfl
+      have target_ok : ¬ (target g = Shadow7.e0P s + 4 ∨
+          (shifted = true ∧ target g = Shadow7.e0P s + 6)) :=
+        fun bad => bad.elim hu (fun h => hc h.2)
+      rw [List.cons_append, FlagLeave.check, if_neg miss, if_neg hf, if_neg target_ok]
+      exact ih (fun x hx => sites x (List.mem_cons_of_mem _ hx)) (n + 1) shifted
+
+private def checkPrefix (s : Nat) : List Gate :=
+  let h := Shadow7.sbP s
+  DeadScan.fix0M s h ++ leaveFix1 s h ++ Shadow7.fix2P s h ++ leaveFix3 s h ++ leaveFix4 s h ++
+    Shadow7.leaveFix5Move s h ++ [Gate.cx (Shadow7.e0P s + 6) (Shadow7.e0P s + 3)]
+
+private theorem all_local_checked : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    FlagLeave.check (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) (Shadow7.e0P s + 6) 1559
+      2 false (checkPrefix s ++ afterShort s) = true := by
+  decide +kernel
+
 theorem all_checked : ∀ j : Fin 26, j.val≤24 →
     FlagLeave.check (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) 1559
-      2 false (scanShortenedOps (start j)) = true := by decide +kernel
+      2 false (scanShortenedOps (start j)) = true := by
+  intro j hi
+  let s := start j
+  obtain ⟨adj, bar⟩ := middle_sites j hi
+  have shape : scanShortenedOps s = checkPrefix s ++
+      ((Shadow7.leaveAdjustCore s ++ Shadow7.leaveBarrel s) ++ afterShort s) := by
+    simp only [scan_shortened_shape, beforeScan, beforeScanTail, Shadow7.leaveAdjust,
+      checkPrefix, List.append_assoc]
+  change FlagLeave.check _ _ _ _ 2 false (scanShortenedOps s) = true
+  rw [shape, check_tail_congr _ _ _ _ _ _ _ (check_middle s _ _ (allAT_append adj bar))]
+  exact all_local_checked j hi
 
 theorem before_all_checked : ∀ j : Fin 26, j.val≤24 →
     FlagLeave.check (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) 1559
@@ -2659,13 +2736,82 @@ theorem before_all_checked : ∀ j : Fin 26, j.val≤24 →
     (Shadow7.leaveBarrel (start j) ++ afterShort (start j))
     (by rw [←scan_shortened_shape]; exact all_checked j hi)
 
-theorem removed_before : ∀ j : Fin 26, j.val≤24 →
-    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (beforeScan (start j)) =
+private theorem hit_target (f u l : Wire) (g : Gate) (hit : FlagLeave.hit f u l g = true) :
+    target g = l := by
+  rcases of_decide_eq_true hit with rfl | rfl <;> rfl
+
+private theorem removed_filter (f u l : Wire) (n : Nat) (p : List Gate) :
+    FlagLeave.removed f u l n p = (p.filter (FlagLeave.hit f u l)).take n := by
+  induction p generalizing n with
+  | nil => cases n <;> rfl
+  | cons g p ih =>
+    cases n with
+    | zero => rfl
+    | succ n =>
+      by_cases hit : FlagLeave.hit f u l g = true <;>
+        simp [FlagLeave.removed,hit,ih]
+
+private theorem adjust_sites : ∀ j : Fin 26, j.val≤24 →
+    let s := start j
+    let n := Shadow7.wpP s
+    decide (Shadow7.e0P s+3 ≠ 1559) = true ∧
+    (List.range n).all (fun i => decide (Shadow7.bankW s i ≠ 1559)) = true ∧
+    (List.range (n-1)).all (fun i => decide (Shadow7.poolW s i ≠ 1559)) = true := by decide +kernel
+
+private theorem no_adjust_hits (j : Fin 26) (hi : j.val≤24) (f u : Wire) :
+    (Shadow7.leaveAdjust (start j)).filter (FlagLeave.hit f u 1559) = [] := by
+  let s := start j
+  obtain ⟨clear,bank,pool⟩ := adjust_sites j hi
+  have safe : AllAT (fun _ => True) (· ≠ 1559) (Shadow7.leaveAdjustCore s) := by
+    unfold Shadow7.leaveAdjustCore
+    apply allAT_adjustG
+    · intro w hw
+      obtain ⟨i,used,rfl⟩ := List.mem_map.mp hw
+      exact ⟨trivial,of_decide_eq_true (List.all_eq_true.mp bank i used)⟩
+    · intro w hw
+      obtain ⟨i,used,rfl⟩ := List.mem_map.mp hw
+      exact ⟨trivial,of_decide_eq_true (List.all_eq_true.mp pool i used)⟩
+    · trivial
+    · trivial
+  apply List.filter_eq_nil_iff.mpr
+  intro g hg hit
+  have dst := hit_target f u 1559 g hit
+  rw [Shadow7.leaveAdjust,List.singleton_append,List.mem_cons] at hg
+  rcases hg with rfl | belongs
+  · exact of_decide_eq_true clear dst
+  · exact (safe g belongs).2 dst
+
+theorem removed_barrel (j : Fin 26) (_ : j.val ≤ 24) :
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (Shadow7.leaveBarrel (start j)) = [] := by
+  rw [removed_filter]
+  have counts := Shadow7.counts_leaveBarrel (start j)
+  have noHit : (Shadow7.leaveBarrel (start j)).filter
+      (FlagLeave.hit (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559) = [] := by
+    apply List.filter_eq_nil_iff.mpr
+    intro g hg hit
+    rcases of_decide_eq_true hit with rfl | rfl
+    · exact (List.countP_eq_zero.mp counts.make) _ hg rfl
+    · exact (List.countP_eq_zero.mp counts.pop) _ hg rfl
+  rw [noHit]
+  rfl
+
+private def before_adjust (s : Nat) : List Gate :=
+  DeadScan.fix0M s (Shadow7.sbP s) ++ leaveFix1 s (Shadow7.sbP s) ++
+  Shadow7.fix2P s (Shadow7.sbP s) ++ leaveFix3 s (Shadow7.sbP s) ++
+  leaveFix4 s (Shadow7.sbP s) ++ Shadow7.leaveFix5Move s (Shadow7.sbP s)
+
+private theorem before_hits : ∀ j : Fin 26, j.val≤24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (before_adjust (start j)) =
       [.make (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559] := by decide +kernel
 
-theorem removed_barrel : ∀ j : Fin 26, j.val≤24 →
-    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
-      (Shadow7.leaveBarrel (start j)) = [] := by decide +kernel
+theorem removed_before (j : Fin 26) (hi : j.val ≤ 24) :
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (beforeScan (start j)) =
+      [.make (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559] := by
+  have shape (s : Nat) : beforeScan s = before_adjust s ++ Shadow7.leaveAdjust s := by
+    simp only [beforeScan,beforeScanTail,before_adjust,List.append_assoc]
+  rw [shape,removed_filter,List.filter_append,no_adjust_hits j hi,List.append_nil,←removed_filter]
+  exact before_hits j hi
 
 theorem all_split (j : Fin 26) (hi : j.val≤24) : allOps (start j) =
     beforeAll (start j) ++ (Shadow7.leaveBarrel (start j) ++ afterAll (start j)) := by
@@ -2903,9 +3049,21 @@ theorem removed_pre5 : ∀ j : Fin 26, j.val ≤ 24 →
     FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 2 (beforePre5 (start j)) =
       [.make (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559] := by decide +kernel
 
-theorem removed_post5 : ∀ j : Fin 26, j.val ≤ 24 →
-    FlagLeave.removed (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) 1559 1
-      (row0Old (start j) ++ beforePost5 (start j)) = [] := by decide +kernel
+private def post_adjust (s : Nat) : List Gate :=
+  row0Old s ++ rowGates (Shadow7.e0P s+6) ((Shadow7.moveRows s).drop 1) ++
+  (Shadow7.fix5P s (Shadow7.sbP s)).drop 43
+
+private theorem post_hits : ∀ j : Fin 26, j.val ≤ 24 →
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (post_adjust (start j)) = [] := by decide +kernel
+
+theorem removed_post5 (j : Fin 26) (hi : j.val ≤ 24) :
+    FlagLeave.removed (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1
+      (row0Old (start j) ++ beforePost5 (start j)) = [] := by
+  have shape (s : Nat) : row0Old s ++ beforePost5 s = post_adjust s ++ Shadow7.leaveAdjust s := by
+    simp only [beforePost5,post_adjust,List.append_assoc]
+  rw [shape,removed_filter,List.filter_append,no_adjust_hits j hi,List.append_nil,←removed_filter]
+  exact post_hits j hi
 
 theorem beforeAll_split5 (j : Fin 26) (hi : j.val ≤ 24) :
     beforeAll (start j) = beforePre5Cut (start j) ++ (row0Old (start j) ++ beforePost5 (start j)) := by
@@ -2948,9 +3106,9 @@ def chainMid7 (s : Nat) : List Gate :=
 def afterPost7 (s : Nat) : List Gate :=
   let L := Shadow7.lowsP s; let top := Shadow7.a0P s + L - 2; let H := Shadow7.liveW s - L
   let hi := (List.range H).map (fun i => Shadow7.bankW s (L+i))
-  let seq2 := (List.range L).map (Shadow7.b0P s - 1 + ·)
+  let seq2 := (List.range (L - 1)).map (Shadow7.b0P s - 1 + ·)
   xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-    chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+L) 1556, .x 1556] 0 L ++
+    chainG (1558 + ·) (Shadow7.b0P s - 1 + ·) [.cx (1558+(L-1)) 1556, .x 1556] 0 (L-1) ++
     xsG seq2.reverse ++ [.x 1558] ++ Shadow7.leaveLowClose s ++ Shadow7.leaveClose s
 
 theorem store0_7 (s : Nat) : Shadow7.storeW s 0 = 1558 := by
@@ -3558,6 +3716,7 @@ theorem after7S_sel (s : Nat) :
     after7S s = (keptHead s ++ (KeptParity.placed s ++ selPre s)) ++
       (receiver 1565 false (selectorSources s) ++ (selPost s ++ selTail s)) := by
   simp only [after7S, afterRest7S, selTail, List.append_assoc]
+set_option linter.unnecessarySimpa false in
 theorem recv_counts (a b : List Gate) (x y t : Wire) (qs : List Wire) (c : Bool) :
     toffoliCount (GateMirror.forward (a ++ (receiver t c qs ++ b))) =
       toffoliCount (GateMirror.forward (a ++ (Gate.pop x y t :: b))) ∧
@@ -3574,15 +3733,15 @@ theorem recv_counts (a b : List Gate) (x y t : Wire) (qs : List Wire) (c : Bool)
   have hm : (qs.map (fun q => Gate.cx q t)).countP isMake = 0 := by
     induction qs with
     | nil => rfl
-    | cons q qs ih => simp [isMake, ih]
+    | cons q qs ih => simpa [isMake] using ih
   have hp : (qs.map (fun q => Gate.cx q t)).countP isPop = 0 := by
     induction qs with
     | nil => rfl
-    | cons q qs ih => simp [isPop, ih]
+    | cons q qs ih => simpa [isPop] using ih
   have hc : (qs.map (fun q => Gate.cx q t)).countP isCCX = 0 := by
     induction qs with
     | nil => rfl
-    | cons q qs ih => simp [isCCX, ih]
+    | cons q qs ih => simpa [isCCX] using ih
   cases c <;> simp [toffoli_forward,toffoli_inverse,meas_forward,meas_inverse,slots_forward,slots_inverse,
     receiver,List.countP_append,List.countP_cons,isMake,isPop,isCCX,hm,hp,hc,List.length_append,Nat.add_assoc,Nat.add_comm,Nat.add_left_comm]
 
@@ -3681,193 +3840,47 @@ end
 -- ==== end ScanRowGordo defs ====
 
 section
-namespace ECDSAAdd.Entrant.StairPacket.AdjustShort
-open Arithmetic Partial GateMirror
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
+def trimAdjust (s : Nat) : Bool := decide ((45 ≤ s ∧ s ≤ 150) ∨ (345 ≤ s ∧ s ≤ 405))
 
-/-- Tightened high-bank adjust width: on early blocks (`s < 225`) and late blocks (`270 ≤ s`),
-the signed rail width `wpP s` has an unused top bit above `Shadow.high (sbP s) 15 z + 1`. -/
-def adjW (s : Nat) : Nat :=
-  if s < 225 ∨ 270 ≤ s then Shadow7.wpP s - 1 else Shadow7.wpP s
+def adjustWidth (s : Nat) : Nat :=
+  if trimAdjust s then Shadow7.wpP s - 1 else Shadow7.wpP s
 
-def core (s : Nat) : List Gate :=
-  adjustG ((List.range (adjW s)).map (Shadow7.bankW s))
-    ((List.range (adjW s - 1)).map (Shadow7.poolW s))
-    (Shadow7.e0P s + 3) 1596
+def leaveAdjustCoreTrim (s : Nat) : List GateMirror.Gate :=
+  Partial.adjustG ((List.range (adjustWidth s)).map (Shadow7.bankW s))
+    ((List.range (adjustWidth s - 1)).map (Shadow7.poolW s)) (Shadow7.e0P s + 3) 1596
 
-def beforePost5Pre (s : Nat) : List Gate :=
-  let b := Shadow7.sbP s
-  rowGates (Shadow7.e0P s + 6) ((Shadow7.moveRows s).drop 1) ++ (Shadow7.fix5P s b).drop 43 ++
-    [.cx (Shadow7.e0P s + 6) (Shadow7.e0P s + 3)]
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
-def beforePost5Short (s : Nat) : List Gate :=
-  beforePost5Pre s ++ core s
-
-def before5Pre (s : Nat) : List Gate :=
-  DeadJoin.beforePre5Cut s ++ (DeadJoin.row0New s ++ beforePost5Pre s)
-
-def before5Short (s : Nat) : List Gate :=
-  DeadJoin.beforePre5Cut s ++ (DeadJoin.row0New s ++ beforePost5Short s)
-
-def before5TailShort (s : Nat) : List Gate :=
-  let h := Shadow7.sbP s
-  let preTail := (DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ Shadow7.fix2P s h ++
-    leaveFix3 s h ++ leaveFix4 s h ++ (Shadow7.fix5P s h).take 27
-  FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 preTail ++
-    (DeadJoin.row0New s ++ beforePost5Short s)
-
-def before5RowPrefix (s : Nat) : List Gate :=
-  let h := Shadow7.sbP s
-  let preTail := (DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ Shadow7.fix2P s h ++
-    leaveFix3 s h ++ leaveFix4 s h ++ (Shadow7.fix5P s h).take 27
-  ScanRowGordo.firstRows s h ++ (ScanRowGordo.shortCell s h ++
-    (FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 preTail ++
-      (DeadJoin.row0New s ++ beforePost5Pre s)))
-
-def before5RowShort (s : Nat) : List Gate :=
-  let h := Shadow7.sbP s
-  ScanRowGordo.firstRows s h ++ (ScanRowGordo.shortCell s h ++ before5TailShort s)
-
-theorem beforePost5_split (s : Nat) :
-    DeadJoin.beforePost5 s = beforePost5Pre s ++ Shadow7.leaveAdjustCore s := by
-  simp only [DeadJoin.beforePost5, beforePost5Pre, Shadow7.leaveAdjust, List.append_assoc]
-
-theorem before5_split_core (s : Nat) :
-    DeadJoin.before5 s = before5Pre s ++ Shadow7.leaveAdjustCore s := by
-  simp only [DeadJoin.before5, before5Pre, beforePost5_split, List.append_assoc]
-
-theorem before5Short_split_core (s : Nat) :
-    before5Short s = before5Pre s ++ core s := by
-  simp only [before5Short, before5Pre, beforePost5Short, List.append_assoc]
-
-theorem before5Row_split_core (s : Nat) :
-    ScanRowGordo.before5Row s = before5RowPrefix s ++ Shadow7.leaveAdjustCore s := by
-  simp only [ScanRowGordo.before5Row, ScanRowGordo.before5Tail, before5RowPrefix, beforePost5_split, List.append_assoc]
-
-theorem before5RowShort_split_core (s : Nat) :
-    before5RowShort s = before5RowPrefix s ++ core s := by
-  simp only [before5RowShort, before5TailShort, before5RowPrefix, beforePost5Short, List.append_assoc]
-
-end ECDSAAdd.Entrant.StairPacket.AdjustShort
-end
-
--- ==== begin Clean1556 defs (clean-1556 fix2P fusion, -150 T / +50 M) ====
-section
-namespace ECDSAAdd.Entrant.StairPacket.Clean1556
-open Arithmetic Partial GateMirror Challenge MeasuredCodec5
-set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+open Arithmetic Partial GateMirror DeadJoin ScanRowGordo
 set_option maxRecDepth 30000
-set_option linter.unusedVariables false
-set_option linter.unusedSimpArgs false
+set_option maxHeartbeats 6000000
 
-def oldMidLocal : List Gate := [
-  .cx 0 4, .x 4, .ccx 1 0 4, .make 2 3 5, .ccx 5 0 4, .pop 2 3 5]
+def postPrefix (s : Nat) : List Gate :=
+  rowGates (Shadow7.e0P s+6) ((Shadow7.moveRows s).drop 1) ++
+  (Shadow7.fix5P s (Shadow7.sbP s)).drop 43 ++ [.cx (Shadow7.e0P s+6) (Shadow7.e0P s+3)]
 
-def newMidLocal : List Gate := [
-  .make 2 3 5, .cx 1 5, .make 5 0 4, .cx 1 5, .pop 2 3 5, .cx 0 4, .x 4]
-
-def port (s h : Nat) : Wire → Wire
-  | 0 => 1570
-  | 1 => h + 1578
-  | 2 => h + 1577
-  | 3 => OB5.sig (s + 14) (s + 1044)
-  | 4 => 1556
-  | _ => 1571
-
-def oldMid (s h : Nat) : List Gate := [
-  .cx 1570 1556, .x 1556, .ccx (h+1578) 1570 1556,
-  .make (h+1577) (OB5.sig (s+14) (s+1044)) 1571,
-  .ccx 1571 1570 1556,
-  .pop (h+1577) (OB5.sig (s+14) (s+1044)) 1571]
-
-def newMid (s h : Nat) : List Gate := [
-  .make (h+1577) (OB5.sig (s+14) (s+1044)) 1571,
-  .cx (h+1578) 1571,
-  .make 1571 1570 1556,
-  .cx (h+1578) 1571,
-  .pop (h+1577) (OB5.sig (s+14) (s+1044)) 1571,
-  .cx 1570 1556,
-  .x 1556]
-
-def preMid (s : Nat) : List Gate :=
+def tailPrefix (s : Nat) : List Gate :=
   let h := Shadow7.sbP s
-  DeadScan.fix0M s h ++ leaveFix1 s h ++ (Shadow7.fix2P s h).take 29
+  let tail := (DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ Shadow7.fix2P s h ++
+    leaveFix3 s h ++ leaveFix4 s h ++ (Shadow7.fix5P s h).take 27
+  FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 tail ++
+    (DeadJoin.row0New s ++ postPrefix s)
 
-def postMidRaw (s : Nat) : List Gate :=
+def rowPrefix (s : Nat) : List Gate :=
   let h := Shadow7.sbP s
-  (Shadow7.fix2P s h).drop 35 ++ leaveFix3 s h ++ leaveFix4 s h ++ (Shadow7.fix5P s h).take 27
+  firstRows s h ++ (shortCell s h ++ tailPrefix s)
 
-def postMidCut (s : Nat) : List Gate :=
-  FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 (postMidRaw s)
+def rowBefore (s : Nat) : List Gate := rowPrefix s ++ leaveAdjustCoreTrim s
 
-def before5Clean (s : Nat) : List Gate :=
-  preMid s ++ (newMid s (Shadow7.sbP s) ++ (postMidCut s ++ (DeadJoin.row0New s ++ DeadJoin.beforePost5 s)))
-
-def before5PreClean (s : Nat) : List Gate :=
-  preMid s ++ (newMid s (Shadow7.sbP s) ++ (postMidCut s ++ (DeadJoin.row0New s ++ AdjustShort.beforePost5Pre s)))
-
-def before5ShortClean (s : Nat) : List Gate :=
-  before5PreClean s ++ AdjustShort.core s
-
-def before5TailClean (s : Nat) : List Gate :=
-  let h := Shadow7.sbP s
-  ((DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ (Shadow7.fix2P s h).take 29) ++
-    (newMid s h ++ (postMidCut s ++ (DeadJoin.row0New s ++ AdjustShort.beforePost5Short s)))
-
-def before5RowClean (s : Nat) : List Gate :=
-  let h := Shadow7.sbP s
-  ScanRowGordo.firstRows s h ++ (ScanRowGordo.shortCell s h ++ before5TailClean s)
-
-theorem local_counts :
-    toffoliCount (GateMirror.forward newMidLocal) + 1 = toffoliCount (GateMirror.forward oldMidLocal) ∧
-    toffoliCount (inverse newMidLocal) + 2 = toffoliCount (inverse oldMidLocal) ∧
-    measurementCount (GateMirror.forward newMidLocal) = measurementCount (GateMirror.forward oldMidLocal) ∧
-    measurementCount (inverse newMidLocal) = measurementCount (inverse oldMidLocal) + 1 ∧
-    gateSlots (GateMirror.forward newMidLocal) = gateSlots (GateMirror.forward oldMidLocal) + 1 ∧
-    gateSlots (inverse newMidLocal) = gateSlots (inverse oldMidLocal) + 2 := by decide
-
-theorem mid_counts (s h : Nat) :
-    toffoliCount (GateMirror.forward (newMid s h)) + 1 = toffoliCount (GateMirror.forward (oldMid s h)) ∧
-    toffoliCount (inverse (newMid s h)) + 2 = toffoliCount (inverse (oldMid s h)) ∧
-    measurementCount (GateMirror.forward (newMid s h)) = measurementCount (GateMirror.forward (oldMid s h)) ∧
-    measurementCount (inverse (newMid s h)) = measurementCount (inverse (oldMid s h)) + 1 ∧
-    gateSlots (GateMirror.forward (newMid s h)) = gateSlots (GateMirror.forward (oldMid s h)) + 1 ∧
-    gateSlots (inverse (newMid s h)) = gateSlots (inverse (oldMid s h)) + 2 := by
-  have nf : GateMirror.forward (newMid s h) = renameProgram (port s h) (GateMirror.forward newMidLocal) := rfl
-  have nr : inverse (newMid s h) = renameProgram (port s h) (inverse newMidLocal) := rfl
-  have ofw : GateMirror.forward (oldMid s h) = renameProgram (port s h) (GateMirror.forward oldMidLocal) := rfl
-  have obw : inverse (oldMid s h) = renameProgram (port s h) (inverse oldMidLocal) := rfl
-  rw [nf, nr, ofw, obw]
-  simp only [renameProgram_counts, Baselines.rename_gateSlots]
-  exact local_counts
-
-theorem fix2P_split (s h : Nat) :
-    Shadow7.fix2P s h = (Shadow7.fix2P s h).take 29 ++ (oldMid s h ++ (Shadow7.fix2P s h).drop 35) := rfl
-
-theorem before5Clean_split_core (s : Nat) :
-    before5Clean s = before5PreClean s ++ Shadow7.leaveAdjustCore s := by
-  simp only [before5Clean, before5PreClean, AdjustShort.beforePost5_split, List.append_assoc]
-
-theorem before5ShortClean_split_core (s : Nat) :
-    before5ShortClean s = before5PreClean s ++ AdjustShort.core s := rfl
-
-theorem before5ShortClean_split_row (s : Nat) :
-    before5ShortClean s =
-      ScanRowGordo.firstRows s (Shadow7.sbP s) ++
-        (ScanRowGordo.cell s (Shadow7.sbP s) ++ before5TailClean s) := by
-  have hfix0 : DeadScan.fix0M s (Shadow7.sbP s) =
-      (ScanRowGordo.firstRows s (Shadow7.sbP s) ++ ScanRowGordo.cell s (Shadow7.sbP s)) ++
-        (DeadScan.fix0M s (Shadow7.sbP s)).drop 50 := rfl
-  simp only [before5ShortClean, before5PreClean, before5TailClean, preMid, AdjustShort.beforePost5Short]
-  conv_lhs => rw [hfix0]
-  simp only [List.append_assoc]
-
-end ECDSAAdd.Entrant.StairPacket.Clean1556
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
 end
--- ==== end Clean1556 defs ====
 
 namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
-def before (s : Nat) : List GateMirror.Gate := Clean1556.before5RowClean s
+def before (s : Nat) : List GateMirror.Gate := LeaveAdjustTrim.rowBefore s
 def afterPart (s : Nat) : List GateMirror.Gate := DeadJoin.after7S s
 -- ==== end DeadJoin ====
 
@@ -3883,7 +3896,8 @@ def unleave (j : Fin 26) : Program :=
     GateMirror.inverse (afterPart s) ++ barrel s true ++ GateMirror.inverse (before s)
   else Shadow7.leaveMoveInvP j
 
-def params : WindowFold.Pieces Program := { Shadow7.params with leave := leave, leaveInv := unleave, unrouted := TickCut.Tail.selected }
+def params : WindowFold.Pieces Program :=
+  { Shadow7.params with leave := leave, leaveInv := unleave, unrouted := TickCut.Tail.selected }
 
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel
 
@@ -4538,55 +4552,55 @@ theorem schedule_extent (n : Nat) (hn : UsedWidth n) : extent (schedule n) = n :
 /-- replay memory (build-chain s5-mem2): one decide per block, each its own kernel check (the single Fin 26 decide
 peaked at about +3 to +4.5 GB; per block <= +0.2 GB). -/
 private theorem place_nodup_0 : ((List.range (barrelWidth (start ⟨0, by decide⟩)+26)).map (place (start ⟨0, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_1 : ((List.range (barrelWidth (start ⟨1, by decide⟩)+26)).map (place (start ⟨1, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_2 : ((List.range (barrelWidth (start ⟨2, by decide⟩)+26)).map (place (start ⟨2, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_3 : ((List.range (barrelWidth (start ⟨3, by decide⟩)+26)).map (place (start ⟨3, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_4 : ((List.range (barrelWidth (start ⟨4, by decide⟩)+26)).map (place (start ⟨4, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_5 : ((List.range (barrelWidth (start ⟨5, by decide⟩)+26)).map (place (start ⟨5, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_6 : ((List.range (barrelWidth (start ⟨6, by decide⟩)+26)).map (place (start ⟨6, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_7 : ((List.range (barrelWidth (start ⟨7, by decide⟩)+26)).map (place (start ⟨7, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_8 : ((List.range (barrelWidth (start ⟨8, by decide⟩)+26)).map (place (start ⟨8, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_9 : ((List.range (barrelWidth (start ⟨9, by decide⟩)+26)).map (place (start ⟨9, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_10 : ((List.range (barrelWidth (start ⟨10, by decide⟩)+26)).map (place (start ⟨10, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_11 : ((List.range (barrelWidth (start ⟨11, by decide⟩)+26)).map (place (start ⟨11, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_12 : ((List.range (barrelWidth (start ⟨12, by decide⟩)+26)).map (place (start ⟨12, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_13 : ((List.range (barrelWidth (start ⟨13, by decide⟩)+26)).map (place (start ⟨13, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_14 : ((List.range (barrelWidth (start ⟨14, by decide⟩)+26)).map (place (start ⟨14, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_15 : ((List.range (barrelWidth (start ⟨15, by decide⟩)+26)).map (place (start ⟨15, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_16 : ((List.range (barrelWidth (start ⟨16, by decide⟩)+26)).map (place (start ⟨16, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_17 : ((List.range (barrelWidth (start ⟨17, by decide⟩)+26)).map (place (start ⟨17, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_18 : ((List.range (barrelWidth (start ⟨18, by decide⟩)+26)).map (place (start ⟨18, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_19 : ((List.range (barrelWidth (start ⟨19, by decide⟩)+26)).map (place (start ⟨19, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_20 : ((List.range (barrelWidth (start ⟨20, by decide⟩)+26)).map (place (start ⟨20, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_21 : ((List.range (barrelWidth (start ⟨21, by decide⟩)+26)).map (place (start ⟨21, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_22 : ((List.range (barrelWidth (start ⟨22, by decide⟩)+26)).map (place (start ⟨22, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_23 : ((List.range (barrelWidth (start ⟨23, by decide⟩)+26)).map (place (start ⟨23, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 private theorem place_nodup_24 : ((List.range (barrelWidth (start ⟨24, by decide⟩)+26)).map (place (start ⟨24, by decide⟩))).Nodup := by
-  decide +kernel
+  exact PeakNodup.nodup_of_mask _ (by decide +kernel)
 
 private theorem place_nodup : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 →
     ((List.range (barrelWidth (start j)+26)).map (place (start j))).Nodup := by
@@ -7507,33 +7521,6 @@ theorem raw_all_valid (j : Fin 26) (hi : j.val≤24) (s : State)
       List.drop_nil,scanEq []]
     simp only [List.drop_nil]
 
-theorem raw_crt_all_pair (j : Fin 26) (hi : j.val≤24) (s : State)
-    (original : RawValid s (referenceOps (start j)))
-    (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
-      (Shadow7.a0P (start j) - 1 + 16) = false)
-    (scanEq : ∀ m, run (GateMirror.forward (DeadScan.fix0M (start j) (Shadow7.sbP (start j)))) m s =
-      run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s)
-    (rel : FlagLeave.Rel (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) (Shadow7.e0P (start j)+6) false s)
-    (barrelSame : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) =
-      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s))
-    (barrelBack : ∀ n, run (CRTBarrel.barrel (start j) true) n
-      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)) =
-      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) :
-    (∀ m,run (GateMirror.forward (beforeAll (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (afterAll (start j))) m s=
-      run (GateMirror.forward (referenceOps (start j))) m s) ∧
-    (∀ m n,run (GateMirror.inverse (afterAll (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (beforeAll (start j))) n
-      (run (GateMirror.forward (beforeAll (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (afterAll (start j))) m s)=s) := by
-  obtain ⟨v,same,beforeEq⟩ := raw_all_valid j hi s original zero scanEq rel
-  rw [all_split j hi] at v
-  have same' : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (beforeAll (start j))) [] s) =
-      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (beforeAll (start j))) [] s) := by
-    simpa only [beforeEq] using barrelSame
-  have back' : ∀ n, run (CRTBarrel.barrel (start j) true) n
-      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (beforeAll (start j))) [] s)) =
-      run (GateMirror.forward (beforeAll (start j))) [] s := by
-    simpa only [beforeEq] using barrelBack
-  obtain ⟨f,r⟩ := raw_replace _ _ _ _ _ s v same' back'
-  exact ⟨fun m => (f m).trans (by rw [←all_split j hi]; exact same m),r⟩
 
 end ECDSAAdd.Entrant.StairPacket.DeadJoin
 
@@ -7958,266 +7945,6 @@ theorem sel_rel (j : Fin 26) (hi : j.val ≤ 24) (s : State) (zero7 : s.basis (S
 end ECDSAAdd.Entrant.StairPacket.DeadJoin
 -- ==== end SelectorReceiver semantics ====
 
--- ==== begin Clean1556 proofs ====
-section
-namespace ECDSAAdd.Entrant.StairPacket.Clean1556
-open Arithmetic Partial GateMirror Challenge MeasuredCodec5
-set_option maxHeartbeats 4000000
-set_option maxRecDepth 30000
-set_option linter.unusedVariables false
-set_option linter.unusedSimpArgs false
-
-theorem preMid_oldMid_cut_noop : ∀ j : Fin 26, j.val ≤ 24 →
-    let s := start j; let h := Shadow7.sbP s
-    FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 (preMid s ++ oldMid s h) =
-      preMid s ++ oldMid s h ∧
-    FlagLeave.removed (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 (preMid s ++ oldMid s h) = [] := by
-  decide +kernel
-
-theorem before5_split_mid (j : Fin 26) (hi : j.val ≤ 24) :
-    DeadJoin.before5 (start j) =
-      preMid (start j) ++ (oldMid (start j) (Shadow7.sbP (start j)) ++
-        (postMidCut (start j) ++ (DeadJoin.row0New (start j) ++ DeadJoin.beforePost5 (start j)))) := by
-  obtain ⟨hc, hr⟩ := preMid_oldMid_cut_noop j hi
-  have hpre : DeadJoin.beforePre5 (start j) =
-      (preMid (start j) ++ oldMid (start j) (Shadow7.sbP (start j))) ++ postMidRaw (start j) := by
-    simp only [DeadJoin.beforePre5, preMid, postMidRaw]
-    conv_lhs => rw [fix2P_split]
-    simp only [List.append_assoc]
-  unfold DeadJoin.before5 DeadJoin.beforePre5Cut postMidCut
-  rw [hpre, FlagLeave.cut_append, hc, hr]
-  simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
-
-theorem tailShort_cut_noop : ∀ j : Fin 26, j.val ≤ 24 →
-    let s := start j; let h := Shadow7.sbP s
-    let p := (DeadScan.fix0M s h).drop 50 ++ leaveFix1 s h ++ (Shadow7.fix2P s h).take 29 ++ oldMid s h
-    FlagLeave.cut (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 p = p ∧
-    FlagLeave.removed (Shadow7.e0P s + 3) (Shadow7.e0P s + 4) 1559 2 p = [] := by
-  decide +kernel
-
-theorem tailShort_split_mid (j : Fin 26) (hi : j.val ≤ 24) :
-    AdjustShort.before5TailShort (start j) =
-      ((DeadScan.fix0M (start j) (Shadow7.sbP (start j))).drop 50 ++ leaveFix1 (start j) (Shadow7.sbP (start j)) ++
-        (Shadow7.fix2P (start j) (Shadow7.sbP (start j))).take 29) ++
-      (oldMid (start j) (Shadow7.sbP (start j)) ++
-        (postMidCut (start j) ++ (DeadJoin.row0New (start j) ++ AdjustShort.beforePost5Short (start j)))) := by
-  obtain ⟨hc, hr⟩ := tailShort_cut_noop j hi
-  unfold AdjustShort.before5TailShort postMidCut
-  dsimp only
-  have h1 : (DeadScan.fix0M (start j) (Shadow7.sbP (start j))).drop 50 ++ leaveFix1 (start j) (Shadow7.sbP (start j)) ++
-      Shadow7.fix2P (start j) (Shadow7.sbP (start j)) ++ leaveFix3 (start j) (Shadow7.sbP (start j)) ++
-      leaveFix4 (start j) (Shadow7.sbP (start j)) ++ (Shadow7.fix5P (start j) (Shadow7.sbP (start j))).take 27 =
-      (((DeadScan.fix0M (start j) (Shadow7.sbP (start j))).drop 50 ++ leaveFix1 (start j) (Shadow7.sbP (start j)) ++
-        (Shadow7.fix2P (start j) (Shadow7.sbP (start j))).take 29) ++ oldMid (start j) (Shadow7.sbP (start j))) ++
-        postMidRaw (start j) := by
-    simp only [postMidRaw]
-    conv_lhs => rw [fix2P_split]
-    simp only [List.append_assoc]
-  rw [h1, FlagLeave.cut_append, hc, hr]
-  simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
-
-private theorem fwd_app (a b : List Gate) :
-    GateMirror.forward (a ++ b) = GateMirror.forward a ++ GateMirror.forward b := List.map_append
-
-theorem before5RowClean_counts (j : Fin 26) (hi : j.val ≤ 24) :
-    toffoliCount (GateMirror.forward (before5RowClean (start j))) + 1 =
-      toffoliCount (GateMirror.forward (AdjustShort.before5RowShort (start j))) ∧
-    toffoliCount (inverse (before5RowClean (start j))) + 2 =
-      toffoliCount (inverse (AdjustShort.before5RowShort (start j))) ∧
-    measurementCount (GateMirror.forward (before5RowClean (start j))) =
-      measurementCount (GateMirror.forward (AdjustShort.before5RowShort (start j))) ∧
-    measurementCount (inverse (before5RowClean (start j))) =
-      measurementCount (inverse (AdjustShort.before5RowShort (start j))) + 1 ∧
-    gateSlots (GateMirror.forward (before5RowClean (start j))) =
-      gateSlots (GateMirror.forward (AdjustShort.before5RowShort (start j))) + 1 ∧
-    gateSlots (inverse (before5RowClean (start j))) =
-      gateSlots (inverse (AdjustShort.before5RowShort (start j))) + 2 := by
-  obtain ⟨c1, c2, c3, c4, c5, c6⟩ := mid_counts (start j) (Shadow7.sbP (start j))
-  unfold before5RowClean before5TailClean AdjustShort.before5RowShort
-  dsimp only
-  rw [tailShort_split_mid j hi]
-  simp only [fwd_app, DeadJoin.inverse_append, toffoliCount_append, measurementCount_append, gateSlots_append]
-  refine ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
-
-theorem newMid_proper : ∀ j : Fin 26, j.val ≤ 24 →
-    (newMid (start j) (Shadow7.sbP (start j))).all proper = true := by decide +kernel
-
-theorem before5RowClean_proper (j : Fin 26) (hi : j.val ≤ 24)
-    (old : ∀ g ∈ AdjustShort.before5RowShort (start j), proper g = true) :
-    ∀ g ∈ before5RowClean (start j), proper g = true := by
-  have keep := List.all_eq_true.mpr old
-  unfold AdjustShort.before5RowShort at keep
-  rw [tailShort_split_mid j hi] at keep
-  simp only [List.all_append, Bool.and_eq_true] at keep
-  apply List.all_eq_true.mp
-  unfold before5RowClean before5TailClean
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨keep.1, keep.2.1, keep.2.2.1, newMid_proper j hi, keep.2.2.2.2⟩
-
-theorem before5ShortClean_proper (j : Fin 26) (hi : j.val ≤ 24)
-    (old : ∀ g ∈ AdjustShort.before5Short (start j), proper g = true) :
-    ∀ g ∈ before5ShortClean (start j), proper g = true := by
-  have hsp : AdjustShort.before5Short (start j) =
-      preMid (start j) ++ (oldMid (start j) (Shadow7.sbP (start j)) ++
-        (postMidCut (start j) ++ (DeadJoin.row0New (start j) ++ (AdjustShort.beforePost5Pre (start j) ++ AdjustShort.core (start j))))) := by
-    unfold AdjustShort.before5Short AdjustShort.beforePost5Short DeadJoin.beforePre5Cut
-    obtain ⟨hc, hr⟩ := preMid_oldMid_cut_noop j hi
-    have hpre : DeadJoin.beforePre5 (start j) =
-        (preMid (start j) ++ oldMid (start j) (Shadow7.sbP (start j))) ++ postMidRaw (start j) := by
-      simp only [DeadJoin.beforePre5, preMid, postMidRaw]
-      conv_lhs => rw [fix2P_split]
-      simp only [List.append_assoc]
-    unfold postMidCut
-    rw [hpre, FlagLeave.cut_append, hc, hr]
-    simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
-  have keep := List.all_eq_true.mpr old
-  rw [hsp] at keep
-  simp only [List.all_append, Bool.and_eq_true] at keep
-  apply List.all_eq_true.mp
-  unfold before5ShortClean before5PreClean
-  simp only [List.all_append, Bool.and_eq_true]
-  exact ⟨⟨keep.1, newMid_proper j hi, keep.2.2.1, keep.2.2.2.1, keep.2.2.2.2.1⟩, keep.2.2.2.2.2⟩
-
-theorem before5RowClean_allW {P : Wire → Prop} (j : Fin 26) (hi : j.val ≤ 24)
-    (covered : AllW P (AdjustShort.before5RowShort (start j))) :
-    AllW P (before5RowClean (start j)) := by
-  unfold AdjustShort.before5RowShort at covered
-  dsimp only at covered
-  rw [tailShort_split_mid j hi] at covered
-  simp only [allW_append_iff] at covered
-  unfold before5RowClean before5TailClean
-  dsimp only
-  simp only [allW_append_iff]
-  refine ⟨covered.1, covered.2.1, covered.2.2.1, ?_, covered.2.2.2.2⟩
-  have hold := covered.2.2.2.1
-  let s := start j; let h := Shadow7.sbP s
-  have p1570 : P 1570 := hold (.cx 1570 1556) (by simp [oldMid]) 1570 (by simp [Gate.wires])
-  have p1556 : P 1556 := hold (.cx 1570 1556) (by simp [oldMid]) 1556 (by simp [Gate.wires])
-  have p1578 : P (h + 1578) := hold (.ccx (h + 1578) 1570 1556) (by simp [oldMid, s, h]) (h + 1578) (by simp [Gate.wires])
-  have p1577 : P (h + 1577) := hold (.make (h + 1577) (OB5.sig (s + 14) (s + 1044)) 1571) (by simp [oldMid, s, h]) (h + 1577) (by simp [Gate.wires])
-  have psig : P (OB5.sig (s + 14) (s + 1044)) := hold (.make (h + 1577) (OB5.sig (s + 14) (s + 1044)) 1571) (by simp [oldMid, s, h]) (OB5.sig (s + 14) (s + 1044)) (by simp [Gate.wires])
-  have p1571 : P 1571 := hold (.make (h + 1577) (OB5.sig (s + 14) (s + 1044)) 1571) (by simp [oldMid, s, h]) 1571 (by simp [Gate.wires])
-  intro g hg q hq
-  simp only [newMid, List.mem_cons, List.not_mem_nil, or_false] at hg
-  rcases hg with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Gate.wires, List.mem_cons, List.not_mem_nil, or_false] at hq
-  · rcases hq with rfl | rfl | rfl <;> assumption
-  · rcases hq with rfl | rfl <;> assumption
-  · rcases hq with rfl | rfl | rfl <;> assumption
-  · rcases hq with rfl | rfl <;> assumption
-  · rcases hq with rfl | rfl | rfl <;> assumption
-  · rcases hq with rfl | rfl <;> assumption
-  · rcases hq with rfl; assumption
-
-theorem preMid_targets : ∀ j : Fin 26, j.val ≤ 24 →
-    (preMid (start j)).all (fun g => decide (target g ≠ 1556)) = true ∧
-    (preMid (start j)).all (fun g => decide (target g ≠ 1571)) = true := by decide +kernel
-
-private theorem ports_inj : ∀ j : Fin 26, j.val ≤ 24 → ∀ a b : Fin 6,
-    port (start j) (Shadow7.sbP (start j)) a.val = port (start j) (Shadow7.sbP (start j)) b.val → a = b := by
-  decide +kernel
-
-private theorem local_sim_eq : ∀ (x : Fin 16) (ph : Bool),
-    sim (GateMirror.forward newMidLocal) [] ph x.val = sim (GateMirror.forward oldMidLocal) [] ph x.val := by
-  decide +kernel
-
-theorem mid_valid (j : Fin 26) (hi : j.val ≤ 24) (u : State)
-    (h4 : u.basis 1556 = false) (h5 : u.basis 1571 = false) :
-    DeadJoin.RawValid u (newMid (start j) (Shadow7.sbP (start j))) := by
-  have hne (a b : Fin 6) (hab : a ≠ b) :
-      port (start j) (Shadow7.sbP (start j)) a.val ≠ port (start j) (Shadow7.sbP (start j)) b.val :=
-    fun heq => hab (ports_inj j hi a b heq)
-  have h04 : (1570 : Wire) ≠ 1556 := by decide
-  have h05 : (1570 : Wire) ≠ 1571 := by decide
-  have h45 : (1556 : Wire) ≠ 1571 := by decide
-  have h14 := hne ⟨1, by decide⟩ ⟨4, by decide⟩ (by decide)
-  have h15 := hne ⟨1, by decide⟩ ⟨5, by decide⟩ (by decide)
-  have h24 := hne ⟨2, by decide⟩ ⟨4, by decide⟩ (by decide)
-  have h25 := hne ⟨2, by decide⟩ ⟨5, by decide⟩ (by decide)
-  have h34 := hne ⟨3, by decide⟩ ⟨4, by decide⟩ (by decide)
-  have h35 := hne ⟨3, by decide⟩ ⟨5, by decide⟩ (by decide)
-  dsimp only [port] at h14 h15 h24 h25 h34 h35
-  refine ⟨fun g hg => List.all_eq_true.mp (newMid_proper j hi) g hg, ?_, ?_⟩
-  · simp only [newMid, Prepared, ValueOK, transition, front, run, writeBit,
-      Function.update_of_ne h45, Function.update_of_ne h45.symm,
-      Function.update_of_ne h15, Function.update_of_ne h25, Function.update_of_ne h35,
-      Function.update_of_ne h24, Function.update_of_ne h34, Function.update_of_ne h14,
-      Function.update_self, h5, Bool.false_xor]
-    refine ⟨trivial, trivial, trivial, trivial, ?_, trivial, trivial, trivial⟩
-    cases u.basis (Shadow7.sbP (start j) + 1578) <;>
-      cases u.basis (Shadow7.sbP (start j) + 1577) <;>
-      cases u.basis (OB5.sig (start j + 14) (start j + 1044)) <;> rfl
-  · simp only [newMid, Ready, Fresh, transition, front, run, writeBit,
-      Function.update_of_ne h45, Function.update_of_ne h45.symm,
-      Function.update_self, h4, h5]
-    exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
-
-private def pack4 (a b c d : Bool) : Nat :=
-  a.toNat + 2 * b.toNat + 4 * c.toNat + 8 * d.toNat
-
-private theorem pack4_spec (a b c d : Bool) :
-    pack4 a b c d < 16 ∧
-    (pack4 a b c d).testBit 0 = a ∧ (pack4 a b c d).testBit 1 = b ∧
-    (pack4 a b c d).testBit 2 = c ∧ (pack4 a b c d).testBit 3 = d ∧
-    (pack4 a b c d).testBit 4 = false ∧ (pack4 a b c d).testBit 5 = false := by
-  cases a <;> cases b <;> cases c <;> cases d <;> decide
-
-private theorem rename_eq (f : Wire → Wire) (S : Finset Wire)
-    (hf : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b)
-    (p q : Program) (hp : wires p ⊆ S) (hq : wires q ⊆ S)
-    (mp mq : List Bool) (t s : State) (hph : t.phase = s.phase)
-    (hb : ∀ a ∈ S, t.basis a = s.basis (f a))
-    (heq : run p mp t = run q mq t) :
-    run (renameProgram f p) mp s = run (renameProgram f q) mq s := by
-  have rp := run_rename_pool f S hf p hp mp t s hph hb
-  have rq := run_rename_pool f S hf q hq mq t s hph hb
-  have hph_eq : (run (renameProgram f p) mp s).phase = (run (renameProgram f q) mq s).phase := by
-    rw [rp.1, rq.1, heq]
-  have hb_eq : (run (renameProgram f p) mp s).basis = (run (renameProgram f q) mq s).basis := by
-    funext w
-    by_cases hw : w ∈ S.image f
-    · obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hw
-      rw [rp.2 a ha, rq.2 a ha, heq]
-    · rw [run_rename_pool_outside f S p hp mp s w hw, run_rename_pool_outside f S q hq mq s w hw]
-  cases h1 : run (renameProgram f p) mp s
-  cases h2 : run (renameProgram f q) mq s
-  rw [h1, h2] at hph_eq hb_eq
-  simp only at hph_eq hb_eq
-  rw [hph_eq, hb_eq]
-
-theorem mid_eq (j : Fin 26) (hi : j.val ≤ 24) (u : State)
-    (h4 : u.basis 1556 = false) (h5 : u.basis 1571 = false) :
-    run (GateMirror.forward (newMid (start j) (Shadow7.sbP (start j)))) [] u =
-    run (GateMirror.forward (oldMid (start j) (Shadow7.sbP (start j)))) [] u := by
-  let f := port (start j) (Shadow7.sbP (start j))
-  have inj : ∀ a ∈ Finset.range 6, ∀ b ∈ Finset.range 6, f a = f b → a = b := fun a ha b hb eq =>
-    congrArg Fin.val (ports_inj j hi ⟨a, Finset.mem_range.mp ha⟩ ⟨b, Finset.mem_range.mp hb⟩ eq)
-  let x := pack4 (u.basis (f 0)) (u.basis (f 1)) (u.basis (f 2)) (u.basis (f 3))
-  obtain ⟨hlt, hb0, hb1, hb2, hb3, hb4, hb5⟩ := pack4_spec (u.basis (f 0)) (u.basis (f 1)) (u.basis (f 2)) (u.basis (f 3))
-  let t : State := ⟨u.phase, bitsOf x⟩
-  have hreads : ∀ a ∈ Finset.range 6, t.basis a = u.basis (f a) := by
-    intro a ha
-    have ha' : a < 6 := Finset.mem_range.mp ha
-    change x.testBit a = u.basis (f a)
-    interval_cases a
-    · exact hb0
-    · exact hb1
-    · exact hb2
-    · exact hb3
-    · exact hb4.trans h4.symm
-    · exact hb5.trans h5.symm
-  have hloc : run (GateMirror.forward newMidLocal) [] t = run (GateMirror.forward oldMidLocal) [] t := by
-    simpa only [t, run_sim] using congrArg (fun y : Bool × Nat => State.mk y.1 (bitsOf y.2))
-      (local_sim_eq ⟨x, hlt⟩ u.phase)
-  have hnew : renameProgram f (GateMirror.forward newMidLocal) = GateMirror.forward (newMid (start j) (Shadow7.sbP (start j))) := rfl
-  have hold : renameProgram f (GateMirror.forward oldMidLocal) = GateMirror.forward (oldMid (start j) (Shadow7.sbP (start j))) := rfl
-  rw [← hnew, ← hold]
-  exact rename_eq f (Finset.range 6) inj _ _ (by decide) (by decide) [] [] t u rfl hreads hloc
-
-end ECDSAAdd.Entrant.StairPacket.Clean1556
-end
--- ==== end Clean1556 proofs ====
-
 namespace ECDSAAdd.Entrant.StairPacket.DeadJoin
 open Arithmetic Partial GateMirror HighBankJoin Challenge
 set_option maxHeartbeats 10000000
@@ -8229,7 +7956,7 @@ set_option linter.unusedTactic false
 set_option linter.unnecessarySeqFocus false
 set_option linter.unreachableTactic false
 
-theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
+theorem raw_crt_all_valid57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
     (original : RawValid s (referenceOps (start j)))
     (zero : (run (GateMirror.forward (LeaveJ7.entryOps (start j) ++ postEntry (start j))) [] s).basis
       (Shadow7.a0P (start j) - 1 + 16) = false)
@@ -8237,29 +7964,14 @@ theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
       run (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))) [] s)
     (rel : FlagLeave.Rel (Shadow7.e0P (start j) + 3) (Shadow7.e0P (start j) + 4) (Shadow7.e0P (start j) + 6) false s)
     (zero6 : s.basis (Shadow7.e0P (start j) + 6) = false)
-    (barrelSame : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s) =
-      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s))
-    (barrelBack : ∀ n, run (CRTBarrel.barrel (start j) true) n
-      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)) =
-      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)
-    (t0 : State)
-    (ht0 : run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0 =
-      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s)
-    (ht0_undo : run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) []
-      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) = t0)
-    (adjSame : ∀ m, run (GateMirror.forward (AdjustShort.core (start j))) m t0 =
-      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0)
-    (adjBack : ∀ n, run (GateMirror.inverse (AdjustShort.core (start j))) n
-      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0) = t0)
     (keptRel : KeptParity.relation (fun q => (run (GateMirror.forward (CRTBarrel.beforeReference (start j) ++
       (Shadow7.leaveBarrel (start j) ++ keptHead (start j)))) [] s).basis (KeptParity.port (start j) q)))
-    (zero7 : s.basis (Shadow7.e0P (start j) + 7) = false)
-    (zero1556 : s.basis 1556 = false)
-    (zero1571 : s.basis 1571 = false) :
-    (∀ m, run (GateMirror.forward (Clean1556.before5ShortClean (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7S (start j))) m s =
-      run (GateMirror.forward (referenceOps (start j))) m s) ∧
-    (∀ m n, run (GateMirror.inverse (after7S (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (Clean1556.before5ShortClean (start j))) n
-      (run (GateMirror.forward (Clean1556.before5ShortClean (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7S (start j))) m s) = s) := by
+    (zero7 : s.basis (Shadow7.e0P (start j) + 7) = false) :
+    RawValid s (before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7S (start j))) ∧
+    run (GateMirror.forward (before5 (start j))) [] s =
+      run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s ∧
+    (∀ m, run (GateMirror.forward (before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7S (start j)))) m s =
+      run (GateMirror.forward (referenceOps (start j))) m s) := by
   obtain ⟨v0, same0, beforeEq⟩ := raw_all_valid j hi s original zero scanEq rel
   -- Step 1: FlagCut5 (row0Old -> row0New inside beforeAll)
   have shape0 : allOps (start j) =
@@ -8312,7 +8024,7 @@ theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
   have vCxB : RawValid (run (GateMirror.forward pre7b) [] s) [.cx (topW7 (start j)) 1559] :=
     ⟨fun x hx => by rw [List.mem_singleton.mp hx]; exact top_cx_proper j hi, ⟨trivial, trivial⟩, ⟨trivial, trivial⟩⟩
   obtain ⟨v7, same7b⟩ := raw_swap_mid v7a vCxB (pop_cx_1558 _ _ h1558B valB)
-  -- Step 4: Splice in the CRT barrel
+  -- Keep the input equality for the adjustment and barrel splice.
   have shape7 : pre7b ++ ([.cx (topW7 (start j)) 1559] ++ afterPost7 (start j)) =
       before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7 (start j)) := by
     simp only [pre7b, pre7, after7, List.append_assoc]
@@ -8320,13 +8032,6 @@ theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
   have bEq : run (GateMirror.forward (before5 (start j))) [] s =
       run (GateMirror.forward (CRTBarrel.beforeReference (start j))) [] s :=
     before5Eq.trans beforeEq
-  have same' : ∀ m, run (CRTBarrel.barrel (start j) false) m (run (GateMirror.forward (before5 (start j))) [] s) =
-      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (before5 (start j))) [] s) := by
-    simpa only [bEq] using barrelSame
-  have back' : ∀ n, run (CRTBarrel.barrel (start j) true) n
-      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] (run (GateMirror.forward (before5 (start j))) [] s)) =
-      run (GateMirror.forward (before5 (start j))) [] s := by
-    simpa only [bEq] using barrelBack
   -- Step 3b: KeptParity (GordoAR a2ce2c3a): the kept pass inside after7 -> the parity pass
   have shapeK : before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7 (start j)) =
       (before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ keptHead (start j))) ++
@@ -8362,82 +8067,9 @@ theorem raw_crt_all_pair57 (j : Fin 26) (hi : j.val ≤ 24) (s : State)
       before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7S (start j)) := by
     rw [after7S_sel, ← clear_receiver]; simp only [List.append_assoc]
   rw [shapeS2] at v7S
-  -- Clean1556: clean-1556 fix2P fusion (-1 T fwd, -2 T inv per block = -150 T total)
-  have shapeC : before5 (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7S (start j)) =
-      Clean1556.preMid (start j) ++
-        (Clean1556.oldMid (start j) (Shadow7.sbP (start j)) ++
-          (Clean1556.postMidCut (start j) ++ (row0New (start j) ++ (beforePost5 (start j) ++
-            (Shadow7.leaveBarrel (start j) ++ after7S (start j)))))) := by
-    rw [Clean1556.before5_split_mid j hi]; simp only [List.append_assoc]
-  rw [shapeC] at v7S
-  have h1556u : (run (GateMirror.forward (Clean1556.preMid (start j))) [] s).basis 1556 = false :=
-    (keeps_of_targets57 _ 1556 (fun g hg => of_decide_eq_true (List.all_eq_true.mp (Clean1556.preMid_targets j hi).1 g hg)) [] s).trans zero1556
-  have h1571u : (run (GateMirror.forward (Clean1556.preMid (start j))) [] s).basis 1571 = false :=
-    (keeps_of_targets57 _ 1571 (fun g hg => of_decide_eq_true (List.all_eq_true.mp (Clean1556.preMid_targets j hi).2 g hg)) [] s).trans zero1571
-  obtain ⟨v7C, same7C⟩ := raw_swap_mid v7S
-    (Clean1556.mid_valid j hi _ h1556u h1571u)
-    (Clean1556.mid_eq j hi _ h1556u h1571u)
-  have shapeC2 : Clean1556.preMid (start j) ++
-      (Clean1556.newMid (start j) (Shadow7.sbP (start j)) ++
-        (Clean1556.postMidCut (start j) ++ (row0New (start j) ++ (beforePost5 (start j) ++
-          (Shadow7.leaveBarrel (start j) ++ after7S (start j)))))) =
-      Clean1556.before5Clean (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7S (start j)) := by
-    simp only [Clean1556.before5Clean, List.append_assoc]
-  rw [shapeC2] at v7C
-  have bEqC : run (GateMirror.forward (Clean1556.before5Clean (start j))) [] s =
-      run (GateMirror.forward (before5 (start j))) [] s := by
-    rw [Clean1556.before5_split_mid j hi, Clean1556.before5Clean]
-    simp only [forward_app, run_append, run_take, List.drop_nil]
-    rw [Clean1556.mid_eq j hi _ h1556u h1571u]
-  -- TruncatedAdjust (credit Mahmoud514 50c0ac46): the adjust core is replaced next to the barrel, from the
-  -- pre-adjust state t0 of the reference (identified through the undo of the old adjust)
-  have vPreAdj : RawValid s (Clean1556.before5PreClean (start j) ++ Shadow7.leaveAdjustCore (start j)) := by
-    rw [← Clean1556.before5Clean_split_core]; exact v7C.parts.1
-  have hstep1 : run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) []
-      (run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s) =
-      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] t0 := by
-    have hsplit : run (GateMirror.forward (Clean1556.before5Clean (start j))) [] s =
-        run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) []
-          (run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s) := by
-      rw [Clean1556.before5Clean_split_core, forward_app, run_append, run_take, List.drop_nil]
-    rw [← hsplit, bEqC, bEq, ht0]
-  have hpreEq : run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s = t0 := by
-    have hinv := congrArg (run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) []) hstep1
-    rw [vPreAdj.parts.2.undo_run [] [], ht0_undo] at hinv
-    exact hinv
-  have sameAB : ∀ m, run (GateMirror.forward (AdjustShort.core (start j)) ++ CRTBarrel.barrel (start j) false) m
-      (run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s) =
-      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j))) []
-        (run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s) := by
-    intro m
-    rw [hpreEq, run_append, run_take, adjSame, forward_app, run_append, run_take, List.drop_nil, ht0]
-    exact barrelSame _
-  have backAB : ∀ n, run (CRTBarrel.barrel (start j) true ++ GateMirror.inverse (AdjustShort.core (start j))) n
-      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j))) []
-        (run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s)) =
-      run (GateMirror.forward (Clean1556.before5PreClean (start j))) [] s := by
-    intro n
-    rw [hpreEq, run_append, run_take, forward_app, run_append, run_take, List.drop_nil, ht0, barrelBack _, ← ht0]
-    exact adjBack _
-  have hspA : Clean1556.before5Clean (start j) ++ (Shadow7.leaveBarrel (start j) ++ after7S (start j)) =
-      Clean1556.before5PreClean (start j) ++ ((Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j)) ++ after7S (start j)) := by
-    rw [Clean1556.before5Clean_split_core]; simp only [List.append_assoc]
-  rw [hspA] at v7C
-  obtain ⟨f, r⟩ := raw_replace _ _ _ _ _ s v7C sameAB backAB
-  have hfprog : GateMirror.forward (Clean1556.before5ShortClean (start j)) ++ CRTBarrel.barrel (start j) false ++ GateMirror.forward (after7S (start j)) =
-      GateMirror.forward (Clean1556.before5PreClean (start j)) ++ (GateMirror.forward (AdjustShort.core (start j)) ++ CRTBarrel.barrel (start j) false) ++ GateMirror.forward (after7S (start j)) := by
-    rw [Clean1556.before5ShortClean_split_core, forward_app]; simp only [List.append_assoc]
-  have hrprog : GateMirror.inverse (after7S (start j)) ++ CRTBarrel.barrel (start j) true ++ GateMirror.inverse (Clean1556.before5ShortClean (start j)) =
-      GateMirror.inverse (after7S (start j)) ++ (CRTBarrel.barrel (start j) true ++ GateMirror.inverse (AdjustShort.core (start j))) ++ GateMirror.inverse (Clean1556.before5PreClean (start j)) := by
-    rw [Clean1556.before5ShortClean_split_core, inverse_append]; simp only [List.append_assoc]
-  refine ⟨fun m => ?_, fun m n => by rw [hfprog, hrprog]; exact r m n⟩
-  have h0 := f m
-  rw [← hfprog, ← hspA, ← shapeC2] at h0
-  have hC := same7C m
-  rw [← shapeC, ← shapeS2] at hC
-  have hS := same7S m
-  rw [← shapeS, ← shapeK2] at hS
-  have h1 := (h0.trans hC).trans hS
+  refine ⟨v7S, bEq, fun m => ?_⟩
+  have h1 := same7S m
+  rw [shapeS2, ← shapeS, ← shapeK2] at h1
   have hK := same7K m
   rw [← shapeK, ← shape7] at hK
   have h2 := (same7b m)
@@ -8480,15 +8112,6 @@ theorem before5_split (j : Fin 26) (hi : j.val ≤ 24) :
         (cell (start j) (Shadow7.sbP (start j)) ++ before5Tail (start j)) := by
   obtain ⟨hc, hr⟩ := prefix_cut_noop j hi
   unfold DeadJoin.before5 DeadJoin.beforePre5Cut before5Tail
-  rw [pre5_prefix, FlagLeave.cut_append, hc, hr]
-  simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
-
-theorem before5Short_split (j : Fin 26) (hi : j.val ≤ 24) :
-    AdjustShort.before5Short (start j) =
-      firstRows (start j) (Shadow7.sbP (start j)) ++
-        (cell (start j) (Shadow7.sbP (start j)) ++ AdjustShort.before5TailShort (start j)) := by
-  obtain ⟨hc, hr⟩ := prefix_cut_noop j hi
-  unfold AdjustShort.before5Short DeadJoin.beforePre5Cut AdjustShort.before5TailShort
   rw [pre5_prefix, FlagLeave.cut_append, hc, hr]
   simp only [List.length_nil, Nat.sub_zero, List.append_assoc]
 
@@ -8752,25 +8375,32 @@ theorem before5Row_pair (j : Fin 26) (hi : j.val ≤ 24) (s : State) (u v : Nat)
     (ready : Shadow7.onRails j 15 (SkywalkRails.encode G sg u v) s.basis)
     (fresh : s.basis (Shadow7.e0P (start j) + 5) = false)
     (small : u < 2^15 * 2^(Shadow7.sbP (start j)))
-    (phys : ∀ g ∈ Clean1556.before5ShortClean (start j), proper g = true)
+    (phys : ∀ g ∈ DeadJoin.before5 (start j), proper g = true)
+    (tail : List Gate)
     (orig_det : ∀ m, run (GateMirror.forward (DeadJoin.referenceOps (start j))) m s =
       run (GateMirror.forward (DeadJoin.referenceOps (start j))) [] s)
-    (fwd5 : ∀ m, run (GateMirror.forward (Clean1556.before5ShortClean (start j)) ++ CRTBarrel.barrel (start j) false ++
+    (fwd5 : ∀ m, run (GateMirror.forward (firstRows (start j) (Shadow7.sbP (start j)) ++
+        (cell (start j) (Shadow7.sbP (start j)) ++ tail)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7S (start j))) m s =
       run (GateMirror.forward (DeadJoin.referenceOps (start j))) m s)
     (rev5 : ∀ m n, run (inverse (DeadJoin.after7S (start j)) ++ CRTBarrel.barrel (start j) true ++
-        inverse (Clean1556.before5ShortClean (start j))) n
-      (run (GateMirror.forward (Clean1556.before5ShortClean (start j)) ++ CRTBarrel.barrel (start j) false ++
+        inverse (firstRows (start j) (Shadow7.sbP (start j)) ++
+        (cell (start j) (Shadow7.sbP (start j)) ++ tail))) n
+      (run (GateMirror.forward (firstRows (start j) (Shadow7.sbP (start j)) ++
+        (cell (start j) (Shadow7.sbP (start j)) ++ tail)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7S (start j))) m s) = s) :
-    (∀ m, run (GateMirror.forward (Clean1556.before5RowClean (start j)) ++ CRTBarrel.barrel (start j) false ++
+    (∀ m, run (GateMirror.forward (firstRows (start j) (Shadow7.sbP (start j)) ++
+        (shortCell (start j) (Shadow7.sbP (start j)) ++ tail)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7S (start j))) m s =
       run (GateMirror.forward (DeadJoin.referenceOps (start j))) m s) ∧
     (∀ m n, run (inverse (DeadJoin.after7S (start j)) ++ CRTBarrel.barrel (start j) true ++
-        inverse (Clean1556.before5RowClean (start j))) n
-      (run (GateMirror.forward (Clean1556.before5RowClean (start j)) ++ CRTBarrel.barrel (start j) false ++
+        inverse (firstRows (start j) (Shadow7.sbP (start j)) ++
+        (shortCell (start j) (Shadow7.sbP (start j)) ++ tail))) n
+      (run (GateMirror.forward (firstRows (start j) (Shadow7.sbP (start j)) ++
+        (shortCell (start j) (Shadow7.sbP (start j)) ++ tail)) ++ CRTBarrel.barrel (start j) false ++
         GateMirror.forward (DeadJoin.after7S (start j))) m s) = s) := by
   let st := start j; let h := Shadow7.sbP st
-  have sp := Clean1556.before5ShortClean_split_row st
+  have sp := before5_split j hi
   have pFR : ∀ g ∈ firstRows st h, proper g = true := fun g hg => phys g (by rw [sp]; exact List.mem_append_left _ hg)
   have pC : ∀ g ∈ cell st h, proper g = true := fun g hg => phys g (by rw [sp]; exact List.mem_append_right _ (List.mem_append_left _ hg))
   obtain ⟨fFR, rFR, rFR2⟩ := pure_list_roundtrip (firstRows st h) (firstRows_pure j hi) pFR
@@ -8787,32 +8417,32 @@ theorem before5Row_pair (j : Fin 26) (hi : j.val ≤ 24) (s : State) (u v : Nat)
       change measurementCount (GateMirror.forward [g] ++ GateMirror.forward tl) = 0
       rw [measurementCount_append, h1, ih hl.2]
   have hmcC : measurementCount (GateMirror.forward (cell st h)) = 0 := rfl
-  have hFwd : ∀ m, run (GateMirror.forward (Clean1556.before5RowClean st) ++ CRTBarrel.barrel st false ++
+  have hFwd : ∀ m, run (GateMirror.forward (firstRows st h ++ (shortCell st h ++ tail)) ++ CRTBarrel.barrel st false ++
       GateMirror.forward (DeadJoin.after7S st)) m s =
       run (GateMirror.forward (DeadJoin.referenceOps st)) m s := by
     intro m
     let m' := m.drop (measurementCount (GateMirror.forward (shortCell st h)))
     have h5m := fwd5 m'
-    rw [Clean1556.before5RowClean, fwd_app, fwd_app]
+    rw [fwd_app, fwd_app]
     simp only [List.append_assoc]
     rw [run_append, run_append, fFR, hmcF, List.drop_zero, cFwd]
-    rw [sp, fwd_app, fwd_app] at h5m
+    rw [fwd_app, fwd_app] at h5m
     simp only [List.append_assoc] at h5m
     rw [run_append, run_append, fFR, hmcF, List.drop_zero, fC, hmcC, List.drop_zero] at h5m
     exact h5m.trans ((orig_det m').trans (orig_det m).symm)
   refine ⟨hFwd, fun m n => ?_⟩
   rw [hFwd m, orig_det m, ← orig_det [], ← fwd5 []]
-  let endS := run (GateMirror.forward (Clean1556.before5ShortClean st) ++ CRTBarrel.barrel st false ++
+  let endS := run (GateMirror.forward (firstRows st h ++ (cell st h ++ tail)) ++ CRTBarrel.barrel st false ++
     GateMirror.forward (DeadJoin.after7S st)) [] s
   have hrev := rev5 [] n
-  change run (inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (Clean1556.before5ShortClean st)) n endS = s at hrev
-  let midP := inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (Clean1556.before5TailClean st)
-  have hInv5 : inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (Clean1556.before5ShortClean st) =
+  change run (inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (firstRows st h ++ (cell st h ++ tail))) n endS = s at hrev
+  let midP := inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse tail
+  have hInv5 : inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (firstRows st h ++ (cell st h ++ tail)) =
       midP ++ (inverse (cell st h) ++ inverse (firstRows st h)) := by
-    rw [sp, inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
-  have hInvR : inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (Clean1556.before5RowClean st) =
+    rw [inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
+  have hInvR : inverse (DeadJoin.after7S st) ++ CRTBarrel.barrel st true ++ inverse (firstRows st h ++ (shortCell st h ++ tail)) =
       midP ++ (inverse (shortCell st h) ++ inverse (firstRows st h)) := by
-    rw [Clean1556.before5RowClean, inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
+    rw [inv_app, inv_app]; simp only [midP, st, h, List.append_assoc]
   rw [hInv5, run_append, run_append] at hrev
   have hMid : run midP (n.take (measurementCount midP)) endS =
       run (GateMirror.forward (cell st h)) [] (run (GateMirror.forward (firstRows st h)) [] s) := by
@@ -8829,231 +8459,496 @@ end ECDSAAdd.Entrant.StairPacket.ScanRowGordo
 end
 -- ==== end ScanRowGordo ====
 
-
 section
-set_option linter.unusedVariables false
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.TruncatedAdjust
+open Arithmetic Partial GateMirror HighBankAdjust Challenge
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.StairPacket.AdjustShort
-open Arithmetic Partial GateMirror CRTBarrel Challenge
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+set_option linter.unnecessarySeqFocus false
 
-theorem adjW_le (s : Nat) : adjW s ≤ Shadow7.wpP s := by
-  unfold adjW; split_ifs <;> omega
-
-theorem wpP_ge2 : ∀ j : Fin 26, j.val ≤ 24 → 2 ≤ Shadow7.wpP (start j) := by decide
-
-theorem adjW_pos (j : Fin 26) (h1 : j.val ≤ 24) : 1 ≤ adjW (start j) := by
-  have hw := wpP_ge2 j h1
-  unfold adjW; split_ifs <;> omega
-
-theorem core_counts (s : Nat) (hw : 1 ≤ adjW s) :
-    Counts (core s) 0 (adjW s - 1) (adjW s - 1) (5 * adjW s - 2) :=
-  ((counts_cxsG _ _).app ((counts_addG _ _ _ (by simp; omega)).app (counts_cxsG _ _))).congr
-    (by simp) (by simp) (by simp) (by simp; omega)
-
-theorem old_core_counts (s : Nat) (hw : 1 ≤ Shadow7.wpP s) :
-    Counts (Shadow7.leaveAdjustCore s) 0 (Shadow7.wpP s - 1) (Shadow7.wpP s - 1) (5 * Shadow7.wpP s - 2) :=
-  ((counts_cxsG _ _).app ((counts_addG _ _ _ (by simp; omega)).app (counts_cxsG _ _))).congr
-    (by simp) (by simp) (by simp) (by simp; omega)
-
-theorem beforeShort_counts (j : Fin 26) (h1 : j.val ≤ 24) :
-    toffoliCount (GateMirror.forward (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
-      toffoliCount (GateMirror.forward (ScanRowGordo.before5Row (start j))) ∧
-    toffoliCount (inverse (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
-      toffoliCount (inverse (ScanRowGordo.before5Row (start j))) ∧
-    measurementCount (GateMirror.forward (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
-      measurementCount (GateMirror.forward (ScanRowGordo.before5Row (start j))) ∧
-    measurementCount (inverse (before5RowShort (start j))) + (Shadow7.wpP (start j) - adjW (start j)) =
-      measurementCount (inverse (ScanRowGordo.before5Row (start j))) ∧
-    gateSlots (GateMirror.forward (before5RowShort (start j))) + 6 * (Shadow7.wpP (start j) - adjW (start j)) =
-      gateSlots (GateMirror.forward (ScanRowGordo.before5Row (start j))) ∧
-    gateSlots (inverse (before5RowShort (start j))) + 6 * (Shadow7.wpP (start j) - adjW (start j)) =
-      gateSlots (inverse (ScanRowGordo.before5Row (start j))) := by
-  have hw2 := wpP_ge2 j h1
-  have hle := adjW_le (start j)
-  have hap := adjW_pos j h1
-  obtain ⟨a1, a2, a3, a4, a5, a6⟩ := (core_counts (start j) hap).programs
-  obtain ⟨b1, b2, b3, b4, b5, b6⟩ := (old_core_counts (start j) (by omega)).programs
-  have hfa : ∀ a b : List Gate, GateMirror.forward (a ++ b) = GateMirror.forward a ++ GateMirror.forward b :=
-    fun _ _ => List.map_append
-  rw [before5RowShort_split_core, before5Row_split_core]
-  simp only [hfa, DeadJoin.inverse_append, toffoliCount_append,
-    measurementCount_append, gateSlots_append]
-  refine ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
-
-private theorem allW_cxsG_mem {P : Wire → Prop} (neg : Wire) (ys : List Wire)
-    (h : AllW P (cxsG neg ys)) (y : Wire) (hy : y ∈ ys) : P neg ∧ P y := by
-  have hm : Gate.cx neg y ∈ cxsG neg ys := List.mem_map.mpr ⟨y, hy, rfl⟩
-  exact ⟨h _ hm neg (by simp [Gate.wires]), h _ hm y (by simp [Gate.wires])⟩
-
-private theorem allW_addG_mem {P : Wire → Prop} :
-    ∀ (ys cs : List Wire) (cin : Wire), ys.length = cs.length + 1 →
-      AllW P (addG ys cs cin) → P cin ∧ ∀ c ∈ cs, P c
-  | [y], [], cin, _, h =>
-    ⟨h (.cx cin y) (by simp [addG]) cin (by simp [Gate.wires]), fun _ hc => by cases hc⟩
-  | y :: y' :: ys, c :: cs, cin, hlen, h => by
-    have hcons : addG (y :: y' :: ys) (c :: cs) cin =
-        .make y cin c :: (addG (y' :: ys) cs c ++ [.pop y cin c, .cx cin y]) := rfl
-    rw [hcons] at h
-    have hm := h (.make y cin c) (List.mem_cons_self ..)
-    have hrest : AllW P (addG (y' :: ys) cs c) := fun g hg =>
-      h g (List.mem_cons_of_mem _ (List.mem_append_left _ hg))
-    have ih := allW_addG_mem (y' :: ys) cs c (by simpa using hlen) hrest
-    refine ⟨hm cin (by simp [Gate.wires]), fun q hq => ?_⟩
-    rcases List.mem_cons.mp hq with rfl | hq'
-    · exact hm q (by simp [Gate.wires])
-    · exact ih.2 q hq'
-  | [], [], _, hlen, _ => by simp at hlen
-  | [], _ :: _, _, hlen, _ => by simp at hlen
-  | [_], _ :: _, _, hlen, _ => by simp at hlen
-  | _ :: _ :: _, [], _, hlen, _ => by simp at hlen
-
-theorem beforeShort_allW {P : Wire → Prop} (j : Fin 26) (h1 : j.val ≤ 24)
-    (covered : AllW P (ScanRowGordo.before5Row (start j))) :
-    AllW P (before5RowShort (start j)) := by
-  have hw2 := wpP_ge2 j h1
-  have hle := adjW_le (start j)
-  rw [before5Row_split_core, allW_append_iff] at covered
-  rw [before5RowShort_split_core, allW_append_iff]
-  refine ⟨covered.1, ?_⟩
-  have hcore := covered.2
-  unfold Shadow7.leaveAdjustCore adjustG at hcore
-  rw [allW_append_iff, allW_append_iff] at hcore
-  have hcy : ∀ y ∈ (List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j)), P 1596 ∧ P y :=
-    allW_cxsG_mem 1596 _ hcore.1
-  have h0y : Shadow7.bankW (start j) 0 ∈ (List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j)) :=
-    List.mem_map.mpr ⟨0, List.mem_range.mpr (by omega), rfl⟩
-  have hneg : P 1596 := (hcy _ h0y).1
-  have hadd := allW_addG_mem _ _ _ (by simp; omega) hcore.2.1
-  refine allW_adjustG _ _ _ _ (fun y hy => ?_) (fun c hc => ?_) hadd.1 hneg
-  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy
-    rw [List.mem_range] at hi
-    exact (hcy _ (List.mem_map.mpr ⟨i, List.mem_range.mpr (by omega), rfl⟩)).2
-  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hc
-    rw [List.mem_range] at hi
-    exact hadd.2 _ (List.mem_map.mpr ⟨i, List.mem_range.mpr (by omega), rfl⟩)
-
-theorem core_proper_all : ∀ j : Fin 26, j.val ≤ 24 →
-    (core (start j)).all proper = true := by decide +kernel
-
-theorem beforeShort_proper (j : Fin 26) (h1 : j.val ≤ 24)
-    (old : ∀ g ∈ ScanRowGordo.before5Row (start j), proper g = true) :
-    ∀ g ∈ before5RowShort (start j), proper g = true := by
-  have keep := List.all_eq_true.mpr old
-  rw [before5Row_split_core, List.all_append, Bool.and_eq_true] at keep
-  apply List.all_eq_true.mp
-  rw [before5RowShort_split_core, List.all_append, Bool.and_eq_true]
-  exact ⟨keep.1, core_proper_all j h1⟩
-
-theorem before5Short_proper (j : Fin 26) (h1 : j.val ≤ 24)
-    (old : ∀ g ∈ DeadJoin.before5 (start j), proper g = true) :
-    ∀ g ∈ before5Short (start j), proper g = true := by
-  have keep := List.all_eq_true.mpr old
-  rw [before5_split_core, List.all_append, Bool.and_eq_true] at keep
-  apply List.all_eq_true.mp
-  rw [before5Short_split_core, List.all_append, Bool.and_eq_true]
-  exact ⟨keep.1, core_proper_all j h1⟩
-
-theorem run_cx_single (a b : Wire) (u : State) :
-    run [.CX a b] [] u = ⟨u.phase, writeBit u.basis b (u.basis b ^^ u.basis a)⟩ := rfl
-
-theorem ready_append (a b : List Gate) (s : State) :
-    Ready s (a ++ b) ↔ Ready s a ∧ Ready (run (GateMirror.forward a) [] s) b := by
-  induction a generalizing s with
-  | nil => simp [Ready, GateMirror.forward, run]
-  | cons g gs ih =>
-    change (Fresh s g ∧ Ready (transition g s) (gs ++ b)) ↔
-      (Fresh s g ∧ Ready (transition g s) gs) ∧ Ready (run ([front g] ++ GateMirror.forward gs) [] s) b
-    rw [run_append, run_take, List.drop_nil]
-    change (Fresh s g ∧ Ready (transition g s) (gs ++ b)) ↔
-      (Fresh s g ∧ Ready (transition g s) gs) ∧ Ready (run (GateMirror.forward gs) [] (transition g s)) b
-    rw [ih (transition g s)]
-    tauto
-
-theorem ready_cxsG (neg : Wire) (ys : List Wire) (s : State) :
-    Ready s (cxsG neg ys) := by
-  induction ys generalizing s with
-  | nil => trivial
-  | cons y ys ih => exact ⟨trivial, ih _⟩
-
-theorem transition_make_other (a b t : Wire) (s : State) (q : Wire) (hq : q ≠ t) :
-    (transition (.make a b t) s).basis q = s.basis q := by
-  simp [transition, front, run, writeBit, hq]
-
-theorem ready_addG : ∀ (ys cs : List Wire) (cin : Wire) (s : State),
-    ys.length = cs.length + 1 → cs.Nodup → (∀ c ∈ cs, s.basis c = false) →
-    Ready s (addG ys cs cin)
-  | [y], [], cin, s, _, _, _ => ⟨trivial, trivial⟩
-  | y :: y' :: ys, c :: cs, cin, s, hlen, hnd, hclean => by
-    have hcons : addG (y :: y' :: ys) (c :: cs) cin =
-        .make y cin c :: (addG (y' :: ys) cs c ++ [.pop y cin c, .cx cin y]) := rfl
-    rw [hcons]
-    have hnd' := List.nodup_cons.mp hnd
-    refine ⟨hclean c (List.mem_cons_self ..), ?_⟩
-    rw [ready_append]
-    refine ⟨ready_addG (y' :: ys) cs c _ (by simpa using hlen) hnd'.2 (fun q hq => ?_), ⟨trivial, trivial, trivial⟩⟩
-    exact (transition_make_other y cin c s q (fun heq => hnd'.1 (heq ▸ hq))).trans
-      (hclean q (List.mem_cons_of_mem _ hq))
-  | [], [], _, _, hlen, _, _ => by simp at hlen
-  | [], _ :: _, _, _, hlen, _, _ => by simp at hlen
-  | [_], _ :: _, _, _, hlen, _, _ => by simp at hlen
-  | _ :: _ :: _, [], _, _, hlen, _, _ => by simp at hlen
-
-theorem ready_adjustG (ys cs : List Wire) (cin neg : Wire) (s : State)
-    (hlen : ys.length = cs.length + 1) (hnd : cs.Nodup) (hdisj : ∀ c ∈ cs, c ∉ ys)
-    (hneg : neg ∉ ys) (hynd : ys.Nodup) (hclean : ∀ c ∈ cs, s.basis c = false) :
-    Ready s (adjustG ys cs cin neg) := by
-  unfold adjustG
-  rw [ready_append]
-  refine ⟨ready_cxsG neg ys s, ?_⟩
-  rw [ready_append]
-  refine ⟨ready_addG ys cs cin _ hlen hnd (fun c hc => ?_), ready_cxsG neg ys _⟩
-  rw [forward_cxsG]
-  exact ((signComplement_correct neg ys hynd hneg s []).2.1 c (hdisj c hc)).trans (hclean c hc)
-
-theorem adjusted_drop_top (v w : Nat) (cin neg : Bool)
-    (h : (v = 0 ∧ cin = false) ∨ (1 ≤ v ∧ v + 1 < 2^w)) :
-    HighBankAdjust.adjusted v w cin neg = HighBankAdjust.adjusted v (w + 1) cin neg ∧
-    HighBankAdjust.adjusted v w cin neg < 2^w := by
-  have hp : 2^(w + 1) = 2 * 2^w := by rw [pow_succ]; omega
-  have hpos : 0 < 2^w := Nat.two_pow_pos w
-  rcases h with ⟨rfl, rfl⟩ | ⟨h1, hlt⟩
-  · cases neg <;> simp [HighBankAdjust.adjusted, hpos]
-  · cases cin <;> cases neg <;> simp only [HighBankAdjust.adjusted, Bool.false_eq_true, ↓reduceIte,
-      Bool.toNat_false, Bool.toNat_true, Nat.sub_zero, Nat.add_zero]
-    · exact ⟨by rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)], by omega⟩
-    · rw [Nat.add_mod_right, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-      exact ⟨rfl, by omega⟩
-    · exact ⟨by rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)], by omega⟩
-    · have e1 : v + 2^w - 1 = (v - 1) + 2^w := by omega
-      have e2 : v + 2^(w + 1) - 1 = (v - 1) + 2^(w + 1) := by omega
-      rw [e1, e2, Nat.add_mod_right, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-      exact ⟨rfl, by omega⟩
-
-theorem basis_eq_of_regValue (ys : List Wire) (b1 b2 : BasisState)
-    (hout : ∀ q, q ∉ ys → b1 q = b2 q) (hval : regValue ys b1 = regValue ys b2) :
-    b1 = b2 := by
-  funext q
-  by_cases hq : q ∈ ys
-  · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hq
-    have g1 := HighBankAdjust.bit_read ys i b1 hi
-    have g2 := HighBankAdjust.bit_read ys i b2 hi
-    simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some] at g1 g2
-    rw [g1, g2, hval]
-  · exact hout q hq
-
-theorem regValue_snoc (ys : List Wire) (z : Wire) (b : BasisState) :
-    regValue (ys ++ [z]) b = regValue ys b + 2^ys.length * (b z).toNat := by
-  induction ys with
-  | nil => cases h : b z <;> simp [regValue, h]
+theorem addG_mem (ys cs : List Wire) (y_top c_top cin : Wire)
+    (hlen : cs.length + 1 = ys.length) :
+    ∀ g ∈ addG ys cs cin, g ∈ addG (ys ++ [y_top]) (cs ++ [c_top]) cin := by
+  induction ys generalizing cs cin with
+  | nil => simp at hlen
   | cons y ys ih =>
-    change (if b y then 1 else 0) + 2 * regValue (ys ++ [z]) b =
-      (if b y then 1 else 0) + 2 * regValue ys b + 2^(ys.length + 1) * (b z).toNat
-    rw [ih, pow_succ]
+    cases ys with
+    | nil =>
+      cases cs with
+      | nil =>
+        intro g hg
+        simp only [addG, List.mem_singleton] at hg
+        subst hg
+        simp [addG]
+      | cons _ _ => simp at hlen
+    | cons y' ys =>
+      cases cs with
+      | nil => simp at hlen
+      | cons c cs =>
+        simp only [List.length_cons, Nat.add_right_cancel_iff] at hlen
+        intro g hg
+        simp only [List.cons_append, addG, List.mem_cons, List.mem_append] at hg ⊢
+        rcases hg with rfl | hmid | htail
+        · exact Or.inl rfl
+        · exact Or.inr (Or.inl (ih cs c (by simp [hlen]) g hmid))
+        · exact Or.inr (Or.inr htail)
+
+theorem adjustG_mem (ys cs : List Wire) (y_top c_top cin neg : Wire)
+    (hlen : cs.length + 1 = ys.length) :
+    ∀ g ∈ adjustG ys cs cin neg, g ∈ adjustG (ys ++ [y_top]) (cs ++ [c_top]) cin neg := by
+  have hcxs : ∀ x ∈ cxsG neg ys, x ∈ cxsG neg (ys ++ [y_top]) := by
+    intro x hx
+    simp only [cxsG, List.map_append]
+    exact List.mem_append_left _ hx
+  intro g hg
+  simp only [adjustG, List.mem_append] at hg ⊢
+  rcases hg with h1 | h2 | h3
+  · exact Or.inl (hcxs g h1)
+  · exact Or.inr (Or.inl (addG_mem ys cs y_top c_top cin hlen g h2))
+  · exact Or.inr (Or.inr (hcxs g h3))
+
+private theorem regValue_snoc (r : List Wire) (q : Wire) (b : BasisState) :
+    regValue (r ++ [q]) b = regValue r b + 2^r.length * (if b q then 1 else 0) := by
+  induction r with
+  | nil => simp [regValue]
+  | cons a r ih =>
+    change (if b a then 1 else 0) + 2 * regValue (r ++ [q]) b =
+      ((if b a then 1 else 0) + 2 * regValue r b) + 2^(r.length + 1) * (if b q then 1 else 0)
+    rw [ih, Nat.pow_succ]
     ring
 
-end ECDSAAdd.Entrant.StairPacket.AdjustShort
+private theorem adjusted_short (V n : Nat) (c ng : Bool)
+    (small : V + 1 < 2^n) (pos : c = true → 1 ≤ V) :
+    HighBankAdjust.adjusted V n c ng = HighBankAdjust.adjusted V (n + 1) c ng ∧
+    HighBankAdjust.adjusted V (n + 1) c ng < 2^n := by
+  have p2 : 2^(n + 1) = 2 * 2^n := by rw [Nat.pow_succ]; ring
+  unfold HighBankAdjust.adjusted
+  cases ng <;> cases hc : c
+  · simp only [Bool.false_eq_true, ↓reduceIte, Bool.toNat_false, Nat.add_zero]
+    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    exact ⟨rfl, by omega⟩
+  · simp only [Bool.false_eq_true, ↓reduceIte, Bool.toNat_true]
+    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    exact ⟨rfl, by omega⟩
+  · simp only [↓reduceIte, Bool.toNat_false, Nat.sub_zero]
+    have e1 : (V + 2^n) % 2^n = V := by
+      rw [Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    have e2 : (V + 2^(n + 1)) % 2^(n + 1) = V := by
+      rw [Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    exact ⟨e1.trans e2.symm, by rw [e2]; omega⟩
+  · simp only [↓reduceIte, Bool.toNat_true]
+    have hv : 1 ≤ V := pos hc
+    have e1 : (V + 2^n - 1) % 2^n = V - 1 := by
+      rw [show V + 2^n - 1 = (V - 1) + 2^n by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    have e2 : (V + 2^(n + 1) - 1) % 2^(n + 1) = V - 1 := by
+      rw [show V + 2^(n + 1) - 1 = (V - 1) + 2^(n + 1) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    exact ⟨e1.trans e2.symm, by rw [e2]; omega⟩
+
+theorem adjust_eq (ys' cs' : List Wire) (y_top c_top cin neg : Wire)
+    (nd_full : (cin :: ((ys' ++ [y_top]) ++ (cs' ++ [c_top]))).Nodup)
+    (nd_short : (cin :: (ys' ++ cs')).Nodup)
+    (neg_out : neg ∉ ys' ++ [y_top])
+    (hlen : cs'.length + 1 = ys'.length)
+    (s : State) (m : List Bool)
+    (clean : ∀ q ∈ cs' ++ [c_top], s.basis q = false)
+    (small : regValue (ys' ++ [y_top]) s.basis + 1 < 2 ^ ys'.length)
+    (pos_if_cin : s.basis cin = true → 1 ≤ regValue (ys' ++ [y_top]) s.basis) :
+    run (HighBankAdjust.adjust ys' cs' cin neg) m s =
+      run (HighBankAdjust.adjust (ys' ++ [y_top]) (cs' ++ [c_top]) cin neg) [] s := by
+  let ys := ys' ++ [y_top]
+  let cs := cs' ++ [c_top]
+  have hlen_full : cs.length + 1 = ys.length := by simp [ys, cs, hlen]
+  have neg_out' : neg ∉ ys' := fun h => neg_out (List.mem_append_left _ h)
+  have clean' : ∀ q ∈ cs', s.basis q = false := fun q h => clean q (List.mem_append_left _ h)
+  have h_short := HighBankAdjust.correct ys' cs' cin neg nd_short neg_out' hlen s m clean'
+  have h_full := HighBankAdjust.correct ys cs cin neg nd_full neg_out hlen_full s [] clean
+  let r1 := run (HighBankAdjust.adjust ys' cs' cin neg) m s
+  let r2 := run (HighBankAdjust.adjust ys cs cin neg) [] s
+  have hin := regValue_snoc ys' y_top s.basis
+  have ytop_in : s.basis y_top = false := by
+    cases hy : s.basis y_top
+    · rfl
+    · simp only [hy, ↓reduceIte, Nat.mul_one] at hin
+      change regValue (ys' ++ [y_top]) s.basis + 1 < 2 ^ ys'.length at small
+      omega
+  have val_in : regValue ys' s.basis = regValue ys s.basis := by
+    change regValue ys' s.basis = regValue (ys' ++ [y_top]) s.basis
+    rw [hin, ytop_in]
+    simp
+  have hadj := adjusted_short (regValue ys s.basis) ys'.length (s.basis cin) (s.basis neg) small pos_if_cin
+  have r2_len : ys.length = ys'.length + 1 := by simp [ys]
+  have r2_val_lt : regValue ys r2.basis < 2 ^ ys'.length := by
+    have e := h_full.2.2
+    change regValue ys r2.basis = HighBankAdjust.adjusted (regValue ys s.basis) ys.length (s.basis cin) (s.basis neg) at e
+    rw [e, r2_len]
+    exact hadj.2
+  have hout := regValue_snoc ys' y_top r2.basis
+  have ytop_out : r2.basis y_top = false := by
+    cases hy : r2.basis y_top
+    · rfl
+    · simp only [hy, ↓reduceIte, Nat.mul_one] at hout
+      change regValue ys r2.basis < 2 ^ ys'.length at r2_val_lt
+      change regValue ys r2.basis = regValue ys' r2.basis + 2 ^ ys'.length at hout
+      omega
+  have val_out : regValue ys' r1.basis = regValue ys' r2.basis := by
+    have e1 : regValue ys' r1.basis = HighBankAdjust.adjusted (regValue ys' s.basis) ys'.length (s.basis cin) (s.basis neg) := h_short.2.2
+    have e2 : regValue ys r2.basis = HighBankAdjust.adjusted (regValue ys s.basis) ys.length (s.basis cin) (s.basis neg) := h_full.2.2
+    have e3 : regValue ys r2.basis = regValue ys' r2.basis := by
+      change regValue (ys' ++ [y_top]) r2.basis = regValue ys' r2.basis
+      rw [hout, ytop_out]
+      simp
+    rw [e1, val_in, hadj.1, ← r2_len, ← e2, e3]
+  have bits_eq : ∀ q ∈ ys', r1.basis q = r2.basis q := (regValue_eq_iff ys' r1.basis r2.basis).mp val_out
+  apply State.extensionality
+  · exact h_short.1.trans h_full.1.symm
+  · funext q
+    by_cases hq : q ∈ ys'
+    · exact bits_eq q hq
+    · by_cases htop : q = y_top
+      · subst htop
+        exact (h_short.2.1 q hq).trans (ytop_in.trans ytop_out.symm)
+      · have hq_full : q ∉ ys := by
+          simp only [ys, List.mem_append, List.mem_singleton]
+          rintro (h1 | h2)
+          · exact hq h1
+          · exact htop h2
+        exact (h_short.2.1 q hq).trans (h_full.2.1 q hq_full).symm
+
+theorem adjustG_ready (ys cs : List Wire) (cin neg : Wire)
+    (nd : cs.Nodup) (disj : ∀ y ∈ ys, y ∉ cs)
+    (s : State) (clean : ∀ q ∈ cs, s.basis q = false) :
+    Ready s (adjustG ys cs cin neg) := by
+  let Z : Wire → Prop := fun q => q ∈ cs
+  have hyZ : ∀ y ∈ ys, ¬ Z y := disj
+  have s1 : Safe (cxsG neg ys) Z Z :=
+    safe_frame' (noMake_cxsG neg ys) (allAT_cxsG neg ys trivial hyZ)
+  have s2 : Safe (addG ys cs cin) Z Z :=
+    safe_addG ys cs cin Z (fun _ h => h) nd hyZ
+  have hsafe : Safe (adjustG ys cs cin neg) Z Z :=
+    safe_append s1 (safe_append s2 s1)
+  exact (hsafe s clean).1
+
+theorem adjustG_pair (ys' cs' : List Wire) (y_top c_top cin neg : Wire)
+    (phys : Proper (adjustG ys' cs' cin neg))
+    (nd_full : (cin :: ((ys' ++ [y_top]) ++ (cs' ++ [c_top]))).Nodup)
+    (nd_short : (cin :: (ys' ++ cs')).Nodup)
+    (neg_out : neg ∉ ys' ++ [y_top])
+    (hlen : cs'.length + 1 = ys'.length)
+    (s : State)
+    (clean : ∀ q ∈ cs' ++ [c_top], s.basis q = false)
+    (small : regValue (ys' ++ [y_top]) s.basis + 1 < 2 ^ ys'.length)
+    (pos_if_cin : s.basis cin = true → 1 ≤ regValue (ys' ++ [y_top]) s.basis) :
+    (∀ m, run (GateMirror.forward (adjustG ys' cs' cin neg)) m s =
+      run (GateMirror.forward (adjustG (ys' ++ [y_top]) (cs' ++ [c_top]) cin neg)) [] s) ∧
+    (∀ n, run (GateMirror.inverse (adjustG ys' cs' cin neg)) n
+      (run (GateMirror.forward (adjustG (ys' ++ [y_top]) (cs' ++ [c_top]) cin neg)) [] s) = s) := by
+  have same : ∀ m, run (GateMirror.forward (adjustG ys' cs' cin neg)) m s =
+      run (GateMirror.forward (adjustG (ys' ++ [y_top]) (cs' ++ [c_top]) cin neg)) [] s := by
+    intro m
+    rw [forward_adjustG, forward_adjustG]
+    exact adjust_eq ys' cs' y_top c_top cin neg nd_full nd_short neg_out hlen s m clean small pos_if_cin
+  have sep := List.nodup_append'.mp (List.nodup_cons.mp nd_short).2
+  have disj : ∀ y ∈ ys', y ∉ cs' := fun y hy hc => List.disjoint_left.mp sep.2.2 hy hc
+  have clean' : ∀ q ∈ cs', s.basis q = false := fun q h => clean q (List.mem_append_left _ h)
+  have rdy : Ready s (adjustG ys' cs' cin neg) := adjustG_ready ys' cs' cin neg sep.2.1 disj s clean'
+  have quiet : ∀ m, (run (GateMirror.forward (adjustG ys' cs' cin neg)) m s).phase = s.phase := fun m =>
+    (congrArg State.phase (same m)).trans (no_phase _ s)
+  have prep : Prepared s (adjustG ys' cs' cin neg) := all_prepared _ s phys quiet
+  refine ⟨same, ?_⟩
+  intro n
+  rw [← same []]
+  exact invert (adjustG ys' cs' cin neg) s phys prep rdy [] n
+
+end ECDSAAdd.Entrant.StairPacket.TruncatedAdjust
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+open Arithmetic Partial GateMirror HighBankAdjust Challenge CRTBarrel
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.constructorNameAsVariable false
+set_option linter.unnecessarySeqFocus false
+
+theorem leaveAdjustCoreTrim_mem (j : Fin 26) (hi : j.val ≤ 24) (g : Gate)
+    (hg : g ∈ leaveAdjustCoreTrim (start j)) : g ∈ Shadow7.leaveAdjustCore (start j) := by
+  by_cases ht : trimAdjust (start j) = true
+  · have hw : 16 ≤ Shadow7.wpP (start j) := (Shadow7.window_geom j (Nat.zero_le _) hi).1
+    have haw : adjustWidth (start j) = Shadow7.wpP (start j) - 1 := by simp [adjustWidth, ht]
+    have hys : (List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j)) =
+        (List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.bankW (start j)) ++
+          [Shadow7.bankW (start j) (Shadow7.wpP (start j) - 1)] := by
+      conv_lhs => rw [show Shadow7.wpP (start j) = (Shadow7.wpP (start j) - 1) + 1 by omega]
+      simp [List.range_succ]
+    have hcs : (List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.poolW (start j)) =
+        (List.range (Shadow7.wpP (start j) - 1 - 1)).map (Shadow7.poolW (start j)) ++
+          [Shadow7.poolW (start j) (Shadow7.wpP (start j) - 1 - 1)] := by
+      conv_lhs => rw [show Shadow7.wpP (start j) - 1 = (Shadow7.wpP (start j) - 1 - 1) + 1 by omega]
+      simp [List.range_succ]
+    unfold leaveAdjustCoreTrim at hg
+    rw [haw] at hg
+    unfold Shadow7.leaveAdjustCore
+    rw [hys, hcs]
+    exact TruncatedAdjust.adjustG_mem _ _ _ _ _ _ (by simp; omega) g hg
+  · have hf : trimAdjust (start j) = false := Bool.eq_false_iff.mpr ht
+    have haw : adjustWidth (start j) = Shadow7.wpP (start j) := by simp [adjustWidth, hf]
+    simpa only [leaveAdjustCoreTrim, Shadow7.leaveAdjustCore, haw] using hg
+
+private theorem adjust_trim_mask : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let w := Shadow7.wpP s
+    let ys' := (List.range (w - 1)).map (Shadow7.bankW s)
+    let y_top := Shadow7.bankW s (w - 1)
+    let cs' := (List.range (w - 2)).map (Shadow7.poolW s)
+    let c_top := Shadow7.poolW s (w - 2)
+    let cin := Shadow7.e0P s + 3
+    StairLoan.nodupMask (cin :: ((ys' ++ [y_top]) ++ (cs' ++ [c_top]))) 0 = true ∧
+    (1596 : Wire) ∉ ys' ++ [y_top] := by decide +kernel
+
+theorem adjust_trim_geom : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let w := Shadow7.wpP s
+    let ys' := (List.range (w - 1)).map (Shadow7.bankW s)
+    let y_top := Shadow7.bankW s (w - 1)
+    let cs' := (List.range (w - 2)).map (Shadow7.poolW s)
+    let c_top := Shadow7.poolW s (w - 2)
+    let cin := Shadow7.e0P s + 3
+    (cin :: ((ys' ++ [y_top]) ++ (cs' ++ [c_top]))).Nodup ∧
+    (cin :: (ys' ++ cs')).Nodup ∧
+    (1596 : Wire) ∉ ys' ++ [y_top] := by
+  intro j hj
+  have h := adjust_trim_mask j hj
+  have full := StairLoan.nodup_of_mask _ h.1
+  refine ⟨full, full.sublist ?_, h.2⟩
+  apply List.Sublist.cons₂
+  exact List.Sublist.append (List.sublist_append_left _ _) (List.sublist_append_left _ _)
+
+theorem trimAdjust_iff : ∀ j : Fin 26, j.val ≤ 24 →
+    (trimAdjust (start j) = true ↔ (j.val ≤ 7 ∨ 20 ≤ j.val)) := by decide +kernel
+
+theorem run_snoc_cx (gs : List Gate) (c t : Wire) (s : State) :
+    run (GateMirror.forward (gs ++ [.cx c t])) [] s =
+      State.mk (run (GateMirror.forward gs) [] s).phase
+        (writeBit (run (GateMirror.forward gs) [] s).basis t
+          ((run (GateMirror.forward gs) [] s).basis t ^^ (run (GateMirror.forward gs) [] s).basis c)) := by
+  simp only [forward_app, run_append, run_take, List.drop_nil]
+  rfl
+
+theorem run_append_nil (a b : List Gate) (s : State) :
+    run (GateMirror.forward (a ++ b)) [] s =
+      run (GateMirror.forward b) [] (run (GateMirror.forward a) [] s) := by
+  rw [forward_app, run_append, run_take, List.drop_nil]
+
+theorem adjust_pair (j : Fin 26) (hi : j.val ≤ 24) (u' : State)
+    (phys_old : Proper (Shadow7.leaveAdjustCore (start j)))
+    (default_old : ∀ m, run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) m u' =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u')
+    (undo_old : ∀ n, run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u') = u')
+    (preClean : trimAdjust (start j) = true →
+      (∀ q ∈ (List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.poolW (start j)), u'.basis q = false) ∧
+      regValue ((List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j))) u'.basis + 1 <
+        2 ^ (Shadow7.wpP (start j) - 1) ∧
+      (u'.basis (Shadow7.e0P (start j) + 3) = true →
+        1 ≤ regValue ((List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j))) u'.basis)) :
+    (∀ m, run (GateMirror.forward (leaveAdjustCoreTrim (start j))) m u' =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u') ∧
+    (∀ n, run (GateMirror.inverse (leaveAdjustCoreTrim (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u') = u') := by
+  let t := run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u'
+  have adjPair : (∀ m, run (GateMirror.forward (leaveAdjustCoreTrim (start j))) m u' = t) ∧
+      (∀ n, run (GateMirror.inverse (leaveAdjustCoreTrim (start j))) n t = u') := by
+    by_cases ht : trimAdjust (start j) = true
+    · obtain ⟨hclean, hsmall, hpos⟩ := preClean ht
+      have hw : 16 ≤ Shadow7.wpP (start j) := (Shadow7.window_geom j (Nat.zero_le _) hi).1
+      have haw : adjustWidth (start j) = Shadow7.wpP (start j) - 1 := by simp [adjustWidth, ht]
+      have hys : (List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j)) =
+          (List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.bankW (start j)) ++
+            [Shadow7.bankW (start j) (Shadow7.wpP (start j) - 1)] := by
+        conv_lhs => rw [show Shadow7.wpP (start j) = (Shadow7.wpP (start j) - 1) + 1 by omega]
+        simp [List.range_succ]
+      have hcs : (List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.poolW (start j)) =
+          (List.range (Shadow7.wpP (start j) - 2)).map (Shadow7.poolW (start j)) ++
+            [Shadow7.poolW (start j) (Shadow7.wpP (start j) - 2)] := by
+        conv_lhs => rw [show Shadow7.wpP (start j) - 1 = (Shadow7.wpP (start j) - 2) + 1 by omega]
+        simp [List.range_succ]
+      have hsub : Shadow7.wpP (start j) - 1 - 1 = Shadow7.wpP (start j) - 2 := by omega
+      have hphys : Proper (leaveAdjustCoreTrim (start j)) :=
+        fun g hg => phys_old g (leaveAdjustCoreTrim_mem j hi g hg)
+      obtain ⟨nd_full, nd_short, neg_out⟩ := adjust_trim_geom j hi
+      rw [hys] at hsmall hpos
+      rw [hcs] at hclean
+      have hpair := TruncatedAdjust.adjustG_pair
+        ((List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.bankW (start j)))
+        ((List.range (Shadow7.wpP (start j) - 2)).map (Shadow7.poolW (start j)))
+        (Shadow7.bankW (start j) (Shadow7.wpP (start j) - 1))
+        (Shadow7.poolW (start j) (Shadow7.wpP (start j) - 2))
+        (Shadow7.e0P (start j) + 3) 1596
+        (by simpa only [leaveAdjustCoreTrim, haw, hsub] using hphys)
+        nd_full nd_short neg_out (by simp; omega) u' hclean
+        (by simpa using hsmall) hpos
+      have heq_new : leaveAdjustCoreTrim (start j) =
+          adjustG ((List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.bankW (start j)))
+            ((List.range (Shadow7.wpP (start j) - 2)).map (Shadow7.poolW (start j)))
+            (Shadow7.e0P (start j) + 3) 1596 := by
+        simp only [leaveAdjustCoreTrim, haw, hsub]
+      have heq_old : Shadow7.leaveAdjustCore (start j) =
+          adjustG (((List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.bankW (start j))) ++
+              [Shadow7.bankW (start j) (Shadow7.wpP (start j) - 1)])
+            (((List.range (Shadow7.wpP (start j) - 2)).map (Shadow7.poolW (start j))) ++
+              [Shadow7.poolW (start j) (Shadow7.wpP (start j) - 2)])
+            (Shadow7.e0P (start j) + 3) 1596 := by
+        simp only [Shadow7.leaveAdjustCore, hys, hcs]
+      simpa only [t, heq_new, heq_old] using hpair
+    · have hf : trimAdjust (start j) = false := Bool.eq_false_iff.mpr ht
+      have heq : leaveAdjustCoreTrim (start j) = Shadow7.leaveAdjustCore (start j) := by
+        simp [leaveAdjustCoreTrim, Shadow7.leaveAdjustCore, adjustWidth, hf]
+      rw [heq]
+      exact ⟨default_old, undo_old⟩
+  exact adjPair
+
+theorem adjust_barrel_pair (j : Fin 26) (hi : j.val ≤ 24) (u' : State)
+    (phys_old : Proper (Shadow7.leaveAdjustCore (start j)))
+    (default_old : ∀ m, run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) m u' =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u')
+    (undo_old : ∀ n, run (GateMirror.inverse (Shadow7.leaveAdjustCore (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u') = u')
+    (barrelSame : ∀ m, run (CRTBarrel.barrel (start j) false) m
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u') =
+      run (GateMirror.forward (Shadow7.leaveBarrel (start j))) []
+        (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u'))
+    (barrelBack : ∀ n, run (CRTBarrel.barrel (start j) true) n
+      (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) []
+        (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u')) =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u')
+    (preClean : trimAdjust (start j) = true →
+      (∀ q ∈ (List.range (Shadow7.wpP (start j) - 1)).map (Shadow7.poolW (start j)), u'.basis q = false) ∧
+      regValue ((List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j))) u'.basis + 1 <
+        2 ^ (Shadow7.wpP (start j) - 1) ∧
+      (u'.basis (Shadow7.e0P (start j) + 3) = true →
+        1 ≤ regValue ((List.range (Shadow7.wpP (start j))).map (Shadow7.bankW (start j))) u'.basis)) :
+    (∀ m, run (GateMirror.forward (leaveAdjustCoreTrim (start j)) ++ CRTBarrel.barrel (start j) false) m u' =
+      run (GateMirror.forward (Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j))) [] u') ∧
+    (∀ n, run (CRTBarrel.barrel (start j) true ++ GateMirror.inverse (leaveAdjustCoreTrim (start j))) n
+      (run (GateMirror.forward (Shadow7.leaveAdjustCore (start j) ++ Shadow7.leaveBarrel (start j))) [] u') = u') := by
+  let t := run (GateMirror.forward (Shadow7.leaveAdjustCore (start j))) [] u'
+  have adjPair := adjust_pair j hi u' phys_old default_old undo_old preClean
+  refine ⟨?_, ?_⟩
+  · intro m
+    simp only [forward_app, run_append, run_take, List.drop_nil, adjPair.1]
+    exact barrelSame _
+  · intro n
+    simp only [forward_app, run_append, run_take, List.drop_nil]
+    have hb := barrelBack n
+    change run (GateMirror.inverse (leaveAdjustCoreTrim (start j))) _
+      (run (CRTBarrel.barrel (start j) true) _ (run (GateMirror.forward (Shadow7.leaveBarrel (start j))) [] t)) = u'
+    rw [hb]
+    exact adjPair.2 _
+
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+open Arithmetic Partial GateMirror
+set_option maxRecDepth 50000
+theorem postPrefix_split (s : Nat) :
+    DeadJoin.beforePost5 s = postPrefix s ++ Shadow7.leaveAdjustCore s := by
+  simp only [DeadJoin.beforePost5, postPrefix, Shadow7.leaveAdjust, List.append_assoc]
+
+set_option maxHeartbeats 6000000 in
+theorem trimmed_counts : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let price := if trimAdjust s then 1 else 0
+    let old := Shadow7.leaveAdjustCore s
+    let newRow := leaveAdjustCoreTrim s
+    toffoliCount (GateMirror.forward newRow) + price = toffoliCount (GateMirror.forward old) ∧
+    toffoliCount (inverse newRow) + price = toffoliCount (inverse old) ∧
+    measurementCount (GateMirror.forward newRow) + price = measurementCount (GateMirror.forward old) ∧
+    measurementCount (inverse newRow) + price = measurementCount (inverse old) ∧
+    Challenge.gateSlots (GateMirror.forward newRow) ≤ Challenge.gateSlots (GateMirror.forward old) ∧
+    Challenge.gateSlots (inverse newRow) ≤ Challenge.gateSlots (inverse old) := by
+  decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+open Arithmetic Partial GateMirror DeadJoin ScanRowGordo
+set_option maxRecDepth 30000
+set_option maxHeartbeats 6000000
+theorem splitTail (s : Nat) : before5Tail s = tailPrefix s ++ Shadow7.leaveAdjustCore s := by
+  simp only [before5Tail,tailPrefix,postPrefix_split,List.append_assoc]
+
+theorem splitRows (s : Nat) : before5Row s = rowPrefix s ++ Shadow7.leaveAdjustCore s := by
+  simp only [before5Row,rowPrefix,before5Tail,tailPrefix,postPrefix_split,List.append_assoc]
+
+theorem row_mem (j : Fin 26) (hi : j.val ≤ 24) {g : Gate} (h : g ∈ rowBefore (start j)) :
+    g ∈ before5Row (start j) := by
+  rw [splitRows]
+  rcases List.mem_append.mp h with p | c
+  · exact List.mem_append_left _ p
+  · exact List.mem_append_right _ (leaveAdjustCoreTrim_mem j hi _ c)
+
+theorem exact_adjust_cost : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let d := if trimAdjust s then 6 else 0
+    Challenge.gateSlots (GateMirror.forward (leaveAdjustCoreTrim s)) + d =
+      Challenge.gateSlots (GateMirror.forward (Shadow7.leaveAdjustCore s)) ∧
+    Challenge.gateSlots (inverse (leaveAdjustCoreTrim s)) + d =
+      Challenge.gateSlots (inverse (Shadow7.leaveAdjustCore s)) := by decide +kernel
+
+theorem row_before_deltas (j : Fin 26) (hi : j.val ≤ 24) :
+    toffoliCount (GateMirror.forward (rowBefore (start j))) + (if trimAdjust (start j) then 1 else 0) =
+      toffoliCount (GateMirror.forward (before5Row (start j))) ∧
+    toffoliCount (inverse (rowBefore (start j))) + (if trimAdjust (start j) then 1 else 0) =
+      toffoliCount (inverse (before5Row (start j))) ∧
+    measurementCount (GateMirror.forward (rowBefore (start j))) + (if trimAdjust (start j) then 1 else 0) =
+      measurementCount (GateMirror.forward (before5Row (start j))) ∧
+    measurementCount (inverse (rowBefore (start j))) + (if trimAdjust (start j) then 1 else 0) =
+      measurementCount (inverse (before5Row (start j))) ∧
+    Challenge.gateSlots (GateMirror.forward (rowBefore (start j))) + (if trimAdjust (start j) then 6 else 0) =
+      Challenge.gateSlots (GateMirror.forward (before5Row (start j))) ∧
+    Challenge.gateSlots (inverse (rowBefore (start j))) + (if trimAdjust (start j) then 6 else 0) =
+      Challenge.gateSlots (inverse (before5Row (start j))) := by
+  obtain ⟨t1,t2,m1,m2,_,_⟩ := trimmed_counts j hi
+  obtain ⟨s1,s2⟩ := exact_adjust_cost j hi
+  rw [splitRows]
+  simp only [rowBefore, forward_app, DeadJoin.inverse_append, toffoliCount_append,
+    measurementCount_append, Challenge.gateSlots_append]
+  refine ⟨?_,?_,?_,?_,?_,?_⟩
+  · clear * - j t1
+    omega
+  · clear * - j t2
+    omega
+  · clear * - j m1
+    omega
+  · clear * - j m2
+    omega
+  · clear * - j s1
+    omega
+  · clear * - j s2
+    omega
+theorem row_allW {P : Wire → Prop} (j : Fin 26) (hi : j.val ≤ 24)
+    (covered : AllW P (DeadJoin.before5 (start j))) : AllW P (rowBefore (start j)) :=
+  fun g hg => before5Row_allW j hi covered g (row_mem j hi hg)
+
+theorem row_proper (j : Fin 26) (hi : j.val ≤ 24) (physical : Proper (DeadJoin.before5 (start j))) :
+    Proper (rowBefore (start j)) :=
+  fun g hg => before5Row_proper j hi physical g (row_mem j hi hg)
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
 end
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+open Arithmetic Partial GateMirror ScanRowGordo
+theorem before_full (s : Nat) (h : trimAdjust s = false) : CRTBarrel.before s = before5Row s := by
+  rw [CRTBarrel.before, rowBefore, splitRows]
+  simp only [leaveAdjustCoreTrim, Shadow7.leaveAdjustCore, adjustWidth, h, Bool.false_eq_true, if_false]
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
+end
+
+
 
 -- ==== begin SplitLeafSquare (folded into CRT to keep 18 modules; credited to dadon 568bda28) ====
 
@@ -9640,24 +9535,27 @@ set_option linter.unusedSimpArgs false
 theorem parts_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (GateMirror.forward (CRTBarrel.before (start j))) +
       toffoliCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 96 ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 96 ∧
     toffoliCount (inverse (CRTBarrel.afterPart (start j))) + toffoliCount (inverse (CRTBarrel.before (start j))) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 126 ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 127 ∧
     measurementCount (GateMirror.forward (CRTBarrel.before (start j))) +
       measurementCount (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 ∧
     measurementCount (inverse (CRTBarrel.afterPart (start j))) +
       measurementCount (inverse (CRTBarrel.before (start j))) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 58 ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 56 ∧
     gateSlots (GateMirror.forward (CRTBarrel.before (start j))) +
       gateSlots (GateMirror.forward (CRTBarrel.afterPart (start j))) =
-      6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 651 + 3*Shadow7.wpP (start j + 15) ∧
+      6 * CRTBarrel.adjustWidth (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 645 + 3*Shadow7.wpP (start j + 15) ∧
     gateSlots (inverse (CRTBarrel.afterPart (start j))) + gateSlots (inverse (CRTBarrel.before (start j))) =
-      6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 621 + 3*Shadow7.wpP (start j + 15) := by
+      6 * CRTBarrel.adjustWidth (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 + 3*Shadow7.wpP (start j + 15) := by
   obtain ⟨r1, r2, r3, r4, r5, r6⟩ := ScanRowGordo.before5Row_counts j (by omega)
-  obtain ⟨a1, a2, a3, a4, a5, a6⟩ := AdjustShort.beforeShort_counts j h1
-  obtain ⟨cl1, cl2, cl3, cl4, cl5, cl6⟩ := Clean1556.before5RowClean_counts j h1
-  have hle := AdjustShort.adjW_le (start j)
+  obtain ⟨a1,a2,a3,a4,a5,a6⟩ := CRTBarrel.LeaveAdjustTrim.row_before_deltas j h1
+  have widths : ∀ k : Fin 26, k.val ≤ 24 →
+      CRTBarrel.adjustWidth (start k) + (if CRTBarrel.trimAdjust (start k) then 1 else 0) = Shadow7.wpP (start k) ∧
+      6 * CRTBarrel.adjustWidth (start k) + (if CRTBarrel.trimAdjust (start k) then 6 else 0) = 6 * Shadow7.wpP (start k) := by
+    decide +kernel
+  obtain ⟨aw,awS⟩ := widths j h1
   dsimp only [CRTBarrel.before, CRTBarrel.afterPart] at *
   obtain ⟨t1, t2, m1, m2, s1, s2⟩ := Shadow7.leaveMove_counts j (by omega) (by omega)
   obtain ⟨b1, b2, c1, c2, d1, d2⟩ := (Shadow7.counts_leaveBarrel (start j)).programs
@@ -9670,17 +9568,17 @@ theorem parts_counts (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
   have afterEq : DeadJoin.afterReference (start j) = CRTBarrel.afterReference (start j) := by rfl
   rw [afterEq] at f1 f2 g1 g2 h1 h2
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · clear * - j t1 b1 f1 r1 a1 cl1 hle k1 q1
+  · clear * - j t1 b1 f1 r1 k1 q1 a1 aw
     omega
-  · clear * - j t2 b2 f2 r2 a2 cl2 hle k2 q2
+  · clear * - j t2 b2 f2 r2 k2 q2 a2 aw
     omega
-  · clear * - j m1 c1 g1 r3 a3 cl3 hle k3 q3
+  · clear * - j m1 c1 g1 r3 k3 q3 a3 aw
     omega
-  · clear * - j m2 c2 g2 r4 a4 cl4 hle k4 q4
+  · clear * - j m2 c2 g2 r4 k4 q4 a4 aw
     omega
-  · clear * - j s1 d1 h1 r5 a5 cl5 hle k5 q5
+  · clear * - j s1 d1 h1 r5 k5 q5 a5 awS
     omega
-  · clear * - j s2 d2 h2 r6 a6 cl6 hle k6 q6
+  · clear * - j s2 d2 h2 r6 k6 q6 a6 awS
     omega
 
 end ECDSAAdd.Entrant.StairPacket.CRTWindow
@@ -9694,16 +9592,16 @@ set_option linter.unusedSimpArgs false
 /-- The rebuilt leave and its mirror: the Shadow7 counts with the barrel stage replaced by the CRT barrel. -/
 theorem leave_metrics (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     toffoliCount (CRTBarrel.leave j) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 96 + CRTBarrel.barrelT (start j) false ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 3*Shadow7.lowsP (start j) + 96 + CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 126 + CRTBarrel.barrelT (start j) true ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 127 + CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 88 + CRTBarrel.barrelM (start j) false ∧
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 + CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
-      AdjustShort.adjW (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 58 + CRTBarrel.barrelM (start j) true ∧
-    gateSlots (CRTBarrel.leave j) = 6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 651 +
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2*Shadow7.lowsP (start j) + 56 + CRTBarrel.barrelM (start j) true ∧
+    gateSlots (CRTBarrel.leave j) = 6 * CRTBarrel.adjustWidth (start j) + 5*Shadow7.liveW (start j) + 10*Shadow7.lowsP (start j) + 645 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) false ∧
-    gateSlots (CRTBarrel.unleave j) = 6*AdjustShort.adjW (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 621 +
+    gateSlots (CRTBarrel.unleave j) = 6 * CRTBarrel.adjustWidth (start j) + 5*Shadow7.liveW (start j) + 11*Shadow7.lowsP (start j) + 614 +
       3*Shadow7.wpP (start j + 15) + CRTBarrel.barrelSlots (start j) true := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := parts_counts j h0 h1
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics j h0 h1 false
@@ -9745,7 +9643,7 @@ theorem parts_box (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     AllW (leaveBox (start j)) (CRTBarrel.before (start j)) ∧ AllW (leaveBox (start j)) (CRTBarrel.afterPart (start j)) := by
   have a := Shadow7.allW_leaveMove (start j) (Shadow7.leaveOps_box j (by omega) (by omega))
   rw [split_ops, allW_append_iff, allW_append_iff] at a
-  exact ⟨Clean1556.before5RowClean_allW j h1 (AdjustShort.beforeShort_allW j h1 (ScanRowGordo.before5Row_allW j h1 (DeadJoin.before5_allW j h1 (show AllW _ (DeadJoin.beforeAll (start j)) from FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_allW _ a.1))))),
+  exact ⟨CRTBarrel.LeaveAdjustTrim.row_allW j h1 (DeadJoin.before5_allW j h1 (show AllW _ (DeadJoin.beforeAll (start j)) from FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_allW _ a.1))),
     DeadJoin.after7S_allW j h1 (show AllW _ (DeadJoin.afterAll (start j)) from FlagLeave.cut_allW (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1 (DeadJoin.afterShort (start j)) (DeadJoin.after_short_allW j h1 a.2.2))⟩
 
 end ECDSAAdd.Entrant.StairPacket.CRTWindow
@@ -10133,7 +10031,7 @@ theorem parts_proper (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) :
     (∀ g ∈ CRTBarrel.before (start j), proper g = true) ∧ (∀ g ∈ CRTBarrel.afterPart (start j), proper g = true) := by
   have p := WindowPhysicalW7.leaveMove_proper j (by omega) (by omega)
   rw [split_ops] at p
-  exact ⟨Clean1556.before5RowClean_proper j h1 (AdjustShort.beforeShort_proper j h1 (ScanRowGordo.before5Row_proper j h1 (DeadJoin.before5_proper j h1 (show Proper (DeadJoin.beforeAll (start j)) from FlagLeave.cut_proper (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_proper _ (fun g hg => p g (List.mem_append_left _ hg))))))),
+  exact ⟨CRTBarrel.LeaveAdjustTrim.row_proper j h1 (DeadJoin.before5_proper j h1 (show Proper (DeadJoin.beforeAll (start j)) from FlagLeave.cut_proper (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 2 (DeadJoin.beforeScan (start j)) (DeadJoin.before_scan_proper _ (fun g hg => p g (List.mem_append_left _ hg))))),
     DeadJoin.after7S_proper j h1 (show Proper (DeadJoin.afterAll (start j)) from FlagLeave.cut_proper (Shadow7.e0P (start j)+3) (Shadow7.e0P (start j)+4) 1559 1 (DeadJoin.afterShort (start j)) (DeadJoin.after_short_proper j h1 (fun g hg => p g (List.mem_append_right _ (List.mem_append_right _ hg)))))⟩
 
 end ECDSAAdd.Entrant.StairPacket.CRTWindow
@@ -10159,3 +10057,4441 @@ end ECDSAAdd.Entrant.StairPacket.CRTWindow
 end
 end
 -- ==== end MixedBase ====
+
+section
+
+/-! 21-tag CRT barrel shifter for 20-tick shadow blocks (shifts `0..20` on widths `84, 94, 104, 113, 123`). -/
+
+set_option autoImplicit false
+
+section
+
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Challenge
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel20
+
+structure R8Step where
+  tags : List Nat
+  pre : List (Nat × Nat)
+  src : Nat
+  dst : Nat
+
+structure Count where
+  t : Nat
+  m : Nat
+  slots : Nat
+  deriving DecidableEq, Repr
+
+def count (p : Program) : Count := ⟨toffoliCount p, measurementCount p, gateSlots p⟩
+def cadd (a b : Count) : Count := ⟨a.t + b.t, a.m + b.m, a.slots + b.slots⟩
+def cscale (k : Nat) (a : Count) : Count := ⟨k * a.t, k * a.m, k * a.slots⟩
+def czero : Count := ⟨0, 0, 0⟩
+def csumBy {α : Type} (f : α → Count) : List α → Count
+  | [] => czero
+  | x :: xs => cadd (f x) (csumBy f xs)
+
+def Fits (P : Wire → Prop) (p : Program) : Prop :=
+  ∀ i ∈ p, RecordedQuantum.PhysicalInstr (.gate i) ∧ ∀ q ∈ i.wires, P q
+
+def fieldDegree (p : Nat) : Nat := Nat.log2 p
+def selected (n mask : Nat) : List Nat := (List.range n).filter (fun i => mask.testBit i)
+def elimStep (n i : Nat) (row : Nat × Nat) : List (Nat × Nat) :=
+  (if row.1 < n then [(row.1, i)] else []) ++ (selected n row.2).map (fun j => (i, j))
+
+def schedule20 : Nat → List (Nat × Nat)
+  | 84 => [(257,2), (21,1), (31,1), (11,1), (13,1), (19,1), (25,1), (73,1), (2047,1), (8191,1), (109,1), (115,1), (117,1)]
+  | 94 => [(257,1), (21,1), (31,1), (11,1), (13,1), (19,1), (25,1), (73,1), (2047,1), (8191,1), (91,1), (97,1), (103,1), (109,1), (115,1), (117,1)]
+  | 104 => [(257,2), (21,1), (31,1), (11,1), (13,1), (19,1), (25,1), (73,1), (8191,1), (67,1), (87,1), (91,1), (97,1), (103,1), (109,1), (115,1), (117,1)]
+  | 113 => [(257,2), (21,1), (31,1), (11,1), (13,1), (19,1), (25,1), (73,1), (2047,1), (8191,1), (61,1), (87,1), (91,1), (97,1), (103,1), (109,1), (115,1), (117,1)]
+  | 123 => [(257,2), (21,1), (31,1), (11,1), (13,1), (19,1), (25,1), (73,1), (2047,1), (8191,1), (55,1), (59,1), (61,1), (87,1), (91,1), (97,1), (103,1), (109,1), (115,1), (117,1)]
+  | _ => []
+
+def pivots20 : Nat → List (Nat × Nat)
+  | 84 => [
+      (84,307027626395105756250112), (84,921082879185317268750337), (84,1535138131975528781250561),
+      (84,4605414395926584414371847), (84,5219469648716625483137025), (84,15658408946149479486849043),
+      (84,9854990086665559479484437), (84,6467654431339076291592319), (84,19243795625878435610820609),
+      (84,15782605410283546028736771), (84,12477253279421527258038533), (84,4488531217773135755216655),
+      (84,5636360827143328658161937), (84,16359148201030912999363379), (84,14320404153479497920091477),
+      (84,1400698297665923122692095), (18,3679018800776039898546177), (19,7358037601552079243444226),
+      (84,14716075203084640678051844), (84,6552284796665441182285832), (84,6662746015408493588447253),
+      (84,13319367699029770067640362), (84,13642782826699741438672980), (84,14281717871072521346351272),
+      (84,6038417373002721830044051), (84,11560011471352540875326246), (84,12848410204950145710098399),
+      (28,15175770763901808937864749), (84,10687240142307049715733111), (84,5105553161201973691233945),
+      (31,10138513086308591011448817), (32,16884374789537179537412066), (84,13499763147106420368314406),
+      (84,3650488019479867856676797), (84,4622154900715375360980739), (36,5397580909099373237426437),
+      (37,10423537585185473386623498), (84,3957118947624526475540504), (84,7392275591455554238775083),
+      (84,12276385441814112559661437), (84,18589972666942868676836817), (84,4777206350746782205279138),
+      (84,9168728176400445105370948), (84,18335464104440929579167368), (46,12467701219520366838631603),
+      (84,11939343834385950402320742), (84,16036567373558931897640729), (51,12720064283814760921639211),
+      (52,10023741823372680528548438), (53,16719764802824452783776940), (51,6712728193259744747387157),
+      (84,10271852959650996003029607), (84,8806612334336156912561637), (84,17605225320970982821682122),
+      (58,3183971150954508586038161), (84,6306446549717198523295522), (58,16361376900577164272737015),
+      (84,4115933028864247860515532), (84,1401732531998593882943787), (84,7540310951934154686985311),
+      (84,14562711117254840002799806), (84,7697301036425717341831681), (63,18972486016449045260670847),
+      (64,2803260489694741149003518), (65,5603348139408804255129084), (84,12374448541076194680514693),
+      (69,11177316564052136152043151), (68,18509151071522484336008478), (84,6872937680269400553269677),
+      (84,9351989386982972029432952), (84,7157357253541151936240707), (84,1214463327796784740956635),
+      (73,10456323196557866151490283), (84,15094690886220329399707094), (84,1301068891416896356949137),
+      (84,2602137782833792713898274), (77,13774658576756187619406369), (84,5454971038222015778792487),
+      (79,11765404873705086313831981), (84,8527341854295700539449975), (81,7707264255970309618817731),
+      (82,15414528511940619237635462), (84,4489753397857746465972944), (84,7317005376890445844684643)
+    ]
+  | 94 => [
+      (94,314397470290195105628885248), (94,943192410870585316886655745), (94,1571987351450975528144426241),
+      (94,4715962054352926584425742087), (94,5344756994933316795017716737), (94,16034270984799950383502515219),
+      (94,10091568272086057220166811925), (94,6622932408614480203102122879), (94,19705704082769002263813526529),
+      (94,3583576915659334157612800002), (94,12776733761083475897024299269), (94,12245573140325561317057589770),
+      (94,1318548251071074005111104789), (94,2634944872262124045995723306), (94,6363011009189250557041639745),
+      (94,12636289374152683786511123074), (94,3078181882799077883732071059), (94,5627232045538153499256759590),
+      (94,11252307758927758623055170124), (20,11892483399400822222678795053), (21,17904717353998205682533025370),
+      (94,10236183616783149798513880985), (25,14828469577761078930836010737), (94,1535901127459542359471610643),
+      (94,12321285162705610739681722583), (94,18362463963983230575535980974), (28,7145837473300571672599049219),
+      (28,17715591629157593532687768581), (94,5083536407370153404659272713), (94,15076522106415105102106727451),
+      (94,3472984834226394613408945195), (94,6945939581813205006539204694), (94,13891834909800049572339601580),
+      (94,11823428715610651638125032819), (94,17766531852093450488729561830), (94,2418165884433075999493576140),
+      (41,1649334669373459822228996019), (94,3298562497222725135523774310), (41,8474336134276006465791917593),
+      (94,16948560720636112780049120306), (41,7022760450657737523298367665), (94,13827914236969689414175945058),
+      (94,1369667326057962065646119957), (94,1892702011734518235839908697), (94,927663053555055936388498881),
+      (94,3385062049422495062116014321), (94,8327628158260842550835094161), (94,14531989274446797506608588723),
+      (94,12733808005690117836290051942), (94,12159719877098227040434101964), (94,18436536360470524229559467416),
+      (94,1216753103965406829827488560), (53,18477223847937620720786098749), (94,1762896991047905200479429146),
+      (94,15197095320894939104548261385), (56,11621457232443777767121946209), (57,19756338139462382216567983298),
+      (94,10990862993507708732534360404), (94,10814754033278670638197047695), (62,6148913767403760340587971217),
+      (63,11903490472172907542255371554), (62,14453501925100007005824224376), (63,12898756421391206116523776240),
+      (94,7857298350825096186857533228), (94,14590448216335406092945683929), (94,13397046414395004092031101874),
+      (94,12377760556680419808814319887), (94,18326831393968871238158291486), (94,1056576396270325009549960252),
+      (94,2113109110650683474881693816), (94,14969349815240535838446368953), (74,11726752236534177039378139595),
+      (75,19502734894567745935816496022), (94,9500897199897367664694023774), (75,7827920322021675536778093943),
+      (94,19306030898047621435394547435), (78,10552475280351999105009324623), (79,15224735374098441904247809182),
+      (80,7238095011596003654137039164), (80,9885799190805307835083962086), (94,10481961362174891693909072682),
+      (94,16307915656302151967874514737), (94,2427928595534717893981246251), (94,2984829016091591970264724861),
+      (86,6593073576105861806455028177), (87,13186147152211723612910056354), (94,15840983729848167553393855934),
+      (94,5994711644524694402630884220), (89,5829912733096133667738069101), (90,11659825466192267335476138202),
+      (94,13172399663377607398507219417), (93,9977059157067206525673294513), (93,14580763256644872343818763879),
+      (94,5373208664084648666333583307)
+    ]
+  | 104 => [
+      (104,321943009581771420525996867584), (104,965829028745314261577990602753), (104,1609715047908857102629984337921),
+      (104,4829145143726571307888023633927), (104,5473031162890114148769573634049), (104,16419093488670342445911758340115),
+      (104,10333765910620801827777326153749), (104,6781882786434689010052478730367), (104,20178640980783979530509815709697),
+      (104,16549318207524347426407208386819), (104,13083375371417758873739529027845), (104,4706524248395123257612105942799),
+      (104,5910132629426748944004931453201), (104,17153780158609524701529496556339), (104,15016036944089712536957848196437),
+      (104,1468764349448289332018351669247), (18,3857807627398318584750406893569), (19,7715492567715412216117608316930),
+      (104,15430983325058353819607271211012), (104,6870571422961535292230455001096), (104,6986405741222969313144821055509),
+      (104,13966389668243042613113830113322), (104,14305533564233574114986231595092), (104,14975514228647944946720396804264),
+      (104,6331705153016533320803395240339), (104,12121578827164933018977191723814), (104,13472555552383768639531732895711),
+      (28,15912994725289331492465589161517), (104,11206412686910451591267587920503), (104,5353589971823445121731338516121),
+      (31,10631026550636245989684948322289), (32,17704478183120804653462483800034), (104,14155461317884228373766189060134),
+      (104,3827852489910225482957331523517), (104,4846683751261975577815568332547), (36,5659757866097572751132240435461),
+      (37,10929914602364789807613199102474), (104,4149318355024803973073936955416), (104,7751400861511157344175741042475),
+      (104,12872727982193579218893841596797), (104,19493046985014537884997964430801), (104,5009319037176235809233821301666),
+      (104,9614095824414356691954016319300), (104,19226102039434291685245668552328), (104,13073306145393725757360637824179),
+      (104,4676324100636748809263447528917), (104,16815608881761051674344812111641), (104,9856311528947452814782952230450),
+      (104,19712508806629865592822432504932), (104,2973022072720016548688693770440), (104,5946044145440033097377387540880),
+      (104,11503654380408787767775807202080), (104,19521267815690681190970499384896), (55,5131849569374805402338857341571),
+      (104,15088815296413149974357731912070), (104,16551862799134859799637993295119), (104,12267994900183757046501603351441),
+      (104,18270542562024315510345666017058), (104,2386086720076980582645271653956), (104,4679714207541290626754099600520),
+      (61,3198830189795648941543846193007), (104,785703631803803925235662835873), (104,8493955043844682625546927327475),
+      (104,14771083252427049043137963907349), (66,16222497035821015022121936059097), (67,6141122015398488885640635282866),
+      (104,15028720053364455837398413268517), (104,13894858100470954491002612984906), (104,17288655100179525857866298149161),
+      (104,8189350099806395410253496685138), (104,15969825185810024367606086968484), (72,6696466908410417421945876686021),
+      (73,13392811129739609890509101549962), (104,15304905225927833521043139779164), (104,3625714212365045051915915283171),
+      (104,9370567809740068756455503257381), (104,18676655143039352036619703205450), (104,345479667904537436465993710740),
+      (104,684537521855281962755948214568), (104,1369075043710563925511896429136), (104,1212028746883192424419112988227),
+      (104,2036350147712694813993256508550), (104,4072700295425389627986513017100), (104,7764115058750882131304095773208),
+      (104,16214861762132196260480084462195), (104,6123265575692695670552235578598), (104,17156797311312899874703674938217),
+      (89,15018202738566655637801774134715), (104,9471022663528775249936585783327), (104,11190272623004811636265378305772),
+      (104,12344916596799195505973654513757), (104,18108943944757309470583564652730), (93,16275862667010337319595671810789),
+      (94,6247975379284914558134752110026), (104,16797864883851663368200265412190), (104,14030675007686374870980158008921),
+      (104,14434106062919283675870756560050), (104,11780603759193537240773934898345), (104,16602410972238227021035400191135),
+      (104,13198869017092759520753879770529), (104,5754865784682212383113573373917), (104,11509731569364424766227146747834),
+      (104,3091965473465960227654294406123), (104,6183930946931920455308588812246)
+    ]
+  | 113 => [
+      (113,164834820905903869672381322690560), (113,494504462717711609017143968071681), (113,824174104529519348361906613452801),
+      (113,2472522313588558045085717910978567), (113,2802191955400365784430310112624641), (113,8406575866198367235167624361672723),
+      (113,5290888146238367807798220572131349), (113,3472323986653234903787617003962495), (113,10331464182163060040627828307591169),
+      (113,8473250922253542746176183568630019), (113,6698688190165203149807136926859525), (113,2409740415178632976583313900439311),
+      (113,3025987906267415324782464136708369), (113,8782735441208179963090014759490355), (113,7688210915371928257929503651992917),
+      (113,752007346917450407018312677425151), (18,1975197505228012981316678682148865), (19,3950332194670438786501439077744642),
+      (113,7900663462431021179538361053872132), (113,3517732568557192165080324400742408), (113,3577039739505092091324864831750165),
+      (113,7150791510140699488088806453280810), (113,7324433184887928809278729283174484), (113,7667463285068425522534196051443880),
+      (113,3241833038343757274594370273870227), (113,6206248359509234089695740135080742), (113,6897948442822276233778706757126111),
+      (28,8147453299346885027880926536601133), (113,5737683295699003911579724754129527), (113,2741038065573572466977343509444249),
+      (31,5443085593927656993676013144721393), (32,9064692829757296654920333192761314), (113,7247596194754987489255318041890854),
+      (113,1959860474833383833863800309573565), (113,2481502080644872681336341772351235), (36,2897796027440587093419175598151941),
+      (37,5596116276410229170269506136814090), (113,2124450997774026393065755254831128), (113,3968717241095262662869950444699435),
+      (113,6590836726883409445487826916573565), (113,9980440056327336753622636162350545), (113,2564771347032654388273618747194274),
+      (113,4922417062099392010901843078674244), (113,9843764244191238188818137986887304), (46,6693532746440291138370187767925939),
+      (113,6409898628569938262016011050588518), (113,8609591747462323122182254955783961), (51,6829049439827157575160289482975531),
+      (52,5381489268520433991442213422125654), (53,8976367066274000519816746136020140), (51,3603866210967248888192296165374229),
+      (113,5514651450685802133766320761356903), (113,4728011286936065814559314206502373), (113,9451723826913021267322631323868106),
+      (58,1709363572437636516048925541512081), (113,3385767301872014707872017892206370), (58,8783972506315309964573903659342583),
+      (113,2209716452810275679802687924425420), (113,752569236870617295754866481066283), (113,4048196620663663553550838516806751),
+      (113,7818281964888438233393123889506494), (113,4132433535604313197401248621216257), (63,10185790812022652868634483363944319),
+      (64,1505003124414157162260023516081918), (65,3008279635930400187356477294403068), (113,6643510003780872731304958031964293),
+      (113,6000759775634276651144295019220623), (113,9937031706380743948820076502261022), (70,7058358962360654974194988666500275),
+      (70,1171168086118727831571916668921833), (113,6907966861959645891717965264929117), (73,652851219080938731775832111184347),
+      (74,1304949760191006758168348922999734), (113,3910471290327742942943515172672730), (113,9775864086479948651094723249578969),
+      (113,236506873080147351284308396756447), (113,473013739964549877043642273143742), (113,3824699836708426652033362484659825),
+      (113,7614990830211312894897868484381922), (113,6666883013637164786179116500523460), (81,4166776423954483077219579548281917),
+      (82,8208570421542714161885343514908794), (113,8892130628162730248714302483104636), (84,5766024836165056007643243021320779),
+      (113,2651554964848781427310341035411165), (113,507818270339374014348963772583921), (87,8881839584101832985013128507315333),
+      (113,5184851075143100850828440240273128), (113,2788652444060958240737361795125343), (113,6936694738244021480794338789104107),
+      (113,1873855175564710689859163448748605), (93,9748818261577613168219182136642961), (93,6476379526843280704262734996669129),
+      (113,2900329575561631342777163853339769), (113,6083592604166672373513793832906993), (97,3841781429271906378367502973930033),
+      (98,7559333099721446275388329033733218), (113,1207543572803954773455767893720230), (113,2415087145607909546911535787440460),
+      (113,5560520426874706313595643412140141), (113,8038114593994358722751304628805850), (113,4620848175431955848027796831713565),
+      (113,9241696350863911696055593663427130), (105,4107067663073440200451201166564713), (106,8214135326146880400902402333129426),
+      (113,3350785386203480493108314832081360), (113,5221304642611164450377950547086189), (113,9773255700811963795831812053155351),
+      (113,7999864710130984064145190353519161), (113,7078812770567832337055548093151845), (111,3648105002147619079269705064336093),
+      (112,7296210004295238158539410128672186), (113,1679278461682261868535774652058116)
+    ]
+  | 123 => [
+      (123,168790856607647979067709693422010368), (123,506372569822943937203129080266031105), (123,843954283038239895338548467110051841),
+      (123,2531862849114719686015645399400775687), (123,2869444562330015644151064615801061377), (123,8608333686987146292628067065706315795),
+      (123,5417869461748144621047198937155436565), (123,3555659762332954175774154661498650751), (123,10579419322535002609005636870275923969),
+      (123,8676608944387658190768112934073598211), (123,6859456706729176206735200908728336645), (123,2467574185142903944642135906737456911),
+      (123,3098611616017768239455321579333943569), (123,8993521091797132035825246892982473523), (123,7872727977340829780739984213026346325),
+      (123,770055523243541767384189930594861055), (18,2022602245353546222026789813046476801), (19,4045140167342551341915568950951280642),
+      (123,8090279385529409736943439108286447620), (123,3602158150202637453756939866488176648), (123,3662888693253245338319069287259897877),
+      (123,7322410506384137698373071239205486634), (123,7500219581325232903164239351131668564), (123,7851482403910055355351949556752842920),
+      (123,3319637031264009870716408925412065683), (123,6355198320137458962891420894400742182), (123,7063499205449982007971024236374329311),
+      (28,8342992178531268011576106174607330861), (123,5875387694795810491739146582324875895), (123,2806822979147353534336091554775119513),
+      (31,5573719648181932506594499238479087601), (32,9282245457671445679950962846739894242), (123,7421538503429073578687021718828453926),
+      (123,2006897126229378641809411854644963261), (123,2541058130580296569372208519526725379), (36,2967343132099132135931674214972053765),
+      (37,5730423067044125838835095350239408650), (123,2175437821720577191951007476877211672), (123,4063966454881574640263047096758796075),
+      (123,6749016808328677668551916592400925053), (123,10219970617679209591587871447960681937), (123,2626325859361470055822267440952048546),
+      (123,5040555071589790799544889036041221956), (123,10080014586051832456232711999230045832), (46,6854177532354849631601331432240532659),
+      (123,6563736195655646220082712271368395110), (123,8816221949401463580131421276143806233), (51,6992946626383042855077624312852588843),
+      (52,5510645010964989853937300117225624150), (53,9191799875864578962567565875905078444), (51,3690359000030500120503650361447086357),
+      (123,5647003085502280849912539014109086311), (123,4841483557822469455196902135186304485), (123,9678565198758916436400955582699232202),
+      (58,1750388298176090859592692763617899409), (123,3467025717116951933731892752300336930), (58,8994787846466919693612662124727638775),
+      (123,2262749647677746947490298600213402316), (123,770630898555565781715259044247531819), (123,4145353339559604308403389972661793887),
+      (123,8005920732045786410129221525758011582), (123,4231611940458754467810050686977917441), (63,10430249791511188716722560348628981631),
+      (64,1541123199400077972222029580648591102), (65,3080478347192691867988563749830155772), (123,6802954243871616772819061054109264005),
+      (68,6144778010249517689523379269124001423), (69,10175520467333918601095000677199453470), (70,2572559760224286059876269706812996156),
+      (123,5947939811261528402757977799415130470), (123,6299225699417951355050078947476077409), (123,6611264597593856833818054178926661821),
+      (123,9864289507360035214046127917204578682), (123,6054375163738727489529672309693796937), (123,4347347929197083946494223687850341423),
+      (123,8693600301138294823132095356629575774), (123,2364544571350399376130554861236529247), (123,4725379044727723661443573544200458430),
+      (80,9113786763678350837179436319933499683), (80,3866959126796873333011713993056533017), (123,5431662599817801360431689970425420909),
+      (123,7640722627651462786898240847290189259), (83,462556993542955184872652803720793693), (123,6916872907640624322071150903860124017),
+      (123,6193710553336102612473746860315081919), (123,10557931906588968939574288624634755454), (123,1971094564195089649280527287886148348),
+      (123,10085215920388906556831186880464353025), (123,8160376604702817102978220200469403907), (92,7233355247545265218594703687643612423),
+      (91,5223356020128704188041058974103207183), (123,6959947297375407974407866050745518104), (123,1118011151590969471569101463037941537),
+      (123,4308430690235580103285741683936465243), (123,8322401357845345255356617173702550198), (123,2852967009303591139133342945427080556),
+      (123,5702242620059317674249527491120106200), (98,9537532815211564317670837164907381127), (123,2501783902953784360935602157624022841),
+      (100,5435041055356841436231569519634312443), (101,8914411611910381506845297175768390134), (102,5238679721630817811388729693752636396),
+      (103,10428884484308908130464225456931694552), (123,3781986300561227195075021147794275420), (123,3238382121778575979218634848972515247),
+      (106,10095698153719774866034324789517330241), (123,8233581740273282440834950052126714307), (109,7158383527309339468104956636005299399),
+      (110,5842938581489840246448143262723402126), (123,4853612753227974165641469898060887056), (123,5678965634524251499228207527047417851),
+      (123,6829260639458406217714614883252516909), (123,6513920801572889618571266817498181722), (123,9870925113156604038995991866830545076),
+      (123,634197786905042404999757242131136872), (116,3913577332620487300700047954834332449), (123,6725246440552868320140053974143513746),
+      (119,4676773177102048747457699276864209991), (120,9353546354204097494915398553728419982), (123,97900767419372769177498263532015900),
+      (123,195801534838745538354996527064031800), (123,5517795093121105609941773405371631801), (123,3951545068757061787953863145549269207)
+    ]
+  | _ => []
+
+def products20 : Nat → Bool → List (Nat × Nat × Nat)
+  | 11, false => [(1,363286,7), (2,957754,5), (4,1915508,1), (3,726572,2), (5,1618274,4), (6,1288014,3)]
+  | 11, true => [(1,1717352,7), (2,1519196,5), (4,759598,1), (3,858676,2), (5,1155910,4), (6,1882482,3)]
+  | 13, false => [(1,1155910,7), (2,1882482,3), (4,1519196,6), (3,858676,2), (5,429338,4), (6,759598,5)]
+  | 13, true => [(1,1618274,7), (2,1288014,3), (4,957754,6), (3,726572,2), (5,1453144,4), (6,1915508,5)]
+  | 19, false => [(11,683540,5), (3,1845688,1), (5,341770,10), (4,922844,8), (7,85442,9), (9,1594224,6), (1,293576,2), (14,1274022,15), (8,1509998,4)]
+  | 19, true => [(11,1779830,5), (3,662932,1), (5,1462508,10), (4,1325864,8), (7,1655730,9), (9,331466,6), (1,987998,2), (14,484622,15), (8,554576,4)]
+  | 25, false => [(14,1655730,9), (12,662932,8), (2,1325864,1), (9,331466,6), (8,987998,4), (13,1779830,10), (10,1462508,5), (7,484622,15), (1,554576,2)]
+  | 25, true => [(14,85442,9), (12,1845688,8), (2,922844,1), (9,1594224,6), (8,293576,4), (13,683540,10), (10,341770,5), (7,1274022,15), (1,1509998,2)]
+  | 37, false => [(8,1185240,4), (13,1128498,24), (5,1585886,9), (27,376132,13), (16,715900,2), (3,1022530,19), (20,255632,10), (4,1823822,8), (31,1918176,29), (24,1176392,6), (22,1344886,21), (1,1532902,1), (2,1550492,18)]
+  | 37, true => [(8,543550,4), (13,1870582,24), (5,793738,9), (27,1943054,13), (16,1527958,2), (3,1700282,19), (20,509674,10), (4,776800,8), (31,179622,29), (24,1019348,6), (22,77048,21), (1,453138,1), (2,1436976,18)]
+  | 41, false => [(2,1087100,8), (31,509674,25), (20,718488,7), (24,1980240,14), (16,776800,21), (8,1436976,26), (13,1870582,17), (12,1360328,19), (9,1943054,16), (3,1629506,31), (22,1728740,1), (18,1788956,3), (5,616390,4)]
+  | 41, true => [(2,592620,8), (31,255632,25), (20,1003832,7), (24,818386,14), (16,1823822,21), (8,1550492,26), (13,1128498,17), (12,208362,19), (9,376132,16), (3,1777460,31), (22,416724,1), (18,1236642,3), (5,430254,4)]
+  | 47, false => [(9,1359064,2), (13,2024116,27), (5,1444074,3), (24,584286,17), (6,959974,6), (30,1547012,1), (23,206812,8), (26,1951080,26), (12,177202,9), (8,1168572,31), (16,1654498,14), (25,354404,22), (10,790996,5)]
+  | 47, true => [(9,1911688,2), (13,490648,27), (5,1076468,3), (24,1511532,17), (6,356614,6), (30,1698140,1), (23,312020,8), (26,245324,26), (12,870268,9), (8,755766,31), (16,1874010,14), (25,1483710,22), (10,538234,5)]
+  | 55, false => [(16,390768,17), (20,1470676,25), (24,534076,21), (3,195384,18), (27,1252950,7), (2,1848610,1), (8,462152,4), (5,497082,27), (10,1661856,5), (17,711940,2), (13,39154,31), (14,1279652,13), (4,1783914,8)]
+  | 55, true => [(16,1024598,17), (20,946082,25), (24,268138,21), (3,2049196,18), (27,1624110,7), (2,801214,1), (8,1107706,4), (5,647968,27), (10,1744434,5), (17,1790918,2), (13,1639898,31), (14,118260,13), (4,1892164,8)]
+  | 59, false => [(5,1372560,4), (24,409974,16), (22,1024598,19), (18,1277202,8), (17,2001240,10), (8,946082,15), (14,1125134,25), (20,118260,30), (9,1624110,26), (10,1744434,2), (2,236520,13), (15,914506,6), (1,383646,31)]
+  | 59, true => [(5,994164,4), (24,156618,16), (22,390768,19), (18,2018842,8), (17,1146268,10), (8,1470676,15), (14,1346540,25), (20,1279652,30), (9,1252950,26), (10,1661856,2), (2,1688402,13), (15,1028998,6), (1,1810584,31)]
+  | 61, false => [(1,134558,2), (16,981296,16), (3,1698140,18), (24,490648,30), (31,1355296,5), (2,1828034,11), (8,624040,17), (5,538234,25), (20,312020,15), (13,111570,24), (22,2041366,13), (4,670692,22), (27,2004420,21)]
+  | 61, true => [(1,1066834,2), (16,2060634,16), (3,1547012,18), (24,2024116,30), (31,1388342,5), (2,515158,11), (8,103406,17), (5,790996,25), (20,206812,15), (13,885306,24), (22,326538,13), (4,1857158,22), (27,620976,21)]
+  | 67, false => [(25,2032294,42), (56,1534264,9), (33,551838,35), (23,1235176,13), (32,1215520,14), (55,21704,3), (29,86818,34), (30,1350750,16), (3,1429372,50), (19,821612,62), (6,1145158,22), (21,1962026,40), (28,1815708,23), (48,772656,18), (44,1081004,5)]
+  | 67, true => [(25,1628740,42), (56,100986,9), (33,1658942,35), (23,2028460,13), (32,1783166,14), (55,378578,3), (29,94644,34), (30,1065748,16), (3,1127072,50), (19,481372,62), (6,719888,22), (21,894028,40), (28,201972,23), (48,876418,18), (44,936822,5)]
+  | 87, false => [(41,896918,11), (32,1729696,9), (9,1559350,2), (7,1577912,63), (24,1167320,14), (31,646240,49), (37,2043098,43), (38,606630,23), (3,1469820,60), (11,692468,48), (30,191198,17), (21,555562,33), (52,1648692,22), (16,864848,18), (36,1317476,4)]
+  | 87, true => [(41,1736044,11), (32,84374,9), (9,1783034,2), (7,487942,63), (24,457954,14), (31,102116,49), (37,1494334,43), (38,1663140,23), (3,1027482,60), (11,770644,48), (30,2020816,17), (21,1382276,33), (52,722214,22), (16,168748,18), (36,628234,4)]
+  | 91, false => [(1,704702,44), (24,882584,9), (25,505638,37), (55,316040,1), (8,538696,14), (63,846528,15), (61,1288962,59), (30,832990,46), (35,2039516,21), (11,1947956,25), (14,653838,40), (5,1327930,49), (44,1844332,3), (32,696224,18), (12,1489868,17)]
+  | 91, true => [(1,1653624,44), (24,48938,9), (25,1672274,37), (55,54732,1), (8,1813814,14), (63,1800442,15), (61,974398,59), (30,1034892,46), (35,70834,21), (11,1519754,25), (14,1366160,40), (5,256026,49), (44,849754,3), (32,887054,18), (12,97876,17)]
+  | 97, false => [(25,447014,20), (8,1408520,9), (17,1289262,29), (55,1514312,24), (56,841208,14), (15,1822384,22), (45,378578,56), (62,1783166,57), (19,2028460,1), (3,1314748,13), (14,171662,63), (13,1478962,50), (4,1752836,40), (40,403944,18), (44,1873644,58)]
+  | 97, true => [(25,1826900,20), (8,193164,9), (17,1643224,29), (55,1578290,24), (56,1876744,14), (15,308794,22), (45,21704,56), (62,1215520,57), (19,1235176,1), (3,237998,13), (14,843172,63), (13,1014794,50), (4,386328,40), (40,907854,18), (44,540502,58)]
+  | 103, false => [(17,164142,23), (24,1842072,9), (9,2005686,30), (15,1365424,26), (8,784008,14), (7,2040632,20), (37,384666,1), (62,1252734,44), (27,1491940,45), (59,1280516,33), (46,323694,42), (21,1538666,11), (36,1094308,46), (40,966504,18), (12,1969612,60)]
+  | 103, true => [(17,1791582,23), (24,188334,9), (9,1673712,30), (15,471358,26), (8,1873204,14), (7,1811466,20), (37,651482,1), (62,631062,44), (27,20940,45), (59,1415098,33), (46,1567628,42), (21,162870,11), (36,846878,46), (40,611138,18), (12,376668,60)]
+  | 109, false => [(41,795286,24), (56,1451064,9), (17,1705646,17), (15,218928,16), (24,963800,14), (23,910312,30), (21,1024106,39), (22,212438,19), (3,826812,52), (51,54732,56), (54,1813814,21), (5,1800442,45), (28,1774108,48), (40,195752,18), (52,1699508,34)]
+  | 109, true => [(41,1636068,24), (56,174056,9), (17,1724684,17), (15,1651874,16), (24,1707538,14), (23,211632,30), (21,331982,39), (22,1085874,19), (3,1409404,52), (51,316040,56), (54,538696,21), (5,846528,45), (28,348112,48), (40,744934,18), (52,922166,34)]
+  | 115, false => [(57,806790,55), (8,347400,9), (49,590478,62), (7,1885432,11), (16,1201360,14), (23,954408,5), (37,651482,26), (22,631062,41), (51,20940,51), (27,1670052,63), (14,2013390,47), (21,508778,16), (4,1222276,29), (56,753336,18), (60,1693756,15)]
+  | 115, true => [(57,1823574,55), (8,241626,9), (49,1604748,62), (7,1914220,11), (16,1768866,14), (23,510158,5), (37,384666,26), (22,1252734,41), (51,1491940,51), (27,211104,63), (14,675590,47), (21,620454,16), (4,483252,29), (56,984806,18), (60,547154,15)]
+  | 117, false => [(25,1305446,13), (48,674992,9), (41,1681366,4), (39,1951768,37), (8,1831816,14), (47,408464,43), (45,1334802,42), (46,1111726,59), (3,305340,17), (19,1736044,29), (22,84374,61), (5,1783034,32), (12,1444428,26), (24,337496,18), (20,1256468,8)]
+  | 117, true => [(25,1684978,13), (48,216212,9), (41,1767782,4), (39,394478,37), (8,291830,14), (47,161560,43), (45,1187466,42), (46,1924034,59), (3,1000776,17), (19,896918,29), (22,1729696,61), (5,1559350,32), (12,824346,26), (24,432424,18), (20,658738,8)]
+  | _, _ => []
+
+def eraseMasks20 : Nat → Bool → List Nat
+  | 11, false => [6286535496253689744, 8740294775772435184, 7106578047554856936]
+  | 11, true => [3306664050020808936, 7380523699265968952, 6832456473899414640]
+  | 13, false => [6887238567363863832, 4407302102528772728, 2868407302305215400]
+  | 13, true => [4086913057514466792, 8315443280214808984, 6663993620008738512]
+  | 19, false => [15708399374979989322589728, 6137417077740377906166368, 13559611765969500375315904, 7856709018760480490519440]
+  | 19, true => [16336307599823951298573712, 9165726439874457696292528, 18326730446011049528429920, 17235088838382178435078848]
+  | 21, false => [5065138418545569243182128, 10201389039733906385561712, 6955481312308722906785216, 12772873387331961212820112]
+  | 21, true => [6725622185313079605376400, 12318153048361044241050160, 2270376973213991119970784, 3327401988835754959884992]
+  | 25, false => [8652907187916169282749744, 18444198688402591924362080, 17616733282506757888354256, 13433528094520111512275600]
+  | 25, true => [8386203691543949371964816, 16691850451999419700931120, 12751976892749107918587232, 4795047351482774303241792]
+  | 31, false => [743515175706264116778784, 861961832363087465506928, 1064544168978137148692176, 371757587853132058389392]
+  | 31, true => [188175415753972119666064, 568658321875080730609328, 1011140793955320828092896, 736173364563230992219712]
+  | 37, false => [31611976626554878451695449641056, 22657897352472997885530655662304, 34666332174889870568503627665792, 28808697200333147699604601775872, 15786201219942748506395868056096]
+  | 37, true => [17489702065332038324705322772000, 33713031363809694836138317269088, 32941928582062815665887132530368, 25279385228935310464075505396096, 8725063958183919446520281256704]
+  | 41, false => [15492231978092928927939150746720, 32290490658673563518911284522176, 25324626044724756393394550397344, 14955116861224702053620633642752, 28642543228849755072497303833120]
+  | 41, true => [8198874216854697059506498217504, 17664121200528035399659692574816, 35287351731949250932119159051456, 22638508958457058425116902198144, 4753049483023004500511705338624]
+  | 47, false => [4468866481730572223591102192704, 7025562216223311496366054416608, 12141152591549472613104901807520, 21083341913221432807977082267392, 1600587993475165802205731835424]
+  | 47, true => [39293249871429952710912677422624, 3848092493835362242973158828640, 31559039293735002127331827676864, 19321407418989220528392105020288, 39909227498129338703539401462528]
+  | 55, false => [36759960104316443646229868846144, 5114659223371425638400298493152, 26492308227216509734231221687680, 12380181958126129507558887959328, 18380000018324269825268561694240]
+  | 55, true => [12046562202857510064128685696544, 34906696786634060937254668544608, 40021275404533390807268258756288, 38210082209242430105167125866880, 26305710652946168429407209730304]
+  | 59, false => [6477276897885912077530994022464, 19195341548093727659176916167872, 39657096965339112407134604679584, 34925015063061452111998291946272, 22887202786315022769629409562144]
+  | 59, true => [18975023625235365884022012438048, 22938000089036084796079414651488, 6619682383368809036858110923968, 5734500305315932042648825285504, 10120717519359779759736279494912]
+  | 61, false => [40503805796930611104437027278944, 39175141825289211470821610628320, 4106731230730402243891175710112, 31062965758438686639365854572320, 20251903521818257733638703204896]
+  | 61, true => [20369680549495502255983804474912, 1481806574352427869632354666592, 23212050936621188334739505575616, 26059104300124145295909805001600, 30487675889066058492651016777984]
+  | 67, false => [72322406613806880369993162774917177472, 36851238646781163905601673714725331328, 73722921962423461159528669662575411968, 62375571642563261661781270627101345280, 39680556546266141132852757883133959168, 79361113170522504666879482461375313984]
+  | 67, true => [42491422808792068042506936013562386496, 42683710927936577990029171111641163968, 1647151826173011453601385711232242048, 4644300756317572762107621701608317696, 10617824436579720372282009410479932928, 21235324275377615154993391427868855296]
+  | 73, false => [6708616229847915152594463391240704192, 14746141006291548698767419701240836480, 29513046208623655497434503354337289024, 53667805497726965499399089620963984896, 23593922742469910743647864382797978624, 45879381605986946170809005095922051136]
+  | 73, true => [23282274731900442517406795733575997504, 45256090734658928100940359525678588096, 6770822804232612433993874797059133824, 35473897012432586792445350064922405632, 69618561037706321471001274961837639168, 54166210897246107653079339171216264192]
+  | 87, false => [44231012707078745642228041812244721792, 47580577952768866951693540968063340992, 51620724157953357677915333112572498688, 16841623438818680224402864213254387264, 74528550928435186395910130204117113856, 63986185686072320974210772712470231104]
+  | 87, true => [2807875681487768400238162534612670528, 9498559180007867819831151752381147328, 16399561144124683918887639657183664512, 34128674802587946933541314226848965376, 64162299700538360325716052964685663744, 44604009923425918352861659645755821056]
+  | 91, false => [60966064045822286576151279688646156416, 73621354812929641310690052328883532160, 63501350882802861608770473130104808256, 68239272463720609095781393831101642304, 15231212508072320312127267202380143616, 30483194282806942521649034375343257664]
+  | 91, true => [64531220846924929647723428834712033344, 23369706560504006393548554000277383360, 46760506747747998242003833721522901376, 72895611436010063772532521569597369088, 37395501719933653063990207819664739840, 74790683993134645914148056777813429248]
+  | 97, false => [80402261976229795642582324272399929536, 75754381962965135346076687305896665472, 65109263727109803952261473359493415680, 43797943533378422245868483903977592320, 2504201708544000972880647028808956992, 83390818556917323410395087874414487616]
+  | 97, true => [74050198283406284973960605541381642304, 61721341036852641613099387878713729216, 39700998891285285211595809606547296640, 79381553112471497036751852607113569024, 72384055608367681475514990573499532800, 36350262770375330546864507276909184000]
+  | 103, false => [56926863337597143316923808587365511296, 82998080701543248647673990918760862144, 30852743072636095572239042158668366592, 63035033589008364458539280834134447616, 42349477622375406632170923066182151232, 28473818758212580636685783011251861568]
+  | 103, true => [60330454193770436967592472462871697472, 73966121894015890528353399684203096256, 4203807143630244365243773188068956544, 8428058957379211811227911366721839872, 18164576802356700789839182130814993920, 72046131299159607534678288367757657088]
+  | 109, false => [10016150252225309056169900354415640768, 18703077500039935914569576193681822144, 36788472944179889888132151785329615680, 66229974296193722573585556126768731648, 46059804349071844860551244363182455872, 5008234850088132132359591621396146240]
+  | 109, true => [35716967145639053242078850327536670784, 70083937028850226877223071086088429760, 68671364939178730264888670726697212288, 81819753973003349011626934687999830784, 78568916136562965019787333526679668224, 61047846582216574680983977829371839488]
+  | 115, false => [36151136825799376982415857576217960576, 58935773410431738144801994780976128384, 32780185901956781075114042821441049344, 64230819289555645037501680225061611072, 79206773345722911329496700559679368256, 59956475149865979422347208087958337600]
+  | 115, true => [56299901942095323708846822129251326016, 83653288262819570054728404144071715008, 82214896160019424928396015383813968256, 78009527925157877817051351940891714304, 41511325963084585142094737693838298624, 28160173265873821076078402028398937088]
+  | 117, false => [44890557021463559409028033337709314240, 4710197792901206717655159373194363328, 51631024418205400299553102079444472576, 16841784361044685349234716715928696384, 75198159130623839781965789156580604992, 22434893877410300198681842451823863872]
+  | 117, true => [4074440117197517875602674798580668480, 9478108228961651908160942740056187072, 16399556002762611656636529749481707904, 34128345151141004769873815997432374016, 65534408635863188359870520572070481408, 44582900517423618559449378899690226688]
+  | 257, false => [0, 5709077884439019562983799758531600717661077760, 11440543626367714088625133986720686846379098880, 22881174365021380219906522971377784141828458240, 1512995364689253980630658066051280499544689020672, 3031699807261617732546105412336446310105957932800, 6063422002380719927475600220663250868604903964416, 12126844091873725786711447092672767722612115275520]
+  | 257, true => [0, 5709077884439019562983799758531600717661077760, 17149447286234829566296423749379466665899655680, 40007885344622726652920392259354123600390128640, 1541517408021482812163806834101530706126938834944, 3083034816044294872605808187727707701954958856192, 6166069632089924165504259826156020080535541915648, 12332139264181177559004304568185016025725402103808]
+  | 2047, false => [1236339822994073560944192049893825799668569876385435399660505088, 415597983953478698891521729387738308013014073598862364531235840, 419618863193495016930016226570348740020453224888900452043731968, 427660621673527630204482366402265971784228765698571604196353024, 443744138633546157186608561860261585053323741528427065885377536, 475911172457942498332000499218287482273409036319084311249781760, 540245044234555327596575487221344833235242358078466230034039808, 668511641563441988449925475014839291524184502279322725163336704, 103497368774948070118249591155569244186294187606798399901008896, 1440922190157639801549580616225588152325652871009507631504557056]
+  | 2047, true => [11269005276315808098497906372056441436760843465511041620247552, 12890092901385858533444015504820163807412355309617225528773632, 35402970479163067922459570968778059546355755699541412446476288, 67610859371127770653519063409433509489035006742707171936972800, 132001602258515990554053261955739884833907797885677412087783424, 260783037606015540383193718692429633424707337488847346474729472, 518344340464070904734706858612156368253055627435255970059091968, 1031861578942168928518367869415305214327364897576245931765596160, 415000004364355865704894309661887350349945480292588994576646144, 828386781298760925126732863236005304372980458916694119200063488]
+  | 8191, false => [341043330500400741992594262306458894612841607103490191861429628764147425280, 568994643677088925880101684727350215681867992526229155712146291727076978688, 1024897270030465243456691096388400786589317301462910763324348803182384697344, 1936702522736806653108721303153374407300655962476819807569921683336028327936, 3760313024780730167003314880694668768360166691856069237468153978530274938880, 170500854660085066466995053689867314589087131937581651651413362395190792192, 1808481675598705158669151031758630400905859798967471389991340996165373952, 342837794610751240591704107953923755898677502775216859814534829688246243328, 572583571897789923084449861608066866842218818470361119698247394401119637504, 1032075126471867288069941368916353087368670402110495921761172173852896137216, 1951058235620022018040924383532914382132030400131510090620154745991844597760, 3789024453916331477982890412674726567721107824353012722163764314629359013888]
+  | 8191, true => [171467458163825151851837992687467990555248592392524233895732009973848215552, 286368189782796269374024443985737103388378440165084092233696299996206346240, 516169653020712799688323059520905015986947889561402518690848802588034359296, 975772579391259285932640487583546316347078204539156861180202374267735687168, 1894978000878543580411202224192233459973354450435939565394596607017330245632, 3618544216106950443015497117387068792301393863855084495932528210204350939136, 169617770016790188091856808304553638109603773045373865378023484504546869248, 284546061535106714330705895389605088322444228467380930334556429704628011008, 512525450432088698451571551628974145422162751144512450015720383263255560192, 968484174345645014015555183824299172672157178393757212041643112273558896640, 1880401622146448852344363391730413546579090050749025157769709038909360439296, 3704236517748043682911745843068271669446748594917731919786399788258744598528]
+  | _, _ => []
+
+def revCore21_20 : Program := [
+  .CX 24 20, .CX 42 20, .CX 25 20, .CX 27 20, .CX 39 20, .CX 30 20,
+  .CX 31 20, .CX 33 20, .CX 36 20, .CX 37 20, .CX 2 1, .CX 2 0,
+  .CX 2 3, .CCX 20 1 2, .CX 2 3, .CX 2 0, .CX 2 1, .CX 23 20,
+  .CX 41 20, .CX 24 20, .CX 42 20, .CX 29 20, .CX 30 20, .CX 35 20,
+  .CX 36 20, .CX 1 0, .CX 2 0, .CX 3 0, .CCX 20 0 3, .CX 3 0,
+  .CX 2 0, .CX 1 0, .CX 24 20, .CX 42 20, .CX 25 20, .CX 27 20,
+  .CX 39 20, .CX 30 20, .CX 31 20, .CX 33 20, .CX 36 20, .CX 37 20,
+  .CX 3 2, .CX 3 1, .CCX 20 2 3, .CX 3 1, .CX 3 2, .CX 23 20,
+  .CX 41 20, .CX 24 20, .CX 42 20, .CX 26 20, .CX 38 20, .CX 27 20,
+  .CX 39 20, .CX 29 20, .CX 30 20, .CX 32 20, .CX 33 20, .CX 35 20,
+  .CX 36 20, .CX 0 1, .CX 0 2, .CCX 20 3 0, .CX 0 2, .CX 0 1,
+  .CX 24 20, .CX 42 20, .CX 25 20, .CX 27 20, .CX 39 20, .CX 30 20,
+  .CX 31 20, .CX 33 20, .CX 36 20, .CX 37 20, .CX 0 3, .CCX 20 1 0,
+  .CX 0 3, .CX 23 20, .CX 41 20, .CX 25 20, .CX 27 20, .CX 39 20,
+  .CX 29 20, .CX 31 20, .CX 33 20, .CX 35 20, .CX 37 20, .CX 2 0,
+  .CX 3 0, .CCX 20 0 2, .CX 3 0, .CX 2 0, .CX 24 20, .CX 42 20,
+  .CX 25 20, .CX 27 20, .CX 39 20, .CX 30 20, .CX 31 20, .CX 33 20,
+  .CX 36 20, .CX 37 20, .CX 2 1, .CCX 20 1 0, .CX 2 1, .CX 23 20,
+  .CX 41 20, .CX 25 20, .CX 26 20, .CX 38 20, .CX 29 20, .CX 31 20,
+  .CX 32 20, .CX 35 20, .CX 37 20
+]
+
+def revCore31_20 : Program := [
+  .CX 25 20, .CX 40 20, .CX 30 20, .CX 35 20, .CX 0 1, .CX 0 2,
+  .CCX 20 3 0, .CX 0 2, .CX 0 1, .CX 23 20, .CX 38 20, .CX 24 20,
+  .CX 39 20, .CX 25 20, .CX 40 20, .CX 28 20, .CX 29 20, .CX 30 20,
+  .CX 33 20, .CX 34 20, .CX 35 20, .CX 3 1, .CCX 20 1 3, .CX 3 1,
+  .CX 23 20, .CX 38 20, .CX 26 20, .CX 41 20, .CX 28 20, .CX 31 20,
+  .CX 33 20, .CX 36 20, .CX 2 1, .CCX 20 1 2, .CX 2 1, .CX 23 20,
+  .CX 38 20, .CX 24 20, .CX 39 20, .CX 28 20, .CX 29 20, .CX 33 20,
+  .CX 34 20, .CX 1 2, .CX 1 3, .CCX 20 0 1, .CX 1 3, .CX 1 2,
+  .CX 23 20, .CX 38 20, .CX 24 20, .CX 39 20, .CX 25 20, .CX 40 20,
+  .CX 28 20, .CX 29 20, .CX 30 20, .CX 33 20, .CX 34 20, .CX 35 20,
+  .CX 2 0, .CCX 20 0 2, .CX 2 0, .CX 23 20, .CX 38 20, .CX 26 20,
+  .CX 41 20, .CX 28 20, .CX 31 20, .CX 33 20, .CX 36 20, .CX 0 2,
+  .CX 0 3, .CCX 20 1 0, .CX 0 3, .CX 0 2, .CX 24 20, .CX 39 20,
+  .CX 26 20, .CX 41 20, .CX 29 20, .CX 31 20, .CX 34 20, .CX 36 20,
+  .CX 3 2, .CCX 20 2 3, .CX 3 2, .CX 23 20, .CX 38 20, .CX 25 20,
+  .CX 40 20, .CX 26 20, .CX 41 20, .CX 28 20, .CX 30 20, .CX 31 20,
+  .CX 33 20, .CX 35 20, .CX 36 20
+]
+
+def orderNineSix20 : Program := [
+  .CX 0 1, .CX 0 2, .CX 5 2, .CX 24 20, .CX 42 20, .CX 25 20,
+  .CX 28 20, .CX 29 20, .CX 38 20, .CX 33 20, .CX 34 20, .CX 37 20,
+  .CCX 20 2 0, .CX 5 2, .CX 0 2, .CX 0 1, .CX 5 2, .CX 5 3,
+  .CCX 20 3 5, .CX 5 3, .CX 4 2, .CX 0 2, .CX 25 20, .CX 30 20,
+  .CX 39 20, .CX 34 20, .CCX 20 2 1, .CX 0 2, .CX 4 2, .CX 3 2,
+  .CX 1 2, .CX 24 20, .CX 42 20, .CX 25 20, .CX 26 20, .CX 27 20,
+  .CX 33 20, .CX 34 20, .CX 35 20, .CX 36 20, .CCX 20 2 4, .CX 1 2,
+  .CX 3 2, .CX 5 2, .CX 3 4, .CX 3 5, .CX 5 0, .CX 25 20,
+  .CX 30 20, .CX 39 20, .CX 34 20, .CCX 20 0 3, .CX 5 0, .CX 3 5,
+  .CX 3 4, .CX 2 4, .CX 2 3, .CX 2 0, .CX 25 20, .CX 30 20,
+  .CX 39 20, .CX 34 20, .CCX 20 0 2, .CX 2 0, .CX 26 20, .CX 27 20,
+  .CX 28 20, .CX 29 20, .CX 38 20, .CX 35 20, .CX 36 20, .CX 37 20,
+  .CCX 20 4 2, .CX 2 3, .CX 2 4, .CX 0 1, .CX 0 2, .CX 0 3,
+  .CX 23 20, .CX 41 20, .CX 26 20, .CX 29 20, .CX 38 20, .CX 32 20,
+  .CX 35 20, .CCX 20 3 0, .CX 0 3, .CX 0 2, .CX 0 1, .CX 4 1,
+  .CX 4 5, .CCX 20 5 4, .CX 4 5, .CX 4 1, .CX 1 2, .CX 2 0,
+  .CX 3 0, .CX 4 0, .CX 25 20, .CX 30 20, .CX 39 20, .CX 34 20,
+  .CCX 20 0 1, .CX 4 0, .CX 3 0, .CX 2 0, .CX 1 3, .CX 24 20,
+  .CX 42 20, .CX 26 20, .CX 27 20, .CX 30 20, .CX 39 20, .CX 33 20,
+  .CX 35 20, .CX 36 20, .CCX 20 3 1, .CX 1 3, .CX 1 2, .CX 0 4,
+  .CX 25 20, .CX 30 20, .CX 39 20, .CX 34 20, .CCX 20 4 0, .CX 0 4,
+  .CX 3 1, .CX 5 1, .CX 25 20, .CX 30 20, .CX 39 20, .CX 34 20,
+  .CCX 20 1 2, .CX 5 1, .CX 3 1, .CX 23 20, .CX 41 20, .CX 24 20,
+  .CX 42 20, .CX 27 20, .CX 29 20, .CX 38 20, .CX 30 20, .CX 39 20,
+  .CX 32 20, .CX 33 20, .CX 36 20
+]
+
+def primaryShift8_20 : Program := [
+  .CX 23 20, .CX 39 20, .CX 25 20, .CX 41 20, .CX 27 20, .CX 29 20,
+  .CX 31 20, .CX 33 20, .CX 35 20, .CX 37 20, .CCX 20 0 1, .CCX 20 2 3,
+  .CCX 20 4 5, .CCX 20 6 7, .CX 24 20, .CX 40 20, .CX 25 20, .CX 41 20,
+  .CX 28 20, .CX 29 20, .CX 32 20, .CX 33 20, .CX 36 20, .CX 37 20,
+  .CX 1 0, .CCX 20 0 2, .CX 1 0, .CX 5 4, .CCX 20 4 6, .CX 5 4,
+  .CX 23 20, .CX 39 20, .CX 25 20, .CX 41 20, .CX 27 20, .CX 29 20,
+  .CX 31 20, .CX 33 20, .CX 35 20, .CX 37 20, .CX 2 3, .CCX 20 1 2,
+  .CX 2 3, .CX 6 7, .CCX 20 5 6, .CX 6 7, .CX 23 20, .CX 39 20,
+  .CX 26 20, .CX 42 20, .CX 28 20, .CX 29 20, .CX 31 20, .CX 34 20,
+  .CX 36 20, .CX 37 20, .CX 1 0, .CX 2 0, .CX 3 0, .CCX 20 0 4,
+  .CX 3 0, .CX 2 0, .CX 1 0, .CX 23 20, .CX 39 20, .CX 27 20,
+  .CX 31 20, .CX 35 20, .CX 3 1, .CX 4 5, .CCX 20 1 4, .CX 4 5,
+  .CX 3 1, .CX 24 20, .CX 40 20, .CX 28 20, .CX 32 20, .CX 36 20,
+  .CX 3 2, .CX 4 6, .CCX 20 2 4, .CX 4 6, .CX 3 2, .CX 25 20,
+  .CX 41 20, .CX 29 20, .CX 33 20, .CX 37 20, .CX 4 5, .CX 4 6,
+  .CX 4 7, .CCX 20 3 4, .CX 4 7, .CX 4 6, .CX 4 5, .CX 26 20,
+  .CX 42 20, .CX 27 20, .CX 28 20, .CX 29 20, .CX 34 20, .CX 35 20,
+  .CX 36 20, .CX 37 20
+]
+
+def order11_2047_20 : Program := [
+  .CX 9 8, .CX 9 7, .CX 9 6, .CX 9 5, .CX 9 0, .CX 8 9,
+  .CX 8 7, .CX 8 6, .CX 8 5, .CX 8 4, .CX 8 2, .CX 8 1,
+  .CX 9 8, .CX 7 9, .CX 7 5, .CX 7 4, .CX 7 2, .CX 9 7,
+  .CX 6 7, .CX 6 3, .CX 7 6, .CX 5 9, .CX 5 4, .CX 9 5,
+  .CX 4 8, .CX 8 4, .CX 3 6, .CX 6 3, .CX 2 4, .CX 4 2,
+  .CX 1 2, .CX 2 1, .CX 22 20, .CX 24 20, .CX 26 20, .CX 27 20,
+  .CX 29 20, .CX 31 20, .CX 33 20, .CX 35 20, .CX 37 20, .CX 38 20,
+  .CX 40 20, .CX 42 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5, .CCX 20 6 7,
+  .CCX 20 8 9, .CX 9 6, .CX 9 4, .CX 9 2, .CX 8 9, .CX 8 7,
+  .CX 8 6, .CX 9 8, .CX 7 9, .CX 7 8, .CX 7 6, .CX 8 7,
+  .CX 6 7, .CX 6 5, .CX 6 4, .CX 7 6, .CX 5 7, .CX 5 6,
+  .CX 5 4, .CX 6 5, .CX 4 5, .CX 4 3, .CX 4 2, .CX 5 4,
+  .CX 3 5, .CX 3 4, .CX 3 2, .CX 4 3, .CX 2 3, .CX 2 1,
+  .CX 2 0, .CX 3 2, .CX 1 3, .CX 1 2, .CX 1 0, .CX 2 1,
+  .CX 22 20, .CX 25 20, .CX 26 20, .CX 28 20, .CX 29 20, .CX 32 20,
+  .CX 33 20, .CX 36 20, .CX 37 20, .CX 39 20, .CX 40 20, .CCX 20 0 1,
+  .CCX 20 2 3, .CCX 20 4 5, .CCX 20 6 7, .CCX 20 8 9, .CX 9 6, .CX 9 5,
+  .CX 9 3, .CX 9 1, .CX 8 9, .CX 8 7, .CX 8 6, .CX 8 5,
+  .CX 8 4, .CX 7 9, .CX 7 8, .CX 7 6, .CX 8 7, .CX 6 7,
+  .CX 6 5, .CX 6 4, .CX 6 3, .CX 6 2, .CX 5 7, .CX 5 6,
+  .CX 5 4, .CX 6 5, .CX 4 5, .CX 4 3, .CX 4 2, .CX 4 1,
+  .CX 4 0, .CX 3 5, .CX 3 4, .CX 3 2, .CX 4 3, .CX 2 3,
+  .CX 2 1, .CX 1 3, .CX 1 2, .CX 1 0, .CX 2 1, .CX 22 20,
+  .CX 23 20, .CX 25 20, .CX 28 20, .CX 31 20, .CX 33 20, .CX 34 20,
+  .CX 36 20, .CX 39 20, .CX 42 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5,
+  .CCX 20 6 7, .CCX 20 8 9, .CX 9 8, .CX 9 5, .CX 9 4, .CX 8 9,
+  .CX 8 5, .CX 8 1, .CX 7 8, .CX 7 5, .CX 7 4, .CX 7 2,
+  .CX 6 7, .CX 6 3, .CX 6 2, .CX 6 1, .CX 6 0, .CX 5 9,
+  .CX 5 8, .CX 5 4, .CX 8 5, .CX 4 5, .CX 4 2, .CX 5 4,
+  .CX 3 7, .CX 3 6, .CX 3 2, .CX 6 3, .CX 2 4, .CX 4 2,
+  .CX 1 2, .CX 1 0, .CX 2 1, .CX 23 20, .CX 24 20, .CX 28 20,
+  .CX 29 20, .CX 30 20, .CX 31 20, .CX 34 20, .CX 35 20, .CX 39 20,
+  .CX 40 20, .CX 41 20, .CX 42 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5,
+  .CCX 20 6 7, .CCX 20 8 9, .CX 9 8, .CX 9 6, .CX 9 5, .CX 9 4,
+  .CX 9 2, .CX 9 1, .CX 9 0, .CX 8 9, .CX 8 6, .CX 9 8,
+  .CX 7 8, .CX 7 4, .CX 7 3, .CX 7 2, .CX 7 1, .CX 8 7,
+  .CX 6 8, .CX 8 6, .CX 5 9, .CX 5 7, .CX 5 6, .CX 5 4,
+  .CX 5 3, .CX 5 1, .CX 5 0, .CX 4 6, .CX 4 1, .CX 6 4,
+  .CX 3 4, .CX 3 2, .CX 4 3, .CX 2 9, .CX 2 7, .CX 2 6,
+  .CX 2 5, .CX 2 3, .CX 2 1, .CX 2 0, .CX 3 2, .CX 1 6,
+  .CX 1 0, .CX 6 1, .CX 23 20, .CX 24 20, .CX 25 20, .CX 26 20,
+  .CX 27 20, .CX 28 20, .CX 29 20, .CX 34 20, .CX 35 20, .CX 36 20,
+  .CX 37 20, .CX 38 20, .CX 39 20, .CX 40 20, .CCX 20 0 1, .CCX 20 2 3,
+  .CCX 20 4 5, .CCX 20 6 7, .CCX 20 8 9, .CX 9 7, .CX 9 5, .CX 9 4,
+  .CX 8 9, .CX 8 6, .CX 8 5, .CX 8 4, .CX 9 8, .CX 7 8,
+  .CX 7 6, .CX 8 7, .CX 6 9, .CX 6 5, .CX 6 4, .CX 9 6,
+  .CX 5 9, .CX 5 4, .CX 9 5, .CX 3 9, .CX 3 8, .CX 3 7,
+  .CX 3 6, .CX 3 5, .CX 3 4, .CX 3 2, .CX 3 0, .CX 2 3,
+  .CX 3 2, .CX 1 2, .CX 1 0, .CX 2 1, .CX 22 20, .CX 23 20,
+  .CX 24 20, .CX 25 20, .CX 26 20, .CX 30 20, .CX 31 20, .CX 32 20,
+  .CX 33 20, .CX 34 20, .CX 35 20, .CX 36 20, .CX 37 20, .CX 41 20,
+  .CX 42 20
+]
+
+def order13_8191_20 : Program := [
+  .CX 11 10, .CX 11 9, .CX 11 8, .CX 11 7, .CX 11 6, .CX 11 0,
+  .CX 10 11, .CX 10 6, .CX 10 5, .CX 10 3, .CX 10 1, .CX 11 10,
+  .CX 9 10, .CX 9 5, .CX 9 2, .CX 10 9, .CX 8 9, .CX 8 7,
+  .CX 8 4, .CX 8 3, .CX 9 8, .CX 7 9, .CX 7 4, .CX 9 7,
+  .CX 6 11, .CX 6 5, .CX 11 6, .CX 5 10, .CX 10 5, .CX 4 8,
+  .CX 8 4, .CX 3 6, .CX 6 3, .CX 2 4, .CX 4 2, .CX 1 2,
+  .CX 2 1, .CX 22 20, .CX 24 20, .CX 25 20, .CX 27 20, .CX 29 20,
+  .CX 31 20, .CX 33 20, .CX 35 20, .CX 37 20, .CX 38 20, .CX 40 20,
+  .CX 42 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5, .CCX 20 6 7, .CCX 20 8 9,
+  .CCX 20 10 11, .CX 11 8, .CX 11 6, .CX 11 4, .CX 11 2, .CX 10 11,
+  .CX 10 9, .CX 10 8, .CX 11 10, .CX 9 11, .CX 9 10, .CX 9 8,
+  .CX 10 9, .CX 8 9, .CX 8 7, .CX 8 6, .CX 9 8, .CX 7 9,
+  .CX 7 8, .CX 7 6, .CX 8 7, .CX 6 7, .CX 6 5, .CX 6 4,
+  .CX 7 6, .CX 5 7, .CX 5 6, .CX 5 4, .CX 6 5, .CX 4 5,
+  .CX 4 3, .CX 4 2, .CX 5 4, .CX 3 5, .CX 3 4, .CX 3 2,
+  .CX 4 3, .CX 2 3, .CX 2 1, .CX 2 0, .CX 3 2, .CX 1 3,
+  .CX 1 2, .CX 1 0, .CX 2 1, .CX 23 20, .CX 24 20, .CX 25 20,
+  .CX 28 20, .CX 29 20, .CX 32 20, .CX 33 20, .CX 36 20, .CX 37 20,
+  .CX 38 20, .CX 41 20, .CX 42 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5,
+  .CCX 20 6 7, .CCX 20 8 9, .CCX 20 10 11, .CX 11 8, .CX 11 7, .CX 11 5,
+  .CX 11 3, .CX 11 1, .CX 10 11, .CX 10 9, .CX 10 8, .CX 10 7,
+  .CX 10 6, .CX 9 11, .CX 9 10, .CX 9 8, .CX 10 9, .CX 8 9,
+  .CX 8 7, .CX 8 6, .CX 8 5, .CX 8 4, .CX 7 9, .CX 7 8,
+  .CX 7 6, .CX 8 7, .CX 6 7, .CX 6 5, .CX 6 4, .CX 6 3,
+  .CX 6 2, .CX 5 7, .CX 5 6, .CX 5 4, .CX 6 5, .CX 4 5,
+  .CX 4 3, .CX 4 2, .CX 4 1, .CX 4 0, .CX 3 5, .CX 3 4,
+  .CX 3 2, .CX 4 3, .CX 2 3, .CX 2 1, .CX 1 3, .CX 1 2,
+  .CX 1 0, .CX 2 1, .CX 23 20, .CX 25 20, .CX 26 20, .CX 28 20,
+  .CX 31 20, .CX 33 20, .CX 34 20, .CX 36 20, .CX 38 20, .CX 39 20,
+  .CX 41 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5, .CCX 20 6 7, .CCX 20 8 9,
+  .CCX 20 10 11, .CX 11 10, .CX 11 7, .CX 11 6, .CX 10 11, .CX 10 7,
+  .CX 10 6, .CX 10 3, .CX 10 2, .CX 9 10, .CX 9 7, .CX 9 4,
+  .CX 9 2, .CX 9 1, .CX 8 9, .CX 8 5, .CX 8 1, .CX 7 11,
+  .CX 7 10, .CX 7 6, .CX 10 7, .CX 6 7, .CX 6 3, .CX 6 2,
+  .CX 6 1, .CX 6 0, .CX 5 9, .CX 5 8, .CX 5 4, .CX 8 5,
+  .CX 4 5, .CX 4 2, .CX 5 4, .CX 3 7, .CX 3 6, .CX 3 2,
+  .CX 6 3, .CX 2 4, .CX 4 2, .CX 1 2, .CX 1 0, .CX 2 1,
+  .CX 22 20, .CX 25 20, .CX 28 20, .CX 29 20, .CX 30 20, .CX 31 20,
+  .CX 34 20, .CX 35 20, .CX 38 20, .CX 41 20, .CX 42 20, .CCX 20 0 1,
+  .CCX 20 2 3, .CCX 20 4 5, .CCX 20 6 7, .CCX 20 8 9, .CCX 20 10 11, .CX 11 9,
+  .CX 11 8, .CX 11 5, .CX 11 2, .CX 11 0, .CX 10 9, .CX 10 8,
+  .CX 10 6, .CX 10 3, .CX 10 2, .CX 10 1, .CX 10 0, .CX 9 10,
+  .CX 9 8, .CX 9 6, .CX 9 3, .CX 9 2, .CX 10 9, .CX 8 11,
+  .CX 8 6, .CX 11 8, .CX 7 8, .CX 7 6, .CX 7 1, .CX 7 0,
+  .CX 8 7, .CX 6 10, .CX 10 6, .CX 5 11, .CX 5 9, .CX 5 8,
+  .CX 5 7, .CX 5 6, .CX 5 3, .CX 5 1, .CX 4 11, .CX 4 9,
+  .CX 4 8, .CX 4 7, .CX 4 6, .CX 4 5, .CX 4 3, .CX 4 1,
+  .CX 5 4, .CX 3 6, .CX 3 2, .CX 6 3, .CX 2 11, .CX 2 9,
+  .CX 2 8, .CX 2 7, .CX 2 5, .CX 2 3, .CX 2 1, .CX 3 2,
+  .CX 1 8, .CX 1 0, .CX 8 1, .CX 0 11, .CX 0 9, .CX 0 7,
+  .CX 0 5, .CX 0 3, .CX 0 1, .CX 1 0, .CX 22 20, .CX 23 20,
+  .CX 24 20, .CX 26 20, .CX 27 20, .CX 28 20, .CX 29 20, .CX 34 20,
+  .CX 35 20, .CX 36 20, .CX 37 20, .CX 39 20, .CX 40 20, .CX 41 20,
+  .CX 42 20, .CCX 20 0 1, .CCX 20 2 3, .CCX 20 4 5, .CCX 20 6 7, .CCX 20 8 9,
+  .CCX 20 10 11, .CX 11 9, .CX 11 7, .CX 11 5, .CX 11 3, .CX 11 2,
+  .CX 10 11, .CX 10 6, .CX 10 4, .CX 10 3, .CX 10 2, .CX 11 10,
+  .CX 9 10, .CX 9 5, .CX 9 4, .CX 10 9, .CX 8 10, .CX 8 5,
+  .CX 8 4, .CX 10 8, .CX 7 9, .CX 7 6, .CX 9 7, .CX 6 11,
+  .CX 6 4, .CX 6 3, .CX 6 2, .CX 11 6, .CX 5 10, .CX 5 4,
+  .CX 10 5, .CX 4 11, .CX 4 3, .CX 4 2, .CX 11 4, .CX 3 11,
+  .CX 3 2, .CX 11 3, .CX 1 11, .CX 1 10, .CX 1 9, .CX 1 8,
+  .CX 1 7, .CX 1 6, .CX 1 5, .CX 1 4, .CX 1 3, .CX 1 2,
+  .CX 1 0, .CX 0 1, .CX 1 0, .CX 22 20, .CX 23 20, .CX 24 20,
+  .CX 30 20, .CX 31 20, .CX 32 20, .CX 33 20, .CX 34 20, .CX 35 20,
+  .CX 36 20, .CX 37 20
+]
+
+def pascalR8Steps20 (mir : Bool) : List R8Step :=
+  if mir then [
+    ⟨[8, 9, 10, 11, 12, 13, 14, 15], [(1,0), (2,0), (3,0), (4,0), (5,0), (6,0), (7,0)], 0, 8⟩,
+    ⟨[7, 8, 9, 10, 11, 12, 13, 14], [(3,1), (5,1), (7,1), (8,9)], 1, 8⟩,
+    ⟨[6, 7, 8, 9, 10, 11, 12, 13], [(3,2), (6,2), (7,2), (8,10)], 2, 8⟩,
+    ⟨[5, 6, 7, 8, 9, 10, 11, 12], [(7,3), (8,9), (8,10), (8,11)], 3, 8⟩,
+    ⟨[4, 5, 6, 7, 8, 9, 10, 11, 20], [(5,4), (6,4), (7,4), (8,12)], 4, 8⟩,
+    ⟨[3, 4, 5, 6, 7, 8, 9, 10, 19, 20], [(7,5), (8,9), (8,12), (8,13)], 5, 8⟩,
+    ⟨[2, 3, 4, 5, 6, 7, 8, 9, 18, 19, 20], [(7,6), (8,10), (8,12), (8,14)], 6, 8⟩,
+    ⟨[1, 2, 3, 4, 5, 6, 7, 8, 17, 18, 19, 20], [(8,9), (8,10), (8,11), (8,12), (8,13), (8,14), (8,15)], 7, 8⟩
+  ]
+  else [
+    ⟨[1, 2, 3, 4, 5, 6, 7, 8, 17, 18, 19, 20], [(1,0), (2,0), (3,0), (4,0), (5,0), (6,0), (7,0)], 0, 8⟩,
+    ⟨[2, 3, 4, 5, 6, 7, 8, 9, 18, 19, 20], [(3,1), (5,1), (7,1), (8,9)], 1, 8⟩,
+    ⟨[3, 4, 5, 6, 7, 8, 9, 10, 19, 20], [(3,2), (6,2), (7,2), (8,10)], 2, 8⟩,
+    ⟨[4, 5, 6, 7, 8, 9, 10, 11, 20], [(7,3), (8,9), (8,10), (8,11)], 3, 8⟩,
+    ⟨[5, 6, 7, 8, 9, 10, 11, 12], [(5,4), (6,4), (7,4), (8,12)], 4, 8⟩,
+    ⟨[6, 7, 8, 9, 10, 11, 12, 13], [(7,5), (8,9), (8,12), (8,13)], 5, 8⟩,
+    ⟨[7, 8, 9, 10, 11, 12, 13, 14], [(7,6), (8,10), (8,12), (8,14)], 6, 8⟩,
+    ⟨[8, 9, 10, 11, 12, 13, 14, 15], [(8,9), (8,10), (8,11), (8,12), (8,13), (8,14), (8,15)], 7, 8⟩
+  ]
+
+def basisNetwork20 (n : Nat) : List (Nat × Nat) :=
+  ((pivots20 n).zipIdx.flatMap (fun (row,i) => elimStep n i row)).reverse
+
+def bilinearOp20 (d : Nat) (triple : Nat × Nat × Nat) : Program :=
+  let (xm, tm, om) := triple
+  let left := (selected d xm).map (fun i => Instr.CX i 20)
+  let right := (selected 21 tm).map (fun k => Instr.CX (22 + k) 21)
+  let compute := match selected d om with
+    | [] => []
+    | j0 :: rest =>
+      let fan := rest.map (fun j => Instr.CX (12 + j0) (12 + j))
+      fan ++ [Instr.CCX 20 21 (12 + j0)] ++ fan.reverse
+  left ++ right ++ compute ++ right.reverse ++ left.reverse
+
+def bilinearErase20 (d : Nat) (mask i : Nat) : Instr :=
+  let pairs := (List.range 21).flatMap fun k => (List.range d).filterMap fun j =>
+    if mask.testBit (k * d + j) then some (Correction.CZ (22 + k) (12 + j)) else none
+  Instr.measureX i [] (.Z (12 + i) :: pairs)
+
+def bilinearCore20 (p : Nat) (mirror : Bool) : Program :=
+  let d := fieldDegree p
+  let copy := (List.range d).map (fun i => Instr.CX i (12 + i))
+  let ops := (products20 p mirror).flatMap (bilinearOp20 d)
+  let erase := (List.range d).map (fun i => bilinearErase20 d ((eraseMasks20 p mirror).getD i 0) i)
+  let move := (List.range d).flatMap (fun i => [Instr.CX (12 + i) i, Instr.CX i (12 + i)])
+  copy ++ ops ++ erase ++ move
+
+def fieldCore20 (p : Nat) (mirror : Bool) : Program :=
+  if p == 21 then (if mirror then revCore21_20.reverse else revCore21_20)
+  else if p == 31 then (if mirror then revCore31_20.reverse else revCore31_20)
+  else if p == 73 then (if mirror then orderNineSix20.reverse else orderNineSix20)
+  else if p == 257 then (if mirror then primaryShift8_20.reverse else primaryShift8_20)
+  else if p == 2047 then (if mirror then order11_2047_20.reverse else order11_2047_20)
+  else if p == 8191 then (if mirror then order13_8191_20.reverse else order13_8191_20)
+  else bilinearCore20 p mirror
+
+def fieldPlace20 (n offset q : Nat) : Wire :=
+  if q < 12 then offset + q else if q < 22 then n + 21 + (q - 12) else n + (q - 22)
+
+def r8Step20 (n off : Nat) (st : R8Step) : Program :=
+  let toggle := st.tags.map (fun k => Instr.CX (n + k) (n + 29))
+  let pre := st.pre.map (fun p => Instr.CX (off + p.1) (off + p.2))
+  toggle ++ pre ++ [Instr.CCX (n + 29) (off + st.src) (off + st.dst)] ++ pre.reverse ++ toggle.reverse
+
+def pascalR8_20 (n off : Nat) (mir : Bool) : Program :=
+  (pascalR8Steps20 mir).flatMap (r8Step20 n off)
+
+def primary20 (n offset p m : Nat) (mirror : Bool) : Program :=
+  let d := fieldDegree p
+  let scalar := (List.range m).flatMap fun j =>
+    renameProgram (fieldPlace20 n (offset + d * j)) (fieldCore20 p mirror)
+  let shift := if d == 8 && m == 2 then pascalR8_20 n offset mirror else []
+  scalar ++ shift
+
+def components20 (n : Nat) (mirror : Bool) : Nat → List (Nat × Nat) → Program
+  | _, [] => []
+  | offset, (p,m) :: tail => primary20 n offset p m mirror ++
+      components20 n mirror (offset + fieldDegree p * m) tail
+
+def logical20 (n : Nat) (mirror : Bool) : Program :=
+  let basis := (basisNetwork20 n).map (fun (i,j) => Instr.CX i j)
+  basis ++ components20 n mirror 0 (schedule20 n) ++ basis.reverse
+
+def UsedField20 (p : Nat) : Prop :=
+  p = 11 ∨ p = 13 ∨ p = 19 ∨ p = 21 ∨ p = 25 ∨ p = 31 ∨ p = 37 ∨ p = 41 ∨ p = 47 ∨ p = 55 ∨ p = 59 ∨ p = 61 ∨ p = 67 ∨ p = 73 ∨ p = 87 ∨ p = 91 ∨ p = 97 ∨ p = 103 ∨ p = 109 ∨ p = 115 ∨ p = 117 ∨ p = 257 ∨ p = 2047 ∨ p = 8191
+
+def UsedWidth20 (n : Nat) : Prop :=
+  n = 84 ∨ n = 94 ∨ n = 104 ∨ n = 113 ∨ n = 123
+
+def measuredField20 : Nat → Nat × Nat × Nat × Nat
+  | 11 => (6,3,272,272)
+  | 13 => (6,3,274,274)
+  | 19 => (9,4,420,421)
+  | 21 => (7,0,117,117)
+  | 25 => (9,4,421,420)
+  | 31 => (7,0,99,99)
+  | 37 => (13,5,666,660)
+  | 41 => (13,5,664,674)
+  | 47 => (13,5,667,670)
+  | 55 => (13,5,647,663)
+  | 59 => (13,5,661,675)
+  | 61 => (13,5,664,671)
+  | 67 => (15,6,882,804)
+  | 73 => (13,0,147,147)
+  | 87 => (15,6,849,849)
+  | 91 => (15,6,839,861)
+  | 97 => (15,6,844,874)
+  | 103 => (15,6,864,904)
+  | 109 => (15,6,865,795)
+  | 115 => (15,6,888,896)
+  | 117 => (15,6,853,853)
+  | 257 => (12,0,104,104)
+  | 2047 => (25,0,307,307)
+  | 8191 => (30,0,386,386)
+  | _ => (0,0,0,0)
+
+def measuredCosts20 : Nat → Nat × Nat × Nat × Nat
+  | 84 => (189,32,12119,12057)
+  | 94 => (214,50,16496,16526)
+  | 104 => (239,62,19764,19716)
+  | 113 => (262,61,21937,21974)
+  | 123 => (288,71,25559,25626)
+  | _ => (0,0,0,0)
+
+/-! ## Exact resource counts (symbolic, < 0.2s total) -/
+
+theorem count_append (a b : Program) : count (a ++ b) = cadd (count a) (count b) := by
+  simp only [count, cadd, toffoliCount_append, measurementCount_append, gateSlots_append]
+
+private theorem count_reverse_cxs (p : Program) (h : ∀ i ∈ p, match i with | .CX _ _ => True | _ => False) :
+    count p.reverse = count p := by
+  induction p with
+  | nil => rfl
+  | cons i tail ih =>
+    have hi := h i (List.mem_cons_self ..)
+    have ht := ih (fun x hx => h x (List.mem_cons_of_mem _ hx))
+    cases i with
+    | CX c t =>
+      rw [List.reverse_cons, count_append, ht]
+      simp only [count, cadd, toffoliCount, measurementCount, gateSlots, instructionSlots,
+        List.map_cons, List.sum_cons, List.map_nil, List.sum_nil]
+      congr 1; omega
+    | _ => exact hi.elim
+
+theorem count_rename (f : Wire → Wire) (p : Program) : count (renameProgram f p) = count p := by
+  have hs : gateSlots (renameProgram f p) = gateSlots p := by
+    induction p with
+    | nil => rfl
+    | cons i tail ih =>
+      simp only [renameProgram, List.map_cons, gateSlots, List.sum_cons] at ih ⊢
+      have h1 : instructionSlots (renameInstr f i) = instructionSlots i := by
+        cases i <;> simp [renameInstr, instructionSlots]
+      rw [h1, ih]
+  simp only [count, (renameProgram_counts f p).1, (renameProgram_counts f p).2, hs]
+
+private theorem count_map_cx {α : Type} (f g : α → Wire) (xs : List α) :
+    count (xs.map (fun x => Instr.CX (f x) (g x))) = ⟨0, 0, xs.length⟩ := by
+  induction xs with
+  | nil => rfl
+  | cons x tail ih =>
+    simp only [List.map_cons, count, toffoliCount, measurementCount, gateSlots, instructionSlots,
+      List.sum_cons, List.length_cons] at ih ⊢
+    obtain ⟨h1, h2, h3⟩ := Count.mk.inj ih
+    rw [h1, h2, h3]
+    congr 1; omega
+
+private theorem count_map_cx_rev {α : Type} (f g : α → Wire) (xs : List α) :
+    count (xs.map (fun x => Instr.CX (f x) (g x))).reverse = ⟨0, 0, xs.length⟩ := by
+  rw [count_reverse_cxs _ (fun i hi => by obtain ⟨_, _, rfl⟩ := List.mem_map.mp hi; trivial), count_map_cx]
+
+private theorem count_flatMap {α : Type} (f : α → Program) (g : α → Count)
+    (h : ∀ x, count (f x) = g x) (xs : List α) :
+    count (xs.flatMap f) = csumBy g xs := by
+  induction xs with
+  | nil => rfl
+  | cons x tail ih =>
+    simp only [List.flatMap_cons, csumBy, count_append, h, ih]
+
+private def popCount (n mask : Nat) : Nat := (selected n mask).length
+
+private def bilinearOpPrice (d : Nat) (triple : Nat × Nat × Nat) : Count :=
+  let (xm, tm, om) := triple
+  let lx := popCount d xm
+  let lt := popCount 21 tm
+  let lo := popCount d om
+  match selected d om with
+  | [] => ⟨0, 0, 2 * lx + 2 * lt⟩
+  | _ :: _ => ⟨1, 0, 2 * lx + 2 * lt + 2 * (lo - 1) + 1⟩
+
+private theorem bilinearOp20_count (d : Nat) (triple : Nat × Nat × Nat) :
+    count (bilinearOp20 d triple) = bilinearOpPrice d triple := by
+  obtain ⟨xm, tm, om⟩ := triple
+  unfold bilinearOp20 bilinearOpPrice popCount
+  rw [count_append, count_append, count_append, count_append,
+    count_map_cx, count_map_cx, count_map_cx_rev, count_map_cx_rev]
+  cases h : selected d om with
+  | nil =>
+    simp only [h, count, cadd, toffoliCount, measurementCount, gateSlots, List.map_nil, List.sum_nil]
+    congr 1; omega
+  | cons j0 rest =>
+    rw [count_append, count_append, count_map_cx, count_map_cx_rev]
+    have hccx : count [Instr.CCX 20 21 (12 + j0)] = ⟨1, 0, 1⟩ := rfl
+    rw [hccx]
+    simp only [h, cadd, List.length_cons, Nat.add_sub_cancel]
+    congr 1; omega
+
+private def eraseMaskCount (d mask : Nat) : Nat :=
+  ((List.range 21).map fun k => ((List.range d).filter fun j => mask.testBit (k * d + j)).length).sum
+
+private theorem filterMap_some_len {α β : Type} (p : α → Bool) (f : α → β) (xs : List α) :
+    (xs.filterMap (fun x => if p x then some (f x) else none)).length = (xs.filter p).length := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    cases hp : p x <;> simp [hp, ih]
+
+private theorem count_measureX (i : Wire) (c2 : List Correction) :
+    count [Instr.measureX i [] c2] = ⟨0, 1, 1 + c2.length⟩ := by
+  simp [count, toffoliCount, measurementCount, gateSlots, instructionSlots]
+
+private theorem bilinearErase20_count (d : Nat) (masks : List Nat) (xs : List Nat) :
+    count (xs.map (fun i => bilinearErase20 d (masks.getD i 0) i)) =
+      csumBy (fun i => ⟨0, 1, 2 + eraseMaskCount d (masks.getD i 0)⟩) xs := by
+  induction xs with
+  | nil => rfl
+  | cons i tail ih =>
+    have h1 : count [bilinearErase20 d (masks.getD i 0) i] = ⟨0, 1, 2 + eraseMaskCount d (masks.getD i 0)⟩ := by
+      unfold bilinearErase20
+      rw [count_measureX]
+      have hmap : ((List.range 21).flatMap fun k => (List.range d).filterMap fun j =>
+          if ((masks.getD i 0)).testBit (k * d + j) then some (Correction.CZ (22 + k) (12 + j)) else none).length =
+          eraseMaskCount d (masks.getD i 0) := by
+        unfold eraseMaskCount
+        rw [List.length_flatMap]
+        congr 1
+        apply List.map_congr_left
+        intro k _
+        exact filterMap_some_len _ _ _
+      simp only [List.length_cons, hmap]
+      exact congrArg (Count.mk 0 1) (by omega)
+    change count ([bilinearErase20 d (masks.getD i 0) i] ++ tail.map (fun i => bilinearErase20 d (masks.getD i 0) i)) = _
+    rw [count_append, h1, ih]
+    rfl
+
+private theorem bilinearCore20_count (p : Nat) (mir : Bool) :
+    count (bilinearCore20 p mir) =
+      cadd (⟨0, 0, fieldDegree p⟩)
+        (cadd (csumBy (bilinearOpPrice (fieldDegree p)) (products20 p mir))
+          (cadd (csumBy (fun i => ⟨0, 1, 2 + eraseMaskCount (fieldDegree p) ((eraseMasks20 p mir).getD i 0)⟩)
+              (List.range (fieldDegree p)))
+            (csumBy (fun _ => ⟨0, 0, 2⟩) (List.range (fieldDegree p))))) := by
+  unfold bilinearCore20
+  have hmv : count ((List.range (fieldDegree p)).flatMap fun i => [Instr.CX (12 + i) i, Instr.CX i (12 + i)]) =
+      csumBy (fun _ => ⟨0, 0, 2⟩) (List.range (fieldDegree p)) :=
+    count_flatMap (fun i => [Instr.CX (12 + i) i, Instr.CX i (12 + i)]) (fun _ => ⟨0, 0, 2⟩) (fun _ => rfl) _
+  rw [count_append, count_append, count_append, count_map_cx, List.length_range,
+    count_flatMap _ _ (bilinearOp20_count _), bilinearErase20_count, hmv]
+  simp only [cadd]
+  congr 1 <;> omega
+
+def fieldPrice20 (p : Nat) (mir : Bool) : Count :=
+  let x := measuredField20 p
+  ⟨x.1, x.2.1, if mir then x.2.2.2 else x.2.2.1⟩
+
+def r8StepPrice20 (st : R8Step) : Count :=
+  ⟨1, 0, 2 * st.tags.length + 2 * st.pre.length + 1⟩
+
+def r8Price20 (mir : Bool) : Count := csumBy r8StepPrice20 (pascalR8Steps20 mir)
+
+def partsPrice20 (mir : Bool) (parts : List (Nat × Nat)) : Count :=
+  csumBy (fun (p,m) =>
+    cadd (cscale m (fieldPrice20 p mir))
+      (if fieldDegree p == 8 && m == 2 then r8Price20 mir else czero)) parts
+
+def listedPrice20 (n : Nat) (mir : Bool) : Count :=
+  let z := measuredCosts20 n
+  ⟨z.1, z.2.1, if mir then z.2.2.2 else z.2.2.1⟩
+
+private theorem field20_count_rev (p : Nat) (hp : p = 21 ∨ p = 31 ∨ p = 73 ∨ p = 257 ∨ p = 2047 ∨ p = 8191) (mir : Bool) :
+    count (fieldCore20 p mir) = fieldPrice20 p mir := by
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> cases mir <;> decide +kernel
+
+theorem field20_count (p : Nat) (hp : UsedField20 p) (mir : Bool) :
+    count (fieldCore20 p mir) = fieldPrice20 p mir := by
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals first
+    | exact field20_count_rev _ (by decide) mir
+    | (change count (bilinearCore20 _ mir) = _; rw [bilinearCore20_count]; cases mir <;> decide +kernel)
+
+private theorem r8Step20_count (n off : Nat) (st : R8Step) :
+    count (r8Step20 n off st) = r8StepPrice20 st := by
+  unfold r8Step20 r8StepPrice20
+  have hccx : count [Instr.CCX (n + 29) (off + st.src) (off + st.dst)] = ⟨1, 0, 1⟩ := rfl
+  rw [count_append, count_append, count_append, count_append,
+    count_map_cx, count_map_cx, count_map_cx_rev, count_map_cx_rev, hccx]
+  simp only [cadd]
+  congr 1; omega
+
+private theorem pascalR8_20_count (n off : Nat) (mir : Bool) :
+    count (pascalR8_20 n off mir) = r8Price20 mir :=
+  count_flatMap _ _ (r8Step20_count n off) _
+
+private theorem primary20_count (n off p m : Nat) (mir : Bool)
+    (hf : count (fieldCore20 p mir) = fieldPrice20 p mir) :
+    count (primary20 n off p m mir) =
+      cadd (cscale m (fieldPrice20 p mir))
+        (if fieldDegree p == 8 && m == 2 then r8Price20 mir else czero) := by
+  have hsc : ∀ (k : Nat) (o : Nat),
+      count ((List.range k).flatMap fun j =>
+        renameProgram (fieldPlace20 n (o + fieldDegree p * j)) (fieldCore20 p mir)) =
+      cscale k (fieldPrice20 p mir) := by
+    intro k; induction k with
+    | zero => intro _; simp [cscale, count, toffoliCount, measurementCount, gateSlots]
+    | succ k ih =>
+      intro o
+      rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, count_append, ih, count_rename, hf]
+      simp only [cscale, cadd, Nat.succ_mul]
+  unfold primary20
+  rw [count_append, hsc]
+  split_ifs with h
+  · rw [pascalR8_20_count]
+  · rfl
+
+private theorem components20_count (n : Nat) (mir : Bool) (off : Nat) (parts : List (Nat × Nat))
+    (h : ∀ pair ∈ parts, count (fieldCore20 pair.1 mir) = fieldPrice20 pair.1 mir) :
+    count (components20 n mir off parts) = partsPrice20 mir parts := by
+  induction parts generalizing off with
+  | nil => rfl
+  | cons pair tail ih =>
+    obtain ⟨p, m⟩ := pair
+    simp only [components20, partsPrice20, csumBy, count_append]
+    rw [primary20_count n off p m mir (h (p, m) (List.mem_cons_self ..)),
+      ih _ (fun x hx => h x (List.mem_cons_of_mem _ hx))]
+    rfl
+
+private theorem schedule20_fields (n : Nat) (hn : UsedWidth20 n) :
+    ∀ pair ∈ schedule20 n, UsedField20 pair.1 := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;>
+    intro pair hp <;> simp only [schedule20, List.mem_cons, List.not_mem_nil, or_false] at hp <;>
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [UsedField20]
+
+private theorem elimStep_len (n i : Nat) (row : Nat × Nat) :
+    (elimStep n i row).length = (if row.1 < n then 1 else 0) + popCount n row.2 := by
+  unfold elimStep popCount
+  rw [List.length_append, List.length_map]
+  split_ifs <;> simp
+
+private theorem map_zipIdx_fst {α β : Type} (f : α → β) (xs : List α) (k : Nat) :
+    (xs.zipIdx k).map (fun x => f x.1) = xs.map f := by
+  induction xs generalizing k with
+  | nil => rfl
+  | cons a xs ih => simp [List.zipIdx_cons, ih]
+
+private theorem basis20_len (n : Nat) :
+    (basisNetwork20 n).length =
+      ((pivots20 n).map (fun row => (if row.1 < n then 1 else 0) + popCount n row.2)).sum := by
+  have hstep : ∀ (xs : List ((Nat × Nat) × Nat)),
+      (xs.flatMap (fun x => elimStep n x.2 x.1)).length =
+        (xs.map (fun x => (if x.1.1 < n then 1 else 0) + popCount n x.1.2)).sum := by
+    intro xs; induction xs with
+    | nil => rfl
+    | cons x tail ih =>
+      simp only [List.flatMap_cons, List.length_append, List.map_cons, List.sum_cons, ih, elimStep_len]
+  unfold basisNetwork20
+  rw [List.length_reverse]
+  exact (hstep ((pivots20 n).zipIdx)).trans
+    (congrArg List.sum (map_zipIdx_fst (fun row : Nat × Nat => (if row.1 < n then 1 else 0) + popCount n row.2) (pivots20 n) 0))
+
+theorem logical20_metrics (n : Nat) (hn : UsedWidth20 n) (mir : Bool) :
+    count (logical20 n mir) = listedPrice20 n mir := by
+  have hc := components20_count n mir 0 (schedule20 n)
+    (fun pair hp => field20_count pair.1 (schedule20_fields n hn pair hp) mir)
+  have hlog : count (logical20 n mir) =
+      cadd ⟨0, 0, (basisNetwork20 n).length⟩
+        (cadd (partsPrice20 mir (schedule20 n)) ⟨0, 0, (basisNetwork20 n).length⟩) := by
+    unfold logical20
+    rw [count_append, count_append, count_map_cx, count_map_cx_rev, hc]
+    simp only [cadd]; congr 1; omega
+  rw [hlog, basis20_len]
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> cases mir <;> decide +kernel
+
+/-! ## Physical soundness & wire-range bounds (`Fits (· < n + 31)`) -/
+
+def fieldScope20 (d q : Nat) : Prop := q < d ∨ (12 ≤ q ∧ q < 43)
+
+private theorem fits_append {P : Wire → Prop} {a b : Program} (ha : Fits P a) (hb : Fits P b) :
+    Fits P (a ++ b) := fun i hi => (List.mem_append.mp hi).elim (ha i) (hb i)
+
+private theorem fits_reverse {P : Wire → Prop} {a : Program} (ha : Fits P a) :
+    Fits P a.reverse := fun i hi => ha i (List.mem_reverse.mp hi)
+
+private theorem fits_nil {P : Wire → Prop} : Fits P [] := fun _ h => (List.not_mem_nil h).elim
+
+private theorem fits_flatMap {α : Type} {P : Wire → Prop} {f : α → Program} {xs : List α}
+    (h : ∀ x ∈ xs, Fits P (f x)) : Fits P (xs.flatMap f) := by
+  intro i hi
+  obtain ⟨x, hx, hix⟩ := List.mem_flatMap.mp hi
+  exact h x hx i hix
+
+theorem support {S : Wire → Prop} {p : Program} (h : Fits S p) : ∀ q ∈ wires p, S q := by
+  induction p with
+  | nil => simp [wires]
+  | cons i p ih =>
+    intro q hq
+    rcases Finset.mem_union.mp hq with a | a
+    · exact (h i (by simp)).2 q a
+    · exact ih (fun j hj => h j (List.mem_cons_of_mem i hj)) q a
+
+theorem fits_rename {P Q : Wire → Prop} {f : Wire → Wire} {pr : Program}
+    (hf : Fits P pr) (hmap : ∀ q, P q → Q (f q))
+    (hinj : ∀ a, P a → ∀ b, P b → f a = f b → a = b) :
+    Fits Q (renameProgram f pr) := by
+  intro g hg
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hg
+  obtain ⟨hp, hq⟩ := hf j hj
+  constructor
+  · cases j with
+    | X t => trivial
+    | measureX t c1 c2 => trivial
+    | CX c t =>
+      intro heq
+      exact hp (hinj c (hq c (by simp [Instr.wires])) t (hq t (by simp [Instr.wires])) heq)
+    | CCX a b t =>
+      have sa := hq a (by simp [Instr.wires])
+      have sb := hq b (by simp [Instr.wires])
+      have st := hq t (by simp [Instr.wires])
+      exact ⟨fun h => hp.1 (hinj a sa t st h), fun h => hp.2 (hinj b sb t st h)⟩
+  · intro q hqm
+    rw [renameInstr_support, Finset.mem_image] at hqm
+    obtain ⟨w, hw, rfl⟩ := hqm
+    exact hmap w (hq w hw)
+
+private theorem mem_selected {n mask q : Nat} (h : q ∈ selected n mask) : q < n ∧ mask.testBit q = true := by
+  simp only [selected, List.mem_filter, List.mem_range] at h
+  exact h
+
+private theorem correctionWires_forall {P : Wire → Prop} {cs : List Correction}
+    (h : ∀ c ∈ cs, match c with | .Z t => P t | .CZ a b => P a ∧ P b) :
+    ∀ q ∈ correctionWires cs, P q := by
+  induction cs with
+  | nil => intro _ hq; simp [correctionWires] at hq
+  | cons c tail ih =>
+    intro q hq
+    have hc := h c (List.mem_cons_self ..)
+    have ht := ih (fun x hx => h x (List.mem_cons_of_mem _ hx))
+    cases c with
+    | Z t =>
+      simp only [correctionWires, Finset.mem_union, Finset.mem_singleton] at hq
+      rcases hq with rfl | hq
+      · exact hc
+      · exact ht q hq
+    | CZ a b =>
+      simp only [correctionWires, Finset.mem_union, Finset.mem_insert, Finset.mem_singleton] at hq
+      rcases hq with (rfl | rfl) | hq
+      · exact hc.1
+      · exact hc.2
+      · exact ht q hq
+
+private theorem bilinearCore20_fits (p : Nat) (hd : fieldDegree p ≤ 8) (mir : Bool) :
+    Fits (fieldScope20 (fieldDegree p)) (bilinearCore20 p mir) := by
+  set d := fieldDegree p
+  have hcopy : Fits (fieldScope20 d) ((List.range d).map (fun i => Instr.CX i (12 + i))) := by
+    intro g hg; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hg; rw [List.mem_range] at hi
+    refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate], fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+  have hop : ∀ triple, Fits (fieldScope20 d) (bilinearOp20 d triple) := by
+    intro ⟨xm, tm, om⟩
+    have hl : Fits (fieldScope20 d) ((selected d xm).map (fun i => Instr.CX i 20)) := by
+      intro g hg; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hg; have := (mem_selected hi).1
+      refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate]; unfold Wire at *; omega, fun q hq => ?_⟩
+      simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+      rcases hq with rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+    have hr : Fits (fieldScope20 d) ((selected 21 tm).map (fun k => Instr.CX (22 + k) 21)) := by
+      intro g hg; obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hg; have := (mem_selected hk).1
+      refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate]; unfold Wire at *; omega, fun q hq => ?_⟩
+      simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+      rcases hq with rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+    have hc : Fits (fieldScope20 d) (match selected d om with
+      | [] => []
+      | j0 :: rest =>
+        let fan := rest.map (fun j => Instr.CX (12 + j0) (12 + j))
+        fan ++ [Instr.CCX 20 21 (12 + j0)] ++ fan.reverse) := by
+      have hnd : (selected d om).Nodup := (List.nodup_range).filter _
+      cases hs : selected d om with
+      | nil => exact fits_nil
+      | cons j0 rest =>
+        rw [hs, List.nodup_cons] at hnd
+        have hj0 : j0 < d := (mem_selected (hs ▸ List.mem_cons_self ..)).1
+        have hfan : Fits (fieldScope20 d) (rest.map (fun j => Instr.CX (12 + j0) (12 + j))) := by
+          intro g hg; obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hg
+          have hjd : j < d := (mem_selected (hs ▸ List.mem_cons_of_mem _ hj)).1
+          have hne : j0 ≠ j := fun e => hnd.1 (e ▸ hj)
+          refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate]; omega, fun q hq => ?_⟩
+          simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+          rcases hq with rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+        have hccx : Fits (fieldScope20 d) [Instr.CCX 20 21 (12 + j0)] := by
+          intro g hg; simp only [List.mem_singleton] at hg; subst hg
+          refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate]; unfold Wire at *; omega, fun q hq => ?_⟩
+          simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+          rcases hq with rfl | rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+        exact fits_append (fits_append hfan hccx) (fits_reverse hfan)
+    exact fits_append (fits_append (fits_append (fits_append hl hr) hc) (fits_reverse hr)) (fits_reverse hl)
+  have herase : Fits (fieldScope20 d) ((List.range d).map (fun i => bilinearErase20 d ((eraseMasks20 p mir).getD i 0) i)) := by
+    intro g hg; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hg; rw [List.mem_range] at hi
+    unfold bilinearErase20
+    refine ⟨trivial, fun q hq => ?_⟩
+    simp only [Instr.wires, correctionWires, Finset.union_empty, Finset.mem_union, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl | hq
+    · exact Or.inl hi
+    · unfold fieldScope20; unfold Wire at *; omega
+    · refine correctionWires_forall (fun c hc => ?_) q hq
+      simp only [List.mem_flatMap, List.mem_filterMap, List.mem_range] at hc
+      obtain ⟨k, hk, j, hj, hite⟩ := hc
+      split_ifs at hite with hbit
+      · simp only [Option.some.injEq] at hite; subst hite
+        exact ⟨by unfold fieldScope20; unfold Wire at *; omega, by unfold fieldScope20; unfold Wire at *; omega⟩
+  have hmove : Fits (fieldScope20 d) ((List.range d).flatMap (fun i => [Instr.CX (12 + i) i, Instr.CX i (12 + i)])) := by
+    apply fits_flatMap; intro i hi; rw [List.mem_range] at hi
+    intro g hg; simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+    rcases hg with rfl | rfl
+    · refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate], fun q hq => ?_⟩
+      simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+      rcases hq with rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+    · refine ⟨by simp [RecordedQuantum.PhysicalInstr, ProperGate], fun q hq => ?_⟩
+      simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+      rcases hq with rfl | rfl <;> (unfold fieldScope20; unfold Wire at *; omega)
+  exact fits_append (fits_append (fits_append hcopy (fits_flatMap (fun t _ => hop t))) herase) hmove
+
+private def revCoreGood (d : Nat) (pr : Program) : Bool :=
+  pr.all fun i =>
+    let okW := fun w => w < d || (12 <= w && w < 43)
+    match i with
+    | .X t => okW t
+    | .CX c t => okW c && okW t && c != t
+    | .CCX a b t => okW a && okW b && okW t && a != t && b != t
+    | _ => false
+
+private theorem revCores_good :
+    revCoreGood 4 revCore21_20 = true ∧
+    revCoreGood 4 revCore31_20 = true ∧
+    revCoreGood 6 orderNineSix20 = true ∧
+    revCoreGood 8 primaryShift8_20 = true ∧
+    revCoreGood 10 order11_2047_20 = true ∧
+    revCoreGood 12 order13_8191_20 = true := by decide +kernel
+
+private theorem fits_of_revCoreGood {d : Nat} {pr : Program} (h : revCoreGood d pr = true) :
+    Fits (fieldScope20 d) pr := by
+  have hall := List.all_eq_true.mp h
+  intro i hi
+  have hg := hall i hi
+  have toS : ∀ w, (decide (w < d) || (decide (12 ≤ w) && decide (w < 43))) = true → fieldScope20 d w := by
+    intro w hw; simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hw; exact hw
+  cases i with
+  | X t =>
+    refine ⟨trivial, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_singleton] at hq; subst hq; exact toS _ hg
+  | CX c t =>
+    simp only [Bool.and_eq_true, bne_iff_ne] at hg
+    refine ⟨hg.2, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl
+    · exact toS _ hg.1.1
+    · exact toS _ hg.1.2
+  | CCX a b t =>
+    simp only [Bool.and_eq_true, bne_iff_ne] at hg
+    refine ⟨⟨hg.1.2, hg.2⟩, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl | rfl
+    · exact toS _ hg.1.1.1.1
+    · exact toS _ hg.1.1.1.2
+    · exact toS _ hg.1.1.2
+  | measureX _ _ _ => simp at hg
+
+private theorem used_degree20 (p : Nat) (hp : UsedField20 p) : 0 < fieldDegree p ∧ fieldDegree p ≤ 12 := by
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem fits_core20 (p : Nat) (hp : UsedField20 p) (mir : Bool) :
+    Fits (fieldScope20 (fieldDegree p)) (fieldCore20 p mir) := by
+  have hd := (used_degree20 p hp).2
+  unfold fieldCore20
+  by_cases h21 : p = 21
+  · subst h21; cases mir
+    · exact fits_of_revCoreGood revCores_good.1
+    · exact fits_reverse (fits_of_revCoreGood revCores_good.1)
+  · by_cases h31 : p = 31
+    · subst h31; cases mir
+      · exact fits_of_revCoreGood revCores_good.2.1
+      · exact fits_reverse (fits_of_revCoreGood revCores_good.2.1)
+    · by_cases h73 : p = 73
+      · subst h73; cases mir
+        · exact fits_of_revCoreGood revCores_good.2.2.1
+        · exact fits_reverse (fits_of_revCoreGood revCores_good.2.2.1)
+      · by_cases h257 : p = 257
+        · subst h257; cases mir
+          · exact fits_of_revCoreGood revCores_good.2.2.2.1
+          · exact fits_reverse (fits_of_revCoreGood revCores_good.2.2.2.1)
+        · by_cases h2047 : p = 2047
+          · subst h2047; cases mir
+            · exact fits_of_revCoreGood revCores_good.2.2.2.2.1
+            · exact fits_reverse (fits_of_revCoreGood revCores_good.2.2.2.2.1)
+          · by_cases h8191 : p = 8191
+            · subst h8191; cases mir
+              · exact fits_of_revCoreGood revCores_good.2.2.2.2.2
+              · exact fits_reverse (fits_of_revCoreGood revCores_good.2.2.2.2.2)
+            · simp only [beq_iff_eq, h21, h31, h73, h257, h2047, h8191, ↓reduceIte]
+              have hd8 : fieldDegree p ≤ 8 := by
+                rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact absurd rfl h2047 | exact absurd rfl h8191 | decide
+              exact bilinearCore20_fits p hd8 mir
+
+private theorem fieldPlace20_maps {n off d : Nat} (sd : d ≤ 12) (endp : off + d ≤ n) :
+    (∀ q, fieldScope20 d q → fieldPlace20 n off q < n + 31) ∧
+    (∀ a, fieldScope20 d a → ∀ b, fieldScope20 d b → fieldPlace20 n off a = fieldPlace20 n off b → a = b) := by
+  constructor
+  · intro q hq; unfold fieldScope20 at hq; unfold fieldPlace20; unfold Wire at *; split_ifs <;> omega
+  · intro a ha b hb heq
+    unfold fieldScope20 at ha hb
+    unfold fieldPlace20 at heq
+    unfold Wire at *
+    by_cases ha12 : a < 12 <;> by_cases ha22 : a < 22 <;>
+      by_cases hb12 : b < 12 <;> by_cases hb22 : b < 22 <;>
+      simp only [ha12, ha22, hb12, hb22, ↓reduceIte] at heq <;> omega
+
+private def r8Step20Good (st : R8Step) : Bool :=
+  st.tags.all (· < 21) &&
+  st.pre.all (fun p => p.1 < 16 && p.2 < 16 && p.1 != p.2) &&
+  st.src < 16 && st.dst < 16 && st.src != st.dst
+
+private theorem pascalR8Steps20_good : ∀ mir : Bool, (pascalR8Steps20 mir).all r8Step20Good = true := by
+  decide +kernel
+
+private theorem pascalR8_20_fits (n off : Nat) (mir : Bool) (endp : off + 16 ≤ n) :
+    Fits (· < n + 31) (pascalR8_20 n off mir) := by
+  apply fits_flatMap
+  intro st hst
+  have h := List.all_eq_true.mp (pascalR8Steps20_good mir) st hst
+  unfold r8Step20Good at h
+  simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, bne_iff_ne] at h
+  obtain ⟨⟨⟨⟨ht, hpre⟩, hsrc⟩, hdst⟩, hne⟩ := h
+  have htog : Fits (· < n + 31) (st.tags.map (fun k => Instr.CX (n + k) (n + 29))) := by
+    intro i hi; obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hi; have := ht k hk
+    refine ⟨by change n + k ≠ n + 29; omega, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+  have hpr : Fits (· < n + 31) (st.pre.map (fun p => Instr.CX (off + p.1) (off + p.2))) := by
+    intro i hi; obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hi; have := hpre p hp
+    refine ⟨by change off + p.1 ≠ off + p.2; omega, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+  have hccx : Fits (· < n + 31) [Instr.CCX (n + 29) (off + st.src) (off + st.dst)] := by
+    intro i hi; simp only [List.mem_singleton] at hi; subst hi
+    refine ⟨⟨by change n + 29 ≠ off + st.dst; omega, by change off + st.src ≠ off + st.dst; omega⟩, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl | rfl <;> (unfold Wire at *; omega)
+  exact fits_append (fits_append (fits_append (fits_append htog hpr) hccx) (fits_reverse hpr)) (fits_reverse htog)
+
+private def pivots20Good (n : Nat) : Bool :=
+  (pivots20 n).length == n &&
+  ((pivots20 n).zipIdx).all (fun ((donor, mask), i) =>
+    donor <= n && donor != i && !(mask.testBit i))
+
+private theorem pivots20_good_checked (n : Nat) (hn : UsedWidth20 n) : pivots20Good n = true := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem basis20_pairs (n : Nat) (hn : UsedWidth20 n) :
+    ∀ o ∈ basisNetwork20 n, o.1 < n ∧ o.2 < n ∧ o.1 ≠ o.2 := by
+  have hg := pivots20_good_checked n hn
+  unfold pivots20Good at hg
+  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at hg
+  obtain ⟨hlen, hall⟩ := hg
+  intro o ho
+  unfold basisNetwork20 at ho
+  rw [List.mem_reverse, List.mem_flatMap] at ho
+  obtain ⟨⟨⟨donor, mask⟩, i⟩, hmem, helim⟩ := ho
+  have hi : i < n := by
+    have hidx := List.mem_zipIdx hmem
+    omega
+  have hp := hall ((donor, mask), i) hmem
+  simp only [decide_eq_true_eq, bne_iff_ne, Bool.not_eq_true'] at hp
+  obtain ⟨⟨hdle, hdne⟩, hbit⟩ := hp
+  unfold elimStep at helim
+  rcases List.mem_append.mp helim with h1 | h2
+  · split_ifs at h1 with hlt
+    · simp only [List.mem_singleton] at h1; subst h1; exact ⟨hlt, hi, hdne⟩
+    · exact (List.not_mem_nil h1).elim
+  · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp h2
+    obtain ⟨hjlt, hjbit⟩ := mem_selected hj
+    refine ⟨hi, hjlt, ?_⟩
+    intro heq; dsimp only at heq; subst heq; rw [hbit] at hjbit; cases hjbit
+
+private theorem schedule20_extent (n : Nat) (hn : UsedWidth20 n) :
+    ((schedule20 n).map (fun x => fieldDegree x.1 * x.2)).sum = n := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem logical20_fits (n : Nat) (hn : UsedWidth20 n) (mir : Bool) :
+    Fits (· < n + 31) (logical20 n mir) := by
+  have hb : Fits (· < n + 31) ((basisNetwork20 n).map (fun (i, j) => Instr.CX i j)) := by
+    intro i hi; obtain ⟨o, ho, rfl⟩ := List.mem_map.mp hi
+    have hp := basis20_pairs n hn o ho
+    refine ⟨hp.2.2, fun q hq => ?_⟩
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+  have hcomp : ∀ (off : Nat) (parts : List (Nat × Nat)),
+      off + (parts.map (fun x => fieldDegree x.1 * x.2)).sum ≤ n →
+      (∀ pair ∈ parts, UsedField20 pair.1) →
+      Fits (· < n + 31) (components20 n mir off parts) := by
+    intro off parts
+    induction parts generalizing off with
+    | nil => intro _ _; exact fits_nil
+    | cons pair tail ih =>
+      intro hend huf
+      obtain ⟨p, m⟩ := pair
+      simp only [List.map_cons, List.sum_cons] at hend
+      have hp := huf (p, m) (List.mem_cons_self ..)
+      have hd := used_degree20 p hp
+      have hsc : ∀ (k : Nat) (o : Nat), o + fieldDegree p * k ≤ n →
+          Fits (· < n + 31) ((List.range k).flatMap fun j =>
+            renameProgram (fieldPlace20 n (o + fieldDegree p * j)) (fieldCore20 p mir)) := by
+        intro k; induction k with
+        | zero => intro _ _; exact fits_nil
+        | succ k ihk =>
+          intro o ho
+          rw [Nat.mul_succ] at ho
+          rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+          refine fits_append (ihk o (by omega)) ?_
+          have hm := fieldPlace20_maps hd.2 (show o + fieldDegree p * k + fieldDegree p ≤ n by omega)
+          exact fits_rename (fits_core20 p hp mir) hm.1 hm.2
+      have hprim : Fits (· < n + 31) (primary20 n off p m mir) := by
+        unfold primary20
+        refine fits_append (hsc m off (by omega)) ?_
+        split_ifs with h8
+        · simp only [Bool.and_eq_true, beq_iff_eq] at h8
+          exact pascalR8_20_fits n off mir (by rw [h8.1, h8.2] at hend; omega)
+        · exact fits_nil
+      exact fits_append hprim (ih (off + fieldDegree p * m) (by omega)
+        (fun x hx => huf x (List.mem_cons_of_mem _ hx)))
+  have hcs := hcomp 0 (schedule20 n) (by rw [Nat.zero_add, schedule20_extent n hn]) (schedule20_fields n hn)
+  exact fits_append (fits_append hb hcs) (fits_reverse hb)
+
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel20
+
+end
+end
+
+section
+
+/-! Semantic soundness, basis/prototype certificates, and generic physical barrel theorem
+    for the 21-tag CRT barrel shifter (`CRTBarrel20`). -/
+
+set_option autoImplicit false
+
+section
+
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Challenge
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel20
+
+/-! ## Linear evaluation & CNOT reversal -/
+
+def rowValue (x : Nat → Bool) (row : Nat) : Nat → Bool
+  | 0 => false
+  | n + 1 => rowValue x row n ^^ (row.testBit n && x n)
+
+theorem rowValue_xor (x : Nat → Bool) (a b n : Nat) :
+    rowValue x (a ^^^ b) n = (rowValue x a n ^^ rowValue x b n) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp only [rowValue, ih, Nat.testBit_xor]
+    cases rowValue x a n <;> cases rowValue x b n <;> cases a.testBit n <;>
+      cases b.testBit n <;> cases x n <;> rfl
+
+theorem rowValue_zero (x : Nat → Bool) (n : Nat) : rowValue x 0 n = false := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp [rowValue, ih]
+
+theorem rowValue_congr (x : Nat → Bool) (d a b : Nat) (eq : ∀ i < d, a.testBit i = b.testBit i) :
+    rowValue x a d = rowValue x b d := by
+  induction d with
+  | zero => rfl
+  | succ w ih => rw [rowValue, rowValue, eq w (by omega), ih (fun i hi => eq i (by omega))]
+
+def cnotProgram (ops : List (Wire × Wire)) : Program :=
+  ops.map fun (a, b) => .CX a b
+
+theorem inverse_cnot (a b : Wire) (hab : a ≠ b) (s : State) (m n : List Bool) :
+    run [.CX a b] n (run [.CX a b] m s) = s := by
+  cases s with
+  | mk ph bits =>
+    change State.mk ph _ = State.mk ph bits
+    congr 1
+    funext q
+    by_cases e : q = b
+    · subst q; simp [run, writeBit, Function.update_of_ne hab]
+    · simp [run, writeBit, Function.update_of_ne e]
+
+theorem reverse_cnots (ops : List (Wire × Wire)) (apart : ∀ p ∈ ops, p.1 ≠ p.2)
+    (s : State) (m n : List Bool) :
+    run (cnotProgram ops.reverse) n (run (cnotProgram ops) m s) = s := by
+  induction ops generalizing s m n with
+  | nil => rfl
+  | cons p tail ih =>
+    obtain ⟨a, b⟩ := p
+    have sep := apart (a, b) (by simp)
+    have rest : ∀ p ∈ tail, p.1 ≠ p.2 := fun p hp => apart p (List.mem_cons_of_mem _ hp)
+    change run (cnotProgram (((a, b) :: tail).reverse)) n
+      (run (cnotProgram tail) m (run [.CX a b] m s)) = s
+    rw [List.reverse_cons, cnotProgram, List.map_append, run_append, run_take]
+    change run [.CX a b] _ (run (cnotProgram tail.reverse) n
+      (run (cnotProgram tail) m (run [.CX a b] m s))) = s
+    rw [ih rest]
+    exact inverse_cnot a b sep s m _
+
+/-! ## Field core bit-slice verification (21 tags in 32 slots, 39 local wires) -/
+
+namespace Field20
+open CodecBitSliceVerify
+
+def rowWord (cols : Cols) (row : Nat) : Nat := packBits (cols.map (·.testBit row))
+
+theorem run_columns (P : Program) (input output : Cols) (mask row : Nat)
+    (hm : mask.testBit row = true) (hb : ∀ i ∈ P, target i < input.length)
+    (checked : eval mask P input = (true, output)) (phase : Bool) (tape : List Bool) :
+    run P tape ⟨phase, MeasuredCodec5.bitsOf (rowWord input row)⟩ =
+      ⟨phase, MeasuredCodec5.bitsOf (rowWord output row)⟩ := by
+  have initial : Rel input (rowWord input row) row := fun q => pack_rows input row q
+  have proof := eval_sound mask row hm P input _ hb initial (congrArg Prod.fst checked)
+  rw [MeasuredCodec5.run_sim, MeasuredCodec5.sim_safe P _ proof.1]
+  apply congrArg (State.mk phase)
+  funext q
+  change (MeasuredCodec5.bitRun P _).testBit q = (rowWord output row).testBit q
+  rw [proof.2 q, checked]
+  exact (pack_rows output row q).symm
+
+def tagColumn (d k : Nat) : Nat := CertificateBits.mask d <<< ((k + 1) * 2 ^ d)
+
+def inputColumn20 (d q : Nat) : Nat :=
+  if q < d then CertificateBits.input (d + 5) q
+  else if 22 ≤ q ∧ q < 43 then tagColumn d (q - 22) else 0
+
+def inputCols20 (d : Nat) : Cols := (List.range 43).map (inputColumn20 d)
+
+def rowMask20 (p : Nat) (mir : Bool) (i : Nat) : Nat := (eraseMasks20 p (!mir)).getD i 0
+
+def outputColumn20 (p : Nat) (mir : Bool) (q : Nat) : Nat :=
+  let d := fieldDegree p
+  if q < d then
+    let extra := (List.range 21).flatMap fun k =>
+      (selected d ((rowMask20 p mir q) >>> (k * d))).map fun j =>
+        tagColumn d k &&& inputColumn20 d j
+    extra.foldl Nat.xor (inputColumn20 d q)
+  else inputColumn20 d q
+
+def outputCols20 (p : Nat) (mir : Bool) : Cols := (List.range 43).map (outputColumn20 p mir)
+
+def fieldTest20 (p : Nat) (mir : Bool) : Bool :=
+  let P := fieldCore20 p mir
+  let d := fieldDegree p
+  (P.all (fun i => decide (target i < 43))) &&
+    (eval (CertificateBits.mask (d + 5)) P (inputCols20 d) == (true, outputCols20 p mir))
+
+theorem run_field_of_test20 (p : Nat) (mir : Bool) (tested : fieldTest20 p mir = true)
+    (row : Nat) (small : row < 2 ^ (fieldDegree p + 5)) (phase : Bool) (m : List Bool) :
+    run (fieldCore20 p mir) m ⟨phase, MeasuredCodec5.bitsOf (rowWord (inputCols20 (fieldDegree p)) row)⟩ =
+      ⟨phase, MeasuredCodec5.bitsOf (rowWord (outputCols20 p mir) row)⟩ := by
+  simp only [fieldTest20, Bool.and_eq_true] at tested
+  obtain ⟨bound, check⟩ := tested
+  apply run_columns _ _ _ (CertificateBits.mask (fieldDegree p + 5)) row
+  · exact CertificateBits.mask_bit _ _ small
+  · intro i hi
+    simpa [inputCols20] using (of_decide_eq_true (List.all_eq_true.mp bound i hi))
+  · exact beq_iff_eq.mp check
+
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 4000000 in
+private theorem ft20_257_f : fieldTest20 257 false = true := by decide +kernel
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 4000000 in
+private theorem ft20_257_t : fieldTest20 257 true = true := by decide +kernel
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 4000000 in
+private theorem ft20_2047_f : fieldTest20 2047 false = true := by decide +kernel
+
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 8000000 in
+private theorem ft20_8191_f : fieldTest20 8191 false = true := by decide +kernel
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 4000000 in
+private theorem ft20_2047_t : fieldTest20 2047 true = true := by decide +kernel
+
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 8000000 in
+private theorem ft20_8191_t : fieldTest20 8191 true = true := by decide +kernel
+
+private theorem ft20_11 : ∀ mir : Bool, fieldTest20 11 mir = true := by decide +kernel
+private theorem ft20_13 : ∀ mir : Bool, fieldTest20 13 mir = true := by decide +kernel
+private theorem ft20_19 : ∀ mir : Bool, fieldTest20 19 mir = true := by decide +kernel
+private theorem ft20_21 : ∀ mir : Bool, fieldTest20 21 mir = true := by decide +kernel
+private theorem ft20_25 : ∀ mir : Bool, fieldTest20 25 mir = true := by decide +kernel
+private theorem ft20_31 : ∀ mir : Bool, fieldTest20 31 mir = true := by decide +kernel
+private theorem ft20_37_f : fieldTest20 37 false = true := by decide +kernel
+private theorem ft20_37_t : fieldTest20 37 true = true := by decide +kernel
+private theorem ft20_41_f : fieldTest20 41 false = true := by decide +kernel
+private theorem ft20_41_t : fieldTest20 41 true = true := by decide +kernel
+private theorem ft20_47_f : fieldTest20 47 false = true := by decide +kernel
+private theorem ft20_47_t : fieldTest20 47 true = true := by decide +kernel
+private theorem ft20_55_f : fieldTest20 55 false = true := by decide +kernel
+private theorem ft20_55_t : fieldTest20 55 true = true := by decide +kernel
+private theorem ft20_59_f : fieldTest20 59 false = true := by decide +kernel
+private theorem ft20_59_t : fieldTest20 59 true = true := by decide +kernel
+private theorem ft20_61_f : fieldTest20 61 false = true := by decide +kernel
+private theorem ft20_61_t : fieldTest20 61 true = true := by decide +kernel
+private theorem ft20_67_f : fieldTest20 67 false = true := by decide +kernel
+private theorem ft20_67_t : fieldTest20 67 true = true := by decide +kernel
+private theorem ft20_73_f : fieldTest20 73 false = true := by decide +kernel
+private theorem ft20_73_t : fieldTest20 73 true = true := by decide +kernel
+private theorem ft20_87_f : fieldTest20 87 false = true := by decide +kernel
+private theorem ft20_87_t : fieldTest20 87 true = true := by decide +kernel
+private theorem ft20_91_f : fieldTest20 91 false = true := by decide +kernel
+private theorem ft20_91_t : fieldTest20 91 true = true := by decide +kernel
+private theorem ft20_97_f : fieldTest20 97 false = true := by decide +kernel
+private theorem ft20_97_t : fieldTest20 97 true = true := by decide +kernel
+private theorem ft20_103_f : fieldTest20 103 false = true := by decide +kernel
+private theorem ft20_103_t : fieldTest20 103 true = true := by decide +kernel
+private theorem ft20_109_f : fieldTest20 109 false = true := by decide +kernel
+private theorem ft20_109_t : fieldTest20 109 true = true := by decide +kernel
+private theorem ft20_115_f : fieldTest20 115 false = true := by decide +kernel
+private theorem ft20_115_t : fieldTest20 115 true = true := by decide +kernel
+private theorem ft20_117_f : fieldTest20 117 false = true := by decide +kernel
+private theorem ft20_117_t : fieldTest20 117 true = true := by decide +kernel
+
+theorem field_tested20 (p : Nat) (hp : UsedField20 p) (mir : Bool) : fieldTest20 p mir = true := by
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact ft20_11 mir
+  · exact ft20_13 mir
+  · exact ft20_19 mir
+  · exact ft20_21 mir
+  · exact ft20_25 mir
+  · exact ft20_31 mir
+  · cases mir; exact ft20_37_f; exact ft20_37_t
+  · cases mir; exact ft20_41_f; exact ft20_41_t
+  · cases mir; exact ft20_47_f; exact ft20_47_t
+  · cases mir; exact ft20_55_f; exact ft20_55_t
+  · cases mir; exact ft20_59_f; exact ft20_59_t
+  · cases mir; exact ft20_61_f; exact ft20_61_t
+  · cases mir; exact ft20_67_f; exact ft20_67_t
+  · cases mir; exact ft20_73_f; exact ft20_73_t
+  · cases mir; exact ft20_87_f; exact ft20_87_t
+  · cases mir; exact ft20_91_f; exact ft20_91_t
+  · cases mir; exact ft20_97_f; exact ft20_97_t
+  · cases mir; exact ft20_103_f; exact ft20_103_t
+  · cases mir; exact ft20_109_f; exact ft20_109_t
+  · cases mir; exact ft20_115_f; exact ft20_115_t
+  · cases mir; exact ft20_117_f; exact ft20_117_t
+  · cases mir; exact ft20_257_f; exact ft20_257_t
+  · cases mir; exact ft20_2047_f; exact ft20_2047_t
+  · cases mir; exact ft20_8191_f; exact ft20_8191_t
+
+theorem run_field20 (p : Nat) (hp : UsedField20 p) (mir : Bool) (row : Nat)
+    (small : row < 2 ^ (fieldDegree p + 5)) (phase : Bool) (m : List Bool) :
+    run (fieldCore20 p mir) m ⟨phase, MeasuredCodec5.bitsOf (rowWord (inputCols20 (fieldDegree p)) row)⟩ =
+      ⟨phase, MeasuredCodec5.bitsOf (rowWord (outputCols20 p mir) row)⟩ :=
+  run_field_of_test20 p mir (field_tested20 p hp mir) row small phase m
+
+def accumulate20 {α : Type} (p : Nat) (mir : Bool) (q : Nat) (combine : α → α → α)
+    (source : Nat → α) (term : Nat → Nat → α) : α :=
+  let d := fieldDegree p
+  ((List.range 21).flatMap fun k =>
+    (selected d (rowMask20 p mir q >>> (k * d))).map (term k)).foldl combine (source q)
+
+private theorem map_fold {α β} (f : α → β) (op : α → α → α) (op' : β → β → β)
+    (pres : ∀ a b, f (op a b) = op' (f a) (f b)) (xs : List α) (a : α) :
+    f (xs.foldl op a) = (xs.map f).foldl op' (f a) := by
+  induction xs generalizing a with
+  | nil => rfl
+  | cons x xs ih => simp only [List.foldl_cons, List.map_cons]; rw [ih, pres]
+
+theorem map_accumulate20 {α β} (p : Nat) (mir : Bool) (q : Nat) (f : α → β)
+    (op : α → α → α) (op' : β → β → β) (pres : ∀ a b, f (op a b) = op' (f a) (f b))
+    (src : Nat → α) (term : Nat → Nat → α) :
+    f (accumulate20 p mir q op src term) =
+      accumulate20 p mir q op' (fun j => f (src j)) (fun k j => f (term k j)) := by
+  unfold accumulate20
+  rw [map_fold _ _ _ pres]
+  simp only [List.map_flatMap, List.map_map, Function.comp_def]
+
+def scalarRow20 (p : Nat) (mir : Bool) (hot : Nat → Bool) (data : Nat → Nat) (q : Nat) : Nat :=
+  accumulate20 p mir q Nat.xor data (fun k j => if hot k then data j else 0)
+
+theorem accumulate20_congr {α} (p : Nat) (mir : Bool) (q : Nat) (op : α → α → α)
+    (src src' : Nat → α) (a b : Nat → Nat → α) (hs : src q = src' q)
+    (ht : ∀ k, ∀ j < fieldDegree p, a k j = b k j) :
+    accumulate20 p mir q op src a = accumulate20 p mir q op src' b := by
+  have same k : (selected (fieldDegree p) (rowMask20 p mir q >>> (k * fieldDegree p))).map (a k) =
+      (selected (fieldDegree p) (rowMask20 p mir q >>> (k * fieldDegree p))).map (b k) := by
+    apply List.map_congr_left
+    intro j hj
+    exact ht k j (List.mem_range.mp (List.mem_filter.mp hj).1)
+  unfold accumulate20
+  simp only [same, hs]
+
+theorem output_bit20 (p : Nat) (mir : Bool) (q : Nat) (hq : q < fieldDegree p) (row dim : Nat)
+    (x : Nat → Bool) (hot : Nat → Bool) (data : Nat → Nat)
+    (ht : ∀ k, (tagColumn (fieldDegree p) k).testBit row = hot k)
+    (hd : ∀ j < fieldDegree p, (inputColumn20 (fieldDegree p) j).testBit row = rowValue x (data j) dim) :
+    (outputColumn20 p mir q).testBit row = rowValue x (scalarRow20 p mir hot data q) dim := by
+  simp only [outputColumn20, if_pos hq]
+  change ((accumulate20 p mir q Nat.xor (inputColumn20 (fieldDegree p))
+    (fun k j => tagColumn (fieldDegree p) k &&& inputColumn20 (fieldDegree p) j))).testBit row = _
+  rw [map_accumulate20 p mir q (fun a : Nat => a.testBit row) Nat.xor Bool.xor (fun _ _ => Nat.testBit_xor ..)]
+  unfold scalarRow20
+  rw [map_accumulate20 p mir q (fun a => rowValue x a dim) Nat.xor Bool.xor (fun a b => rowValue_xor x a b dim)]
+  apply accumulate20_congr
+  · exact hd q hq
+  · intro k j hj
+    rw [Nat.testBit_and, ht, hd j hj]
+    cases hot k <;> simp [rowValue_zero]
+
+def packedRow (d slot v : Nat) : Nat := v + slot * 2 ^ d
+
+theorem packedRow_lt {d slot v : Nat} (sv : v < 2 ^ d) (ss : slot < 32) : packedRow d slot v < 2 ^ (d + 5) := by
+  have h := Nat.mul_le_mul_right (2 ^ d) (show slot + 1 ≤ 32 by omega)
+  simp only [Nat.succ_mul] at h
+  unfold packedRow
+  rw [Nat.pow_add, show 2 ^ 5 = 32 by decide]
+  omega
+
+theorem data_bit20 {d q slot v : Nat} (sq : q < d) (sv : v < 2 ^ d) (ss : slot < 32) :
+    (inputColumn20 d q).testBit (packedRow d slot v) = v.testBit q := by
+  rw [inputColumn20, if_pos sq, CertificateBits.input_bit _ _ _ (packedRow_lt sv ss)]
+  have low : packedRow d slot v % 2 ^ d = v := by simp [packedRow, Nat.mod_eq_of_lt sv]
+  have bit := congrArg (fun a : Nat => a.testBit q) low
+  simpa only [Nat.testBit_mod_two_pow, sq, decide_true, Bool.true_and] using bit
+
+theorem tag_bit {d slot v : Nat} (sv : v < 2 ^ d) (k : Nat) :
+    (tagColumn d k).testBit (packedRow d slot v) = decide (slot = k + 1) := by
+  let b := 2 ^ d
+  change ((2 ^ b - 1) <<< ((k + 1) * b)).testBit (v + slot * b) = _
+  rw [Nat.testBit_shiftLeft, Nat.testBit_two_pow_sub_one]
+  change v < b at sv
+  rcases lt_trichotomy slot (k + 1) with low | eq | high
+  · have h := Nat.mul_le_mul_right b (show slot + 1 ≤ k + 1 by omega)
+    rw [Nat.succ_mul] at h
+    simp [show ¬v + slot * b ≥ (k + 1) * b by omega, show slot ≠ k + 1 by omega]
+  · subst slot
+    simp [sv]
+  · have h := Nat.mul_le_mul_right b (show k + 1 + 1 ≤ slot by omega)
+    rw [Nat.succ_mul] at h
+    simp [show ¬v + slot * b - (k + 1) * b < b by omega, show slot ≠ k + 1 by omega]
+
+end Field20
+
+/-! ## Binary matrix rows & frame semantics -/
+
+namespace Matrix20
+
+abbrev Rows := Array Nat
+
+def read (rows : Rows) (q : Nat) : Nat := (rows[q]?).getD 0
+
+def basis (rows : Rows) (word : Nat → Bool) (dim : Nat) (outside : BasisState) (q : Wire) : Bool :=
+  if q < rows.size then rowValue word (read rows q) dim else outside q
+
+def applyPair (rows : Rows) (op : Wire × Wire) : Rows :=
+  rows.setIfInBounds op.2 (read rows op.2 ^^^ read rows op.1)
+
+def applyOps (ops : List (Wire × Wire)) (rows : Rows) : Rows := ops.foldl applyPair rows
+
+@[simp] theorem applyPair_size (rows : Rows) (op : Wire × Wire) : (applyPair rows op).size = rows.size := by
+  simp [applyPair]
+
+@[simp] theorem applyOps_size (ops : List (Wire × Wire)) (rows : Rows) : (applyOps ops rows).size = rows.size := by
+  induction ops generalizing rows with
+  | nil => rfl
+  | cons op tail ih => exact (ih (applyPair rows op)).trans (applyPair_size rows op)
+
+theorem apply_read (r : Rows) (a b q : Nat) (hb : b < r.size) :
+    read (applyPair r (a, b)) q = if q = b then read r b ^^^ read r a else read r q := by
+  by_cases e : q = b
+  · subst e; simp [read, applyPair, hb]
+  · simp [read, applyPair, e, Ne.symm e]
+
+theorem run_ops (ops : List (Wire × Wire)) (rows : Rows) (x : Nat → Bool) (dim : Nat)
+    (outside : BasisState) (ph : Bool) (m : List Bool)
+    (within : ∀ op ∈ ops, op.1 < rows.size ∧ op.2 < rows.size) :
+    run (cnotProgram ops) m ⟨ph, basis rows x dim outside⟩ =
+      ⟨ph, basis (applyOps ops rows) x dim outside⟩ := by
+  induction ops generalizing rows with
+  | nil => rfl
+  | cons op tail ih =>
+    obtain ⟨a, b⟩ := op
+    obtain ⟨ha, hb⟩ := within (a, b) (by simp)
+    change a < rows.size at ha
+    change b < rows.size at hb
+    have step : writeBit (basis rows x dim outside) b
+        (basis rows x dim outside b ^^ basis rows x dim outside a) =
+        basis (applyPair rows (a, b)) x dim outside := by
+      funext q
+      by_cases e : q = b
+      · subst q
+        simp [basis, read, applyPair, writeBit, ha, hb, rowValue_xor]
+      · simp [basis, read, applyPair, writeBit, Function.update_of_ne e, Ne.symm e]
+    change run (cnotProgram tail) m ⟨ph, _⟩ = _
+    rw [step]
+    apply ih
+    intro op ho
+    simpa only [applyPair_size] using within op (List.mem_cons_of_mem _ ho)
+
+theorem apply_map (ops : List (Wire × Wire)) (f : Nat → Nat) (zero : f 0 = 0)
+    (linear : ∀ a b, f (a ^^^ b) = f a ^^^ f b) (rows : Rows) :
+    applyOps ops (rows.map f) = (applyOps ops rows).map f := by
+  have mapRead (r : Rows) (i : Nat) : read (r.map f) i = f (read r i) := by
+    unfold read
+    rw [Array.getElem?_map]
+    cases r[i]? <;> simp [zero]
+  have step (r : Rows) (p : Wire × Wire) : applyPair (r.map f) p = (applyPair r p).map f := by
+    unfold applyPair
+    rw [mapRead, mapRead, ← linear]
+    apply Array.ext_getElem?; intro i
+    simp only [Array.getElem?_map, Array.getElem?_setIfInBounds, Array.size_map]
+    split <;> (try split) <;> rfl
+  induction ops generalizing rows with
+  | nil => rfl
+  | cons op tail ih =>
+    change applyOps tail (applyPair (rows.map f) op) = (applyOps tail (applyPair rows op)).map f
+    rw [step, ih]
+
+def units (n : Nat) : Rows := Array.ofFn (fun i : Fin n => 2 ^ i.val)
+
+theorem value_unit (x : Nat → Bool) (i dim : Nat) :
+    rowValue x (2 ^ i) dim = if i < dim then x i else false := by
+  induction dim with
+  | zero => simp [rowValue]
+  | succ n ih =>
+    simp only [rowValue, ih, Nat.testBit_two_pow]
+    by_cases e : i = n
+    · subst i; simp
+    · by_cases h : i < n
+      · simp [e, h, show i < n + 1 by omega]
+      · simp [e, h, show ¬i < n + 1 by omega]
+
+end Matrix20
+
+open Field20 Matrix20 CodecBitSliceVerify
+
+def flags20 (n slot q : Nat) : Bool := decide (n ≤ q ∧ q < n + 21 ∧ slot = q - n + 1)
+
+def frame20 (rows : Rows) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) : State :=
+  ⟨ph, Matrix20.basis rows x dim (flags20 rows.size slot)⟩
+
+def scalarRows20 (rows : Rows) (p : Nat) (mir : Bool) (slot off : Nat) : Rows :=
+  Array.ofFn fun q : Fin rows.size =>
+    if off ≤ q.val ∧ q.val < off + fieldDegree p then
+      scalarRow20 p mir (fun k => decide (slot = k + 1)) (fun j => read rows (off + j)) (q.val - off)
+    else read rows q.val
+
+@[simp] theorem scalarRows20_size (r : Rows) (p : Nat) (mir : Bool) (s o : Nat) :
+    (scalarRows20 r p mir s o).size = r.size := by simp [scalarRows20]
+
+theorem scalar20_read {r : Rows} {q : Nat} (hq : q < r.size) (p : Nat) (mir : Bool) (slot off : Nat) :
+    read (scalarRows20 r p mir slot off) q =
+      if off ≤ q ∧ q < off + fieldDegree p then
+        scalarRow20 p mir (fun k => decide (slot = k + 1)) (fun j => read r (off + j)) (q - off)
+      else read r q := by
+  simp [scalarRows20, Matrix20.read, hq]
+
+instance (d q : Nat) : Decidable (fieldScope20 d q) := by unfold fieldScope20; infer_instance
+
+def fieldPool20 (d : Nat) : Finset Wire := (Finset.range 43).filter (fieldScope20 d)
+
+theorem fieldPool20_iff {d q : Nat} (sd : d ≤ 12) : q ∈ fieldPool20 d ↔ fieldScope20 d q := by
+  simp only [fieldPool20, Finset.mem_filter, Finset.mem_range]
+  unfold fieldScope20; omega
+
+private theorem pack_lt (bs : List Bool) : packBits bs < 2 ^ bs.length := by
+  induction bs with
+  | nil => decide
+  | cons b bs ih =>
+    cases b <;> simp [packBits, Nat.bit, Nat.pow_succ] <;> omega
+
+def fieldWord (d : Nat) (getBit : Nat → Bool) : Nat := packBits ((List.range d).map getBit)
+
+theorem fieldWord_small (d : Nat) (v : Nat → Bool) : fieldWord d v < 2 ^ d := by
+  simpa [fieldWord] using pack_lt ((List.range d).map v)
+
+theorem fieldWord_bit (d : Nat) (v : Nat → Bool) (q : Nat) (hq : q < d) :
+    (fieldWord d v).testBit q = v q := by
+  simp [fieldWord, pack_testBit, List.getElem?_map, List.getElem?_range hq]
+
+private theorem column_bit20 (f : Nat → Nat) (row q : Nat) (hq : q < 43) :
+    (rowWord ((List.range 43).map f) row).testBit q = (f q).testBit row := by
+  rw [rowWord, pack_rows, List.getElem?_map, List.getElem?_range hq]
+  rfl
+
+private theorem used_degree20' (p : Nat) (hp : UsedField20 p) : 0 < fieldDegree p ∧ fieldDegree p ≤ 12 := by
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+private theorem fieldPlace20_maps' {n off d : Nat} (sd : d ≤ 12) (endp : off + d ≤ n) :
+    (∀ q, fieldScope20 d q → fieldPlace20 n off q < n + 31) ∧
+    (∀ a, fieldScope20 d a → ∀ b, fieldScope20 d b → fieldPlace20 n off a = fieldPlace20 n off b → a = b) := by
+  constructor
+  · intro q hq; unfold fieldScope20 at hq; unfold fieldPlace20; unfold Wire at *; split_ifs <;> omega
+  · intro a ha b hb heq
+    unfold fieldScope20 at ha hb; unfold fieldPlace20 at heq; unfold Wire at *
+    by_cases ha12 : a < 12 <;> by_cases ha22 : a < 22 <;>
+      by_cases hb12 : b < 12 <;> by_cases hb22 : b < 22 <;>
+      simp only [ha12, ha22, hb12, hb22, ↓reduceIte] at heq <;> omega
+
+theorem frame_field20 (r : Rows) (p : Nat) (hp : UsedField20 p) (mir : Bool) (off slot dim : Nat)
+    (small : slot < 32) (endp : off + fieldDegree p ≤ r.size) (x : Nat → Bool) (ph : Bool) (m : List Bool) :
+    run (renameProgram (fieldPlace20 r.size off) (fieldCore20 p mir)) m (frame20 r x dim slot ph) =
+      frame20 (scalarRows20 r p mir slot off) x dim slot ph := by
+  let d := fieldDegree p
+  let f := fieldPlace20 r.size off
+  let data := fun j => read r (off + j)
+  let v := fieldWord d (fun j => rowValue x (data j) dim)
+  let row := packedRow d slot v
+  have sd := (used_degree20' p hp).2
+  have sv : v < 2 ^ d := fieldWord_small _ _
+  have val (j : Nat) (hj : j < d) : (inputColumn20 d j).testBit row = rowValue x (data j) dim :=
+    (data_bit20 hj sv small).trans (fieldWord_bit _ _ _ hj)
+  have tags (k : Nat) : (tagColumn d k).testBit row = decide (slot = k + 1) := tag_bit sv k
+  have live := support (fits_core20 p hp mir)
+  have sub : wires (fieldCore20 p mir) ⊆ fieldPool20 d := fun _ h => (fieldPool20_iff sd).mpr (live _ h)
+  have maps := fieldPlace20_maps' sd endp
+  have inj : ∀ a ∈ fieldPool20 d, ∀ b ∈ fieldPool20 d, f a = f b → a = b :=
+    fun a ha b hb => maps.2 a ((fieldPool20_iff sd).mp ha) b ((fieldPool20_iff sd).mp hb)
+  have point (q : Nat) (hq : fieldScope20 d q) :
+      (inputColumn20 d q).testBit row = (frame20 r x dim slot ph).basis (f q) := by
+    by_cases left : q < d
+    · have lt : q < 12 := by omega
+      have inside : off + q < r.size := by omega
+      simpa [frame20, Matrix20.basis, f, fieldPlace20, lt, inside, data] using val q left
+    · obtain hq := hq.resolve_left left
+      by_cases mid : q < 22
+      · simp [frame20, Matrix20.basis, f, fieldPlace20, inputColumn20, left, flags20,
+          show ¬q < 12 by omega, mid, show ¬22 ≤ q by omega,
+          show ¬r.size + 21 + (q - 12) < r.size by omega,
+          show ¬r.size + 21 + (q - 12) < r.size + 21 by omega]
+      · have inside : r.size + (q - 22) < r.size + 21 := by omega
+        simp [frame20, Matrix20.basis, f, fieldPlace20, inputColumn20, left, flags20,
+          show ¬q < 12 by omega, mid, show 22 ≤ q by omega, hq.2, inside, tags]
+  have rel := run_rename_pool f (fieldPool20 d) inj (fieldCore20 p mir) sub m
+    ⟨ph, MeasuredCodec5.bitsOf (rowWord (inputCols20 d) row)⟩ (frame20 r x dim slot ph) rfl (by
+      intro q hq
+      have bound := Finset.mem_range.mp (Finset.mem_filter.mp hq).1
+      exact (column_bit20 (inputColumn20 d) row q bound).trans (point q ((fieldPool20_iff sd).mp hq)))
+  rw [run_field20 p hp mir row (packedRow_lt sv small)] at rel
+  refine State.extensionality _ _ rel.1 ?_
+  funext q
+  by_cases inPool : q ∈ (fieldPool20 d).image f
+  · obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp inPool
+    rw [rel.2 a ha]
+    have shape := (fieldPool20_iff sd).mp ha
+    have sa := Finset.mem_range.mp (Finset.mem_filter.mp ha).1
+    change (rowWord (outputCols20 p mir) row).testBit a = _
+    rw [show (rowWord (outputCols20 p mir) row).testBit a = (outputColumn20 p mir a).testBit row from
+      column_bit20 _ _ _ sa]
+    by_cases left : a < d
+    · have a8 : a < 12 := by omega
+      have inside : off + a < r.size := by omega
+      have inSlice : off ≤ off + a ∧ off + a < off + fieldDegree p := ⟨by omega, Nat.add_lt_add_left left _⟩
+      rw [output_bit20 p mir a left row dim x _ data tags val]
+      simp [frame20, Matrix20.basis, f, fieldPlace20, a8, inside, scalar20_read inside, inSlice, data]
+    · rw [outputColumn20, if_neg left, point a shape]
+      have edge : r.size ≤ f a := by
+        obtain ⟨a8, _⟩ := shape.resolve_left left
+        unfold f fieldPlace20; unfold Wire at *
+        simp only [show ¬a < 12 by omega, if_false]
+        split <;> omega
+      simp only [frame20, Matrix20.basis, scalarRows20_size, if_neg (Nat.not_lt_of_ge edge)]
+  · rw [run_rename_pool_outside f (fieldPool20 d) (fieldCore20 p mir) sub m _ q inPool]
+    by_cases inside : q < r.size
+    · have outsideSlice : ¬(off ≤ q ∧ q < off + fieldDegree p) := by
+        rintro ⟨lower, upper⟩
+        apply inPool
+        have sq : q - off < d := (Nat.sub_lt_iff_lt_add lower).mpr (Nat.add_comm off d ▸ upper)
+        refine Finset.mem_image.mpr ⟨q - off, (fieldPool20_iff sd).mpr (Or.inl sq), ?_⟩
+        simpa only [f, fieldPlace20, if_pos (Nat.lt_of_lt_of_le sq sd)] using Nat.add_sub_of_le lower
+      simp [frame20, Matrix20.basis, inside, scalar20_read inside, outsideSlice]
+    · simp [frame20, Matrix20.basis, inside]
+
+/-! ## Pascal `(X+1)^8` step semantics (only multiplicity `m = 2` component) -/
+
+def controlled (c : Wire) (pairs : List (Wire × Wire)) : Program :=
+  pairs.map (fun (a, b) => Instr.CCX c a b)
+
+theorem run_controlled (c : Wire) (pairs : List (Wire × Wire)) (m : List Bool) (s : State)
+    (apart : ∀ p ∈ pairs, p.2 ≠ c) :
+    run (controlled c pairs) m s = if s.basis c then run (cnotProgram pairs) m s else s := by
+  induction pairs generalizing s with
+  | nil => simp [controlled, cnotProgram, run]
+  | cons p tail ih =>
+    obtain ⟨a, b⟩ := p
+    have ne : b ≠ c := apart (a, b) (by simp)
+    have rest : ∀ p ∈ tail, p.2 ≠ c := fun p hp => apart p (List.mem_cons_of_mem _ hp)
+    cases s with
+    | mk ph bits =>
+      cases bit : bits c <;>
+        simp only [controlled, cnotProgram, List.map_cons, run, bit, Bool.false_and, Bool.xor_false,
+          Bool.true_and, Bool.false_eq_true, if_false, if_true]
+      · simpa [writeBit, Function.update_eq_self, controlled, cnotProgram, bit] using ih ⟨ph, bits⟩ rest
+      · have unchanged : writeBit bits b (bits b ^^ bits a) c = true := by
+          simp [writeBit, Function.update_of_ne ne.symm, bit]
+        simpa [controlled, cnotProgram, unchanged] using ih ⟨ph, writeBit bits b (bits b ^^ bits a)⟩ rest
+
+def xorAt (bits : BasisState) : List Wire → Bool
+  | [] => false
+  | w :: ws => bits w ^^ xorAt bits ws
+
+private theorem xorAt_congr (xs : List Wire) (u v : BasisState) (h : ∀ q ∈ xs, u q = v q) :
+    xorAt u xs = xorAt v xs := by
+  induction xs with
+  | nil => rfl
+  | cons q xs ih => rw [xorAt, xorAt, h q (by simp), ih (fun j hj => h j (List.mem_cons_of_mem _ hj))]
+
+def toggles (xs : List Wire) (t : Wire) : Program := xs.map (fun q => Instr.CX q t)
+
+theorem run_toggles (xs : List Wire) (t : Wire) (sep : t ∉ xs) (m : List Bool) (ph : Bool) (bits : BasisState) :
+    run (toggles xs t) m ⟨ph, bits⟩ = ⟨ph, writeBit bits t (bits t ^^ xorAt bits xs)⟩ := by
+  induction xs generalizing bits with
+  | nil => simp [toggles, xorAt, run, writeBit, Function.update_eq_self]
+  | cons q xs ih =>
+    have hn : t ∉ xs := fun h => sep (List.mem_cons_of_mem _ h)
+    change run (toggles xs t) m ⟨ph, writeBit bits t (bits t ^^ bits q)⟩ = _
+    rw [ih hn]
+    have same : xorAt (writeBit bits t (bits t ^^ bits q)) xs = xorAt bits xs := by
+      apply xorAt_congr
+      intro j hj
+      have ne : j ≠ t := fun eq => hn (eq ▸ hj)
+      simp [writeBit, Function.update_of_ne ne]
+    rw [same]
+    simp [xorAt, writeBit, Function.update_idem]
+
+def r8Enabled20 (n slot : Nat) (tags : List Nat) : Bool :=
+  xorAt (flags20 n slot) (tags.map (n + ·))
+
+def r8Ops (off : Nat) (st : R8Step) : List (Wire × Wire) :=
+  let pre := st.pre.map (fun p => (off + p.1, off + p.2))
+  pre ++ [(off + st.src, off + st.dst)] ++ pre.reverse
+
+def r8StepRows20 (rows : Rows) (slot off : Nat) (st : R8Step) : Rows :=
+  if r8Enabled20 rows.size slot st.tags then applyOps (r8Ops off st) rows else rows
+
+@[simp] theorem r8StepRows20_size (rows : Rows) (s o : Nat) (st : R8Step) :
+    (r8StepRows20 rows s o st).size = rows.size := by
+  unfold r8StepRows20; split <;> simp
+
+private def r8Step20Good' (st : R8Step) : Bool :=
+  st.tags.all (· < 21) &&
+  st.pre.all (fun p => p.1 < 16 && p.2 < 16 && p.1 != p.2) &&
+  st.src < 16 && st.dst < 16 && st.src != st.dst
+
+private theorem pascalR8Steps20_good' : ∀ mir : Bool, (pascalR8Steps20 mir).all r8Step20Good' = true := by
+  decide +kernel
+
+theorem r8Ops_bounds20 (rows : Rows) (off : Nat) (st : R8Step)
+    (hg : r8Step20Good' st = true) (endp : off + 16 ≤ rows.size) :
+    ∀ p ∈ r8Ops off st, p.1 < rows.size ∧ p.2 < rows.size ∧ p.1 ≠ p.2 := by
+  unfold r8Step20Good' at hg
+  simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, bne_iff_ne] at hg
+  obtain ⟨⟨⟨⟨_, hpre⟩, hsrc⟩, hdst⟩, hne⟩ := hg
+  intro p hp
+  unfold r8Ops at hp
+  rcases List.mem_append.mp hp with hp1 | hp2
+  · rcases List.mem_append.mp hp1 with hpA | hpB
+    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hpA
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hpre q hq
+      unfold Wire at *; dsimp only; omega
+    · simp only [List.mem_singleton] at hpB; subst hpB
+      unfold Wire at *; dsimp only; omega
+  · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp (List.mem_reverse.mp hp2)
+    obtain ⟨⟨h1, h2⟩, h3⟩ := hpre q hq
+    unfold Wire at *; dsimp only; omega
+
+def withR8Tag20 (r : Rows) (x : Nat → Bool) (dim slot : Nat) (tags : List Nat) (ph : Bool) : State :=
+  ⟨ph, Matrix20.basis r x dim (writeBit (flags20 r.size slot) (r.size + 29) (r8Enabled20 r.size slot tags))⟩
+
+private theorem toggle_r8_frame20 (r : Rows) (x : Nat → Bool) (dim slot : Nat) (tags : List Nat)
+    (htags : ∀ k ∈ tags, k < 21) (ph : Bool) (tape : List Bool) :
+    run (toggles (tags.map (r.size + ·)) (r.size + 29)) tape (frame20 r x dim slot ph) =
+      withR8Tag20 r x dim slot tags ph := by
+  have external (q : Wire) (hq : r.size ≤ q) : (frame20 r x dim slot ph).basis q = flags20 r.size slot q := by
+    simp only [frame20, Matrix20.basis, if_neg (Nat.not_lt_of_ge hq)]
+  have parity := xorAt_congr (tags.map (r.size + ·)) (frame20 r x dim slot ph).basis (flags20 r.size slot)
+    (fun q hq => by obtain ⟨k, _, rfl⟩ := List.mem_map.mp hq; exact external _ (by omega))
+  have sep : r.size + 29 ∉ tags.map (r.size + ·) := by
+    intro hq; obtain ⟨k, hk, he⟩ := List.mem_map.mp hq; have := htags k hk; unfold Wire at *; omega
+  change run _ _ ⟨ph, (frame20 r x dim slot ph).basis⟩ = _
+  rw [run_toggles _ _ sep, parity, external _ (by omega)]
+  apply congrArg (State.mk ph)
+  funext q
+  by_cases eq : q = r.size + 29
+  · subst q; simp [Matrix20.basis, flags20, writeBit, r8Enabled20]
+  · by_cases inside : q < r.size <;> simp [frame20, Matrix20.basis, inside, writeBit, Function.update_of_ne eq]
+
+private theorem tag_r8_restore20 (r : Rows) (x : Nat → Bool) (dim slot : Nat) (tags : List Nat)
+    (htags : ∀ k ∈ tags, k < 21) (ph : Bool) (tape : List Bool) :
+    run (toggles (tags.map (r.size + ·)) (r.size + 29)).reverse tape (withR8Tag20 r x dim slot tags ph) =
+      frame20 r x dim slot ph := by
+  let ops := (tags.map (r.size + ·)).map (fun a => (a, r.size + 29))
+  have same : cnotProgram ops = toggles (tags.map (r.size + ·)) (r.size + 29) := by
+    simp [cnotProgram, ops, toggles, List.map_map, Function.comp_def]
+  have inv := reverse_cnots ops (by
+    intro pair hp
+    obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hq
+    have := htags k hk; change r.size + k ≠ r.size + 29; unfold Wire at *; omega) (frame20 r x dim slot ph) [] tape
+  have rev : cnotProgram ops.reverse = (cnotProgram ops).reverse := List.map_reverse
+  rw [rev, same, toggle_r8_frame20 r x dim slot tags htags] at inv
+  exact inv
+
+theorem frame_r8Step20 (r : Rows) (off : Nat) (st : R8Step)
+    (hg : r8Step20Good' st = true) (endp : off + 16 ≤ r.size)
+    (x : Nat → Bool) (dim slot : Nat) (ph : Bool) (tape : List Bool) :
+    run (r8Step20 r.size off st) tape (frame20 r x dim slot ph) =
+      frame20 (r8StepRows20 r slot off st) x dim slot ph := by
+  have hg' := hg
+  unfold r8Step20Good' at hg'
+  simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, bne_iff_ne] at hg'
+  obtain ⟨⟨⟨⟨htags, hpre⟩, hsrc⟩, hdst⟩, hne⟩ := hg'
+  let prePairs : List (Wire × Wire) := st.pre.map (fun p => (off + p.1, off + p.2))
+  have hpreB : ∀ p ∈ prePairs, p.1 < r.size ∧ p.2 < r.size := by
+    intro p hp; obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+    obtain ⟨⟨h1, h2⟩, _⟩ := hpre q hq; unfold Wire at *; dsimp only; omega
+  have hpreA : ∀ p ∈ prePairs, p.1 ≠ p.2 := by
+    intro p hp; obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
+    obtain ⟨⟨_, _⟩, h3⟩ := hpre q hq; unfold Wire at *; dsimp only; omega
+  have hpreRevB : ∀ p ∈ prePairs.reverse, p.1 < r.size ∧ p.2 < r.size :=
+    fun p hp => hpreB p (List.mem_reverse.mp hp)
+  have shape : r8Step20 r.size off st =
+      toggles (st.tags.map (r.size + ·)) (r.size + 29) ++ cnotProgram prePairs ++
+      controlled (r.size + 29) [(off + st.src, off + st.dst)] ++ cnotProgram prePairs.reverse ++
+      (toggles (st.tags.map (r.size + ·)) (r.size + 29)).reverse := by
+    simp [r8Step20, toggles, cnotProgram, controlled, prePairs, List.map_reverse, List.map_map, Function.comp_def]
+  rw [shape, run_append, run_take, run_append, run_take, run_append, run_take, run_append, run_take]
+  rw [toggle_r8_frame20 r x dim slot st.tags htags]
+  have sepC : ∀ p ∈ ([(off + st.src, off + st.dst)] : List (Wire × Wire)), p.2 ≠ r.size + 29 := by
+    intro p hp; simp only [List.mem_singleton] at hp; subst hp; unfold Wire at *; dsimp only; omega
+  have hpreRun : ∀ t, run (cnotProgram prePairs) t (withR8Tag20 r x dim slot st.tags ph) =
+      withR8Tag20 (applyOps prePairs r) x dim slot st.tags ph := fun t => by
+    simpa only [withR8Tag20, applyOps_size] using run_ops prePairs r x dim _ ph t hpreB
+  cases yes : r8Enabled20 r.size slot st.tags with
+  | false =>
+    rw [run_controlled _ _ _ _ sepC]
+    have bit : ∀ t, (run (cnotProgram prePairs) t (withR8Tag20 r x dim slot st.tags ph)).basis (r.size + 29) = false := fun t => by
+      rw [hpreRun]; simp [withR8Tag20, Matrix20.basis, writeBit, yes]
+    rw [bit]; simp only [Bool.false_eq_true, ↓reduceIte]; rw [reverse_cnots prePairs hpreA]
+    simpa [r8StepRows20, yes] using tag_r8_restore20 r x dim slot st.tags htags ph _
+  | true =>
+    rw [hpreRun, run_controlled _ _ _ _ sepC]
+    have bit : (withR8Tag20 (applyOps prePairs r) x dim slot st.tags ph).basis (r.size + 29) = true := by
+      simp [withR8Tag20, Matrix20.basis, writeBit, yes]
+    rw [bit]; simp only [↓reduceIte]
+    have hmidB : ∀ p ∈ ([(off + st.src, off + st.dst)] : List (Wire × Wire)),
+        p.1 < (applyOps prePairs r).size ∧ p.2 < (applyOps prePairs r).size := by
+      intro p hp; simp only [List.mem_singleton] at hp; subst hp; rw [applyOps_size]; unfold Wire at *; dsimp only; omega
+    have h2 : ∀ t, run (cnotProgram [(off + st.src, off + st.dst)]) t (withR8Tag20 (applyOps prePairs r) x dim slot st.tags ph) =
+        withR8Tag20 (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r)) x dim slot st.tags ph := fun t => by
+      simpa only [withR8Tag20, applyOps_size] using run_ops [(off + st.src, off + st.dst)] (applyOps prePairs r) x dim _ ph t hmidB
+    rw [h2]
+    have hrevB : ∀ p ∈ prePairs.reverse,
+        p.1 < (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r)).size ∧
+        p.2 < (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r)).size := by
+      intro p hp; rw [applyOps_size, applyOps_size]; exact hpreRevB p hp
+    have h3 : ∀ t, run (cnotProgram prePairs.reverse) t (withR8Tag20 (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r)) x dim slot st.tags ph) =
+        withR8Tag20 (applyOps prePairs.reverse (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r))) x dim slot st.tags ph := fun t => by
+      simpa only [withR8Tag20, applyOps_size] using
+        run_ops prePairs.reverse (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r)) x dim _ ph t hrevB
+    rw [h3]
+    have hcomb : applyOps prePairs.reverse (applyOps [(off + st.src, off + st.dst)] (applyOps prePairs r)) = applyOps (r8Ops off st) r := by
+      simp [r8Ops, applyOps, prePairs, List.foldl_append]
+    rw [hcomb]
+    simpa only [r8StepRows20, yes, if_true, applyOps_size] using
+      tag_r8_restore20 (applyOps (r8Ops off st) r) x dim slot st.tags htags ph _
+
+/-! ## Primary & component row semantics -/
+
+private theorem run_parts20 {α} (xs : List α) (g : α → Program) (next : Rows → α → Rows)
+    (n : Nat) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) (m : List Bool) (r : Rows) (size : r.size = n)
+    (keep : ∀ r a, (next r a).size = r.size)
+    (step : ∀ a ∈ xs, ∀ r : Rows, r.size = n → ∀ m,
+      run (g a) m (frame20 r x dim slot ph) = frame20 (next r a) x dim slot ph) :
+    run (xs.flatMap g) m (frame20 r x dim slot ph) = frame20 (xs.foldl next r) x dim slot ph := by
+  induction xs generalizing r m with
+  | nil => rfl
+  | cons a xs ih =>
+    rw [List.flatMap_cons, run_append, run_take, step a (by simp) r size]
+    exact ih _ _ ((keep r a).trans size) (fun y hy => step y (List.mem_cons_of_mem _ hy))
+
+private theorem fold_size {α} (xs : List α) (f : Rows → α → Rows) (r : Rows)
+    (h : ∀ r a, (f r a).size = r.size) : (xs.foldl f r).size = r.size := by
+  induction xs generalizing r with
+  | nil => rfl
+  | cons a xs ih => exact (ih (f r a)).trans (h r a)
+
+def scalars20 (r : Rows) (p m off slot : Nat) (mir : Bool) : Rows :=
+  (List.range m).foldl (fun a j => scalarRows20 a p mir slot (off + fieldDegree p * j)) r
+
+@[simp] theorem scalars20_size (r : Rows) (p m off slot : Nat) (mir : Bool) :
+    (scalars20 r p m off slot mir).size = r.size := fold_size _ _ _ (fun _ _ => scalarRows20_size ..)
+
+def r8Rows20 (r : Rows) (off slot : Nat) (mir : Bool) : Rows :=
+  (pascalR8Steps20 mir).foldl (fun a st => r8StepRows20 a slot off st) r
+
+@[simp] theorem r8Rows20_size (r : Rows) (off slot : Nat) (mir : Bool) :
+    (r8Rows20 r off slot mir).size = r.size := fold_size _ _ _ (fun _ _ => r8StepRows20_size ..)
+
+def primaryRows20 (r : Rows) (off p m slot : Nat) (mir : Bool) : Rows :=
+  let d := fieldDegree p
+  if d == 8 && m == 2 then r8Rows20 (scalars20 r p m off slot mir) off slot mir
+  else scalars20 r p m off slot mir
+
+@[simp] theorem primaryRows20_size (r : Rows) (off p m slot : Nat) (mir : Bool) :
+    (primaryRows20 r off p m slot mir).size = r.size := by
+  unfold primaryRows20; dsimp only; split <;> simp
+
+theorem frame_primary20 (r : Rows) (p : Nat) (hp : UsedField20 p) (mir : Bool) (off m slot dim : Nat)
+    (small : slot < 32) (endp : off + fieldDegree p * m ≤ r.size) (x : Nat → Bool) (ph : Bool) (tape : List Bool) :
+    run (primary20 r.size off p m mir) tape (frame20 r x dim slot ph) =
+      frame20 (primaryRows20 r off p m slot mir) x dim slot ph := by
+  let d := fieldDegree p
+  change off + d * m ≤ r.size at endp
+  have scalar := run_parts20 (List.range m)
+    (fun j => renameProgram (fieldPlace20 r.size (off + d * j)) (fieldCore20 p mir))
+    (fun a j => scalarRows20 a p mir slot (off + d * j)) r.size x dim slot ph tape r rfl
+    (fun _ _ => scalarRows20_size ..) (by
+      intro j hj a size tape
+      have limit := Nat.mul_le_mul_left d (show j + 1 ≤ m from List.mem_range.mp hj)
+      rw [Nat.mul_succ] at limit
+      rw [← size]
+      exact frame_field20 a p hp mir _ _ _ small (by change off + d * j + d ≤ a.size; rw [size]; omega) x ph tape)
+  unfold primary20 primaryRows20; dsimp only
+  rw [run_append, run_take, scalar]
+  by_cases h82 : (fieldDegree p == 8 && m == 2) = true
+  · have h82' := h82; simp only [Bool.and_eq_true, beq_iff_eq] at h82'
+    have h16 : d * m = 16 := by change fieldDegree p * m = 16; rw [h82'.1, h82'.2]
+    rw [if_pos h82, if_pos h82]
+    unfold pascalR8_20 r8Rows20
+    apply run_parts20 (pascalR8Steps20 mir) (r8Step20 r.size off) (fun a st => r8StepRows20 a slot off st) r.size _ _ _ _ _ _
+      (scalars20_size ..) (fun _ _ => r8StepRows20_size ..)
+    intro st hst a size tape
+    rw [← size]
+    exact frame_r8Step20 a off st (List.all_eq_true.mp (pascalR8Steps20_good' mir) st hst)
+      (by rw [size]; omega) x dim slot ph tape
+  · rw [if_neg h82, if_neg h82]; rfl
+
+def extent20 (parts : List (Nat × Nat)) : Nat :=
+  parts.foldr (fun x r => fieldDegree x.1 * x.2 + r) 0
+
+def componentRows20 (mir : Bool) (slot : Nat) : Nat → List (Nat × Nat) → Rows → Rows
+  | _, [], r => r
+  | off, (p, m) :: ps, r => componentRows20 mir slot (off + fieldDegree p * m) ps (primaryRows20 r off p m slot mir)
+
+@[simp] theorem componentRows20_size (mir : Bool) (slot off : Nat) (parts : List (Nat × Nat)) (r : Rows) :
+    (componentRows20 mir slot off parts r).size = r.size := by
+  induction parts generalizing off r with
+  | nil => rfl
+  | cons pair tail ih =>
+    obtain ⟨p, m⟩ := pair
+    exact (ih _ _).trans (primaryRows20_size ..)
+
+theorem frame_components20 (r : Rows) (mir : Bool) (off slot dim : Nat) (parts : List (Nat × Nat))
+    (small : slot < 32) (endp : off + extent20 parts ≤ r.size) (fields : ∀ pair ∈ parts, UsedField20 pair.1)
+    (x : Nat → Bool) (ph : Bool) (tape : List Bool) :
+    run (components20 r.size mir off parts) tape (frame20 r x dim slot ph) =
+      frame20 (componentRows20 mir slot off parts r) x dim slot ph := by
+  induction parts generalizing off r tape with
+  | nil => rfl
+  | cons pair tail ih =>
+    obtain ⟨p, m⟩ := pair
+    change off + (fieldDegree p * m + extent20 tail) ≤ r.size at endp
+    rw [components20, run_append, run_take,
+      frame_primary20 r p (fields (p, m) (by simp)) mir off m slot dim small (by omega)]
+    let new := primaryRows20 r off p m slot mir
+    have eq : new.size = r.size := primaryRows20_size ..
+    rw [← eq]
+    exact ih new _ (by omega) (fun a ha => fields a (List.mem_cons_of_mem _ ha)) _
+
+/-! ## Primary-component coordinate tables (`encoded20`, `basisWord20`, `prototype20`) -/
+
+def encoded20 : Nat → Rows
+  | 84 => #[19342813113834066795298815, 12895208742556044530199210, 15474250491067253436239052, 10316166994044835624159368, 1137812536107886282076400, 758541690738590854717600, 910250028886309025661120, 606833352590872683774080, 1204221828098618944454400, 802814552065745962969600, 963377462478895155563520, 642251641652596770375680, 1133385249975170771251200, 755590166650113847500800, 906708199980136617000960, 604472133320091078000640, 5219489252939351357461585, 10438978505878702714923170, 6140575591693354538190100, 12281151183386709076380200, 1871885140048458076964401, 3119808566747430128274002, 5615655420145374230893204, 10607349126941262436131608, 15992089582303756011861225, 8833725674034455701790010, 17667451348068911403580020, 8681420058964896120724665, 17362840117929792241449330, 14012116586399481458011740, 15184052214546338270475665, 6733709805276808982634162, 13467419610553617965268324, 7592026107273169135237832, 9112674521263969515641585, 18225349042527939031283170, 17107884971221811267267524, 14227743817549018155470200, 2725406153025543658046017, 5450812306051087316092034, 10901624612102174632184068, 340675769128192957255752, 681351538256385914511504, 1362703076512771829023008, 226784325711781926276097, 377973876186303210460162, 680352977135345778828292, 1285111179033430915564552, 2494627582829601189037072, 4913660390421941735982112, 9751726005606622829872192, 85044122141918222353536, 94493469046575802615040, 113392162855890963138048, 453402529343931244621825, 755670882239885407703042, 1360207588031793733865476, 2569280999615610386190344, 4987427822783243690840080, 9823721469118510300139552, 153495647954976723439680, 155857119461976365338752, 160580062475975649136896, 170025948503974216733184, 188917720559971351925760, 226701264671965622310912, 10355573176002209568072129, 1368333238170352340845442, 13087490169679359902066372, 15971711576529090480073800, 12600610039224114164848784, 14849193144918138181685472, 14995301932353152437767873, 5636754796464513254773570, 11273509592929026509547140, 3204206072023986223795464, 11080595256033161711342800, 17169057523093609616533344, 5560008112359153271911105, 11120016224718306543822210, 8447764263739488692206020, 16895528527478977384412040, 18638746673675716972697040, 12451410613096610033604960]
+  | 94 => #[19807040628566084398385987583, 13204693752377389598923991722, 3961408125713216879677197516, 2640938750475477919784798344, 15146560480668182187001049328, 10097706987112121458000699552, 233024007394895110569246912, 155349338263263407046164608, 1571987351473498761776665681, 3143974702946997523553331362, 5344756995009895790040663316, 10689513990019791580081326632, 1916810383409621070811547185, 3194683972349368451352578642, 5750431150228863212434641556, 10861925505987852734598767384, 4522867545105641319316485353, 6082477043417931429425618234, 12164954086835862858851236468, 3587101846118267253251005625, 7174203692236534506502011250, 11697071237342175825818496604, 2375007252102302487296931217, 2772755985083548360710364850, 5545511970167096721420729700, 11091023940334193442841459400, 1498509284286487112753650417, 2997018568572974225507300834, 5994037137145948451014601668, 10652774956426285755569819000, 1395407950349078352919560769, 2790815900698156705839121538, 5581631801396313411678243076, 10077946308076676993307938888, 348851987587269588229890192, 697703975174539176459780384, 464454299057729385013447681, 774090498429548975022412802, 1393362897173188155040343044, 2631907694660466515076203528, 5108997289635023235147924496, 10063176479584136675291366432, 164494230916279157192262720, 174170362146648519380042880, 193522624607387243755603200, 232227149528864692506723840, 3714273520385484755941994497, 6190455867309141259903324162, 11142820561156454267825983492, 1240509320284995885285314568, 1242927467108163518589964304, 1247763760754498785199263776, 1257436348047169318417862720, 1276781522632510384855060608, 1315471871803192517729456384, 1392852570144556783478247936, 1547613966827285314975831040, 1857136760192742377970997248, 17808231146896237895334838081, 3287829035237489576941404610, 6575658070474979153882809220, 6175325984769244470195009608, 9403817943865580573430206416, 18807635887731161146860412832, 8572907974509531792069275585, 17145815949019063584138551170, 14484591269472042769891114756, 9162141910378001141396241928, 18324283820756002282792483856, 14189974301537808095227631584, 10335455712618176246132151233, 11044567454114069435985671234, 11831745819450551813841222468, 3856451010335019229296457352, 7712902020670038458592914704, 5167727856309088123066075616, 16355032654365788651595571649, 12903024680165492904805155714, 12295773817454311774916814532, 18469015422174228813195144264, 17130990215782373228004300944, 8177516327182894325797785824, 19609264986246262816075468481, 585921148211486517113738050, 1171842296422973034227476100, 2343684592845946068454952200, 15001760758477434928067925200, 9804632493123131408037734240, 13642243253365376243957576385, 7477445878164668089529165186, 8751399291716737680167270852, 17502798583433475360334541704, 8993704031492682709991347664, 6821121626682688121978788192]
+  | 104 => #[20282409603651670423947251286015, 13521606402434446949298167524010, 16225927682921336339157801028812, 10817285121947557559438534019208, 19089326685789807457832707092720, 12726217790526538305221804728480, 15271461348631845966266165674176, 10180974232421230644177443782784, 78919881726271091143763623680, 52613254484180727429175749120, 63135905381016872915010898944, 42090603587344581943340599296, 74277535742372791664718704640, 49518357161581861109812469760, 59422028593898233331774963712, 39614685729265488887849975808, 6438860191635450928237222630481, 12877720383270901856474445260962, 1609715047908862732059305657620, 3219430095817725464118611315240, 1962813832611451976511024318001, 3271356387685753294185040530002, 5888441497834355929533072954004, 11122611718131561200229137802008, 13255433048055816103839542179049, 18525665464752706843920324009274, 16768921325853743263893396732532, 18206257439498349829369973595321, 16130105275345029234792695904626, 9103128719749174914684986797660, 16977008825933236631904088290705, 9728029704611030987968230268594, 19456059409222061975936460537188, 18629709214792453527925669788360, 8538333020196268862817114299121, 17076666040392537725634228598242, 13870922477133405027321205910468, 4269166510098134431408557149560, 714448870578728116694815113793, 1428897741157456233389630227586, 2857795482314912466779260455172, 5159908509735258620573664710728, 10319817019470517241147329421456, 357224435289364058347407556896, 10144919075346220696729567637505, 10147395257693144353233528967170, 10152347622386991666241451626500, 10162252351774686292257296945160, 10182061810550075544288987582480, 10221680728100854048352368857120, 10300918563202411056479131406400, 10459394233405525072732656504960, 10776345573811753105239706702080, 11410248254624209170253807096320, 12678053616249121300282007884800, 15213664339498945560338409461760, 13063655486347181331732372985921, 18789172937257675738318833133762, 17295936270863681052690414981508, 14309462938075691681433578677000, 8336516272499712938919906067984, 16673032544999425877839812135968, 6067176039812300620568215210305, 16933838229100800001376366975938, 18374830136167139351673994903236, 16467250668682608279400738520456, 16728601212691827973102492267088, 13174792821731985522257733248160, 17071670212342294904905670147905, 9629509574518354507192531370434, 19259019149036709014385062740868, 3908162329812287870952234563656, 14409122354911408938200043179984, 8535835106171147452452835073952, 9060390475229210101854465601473, 18120780950458420203708931202946, 15959152297265169983470611119876, 11635894990878669542993970953736, 2989380378105668662040690621456, 4530195237614605050927232800736, 17282074883822243771638713324481, 8745949484651757289124206195778, 546621842790734830570262887236, 1093243685581469661140525774472, 2186487371162939322281051548944, 18782242243736957097792982305248, 18912271792306410304711827726785, 17542133980961150185476404167554, 6687268465644224754030994630340, 5584247432049243944759657655368, 11168494864098487889519315310736, 19597340697979040364329539506400, 5525966559727617725567380016833, 16381008520972363283982325470018, 12479607438293056144017399654020, 4676805272934441864087548022024, 4095252130243090820995581367504, 2762983279863808862783690008416, 11660182132850223002494918275777, 3037954662048775581042585265538, 17716245721229796189837240170948, 15150081838807921955727229055880, 18805875260540706776778293564880, 5830091066425111501247459137888]
+  | 113 => #[10384593717069655257060992658440191, 3461531239023218419020330886146730, 4153837486827862102824397063376076, 2769224991218574735216264708917384, 4886867631562190709205173015736560, 3257911754374793806136782010491040, 3909494105249752567364138412589248, 2606329403499835044909425608392832, 5172093368812902229197692841557760, 3448062245875268152798461894371840, 4137674695050321783358154273246208, 2758449796700214522238769515497472, 4867852582412143274539005027348480, 3245235054941428849692670018232320, 3894282065929714619631204021878784, 2596188043953143079754136014585856, 5604383910799496487937678577570897, 824174104529337718814364496701602, 6593392836234701750514915973612820, 2802191955399748243968839288785448, 2009921364594126823947288901633585, 3349868940990211373245481502722642, 6029764093782380471841866704900756, 1004960682297063411973644450816792, 9485140717953385904087205892748521, 2371285179488346476021801473187130, 4742570358976692952043602946374260, 7522697810790616406689852949421241, 4660801904511577556318713240402290, 3761348905395308203344926474710620, 5919158203488569330000554212521361, 7230265848604605701913189688090290, 4075937980139556146765386717740388, 8151875960279112293530773435480776, 9784659761980301413205392234158833, 9184725806890947569349791809877474, 7984857896712239881638590961314756, 4892329880990150706602696117079416, 365797821736308795747745338262081, 731595643472617591495490676524162, 1463191286945235182990981353048324, 2641873156984452413733716331892808, 5283746313968904827467432663785616, 182898910868154397873872669131040, 1948062524355030590479443664309249, 3246770873925050984132406107182082, 5844187573065091771438330992927748, 654427254275518088989188105978888, 659500333766025981151894990521360, 669646492747041765477308759606304, 689938810709073334128136297776192, 730523446633136471429791374115968, 811692718481262746033101526795520, 974031262177515295239721832154624, 30427328678997891120676818923521, 50712214464996485201128031539202, 91281986036993673362030456770564, 172421529180988049683835307233288, 334700615468976802327445008158736, 659258788044954307614664410009632, 1308375133196909318189103213711424, 2606607823500819339337980821115008, 5203073204108639381635736035922176, 11410248254624209170253807096320, 12678053616249121300282007884800, 15213664339498945560338409461760, 9051990036827288126306284990231137, 7719386356584920995551577322022082, 6642219383745854405845677268155364, 6180202085010552039230378668033448, 9718291876948471691683638824335664, 2663062834118181126157658133678401, 7906791174049600594916857117236162, 7969079394767621945538996499021508, 5553565072465588634017000339602824, 3261914137796959095804662698029648, 6523828275593918191609325396059296, 8819637438197167258898012728278849, 4370347574359627495655851557863874, 8740695148719254991311703115727748, 4851404057602561519194345291921480, 2204909359549291814724503182069712, 4409818719098583629449006364139424, 4957968333766236793544983779389377, 9915936667532473587089967558778754, 9447279617995291917118942459117316, 8509965518920928577176892259794440, 6635337320772201897292791861148688, 2478984166883118396772491889694688, 8759000614057692196492904017597377, 4876524254361052659036464514839618, 1602856980531272698322403114482500, 3205713961062545396644806228965000, 6411427922125090793289612457930000, 9571797165563673726776948338018784, 5718269370418425799433889439097281, 1051945023767196341806786219754370, 7754567737060582326701880985888452, 9842552905203109399559176531373128, 9300512093336563542057360404306064, 2859134685209212899716944719548640, 2114896565339501341816081513762497, 3748344375592879721290276562096962, 7496688751185759442580553124193924, 4608783785301863628100113589947656, 8725531381700461373118313634354384, 6249745141204578299438537086101344, 7840670289142395006646133914677953, 5296746861215134756231275170915714, 7968420810352684602377159744289220, 5552247903635713947693326830138248, 8476570679983287273562782079833552, 3920335144571197503323066957338976]
+  | 123 => #[10633823966279326983230456482242756607, 3544607988759775661076818827414252202, 6380294379767596189938273889345653964, 708921597751955132215363765482850440, 1251038113679920821556524292028559600, 834025409119947214371016194685706400, 1000830490943936657245219433622847680, 667220327295957771496812955748565120, 9309768063863224012555847114803969792, 2661904053815707013960412582455060992, 5321049657834713813398586395394624512, 2758449796700214522238769515497472, 4867852582412143274539005027348480, 3245235054941428849692670018232320, 3894282065929714619631204021878784, 2596188043953143079754136014585856, 1687908566076083648131818489244882001, 3375817132152167296263636978489764002, 5738889124658684403648182863432598804, 843954283038041824065909244622441000, 2058159477344385867722023835272791601, 3430265795573976446203373058787986002, 6174478432033157603166071505818374804, 1029079738672192933861011917636395800, 6531009995037696887338390595393189097, 6949664481899087713449825889969675578, 3265504997518848443669195297696594548, 6279817302920862391671529418647297209, 1925810639562397800112602355051837810, 8456820634600094687450992950445026908, 2550144618885554107309943755530368401, 2977224068930526009221357090001985202, 5954448137861052018442714180003970404, 1275072309442777053654971877765184200, 1609012092190707211000598261633948401, 3218024184381414422001196523267896802, 6436048368762828844002393046535793604, 804506046095353605500299130816974200, 187288484728990103422845613190185537, 374576969457980206845691226380371074, 749153938915960413691382452760742148, 1352639056376039635831662761929117768, 2705278112752079271663325523858235536, 5410556225504158543326651047716471072, 3989632049879102649301900624505342977, 6649386749798504415503167707508904962, 1335072183357980964675245391273272324, 1340267016756261046249857241044763656, 1350656683552821209399080940587746320, 1371436017145941535697528339673711648, 1412994684332182188294423137845642304, 1496112018704663493488212734189503616, 1662346687449626103875791926877226240, 1994816024939551324650950312252671488, 249260676538350724060584500621488129, 415434460897251206767640834369146882, 747782029615052172181753501864464388, 1412477167050654103009978836855099400, 2741867441921857964666429506836369424, 5400647991664265687979330846798909472, 84385124869754151374677044481232960, 85683357560058061395825922088636544, 88279822940665881438123677303443712, 93472753701881521522719187733058048, 103858615224312801691910208592286720, 124630338269175362030292250310744064, 3413886713296185789045046236477648097, 10236747974003344944148677408686093602, 7925733475674997482537619977487484580, 5217642985070667981844783472732212552, 7023855339787756386137751359360202352, 6476187031560920881219331750975120737, 7153970022981227236250275131916447650, 3674116079683127489270093781590138692, 1788492505745306809062568782979111912, 8555005498920123932224894116608938672, 8825572055828964601371089052005954145, 7017320145378602219511721621769151682, 5552015264298941761676415756875217892, 9269237797711143041337635829996684712, 4412786027914482300685544526002977072, 2089966399965118887795417182480156993, 3611360810997219974795081309595982786, 6633339870885207675950452312583864004, 2632855775491088368670448142924971400, 3180947591561111467756468416180728400, 6361895183122222935512936832361456800, 756510385067212345767289484135972673, 2257827184178474818277891258439385538, 4515654368356949636555782516878771076, 8447526096035232285509781376603797576, 5506039579406466578057050612155371472, 378255192533606172883644742067986336, 4096487892859210408075576091204825025, 8192975785718420816151152182409650050, 5752127605157514649071847882576543492, 870431244035702314913239282910330376, 1740862488071404629826478565820660752, 2048243946429605204037788045602412512, 8492972067459966037215323905963234241, 3514869200623904529545651983067624514, 4207363312393741651808024429782760260, 8414726624787483303616048859565520520, 6195629283295639624001641236888284432, 9563398016869646510222890194102995424, 10078774174927984025148596768126083521, 9523724383576641067066737054009410434, 2333903560360663359908364236476491460, 5440985066932632808842458336895593544, 248146167585938634454460191548430480, 10356299070603655504189526625184420064, 1549419360408718134643903987621351105, 4645661735905728779627553994884862786, 9291323471811457559255107989769725572, 7948822977343588135279759497296694536, 3819871425546263940714502619281904848, 6091621663344022558937180234932053856, 3185526347712456903667309887397376705, 6371052695424913807334619774794753410, 5252188247930528589418178452256586180, 10504376495861057178836356904513172360, 7537307015555483348642782459448972752, 1592763173856228451833654943698688352]
+  | _ => #[]
+
+def clipShift (dim k a : Nat) : Nat := (a >>> k) &&& (2 ^ dim - 1)
+
+theorem clip_zero (dim k : Nat) : clipShift dim k 0 = 0 := by simp [clipShift]
+
+theorem clip_xor (dim k a b : Nat) : clipShift dim k (a ^^^ b) = clipShift dim k a ^^^ clipShift dim k b := by
+  apply Nat.eq_of_testBit_eq
+  intro i
+  simp only [clipShift, Nat.testBit_and, Nat.testBit_shiftRight, Nat.testBit_xor]
+  cases (2 ^ dim - 1).testBit i <;> simp
+
+def plain20 (n dim k : Nat) : Rows := (units n).map (clipShift dim k)
+def coded20 (n dim k : Nat) : Rows := (encoded20 n).map (clipShift dim k)
+
+@[simp] theorem plain20_size (n dim k : Nat) : (plain20 n dim k).size = n := by simp [plain20, units]
+
+theorem encode_of_receipt20 (n dim k : Nat) (h : applyOps (basisNetwork20 n) (units n) = encoded20 n) :
+    applyOps (basisNetwork20 n) (plain20 n dim k) = coded20 n dim k := by
+  rw [plain20, apply_map _ _ (clip_zero dim k) (clip_xor dim k), h, coded20]
+
+def entryShift (mir : Bool) (slot : Nat) : Nat := if mir then slot - 1 else 0
+def exitShift (mir : Bool) (slot : Nat) : Nat := if mir then 0 else slot - 1
+
+def CoordinatesOK20 (n : Nat) : Prop := applyOps (basisNetwork20 n) (units n) = encoded20 n
+
+def ActionOK20 (n slot : Nat) (mir : Bool) : Prop :=
+  componentRows20 mir slot 0 (schedule20 n) (coded20 n (n - (slot - 1)) (entryShift mir slot)) =
+    coded20 n (n - (slot - 1)) (exitShift mir slot)
+
+private theorem schedule20_extent' (n : Nat) (hn : UsedWidth20 n) : extent20 (schedule20 n) = n := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> decide
+
+private theorem schedule20_fields' (n : Nat) (hn : UsedWidth20 n) :
+    ∀ pair ∈ schedule20 n, UsedField20 pair.1 := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;>
+    intro pair hp <;> simp only [schedule20, List.mem_cons, List.not_mem_nil, or_false] at hp <;>
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [UsedField20]
+
+theorem logical20_action (n : Nat) (hn : UsedWidth20 n) (mir : Bool) (slot : Nat) (small : slot < 32)
+    (basisOK : CoordinatesOK20 n) (action : ActionOK20 n slot mir)
+    (x : Nat → Bool) (ph : Bool) (tape : List Bool) :
+    run (logical20 n mir) tape (frame20 (plain20 n (n - (slot - 1)) (entryShift mir slot)) x (n - (slot - 1)) slot ph) =
+      frame20 (plain20 n (n - (slot - 1)) (exitShift mir slot)) x (n - (slot - 1)) slot ph := by
+  let dim := n - (slot - 1)
+  let ops := basisNetwork20 n
+  have bounds : ∀ o ∈ ops, o.1 < n ∧ o.2 < n := fun o ho => ⟨(basis20_pairs n hn o ho).1, (basis20_pairs n hn o ho).2.1⟩
+  have apart : ∀ o ∈ ops, o.1 ≠ o.2 := fun o ho => (basis20_pairs n hn o ho).2.2
+  have size (k : Nat) : (coded20 n dim k).size = n := by
+    rw [← encode_of_receipt20 n dim k basisOK, applyOps_size, plain20_size]
+  have fwd (k : Nat) (m : List Bool) : run (cnotProgram ops) m (frame20 (plain20 n dim k) x dim slot ph) =
+      frame20 (coded20 n dim k) x dim slot ph := by
+    have step := run_ops ops (plain20 n dim k) x dim (flags20 n slot) ph m (by simpa only [plain20_size] using bounds)
+    rw [show applyOps ops (plain20 n dim k) = coded20 n dim k from encode_of_receipt20 n dim k basisOK] at step
+    simpa only [frame20, plain20_size, size] using step
+  have inv (k : Nat) (m : List Bool) : run (cnotProgram ops).reverse m (frame20 (coded20 n dim k) x dim slot ph) =
+      frame20 (plain20 n dim k) x dim slot ph := by
+    have hr := reverse_cnots ops apart (frame20 (plain20 n dim k) x dim slot ph) [] m
+    have rev : cnotProgram ops.reverse = (cnotProgram ops).reverse := List.map_reverse
+    rw [rev, fwd] at hr
+    exact hr
+  have c := frame_components20 (coded20 n dim (entryShift mir slot)) mir 0 slot dim (schedule20 n) small
+    (by rw [schedule20_extent' n hn, size]; omega) (schedule20_fields' n hn) x ph
+  change run (cnotProgram ops ++ components20 n mir 0 (schedule20 n) ++ (cnotProgram ops).reverse) _ _ = _
+  rw [run_append, run_take, run_append, run_take, fwd]
+  simp only [size] at c
+  rw [c, show componentRows20 mir slot 0 (schedule20 n) (coded20 n dim (entryShift mir slot)) = _ from action, inv]
+
+theorem plain20_bits (n dim k v q : Nat) (small : v < 2 ^ dim) (hq : q < n) :
+    rowValue v.testBit (Matrix20.read (plain20 n dim k) q) dim = (v <<< k).testBit q := by
+  have rd : Matrix20.read (plain20 n dim k) q = clipShift dim k (2 ^ q) := by
+    simp [Matrix20.read, plain20, units, hq]
+  rw [rd]
+  by_cases fits : k ≤ q
+  · have equal := rowValue_congr v.testBit dim (clipShift dim k (2 ^ q)) (2 ^ (q - k)) (by
+      intro i hi
+      simp only [clipShift, Nat.testBit_and, Nat.testBit_two_pow_sub_one, Nat.testBit_shiftRight,
+        Nat.testBit_two_pow, hi, decide_true, Bool.and_true]
+      exact decide_eq_decide.mpr (by omega))
+    rw [equal, value_unit, Nat.testBit_shiftLeft]
+    by_cases bound : q - k < dim
+    · simp [fits, bound]
+    · have high := Nat.testBit_lt_two_pow (lt_of_lt_of_le small (Nat.pow_le_pow_right (by decide : 0 < 2) (by omega : dim ≤ q - k)))
+      simp [fits, bound, high]
+  · have equal := rowValue_congr v.testBit dim (clipShift dim k (2 ^ q)) 0 (by
+      intro i _
+      simp [clipShift, Nat.testBit_shiftRight, show q ≠ k + i by omega])
+    rw [equal, rowValue_zero, Nat.testBit_shiftLeft]
+    simp [fits]
+
+/-! ## Packed basis & prototype certificates (5 widths, 24 primaries, 22 slots) -/
+
+namespace Packed20
+
+def width : Nat := 144
+
+def basisWord20 : Nat → Nat
+  | 84 => 101327360810724541200943187719513069791060753280597570613561981217240982168249421174196630960871661387785811664461138683314897052251537514454029663713876110124258577519023888896421026378813220088741293976221429335356270031990849153113996629227489783573387387492422565810127121167548566419288446043740399463005477813583646647989304499077564631344338538619711677647146095081202786475421974139292059669358658663812954808709720629643727918755663624729279842475684586534001810140395846825894351456747866972378503631639836338572789503507483857081887806997417195145650200851258096538508139575456135498172992284921788494029733122173127037878161732650068830105395804867289607904002701559505117723670703995170490502115622433172621246934743742826038913254210239527969906276550309305949582938795972634403841028922440622137898729560453780265508653166986039295612199941171127211839491657277351026732797791404433984556888988703733300623487462665043406404828729070582525162700308985752502597438459781865615430866024326310801229119298047459092026910805544984802376289629103464402895019766595297904293654336885306301466786462621348690607956633282262643168314075537191663888595861180951379674991974093465217121584617584710863313581900887202089049737114763703035869620295278833497497206768664812718246671487451681822068111185096633012020616002494398382305678742257171891442498230823621172598134401162427178653470771378621252287727739197029011161069579165323727732740373634559592236141088164695671492247881525147730544453279508770185370426470194530480450924066283325519552930689008089545441588710597439789319987373721139962947660683884887800686198074788189531218021329327962272700917151056893402717055691701615616687177967724776259984220066204729790732638618234896883960062473831801182704303804869637705940618662439130486887092217024368055482311729727510722410077924275407774039533236813610529409997668922064278065722209568202071734736447677077052863898138585186824514829972714993257038568141349346852527343853796362638457446436688942108800633191273523503954925017488036256568674536261584036917486077030495646846416619647762600489767523960288861455814017490063098024701892832268057286434794853792723332850626394022708131699111458902138075518783095317637235291906530338101327396241563861067099419173365168892116294889284618495482403373207564647256077945677937019497357472398076021644997829684499041527206099809332324507292123888241868674646378681278578339091877236704477115222870813720599101391584688816397623626302625773837789228950349194942135208138327171362483996956506824366280278938286291278134889115177903897122295139081626720253499607831127163347842043005489978785834351294261266512854048775603302060856058332947102942774964920987998780939356402597467870401932830920409620103151439901048786547142480817196894757298721763663049755890931421265654312125980848030537467094249217086259357555271112039748176095083887550819047906248378861292427294780182235011953189500968549506104140521922726816117058137405016032985295353251138922660495035143813932150051180609874725616007338478979748197615169728977135287118221711399204610861009838240420425800900519727186606689620337145211617763390755092450908296761988907406252949697288073626676729783530721181944449811595897917997484215616397266939521659477999668294756959467859936671192510530185944942658163534581692688930762359559395521838035266743700355187157136625478579675009668528925118252905663948773860801837021454049793020883740675641007942136850658694930357922250812565885847752915713885380449867448753503611733311107137311579228116239245026970863077185123395498452367970999891574852884919413112831
+  | 94 => 1688720305663768636424630241852800316549235580870983258983573230023955287688850902007998291248150128338684944496697413884419682817042230298963551431009040869886323375288276342712295378216300143853957606467314272263815713732600853033691259289391119613664731060486135872375215809107229583191238461342591615022705009202729278877111989655379960177320872137684356075819615859511810587090614420592298198418157883257177074443552920285401217545315322508864378920289014942740408408350197594141217417058502503795475103763208357293159504060790608314216449512339274199922506874322699233493166801728182128318922937778040220372659045965145120090092079996907555875248238938968821735970691084396432776896521840810696846712068854527474224900798144534182409859715352854481424251710697528256719911514841303981056966815644323054851995566700529961668683250359423324239619848893962993073217921815304731153657974725143396236061158552486598458022460376935205290264640082851565978634291276017864544932205435031446674363989097302967346424991269048761632278380862143034863991615735072687693053047567676506087699747034695416292956619648472224076739643973624213569069612269700070788243541740610534326196803730767328373181949015670466804284120212687582184232870510851897235084767470269860615331748994583994156937910855453184765293366020919354350254914352647425736886189072559982481338264663002082124056984804368037644263693731937196733951162668268761330712770129027571648482854784652543950682312972825309351061165944536928695449585513835272932227445007009830680875034948083245698155071977305572811236947935372939504885908603680469312579950298863816403764089362100784873563420379716083582207025549820322131817104104059949617214986995537270426761238967171596886991369796408088422187379147014728495997202497954441765095670343321732335918205391478797266882846741928729536198081971128322844357422064591093535614794583254136007377246362187928367481197829918363000998777586273176249705851895268984952899681821913106102508033620995763688087158460284546129242130203166164782797274750551184430577882092136834579426170518590738283586983409301154804457043361949992959382764674464971157950386353531964293705248680819912449377357087561345272913807205783876841698258299419283618555866099125872154415550447171781123472667667810154341450225513783115520723313189625754962181748360863527804503361664174692842569022129717236964657427784272977470338062429361567997602004996936976094566594383419066259767878888675039533896390277576546533186567681761245534151681561664417694941696597478409044338975703816157030528391585450945829840058857339079146743536284904560285879024498060432524362702389023024995072768122033723461252845417577601573027285716590013307071012106327312453206880664934106351041703035696767469868831499969915322350414658710060725794153027849582553346547778686203389076081353834736077750511084905442768004182018887960117430282741753318741198955815889813313406477921064152465866528138440897879944529384081995473822640683417538660108656145088185739802250677947315987589633509501107723945256710836307212965814610584437332255090754811982581170764947100922957410963452754817590386433543228720746870567793852447177750364695618020945331306544515676621823609658706386720355095746429250454947429469846913606888544715314643323091756391595617521150897825504873984281148684546062596402357235651333820467291071108998715732631560242421378394548581911514142746282537720446636399828481864249452905367874680274540958688912917796115803594973215896307312273547256307187317200348251926453700788462597272658699107673493086671507492910054789040137089419363792576345164572072058643164441608504712706996737022916436327664021679634511345967260468990897002006768210422029233223842495163115050001521191075377107158679233515276446278009137762501708874127744796119802298708874548575453086981546732353651020812154639717622827370846790913833720033778119941444006071338471049649298568049531186789629388936101715893442352687779794014120259122258289666902818265667879113723739278777608088119875806713382201837026840046484478668832767
+  | 104 => 43910767363319011841964947310243761998773102408283692266379885359028120308353261835493355403243105082483180437851790272763344842050002509300387060590388678665036307542418295718938769213400337994474752824001517166026327221461522758810467536802814925225454715184389731800229573918934140493436168613762860575678987260274584936052228880360312947221891982453252309661557027382745263185375146205877522515432759061267142427713143718660726023852489638394969207890153258579876330417814152946133741247633125101127070600157636340891642500961612686016414638813322226807749357705776661101088096066029791309431316688311909310292784940615308372238067389168780527601855374685940140697548307776428866029752015544618181133445368264924791802677641417352785428819469137428392928003417974962663790440853524901005814292100891208450601675303944674450760388717640715912953300336756435752033718883680956292019454298657262265020830494057290047954725800229506638259731504908091973547377548881095256897739099414621665363571515145233439471271047185887752904502470381138022907884842840120079632556869511509459250150539377116919502426939850519107115984361793991361263533402900720709013593842550193045359821038107435088411357545766695124551827506413847913761204418914641096642101389381261062275034386347086750027748724030260242974718302963180252407996406790829063664856490678782350244661578543918857553902237619434095219056717858878936536918455578876291166651403582427503488028507270081439274447296729116430201410040132342353483647664834986314670523653092446035115397801794941592907880690857998161923678249519681574057902274687261563434904030489050782860124822688809119223701291347182391052199690662668852113218602105974363886000213387467690495020141269707177614411198722291955520087291594569716036225325595495033219584255003309781463512903365956887079239497434491913068518850459069224644480782140316372461213052276157599582757924781457903008369641521624273766146792719833730504036229935314791375130526013300630730894433877430598473014068339815545545124841375527993448099059957134059100335397439930437920629059244679319735079924312556093887346288570226222047955228887160086694109772140588961056654641259998164869951871028000490006822658816603592696659054147458111282058777862822524668295383732004797306828102375294813454102009794785478313932338738192140291189018698322617572486269931884038345507879654577280937853876312071551597764383017952557913489930256630575934256194471902620370957440429611396923328693713922717343086909365515913338534716435282397332749231021202422146146843835653047081499351650813124920672664064712019804903774521056070523718508186264132438256347784042358357405698701955233875359558925258057783196743881631301137026850324105395406621635403149014661330890898361942719291759992958424953707579705210463800498428334907068444434574930968394645060680762673343450519907097372627765714038568969666704444455850563792303968666676740234287125972086400731825022914455445057174126627235340206159737422074174177708283680646460365442283207999945933780657212565273028510323744543844618077243878347464470051743562028179668633327261366687158743118422159792265560438810335775725778508659231166758432055470540369144173279377987955056809658932797907240204858398737322115793937254661445143645489045058178128059225180902264685369737785658341969931639585709603927317765451908788214002268072691815162358165144292907974251957675379631509838499044965591371670865536682493143598970993574402000174689769893249707823379030666245082360622565618605372193277738389915974137733443654722720654545753483788042152358097160918005303014209977792442157171808858056805711913648189806271389252768857235191217541268397696834429816898402928513198201823306631368458268755845273636325099402168341892749226588024621802076668798810932301072861501161979152386785518663034894500771505342476588233270705182214972675122000506664232364292220523371163203929615701704358614585715434493231435778632359794623194216780988996823358407477947829228321746884293319296452528551998508538312218157929390798592112293397711193409520771839583339088446789989951068086179592127578273972068299298507510365984670871370982598087429205669536107865503021889446809172721204885378044952784469493652696574597424535373025845862666479430821426846614376295652839026610178342783202137614527055168532360554065195077256486156871431821853301866440330364393629115271218352305793930131064218065503555991572621264518719931927454551443498534662584978988012459481978345974975353502244926826479615
+  | 113 => 40280352695709809077943924918713218935058040824234866983897461865959000618894536181288792781680157661109058328577630371259173305105906059203841084503123831052080925823177122350996518031007455482325302660026439316777393645370780210452864732393853084826772042733189842046125370799924791725154551778788692105262571309405595735999370641959252152126434662107999247515701434928739042091152063421490518431004856012605220146564404568974886372764493853760462988337005057585453050569563565532736144811053149296011403693375478780392529298805806051540554549584538907522420424454053323886233728990200648538971168705172743432334654671163688412550829272594107867661048460452755370971997728594232288462358612671731703112536296200105334094264076721987608453821547157121326858947951359287378305205302959273037795060067785702708479156190767466823080208231272394803888206836106747121505657050600077508397164597304935584018169937336987488100005129234170560090566949712756513723129348587195559569210578788298120554958736612758801301922905197272393837030269531648207596062387637157513350490791236070452949205866737054153780588852721199093318227980773140691238185968853771268377318547488290740637316485201160328673440559094558563023146308687195823195317080071900640002975331390462952050588000554969005645344691650655451810826557131682540675330767231411970100333422932475101597030368355000896583792622470031494839471239203193686230338636329114656780468852152063346837564352237443803361061098338979973163308796015878361245433847245456040973836754757673231237892156689732635308940406372266301272453122125958185062548791142931450259285728367400272738596959773816299923660163289966882737367234456250331383969473650423638224068393572079367055227852392131173156981682324961944188137333812301709664186108221160691056497490628389480963318603920909628329857690722003668231407103264619047090523018135082090594476928502147398367573418373247424723220203654591972596343612756779329495940052258458268521636880459832998477594727991596272516584134283434661603232909180408393261214447532929557936442072594872572414753409341131808864438359517409868973277821106994502196627206025216856144010442409715806386632070366040374249305214070189911390384388319164905953302969748525365893642733963787358362363505875446580782863677579391352492026538773338340142877744055519811503282568915680509519892890889651183163613439892049149443348948208199761215118422859008892550117301627480356297473618678085068907958355825556539529421417371531142653567447438767076908880410448200642782997328391135271856106419262589642956521230400333744963239117238574647434096847143182476283607684897986291074502662032149451574164972260895962473985350098328872891033583044344521990138505897711869011626956604342953504323111556844834631722484186975776063765363228505713915250426625043872453162508540813105429345709109419663863766853152114232635081476736467466666894379240059226351435341158348840946679547522731427387901865974190055836576994317589848351299565669447025561360213186279527137229275809107742110590581675503409668818826690563005807402405945628951161387646546151342366034330092583099127860965871102023755752183425741615760506046043471728831735873621225358176714749186530758077513650170657429437053289085286761337727678350966541272598438764267043942368658561379850039743159920661632445511114958232364153292018811631787659833792244585933858802789257232818064914756161770689048432388804778400299761811618925368686689338924138514043932592046871637510777090474071775746223792520776684529842208343849820540040009738536432972141147714887626250578299344678365344849074730399512559378876646675744720881579007685383327762167683937408196267306301327659416411556950127023470381178042856882682188115823557142728522481311941841361424568960117513002762766608394806831696632574504371229860621031612836783096352085840297121259385393361045102435723782260784734018946666125981822818046413765451166109697459546731867515423982443246729291391578566371679961167821437071360423477102231671378265620102611754056987089414428499490977995254589996440856975638153782680216868737420202372285397629061515371534732161561698703172134768365842049589938604343795722742100263320711539752667154309825104682724788440567797576526108527690876254032735814549592261600546298960027254245721036812983081672288209990417135918485861229198473141389109780729576335335922380202481124157473463754592749008886645037103155251605283616243706147555216526308194477915357054590619208275804887698491382813921854287465913910070090450624959672362774267996740594123726743753860288576342317269972137068054109545590610816714422157808222423519329828157268947686720199675458511265015883419183852600931534459244936812120880331683579601521585990686413486049499362717395847160725861071348018479749191867613325462713838786549841531750794763896446702305522920750948420913464957210275311242001923012114191384369953172928048660479
+  | 123 => 497868937020167196105550196077137771887373865762208674137072159376570919935639034048163886772328967466308227799968128713960792105269231333984629311884370885736705424500914405726226941188940650636839946482219201049765081450722889029307602141990293064304172466551995215709097055583610396189358738165691120919976923343191233815941698047305177394717741503770096511447805033807991043924344427842472488790413666577138345952682579497416824849009374048660364371058499692156087474343071973373415738176274610578187952218768474793058800301013710487269943171098944289027147331752518258401760555888918058584546837720794332764740454955579784469445287372257448348296512521760038032613018718575598085669793781633655317844844476872973827471797076468198993630021422822642722245777367074814075860676195635467149809563895819378859943653684970981840190436496602962906695470621866779187721323729764030032812625206786670126937832072015790896232479899239829678542800408111796395188420597105423615124795861385660376470326114924771477965603163219274063207572217309282007757344218957625426161447080896275503879791373532975486835906085071224445810590422393046679110112690291895929978606486290298783554193249014027159963918814084269398195012106790484930012050172577459206636567435898651669667892313530022610663643313685976026989230315711838069149980404057603097956185380892410992839753086589365786386694662446660105940843097100129755080594071722937505759327905410968489490600580854666213821681678887236089459199272642762720877142722766949798224491236152612930499259991820710641653524643330242043641411435444646337433377811167372310671223532044574687119865356366141963816713570626192238552690348382653334077387101787185652120671346626248689335275644363691120863988216438323004915477837499619352824574189649849950280101267660594961987847574374943649929919978481471739366781991476317447660512120626112703164217974502108117048141622116767100160269928907207644493327780392794149694219361763380701517732273040965404318640486097157743630470511685175490334408660547014077720990965189074253837910667588152756863957446533717885772734724179104354462317539935262018783122961692828224320569010708998912913588615154591790057643024311132723856633681624013534588684246797849976248484487500880861411025549699267569626705564694615193850986791423888224197433238488555139684227240532470647089630650258274463279615933478892796414255057707603009532540099531081088640864763823843706397846543156281352161948435772299311006663270653981863177141586168091012508791640610432890353497632763121993727885358197522875673853212022716123073617598481033663732633718359271141963084664167028999223125824458501511086732738984471147120441637733388695257770173216724056425504556658163090379422096983748545719379437321516591066141350264431872113118216732631210807102869442419050273991007629567388452255067866256974336209961909497251385257077371417469019807983748132852337189876587892847074086248107462056910663864334328592531243974607996537001776698266976183109017967135171142992905279386588002360239741449367463221449164205065999576917179435482005962545220207062940696012997511441291674164769845587932500751795623832630361430313314527384965492489113816214810987375045553021674796359215311506915658807520165769956562142005930829575661203773316342835688418771373764233033131352016529087953492465259924439651259405036769414700501996177576986464449276060318896256015336198044839210566947583664981212021885160954219005298229858350511433144231236655806904933025833480869012825885214435892403669057858976618843546906854656063708449345785163864502161895248690688123184608471311593914805036183627668953930327064026686091751682177072967992156900609115127225624457155046196940633403354176976196697466725456339270487158412714363044732144679698140454759564435130109490576238648296608607513776271036199197265472743011977012424943649019736564668744023413885843333429332890222093424695740407287441715721724090522358132574671636230138839876851042317059355979545115467690728360435029478770422844459576332288966591267300048147529133267935595446804989325409218603914554777136503655489534266710440274704375461468071309167099617812236253092122328748817473570906165998292792627815267874497089868904955833319503001772660042659935408242482460555278888142511933393951224863500593196202421392211124621035659818391069537981308712336185590214501164448417177915246938550836149972460352312201130080270459484225355705003640753197972215736915092873999771126162952884701146460995295046135251837833265344265858151873673067679585509134365629457033606146580848016325187847387783804481329281765693572791336158699010769324194656405287438297557239863734137079671403169255330024397849914696703168096768203087340096532976476946731989063343544367169481301645373842123597952532204938447097835941971215585178316455189941655367783339416930694054830713378572683472137882248147274125531502862005305098367635842266539573348969747207858805167403519155802327616999184260975557301085919494778074748226177078241713923154840762243470251151641821521476821067580781878780355964478955293879468001064491570242981044048657309739359660223065306754087950353823848351864729895913367748395394632248681400990076054042337326745799480466365280373086916736194598762905838848061373156823671333959832644596874396465638548070127030773286168578036381053964070682623
+  | _ => 0
+
+def digit (w a i : Nat) : Nat := (a / 2 ^ (w * i)) % 2 ^ w
+
+def mark (w : Nat) : Nat → Nat → Nat
+  | 0, _ => 0
+  | n + 1, bits => (if bits.testBit 0 then 1 else 0) + 2 ^ w * mark w n (bits >>> 1)
+
+def unitDigits (w : Nat) : Nat → Nat → Nat
+  | 0, _ => 0
+  | n + 1, start => 2 ^ start + 2 ^ w * unitDigits w n (start + 1)
+
+def identityWord (w n : Nat) : Nat := unitDigits w n 0
+
+def step (n : Nat) (bits : Nat) (v : (Nat × Nat) × Nat) : Nat :=
+  let i := v.2
+  let y := bits ^^^ (digit width bits i * mark width n v.1.2)
+  if v.1.1 < n then y ^^^ (digit width y v.1.1 <<< (width * i)) else y
+
+def encoding20 (n : Nat) : Nat := (pivots20 n).zipIdx.reverse.foldl (step n) (identityWord width n)
+
+def sweep (r : Rows) (i mask : Nat) : Rows :=
+  Array.ofFn fun q : Fin r.size => if mask.testBit q.val then read r q.val ^^^ read r i else read r q.val
+
+@[simp] theorem sweep_size (r : Rows) (i mask : Nat) : (sweep r i mask).size = r.size := by simp [sweep]
+
+def pivotBack (n : Nat) (r : Rows) (v : (Nat × Nat) × Nat) : Rows :=
+  let s := sweep r v.2 v.1.2
+  if v.1.1 < n then applyPair s (v.1.1, v.2) else s
+
+@[simp] theorem pivotBack_size (n : Nat) (r : Rows) (v : (Nat × Nat) × Nat) :
+    (pivotBack n r v).size = r.size := by
+  unfold pivotBack; split <;> simp
+
+def fastBasis20 (n : Nat) : Rows := (pivots20 n).zipIdx.reverse.foldl (pivotBack n) (units n)
+
+private theorem backward_row (n i donor mask : Nat) (r : Rows) (size : r.size = n)
+    (clean : mask.testBit i = false) :
+    applyOps (elimStep n i (donor, mask)).reverse r = pivotBack n r ((donor, mask), i) := by
+  let xs := (selected n mask).reverse
+  have hnd : xs.Nodup := List.nodup_reverse.mpr (List.nodup_range.filter _)
+  have hxs : ∀ j ∈ xs, j < n ∧ mask.testBit j = true ∧ j ≠ i := by
+    intro j hj
+    obtain ⟨hj1, hj2⟩ := List.mem_filter.mp (List.mem_reverse.mp hj)
+    refine ⟨List.mem_range.mp hj1, hj2, ?_⟩
+    rintro rfl; rw [clean] at hj2; cases hj2
+  have fast : ∀ (ys : List Nat) (a : Rows), a.size = n → ys.Nodup → (∀ j ∈ ys, j < n ∧ j ≠ i) →
+      applyOps (ys.map (fun j => (i, j))) a =
+        Array.ofFn fun q : Fin a.size => if q.val ∈ ys then read a q.val ^^^ read a i else read a q.val := by
+    intro ys; induction ys with
+    | nil =>
+      intro a _ _ _
+      apply Array.ext (by simp)
+      intro q _ _
+      simp [applyOps, Matrix20.read]
+    | cons j ys ih =>
+      intro a sz nd good
+      obtain ⟨nj, ndy⟩ := List.nodup_cons.mp nd
+      obtain ⟨hjlt, hjne⟩ := good j (List.mem_cons_self ..)
+      have gy : ∀ k ∈ ys, k < n ∧ k ≠ i := fun k hk => good k (List.mem_cons_of_mem _ hk)
+      change applyOps (ys.map (fun k => (i, k))) (applyPair a (i, j)) = _
+      rw [ih (applyPair a (i, j)) ((applyPair_size ..).trans sz) ndy gy]
+      apply Array.ext (by simp)
+      intro q _ h2
+      have hqa : q < a.size := by simpa using h2
+      have hja : j < a.size := sz ▸ hjlt
+      simp only [Array.getElem_ofFn, List.mem_cons, apply_read _ _ _ _ hja]
+      by_cases eq : q = j
+      · subst eq; simp [nj]
+      · simp [eq, hjne.symm]
+  have hsw : applyOps (xs.map (fun j => (i, j))) r = sweep r i mask := by
+    rw [fast xs r size hnd (fun j hj => ⟨(hxs j hj).1, (hxs j hj).2.2⟩)]
+    apply Array.ext (by simp)
+    intro q h1 h2
+    have hqn : q < n := size ▸ (by simpa using h2)
+    have hmem : q ∈ xs ↔ mask.testBit q = true := by
+      simp [xs, selected, List.mem_reverse, List.mem_filter, List.mem_range, hqn]
+    simp [sweep, hmem]
+  unfold elimStep pivotBack
+  dsimp only
+  rw [List.reverse_append, ← List.map_reverse]
+  change applyOps (xs.map (fun j => (i, j)) ++ _) r = _
+  rw [show ∀ ys zs (a : Rows), applyOps (ys ++ zs) a = applyOps zs (applyOps ys a) from fun _ _ _ => List.foldl_append, hsw]
+  split <;> rfl
+
+private def pivotTest20 (n : Nat) : Bool :=
+  (pivots20 n).zipIdx.all fun ((donor, mask), i) =>
+    decide (i < n ∧ (donor < n → donor ≠ i) ∧ mask.testBit i = false)
+
+private theorem good_pivots20 (n : Nat) (hn : UsedWidth20 n) : pivotTest20 n = true := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem fast_basis20_correct (n : Nat) (hn : UsedWidth20 n) :
+    applyOps (basisNetwork20 n) (units n) = fastBasis20 n := by
+  let rows := (pivots20 n).zipIdx
+  have all : ∀ v ∈ rows.reverse, v.1.2.testBit v.2 = false := by
+    intro v hv
+    obtain ⟨⟨donor, mask⟩, i⟩ := v
+    exact (of_decide_eq_true (List.all_eq_true.mp (good_pivots20 n hn) _ (List.mem_reverse.mp hv))).2.2
+  have fold (xs : List ((Nat × Nat) × Nat)) (r : Rows) (size : r.size = n)
+      (h : ∀ v ∈ xs, v.1.2.testBit v.2 = false) :
+      applyOps (xs.flatMap (fun (row, i) => (elimStep n i row).reverse)) r = xs.foldl (pivotBack n) r := by
+    induction xs generalizing r with
+    | nil => rfl
+    | cons v xs ih =>
+      obtain ⟨⟨donor, mask⟩, i⟩ := v
+      rw [List.flatMap_cons]
+      unfold applyOps
+      rw [List.foldl_append]
+      change applyOps _ (applyOps (elimStep n i (donor, mask)).reverse r) = xs.foldl _ _
+      rw [backward_row n i donor mask r size (h _ (List.mem_cons_self ..))]
+      apply ih _ ((pivotBack_size ..).trans size) (fun z hz => h z (List.mem_cons_of_mem _ hz))
+  simpa only [basisNetwork20, fastBasis20, List.reverse_flatMap, Function.comp_def, rows] using
+    fold rows.reverse (units n) (by simp [units]) all
+
+theorem digit_bound (w a i : Nat) : digit w a i < 2 ^ w := Nat.mod_lt _ (Nat.two_pow_pos _)
+
+theorem digit_zero (w lo hi : Nat) (h : lo < 2 ^ w) : digit w (lo + 2 ^ w * hi) 0 = lo := by
+  simp [digit, Nat.mod_eq_of_lt h]
+
+theorem digit_succ (w lo hi i : Nat) (h : lo < 2 ^ w) : digit w (lo + 2 ^ w * hi) (i + 1) = digit w hi i := by
+  simp only [digit, Nat.mul_succ, Nat.pow_add, Nat.mul_comm (2 ^ (w * i)) (2 ^ w)]
+  rw [← Nat.div_div_eq_div_mul, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt h, Nat.zero_add]
+
+theorem digit_xor (w a b i : Nat) : digit w (a ^^^ b) i = digit w a i ^^^ digit w b i := by
+  apply Nat.eq_of_testBit_eq
+  intro j
+  simp only [digit, Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, Nat.testBit_xor]
+  cases decide (j < w) <;> simp
+
+theorem digit_mark_mul (w n mask v q : Nat) (sv : v < 2 ^ w) (hq : q < n) :
+    digit w (v * mark w n mask) q = if mask.testBit q then v else 0 := by
+  induction n generalizing mask q with
+  | zero => omega
+  | succ n ih =>
+    have eq : v * mark w (n + 1) mask = (if mask.testBit 0 then v else 0) + 2 ^ w * (v * mark w n (mask >>> 1)) := by
+      rw [mark, Nat.mul_add, Nat.mul_left_comm v (2 ^ w)]
+      cases mask.testBit 0 <;> simp
+    have low : (if mask.testBit 0 then v else 0) < 2 ^ w := by split <;> first | exact sv | exact Nat.two_pow_pos _
+    rw [eq]
+    cases q with
+    | zero => exact digit_zero _ _ _ low
+    | succ q => rw [digit_succ _ _ _ _ low, ih _ _ (by omega), Nat.testBit_shiftRight, Nat.one_add]
+
+theorem digit_single (w v i q : Nat) (sv : v < 2 ^ w) :
+    digit w (v <<< (w * i)) q = if q = i then v else 0 := by
+  induction i generalizing q with
+  | zero =>
+    simp only [Nat.mul_zero, Nat.shiftLeft_zero]
+    cases q with
+    | zero => simp [digit, Nat.mod_eq_of_lt sv]
+    | succ q => simpa [digit] using digit_succ w v 0 q sv
+  | succ i ih =>
+    have e : v <<< (w * (i + 1)) = 0 + 2 ^ w * (v <<< (w * i)) := by
+      rw [Nat.mul_succ, Nat.shiftLeft_eq, Nat.pow_add, Nat.shiftLeft_eq, Nat.zero_add]; ac_rfl
+    rw [e]
+    cases q with
+    | zero => simpa using digit_zero w 0 _ (Nat.two_pow_pos w)
+    | succ q => simpa only [Nat.succ.injEq, ih] using digit_succ w 0 (v <<< (w * i)) q (Nat.two_pow_pos w)
+
+theorem digit_units (w n start q : Nat) (bound : start + n ≤ w) (hq : q < n) :
+    digit w (unitDigits w n start) q = 2 ^ (start + q) := by
+  induction n generalizing start q with
+  | zero => omega
+  | succ n ih =>
+    have low : 2 ^ start < 2 ^ w := Nat.pow_lt_pow_right (by decide) (by omega)
+    rw [unitDigits]
+    cases q with
+    | zero => simpa using digit_zero w (2 ^ start) _ low
+    | succ q => rw [digit_succ _ _ _ _ low, ih _ _ (by omega) (by omega), show start + 1 + q = start + (q + 1) by omega]
+
+def Matches (x : Nat) (r : Rows) : Prop := ∀ q < r.size, Matrix20.read r q = digit width x q
+
+theorem matches_step (n : Nat) (x : Nat) (r : Rows) (v : (Nat × Nat) × Nat) (size : r.size = n)
+    (hi : v.2 < n) (agree : Matches x r) : Matches (step n x v) (pivotBack n r v) := by
+  let i := v.2
+  let mask := v.1.2
+  let y := x ^^^ (digit width x i * mark width n mask)
+  have mid : Matches y (sweep r i mask) := by
+    intro q hq
+    have sq : q < r.size := by simpa only [sweep_size] using hq
+    have si : i < r.size := size ▸ hi
+    change Matrix20.read (sweep r i mask) q = digit width (x ^^^ (digit width x i * mark width n mask)) q
+    rw [digit_xor, digit_mark_mul _ _ _ _ _ (digit_bound ..) (size ▸ sq)]
+    have readRow : Matrix20.read (sweep r i mask) q =
+        if mask.testBit q then Matrix20.read r q ^^^ Matrix20.read r i else Matrix20.read r q := by
+      simp [sweep, Matrix20.read, sq]
+    rw [readRow, agree q sq, agree i si]
+    cases mask.testBit q <;> simp
+  change Matches (if v.1.1 < n then y ^^^ (digit width y v.1.1 <<< (width * i)) else y)
+    (if v.1.1 < n then applyPair (sweep r i mask) (v.1.1, i) else sweep r i mask)
+  split
+  · rename_i inside
+    intro q hq
+    have sz : (sweep r i mask).size = n := (sweep_size ..).trans size
+    have sq : q < (sweep r i mask).size := by simpa only [applyPair_size] using hq
+    rw [apply_read _ _ _ _ (sz ▸ hi), digit_xor, digit_single _ _ _ _ (digit_bound ..),
+      mid q sq, mid i (sz ▸ hi), mid v.1.1 (sz ▸ inside)]
+    by_cases hit : q = i <;> simp [hit]
+  · exact mid
+
+theorem encoding20_matches (n : Nat) (hn : UsedWidth20 n) (bound : n ≤ width) :
+    Matches (encoding20 n) (fastBasis20 n) := by
+  have fold (xs : List ((Nat × Nat) × Nat)) (x : Nat) (r : Rows) (size : r.size = n)
+      (agree : Matches x r) (good : ∀ v ∈ xs, v.2 < n) :
+      Matches (xs.foldl (step n) x) (xs.foldl (pivotBack n) r) := by
+    induction xs generalizing x r with
+    | nil => exact agree
+    | cons v xs ih =>
+      exact ih (step n x v) (pivotBack n r v) ((pivotBack_size ..).trans size)
+        (matches_step n x r v size (good _ (List.mem_cons_self ..)) agree)
+        (fun a ha => good a (List.mem_cons_of_mem _ ha))
+  apply fold _ _ _ (by simp [units])
+  · intro q hq
+    have sq : q < n := by simpa [units] using hq
+    simpa [units, Matrix20.read, sq, identityWord] using (digit_units width n 0 q (by simpa using bound) sq).symm
+  · intro v hv
+    obtain ⟨⟨donor, mask⟩, i⟩ := v
+    exact (of_decide_eq_true (List.all_eq_true.mp (good_pivots20 n hn) _ (List.mem_reverse.mp hv))).1
+
+def spreadFour (x : Nat) : Nat :=
+  let pairs := (x ||| (x <<< (2 * (width - 1)))) &&& (3 ||| (3 <<< (2 * width)))
+  (pairs ||| (pairs <<< (width - 1))) &&& (1 ||| (1 <<< width) ||| (1 <<< (2 * width)) ||| (1 <<< (3 * width)))
+
+private theorem four_checked : ∀ a : Fin 16, spreadFour a.val = mark width 4 a.val := by decide +kernel
+
+private theorem mark_congr (n a b : Nat) (eq : ∀ i < n, a.testBit i = b.testBit i) : mark width n a = mark width n b := by
+  induction n generalizing a b with
+  | zero => rfl
+  | succ n ih =>
+    simp only [mark, eq 0 (Nat.zero_lt_succ _)]
+    rw [ih (a >>> 1) (b >>> 1) (fun i hi => by simp only [Nat.testBit_shiftRight]; exact eq _ (by omega))]
+
+private theorem four (a : Nat) : mark width 4 a = spreadFour (a % 16) := by
+  rw [four_checked ⟨a % 16, Nat.mod_lt _ (by decide)⟩]
+  apply mark_congr
+  intro i hi
+  change a.testBit i = (a % 2 ^ 4).testBit i
+  rw [Nat.testBit_mod_two_pow]; simp [hi]
+
+private theorem mark_add (n m bits : Nat) :
+    mark width (n + m) bits = mark width n bits + 2 ^ (width * n) * mark width m (bits >>> n) := by
+  induction n generalizing bits with
+  | zero => simp [mark]
+  | succ n ih =>
+    rw [Nat.succ_add, mark, ih, mark, ← Nat.shiftRight_add, Nat.one_add, Nat.mul_succ, Nat.pow_add]
+    ring
+
+def spreadChunks (r : Nat) : Nat → Nat → Nat
+  | 0, a => mark width r a
+  | c + 1, a => spreadFour (a % 16) + (spreadChunks r c (a >>> 4) <<< (4 * width))
+
+private theorem spreadChunks_eq (r c bits : Nat) : mark width (4 * c + r) bits = spreadChunks r c bits := by
+  induction c generalizing bits with
+  | zero => simp [spreadChunks]
+  | succ c ih =>
+    rw [show 4 * (c + 1) + r = 4 + (4 * c + r) by omega, mark_add, four, ih, spreadChunks, Nat.shiftLeft_eq]
+    simp [Nat.mul_comm]
+
+def capture (w value i : Nat) : Nat := (value >>> (w * i)) &&& (2 ^ w - 1)
+
+theorem capture_eq (w value i : Nat) : capture w value i = digit w value i := by
+  simp only [capture, digit, Nat.and_two_pow_sub_one_eq_mod, Nat.shiftRight_eq_div_pow, Nat.pow_mul]
+
+def quickStep (n : Nat) (bits : Nat) (v : (Nat × Nat) × Nat) : Nat :=
+  let i := v.2
+  let marks := spreadChunks (n % 4) (n / 4) v.1.2
+  let mid := bits ^^^ (capture width bits i * marks)
+  if v.1.1 < n then mid ^^^ (capture width mid v.1.1 <<< (width * i)) else mid
+
+private theorem quickStep_eq (n : Nat) : quickStep n = step n := by
+  funext bits v
+  unfold quickStep step
+  simp only [capture_eq, ← spreadChunks_eq, Nat.div_add_mod]
+
+def quickEncoding20 (n : Nat) : Nat := (pivots20 n).zipIdx.reverse.foldl (quickStep n) (identityWord width n)
+
+theorem quickEncoding20_eq (n : Nat) : quickEncoding20 n = encoding20 n := by
+  simp only [quickEncoding20, encoding20, quickStep_eq]
+
+private theorem packed_id_84 : quickEncoding20 84 = basisWord20 84 := by decide +kernel
+private theorem packed_id_94 : quickEncoding20 94 = basisWord20 94 := by decide +kernel
+private theorem packed_id_104 : quickEncoding20 104 = basisWord20 104 := by decide +kernel
+private theorem packed_id_113 : quickEncoding20 113 = basisWord20 113 := by decide +kernel
+private theorem packed_id_123 : quickEncoding20 123 = basisWord20 123 := by decide +kernel
+
+private theorem packed_identity20 (n : Nat) (hn : UsedWidth20 n) : encoding20 n = basisWord20 n := by
+  rw [← quickEncoding20_eq]
+  rcases hn with rfl | rfl | rfl | rfl | rfl
+  · exact packed_id_84
+  · exact packed_id_94
+  · exact packed_id_104
+  · exact packed_id_113
+  · exact packed_id_123
+
+private theorem recorded20 (n : Nat) (hn : UsedWidth20 n) :
+    n ≤ width ∧ (encoded20 n).size = n ∧ ∀ i : Fin n, Matrix20.read (encoded20 n) i.val = digit width (basisWord20 n) i.val := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem coordinates_checked20 (n : Nat) (hn : UsedWidth20 n) : CoordinatesOK20 n := by
+  obtain ⟨bound, sz, data⟩ := recorded20 n hn
+  have checks := encoding20_matches n hn bound
+  rw [packed_identity20 n hn] at checks
+  have fs : (fastBasis20 n).size = n := by rw [← fast_basis20_correct n hn, applyOps_size]; simp [units]
+  unfold CoordinatesOK20
+  rw [fast_basis20_correct n hn]
+  apply Array.ext (fs.trans sz.symm)
+  intro q hf he
+  have equal := (checks q hf).trans (data ⟨q, fs ▸ hf⟩).symm
+  simpa only [Matrix20.read, Array.getElem?_eq_getElem hf, Array.getElem?_eq_getElem he, Option.getD_some] using equal
+
+/-! ## Fast scalar & packed word actions -/
+
+def fastScalar20 (p : Nat) (mir : Bool) (slot : Nat) (data : Nat → Nat) (q : Nat) : Nat :=
+  if 1 ≤ slot ∧ slot ≤ 21 then
+    let d := fieldDegree p
+    (selected d (rowMask20 p mir q >>> ((slot - 1) * d))).foldl (fun a j => a ^^^ data j) (data q)
+  else data q
+
+private theorem zeros (n a : Nat) : (List.replicate n 0).foldl Nat.xor a = a := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [List.replicate_succ, List.foldl_cons, show Nat.xor a 0 = a from Nat.xor_zero a, ih]
+
+theorem scalar_fast20 (p : Nat) (mir : Bool) (slot : Nat) (data : Nat → Nat) (q : Nat) :
+    scalarRow20 p mir (fun k => decide (slot = k + 1)) data q = fastScalar20 p mir slot data q := by
+  let js := fun k => selected (fieldDegree p) (rowMask20 p mir q >>> (k * fieldDegree p))
+  have all (ks : List Nat) (nd : ks.Nodup) (a : Nat) :
+      (ks.flatMap (fun k => (js k).map fun j => if decide (slot = k + 1) then data j else 0)).foldl Nat.xor a =
+      if 1 ≤ slot ∧ slot - 1 ∈ ks then (js (slot - 1)).foldl (fun v j => v ^^^ data j) a else a := by
+    induction ks generalizing a with
+    | nil => simp
+    | cons k ks ih =>
+      rw [List.flatMap_cons, List.foldl_append, ih (List.nodup_cons.mp nd).2]
+      by_cases eq : slot = k + 1
+      · subst slot; simp [List.nodup_cons.mp nd, List.foldl_map]; rfl
+      · have no : 1 ≤ slot → slot - 1 ≠ k := by omega
+        by_cases low : 1 ≤ slot <;> simp [eq, low, no, zeros]
+  unfold scalarRow20 accumulate20 fastScalar20
+  change _ = if 1 ≤ slot ∧ slot ≤ 21 then (js (slot - 1)).foldl _ (data q) else data q
+  rw [all (List.range 21) List.nodup_range]
+  simp only [List.mem_range]
+  by_cases valid : 1 ≤ slot ∧ slot ≤ 21
+  · rw [if_pos valid, if_pos (by omega)]
+  · rw [if_neg valid, if_neg (by omega)]
+
+def pack (w : Nat) : List Nat → Nat
+  | [] => 0
+  | a :: xs => a + 2 ^ w * pack w xs
+
+def codedWord20 (n dim k : Nat) : Nat := pack width (coded20 n dim k).toList
+
+def put (x q value : Nat) : Nat := x ^^^ ((digit width x q ^^^ value) <<< (width * q))
+
+def replace (x : Nat) (indices : List Nat) (value : Nat → Nat) : Nat :=
+  indices.foldl (fun acc q => put acc q (value q)) x
+
+def scalarWord20 (x p : Nat) (mir : Bool) (slot off : Nat) : Nat :=
+  let d := fieldDegree p
+  let localData := fun j => digit width x (off + j)
+  replace x ((List.range d).map (off + ·)) (fun q => fastScalar20 p mir slot localData (q - off))
+
+def cxWord (x : Nat) (op : Wire × Wire) : Nat := x ^^^ (digit width x op.1 <<< (width * op.2))
+
+def r8StepWord20 (n x slot off : Nat) (st : R8Step) : Nat :=
+  if r8Enabled20 n slot st.tags then (r8Ops off st).foldl cxWord x else x
+
+def primaryWord20 (n x off p m slot : Nat) (mir : Bool) : Nat :=
+  let d := fieldDegree p
+  let scalar := (List.range m).foldl (fun a j => scalarWord20 a p mir slot (off + d * j)) x
+  if d == 8 && m == 2 then (pascalR8Steps20 mir).foldl (fun a st => r8StepWord20 n a slot off st) scalar
+  else scalar
+
+def componentWord20 (n : Nat) (mir : Bool) (slot : Nat) : Nat → List (Nat × Nat) → Nat → Nat
+  | _, [], x => x
+  | off, (p, m) :: ps, x => componentWord20 n mir slot (off + fieldDegree p * m) ps (primaryWord20 n x off p m slot mir)
+
+def prototype20 : Nat → Rows
+  | 11 => #[19891781826937379155528292012389348046057, 26751016939674406450538047878730502544698, 9945890913468689577764146006194674023028, 14335269661968236889415737841593606611112, 3583817415492059222353934460398401652778, 2778256082484571133056277085397870717472]
+  | 13 => #[15776240759295162778522438492584655346873, 31552481518590325557044876985169310693746, 7888120379647581389261219246292327673436, 14303366242839227460136622698029229148328, 2945749032911870636771631589110852397090, 736437258227967659192907897277713099272]
+  | 19 => #[40006995905761713665020287229952780727697, 10445392358955229623541529622652388974258, 20890784717910459247083059245304777948516, 41781569435820918494166118490609555897032]
+  | 21 => #[6913673486647638622747928531947036677201, 13827346973295277245495857063894073354402, 23506489854601971317342957008619924702484, 3456836743323819311373964265973518338600]
+  | 25 => #[9167965271024970566755654085954890144497, 18335930542049941133511308171909780288994, 36671861084099882267022616343819560577988, 26362054118452546945033801918610610605432]
+  | 31 => #[23885626787740712790203327282952504133169, 25290663657607813542568228887832063199826, 28100737397342015047298032097591181333140, 33720884876810418056757638517109417599768, 723806872355779175460706887362197094944, 3406149987556607884520973587586809858562, 851537496889151971130243396896702464640, 11580909957692466807371310197795153519112]
+  | 37 => #[27932194474876813705862654941247809506593, 12308245983873504088413360131229287946818, 8936042180094617128646825586564267571620, 17872084360189234257293651173128535143240, 35744168720378468514587302346257070286480]
+  | 41 => #[36094934679621090185235730441252256902817, 28633726393362057047159511131238182739266, 13711309820843990771007072511210034412164, 19912769411375303377136920048129646992296, 39825538822750606754273840096259293984592]
+  | 47 => #[30658970243285579744134829468376532194721, 37488565857482452575888569478124830015202, 2147662105671554075591347169113162475620, 29442814043761456597689682242727298581864, 15329485121642789872067414734188266097360]
+  | 55 => #[26577339978445334316881955795361126411489, 27966559955322353983857018769224893216034, 36162927218825386740466089659602859951780, 28769711471770650157620229567939388837192, 35066741472162728820096952773313728738928]
+  | 59 => #[29302661214131106759681126940329769575777, 41564138030242591077700874207736609271714, 39572133094605058832089798664206887477060, 21280070249030678600253205989750735084520, 14651330607065553379840563470164884787888]
+  | 61 => #[12960823162984049230176067084423683502689, 25921646325968098460352134168847367005378, 21198763180058997619339976184866689137636, 30815457268108921413459970064887262578088, 6480411581492024615088033542211841751344]
+  | 67 => #[5612898168739760699118325677947147851841, 16508956679978163768089428834160722520258, 33017913359956327536178857668321445040516, 22479683754032531749045765585376559014664, 1403224542184940174779581419486786962960, 2806449084369880349559162838973573925920]
+  | 73 => #[5540409574916258348366490672861666378305, 11080819149832516696732981345723332756610, 22161638299665033393465962691446665513220, 6137069067599547708959805053015999680584, 12274138135199095417919610106031999361168, 24548276270398190835839220212063998722336]
+  | 87 => #[27362919031636673446739759945993092909377, 38359814407180529648487051612759219067842, 16712370790895707898330997585915954495172, 33424741581791415796661995171831908990344, 6840729757909168361684939986498273227344, 13681459515818336723369879972996546454688]
+  | 91 => #[27372219399588054867180962274776991481665, 38305291753722314268414382140296848687554, 33054440541564505213516814529327366308740, 6197333074470603536525635454041888143432, 39510162074307106209279202882143996170192, 35464181182734089095246456013021661274016]
+  | 97 => #[38200792174768201734171875260307186560961, 32845441383656280145031800769348042055554, 22134739801432436966751651787429753044740, 713336636984750610191353823593175023112, 1426673273969501220382707647186350046224, 40878467570324162528741912505786758813664]
+  | 103 => #[38258357778774199124717167290533158753217, 5681976867193784513574609413500699653186, 27577712907874688609168381682885250644804, 11599282849869253895024813614504170223240, 23198565699738507790049627229008340446480, 40907250372327161224014558520899744909792]
+  | 109 => #[38238675932949108488738639650430836089281, 32921208900018093654165329549595341112194, 16718705178551462680998185954322089879236, 6162425061542662956099276761555451669576, 12324850123085325912198553523110903339152, 19119337966474554244369319825215418044640]
+  | 115 => #[16494610391059644869125081907946136850113, 27408010022837731364564513908734468641602, 11259877079795339405817078066202606216836, 22519754159590678811634156132405212433672, 17741038247179463671969115915000199926992, 30025376678469884096218515829606233958240]
+  | 117 => #[16443077378215551972977953031434699092673, 32886154756431103945955906062869398185346, 38489061122212814880900440187688792750532, 33421979278545506438488930624111254434696, 39554728637608372533982710439920260797904, 29999610172047837648144951391350515079520]
+  | 257 => #[43556142965880123323311949751266331066367, 14518714321960041107770649917088777022122, 26133685779528073993987169850759798639820, 2903742864392008221554129983417755404424, 38431890852247167638216426251117350940912, 11102546246204737317706967583656123605152, 22034284088621709445910751050640614539456, 170808403787765189503184116671632670848, 338958311018522360492699998064329424640, 225972207345681573661799998709552949760, 271166648814817888394159998451463539712, 180777765876545258929439998967642359808, 319019586840962221640188233472310046720, 212679724560641481093458822314873364480, 255215669472769777312150586777848037376, 170143779648513184874767057851898691584]
+  | 2047 => #[8170766438152402225770292478986942417921, 13617944063587337042950487464978237363202, 24512299314457206677310877436960827253764, 2744866850316822622719707629659675968520, 2766144887916177836849317766323704464400, 2808700963114888265108538039651761456160, 2893813113512309121626978586307875439680, 3064037414307150834663859679620103406720, 3404486015896834260737621866244559340800, 4085383219076201112885146239493471208960]
+  | 8191 => #[2041943462202169131504308229091230756865, 3403239103670281885840513715152051261442, 6125830386606507394512924687273692270596, 11571012952478958411857746631516974288904, 22461378084223860446547390520003538325520, 685965381833541192614728545710335332384, 691282942933026008061354348390260412480, 701918065131995638954605953750110572672, 723188309529934900741109164469810893056, 765728798325813424314115585909211533824, 850809775917570471460128428788012815360, 1020971731101084565752154114545615378432]
+  | _ => #[]
+
+def prototypeWord20 (p m dim k : Nat) : Nat :=
+  pack width (((prototype20 p).toList.take (fieldDegree p * m)).map (clipShift dim k))
+
+def prototypeTest20 (p m slot : Nat) (mir : Bool) : Bool :=
+  let dim := 135 - (slot - 1)
+  primaryWord20 (fieldDegree p * m) (prototypeWord20 p m dim (entryShift mir slot)) 0 p m slot mir ==
+    prototypeWord20 p m dim (exitShift mir slot)
+
+def UsedPrimary20 (p m : Nat) : Prop :=
+  p = 11 ∧ m = 1 ∨ p = 13 ∧ m = 1 ∨ p = 19 ∧ m = 1 ∨ p = 21 ∧ m = 1 ∨ p = 25 ∧ m = 1 ∨ p = 31 ∧ m = 1 ∨ p = 37 ∧ m = 1 ∨ p = 41 ∧ m = 1 ∨ p = 47 ∧ m = 1 ∨ p = 55 ∧ m = 1 ∨ p = 59 ∧ m = 1 ∨ p = 61 ∧ m = 1 ∨ p = 67 ∧ m = 1 ∨ p = 73 ∧ m = 1 ∨ p = 87 ∧ m = 1 ∨ p = 91 ∧ m = 1 ∨ p = 97 ∧ m = 1 ∨ p = 103 ∧ m = 1 ∨ p = 109 ∧ m = 1 ∨ p = 115 ∧ m = 1 ∨ p = 117 ∧ m = 1 ∨ p = 257 ∧ m = 1 ∨ p = 257 ∧ m = 2 ∨ p = 2047 ∧ m = 1 ∨ p = 8191 ∧ m = 1
+
+set_option synthInstance.maxSize 1024 in
+instance (p m : Nat) : Decidable (UsedPrimary20 p m) := by unfold UsedPrimary20; infer_instance
+
+def tableOK20 (n : Nat) : Nat → List (Nat × Nat) → Bool
+  | _, [] => true
+  | off, (p, m) :: ps => decide (UsedPrimary20 p m) &&
+      (List.range (fieldDegree p * m)).all (fun j =>
+        Matrix20.read (encoded20 n) (off + j) == (Matrix20.read (prototype20 p) j &&& (2 ^ n - 1))) &&
+      tableOK20 n (off + fieldDegree p * m) ps
+
+private theorem pt20_11_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 11 1 s.val b = true := by decide +kernel
+private theorem pt20_13_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 13 1 s.val b = true := by decide +kernel
+private theorem pt20_19_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 19 1 s.val b = true := by decide +kernel
+private theorem pt20_21_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 21 1 s.val b = true := by decide +kernel
+private theorem pt20_25_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 25 1 s.val b = true := by decide +kernel
+private theorem pt20_31_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 31 1 s.val b = true := by decide +kernel
+private theorem pt20_37_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 37 1 s.val b = true := by decide +kernel
+private theorem pt20_41_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 41 1 s.val b = true := by decide +kernel
+private theorem pt20_47_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 47 1 s.val b = true := by decide +kernel
+private theorem pt20_55_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 55 1 s.val b = true := by decide +kernel
+private theorem pt20_59_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 59 1 s.val b = true := by decide +kernel
+private theorem pt20_61_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 61 1 s.val b = true := by decide +kernel
+private theorem pt20_67_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 67 1 s.val b = true := by decide +kernel
+private theorem pt20_73_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 73 1 s.val b = true := by decide +kernel
+private theorem pt20_87_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 87 1 s.val b = true := by decide +kernel
+private theorem pt20_91_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 91 1 s.val b = true := by decide +kernel
+private theorem pt20_97_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 97 1 s.val b = true := by decide +kernel
+private theorem pt20_103_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 103 1 s.val b = true := by decide +kernel
+private theorem pt20_109_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 109 1 s.val b = true := by decide +kernel
+private theorem pt20_115_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 115 1 s.val b = true := by decide +kernel
+private theorem pt20_117_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 117 1 s.val b = true := by decide +kernel
+private theorem pt20_257_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 257 1 s.val b = true := by decide +kernel
+private theorem pt20_257_2 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 257 2 s.val b = true := by decide +kernel
+private theorem pt20_2047_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 2047 1 s.val b = true := by decide +kernel
+private theorem pt20_8191_1 : ∀ s : Fin 22, ∀ b : Bool, prototypeTest20 8191 1 s.val b = true := by decide +kernel
+
+theorem prototype_checked20 (p m : Nat) (hm : UsedPrimary20 p m) (slot : Fin 22) (mir : Bool) :
+    prototypeTest20 p m slot.val mir = true := by
+  rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact pt20_11_1 slot mir
+  · exact pt20_13_1 slot mir
+  · exact pt20_19_1 slot mir
+  · exact pt20_21_1 slot mir
+  · exact pt20_25_1 slot mir
+  · exact pt20_31_1 slot mir
+  · exact pt20_37_1 slot mir
+  · exact pt20_41_1 slot mir
+  · exact pt20_47_1 slot mir
+  · exact pt20_55_1 slot mir
+  · exact pt20_59_1 slot mir
+  · exact pt20_61_1 slot mir
+  · exact pt20_67_1 slot mir
+  · exact pt20_73_1 slot mir
+  · exact pt20_87_1 slot mir
+  · exact pt20_91_1 slot mir
+  · exact pt20_97_1 slot mir
+  · exact pt20_103_1 slot mir
+  · exact pt20_109_1 slot mir
+  · exact pt20_115_1 slot mir
+  · exact pt20_117_1 slot mir
+  · exact pt20_257_1 slot mir
+  · exact pt20_257_2 slot mir
+  · exact pt20_2047_1 slot mir
+  · exact pt20_8191_1 slot mir
+
+theorem prototype_size20 (p m : Nat) (hm : UsedPrimary20 p m) : fieldDegree p * m ≤ (prototype20 p).size := by
+  rcases hm with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
+
+
+theorem table_checked20 (n : Nat) (hn : UsedWidth20 n) : 20 ≤ n ∧ n ≤ 135 ∧ tableOK20 n 0 (schedule20 n) = true := by
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem digit_pack (xs : List Nat) (q : Nat) (hq : q < xs.length)
+    (bound : ∀ v ∈ xs, v < 2 ^ width) : digit width (pack width xs) q = (xs[q]?).getD 0 := by
+  induction xs generalizing q with
+  | nil => simp at hq
+  | cons a xs ih =>
+    rw [pack]
+    have low := bound a (List.mem_cons_self ..)
+    cases q with
+    | zero => exact digit_zero _ _ _ low
+    | succ q => rw [digit_succ _ _ _ _ low]; exact ih _ (by simpa using hq) (fun v hv => bound v (List.mem_cons_of_mem _ hv))
+
+theorem coded20_matches (n dim k : Nat) (hd : dim ≤ width) : Matches (codedWord20 n dim k) (coded20 n dim k) := by
+  have bound : ∀ v ∈ (coded20 n dim k).toList, v < 2 ^ width := by
+    intro v hv
+    simp only [coded20, Array.toList_map, List.mem_map] at hv
+    obtain ⟨a, _, rfl⟩ := hv
+    exact lt_of_le_of_lt Nat.and_le_right (lt_of_lt_of_le (Nat.sub_lt (Nat.two_pow_pos _) (by decide : 0 < 1))
+      (Nat.pow_le_pow_right (by decide) hd))
+  intro q hq
+  simpa only [codedWord20, Matrix20.read, Array.getElem?_toList] using
+    (digit_pack (coded20 n dim k).toList q (by simpa using hq) bound).symm
+
+theorem digit_put (x i q v : Nat) (hv : v < 2 ^ width) : digit width (put x i v) q =
+    if q = i then v else digit width x q := by
+  rw [put, digit_xor, digit_single _ _ _ _ (Nat.xor_lt_two_pow (digit_bound ..) hv)]
+  by_cases e : q = i <;> simp [e]
+
+private theorem digit_replace (x q : Nat) (xs : List Nat) (v : Nat → Nat) (bound : ∀ j ∈ xs, v j < 2 ^ width) :
+    digit width (replace x xs v) q = if q ∈ xs then v q else digit width x q := by
+  induction xs generalizing x with
+  | nil => simp [replace]
+  | cons a xs ih =>
+    change digit width (replace (put x a (v a)) xs v) q = _
+    rw [ih _ (fun j hj => bound j (List.mem_cons_of_mem _ hj)), digit_put _ _ _ _ (bound a (List.mem_cons_self ..))]
+    by_cases ha : q = a <;> by_cases hx : q ∈ xs <;> simp [ha, hx]
+
+private theorem fast_bound20 (p : Nat) (mir : Bool) (slot : Nat) (v : Nat → Nat) (q : Nat)
+    (h : ∀ j, v j < 2 ^ width) : fastScalar20 p mir slot v q < 2 ^ width := by
+  have fold (xs : List Nat) (a : Nat) (ha : a < 2 ^ width) : xs.foldl (fun w j => w ^^^ v j) a < 2 ^ width := by
+    induction xs generalizing a with
+    | nil => exact ha
+    | cons j xs ih => exact ih _ (Nat.xor_lt_two_pow ha (h j))
+  unfold fastScalar20
+  split
+  · exact fold _ _ (h q)
+  · exact h q
+
+theorem digit_scalar20 (p : Nat) (mir : Bool) (slot off x q : Nat) :
+    digit width (scalarWord20 x p mir slot off) q = if off ≤ q ∧ q < off + fieldDegree p then
+      fastScalar20 p mir slot (fun j => digit width x (off + j)) (q - off) else digit width x q := by
+  unfold scalarWord20
+  rw [digit_replace _ _ _ _ (fun j _ => fast_bound20 _ _ _ _ _ (fun _ => digit_bound ..))]
+  have within : q ∈ (List.range (fieldDegree p)).map (off + ·) ↔ off ≤ q ∧ q < off + fieldDegree p := by
+    constructor
+    · rintro hit; obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hit
+      exact ⟨Nat.le_add_right _ _, Nat.add_lt_add_left (List.mem_range.mp hj) _⟩
+    · rintro ⟨lo, hi⟩
+      exact List.mem_map.mpr ⟨q - off, List.mem_range.mpr ((Nat.sub_lt_iff_lt_add lo).mpr (Nat.add_comm off _ ▸ hi)), Nat.add_sub_of_le lo⟩
+  simp only [within]
+
+theorem digit_cx (x a b q : Nat) : digit width (cxWord x (a, b)) q =
+    if q = b then digit width x q ^^^ digit width x a else digit width x q := by
+  rw [cxWord, digit_xor, digit_single _ _ _ _ (digit_bound ..)]
+  by_cases eq : q = b <;> simp [eq]
+
+private theorem scalar20_matches (p : Nat) (mir : Bool) (slot off x : Nat) (r : Rows)
+    (endp : off + fieldDegree p ≤ r.size) (h : Matches x r) :
+    Matches (scalarWord20 x p mir slot off) (scalarRows20 r p mir slot off) := by
+  intro q hq
+  have sq : q < r.size := by simpa only [scalarRows20_size] using hq
+  let d := fieldDegree p
+  let data := fun j => digit width x (off + j)
+  rw [scalar20_read sq, digit_scalar20]
+  split
+  · rename_i live
+    have jBound : q - off < d := (Nat.sub_lt_iff_lt_add live.1).mpr (Nat.add_comm off d ▸ live.2)
+    change scalarRow20 p mir _ _ _ = fastScalar20 p mir slot data (q - off)
+    rw [← scalar_fast20]
+    apply accumulate20_congr
+    · exact h _ (lt_of_lt_of_le (Nat.add_lt_add_left jBound _) endp)
+    · intro k j hj; dsimp only
+      rw [show Matrix20.read r (off + j) = data j from h _ (lt_of_lt_of_le (Nat.add_lt_add_left hj _) endp)]
+  · exact h q sq
+
+private theorem cx_matches (x : Nat) (r : Rows) (p : Wire × Wire) (ha : p.1 < r.size) (hb : p.2 < r.size)
+    (h : Matches x r) : Matches (cxWord x p) (applyPair r p) := by
+  obtain ⟨a, b⟩ := p
+  intro q hq
+  have sq : q < r.size := by simpa only [applyPair_size] using hq
+  rw [apply_read _ _ _ _ hb, cxWord, digit_xor, digit_single _ _ _ _ (digit_bound ..)]
+  by_cases eq : q = b <;> simp [eq, h q sq, h a ha, h b hb]
+
+private theorem fold_matches {α} (xs : List α) (f : Nat → α → Nat) (g : Rows → α → Rows) (n x : Nat) (r : Rows)
+    (size : r.size = n) (h : Matches x r) (keep : ∀ r a, (g r a).size = r.size)
+    (step : ∀ a ∈ xs, ∀ x r, r.size = n → Matches x r → Matches (f x a) (g r a)) :
+    Matches (xs.foldl f x) (xs.foldl g r) := by
+  induction xs generalizing x r with
+  | nil => exact h
+  | cons a xs ih =>
+    exact ih _ _ ((keep r a).trans size) (step a (List.mem_cons_self ..) x r size h)
+      (fun b hb => step b (List.mem_cons_of_mem _ hb))
+
+private theorem r8Step20_matches (n x slot off : Nat) (st : R8Step) (hg : r8Step20Good' st = true)
+    (r : Rows) (size : r.size = n) (endp : off + 16 ≤ n) (agree : Matches x r) :
+    Matches (r8StepWord20 n x slot off st) (r8StepRows20 r slot off st) := by
+  unfold r8StepWord20 r8StepRows20
+  rw [size]
+  split
+  · apply fold_matches _ _ applyPair n _ _ size agree (fun _ _ => applyPair_size ..)
+    intro p hp z a sz matcha
+    obtain ⟨ha, hb, _⟩ := r8Ops_bounds20 a off st hg (sz ▸ endp) p hp
+    exact cx_matches z a p ha hb matcha
+  · exact agree
+
+private theorem primary20_matches (n x off p m slot : Nat) (mir : Bool) (r : Rows) (size : r.size = n)
+    (endp : off + fieldDegree p * m ≤ n) (agree : Matches x r) :
+    Matches (primaryWord20 n x off p m slot mir) (primaryRows20 r off p m slot mir) := by
+  let d := fieldDegree p
+  have scalar := fold_matches (List.range m) (fun a j => scalarWord20 a p mir slot (off + d * j))
+    (fun a j => scalarRows20 a p mir slot (off + d * j)) n _ _ size agree (fun _ _ => scalarRows20_size ..) (by
+      intro j hj z a sz matcha
+      have kj := Nat.mul_le_mul_left (fieldDegree p) (show j + 1 ≤ m from List.mem_range.mp hj)
+      rw [Nat.mul_succ] at kj
+      exact scalar20_matches p mir slot _ _ a (by dsimp [d]; rw [sz]; omega) matcha)
+  unfold primaryWord20 primaryRows20; dsimp only
+  by_cases h82 : (fieldDegree p == 8 && m == 2) = true
+  · have h82' := h82; simp only [Bool.and_eq_true, beq_iff_eq] at h82'
+    have h16 : fieldDegree p * m = 16 := by rw [h82'.1, h82'.2]
+    rw [if_pos h82, if_pos h82]
+    unfold r8Rows20
+    apply fold_matches (pascalR8Steps20 mir) (fun a st => r8StepWord20 n a slot off st)
+      (fun a st => r8StepRows20 a slot off st) n _ (scalars20 r p m off slot mir) ((scalars20_size ..).trans size) scalar
+      (fun _ _ => r8StepRows20_size ..)
+    exact fun st hst z a sz ma => r8Step20_matches n z slot off st (List.all_eq_true.mp (pascalR8Steps20_good' mir) st hst) a sz (by omega) ma
+  · rw [if_neg h82, if_neg h82]; exact scalar
+
+private theorem components20_match (n x off slot : Nat) (mir : Bool) (ps : List (Nat × Nat)) (r : Rows)
+    (size : r.size = n) (endp : off + extent20 ps ≤ n) (agree : Matches x r) :
+    Matches (componentWord20 n mir slot off ps x) (componentRows20 mir slot off ps r) := by
+  induction ps generalizing x r off with
+  | nil => exact agree
+  | cons pair tail ih =>
+    obtain ⟨p, m⟩ := pair
+    change off + (fieldDegree p * m + extent20 tail) ≤ n at endp
+    exact ih _ _ _ ((primaryRows20_size ..).trans size) (by omega)
+      (primary20_matches n x off p m slot mir r size (by omega) agree)
+
+theorem action_of_digits20 (n slot : Nat) (hn : UsedWidth20 n) (bound : n ≤ width) (mir : Bool)
+    (tested : ∀ q < n, digit width (componentWord20 n mir slot 0 (schedule20 n) (codedWord20 n (n - (slot - 1)) (entryShift mir slot))) q =
+      digit width (codedWord20 n (n - (slot - 1)) (exitShift mir slot)) q) : ActionOK20 n slot mir := by
+  let dim := n - (slot - 1)
+  have hdim : dim ≤ width := by omega
+  have src (k : Nat) : (coded20 n dim k).size = n := by
+    rw [← encode_of_receipt20 n dim k (coordinates_checked20 n hn), applyOps_size, plain20_size]
+  let input := coded20 n dim (entryShift mir slot)
+  let out := componentRows20 mir slot 0 (schedule20 n) input
+  have exactRun : Matches (componentWord20 n mir slot 0 (schedule20 n) (codedWord20 n dim (entryShift mir slot))) out :=
+    components20_match n _ 0 slot mir (schedule20 n) input (src _) (by rw [schedule20_extent' n hn]; omega)
+      (coded20_matches n dim _ hdim)
+  have outSize : out.size = n := (componentRows20_size ..).trans (src _)
+  change out = coded20 n dim (exitShift mir slot)
+  apply Array.ext (outSize.trans (src _).symm)
+  intro q ho he
+  have result := (exactRun q ho).trans ((tested q (outSize ▸ ho)).trans (coded20_matches n dim _ hdim q he).symm)
+  simpa only [Matrix20.read, Array.getElem?_eq_getElem ho, Array.getElem?_eq_getElem he, Option.getD_some] using result
+
+structure Slice (f : Nat → Nat) (off len original bank block : Nat) : Prop where
+  same : ∀ i < len, digit width bank (off + i) = f (digit width block i)
+  exterior : ∀ q, (q < off ∨ off + len ≤ q) → digit width bank q = digit width original q
+
+private theorem scalar20_linear (p : Nat) (mir : Bool) (slot i : Nat) (hi : i < fieldDegree p) (f : Nat → Nat)
+    (fz : f 0 = 0) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b) (u v : Nat → Nat)
+    (rel : ∀ j < fieldDegree p, u j = f (v j)) :
+    fastScalar20 p mir slot u i = f (fastScalar20 p mir slot v i) := by
+  rw [← scalar_fast20, ← scalar_fast20]
+  unfold scalarRow20
+  rw [map_accumulate20 p mir i f Nat.xor Nat.xor fx]
+  apply accumulate20_congr
+  · exact rel i hi
+  · intro k j hj
+    by_cases hot : slot = k + 1
+    · simpa [hot] using rel j hj
+    · simpa [hot] using fz.symm
+
+theorem slice_scalar20 (p : Nat) (mir : Bool) (slot off len j original bank block : Nat) (f : Nat → Nat)
+    (fz : f 0 = 0) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b) (endp : j + fieldDegree p ≤ len)
+    (h : Slice f off len original bank block) :
+    Slice f off len original (scalarWord20 bank p mir slot (off + j)) (scalarWord20 block p mir slot j) := by
+  constructor
+  · intro t ht
+    rw [digit_scalar20, digit_scalar20]
+    by_cases inside : j ≤ t ∧ t < j + fieldDegree p
+    · have outer : off + j ≤ off + t ∧ off + t < off + j + fieldDegree p := by omega
+      rw [if_pos outer, if_pos inside, show off + t - (off + j) = t - j by omega]
+      apply scalar20_linear _ _ _ _ ((Nat.sub_lt_iff_lt_add inside.1).mpr (Nat.add_comm j _ ▸ inside.2)) f fz fx
+      intro z hz; rw [Nat.add_assoc]; exact h.same _ (by omega)
+    · rw [if_neg inside, if_neg (show ¬(off + j ≤ off + t ∧ off + t < off + j + fieldDegree p) by omega)]
+      exact h.same t ht
+  · intro q exterior
+    rw [digit_scalar20, if_neg (by omega)]
+    exact h.exterior q exterior
+
+private theorem slice_cx (f : Nat → Nat) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b)
+    (off len original bank block a b : Nat) (ha : a < len) (hb : b < len)
+    (h : Slice f off len original bank block) :
+    Slice f off len original (cxWord bank (off + a, off + b)) (cxWord block (a, b)) := by
+  constructor
+  · intro q hq
+    rw [digit_cx, digit_cx]
+    by_cases eq : q = b <;> simp [eq, h.same _ hq, h.same a ha, h.same b hb, fx]
+  · intro q external
+    rw [digit_cx, if_neg (by omega)]
+    exact h.exterior q external
+
+private theorem parity_map20 (xs : List Nat) (n s : Nat) :
+    xorAt (flags20 n s) (xs.map (n + ·)) = xorAt (fun k => decide (k < 21 ∧ s = k + 1)) xs := by
+  induction xs with
+  | nil => rfl
+  | cons k xs ih => simp [xorAt, ih, flags20]
+
+theorem r8Enabled20_same (n m slot : Nat) (tags : List Nat) : r8Enabled20 n slot tags = r8Enabled20 m slot tags := by
+  simp only [r8Enabled20, parity_map20]
+
+private theorem shift_r8Ops (off : Nat) (st : R8Step) :
+    r8Ops off st = (r8Ops 0 st).map (fun (a, b) => (off + a, off + b)) := by
+  simp [r8Ops, List.map_append, List.map_reverse]
+
+private theorem slice_r8Step20 (f : Nat → Nat) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b)
+    (n off original bank block slot : Nat) (st : R8Step) (hg : r8Step20Good' st = true)
+    (prev : Slice f off 16 original bank block) :
+    Slice f off 16 original (r8StepWord20 n bank slot off st) (r8StepWord20 16 block slot 0 st) := by
+  unfold r8StepWord20
+  rw [r8Enabled20_same n 16]
+  split
+  · have bounds : ∀ p ∈ r8Ops 0 st, p.1 < 16 ∧ p.2 < 16 := by
+      intro p hp
+      obtain ⟨h1, h2, _⟩ := r8Ops_bounds20 (units 16) 0 st hg (by simp [units]) p hp
+      simpa [units] using And.intro h1 h2
+    rw [shift_r8Ops, List.foldl_map]
+    have run (xs : List (Nat × Nat)) (z t : Nat) (hz : Slice f off 16 original z t)
+        (loc : ∀ e ∈ xs, e.1 < 16 ∧ e.2 < 16) :
+        Slice f off 16 original (xs.foldl (fun acc e => cxWord acc (off + e.1, off + e.2)) z) (xs.foldl cxWord t) := by
+      induction xs generalizing z t with
+      | nil => exact hz
+      | cons e xs ih =>
+        obtain ⟨a, b⟩ := e
+        obtain ⟨ha, hb⟩ := loc (a, b) (List.mem_cons_self ..)
+        exact ih _ _ (slice_cx f fx off 16 original z t a b ha hb hz)
+          (fun w hw => loc w (List.mem_cons_of_mem _ hw))
+    exact run (r8Ops 0 st) bank block prev bounds
+  · exact prev
+
+theorem primary20_slice (f : Nat → Nat) (fz : f 0 = 0) (fx : ∀ a b, f (a ^^^ b) = f a ^^^ f b)
+    (n off p m slot original bank block : Nat) (mir : Bool) (prev : Slice f off (fieldDegree p * m) original bank block) :
+    Slice f off (fieldDegree p * m) original (primaryWord20 n bank off p m slot mir)
+      (primaryWord20 (fieldDegree p * m) block 0 p m slot mir) := by
+  let d := fieldDegree p
+  have fold {α} (xs : List α) (g u : Nat → α → Nat) (b l : Nat) (rel : Slice f off (d * m) original b l)
+      (one : ∀ a ∈ xs, ∀ b l, Slice f off (d * m) original b l → Slice f off (d * m) original (g b a) (u l a)) :
+      Slice f off (d * m) original (xs.foldl g b) (xs.foldl u l) := by
+    induction xs generalizing b l with
+    | nil => exact rel
+    | cons a xs ih => exact ih _ _ (one a (List.mem_cons_self ..) b l rel) (fun z hz => one z (List.mem_cons_of_mem _ hz))
+  have sc : Slice f off (d * m) original
+      ((List.range m).foldl (fun a j => scalarWord20 a p mir slot (off + d * j)) bank)
+      ((List.range m).foldl (fun a j => scalarWord20 a p mir slot (0 + d * j)) block) := by
+    apply fold _ _ _ _ _ prev
+    intro j hj b l carry
+    have h := Nat.mul_le_mul_left d (show j + 1 ≤ m from List.mem_range.mp hj)
+    rw [Nat.mul_succ] at h
+    simpa only [Nat.zero_add] using slice_scalar20 p mir slot off (d * m) (d * j) original b l f fz fx h carry
+  unfold primaryWord20; dsimp only
+  by_cases h82 : (fieldDegree p == 8 && m == 2) = true
+  · have h82' := h82; simp only [Bool.and_eq_true, beq_iff_eq] at h82'
+    have h16 : d * m = 16 := by change fieldDegree p * m = 16; rw [h82'.1, h82'.2]
+    rw [if_pos h82, if_pos h82]
+    apply fold (pascalR8Steps20 mir) (fun a st => r8StepWord20 n a slot off st)
+      (fun a st => r8StepWord20 (d * m) a slot 0 st) _ _ sc
+    intro st hst b l carry
+    rw [h16] at carry ⊢
+    exact slice_r8Step20 f fx n off original b l slot st (List.all_eq_true.mp (pascalR8Steps20_good' mir) st hst) carry
+  · rw [if_neg h82, if_neg h82]; exact sc
+
+private theorem prototype20_digit (p m dim k : Nat) (use : UsedPrimary20 p m) (hd : dim ≤ width) (q : Nat)
+    (hq : q < fieldDegree p * m) :
+    digit width (prototypeWord20 p m dim k) q = clipShift dim k (Matrix20.read (prototype20 p) q) := by
+  let xs := ((prototype20 p).toList.take (fieldDegree p * m)).map (clipShift dim k)
+  have bound : ∀ a ∈ xs, a < 2 ^ width := by
+    intro a ha
+    obtain ⟨b, _, rfl⟩ := List.mem_map.mp ha
+    exact lt_of_le_of_lt Nat.and_le_right (lt_of_lt_of_le (Nat.sub_lt (Nat.two_pow_pos _) (by decide : 0 < 1))
+      (Nat.pow_le_pow_right (by decide) hd))
+  have len : xs.length = fieldDegree p * m := by simp [xs, Nat.min_eq_left (prototype_size20 p m use)]
+  have h := digit_pack xs q (len ▸ hq) bound
+  have inList : q < (prototype20 p).size := lt_of_lt_of_le hq (prototype_size20 p m use)
+  simpa [xs, prototypeWord20, Matrix20.read, List.getElem?_map, List.getElem?_take, hq, inList] using h
+
+private theorem clip_factor (n sh k v : Nat) (high : n ≤ 135) (hk : k ≤ sh) :
+    clipShift (n - sh) k (v &&& (2 ^ n - 1)) = clipShift (n - sh) 0 (clipShift (135 - sh) k v) := by
+  apply Nat.eq_of_testBit_eq
+  intro i
+  simp only [clipShift, Nat.testBit_and, Nat.testBit_two_pow_sub_one, Nat.testBit_shiftRight, Nat.zero_add]
+  by_cases h : i < n - sh
+  · simp [h, show k + i < n by omega, show i < 135 - sh by omega]
+  · simp [h]
+
+private theorem shift_le_slot20 (mir : Bool) (slot : Fin 22) :
+    entryShift mir slot.val ≤ slot.val - 1 ∧ exitShift mir slot.val ≤ slot.val - 1 := by
+  cases mir <;> simp [entryShift, exitShift]
+
+private theorem digits_source20 (n sh off p m k : Nat) (use : UsedPrimary20 p m) (high : n ≤ 135)
+    (sk : k ≤ sh) (size : (coded20 n (n - sh) k).size = n) (endp : off + fieldDegree p * m ≤ n)
+    (table : ∀ j < fieldDegree p * m, Matrix20.read (encoded20 n) (off + j) = (Matrix20.read (prototype20 p) j &&& (2 ^ n - 1))) :
+    ∀ j < fieldDegree p * m, digit width (codedWord20 n (n - sh) k) (off + j) =
+      clipShift (n - sh) 0 (digit width (prototypeWord20 p m (135 - sh) k) j) := by
+  intro j hj
+  have inner : off + j < n := by omega
+  have sz : (encoded20 n).size = n := by simpa only [coded20, Array.size_map] using size
+  have h := (coded20_matches n (n - sh) k (by unfold width; omega) (off + j) (by rwa [size])).symm
+  rw [h, prototype20_digit p m (135 - sh) k use (by unfold width; omega) j hj]
+  have readMap : Matrix20.read (coded20 n (n - sh) k) (off + j) = clipShift (n - sh) k (Matrix20.read (encoded20 n) (off + j)) := by
+    simp [Matrix20.read, coded20, show off + j < (encoded20 n).size by rwa [sz]]
+  rw [readMap, table j hj, clip_factor n sh k _ high sk]
+
+theorem template_action20 (n : Nat) (hn : UsedWidth20 n) (slot : Fin 22) (mir : Bool) :
+    ActionOK20 n slot.val mir := by
+  obtain ⟨_low, high, checked⟩ := table_checked20 n hn
+  let sh := slot.val - 1
+  let dim := n - sh
+  let pdim := 135 - sh
+  let a := entryShift mir slot.val
+  let b := exitShift mir slot.val
+  let src := codedWord20 n dim a
+  let dst := codedWord20 n dim b
+  let crop := clipShift dim 0
+  have sz (k : Nat) : (coded20 n dim k).size = n := by
+    rw [← encode_of_receipt20 n dim k (coordinates_checked20 n hn), applyOps_size, plain20_size]
+  have ks := shift_le_slot20 mir slot
+  have sweep (ps : List (Nat × Nat)) (off bank : Nat) (endp : off + extent20 ps = n) (hc : tableOK20 n off ps = true)
+      (inv : ∀ q < n, digit width bank q = if q < off then digit width dst q else digit width src q) :
+      ∀ q < n, digit width (componentWord20 n mir slot.val off ps bank) q = digit width dst q := by
+    induction ps generalizing off bank with
+    | nil =>
+      change off + 0 = n at endp
+      intro q hq
+      simpa [componentWord20, show q < off by omega] using inv q hq
+    | cons pair tail ih =>
+      obtain ⟨p, m⟩ := pair
+      let len := fieldDegree p * m
+      change off + (len + extent20 tail) = n at endp
+      simp only [tableOK20, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_range, beq_iff_eq] at hc
+      obtain ⟨⟨use, rows⟩, rest⟩ := hc
+      have proto := beq_iff_eq.mp (prototype_checked20 p m use slot mir)
+      have startSlice : Slice crop off len bank bank (prototypeWord20 p m pdim a) := by
+        constructor
+        · intro j hj
+          have eq := inv (off + j) (by omega)
+          rw [if_neg (by omega)] at eq
+          exact eq.trans (digits_source20 n sh off p m a use high ks.1 (sz a) (by omega) rows j hj)
+        · intro q _; rfl
+      have moved := primary20_slice crop (clip_zero dim 0) (clip_xor dim 0) n off p m slot.val bank bank
+        (prototypeWord20 p m pdim a) mir startSlice
+      apply ih (off + len) (primaryWord20 n bank off p m slot.val mir) (by omega) rest
+      intro q hq
+      by_cases low : q < off
+      · rw [moved.exterior q (Or.inl low), inv q hq, if_pos low, if_pos (by omega)]
+      · by_cases mid : q < off + len
+        · have jlt : q - off < len := by omega
+          have hqeq : off + (q - off) = q := by omega
+          rw [← hqeq, moved.same (q - off) jlt, proto]
+          rw [if_pos (by omega)]
+          exact (digits_source20 n sh off p m b use high ks.2 (sz b) (by omega) rows (q - off) jlt).symm
+        · rw [moved.exterior q (Or.inr (by omega)), inv q hq, if_neg low, if_neg mid]
+  apply action_of_digits20 n slot.val hn (by unfold width; omega) mir
+  exact sweep (schedule20 n) 0 src (by rw [Nat.zero_add, schedule20_extent' n hn]) checked (by intro q _; simp)
+
+end Packed20
+
+/-! ## Generic physical barrel theorem (decoupled from any caller layout) -/
+
+theorem barrel20_result (n : Nat) (hn : UsedWidth20 n) (mir : Bool) (slot : Fin 22)
+    (bank tagW scrW : Nat → Wire) (f : Wire → Wire)
+    (hf_bank : ∀ i < n, f i = bank i)
+    (hf_tag : ∀ k < 21, f (n + k) = tagW k)
+    (hf_scr : ∀ k < 10, f (n + 21 + k) = scrW k)
+    (hinj : ∀ a < n + 31, ∀ b < n + 31, f a = f b → a = b)
+    (v : Nat) (s : State) (tape : List Bool)
+    (small : v < 2 ^ (n - (slot.val - 1)))
+    (input : ∀ i < n, s.basis (bank i) = (v <<< entryShift mir slot.val).testBit i)
+    (tag : ∀ k < 21, s.basis (tagW k) = decide (slot.val = k + 1))
+    (scratch : ∀ k < 10, s.basis (scrW k) = false) :
+    let s' := run (renameProgram f (logical20 n mir)) tape s
+    (∀ i < n, s'.basis (bank i) = (v <<< exitShift mir slot.val).testBit i) ∧
+    s'.phase = s.phase ∧
+    (∀ q, (∀ i < n, q ≠ bank i) → s'.basis q = s.basis q) := by
+  let dim := n - (slot.val - 1)
+  let P := logical20 n mir
+  let S := Finset.range (n + 31)
+  let before := entryShift mir slot.val
+  let after := exitShift mir slot.val
+  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support (logical20_fits n hn mir) _ hw)
+  have inj : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b :=
+    fun a ha b hb => hinj a (Finset.mem_range.mp ha) b (Finset.mem_range.mp hb)
+  have bankBit (k i : Nat) (ik : i < n) :
+      (frame20 (plain20 n dim k) v.testBit dim slot.val s.phase).basis i = (v <<< k).testBit i := by
+    simpa only [frame20, Matrix20.basis, plain20_size, if_pos ik] using plain20_bits n dim k v i small ik
+  have other (k q : Nat) (qn : n ≤ q) (high : q < n + 31) :
+      (frame20 (plain20 n dim k) v.testBit dim slot.val s.phase).basis q = s.basis (f q) := by
+    have outside : ¬q < n := Nat.not_lt.mpr qn
+    simp only [frame20, Matrix20.basis, plain20_size, if_neg outside]
+    by_cases mid : q < n + 21
+    · have k21 : q - n < 21 := by omega
+      have hfq : f q = tagW (q - n) := by
+        simpa only [show n + (q - n) = q by omega] using hf_tag (q - n) k21
+      rw [hfq, tag (q - n) k21]
+      simp [flags20, qn, mid]
+    · have pos : q - n - 21 < 10 := by omega
+      have hfq : f q = scrW (q - n - 21) := by
+        simpa only [show n + 21 + (q - n - 21) = q by omega] using hf_scr (q - n - 21) pos
+      rw [hfq, scratch _ pos]
+      simp [flags20, mid]
+  have result := run_rename_pool f S inj P scope tape
+    (frame20 (plain20 n dim before) v.testBit dim slot.val s.phase) s rfl (by
+      intro q hq
+      by_cases low : q < n
+      · rw [bankBit before q low, hf_bank q low]; exact (input q low).symm
+      · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq))
+  have shift := logical20_action n hn mir slot.val (by have := slot.isLt; omega)
+    (Packed20.coordinates_checked20 n hn) (Packed20.template_action20 n hn slot mir) v.testBit s.phase tape
+  change run P tape (frame20 (plain20 n dim before) _ _ _ _) = frame20 (plain20 n dim after) _ _ _ _ at shift
+  rw [shift] at result
+  refine ⟨?_, result.1, ?_⟩
+  · intro i bound
+    have hi : i ∈ S := Finset.mem_range.mpr (Nat.lt_of_lt_of_le bound (Nat.le_add_right _ _))
+    have bit := (result.2 i hi).trans (bankBit after i bound)
+    rwa [hf_bank i bound] at bit
+  · intro q free
+    by_cases hit : q ∈ S.image f
+    · obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hit
+      have above : n ≤ a := by
+        by_contra! low
+        exact free a low (hf_bank a low)
+      exact Eq.trans (result.2 a ha) (other after a above (Finset.mem_range.mp ha))
+    · exact run_rename_pool_outside f S P scope tape s q hit
+
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel20
+
+end
+end
+
+section
+
+/-!
+20-tick shadow blocks (`s ∈ {165, 185, ..., 325}`, margin 21, cutoff `sbP20 s = (492 - s) / 2`):
+- `IntegerPacket` routing, counts, physicality, domain coverage, and semantic roundtrip.
+- 20-tick shadow envelope (`SmallIfFar`, `EndSmall20`), algebraic reduction, archive suffix row membership
+  into the shared 63,145-row 10-tick archive table, and high-bank restoration laws.
+- Physical wire geometry and `CRTBarrel20` instantiation for all 9 blocks.
+-/
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed ECDSAAdd.Entrant.IntegerPacket
+open ECDSAAdd.Entrant.StairPacket ECDSAAdd.Entrant.StairPacket.Partial ECDSAAdd.Entrant.StairPacket.GateMirror
+open ECDSAAdd.Baselines ECDSAAdd.Challenge
+
+set_option maxHeartbeats 2500000
+set_option maxRecDepth 25000
+
+/-! ### Section 1: 20-tick integer-packet blocks and routing -/
+
+/-- Start tick of the `j`-th 20-tick block (`165, 185, ..., 325`). -/
+def start20 (j : Fin 9) : Nat := 165 + 20 * j.val
+
+/-- Narrowed shadow cutoff for a 20-tick block at start tick `s`. -/
+def sbP20 (s : Nat) : Nat := (492 - s) / 2
+
+def smallBits20 (j : Fin 9) : Nat := sbP20 (start20 j)
+
+def shape20 (j : Fin 9) : IntegerPacket.Shape where
+  start := start20 j
+  length := 20
+  mid := smallBits20 j + 20
+  rangeEnd := by have h := j.isLt; simp [start20]; omega
+  extent := by have h := j.isLt; simp [start20, smallBits20, sbP20]; omega
+  midBound := by simp [smallBits20, sbP20, start20]; omega
+
+def net20 (j : Fin 9) (a : Nat) : Wire → Wire := OB5.sig (start20 j + a)
+
+def windowNet20 (j : Fin 9) : Wire → Wire := OB5.sig (start20 j + 19)
+
+def mappedBasis20 (j : Fin 9) (s : BasisState) : BasisState := fun q => s (windowNet20 j q)
+
+def routed20 (j : Fin 9) (a : Nat) : Nat → Program
+  | 0 => []
+  | n + 1 =>
+    renameProgram (net20 j a) (skywalkIntegerTick (IntegerPacket.ports (shape20 j) a)) ++
+      routed20 j (a + 1) n
+
+def unrouted20 (j : Fin 9) (a : Nat) : Nat → Program
+  | 0 => []
+  | n + 1 =>
+    unrouted20 j (a + 1) n ++
+      renameProgram (net20 j a) (ECDSAAdd.Entrant.W.ReverseCarry.receiverUntick
+        (IntegerPacket.ports (shape20 j) a) (IntegerPacket.ports (shape20 j) a).half.length)
+
+def onRails20 (j : Fin 9) (i : Nat) (z : SkywalkRails.State) (b : BasisState) : Prop :=
+  ready (shape20 j) i z (mappedBasis20 j b)
+
+def physicalCells20 (j : Fin 9) (s : State) : List (Bool × Bool) :=
+  readCells (shape20 j) 0 20 (mappedBasis20 j s.basis)
+
+theorem net20_injective (j : Fin 9) : Function.Injective (windowNet20 j) := by
+  apply OB5.sig_injective
+  have h := j.isLt
+  simp only [start20]; omega
+
+theorem net20_invol (j : Fin 9) (q : Wire) : windowNet20 j (windowNet20 j q) = q := by
+  apply OB5.sig_invol
+  have h := j.isLt
+  simp only [start20]; omega
+
+theorem stable20 {j : Fin 9} {a q : Nat} (ha : a < 20)
+    (hq : q ∈ (IntegerPacket.ports (shape20 j) a).wires) : net20 j a q = windowNet20 j q := by
+  have hj := j.isLt
+  simp only [IntegerPacket.ports, shape20, smallBits20, sbP20, start20, SkywalkIntegerLayout.wires,
+    SkywalkIntegerLayout.ah, SkywalkIntegerLayout.bh, List.mem_append, List.mem_cons,
+    List.mem_range'_1, List.not_mem_nil, or_false] at hq
+  unfold windowNet20 net20 OB5.sig start20
+  split <;> split
+  all_goals try rfl
+  all_goals
+    repeat' first | cases_type And | cases_type Or
+    all_goals try simp only [Wire] at *
+    all_goals omega
+
+theorem fixed_route20 (j : Fin 9) (a n : Nat) (bound : a + n ≤ 20) :
+    routed20 j a n = renameProgram (windowNet20 j) (IntegerPacket.seq (shape20 j) a n) ∧
+    unrouted20 j a n = renameProgram (windowNet20 j) (IntegerPacket.backR (shape20 j) a n) := by
+  induction n generalizing a with
+  | zero => exact ⟨rfl, rfl⟩
+  | succ n ih =>
+    have ha : a < 20 := by omega
+    have h := skywalkIntegerTick_wires_subset _ (IntegerPacket.ok (shape20 j) ⟨a, ha⟩)
+    have hn : 0 < (IntegerPacket.ports (shape20 j) a).half.length := by simp [SkywalkIntegerLayout.half]
+    have u := ECDSAAdd.Entrant.W.ReverseCarry.receiverUntick_support (IntegerPacket.ports (shape20 j) a) _
+      (IntegerPacket.ok (shape20 j) ⟨a, ha⟩) hn le_rfl
+    obtain ⟨f, r⟩ := ih (a + 1) (by omega)
+    have app (g : Wire → Wire) (P Q : Program) :
+        renameProgram g (P ++ Q) = renameProgram g P ++ renameProgram g Q := List.map_append
+    simp only [routed20, unrouted20, IntegerPacket.seq, IntegerPacket.backR, app, f, r]
+    constructor
+    · exact congrArg (fun P => P ++ _) (renameProgram_congr_support _ _ _ (fun q hq =>
+        stable20 ha (List.mem_toFinset.mp (h.1 hq))))
+    · exact congrArg (fun P => _ ++ P) (renameProgram_congr_support _ _ _ (fun q hq =>
+        stable20 ha (List.mem_toFinset.mp (u hq))))
+
+theorem routed20_counts (j : Fin 9) (a n : Nat) (bound : a + n ≤ 20) :
+    toffoliCount (routed20 j a n) = n * (2 * (smallBits20 j + 21)) ∧
+    measurementCount (routed20 j a n) = n * (smallBits20 j + 21) ∧
+    toffoliCount (unrouted20 j a n) = n * (2 * (smallBits20 j + 21) - 1) ∧
+    measurementCount (unrouted20 j a n) = n * (smallBits20 j + 21) := by
+  obtain ⟨f, r⟩ := fixed_route20 j a n bound
+  have hs := IntegerPacket.metrics (shape20 j) a n bound
+  have hr := IntegerPacket.metricsR (shape20 j) a n bound
+  have mid : (shape20 j).mid + 1 = smallBits20 j + 21 := rfl
+  rw [mid] at hs hr
+  rw [f, r, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2,
+    (renameProgram_counts _ _).1, (renameProgram_counts _ _).2]
+  exact ⟨hs.1, hs.2.1, hr.1, hr.2⟩
+
+private theorem integer_tick_phys (L : SkywalkIntegerLayout) (hv : L.Valid) :
+    GatePhysical (skywalkIntegerTick L) := by
+  have enough : 1 ≤ L.half.length := by simp [SkywalkIntegerLayout.half]
+  have narrow := narrowTicks_physical L 1 hv (by decide) enough
+  simp only [narrowSkywalkTick, gatePhysical_append] at narrow
+  obtain ⟨⟨⟨⟨route, half⟩, _⟩, prev⟩, _⟩ := narrow
+  have nd := L.record_nodup hv
+  have fresh := (List.nodup_cons.mp nd).1
+  have sx : L.ext ≠ L.history := fun e => fresh (e ▸ by simp [SkywalkIntegerLayout.half])
+  have sy : L.bSign ≠ L.history := fun e => fresh (e ▸ by simp [SkywalkIntegerLayout.b, SkywalkIntegerLayout.bh])
+  have toggle : GatePhysical (skywalkSignToggle L.ext L.bSign L.history) := by
+    simp [skywalkSignToggle, GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate, sx, sy]
+  have arithmetic := signedWords_physical L.history L.half L.b L.carry nd
+  simp only [skywalkIntegerTick, signedRecord, gatePhysical_append]
+  exact ⟨⟨⟨route, half⟩, ⟨⟨toggle, arithmetic.1⟩, toggle⟩⟩, prev⟩
+
+theorem routed20_phys (j : Fin 9) (a n : Nat) (bound : a + n ≤ 20) :
+    GatePhysical (routed20 j a n) ∧ GatePhysical (unrouted20 j a n) := by
+  induction n generalizing a with
+  | zero => simp [routed20, unrouted20, GatePhysical]
+  | succ n ih =>
+    have ha : a < 20 := by omega
+    have valid := IntegerPacket.ok (shape20 j) ⟨a, ha⟩
+    have tick := integer_tick_phys (IntegerPacket.ports (shape20 j) a) valid
+    have hn : 0 < (IntegerPacket.ports (shape20 j) a).half.length := by simp [SkywalkIntegerLayout.half]
+    have untick := ECDSAAdd.Entrant.W.ReverseCarry.receiverUntick_physical (IntegerPacket.ports (shape20 j) a) _
+      valid hn le_rfl
+    have hj := j.isLt
+    have inj := OB5.sig_injective (start20 j + a) (by simp only [start20]; omega)
+    have tail := ih (a + 1) (by omega)
+    exact ⟨(gatePhysical_append _ _).2 ⟨gatePhysical_rename _ inj _ tick, tail.1⟩,
+      (gatePhysical_append _ _).2 ⟨tail.2, gatePhysical_rename _ inj _ untick⟩⟩
+
+theorem ports20_dom {j : Fin 9} {a q : Nat} (ha : a < 20)
+    (hq : q ∈ (IntegerPacket.ports (shape20 j) a).wires) : WindowCovered.domainW (net20 j a q) = true := by
+  have hj := j.isLt
+  simp only [IntegerPacket.ports, shape20, smallBits20, sbP20, start20, SkywalkIntegerLayout.wires,
+    SkywalkIntegerLayout.ah, SkywalkIntegerLayout.bh, List.mem_append, List.mem_cons,
+    List.mem_range'_1, List.not_mem_nil, or_false] at hq
+  rw [WindowCovered.dom_iff]
+  unfold net20 OB5.sig start20
+  split
+  all_goals
+    repeat' first | cases_type And | cases_type Or
+    all_goals try simp only [Wire] at *
+    all_goals omega
+
+theorem routed20_cov (j : Fin 9) (a n : Nat) (bound : a + n ≤ 20) :
+    WindowCovered.CoveredW (routed20 j a n) ∧ WindowCovered.CoveredW (unrouted20 j a n) := by
+  induction n generalizing a with
+  | zero => constructor <;> intro q h <;> simp [routed20, unrouted20, wires] at h
+  | succ n ih =>
+    have ha : a < 20 := by omega
+    have step := skywalkIntegerTick_wires_subset _ (IntegerPacket.ok (shape20 j) ⟨a, ha⟩)
+    have hn : 0 < (IntegerPacket.ports (shape20 j) a).half.length := by simp [SkywalkIntegerLayout.half]
+    have ustep := ECDSAAdd.Entrant.W.ReverseCarry.receiverUntick_support (IntegerPacket.ports (shape20 j) a) _
+      (IntegerPacket.ok (shape20 j) ⟨a, ha⟩) hn le_rfl
+    have sub := ih (a + 1) (by omega)
+    have ok (P : Program) (hp : wires P ⊆ (IntegerPacket.ports (shape20 j) a).wires.toFinset) :
+        WindowCovered.CoveredW (renameProgram (net20 j a) P) := by
+      intro q hq
+      rw [renameProgram_support] at hq
+      obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hq
+      exact ports20_dom ha (List.mem_toFinset.mp (hp hx))
+    exact ⟨WindowCovered.appW (ok _ step.1) sub.1, WindowCovered.appW sub.2 (ok _ ustep)⟩
+
+theorem pull_routed20 (j : Fin 9) (i n : Nat) (bound : i + n ≤ 20) (m : List Bool) (s : State) :
+    pullState (windowNet20 j) (run (routed20 j i n) m s) =
+      run (IntegerPacket.seq (shape20 j) i n) m (pullState (windowNet20 j) s) := by
+  rw [(fixed_route20 j i n bound).1, run_rename _ (net20_injective j)]
+
+theorem route20_frame (j : Fin 9) (i n : Nat) (bound : i + n ≤ 20) (z : SkywalkRails.State)
+    (odd : (z.a + z.b) % 2 = 1) :
+    Triple (onRails20 j i z) (routed20 j i n) (onRails20 j (i + n) (SkywalkTrace.next^[n] z)) := by
+  intro s m hready
+  have h := IntegerPacket.semantic (shape20 j) i n bound z odd (pullState (windowNet20 j) s) m hready
+  rw [← pull_routed20 j i n bound m s] at h
+  exact h
+
+theorem route20_records (j : Fin 9) (i n : Nat) (bound : i + n ≤ 20) (z : SkywalkRails.State)
+    (odd : (z.a + z.b) % 2 = 1) (s : State) (m : List Bool) (h : onRails20 j i z s.basis) :
+    readCells (shape20 j) i n (mappedBasis20 j (run (routed20 j i n) m s).basis) = SkywalkTrace.trace n z ∧
+    ∀ d < i, cell (shape20 j) d (mappedBasis20 j (run (routed20 j i n) m s).basis) =
+      cell (shape20 j) d (mappedBasis20 j s.basis) := by
+  have hh := IntegerPacket.records (shape20 j) i n bound z odd (pullState (windowNet20 j) s) m h
+  rw [← pull_routed20 j i n bound m s] at hh
+  exact hh
+
+theorem route20_undo (j : Fin 9) (i n : Nat) (bound : i + n ≤ 20) (z : SkywalkRails.State)
+    (odd : (z.a + z.b) % 2 = 1) :
+    Restores (onRails20 j i z) (routed20 j i n) (unrouted20 j i n) := by
+  intro s m t hready
+  have forward := pull_routed20 j i n bound m s
+  let actual := run (routed20 j i n) m s
+  have bk : pullState (windowNet20 j) (run (unrouted20 j i n) t actual) =
+      run (IntegerPacket.backR (shape20 j) i n) t (pullState (windowNet20 j) actual) := by
+    rw [(fixed_route20 j i n bound).2, run_rename _ (net20_injective j)]
+  have fin := IntegerPacket.roundtripR (shape20 j) i n bound z odd (pullState (windowNet20 j) s) m t hready
+  change pullState (windowNet20 j) actual = _ at forward
+  rw [forward, fin] at bk
+  apply congrArg₂ State.mk (congrArg State.phase bk)
+  funext q
+  have h := congrArg (fun x : State => x.basis (windowNet20 j q)) bk
+  change (run (unrouted20 j i n) t actual).basis (windowNet20 j (windowNet20 j q)) =
+    s.basis (windowNet20 j (windowNet20 j q)) at h
+  rwa [net20_invol j q] at h
+
+end ECDSAAdd.Entrant.StairPacket.Shadow20
+end
+
+section
+
+/-! ### Section 2 (margin 21): fine limb `limb b k = 2^(b+k)`; the corner `far ∧ farKey20 = 0` is isolated. -/
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+
+section ShadowMath
+set_option exponentiation.threshold 1024
+open SkywalkNat IntegerHigh Shadow HighBankSum
+
+def EndSmall20 (b : Nat) (z : SkywalkNat.State) : Prop :=
+  min (step^[20] z).u (step^[20] z).v < 2 ^ b
+
+def Small20 (b : Nat) (z : SkywalkNat.State) : Prop :=
+  Shadow7.SmallIfFar b 20 z ∧ EndSmall20 b z
+
+theorem inputs20 (x p t : Nat) (hx : x < 2 ^ 256) (hp : p < 2 ^ 256) (ht : t ≤ 492) :
+    Small20 (sbP20 t) (step^[t] (init x p)) := by
+  have hb : sbP20 t = (492 - t) / 2 := rfl
+  refine ⟨?_, ?_⟩
+  · intro hfar
+    have pos : 0 < limb (sbP20 t) 20 := by unfold limb; exact Nat.two_pow_pos _
+    have hf := (Nat.le_div_iff_mul_le pos).mp hfar
+    have he : limb (sbP20 t) 20 = 2 ^ (sbP20 t + 20) := rfl
+    rw [he] at hf
+    obtain ⟨a, c, hac, hu, hv⟩ := Shadow7.Envelope.budget x p hx hp t
+    have hbig : 2 ^ (sbP20 t + 20) ≤ (step^[t] (init x p)).u ∨
+        2 ^ (sbP20 t + 20) ≤ (step^[t] (init x p)).v := by omega
+    rcases hbig with h | h
+    · have ex : sbP20 t + 20 < 256 - a := (Nat.pow_lt_pow_iff_right (by decide)).mp (lt_of_le_of_lt h hu)
+      exact lt_of_le_of_lt (min_le_right _ _)
+        (lt_of_lt_of_le hv (Nat.pow_le_pow_right (by decide) (by omega)))
+    · have ex : sbP20 t + 20 < 256 - c := (Nat.pow_lt_pow_iff_right (by decide)).mp (lt_of_le_of_lt h hv)
+      exact lt_of_le_of_lt (min_le_left _ _)
+        (lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega)))
+  · have h := Shadow7.Envelope.min_lt x p hx hp (20 + t)
+    rw [Function.iterate_add_apply] at h
+    have e : 256 - (20 + t + 1) / 2 ≤ sbP20 t := by omega
+    exact lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) e)
+
+theorem scale20 (b : Nat) : limb b 20 = 2 ^ 20 * 2 ^ b := by
+  rw [limb, show b + 20 = 20 + b by omega, pow_add]
+
+/-- The exact guard of a 20-tick block fits one fine limb. -/
+theorem guard_tight20 (b s : Nat) (hs : s < 2 ^ b) : guard 20 s + s ≤ limb b 20 :=
+  guard_limb b 20 s hs
+
+theorem rail20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (hfar : far b 20 z) :
+    let r := reduced b 20 z
+    let D := 2 ^ b * (high b 20 z - 1)
+    (2 ^ b ≤ z.u → r.v = z.v ∧ z.u = r.u + 2 ^ 20 * D ∧ guard 20 r.v ≤ r.u) ∧
+    (z.u < 2 ^ b → r.u = z.u ∧ z.v = r.v + 2 ^ 20 * D ∧ guard 20 r.u ≤ r.v) := by
+  dsimp only
+  have hr := (represented b 20 z small hfar).2.1
+  have amount : gap b 20 z = 2 ^ 20 * (2 ^ b * (high b 20 z - 1)) := by rw [gap, scale20]; ring
+  have base : 2 ^ b ≤ limb b 20 := Nat.pow_le_pow_right (by decide) (by omega)
+  constructor
+  · intro h
+    have sh : z.v < 2 ^ b := by omega
+    rw [reduced, if_pos hfar, if_pos h] at hr ⊢
+    dsimp only at hr ⊢
+    exact ⟨rfl, by omega, by have t := guard_tight20 b z.v sh; omega⟩
+  · intro h
+    rw [reduced, if_pos hfar, if_neg (Nat.not_le.mpr h)] at hr ⊢
+    dsimp only at hr ⊢
+    exact ⟨rfl, by omega, by have t := guard_tight20 b z.u h; omega⟩
+
+theorem shadow_odd20 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z)
+    (odd : z.v % 2 = 1) : (reduced b 20 z).v % 2 = 1 := by
+  by_cases f : far b 20 z
+  · have h := rail20 b z (small f) f
+    by_cases hu : 2 ^ b ≤ z.u
+    · rw [(h.1 hu).1]; exact odd
+    · have hv := (h.2 (Nat.lt_of_not_ge hu)).2.1
+      change z.v = (reduced b 20 z).v + 1048576 * _ at hv
+      omega
+  · simpa [reduced, f] using odd
+
+theorem true_records20 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z)
+    (odd : z.v % 2 = 1) (G S : Bool) :
+    let T := reduced b 20 z
+    SkywalkTrace.trace 20 (SkywalkRails.encode G S T.u T.v) =
+      SkywalkTrace.trace 20 (SkywalkRails.encode G S z.u z.v) := by
+  by_cases f : far b 20 z
+  · have h := (represented b 20 z (small f) f).1
+    have o := shadow_odd20 b z small odd
+    exact (IntegerHigh.trace_eq h G S G S (by omega) odd (by omega) o).symm
+  · simp [reduced, f]
+
+/-- Every 20-tick block's 10-tick suffix plus its 3 shadow flags lands in the 63,145-row archive table. -/
+theorem interrupted_row20 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z)
+    (odd : z.v % 2 = 1) (G S cross : Bool) (cells : List (Bool × Bool))
+    (records : let T := reduced b 20 z
+      cells = SkywalkTrace.trace 20 (SkywalkRails.encode G S T.u T.v)) :
+    let hfar := decide (far b 20 z)
+    let u := hfar && StairArchiveTrace.afterFlags (decide (z.v < z.u)) (cells.take 10)
+    ∃ row < 63145, ∀ q < 23,
+      (StairArchiveRaw.rawCol q).testBit row =
+        StairArchiveRaw.rawBit (StairArchiveRaw.read (cells.drop 10)) hfar u (hfar && cross) q := by
+  rw [records.trans (true_records20 b z small odd G S)]
+  by_cases f : far b 20 z
+  · simpa only [f, decide_true, Bool.true_and] using
+      StairArchiveTrace.far_suffix 10 (represented b 20 z (small f) f).1 G S cross (by omega) odd
+  · simpa only [f, decide_false, Bool.false_and] using
+      StairArchiveTrace.near_suffix 10 z G S (by omega) odd
+
+/-- Far endpoint law at unit `2^b` (margin 21): crossing digit and shifted high correction. -/
+theorem far_result20 (b w : Nat) (z : SkywalkNat.State) (small : Small20 b z)
+    (hfar : far b 20 z) (odd : z.v % 2 = 1) (enough : high b 20 z + 1 < 2 ^ w) :
+    let r := reduced b 20 z
+    let S := total (step^[20] r)
+    let F := total (step^[20] z)
+    let t := if 2 ^ b ≤ z.u then 0 else wait 20 z.u
+    let d := S / 2 ^ b / 2 ^ t
+    let neg := cross17 d && (!(decide (2 ^ b ≤ z.u)) && negative (oddBits (letters 20 r)))
+    d + 1 = (cross17 d).toNat + 2 * (!neg).toNat ∧
+      F / 2 ^ b = 2 ^ t * HighBankAdjust.adjusted (high b 20 z) w (cross17 d) neg +
+        S / 2 ^ b % 2 ^ t := by
+  let r := reduced b 20 z
+  let H := high b 20 z
+  let V := 2 ^ b
+  let D := V * (H - 1)
+  have hsm : min z.u z.v < 2 ^ b := small.1 hfar
+  have sides := rail20 b z hsm hfar
+  have bounds := (represented b 20 z hsm hfar).2
+  rw [scale20] at bounds
+  have hH : 2 ≤ H := hfar
+  dsimp only
+  by_cases h : 2 ^ b ≤ z.u
+  · obtain ⟨eqV, eqU, guarded⟩ := sides.1 h
+    have shape : z = ⟨r.u + 2 ^ 20 * D, r.v⟩ := SkywalkNat.State.ext eqU eqV.symm
+    have short : r.v < V := by dsimp [r]; omega
+    have rodd : r.v % 2 = 1 := eqV ▸ odd
+    have dcap := left_digit17 20 r.u r.v V guarded rodd short bounds.1 bounds.2
+    change total (step^[20] r) / V = 1 ∨ total (step^[20] r) / V = 2 at dcap
+    have room : H - 1 + total (step^[20] r) / V < 2 ^ w := by change H + 1 < 2 ^ w at enough; omega
+    have outcome := HighBankSum.left17 20 r.u r.v H w b guarded rodd short bounds.1 bounds.2 hH room
+    rw [← shape] at outcome
+    simpa only [if_pos h, decide_eq_true h, Bool.not_true, Bool.false_and, Bool.and_false,
+      Bool.not_false, Bool.toNat_true, Nat.mul_one, pow_zero, Nat.div_one, one_mul, Nat.mod_one,
+      Nat.add_zero] using outcome
+  · obtain ⟨eqU, eqV, guarded⟩ := sides.2 (Nat.lt_of_not_ge h)
+    have shape : z = ⟨r.u, r.v + 2 ^ 20 * D⟩ := SkywalkNat.State.ext eqU.symm eqV
+    have short : r.u < V := by dsimp [r]; omega
+    have rodd : r.v % 2 = 1 := by change z.v = r.v + 1048576 * D at eqV; omega
+    have dcap := (right_digit17 20 r.v r.u V guarded rodd short
+      (by simpa only [Nat.add_comm r.v r.u] using bounds.1)
+      (by simpa only [Nat.add_comm r.v r.u] using bounds.2)).1
+    change total (step^[20] r) / (2 ^ (wait 20 r.u) * V) = 0 ∨
+      total (step^[20] r) / (2 ^ (wait 20 r.u) * V) = 1 ∨
+      total (step^[20] r) / (2 ^ (wait 20 r.u) * V) = 2 at dcap
+    rw [Nat.mul_comm (2 ^ _) V, ← Nat.div_div_eq_div_mul] at dcap
+    have room : H - 1 + total (step^[20] r) / V / 2 ^ (wait 20 r.u) < 2 ^ w := by
+      change H + 1 < 2 ^ w at enough; omega
+    have outcome := HighBankSum.right17 20 r.v r.u H w b (by decide) guarded rodd short
+      (by simpa only [Nat.add_comm r.v r.u] using bounds.1)
+      (by simpa only [Nat.add_comm r.v r.u] using bounds.2) hH room
+    rw [← shape] at outcome
+    have waits : wait 20 z.u = wait 20 r.u := congrArg (wait 20) eqU.symm
+    simpa only [if_neg h, decide_eq_false h, Bool.not_false, Bool.true_and, waits] using outcome
+
+theorem near_result20 (b : Nat) (z : SkywalkNat.State) (close : ¬ far b 20 z) :
+    reduced b 20 z = z ∧ total (step^[20] z) / 2 ^ b < 2 ^ 21 := by
+  refine ⟨by simp [reduced, close], ?_⟩
+  have lt : (z.u + z.v) / limb b 20 < 2 := Nat.lt_of_not_ge close
+  have lim := (Nat.div_lt_iff_lt_mul (by unfold limb; positivity)).mp lt
+  rw [scale20] at lim
+  have noninc := iter_sum_nonincrease 20 z
+  apply (Nat.div_lt_iff_lt_mul (by positivity)).mpr
+  dsimp only [total]
+  omega
+
+/-- Margin-21 row bound: the reduced end total is below `2^(b+21)`. -/
+theorem inputTight21 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) :
+    let a := step^[20] (reduced b 20 z)
+    (a.u + a.v) / 2 ^ b < 2 ^ 21 := by
+  have upper : (reduced b 20 z).u + (reduced b 20 z).v < 2 * limb b 20 := by
+    by_cases f : far b 20 z
+    · exact (represented b 20 z (small f) f).2.2
+    · have low : (z.u + z.v) / limb b 20 < 2 := Nat.lt_of_not_ge f
+      simpa only [reduced, if_neg f] using (Nat.div_lt_iff_lt_mul (by unfold limb; positivity)).mp low
+  dsimp only
+  have noninc := iter_sum_nonincrease 20 (reduced b 20 z)
+  apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos b)).mpr
+  rw [scale20] at upper
+  have e20 : (2:Nat) ^ 20 = 1048576 := by norm_num
+  have e21 : (2:Nat) ^ 21 = 2097152 := by norm_num
+  rw [e20] at upper
+  rw [e21]
+  omega
+
+/-- Companion row (margin-21 form of `inputRow20`): after the block `a.u < 2^20*2^b`; and if `a.u ≥ 2^b`
+while `min a.u a.v < 2^b`, then `a.u+a.v < 2^20*2^b`. -/
+theorem inputRow19 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) :
+    let a := step^[20] (reduced b 20 z)
+    a.u < 2 ^ 20 * 2 ^ b ∧ (min a.u a.v < 2 ^ b → 2 ^ b ≤ a.u → a.u + a.v < 2 ^ 20 * 2 ^ b) := by
+  have hb := Nat.two_pow_pos b
+  have hS : (reduced b 20 z).u + (reduced b 20 z).v < 2 ^ 21 * 2 ^ b := by
+    by_cases f : far b 20 z
+    · have upper := (represented b 20 z (small f) f).2.2
+      rw [scale20] at upper
+      omega
+    · simp only [reduced, if_neg f]
+      have upper := (Nat.div_lt_iff_lt_mul (by unfold limb; positivity)).mp (Nat.lt_of_not_ge f)
+      rw [scale20] at upper
+      omega
+  dsimp only
+  rw [show (20 : Nat) = 18 + 1 + 1 from rfl, Function.iterate_succ_apply', Function.iterate_succ_apply']
+  have hc0 := iter_sum_nonincrease 18 (reduced b 20 z)
+  generalize step^[18] (reduced b 20 z) = c at hc0 ⊢
+  have h1 := LeaveShadowRails.step_u_half' c
+  have h2 := step_sum_nonincrease c
+  generalize step c = d at h1 h2 ⊢
+  have h3 := LeaveShadowRails.step_u_half' d
+  refine ⟨by omega, fun hmin hlong => ?_⟩
+  unfold step at hmin hlong ⊢
+  split_ifs at hmin hlong ⊢ <;> (try dsimp only at hmin hlong ⊢) <;> omega
+
+/-! ### The farKey-0 corner (20-tick copy of the 15-tick margin-16 block) -/
+
+/-- The farKey the leave reads: 0 when u is long at the start, else the number of even ticks of the short u. -/
+def farKey20 (b : Nat) (z : SkywalkNat.State) : Nat := if 2 ^ b ≤ z.u then 0 else wait 20 z.u
+
+theorem farKey20_le (b : Nat) (z : SkywalkNat.State) : farKey20 b z ≤ 20 := by
+  unfold farKey20; split
+  · omega
+  · exact wait_le 20 z.u
+
+/-- End states of a far block: the reduced walk plus the shifted gap on the rail that ends long. -/
+theorem gapShape20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z) :
+    (farKey20 b z = 20 → (step^[20] z).u = (step^[20] (reduced b 20 z)).u ∧
+        (step^[20] z).v = (step^[20] (reduced b 20 z)).v + 2 ^ 20 * (2 ^ b * (high b 20 z - 1))) ∧
+    (farKey20 b z < 20 → (step^[20] z).u = (step^[20] (reduced b 20 z)).u +
+        2 ^ (farKey20 b z) * (2 ^ b * (high b 20 z - 1)) ∧
+        (step^[20] z).v = (step^[20] (reduced b 20 z)).v) := by
+  have side := rail20 b z small f
+  by_cases long : 2 ^ b ≤ z.u
+  · obtain ⟨rv, fullU, valid⟩ := side.1 long
+    have shape : z = ⟨(reduced b 20 z).u + 2 ^ 20 * (2 ^ b * (high b 20 z - 1)), (reduced b 20 z).v⟩ :=
+      SkywalkNat.State.ext fullU rv.symm
+    have result := long_u 20 (reduced b 20 z).u (reduced b 20 z).v (2 ^ b * (high b 20 z - 1)) valid
+    rw [← shape, show (⟨(reduced b 20 z).u, (reduced b 20 z).v⟩ : SkywalkNat.State) = reduced b 20 z
+      from rfl] at result
+    have k0 : farKey20 b z = 0 := by rw [farKey20, if_pos long]
+    rw [k0, pow_zero, one_mul]
+    exact ⟨fun h => absurd h (by decide), fun _ => ⟨by rw [result], by rw [result]⟩⟩
+  · obtain ⟨ru, fullV, valid⟩ := side.2 (Nat.lt_of_not_ge long)
+    have shape : z = ⟨(reduced b 20 z).u, (reduced b 20 z).v + 2 ^ 20 * (2 ^ b * (high b 20 z - 1))⟩ :=
+      SkywalkNat.State.ext ru.symm fullV
+    have result := long_v 20 (reduced b 20 z).v (reduced b 20 z).u (2 ^ b * (high b 20 z - 1)) valid
+    rw [← shape, show (⟨(reduced b 20 z).u, (reduced b 20 z).v⟩ : SkywalkNat.State) = reduced b 20 z
+      from rfl] at result
+    have result' : step^[20] z = (if wait 20 (reduced b 20 z).u = 20 then
+        (⟨(step^[20] (reduced b 20 z)).u,
+          (step^[20] (reduced b 20 z)).v + 2 ^ (wait 20 (reduced b 20 z).u) * (2 ^ b * (high b 20 z - 1))⟩ :
+          SkywalkNat.State)
+      else ⟨(step^[20] (reduced b 20 z)).u + 2 ^ (wait 20 (reduced b 20 z).u) * (2 ^ b * (high b 20 z - 1)),
+          (step^[20] (reduced b 20 z)).v⟩) := result
+    have kw : farKey20 b z = wait 20 (reduced b 20 z).u := by rw [farKey20, if_neg long, ru]
+    rw [kw]
+    constructor
+    · intro h
+      rw [result']
+      simp only [h, ite_true, and_self]
+    · intro h
+      have hc : (wait 20 (reduced b 20 z).u = 20) = False := eq_false (Nat.ne_of_lt h)
+      rw [result']
+      simp only [hc, ite_false, and_self]
+
+/-- Unit `2^b`: both rails keep their low `b` bits. -/
+theorem limbGaps21 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    ∃ a c : Nat, F.u = r.u + 2 ^ b * a ∧ F.v = r.v + 2 ^ b * c := by
+  by_cases f : far b 20 z
+  · obtain ⟨last, early⟩ := gapShape20 b z small f
+    try dsimp only at last early ⊢
+    by_cases h : farKey20 b z = 20
+    · obtain ⟨hu, hv⟩ := last h
+      exact ⟨0, 2 ^ 20 * (high b 20 z - 1), by rw [hu]; simp, by rw [hv]; ring⟩
+    · have lt : farKey20 b z < 20 := by have le := farKey20_le b z; omega
+      obtain ⟨hu, hv⟩ := early lt
+      exact ⟨2 ^ (farKey20 b z) * (high b 20 z - 1), 0, by rw [hu]; ring, by rw [hv]; simp⟩
+  · refine ⟨0, 0, ?_, ?_⟩ <;> simp [reduced, f]
+
+/-- For farKey ≥ 1 the gap is a multiple of `2^(b+1)`, as at margin 22. -/
+theorem evenGap20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k1 : 1 ≤ farKey20 b z) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    ∃ a c : Nat, F.u = r.u + 2 ^ (b + 1) * a ∧ F.v = r.v + 2 ^ (b + 1) * c := by
+  obtain ⟨last, early⟩ := gapShape20 b z small f
+  try dsimp only at last early ⊢
+  by_cases h : farKey20 b z = 20
+  · obtain ⟨hu, hv⟩ := last h
+    refine ⟨0, 2 ^ 19 * (high b 20 z - 1), by rw [hu]; simp, ?_⟩
+    rw [hv]
+    ring
+  · have le := farKey20_le b z
+    obtain ⟨hu, hv⟩ := early (by omega)
+    obtain ⟨m, hm⟩ : ∃ m, farKey20 b z = m + 1 := ⟨farKey20 b z - 1, by omega⟩
+    refine ⟨2 ^ m * (high b 20 z - 1), 0, ?_, by rw [hv]; simp⟩
+    rw [hu, hm]
+    ring
+
+/-- At farKey 0 the gap `2^b (H-1)` sits on the u rail, unshifted. -/
+theorem key0Shape20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    F.u = r.u + 2 ^ b * (high b 20 z - 1) ∧ F.v = r.v := by
+  obtain ⟨_, early⟩ := gapShape20 b z small f
+  try dsimp only at early ⊢
+  have h := early (by omega)
+  rw [k0, pow_zero, one_mul] at h
+  exact h
+
+/-- At farKey 0 the true u rail is long whatever the reduced one is. -/
+theorem key0Latch20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) (e : Nat) (he : e ≤ (step^[20] (reduced b 20 z)).u) :
+    2 ^ b ≤ (step^[20] z).u - e := by
+  obtain ⟨hu, _⟩ := key0Shape20 b z small f k0
+  try dsimp only at hu
+  have hH : 2 ≤ high b 20 z := f
+  have big : 2 ^ b ≤ 2 ^ b * (high b 20 z - 1) := Nat.le_mul_of_pos_right _ (by omega)
+  omega
+
+/-- At farKey 0 bit `b` of `u - e` and of the total flip together with `(H-1) mod 2`. -/
+theorem key0Bits20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) (e : Nat) (he : e ≤ (step^[20] (reduced b 20 z)).u) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let g := high b 20 z - 1
+    (F.u - e) / 2 ^ b % 2 = ((r.u - e) / 2 ^ b + g) % 2 ∧
+      (F.u + F.v) / 2 ^ b % 2 = ((r.u + r.v) / 2 ^ b + g) % 2 := by
+  obtain ⟨hu, hv⟩ := key0Shape20 b z small f k0
+  try dsimp only at hu hv ⊢
+  constructor
+  · rw [hu, show (step^[20] (reduced b 20 z)).u + 2 ^ b * (high b 20 z - 1) - e =
+      ((step^[20] (reduced b 20 z)).u - e) + 2 ^ b * (high b 20 z - 1) by omega]
+    exact LeaveShadowRails.bit_add _ _ _
+  · rw [hu, hv, show (step^[20] (reduced b 20 z)).u + 2 ^ b * (high b 20 z - 1) + (step^[20] (reduced b 20 z)).v =
+      ((step^[20] (reduced b 20 z)).u + (step^[20] (reduced b 20 z)).v) + 2 ^ b * (high b 20 z - 1) by omega]
+    exact LeaveShadowRails.bit_add _ _ _
+
+/-- Reduced sum of a far block: one limb at the start, so at least `2^b` after the 20 ticks. -/
+theorem endSum20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z) :
+    2 ^ b ≤ (step^[20] (reduced b 20 z)).u + (step^[20] (reduced b 20 z)).v := by
+  have lo := (represented b 20 z small f).2.1
+  rw [scale20] at lo
+  exact LeaveShadowRails.sumLower 20 (2 ^ b) (reduced b 20 z) lo
+
+/-- At farKey 0 the reduced u rail ends positive. -/
+theorem key0Positive20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) : 0 < (step^[20] (reduced b 20 z)).u := by
+  obtain ⟨hu, hv⟩ := key0Shape20 b z small f k0
+  try dsimp only at hu hv
+  have hH : 2 ≤ high b 20 z := f
+  have big : 2 ^ b ≤ 2 ^ b * (high b 20 z - 1) := Nat.le_mul_of_pos_right _ (by omega)
+  have mi := LeaveShadowRails.min_iter 20 z
+  have sum := endSum20 b z small f
+  omega
+
+/-- For `1 ≤ farKey < 20` the reduced u rail ends above `2^b` (the first tick halves the short word;
+`sumLower` over the other 19 ticks). -/
+theorem midKeyLong20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k1 : 1 ≤ farKey20 b z) (k20 : farKey20 b z < 20) : 2 ^ b + 1 ≤ (step^[20] (reduced b 20 z)).u := by
+  have short : z.u < 2 ^ b := by
+    by_contra h
+    have : farKey20 b z = 0 := by rw [farKey20, if_pos (Nat.le_of_not_gt h)]
+    omega
+  have kw : farKey20 b z = wait 20 z.u := by rw [farKey20, if_neg (Nat.not_le.mpr short)]
+  have even : z.u % 2 = 0 := by
+    by_contra odd
+    have : wait 20 z.u = 0 := by
+      show (if z.u % 2 = 0 then wait 19 (z.u / 2) + 1 else 0) = 0
+      rw [if_neg odd]
+    omega
+  have side := (rail20 b z small f).2 short
+  obtain ⟨ru, fullV, valid⟩ := side
+  have lo := (represented b 20 z small f).2.1
+  rw [scale20] at lo
+  let r0 := reduced b 20 z
+  have r0u : r0.u = z.u := ru
+  have stepR : step r0 = ⟨z.u / 2, r0.v⟩ := by
+    by_cases zero : z.u = 0
+    · have : wait 20 z.u = 20 := by rw [zero]; decide
+      omega
+    · have e : r0 = ⟨z.u, r0.v⟩ := SkywalkNat.State.ext r0u rfl
+      rw [e]; simp [step, zero, even]
+  have stepZ : step z = ⟨z.u / 2, z.v⟩ := by
+    by_cases zero : z.u = 0
+    · have : wait 20 z.u = 20 := by rw [zero]; decide
+      omega
+    · have e : z = ⟨z.u, z.v⟩ := rfl
+      rw [e]; simp [step, zero, even]
+  have sum19 : 2 ^ b + 1 + z.u / 2 ≤ (step^[20] r0).u + (step^[20] r0).v := by
+    have h := LeaveShadowRails.sumLower 19 (2 ^ b + 1 + z.u / 2) (step r0) (by
+      rw [stepR]
+      change 2 ^ 19 * (2 ^ b + 1 + z.u / 2) ≤ z.u / 2 + r0.v
+      have tot : 2 ^ 20 * 2 ^ b ≤ z.u + r0.v := by rw [← r0u]; exact lo
+      have e20 : (2:Nat) ^ 20 = 1048576 := by norm_num
+      have e19 : (2:Nat) ^ 19 = 524288 := by norm_num
+      have pos := Nat.two_pow_pos b
+      rw [e20] at tot
+      rw [e19]
+      omega)
+    rw [Function.iterate_succ_apply]
+    exact h
+  obtain ⟨_, early⟩ := gapShape20 b z small f
+  try dsimp only at early
+  obtain ⟨hu, hv⟩ := early k20
+  have mi : min (step^[20] z).u (step^[20] z).v ≤ z.u / 2 := by
+    have m := LeaveShadowRails.min_iter 19 (step z)
+    rw [stepZ] at m
+    rw [Function.iterate_succ_apply, stepZ]
+    exact le_trans m (Nat.min_le_left _ _)
+  have hH : 2 ≤ high b 20 z := f
+  have gbig : 2 ^ b ≤ 2 ^ (farKey20 b z) * (2 ^ b * (high b 20 z - 1)) := by
+    have one : 1 ≤ 2 ^ (farKey20 b z) := Nat.one_le_two_pow
+    have g : 2 ^ b ≤ 2 ^ b * (high b 20 z - 1) := Nat.le_mul_of_pos_right _ (by omega)
+    calc 2 ^ b ≤ 2 ^ b * (high b 20 z - 1) := g
+      _ = 1 * (2 ^ b * (high b 20 z - 1)) := (Nat.one_mul _).symm
+      _ ≤ 2 ^ (farKey20 b z) * (2 ^ b * (high b 20 z - 1)) := Nat.mul_le_mul_right _ one
+  change 2 ^ b + 1 + z.u / 2 ≤ (step^[20] (reduced b 20 z)).u + (step^[20] (reduced b 20 z)).v at sum19
+  omega
+
+/-- Margin-21 form of `afterThreshold20`: the sign test always agrees; the latch agrees except in far blocks
+with farKey 0. -/
+theorem afterThreshold21 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (e : Nat) (en : e ≤ 1) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    (0 < F.u ↔ 0 < r.u) ∧ (¬(far b 20 z ∧ farKey20 b z = 0) → (2 ^ b ≤ F.u - e ↔ 2 ^ b ≤ r.u - e)) := by
+  dsimp only
+  by_cases f : far b 20 z
+  · obtain ⟨last, early⟩ := gapShape20 b z small f
+    try dsimp only at last early
+    have le := farKey20_le b z
+    by_cases h20 : farKey20 b z = 20
+    · obtain ⟨hu, _⟩ := last h20
+      rw [hu]
+      exact ⟨Iff.rfl, fun _ => Iff.rfl⟩
+    · obtain ⟨hu, _⟩ := early (by omega)
+      by_cases h0 : farKey20 b z = 0
+      · have pos := key0Positive20 b z small f h0
+        exact ⟨⟨fun _ => pos, fun _ => by omega⟩, fun n => absurd ⟨f, h0⟩ n⟩
+      · have long := midKeyLong20 b z small f (by omega) (by omega)
+        exact ⟨⟨fun _ => by omega, fun _ => by omega⟩, fun _ => ⟨fun _ => by omega, fun _ => by omega⟩⟩
+  · have same : reduced b 20 z = z := by simp [reduced, f]
+    rw [same]
+    exact ⟨Iff.rfl, fun _ => Iff.rfl⟩
+
+/-- Margin-21 form of `retainedLow20`: the sign and the low `b` bits of the total and of `u - e` are those of
+the reduced walk. -/
+theorem retainedLow21 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (sg : Bool) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u + F.v) % 2 ^ b = (r.u + r.v) % 2 ^ b ∧
+      (F.u - e.toNat) % 2 ^ b = (r.u - e.toNat) % 2 ^ b := by
+  obtain ⟨a, c, ahu, chv⟩ := limbGaps21 b z small
+  have at21 := afterThreshold21 b z small 0 (by decide)
+  try dsimp only at at21 ahu chv
+  exact LeaveShadowRails.retained_of_gaps (2 ^ b) _ _ sg at21.1 a c ahu chv
+
+/-- Outside far blocks with farKey 0 the margin-22 statement (mod `2^(b+1)`) still holds. -/
+theorem retainedLow22 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (sg : Bool)
+    (plain : ¬(far b 20 z ∧ farKey20 b z = 0)) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u + F.v) % 2 ^ (b + 1) = (r.u + r.v) % 2 ^ (b + 1) ∧
+      (F.u - e.toNat) % 2 ^ (b + 1) = (r.u - e.toNat) % 2 ^ (b + 1) := by
+  have at21 := afterThreshold21 b z small 0 (by decide)
+  try dsimp only at at21
+  have same := at21.1
+  by_cases f : far b 20 z
+  · have k1 : 1 ≤ farKey20 b z := by
+      by_contra h
+      exact plain ⟨f, by omega⟩
+    obtain ⟨a, c, ahu, chv⟩ := evenGap20 b z small f k1
+    try dsimp only at ahu chv
+    exact LeaveShadowRails.retained_of_gaps (2 ^ (b + 1)) _ _ sg same a c ahu chv
+  · have eq : reduced b 20 z = z := by simp [reduced, f]
+    rw [eq] at same ⊢
+    exact LeaveShadowRails.retained_of_gaps (2 ^ (b + 1)) _ _ sg same 0 0 (by simp) (by simp)
+
+/-- At farKey 0 with `(H-1)` odd both borrow bits flip (mirrored test); with `(H-1)` even it is the reduced
+borrow. -/
+theorem key0Borrow20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) (e : Nat) (he : e ≤ (step^[20] (reduced b 20 z)).u) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    LeaveCompanion.upperBorrow (2 ^ b) F.u F.v e =
+      if (high b 20 z - 1) % 2 = 1 then
+        (if (r.u - e) / 2 ^ b % 2 = 0 ∧ (r.u + r.v) / 2 ^ b % 2 = 1 then 1 else 0)
+      else LeaveCompanion.upperBorrow (2 ^ b) r.u r.v e := by
+  obtain ⟨bu, bt⟩ := key0Bits20 b z small f k0 e he
+  try dsimp only at bu bt ⊢
+  rw [LeaveShadowRails.borrow_bits _ _ _ _ (Nat.two_pow_pos b),
+    LeaveShadowRails.borrow_bits _ _ _ _ (Nat.two_pow_pos b), bu, bt]
+  generalize ((step^[20] (reduced b 20 z)).u - e) / 2 ^ b = x
+  generalize ((step^[20] (reduced b 20 z)).u + (step^[20] (reduced b 20 z)).v) / 2 ^ b = y
+  generalize high b 20 z - 1 = g
+  split_ifs <;> omega
+
+/-- Key 0: the short word of the far block ends in v, below `2^b`, on both walks. -/
+theorem key0ShortV20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) : (step^[20] (reduced b 20 z)).v < 2 ^ b := by
+  obtain ⟨hu, hv⟩ := key0Shape20 b z small f k0
+  try dsimp only at hu hv
+  have hH : 2 ≤ high b 20 z := f
+  have big : 2 ^ b ≤ 2 ^ b * (high b 20 z - 1) := Nat.le_mul_of_pos_right _ (by omega)
+  have mi := LeaveShadowRails.min_iter 20 z
+  omega
+
+/-- Latch, erase side: when the reduced u rail of a farKey-0 far block ends below the cutoff, the reduced total
+is below `2^(b+1)`. -/
+theorem key0EraseBound20 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (f : far b 20 z)
+    (k0 : farKey20 b z = 0) (e : Nat) (en : e ≤ 1) (low : ¬ 2 ^ b ≤ (step^[20] (reduced b 20 z)).u - e) :
+    (step^[20] (reduced b 20 z)).u + (step^[20] (reduced b 20 z)).v < 2 * 2 ^ b := by
+  have sv := key0ShortV20 b z small f k0
+  omega
+
+/-- The latch the margin-21 leave computes: reduced latch OR (far and farKey 0) is the TRUE latch. -/
+theorem latch21 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (e : Nat) (en : e ≤ 1)
+    (he : e ≤ (step^[20] (reduced b 20 z)).u) :
+    (2 ^ b ≤ (step^[20] (reduced b 20 z)).u - e ∨ (far b 20 z ∧ farKey20 b z = 0)) ↔
+      2 ^ b ≤ (step^[20] z).u - e := by
+  have at21 := afterThreshold21 b z small e en
+  try dsimp only at at21
+  by_cases k : far b 20 z ∧ farKey20 b z = 0
+  · have t := key0Latch20 b z small k.1 k.2 e he
+    exact ⟨fun _ => t, fun _ => Or.inr k⟩
+  · have same := at21.2 k
+    exact ⟨fun h => h.elim same.mpr (fun hk => absurd hk k), fun h => Or.inl (same.mp h)⟩
+
+/-- Sign, TRUE latch from the margin-21 latch, and the retained low `b` bits. -/
+theorem truth21 (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (sg : Bool) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let e := (PortalValues.negative sg r.u).toNat
+    PortalValues.negative sg F.u = PortalValues.negative sg r.u ∧
+      (decide (2 ^ b ≤ r.u - e) || decide (far b 20 z ∧ farKey20 b z = 0)) = decide (2 ^ b ≤ F.u - e) ∧
+      (F.u - e) % 2 ^ b = (r.u - e) % 2 ^ b ∧ (F.u + F.v) % 2 ^ b = (r.u + r.v) % 2 ^ b := by
+  have low := retainedLow21 b z small sg
+  try dsimp only at low ⊢
+  have e1 : (PortalValues.negative sg (step^[20] (reduced b 20 z)).u).toNat ≤ 1 := by
+    cases PortalValues.negative sg (step^[20] (reduced b 20 z)).u <;> decide
+  have eu : (PortalValues.negative sg (step^[20] (reduced b 20 z)).u).toNat ≤ (step^[20] (reduced b 20 z)).u := by
+    by_cases p : 0 < (step^[20] (reduced b 20 z)).u
+    · omega
+    · have n0 : PortalValues.negative sg (step^[20] (reduced b 20 z)).u = false := by
+        simp only [PortalValues.negative, decide_eq_false p, Bool.and_false]
+      rw [n0]; exact Nat.zero_le _
+  have lt := latch21 b z small _ e1 eu
+  refine ⟨low.1, ?_, low.2.2, low.2.1⟩
+  apply Bool.eq_iff_iff.mpr
+  simp only [Bool.or_eq_true, decide_eq_true_eq]
+  exact lt
+
+/-- The restore runs on TRUE values (true latch, true borrow): `upper_restore` on the 20-tick end state. -/
+theorem restored21 (b k : Nat) (z : SkywalkNat.State) (endSmall : EndSmall20 b z) (sg : Bool) :
+    let F := step^[20] z
+    let e := (PortalValues.negative sg F.u).toNat
+    ((if 2 ^ b ≤ F.u - e then ((F.u + F.v) / 2 ^ (b + 1)) % 2 ^ k else 0) + 2 ^ k -
+        LeaveCompanion.upperBorrow (2 ^ b) F.u F.v e) % 2 ^ k = ((F.u - e) / 2 ^ (b + 1)) % 2 ^ k := by
+  dsimp only
+  have le : (PortalValues.negative sg (step^[20] z).u).toNat ≤ 1 := by
+    cases PortalValues.negative sg (step^[20] z).u <;> decide
+  have eu : (PortalValues.negative sg (step^[20] z).u).toNat ≤ (step^[20] z).u := by
+    by_cases p : 0 < (step^[20] z).u
+    · omega
+    · have n0 : PortalValues.negative sg (step^[20] z).u = false := by
+        simp only [PortalValues.negative, decide_eq_false p, Bool.and_false]
+      rw [n0]; exact Nat.zero_le _
+  have out := LeaveCompanion.upper_restore (2 ^ b) (step^[20] z).u (step^[20] z).v
+    (PortalValues.negative sg (step^[20] z).u).toNat (2 ^ k) (Nat.two_pow_pos _) le eu endSmall (Nat.two_pow_pos _)
+  have two : 2 * 2 ^ b = 2 ^ (b + 1) := (Nat.mul_comm _ _).trans (pow_succ 2 b).symm
+  simpa only [two] using out
+
+/-! ### `SmallIfFar` forms (near blocks supply no `min` bound; the near case is the identity reduction) -/
+
+theorem limbGaps21_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    ∃ a c : Nat, F.u = r.u + 2 ^ b * a ∧ F.v = r.v + 2 ^ b * c := by
+  by_cases f : far b 20 z
+  · exact limbGaps21 b z (small f)
+  · refine ⟨0, 0, ?_, ?_⟩ <;> simp [reduced, f]
+
+theorem afterThreshold21_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z)
+    (e : Nat) (en : e ≤ 1) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    (0 < F.u ↔ 0 < r.u) ∧ (¬(far b 20 z ∧ farKey20 b z = 0) → (2 ^ b ≤ F.u - e ↔ 2 ^ b ≤ r.u - e)) := by
+  by_cases f : far b 20 z
+  · exact afterThreshold21 b z (small f) e en
+  · have same : reduced b 20 z = z := by simp [reduced, f]
+    dsimp only
+    rw [same]
+    exact ⟨Iff.rfl, fun _ => Iff.rfl⟩
+
+theorem retainedLow21_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) (sg : Bool) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u + F.v) % 2 ^ b = (r.u + r.v) % 2 ^ b ∧
+      (F.u - e.toNat) % 2 ^ b = (r.u - e.toNat) % 2 ^ b := by
+  by_cases f : far b 20 z
+  · exact retainedLow21 b z (small f) sg
+  · simp [reduced, f]
+
+theorem retainedLow22_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) (sg : Bool)
+    (plain : ¬(far b 20 z ∧ farKey20 b z = 0)) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let e := PortalValues.negative sg r.u
+    PortalValues.negative sg F.u = e ∧ (F.u + F.v) % 2 ^ (b + 1) = (r.u + r.v) % 2 ^ (b + 1) ∧
+      (F.u - e.toNat) % 2 ^ (b + 1) = (r.u - e.toNat) % 2 ^ (b + 1) := by
+  by_cases f : far b 20 z
+  · exact retainedLow22 b z (small f) sg plain
+  · simp [reduced, f]
+
+theorem latch21_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) (e : Nat)
+    (en : e ≤ 1) (he : e ≤ (step^[20] (reduced b 20 z)).u) :
+    (2 ^ b ≤ (step^[20] (reduced b 20 z)).u - e ∨ (far b 20 z ∧ farKey20 b z = 0)) ↔
+      2 ^ b ≤ (step^[20] z).u - e := by
+  by_cases f : far b 20 z
+  · exact latch21 b z (small f) e en he
+  · have same : reduced b 20 z = z := by simp [reduced, f]
+    rw [same]
+    exact ⟨fun h => h.elim id (fun k => absurd k.1 f), Or.inl⟩
+
+theorem truth21_shadow7 (b : Nat) (z : SkywalkNat.State) (small : Shadow7.SmallIfFar b 20 z) (sg : Bool) :
+    let F := step^[20] z
+    let r := step^[20] (reduced b 20 z)
+    let e := (PortalValues.negative sg r.u).toNat
+    PortalValues.negative sg F.u = PortalValues.negative sg r.u ∧
+      (decide (2 ^ b ≤ r.u - e) || decide (far b 20 z ∧ farKey20 b z = 0)) = decide (2 ^ b ≤ F.u - e) ∧
+      (F.u - e) % 2 ^ b = (r.u - e) % 2 ^ b ∧ (F.u + F.v) % 2 ^ b = (r.u + r.v) % 2 ^ b := by
+  by_cases f : far b 20 z
+  · exact truth21 b z (small f) sg
+  · simp [reduced, f]
+
+/-! ### Trace history at 20 ticks -/
+
+theorem orient20m (b : Nat) (z : SkywalkNat.State) (small : min z.u z.v < 2 ^ b) (hfar : far b 20 z) :
+    decide (2 ^ b ≤ z.u) = decide (z.v < z.u) := by
+  have hr := rail20 b z small hfar
+  by_cases lhs : 2 ^ b ≤ z.u
+  · have hv : z.v < 2 ^ b := by omega
+    simp [lhs, show z.v < z.u by omega]
+  · obtain ⟨_, _, guarded⟩ := hr.2 (by omega)
+    have g : (reduced b 20 z).u < guard 20 (reduced b 20 z).u := guard_gt 19 _
+    simp [lhs, show ¬ z.v < z.u by omega]
+
+theorem orient20 (b : Nat) (z : SkywalkNat.State) (small : Small20 b z) (hfar : far b 20 z) :
+    decide (2 ^ b ≤ z.u) = decide (z.v < z.u) :=
+  orient20m b z (small.1 hfar) hfar
+
+theorem certifiedChain20m (b : Nat) (z : SkywalkNat.State) (g s : Bool)
+    (small : min z.u z.v < 2 ^ b) (odd : z.v % 2 = 1) (hfar : far b 20 z) :
+    StairArchiveTrace.chain (decide (2 ^ b ≤ z.u))
+      (SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v)) := by
+  rw [orient20m b z small hfar]
+  exact StairArchiveTrace.signed (represented b 20 z small hfar).1 g s (by omega) odd
+
+theorem certifiedChain20 (b : Nat) (z : SkywalkNat.State) (g s : Bool)
+    (small : Small20 b z) (odd : z.v % 2 = 1) (hfar : far b 20 z) :
+    StairArchiveTrace.chain (decide (2 ^ b ≤ z.u))
+      (SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v)) :=
+  certifiedChain20m b z g s (small.1 hfar) odd hfar
+
+private theorem raw_before_first20m (xs : List Nat) (i : Nat) (hi : i < xs.length) (early : i ≤ xs.idxOf 2) :
+    decide (xs[i] = 2) = decide (i = xs.idxOf 2) := by
+  induction xs generalizing i with
+  | nil => simp at hi
+  | cons x xs ih =>
+    by_cases hit : x = 2
+    · subst x
+      simp at early
+      subst i; simp
+    · cases i with
+      | zero => simp [hit]
+      | succ i =>
+        simp [hit] at early ⊢
+        have hh := ih i (by simpa using hi) early
+        simpa using hh
+
+private theorem letters_len20 (n : Nat) (z : SkywalkNat.State) : (letters n z).length = n := by
+  induction n generalizing z with
+  | zero => rfl
+  | succ n ih => simp [letters, ih]
+
+/-- 20-tick copy of `raw_exchange`: only the prefix through the selected swap is one-hot. -/
+theorem raw_exchange20m (B small : Nat) (ready : guard 20 small ≤ B)
+    (v : BasisState) (sw : Nat → Wire)
+    (records : ∀ i : Fin 20, v (sw i) =
+      decide ((letters 20 ⟨small, B⟩)[i.val]'(by rw [letters_len20]; exact i.isLt) = 2)) :
+    ∀ i < 20, i ≤ wait 20 small → v (sw i) = decide (i = wait 20 small) := by
+  intro i hi early
+  have h := first_exchange 20 B small ready
+  rw [← h] at early ⊢
+  exact (records ⟨i, hi⟩).trans (raw_before_first20m _ _ (by simpa only [letters_len20] using hi) early)
+
+theorem firstSwap20m (b : Nat) (z : SkywalkNat.State) (g s : Bool)
+    (small : min z.u z.v < 2 ^ b) (odd : z.v % 2 = 1) (hfar : far b 20 z)
+    (side : decide (2 ^ b ≤ z.u) = false) :
+    let xs := SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v)
+    ∀ i (hi : i < xs.length), i ≤ wait 20 z.u → xs[i].2 = decide (i = wait 20 z.u) := by
+  let xs := SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v)
+  let r := reduced b 20 z
+  have h := (rail20 b z small hfar).2 (Nat.lt_of_not_ge (of_decide_eq_false side))
+  have eq : r = ⟨z.u, r.v⟩ := SkywalkNat.State.ext h.1 rfl
+  have guard : IntegerHigh.guard 20 z.u ≤ r.v := h.1 ▸ h.2.2
+  have tape := LeaveTraceHistory.swapLetters (represented b 20 z small hfar).1 g s odd
+  change xs.map Prod.snd = (letters 20 r).map _ at tape
+  rw [eq] at tape
+  let v : BasisState := fun q => (xs[q]?.getD (false, false)).2
+  have raw := raw_exchange20m r.v z.u guard v id (by
+    intro i
+    have hi : i.val < xs.length := by simpa only [xs, SkywalkTrace.trace_length] using i.isLt
+    have bit := congrArg (fun a : List Bool => a[i.val]?) tape
+    have len := congrArg List.length tape
+    simp only [List.length_map] at len
+    have hi2 : i.val < (letters 20 ⟨z.u, r.v⟩).length := len ▸ hi
+    simpa [v, List.getElem?_eq_getElem hi, List.getElem?_eq_getElem hi2] using bit)
+  dsimp only
+  intro i hi early
+  change i < xs.length at hi
+  have idx : i < 20 := by simpa only [xs, SkywalkTrace.trace_length] using hi
+  simpa only [v, id_eq, List.getElem?_eq_getElem hi, Option.getD_some] using raw i idx early
+
+/-- In a far block "u long at the start" xor "the first tick's swap record" is exactly farKey 0. -/
+theorem key0Flag20 (b : Nat) (z : SkywalkNat.State) (g s : Bool) (small : min z.u z.v < 2 ^ b)
+    (odd : z.v % 2 = 1) (hfar : far b 20 z) :
+    (decide (2 ^ b ≤ z.u) ^^
+      ((SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v))[0]?.getD (false, false)).2) =
+      decide (farKey20 b z = 0) := by
+  by_cases long : 2 ^ b ≤ z.u
+  · have ch := certifiedChain20m b z g s small odd hfar
+    have k0 : farKey20 b z = 0 := by rw [farKey20, if_pos long]
+    rw [k0, decide_eq_true long]
+    generalize SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v) = xs at ch ⊢
+    cases xs with
+    | nil => simp
+    | cons v vs =>
+      have hv : v.2 = false := by
+        have h1 := ch.1
+        simpa [long] using h1
+      simp [hv]
+  · have fs := firstSwap20m b z g s small odd hfar (decide_eq_false long)
+    try dsimp only at fs
+    have hi : 0 < (SkywalkTrace.trace 20 (SkywalkRails.encode g s z.u z.v)).length := by
+      rw [SkywalkTrace.trace_length]; decide
+    have h0 := fs 0 hi (Nat.zero_le _)
+    have kw : farKey20 b z = wait 20 z.u := by rw [farKey20, if_neg long]
+    rw [List.getElem?_eq_getElem hi, Option.getD_some, h0, kw, decide_eq_false long]
+    by_cases w : wait 20 z.u = 0
+    · simp [w]
+    · have w' : ¬ 0 = wait 20 z.u := fun h => w h.symm
+      simp [w, w']
+
+end ShadowMath
+
+end ECDSAAdd.Entrant.StairPacket.Shadow20
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed ECDSAAdd.Entrant.IntegerPacket
+open ECDSAAdd.Entrant.StairPacket ECDSAAdd.Entrant.StairPacket.Partial ECDSAAdd.Entrant.StairPacket.GateMirror
+open ECDSAAdd.Baselines ECDSAAdd.Challenge
+
+set_option maxHeartbeats 2500000
+set_option maxRecDepth 25000
+
+
+/-! ### Section 3: Physical wire geometry for the 9 20-tick blocks (`s = 165..325`) -/
+
+def wpP20 (s : Nat) : Nat := railP s - sbP20 s - 20
+def e0P20 (s : Nat) : Nat := 1579 + sbP20 s
+def a0P20 (s : Nat) : Nat := s + sbP20 s + 37
+def b0P20 (s : Nat) : Nat := 787 + sbP20 s
+
+/-- Next block's cutoff: `sbP20 (s+20)` for `s < 325`, handing off to `Shadow7.sbP 345 = 76` at `s = 325`. -/
+def nextSb20 (s : Nat) : Nat := if s + 20 < 345 then sbP20 (s + 20) else Shadow7.sbP (s + 20)
+
+def lowsP20 (s : Nat) : Nat := (if s + 20 < 345 then 22 else 17) + nextSb20 s - sbP20 s
+
+def liveW20 (s : Nat) : Nat :=
+  (if 224 ≤ s + 20 ∧ s + 20 ≤ 286 then min 256 (511 - (s + 20))
+   else if 257 ≤ s + 20 then 512 - (s + 20)
+   else min 257 (railP (s + 20))) - sbP20 s
+
+/-- 21 one-hot barrel tags for shifts `0..20`: index 0 is `1581`, indices `1..19` are `1562..1580`, index 20 is `1560`. -/
+def tagsP20 : List Wire :=
+  [1581, 1562, 1563, 1564, 1565, 1566, 1567, 1568, 1569, 1570,
+   1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1560]
+
+def bankW20 (s i : Nat) : Wire :=
+  if i < 3 then e0P20 s + i
+  else if i < wpP20 s then bTopP s + 1 + i - wpP20 s
+  else 1603 + i - wpP20 s
+
+/-- Carry & barrel scratch pool for 20-tick blocks (`1603..`, skipping `e0P20 s .. e0P20 s + 9`). -/
+def poolW20 (s i : Nat) : Wire :=
+  if 1603 + i < e0P20 s then 1603 + i else 1613 + i
+
+def storeW20 (s i : Nat) : Wire :=
+  let q := Partial.storeW i
+  if q < e0P20 s then q else q + 10
+
+theorem tagsP20_length : tagsP20.length = 21 := rfl
+
+theorem tagsP20_nodup : tagsP20.Nodup := by decide
+
+theorem tagsP20_range : ∀ q ∈ tagsP20, 1560 ≤ q ∧ q ≤ 1581 := by decide
+
+theorem geom20_facts : ∀ j : Fin 9,
+    let s := start20 j
+    165 ≤ s ∧ s ≤ 325 ∧
+    83 ≤ sbP20 s ∧ sbP20 s ≤ 163 ∧
+    1662 ≤ e0P20 s ∧ e0P20 s ≤ 1742 ∧
+    75 ≤ wpP20 s ∧ wpP20 s ≤ 115 ∧
+    10 ≤ lowsP20 s ∧ lowsP20 s ≤ 12 ∧
+    CRTBarrel20.UsedWidth20 (liveW20 s) ∧
+    liveW20 s ≤ wpP20 s + 20 ∧
+    lowsP20 s ≤ liveW20 s ∧
+    1613 + wpP20 s + s < 2050 := by
+  unfold CRTBarrel20.UsedWidth20
+  decide +kernel
+
+theorem bank20_cases (j : Fin 9) {i : Nat} (hi : i < wpP20 (start20 j) + 20) :
+    let s := start20 j
+    (i < 3 ∧ bankW20 s i = e0P20 s + i) ∨
+    (3 ≤ i ∧ i < wpP20 s ∧ bankW20 s i = bTopP s + 1 + i - wpP20 s ∧
+      b0P20 s + 22 ≤ bankW20 s i ∧ bankW20 s i ≤ bTopP s) ∨
+    (wpP20 s ≤ i ∧ bankW20 s i = 1603 + i - wpP20 s ∧ 1603 ≤ bankW20 s i ∧ bankW20 s i ≤ 1622) := by
+  have hg := geom20_facts j
+  have hbt : bTopP (start20 j) = 785 + railP (start20 j) := rfl
+  have hwp : wpP20 (start20 j) = railP (start20 j) - sbP20 (start20 j) - 20 := rfl
+  have hb0 : b0P20 (start20 j) = 787 + sbP20 (start20 j) := rfl
+  by_cases h1 : i < 3
+  · left; exact ⟨h1, by simp [bankW20, h1]⟩
+  · by_cases h2 : i < wpP20 (start20 j)
+    · right; left
+      refine ⟨by omega, h2, by simp [bankW20, h1, h2], ?_, ?_⟩ <;>
+        (simp only [bankW20, h1, h2, if_false, if_true]; unfold Wire; omega)
+    · right; right
+      refine ⟨by omega, by simp [bankW20, h1, h2], ?_, ?_⟩ <;>
+        (simp only [bankW20, h1, h2, if_false]; unfold Wire; omega)
+
+theorem bank20_inj (j : Fin 9) {a b : Nat} (ha : a < wpP20 (start20 j) + 20)
+    (hb : b < wpP20 (start20 j) + 20) (e : bankW20 (start20 j) a = bankW20 (start20 j) b) : a = b := by
+  have hg := geom20_facts j
+  have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
+  have ca := bank20_cases j ha
+  have cb := bank20_cases j hb
+  rcases ca with ⟨_, ea⟩ | ⟨_, _, ea, _, _⟩ | ⟨_, ea, _, _⟩ <;>
+    rcases cb with ⟨_, eb⟩ | ⟨_, _, eb, _, _⟩ | ⟨_, eb, _, _⟩ <;>
+    (rw [ea, eb] at e; unfold Wire at *; omega)
+
+theorem pool20_cases (j : Fin 9) (i : Nat) :
+    let s := start20 j
+    (1603 + i < e0P20 s ∧ poolW20 s i = 1603 + i) ∨
+    (e0P20 s ≤ 1603 + i ∧ poolW20 s i = 1613 + i) := by
+  by_cases h : 1603 + i < e0P20 (start20 j)
+  · left; exact ⟨h, by simp [poolW20, h]⟩
+  · right; exact ⟨by omega, by simp [poolW20, h]⟩
+
+theorem tagsP20_inj {a b : Nat} (ha : a < 21) (hb : b < 21)
+    (e : tagsP20.getD a 0 = tagsP20.getD b 0) : a = b := by
+  have h : ∀ x y : Fin 21, tagsP20.getD x.val 0 = tagsP20.getD y.val 0 → x = y := by decide
+  exact congrArg Fin.val (h ⟨a, ha⟩ ⟨b, hb⟩ e)
+
+theorem tagsP20_getD_range {k : Nat} (hk : k < 21) :
+    1560 ≤ tagsP20.getD k 0 ∧ tagsP20.getD k 0 ≤ 1581 := by
+  rw [List.getD_eq_getElem _ _ (by rw [tagsP20_length]; exact hk)]
+  exact tagsP20_range _ (List.getElem_mem _)
+
+/-! ### Section 4: `CRTBarrel20` physical instantiation for all 9 20-tick blocks -/
+
+def place20 (s : Nat) (q : Nat) : Wire :=
+  let n := liveW20 s
+  if q < n then bankW20 s q
+  else if q < n + 21 then tagsP20.getD (q - n) 0
+  else poolW20 s (22 + (q - n - 21))
+
+def barrel20 (s : Nat) (mir : Bool) : Program :=
+  renameProgram (place20 s) (CRTBarrel20.logical20 (liveW20 s) mir)
+
+def barrel20T (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).t
+def barrel20M (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).m
+def barrel20Slots (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).slots
+
+theorem place20_inj (j : Fin 9) :
+    ∀ a < liveW20 (start20 j) + 31, ∀ b < liveW20 (start20 j) + 31,
+      place20 (start20 j) a = place20 (start20 j) b → a = b := by
+  have hg := geom20_facts j
+  have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
+  have hscr : ∀ k < 10, poolW20 (start20 j) (22 + k) = 1625 + k := by
+    intro k hk; unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
+  have hbank_rng : ∀ i < liveW20 (start20 j),
+      (1662 ≤ bankW20 (start20 j) i ∧ bankW20 (start20 j) i ≤ 1744) ∨
+      (870 ≤ bankW20 (start20 j) i ∧ bankW20 (start20 j) i ≤ 1043) ∨
+      (1603 ≤ bankW20 (start20 j) i ∧ bankW20 (start20 j) i ≤ 1622) := by
+    intro i hi
+    rcases bank20_cases j (i := i) (by omega) with ⟨_, e⟩ | ⟨_, _, e, _, _⟩ | ⟨_, e, _, _⟩
+    · left; rw [e]; unfold Wire at *; omega
+    · right; left; have hb0 : b0P20 (start20 j) = 787 + sbP20 (start20 j) := rfl; unfold Wire at *; omega
+    · right; right; unfold Wire at *; omega
+  intro a ha b hb eq
+  unfold place20 at eq
+  by_cases ha1 : a < liveW20 (start20 j) <;> by_cases hb1 : b < liveW20 (start20 j)
+  · simp only [ha1, hb1, if_true] at eq
+    exact bank20_inj j (by omega) (by omega) eq
+  · simp only [ha1, hb1, if_true, if_false] at eq
+    have ba := hbank_rng a ha1
+    by_cases hb2 : b < liveW20 (start20 j) + 21
+    · rw [if_pos hb2] at eq
+      have tb := tagsP20_getD_range (k := b - liveW20 (start20 j)) (by omega)
+      unfold Wire at *; omega
+    · rw [if_neg hb2, hscr (b - liveW20 (start20 j) - 21) (by omega)] at eq
+      unfold Wire at *; omega
+  · simp only [ha1, hb1, if_true, if_false] at eq
+    have bb := hbank_rng b hb1
+    by_cases ha2 : a < liveW20 (start20 j) + 21
+    · rw [if_pos ha2] at eq
+      have ta := tagsP20_getD_range (k := a - liveW20 (start20 j)) (by omega)
+      unfold Wire at *; omega
+    · rw [if_neg ha2, hscr (a - liveW20 (start20 j) - 21) (by omega)] at eq
+      unfold Wire at *; omega
+  · simp only [ha1, hb1, if_false] at eq
+    by_cases ha2 : a < liveW20 (start20 j) + 21 <;> by_cases hb2 : b < liveW20 (start20 j) + 21
+    · simp only [ha2, hb2, if_true] at eq
+      have := tagsP20_inj (a := a - liveW20 (start20 j)) (b := b - liveW20 (start20 j)) (by omega) (by omega) eq
+      omega
+    · simp only [ha2, hb2, if_true, if_false] at eq
+      have ta := tagsP20_getD_range (k := a - liveW20 (start20 j)) (by omega)
+      rw [hscr (b - liveW20 (start20 j) - 21) (by omega)] at eq
+      unfold Wire at *; omega
+    · simp only [ha2, hb2, if_true, if_false] at eq
+      have tb := tagsP20_getD_range (k := b - liveW20 (start20 j)) (by omega)
+      rw [hscr (a - liveW20 (start20 j) - 21) (by omega)] at eq
+      unfold Wire at *; omega
+    · simp only [ha2, hb2, if_false] at eq
+      rw [hscr (a - liveW20 (start20 j) - 21) (by omega), hscr (b - liveW20 (start20 j) - 21) (by omega)] at eq
+      unfold Wire at *; omega
+
+theorem barrel20_metrics (j : Fin 9) (mir : Bool) :
+    toffoliCount (barrel20 (start20 j) mir) = barrel20T (start20 j) mir ∧
+    measurementCount (barrel20 (start20 j) mir) = barrel20M (start20 j) mir ∧
+    gateSlots (barrel20 (start20 j) mir) = barrel20Slots (start20 j) mir := by
+  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
+  have hm := CRTBarrel20.logical20_metrics (liveW20 (start20 j)) hu mir
+  have hr : CRTBarrel20.count (barrel20 (start20 j) mir) = CRTBarrel20.count (CRTBarrel20.logical20 (liveW20 (start20 j)) mir) :=
+    CRTBarrel20.count_rename (place20 (start20 j)) _
+  rw [hm] at hr
+  exact ⟨congrArg CRTBarrel20.Count.t hr,
+    congrArg CRTBarrel20.Count.m hr,
+    congrArg CRTBarrel20.Count.slots hr⟩
+
+theorem barrel20_phys (j : Fin 9) (mir : Bool) :
+    GatePhysical (barrel20 (start20 j) mir) := by
+  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
+  have hf := CRTBarrel20.logical20_fits (liveW20 (start20 j)) hu mir
+  have hr := CRTBarrel20.fits_rename (Q := fun _ => True) (f := place20 (start20 j)) hf
+    (fun _ _ => trivial) (fun a ha b hb => place20_inj j a ha b hb)
+  intro g hg
+  exact (hr g hg).1
+
+theorem barrel20_wires (j : Fin 9) (mir : Bool) (q : Wire)
+    (hq : q ∈ wires (barrel20 (start20 j) mir)) :
+    (∃ i < liveW20 (start20 j), q = bankW20 (start20 j) i) ∨
+    (∃ k < 10, q = poolW20 (start20 j) (22 + k)) ∨
+    q ∈ tagsP20 := by
+  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
+  have hf := CRTBarrel20.logical20_fits (liveW20 (start20 j)) hu mir
+  rw [barrel20, renameProgram_support] at hq
+  obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hq
+  have hxlt : x < liveW20 (start20 j) + 31 := CRTBarrel20.support hf x hx
+  unfold place20
+  by_cases h1 : x < liveW20 (start20 j)
+  · left; rw [if_pos h1]; exact ⟨x, h1, rfl⟩
+  · by_cases h2 : x < liveW20 (start20 j) + 21
+    · right; right
+      rw [if_neg h1, if_pos h2, List.getD_eq_getElem _ _ (by rw [tagsP20_length]; unfold Wire at *; omega)]
+      exact List.getElem_mem _
+    · right; left
+      rw [if_neg h1, if_neg h2]
+      exact ⟨x - liveW20 (start20 j) - 21, by unfold Wire at *; omega, rfl⟩
+
+theorem barrel20_cov (j : Fin 9) (mir : Bool) :
+    WindowCovered.CoveredW (barrel20 (start20 j) mir) := by
+  have hg := geom20_facts j
+  have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
+  intro q hq
+  rw [WindowCovered.dom_iff]
+  rcases barrel20_wires j mir q hq with ⟨i, hi, rfl⟩ | ⟨k, hk, rfl⟩ | ht
+  · rcases bank20_cases j (i := i) (by omega) with ⟨_, e⟩ | ⟨_, _, e, _, _⟩ | ⟨_, e, _, _⟩
+    · rw [e]; unfold Wire at *; omega
+    · have hb0 : b0P20 (start20 j) = 787 + sbP20 (start20 j) := rfl; unfold Wire at *; omega
+    · unfold Wire at *; omega
+  · rcases pool20_cases j (22 + k) with ⟨_, e⟩ | ⟨_, e⟩ <;> (rw [e]; unfold Wire at *; omega)
+  · have := tagsP20_range q ht; unfold Wire at *; omega
+
+/-- Physical barrel semantics for all 9 20-tick blocks (`j : Fin 9`), returning `HighBankBarrel.Result`. -/
+theorem barrel20_result (j : Fin 9) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (small : v < 2 ^ (liveW20 (start20 j) - (slot.val - 1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) (liveW20 (start20 j))
+      (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k + 1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) (liveW20 (start20 j))
+      (v <<< CRTBarrel20.exitShift mir slot.val) s (run (barrel20 (start20 j) mir) tape s) := by
+  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
+  have hr := CRTBarrel20.barrel20_result (liveW20 (start20 j)) hu mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22 + k))
+    (place20 (start20 j))
+    (fun i hi => by simp [place20, hi])
+    (fun k hk => by
+      unfold place20
+      rw [if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape small input tag scratch
+  exact ⟨hr.1, hr.2.1, hr.2.2⟩
+
+end ECDSAAdd.Entrant.StairPacket.Shadow20
+end
