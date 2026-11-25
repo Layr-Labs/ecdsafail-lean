@@ -2821,7 +2821,7 @@ def cutRowOdd (B N s f d first c : Nat) : Program :=
   let p := StairConcreteAssembly.checkpointPrimitives
   let w := StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))
   let F := History5.historyMap w (5 * first)
-  let hp := StairConcreteAssembly.hostPlan
+  let hp := OddFullPass.P1LifeLoan.hostPlan1542
   (p.unpack B ++ p.tickForward s ++
       StairReplay.movedForward w (s + 1) (5 * first + 5 - (s + 1)) ++
       (TickRanges.tick w (5 * first + 5) ++ renameProgram (MeasuredCodec5.label F) E138)) ++
@@ -2837,7 +2837,7 @@ theorem row_shapeOdd (B N s f d first c : Nat)
     (h1 : s + 1 ≤ 5 * first + 5) (h2 : 5 * first + 5 + 1 ≤ f)
     (h5 : 5 * first + 5 ≠ 5) (hdue : History5.packDue (5 * first + 5) = true) (hf0 : first ≠ 0)
     (hdp : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
-        (StairConcreteAssembly.hostPlan.group true d first (c + 1))
+        (OddFullPass.P1LifeLoan.hostPlan1542.group true d first (c + 1))
         (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first))
           (Rolling1588.onPacket first Rolling1588.dp))) =
       renameProgram (MeasuredCodec5.label (History5.historyMap
@@ -2845,7 +2845,7 @@ theorem row_shapeOdd (B N s f d first c : Nat)
         Rolling1588.dp) :
     ∃ X M Y : Program,
       StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives B N s f ++
-          OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true d first (c + 1) =
+          OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true d first (c + 1) =
         X ++ renameProgram (MeasuredCodec5.label (History5.historyMap
           (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (5 * first)))
           Rolling1588.ep ++ M ++
@@ -2862,7 +2862,7 @@ theorem row_shapeOdd (B N s f d first c : Nat)
   let Mrow := StairReplay.movedForward w (5 * first + 5 + 1) (f - (5 * first + 5) - 1) ++ p.orient f ++
     renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++ p.pack N
   let Brow := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
-      (StairConcreteAssembly.hostPlan.group true d first (c + 1))
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true d first (c + 1))
       (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first)) (oddBasePacketTail d first)) ++
        renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true d (first + 1) c))
   refine ⟨A0 ++ E138', Mrow, Brow, ?_, ?_⟩
@@ -2877,7 +2877,7 @@ theorem entry_row_cut_odd (B N s f d first c : Nat)
     (hF : Function.Injective (History5.historyMap
       (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1))) (5 * first)))
     (hdp : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
-        (StairConcreteAssembly.hostPlan.group true d first (c + 1))
+        (OddFullPass.P1LifeLoan.hostPlan1542.group true d first (c + 1))
         (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first))
           (Rolling1588.onPacket first Rolling1588.dp))) =
       renameProgram (MeasuredCodec5.label (History5.historyMap
@@ -2904,7 +2904,7 @@ theorem entry_row_cut_odd (B N s f d first c : Nat)
     (m : List Bool) :
     ∃ m', run (cutRowOdd B N s f d first c) m x0 =
       run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives B N s f ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true d first (c + 1)) m' x0 := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true d first (c + 1)) m' x0 := by
   set w := StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (s + 1)) with hw
   set F := History5.historyMap w (5 * first) with hFdef
   set p := StairConcreteAssembly.checkpointPrimitives with hpdef
@@ -2916,12 +2916,12 @@ theorem entry_row_cut_odd (B N s f d first c : Nat)
   let Mrow := StairReplay.movedForward w (5 * first + 5 + 1) (f - (5 * first + 5) - 1) ++ p.orient f ++
     renameProgram (OB5.sig f) (Rolling1588.Integer.packFirst base true f) ++ p.pack N
   let Brow := StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
-      (StairConcreteAssembly.hostPlan.group true d first (c + 1))
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true d first (c + 1))
       (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first)) (oddBasePacketTail d first)) ++
        renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups true d (first + 1) c))
   let W := (Finset.range 10).image (MeasuredCodec5.label F)
   have hshape : StairSchedule.forwardSegment p B N s f ++
-      OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true d first (c + 1) =
+      OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true d first (c + 1) =
       (A0 ++ E138') ++ ep' ++ Mrow ++ dp' ++ Brow := by
     rw [forwardSegment_row B N s f first h1 h2 h5 hdue hf0, oddHostedGroup_true_head, hdp]
     simp only [A0, E138', ep', Mrow, dp', Brow, hpdef, hw, hFdef, List.append_assoc]
@@ -2949,7 +2949,7 @@ theorem row_subOdd (B N s f d first c : Nat)
     (h1 : s + 1 ≤ 5 * first + 5) (h2 : 5 * first + 5 + 1 ≤ f)
     (h5 : 5 * first + 5 ≠ 5) (hdue : History5.packDue (5 * first + 5) = true) (hf0 : first ≠ 0)
     (hdp : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d)
-        (StairConcreteAssembly.hostPlan.group true d first (c + 1))
+        (OddFullPass.P1LifeLoan.hostPlan1542.group true d first (c + 1))
         (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first))
           (Rolling1588.onPacket first Rolling1588.dp))) =
       renameProgram (MeasuredCodec5.label (History5.historyMap
@@ -2957,12 +2957,63 @@ theorem row_subOdd (B N s f d first c : Nat)
         Rolling1588.dp) :
     (cutRowOdd B N s f d first c).Sublist
       (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives B N s f ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true d first (c + 1)) := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true d first (c + 1)) := by
   obtain ⟨X, M, Y, ho, hc⟩ := row_shapeOdd B N s f d first c h1 h2 h5 hdue hf0 hdp
   rw [ho, hc]
   simp only [List.append_assoc]
   exact (List.Sublist.refl X).append
     (((List.Sublist.refl M).append (List.sublist_append_right _ _)).trans (List.sublist_append_right _ _))
+
+
+set_option maxRecDepth 200000 in
+theorem hdp1_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 14)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true 14 85 (4 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 85))
+        (Rolling1588.onPacket 85 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap
+      (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85)))
+      Rolling1588.dp := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hdp2_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 23)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true 23 90 (2 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 90))
+        (Rolling1588.onPacket 90 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap
+      (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90)))
+      Rolling1588.dp := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hdp3_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 31)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true 31 93 (2 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 93))
+        (Rolling1588.onPacket 93 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap
+      (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93)))
+      Rolling1588.dp := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hdp4_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 37)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true 37 96 (1 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 96))
+        (Rolling1588.onPacket 96 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap
+      (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (480 + 1))) (5 * 96)))
+      Rolling1588.dp := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hdp5_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 42)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group true 42 98 (1 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 98))
+        (Rolling1588.onPacket 98 Rolling1588.dp))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap
+      (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (490 + 1))) (5 * 98)))
+      Rolling1588.dp := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.PackCutOdd
 
@@ -2992,12 +3043,12 @@ theorem rowCutOdd1 (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR L
           TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85 + 5)) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 4).map Piece.H).flatten mP s))).basis
         ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (425 + 1))) (5 * 85)) j))
     (m : List Bool) :
-    ∃ m', run (PackCutOdd.cutRowOdd 87 62 425 450 13 85 4) m (StairField2V3Seg.pullIn a) =
+    ∃ m', run (PackCutOdd.cutRowOdd 87 62 425 450 14 85 4) m (StairField2V3Seg.pullIn a) =
       run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 13 85 (4 + 1)) m' (StairField2V3Seg.pullIn a) := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true 14 85 (4 + 1)) m' (StairField2V3Seg.pullIn a) := by
   obtain ⟨t, hrel⟩ := rowStart1 x plan V gsub slots s hs mP
-  exact PackCutOdd.entry_row_cut_odd 87 62 425 450 13 85 4 (by decide) (by decide) (by decide) (by decide) (by decide)
-    PackCutRows.hF1 PackCutRows.hdp1 PackCutRows.hdisj1 (StairField2V3Seg.pullIn a)
+  exact PackCutOdd.entry_row_cut_odd 87 62 425 450 14 85 4 (by decide) (by decide) (by decide) (by decide) (by decide)
+    PackCutRows.hF1 PackCutOdd.hdp1_1542 PackCutRows.hdisj1 (StairField2V3Seg.pullIn a)
     (fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree t1)).mpr
       (PackCutBridge.legal_prefix x 87 62 (by decide) (R1L Lb)
         (fun t' h' => StairField2V3RecScratch.rec0 t' (reach_of_x x R1 t' (V.r1 t' h'))) _ t hrel 4
@@ -3019,12 +3070,12 @@ theorem rowCutOdd2 (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR L
           TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90 + 5)) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 6).map Piece.H).flatten mP s))).basis
         ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (450 + 1))) (5 * 90)) j))
     (m : List Bool) :
-    ∃ m', run (PackCutOdd.cutRowOdd 62 47 450 465 22 90 2) m (StairField2V3Seg.pullIn a) =
+    ∃ m', run (PackCutOdd.cutRowOdd 62 47 450 465 23 90 2) m (StairField2V3Seg.pullIn a) =
       run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 22 90 (2 + 1)) m' (StairField2V3Seg.pullIn a) := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true 23 90 (2 + 1)) m' (StairField2V3Seg.pullIn a) := by
   obtain ⟨t, hrel⟩ := rowStart2 x plan V gsub slots s hs mP
-  exact PackCutOdd.entry_row_cut_odd 62 47 450 465 22 90 2 (by decide) (by decide) (by decide) (by decide) (by decide)
-    PackCutRows.hF2 PackCutRows.hdp2 PackCutRows.hdisj2 (StairField2V3Seg.pullIn a)
+  exact PackCutOdd.entry_row_cut_odd 62 47 450 465 23 90 2 (by decide) (by decide) (by decide) (by decide) (by decide)
+    PackCutRows.hF2 PackCutOdd.hdp2_1542 PackCutRows.hdisj2 (StairField2V3Seg.pullIn a)
     (fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree t1)).mpr
       (PackCutBridge.legal_prefix x 62 47 (by decide) (R2L Lb)
         (fun t' h' => StairField2V3RecScratch.rec1 t' (reach_of_x x R2 t' (V.r2 t' h'))) _ t hrel 4
@@ -3046,12 +3097,12 @@ theorem rowCutOdd3 (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR L
           TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93 + 5)) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 8).map Piece.H).flatten mP s))).basis
         ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (465 + 1))) (5 * 93)) j))
     (m : List Bool) :
-    ∃ m', run (PackCutOdd.cutRowOdd 47 32 465 480 30 93 2) m (StairField2V3Seg.pullIn a) =
+    ∃ m', run (PackCutOdd.cutRowOdd 47 32 465 480 31 93 2) m (StairField2V3Seg.pullIn a) =
       run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 30 93 (2 + 1)) m' (StairField2V3Seg.pullIn a) := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true 31 93 (2 + 1)) m' (StairField2V3Seg.pullIn a) := by
   obtain ⟨t, hrel⟩ := rowStart3 x plan V gsub slots s hs mP
-  exact PackCutOdd.entry_row_cut_odd 47 32 465 480 30 93 2 (by decide) (by decide) (by decide) (by decide) (by decide)
-    PackCutRows.hF3 PackCutRows.hdp3 PackCutRows.hdisj3 (StairField2V3Seg.pullIn a)
+  exact PackCutOdd.entry_row_cut_odd 47 32 465 480 31 93 2 (by decide) (by decide) (by decide) (by decide) (by decide)
+    PackCutRows.hF3 PackCutOdd.hdp3_1542 PackCutRows.hdisj3 (StairField2V3Seg.pullIn a)
     (fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree t1)).mpr
       (PackCutBridge.legal_prefix x 47 32 (by decide) (R3L Lb)
         (fun t' h' => StairField2V3RecScratch.rec2 t' (reach_of_x x R3 t' (V.r3 t' h'))) _ t hrel 4
@@ -3073,12 +3124,12 @@ theorem rowCutOdd4 (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR L
           TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (480 + 1))) (5 * 96 + 5)) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 10).map Piece.H).flatten mP s))).basis
         ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (480 + 1))) (5 * 96)) j))
     (m : List Bool) :
-    ∃ m', run (PackCutOdd.cutRowOdd 32 22 480 490 36 96 1) m (StairField2V3Seg.pullIn a) =
+    ∃ m', run (PackCutOdd.cutRowOdd 32 22 480 490 37 96 1) m (StairField2V3Seg.pullIn a) =
       run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 36 96 (1 + 1)) m' (StairField2V3Seg.pullIn a) := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true 37 96 (1 + 1)) m' (StairField2V3Seg.pullIn a) := by
   obtain ⟨t, hrel⟩ := rowStart4 x plan V gsub slots s hs mP
-  exact PackCutOdd.entry_row_cut_odd 32 22 480 490 36 96 1 (by decide) (by decide) (by decide) (by decide) (by decide)
-    PackCutRows.hF4 PackCutRows.hdp4 PackCutRows.hdisj4 (StairField2V3Seg.pullIn a)
+  exact PackCutOdd.entry_row_cut_odd 32 22 480 490 37 96 1 (by decide) (by decide) (by decide) (by decide) (by decide)
+    PackCutRows.hF4 PackCutOdd.hdp4_1542 PackCutRows.hdisj4 (StairField2V3Seg.pullIn a)
     (fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree t1)).mpr
       (PackCutBridge.legal_prefix x 32 22 (by decide) (R4L Lb)
         (fun t' h' => StairField2V3RecScratch.rec3 t' (reach_of_x x R4 t' (V.r4 t' h'))) _ t hrel 4
@@ -3100,12 +3151,12 @@ theorem rowCutOdd5 (x : Nat) (plan : EntryPlanR P x) (V : EntryReachTransportR L
           TickRanges.tick (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (490 + 1))) (5 * 98 + 5)) t1 (StairField2V3Seg.pullIn (run (((entryPieces P hp).take 12).map Piece.H).flatten mP s))).basis
         ((History5.historyMap (StairPhysicalPrimitives.midSegmentMap (StairPhysicalPrimitives.segmentOf (490 + 1))) (5 * 98)) j))
     (m : List Bool) :
-    ∃ m', run (PackCutOdd.cutRowOdd 22 12 490 500 41 98 1) m (StairField2V3Seg.pullIn a) =
+    ∃ m', run (PackCutOdd.cutRowOdd 22 12 490 500 42 98 1) m (StairField2V3Seg.pullIn a) =
       run (StairSchedule.forwardSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++
-        OddFullPass.P1LifeLoan.hostedGroup StairConcreteAssembly.hostPlan true 41 98 (1 + 1)) m' (StairField2V3Seg.pullIn a) := by
+        OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 true 42 98 (1 + 1)) m' (StairField2V3Seg.pullIn a) := by
   obtain ⟨t, hrel⟩ := rowStart5 x plan V gsub slots s hs mP
-  exact PackCutOdd.entry_row_cut_odd 22 12 490 500 41 98 1 (by decide) (by decide) (by decide) (by decide) (by decide)
-    PackCutRows.hF5 PackCutRows.hdp5 PackCutRows.hdisj5 (StairField2V3Seg.pullIn a)
+  exact PackCutOdd.entry_row_cut_odd 22 12 490 500 42 98 1 (by decide) (by decide) (by decide) (by decide) (by decide)
+    PackCutRows.hF5 PackCutOdd.hdp5_1542 PackCutRows.hdisj5 (StairField2V3Seg.pullIn a)
     (fun t1 => (PackCutLegal.legalAt_congr _ _ _ (hagree t1)).mpr
       (PackCutBridge.legal_prefix x 22 12 (by decide) (R5L Lb)
         (fun t' h' => StairField2V3RecScratch.rec4 t' (reach_of_x x R5 t' (V.r5 t' h'))) _ t hrel 4
@@ -33749,18 +33800,63 @@ theorem oddPlaced_false_tail (d first c : Nat) :
 
 /-- The hosted part of the odd exit group before its closing `ep`. -/
 def AhOdd (d first c : Nat) : Program :=
-  StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d) (hostPlan.group false d first (c + 1))
+  StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d) (OddFullPass.P1LifeLoan.hostPlan1542.group false d first (c + 1))
     (renameProgram (OB5.sig 511) (OddFullPass.P1LifeLoan.groups false d (first + 1) c ++
       renameProgram (shifted (Placement5.pi first)) (oddHeadF d first)))
 
 theorem oddHostedGroup_false_tail (d first c : Nat) :
-    OddFullPass.P1LifeLoan.hostedGroup hostPlan false d first (c + 1) =
-      AhOdd d first c ++ StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d) (hostPlan.group false d first (c + 1))
+    OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false d first (c + 1) =
+      AhOdd d first c ++ StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop d) (OddFullPass.P1LifeLoan.hostPlan1542.group false d first (c + 1))
         (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi first))
           (Rolling1588.onPacket first Rolling1588.ep))) := by
   rw [OddFullPass.P1LifeLoan.hostedGroup, OddFullPass.P1LifeLoan.placedGroups, oddPlaced_false_tail,
     PackCutShape.rebindMany_append]
   rfl
+set_option maxRecDepth 200000 in
+theorem hep0_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 14)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group false 14 85 (4 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 85))
+        (Rolling1588.onPacket 85 Rolling1588.ep))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 425) (5 * 85)))
+      Rolling1588.ep := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hep1_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 23)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group false 23 90 (2 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 90))
+        (Rolling1588.onPacket 90 Rolling1588.ep))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 450) (5 * 90)))
+      Rolling1588.ep := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hep2_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 31)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group false 31 93 (2 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 93))
+        (Rolling1588.onPacket 93 Rolling1588.ep))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 465) (5 * 93)))
+      Rolling1588.ep := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hep3_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 37)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group false 37 96 (1 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 96))
+        (Rolling1588.onPacket 96 Rolling1588.ep))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 480) (5 * 96)))
+      Rolling1588.ep := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+theorem hep4_1542 : StairLoan.rebindMany (StairSchedule.exclusiveRoles.drop 42)
+      (OddFullPass.P1LifeLoan.hostPlan1542.group false 42 98 (1 + 1))
+      (renameProgram (OB5.sig 511) (renameProgram (shifted (Placement5.pi 98))
+        (Rolling1588.onPacket 98 Rolling1588.ep))) =
+    renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 490) (5 * 98)))
+      Rolling1588.ep := by
+  decide +kernel
+
 
 /-- PACK-CUT odd exit row: the hosted odd group without its last closing `ep`, then the reverse segment
 without its due-read `dp`. -/
@@ -33844,185 +33940,185 @@ theorem cutRow_sound_gen (A Eh M Dh Bx HG SEG CR : Program)
   subst hHG hSEG hCR
   exact cutRow_sound_split A Eh M Dh Bx h1 h2
 
-theorem cutRowOddPk_eq0 : cutRowOddPk 87 62 425 450 13 85 4 = AhOdd 13 85 4 ++ (PackCutExitRows.headX 62 450 ++ StairReplay.movedReverse (PackCutExitRows.segW 425) (5 * 85 + 5 + 1) (450 - (5 * 85 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 425) (5 * 85))) PackCutExit.D26 ++
+theorem cutRowOddPk_eq0 : cutRowOddPk 87 62 425 450 14 85 4 = AhOdd 14 85 4 ++ (PackCutExitRows.headX 62 450 ++ StairReplay.movedReverse (PackCutExitRows.segW 425) (5 * 85 + 5 + 1) (450 - (5 * 85 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 425) (5 * 85))) PackCutExit.D26 ++
         W.ReverseCarry.compactReceiverTick (PackCutExitRows.segW 425) 430 ++
         StairReplay.movedReverse (PackCutExitRows.segW 425) 426 4 ++
         StairConcreteAssembly.checkpointPrimitives.tickReverse 425 ++
         StairConcreteAssembly.checkpointPrimitives.pack 87) := rfl
 
-theorem hostedGroup_eq0 : OddFullPass.P1LifeLoan.hostedGroup hostPlan false 13 85 5 = AhOdd 13 85 4 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 425) (5 * 85))) Rolling1588.ep :=
-  (oddHostedGroup_false_tail 13 85 4).trans (congrArg (AhOdd 13 85 4 ++ ·) PackCutExitRows.hep0)
+theorem hostedGroup_eq0 : OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5 = AhOdd 14 85 4 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 425) (5 * 85))) Rolling1588.ep :=
+  (oddHostedGroup_false_tail 14 85 4).trans (congrArg (AhOdd 14 85 4 ++ ·) hep0_1542)
 
 theorem cutRow0_counts :
-    toffoliCount (cutRowOddPk 87 62 425 450 13 85 4) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 13 85 5) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) ∧
-    measurementCount (cutRowOddPk 87 62 425 450 13 85 4) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 13 85 5) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) :=
+    toffoliCount (cutRowOddPk 87 62 425 450 14 85 4) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) ∧
+    measurementCount (cutRowOddPk 87 62 425 450 14 85 4) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) :=
   cutRow_counts_gen _ _ _ _ _ _ _ _ hostedGroup_eq0 PackCutExitRows.seg0 cutRowOddPk_eq0
     (ep_counts _).1 (dp_counts _).1 (ep_counts _).2 (dp_counts _).2
 
 theorem cutRow0_slots :
-    Challenge.gateSlots (cutRowOddPk 87 62 425 450 13 85 4) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 13 85 5) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) :=
+    Challenge.gateSlots (cutRowOddPk 87 62 425 450 14 85 4) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) :=
   cutRow_slots_gen _ _ _ _ _ _ _ _ hostedGroup_eq0 PackCutExitRows.seg0 cutRowOddPk_eq0
 
 theorem cutRow0_wires :
-    wires (cutRowOddPk 87 62 425 450 13 85 4) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 13 85 5) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) :=
+    wires (cutRowOddPk 87 62 425 450 14 85 4) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) :=
   cutRow_wires_gen _ _ _ _ _ _ _ _ hostedGroup_eq0 PackCutExitRows.seg0 cutRowOddPk_eq0
 
-theorem cutRow0_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 13 85 5))
-    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450)) : StairPhysicalV3.Sound (cutRowOddPk 87 62 425 450 13 85 4) :=
+theorem cutRow0_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5))
+    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450)) : StairPhysicalV3.Sound (cutRowOddPk 87 62 425 450 14 85 4) :=
   cutRow_sound_gen _ _ _ _ _ _ _ _ hostedGroup_eq0 PackCutExitRows.seg0 cutRowOddPk_eq0 h1 h2
 
-theorem cutRow0_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 87 62 425 450 13 85 4)) :
-    q ∈ wires (StairHostsSchedule.hostedGroup hostPlan false 13 85 5) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) := by
+theorem cutRow0_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 87 62 425 450 14 85 4)) :
+    q ∈ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) := by
   rcases Finset.mem_union.mp (cutRow0_wires h) with h' | h'
-  · exact Or.inl (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan false 13 85 5 (by decide) (by decide) h')
+  · exact Or.inl h'
   · exact Or.inr h'
 
-theorem cutRowOddPk_eq1 : cutRowOddPk 62 47 450 465 22 90 2 = AhOdd 22 90 2 ++ (PackCutExitRows.headX 47 465 ++ StairReplay.movedReverse (PackCutExitRows.segW 450) (5 * 90 + 5 + 1) (465 - (5 * 90 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 450) (5 * 90))) PackCutExit.D26 ++
+theorem cutRowOddPk_eq1 : cutRowOddPk 62 47 450 465 23 90 2 = AhOdd 23 90 2 ++ (PackCutExitRows.headX 47 465 ++ StairReplay.movedReverse (PackCutExitRows.segW 450) (5 * 90 + 5 + 1) (465 - (5 * 90 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 450) (5 * 90))) PackCutExit.D26 ++
         W.ReverseCarry.compactReceiverTick (PackCutExitRows.segW 450) 455 ++
         StairReplay.movedReverse (PackCutExitRows.segW 450) 451 4 ++
         StairConcreteAssembly.checkpointPrimitives.tickReverse 450 ++
         StairConcreteAssembly.checkpointPrimitives.pack 62) := rfl
 
-theorem hostedGroup_eq1 : OddFullPass.P1LifeLoan.hostedGroup hostPlan false 22 90 3 = AhOdd 22 90 2 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 450) (5 * 90))) Rolling1588.ep :=
-  (oddHostedGroup_false_tail 22 90 2).trans (congrArg (AhOdd 22 90 2 ++ ·) PackCutExitRows.hep1)
+theorem hostedGroup_eq1 : OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3 = AhOdd 23 90 2 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 450) (5 * 90))) Rolling1588.ep :=
+  (oddHostedGroup_false_tail 23 90 2).trans (congrArg (AhOdd 23 90 2 ++ ·) hep1_1542)
 
 theorem cutRow1_counts :
-    toffoliCount (cutRowOddPk 62 47 450 465 22 90 2) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 22 90 3) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) ∧
-    measurementCount (cutRowOddPk 62 47 450 465 22 90 2) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 22 90 3) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) :=
+    toffoliCount (cutRowOddPk 62 47 450 465 23 90 2) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) ∧
+    measurementCount (cutRowOddPk 62 47 450 465 23 90 2) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) :=
   cutRow_counts_gen _ _ _ _ _ _ _ _ hostedGroup_eq1 PackCutExitRows.seg1 cutRowOddPk_eq1
     (ep_counts _).1 (dp_counts _).1 (ep_counts _).2 (dp_counts _).2
 
 theorem cutRow1_slots :
-    Challenge.gateSlots (cutRowOddPk 62 47 450 465 22 90 2) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 22 90 3) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) :=
+    Challenge.gateSlots (cutRowOddPk 62 47 450 465 23 90 2) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) :=
   cutRow_slots_gen _ _ _ _ _ _ _ _ hostedGroup_eq1 PackCutExitRows.seg1 cutRowOddPk_eq1
 
 theorem cutRow1_wires :
-    wires (cutRowOddPk 62 47 450 465 22 90 2) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 22 90 3) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) :=
+    wires (cutRowOddPk 62 47 450 465 23 90 2) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) :=
   cutRow_wires_gen _ _ _ _ _ _ _ _ hostedGroup_eq1 PackCutExitRows.seg1 cutRowOddPk_eq1
 
-theorem cutRow1_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 22 90 3))
-    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465)) : StairPhysicalV3.Sound (cutRowOddPk 62 47 450 465 22 90 2) :=
+theorem cutRow1_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3))
+    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465)) : StairPhysicalV3.Sound (cutRowOddPk 62 47 450 465 23 90 2) :=
   cutRow_sound_gen _ _ _ _ _ _ _ _ hostedGroup_eq1 PackCutExitRows.seg1 cutRowOddPk_eq1 h1 h2
 
-theorem cutRow1_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 62 47 450 465 22 90 2)) :
-    q ∈ wires (StairHostsSchedule.hostedGroup hostPlan false 22 90 3) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) := by
+theorem cutRow1_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 62 47 450 465 23 90 2)) :
+    q ∈ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465) := by
   rcases Finset.mem_union.mp (cutRow1_wires h) with h' | h'
-  · exact Or.inl (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan false 22 90 3 (by decide) (by decide) h')
+  · exact Or.inl h'
   · exact Or.inr h'
 
-theorem cutRowOddPk_eq2 : cutRowOddPk 47 32 465 480 30 93 2 = AhOdd 30 93 2 ++ (PackCutExitRows.headX 32 480 ++ StairReplay.movedReverse (PackCutExitRows.segW 465) (5 * 93 + 5 + 1) (480 - (5 * 93 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 465) (5 * 93))) PackCutExit.D26 ++
+theorem cutRowOddPk_eq2 : cutRowOddPk 47 32 465 480 31 93 2 = AhOdd 31 93 2 ++ (PackCutExitRows.headX 32 480 ++ StairReplay.movedReverse (PackCutExitRows.segW 465) (5 * 93 + 5 + 1) (480 - (5 * 93 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 465) (5 * 93))) PackCutExit.D26 ++
         W.ReverseCarry.compactReceiverTick (PackCutExitRows.segW 465) 470 ++
         StairReplay.movedReverse (PackCutExitRows.segW 465) 466 4 ++
         StairConcreteAssembly.checkpointPrimitives.tickReverse 465 ++
         StairConcreteAssembly.checkpointPrimitives.pack 47) := rfl
 
-theorem hostedGroup_eq2 : OddFullPass.P1LifeLoan.hostedGroup hostPlan false 30 93 3 = AhOdd 30 93 2 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 465) (5 * 93))) Rolling1588.ep :=
-  (oddHostedGroup_false_tail 30 93 2).trans (congrArg (AhOdd 30 93 2 ++ ·) PackCutExitRows.hep2)
+theorem hostedGroup_eq2 : OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3 = AhOdd 31 93 2 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 465) (5 * 93))) Rolling1588.ep :=
+  (oddHostedGroup_false_tail 31 93 2).trans (congrArg (AhOdd 31 93 2 ++ ·) hep2_1542)
 
 theorem cutRow2_counts :
-    toffoliCount (cutRowOddPk 47 32 465 480 30 93 2) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 30 93 3) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) ∧
-    measurementCount (cutRowOddPk 47 32 465 480 30 93 2) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 30 93 3) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) :=
+    toffoliCount (cutRowOddPk 47 32 465 480 31 93 2) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) ∧
+    measurementCount (cutRowOddPk 47 32 465 480 31 93 2) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) :=
   cutRow_counts_gen _ _ _ _ _ _ _ _ hostedGroup_eq2 PackCutExitRows.seg2 cutRowOddPk_eq2
     (ep_counts _).1 (dp_counts _).1 (ep_counts _).2 (dp_counts _).2
 
 theorem cutRow2_slots :
-    Challenge.gateSlots (cutRowOddPk 47 32 465 480 30 93 2) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 30 93 3) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) :=
+    Challenge.gateSlots (cutRowOddPk 47 32 465 480 31 93 2) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) :=
   cutRow_slots_gen _ _ _ _ _ _ _ _ hostedGroup_eq2 PackCutExitRows.seg2 cutRowOddPk_eq2
 
 theorem cutRow2_wires :
-    wires (cutRowOddPk 47 32 465 480 30 93 2) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 30 93 3) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) :=
+    wires (cutRowOddPk 47 32 465 480 31 93 2) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) :=
   cutRow_wires_gen _ _ _ _ _ _ _ _ hostedGroup_eq2 PackCutExitRows.seg2 cutRowOddPk_eq2
 
-theorem cutRow2_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 30 93 3))
-    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480)) : StairPhysicalV3.Sound (cutRowOddPk 47 32 465 480 30 93 2) :=
+theorem cutRow2_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3))
+    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480)) : StairPhysicalV3.Sound (cutRowOddPk 47 32 465 480 31 93 2) :=
   cutRow_sound_gen _ _ _ _ _ _ _ _ hostedGroup_eq2 PackCutExitRows.seg2 cutRowOddPk_eq2 h1 h2
 
-theorem cutRow2_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 47 32 465 480 30 93 2)) :
-    q ∈ wires (StairHostsSchedule.hostedGroup hostPlan false 30 93 3) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) := by
+theorem cutRow2_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 47 32 465 480 31 93 2)) :
+    q ∈ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480) := by
   rcases Finset.mem_union.mp (cutRow2_wires h) with h' | h'
-  · exact Or.inl (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan false 30 93 3 (by decide) (by decide) h')
+  · exact Or.inl h'
   · exact Or.inr h'
 
-theorem cutRowOddPk_eq3 : cutRowOddPk 32 22 480 490 36 96 1 = AhOdd 36 96 1 ++ (PackCutExitRows.headX 22 490 ++ StairReplay.movedReverse (PackCutExitRows.segW 480) (5 * 96 + 5 + 1) (490 - (5 * 96 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 480) (5 * 96))) PackCutExit.D26 ++
+theorem cutRowOddPk_eq3 : cutRowOddPk 32 22 480 490 37 96 1 = AhOdd 37 96 1 ++ (PackCutExitRows.headX 22 490 ++ StairReplay.movedReverse (PackCutExitRows.segW 480) (5 * 96 + 5 + 1) (490 - (5 * 96 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 480) (5 * 96))) PackCutExit.D26 ++
         W.ReverseCarry.compactReceiverTick (PackCutExitRows.segW 480) 485 ++
         StairReplay.movedReverse (PackCutExitRows.segW 480) 481 4 ++
         StairConcreteAssembly.checkpointPrimitives.tickReverse 480 ++
         StairConcreteAssembly.checkpointPrimitives.pack 32) := rfl
 
-theorem hostedGroup_eq3 : OddFullPass.P1LifeLoan.hostedGroup hostPlan false 36 96 2 = AhOdd 36 96 1 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 480) (5 * 96))) Rolling1588.ep :=
-  (oddHostedGroup_false_tail 36 96 1).trans (congrArg (AhOdd 36 96 1 ++ ·) PackCutExitRows.hep3)
+theorem hostedGroup_eq3 : OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2 = AhOdd 37 96 1 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 480) (5 * 96))) Rolling1588.ep :=
+  (oddHostedGroup_false_tail 37 96 1).trans (congrArg (AhOdd 37 96 1 ++ ·) hep3_1542)
 
 theorem cutRow3_counts :
-    toffoliCount (cutRowOddPk 32 22 480 490 36 96 1) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 36 96 2) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) ∧
-    measurementCount (cutRowOddPk 32 22 480 490 36 96 1) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 36 96 2) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) :=
+    toffoliCount (cutRowOddPk 32 22 480 490 37 96 1) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) ∧
+    measurementCount (cutRowOddPk 32 22 480 490 37 96 1) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) :=
   cutRow_counts_gen _ _ _ _ _ _ _ _ hostedGroup_eq3 PackCutExitRows.seg3 cutRowOddPk_eq3
     (ep_counts _).1 (dp_counts _).1 (ep_counts _).2 (dp_counts _).2
 
 theorem cutRow3_slots :
-    Challenge.gateSlots (cutRowOddPk 32 22 480 490 36 96 1) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 36 96 2) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) :=
+    Challenge.gateSlots (cutRowOddPk 32 22 480 490 37 96 1) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) :=
   cutRow_slots_gen _ _ _ _ _ _ _ _ hostedGroup_eq3 PackCutExitRows.seg3 cutRowOddPk_eq3
 
 theorem cutRow3_wires :
-    wires (cutRowOddPk 32 22 480 490 36 96 1) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 36 96 2) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) :=
+    wires (cutRowOddPk 32 22 480 490 37 96 1) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) :=
   cutRow_wires_gen _ _ _ _ _ _ _ _ hostedGroup_eq3 PackCutExitRows.seg3 cutRowOddPk_eq3
 
-theorem cutRow3_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 36 96 2))
-    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490)) : StairPhysicalV3.Sound (cutRowOddPk 32 22 480 490 36 96 1) :=
+theorem cutRow3_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2))
+    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490)) : StairPhysicalV3.Sound (cutRowOddPk 32 22 480 490 37 96 1) :=
   cutRow_sound_gen _ _ _ _ _ _ _ _ hostedGroup_eq3 PackCutExitRows.seg3 cutRowOddPk_eq3 h1 h2
 
-theorem cutRow3_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 32 22 480 490 36 96 1)) :
-    q ∈ wires (StairHostsSchedule.hostedGroup hostPlan false 36 96 2) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) := by
+theorem cutRow3_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 32 22 480 490 37 96 1)) :
+    q ∈ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490) := by
   rcases Finset.mem_union.mp (cutRow3_wires h) with h' | h'
-  · exact Or.inl (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan false 36 96 2 (by decide) (by decide) h')
+  · exact Or.inl h'
   · exact Or.inr h'
 
-theorem cutRowOddPk_eq4 : cutRowOddPk 22 12 490 500 41 98 1 = AhOdd 41 98 1 ++ (PackCutExitRows.headX 12 500 ++ StairReplay.movedReverse (PackCutExitRows.segW 490) (5 * 98 + 5 + 1) (500 - (5 * 98 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 490) (5 * 98))) PackCutExit.D26 ++
+theorem cutRowOddPk_eq4 : cutRowOddPk 22 12 490 500 42 98 1 = AhOdd 42 98 1 ++ (PackCutExitRows.headX 12 500 ++ StairReplay.movedReverse (PackCutExitRows.segW 490) (5 * 98 + 5 + 1) (500 - (5 * 98 + 5) - 1)) ++ (renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 490) (5 * 98))) PackCutExit.D26 ++
         W.ReverseCarry.compactReceiverTick (PackCutExitRows.segW 490) 495 ++
         StairReplay.movedReverse (PackCutExitRows.segW 490) 491 4 ++
         StairConcreteAssembly.checkpointPrimitives.tickReverse 490 ++
         StairConcreteAssembly.checkpointPrimitives.pack 22) := rfl
 
-theorem hostedGroup_eq4 : OddFullPass.P1LifeLoan.hostedGroup hostPlan false 41 98 2 = AhOdd 41 98 1 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 490) (5 * 98))) Rolling1588.ep :=
-  (oddHostedGroup_false_tail 41 98 1).trans (congrArg (AhOdd 41 98 1 ++ ·) PackCutExitRows.hep4)
+theorem hostedGroup_eq4 : OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2 = AhOdd 42 98 1 ++ renameProgram (MeasuredCodec5.label (History5.historyMap (PackCutExitRows.segW 490) (5 * 98))) Rolling1588.ep :=
+  (oddHostedGroup_false_tail 42 98 1).trans (congrArg (AhOdd 42 98 1 ++ ·) hep4_1542)
 
 theorem cutRow4_counts :
-    toffoliCount (cutRowOddPk 22 12 490 500 41 98 1) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 41 98 2) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) ∧
-    measurementCount (cutRowOddPk 22 12 490 500 41 98 1) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 41 98 2) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) :=
+    toffoliCount (cutRowOddPk 22 12 490 500 42 98 1) + 13 = toffoliCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2) + toffoliCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) ∧
+    measurementCount (cutRowOddPk 22 12 490 500 42 98 1) + 5 = measurementCount (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2) + measurementCount (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) :=
   cutRow_counts_gen _ _ _ _ _ _ _ _ hostedGroup_eq4 PackCutExitRows.seg4 cutRowOddPk_eq4
     (ep_counts _).1 (dp_counts _).1 (ep_counts _).2 (dp_counts _).2
 
 theorem cutRow4_slots :
-    Challenge.gateSlots (cutRowOddPk 22 12 490 500 41 98 1) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 41 98 2) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) :=
+    Challenge.gateSlots (cutRowOddPk 22 12 490 500 42 98 1) ≤ Challenge.gateSlots (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2) + Challenge.gateSlots (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) :=
   cutRow_slots_gen _ _ _ _ _ _ _ _ hostedGroup_eq4 PackCutExitRows.seg4 cutRowOddPk_eq4
 
 theorem cutRow4_wires :
-    wires (cutRowOddPk 22 12 490 500 41 98 1) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 41 98 2) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) :=
+    wires (cutRowOddPk 22 12 490 500 42 98 1) ⊆ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2) ∪ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) :=
   cutRow_wires_gen _ _ _ _ _ _ _ _ hostedGroup_eq4 PackCutExitRows.seg4 cutRowOddPk_eq4
 
-theorem cutRow4_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup hostPlan false 41 98 2))
-    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500)) : StairPhysicalV3.Sound (cutRowOddPk 22 12 490 500 41 98 1) :=
+theorem cutRow4_sound (h1 : StairPhysicalV3.Sound (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2))
+    (h2 : StairPhysicalV3.Sound (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500)) : StairPhysicalV3.Sound (cutRowOddPk 22 12 490 500 42 98 1) :=
   cutRow_sound_gen _ _ _ _ _ _ _ _ hostedGroup_eq4 PackCutExitRows.seg4 cutRowOddPk_eq4 h1 h2
 
-theorem cutRow4_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 22 12 490 500 41 98 1)) :
-    q ∈ wires (StairHostsSchedule.hostedGroup hostPlan false 41 98 2) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) := by
+theorem cutRow4_stock_mem (q : Wire) (h : q ∈ wires (cutRowOddPk 22 12 490 500 42 98 1)) :
+    q ∈ wires (OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2) ∨ q ∈ wires (StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500) := by
   rcases Finset.mem_union.mp (cutRow4_wires h) with h' | h'
-  · exact Or.inl (OddFullPass.P1LifeLoan.hostedGroup_wires_sub hostPlan false 41 98 2 (by decide) (by decide) h')
+  · exact Or.inl h'
   · exact Or.inr h'
 
 /-- The cut exit rows' wires sit inside the stock rows' wires. -/
 theorem cutRows_sub :
     wires (StairSchedule.reverseLast StairConcreteAssembly.checkpointPrimitives ++
-      cutRowOddPk 22 12 490 500 41 98 1 ++
-      cutRowOddPk 32 22 480 490 36 96 1 ++
-      cutRowOddPk 47 32 465 480 30 93 2 ++
-      cutRowOddPk 62 47 450 465 22 90 2 ++
-      cutRowOddPk 87 62 425 450 13 85 4) ⊆
+      cutRowOddPk 22 12 490 500 42 98 1 ++
+      cutRowOddPk 32 22 480 490 37 96 1 ++
+      cutRowOddPk 47 32 465 480 31 93 2 ++
+      cutRowOddPk 62 47 450 465 23 90 2 ++
+      cutRowOddPk 87 62 425 450 14 85 4) ⊆
     wires (StairSchedule.reverseLast StairConcreteAssembly.checkpointPrimitives ++
-      StairHostsSchedule.hostedGroup hostPlan false 41 98 2 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++
-      StairHostsSchedule.hostedGroup hostPlan false 36 96 2 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++
-      StairHostsSchedule.hostedGroup hostPlan false 30 93 3 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++
-      StairHostsSchedule.hostedGroup hostPlan false 22 90 3 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++
-      StairHostsSchedule.hostedGroup hostPlan false 13 85 5 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) := by
+      OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 42 98 2 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++
+      OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 37 96 2 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++
+      OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 31 93 3 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++
+      OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 23 90 3 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++
+      OddFullPass.P1LifeLoan.hostedGroup OddFullPass.P1LifeLoan.hostPlan1542 false 14 85 5 ++ StairSchedule.reverseSegment StairConcreteAssembly.checkpointPrimitives 87 62 425 450) := by
   intro q hq
   simp only [wires_append, Finset.mem_union] at hq ⊢
   rcases hq with (((((h | h) | h) | h) | h) | h)
@@ -34470,3 +34566,3714 @@ end
 
 end
 
+
+
+-- ==== Inlined TagPack1542 v2 (Site A: 99-T packTag / 102-T unpackTag) ====
+section
+set_option maxRecDepth 8192
+
+namespace ECDSAAdd.Entrant.TagPack1542
+
+open ECDSAAdd
+open ECDSAAdd.Arithmetic
+open ECDSAAdd.Challenge
+
+/-!
+# TagPack1542 v2: 99-T `packTag` and 102-T `unpackTag` (2-CCX 8-flat merge on P0)
+
+Logical 105-wire programs (wires `0..104`, wire `97` unused):
+- `0..6`    : `C[0..6]` (`rest87_A[0..6]`, value in `0..86`; wire `6` is cleared to `false`)
+- `7..13`   : `P0[0..6]` (value in `used7`, 114 states)
+- `14..85`  : `PK[0..8]`, where `PK[k]` is wires `14 + 8*k .. 21 + 8*k` (each in `used8`, 243 states)
+- `86..96`  : `F[0..10]` (11 one-hot flags for `C ∈ 64..86`; wire `97` untouched)
+- `98..101` : `Q[0..3]` (2-bit one-hot of `(C[2], C[1])`)
+- `102..104`: `G0 = 102`, `G1 = 103`, `G01 = 104` (reused as `TMP = [102, 103, 104]`)
+-/
+
+/-! ## Section 1: Wire constants, value readers, and valid value sets -/
+
+def cWire (i : Nat) : Nat := i
+def p0Wire (i : Nat) : Nat := 7 + i
+def pkWire (k i : Nat) : Nat := 14 + 8 * k + i
+def fWire (k : Nat) : Nat := 86 + k
+def qWire (i : Nat) : Nat := 98 + i
+def g0Wire : Nat := 102
+def g1Wire : Nat := 103
+def g01Wire : Nat := 104
+
+def cWires : List Wire := [0, 1, 2, 3, 4, 5, 6]
+def p0Wires : List Wire := [7, 8, 9, 10, 11, 12, 13]
+def pkWires (k : Nat) : List Wire :=
+  [pkWire k 0, pkWire k 1, pkWire k 2, pkWire k 3,
+   pkWire k 4, pkWire k 5, pkWire k 6, pkWire k 7]
+
+def cVal (s : State) : Nat := regValue cWires s.basis
+def p0Val (s : State) : Nat := regValue p0Wires s.basis
+def pkVal (k : Nat) (s : State) : Nat := regValue (pkWires k) s.basis
+
+def unused7 : List Nat := [4, 5, 10, 26, 46, 47, 49, 63, 71, 74, 81, 90, 97, 119]
+def used7 : List Nat := (List.range 128).filter (fun n => !(unused7.contains n))
+
+def unused8 : List Nat := [15, 47, 79, 111, 143, 175, 207, 223, 239, 249, 251, 253, 255]
+def used8 : List Nat := (List.range 256).filter (fun n => !(unused8.contains n))
+
+/-! ## Section 2: Circuit builders (exact match to `synth_and_verify_packers.py`) -/
+
+def xIf (w : Wire) (b : Bool) : Program :=
+  if b then [.X w] else []
+
+def fredkin1 (f u v : Wire) : Program :=
+  [.CX u v, .CCX f v u, .CX u v]
+
+def fredkin5_const (f : Wire) (us vs : List Wire) (constBits : List Bool) : Program :=
+  let flips := ((vs.zip constBits).filter (fun p => p.2)).map (fun p => Instr.X p.1)
+  let swaps := (us.zip vs).flatMap (fun p => fredkin1 f p.1 p.2)
+  flips ++ swaps ++ flips
+
+def compute_and5 (lits : List (Wire × Bool)) (outF t0 t1 t2 : Wire) : Program :=
+  match lits with
+  | [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] =>
+    let flips := ((([(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1)))
+    flips ++
+    [ .CCX w0 w1 t0
+    , .CCX w2 w3 t1
+    , .CCX t0 t1 t2
+    , .CCX t2 w4 outF
+    , .measureX t2 [] [.CZ t0 t1]
+    , .measureX t1 [] [.CZ w2 w3]
+    , .measureX t0 [] [.CZ w0 w1]
+    ] ++ flips
+  | _ => []
+
+def erase_and5 (lits : List (Wire × Bool)) (outF t0 t1 t2 : Wire) : Program :=
+  match lits with
+  | [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] =>
+    let flips := ((([(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1)))
+    flips ++
+    [ .CCX w0 w1 t0
+    , .CCX w2 w3 t1
+    , .CCX t0 t1 t2
+    , .measureX outF [] [.CZ t2 w4]
+    , .measureX t2 [] [.CZ t0 t1]
+    , .measureX t1 [] [.CZ w2 w3]
+    , .measureX t0 [] [.CZ w0 w1]
+    ] ++ flips
+  | _ => []
+
+structure SlotSpec where
+  cxs : Program
+  ws : List Wire
+  vals : List Bool
+
+def uP0Prog : Program :=
+  [ .CX (p0Wire 3) (p0Wire 2)
+  , .CX (p0Wire 1) (p0Wire 2)
+  , .CX (p0Wire 5) (p0Wire 3)
+  , .CX (p0Wire 5) (p0Wire 1)
+  , .CX (p0Wire 6) (p0Wire 5)
+  , .CCX (p0Wire 2) (p0Wire 5) (p0Wire 6)
+  , .CX (p0Wire 6) (p0Wire 5)
+  , .CX (p0Wire 4) (p0Wire 0)
+  , .CCX (p0Wire 2) (p0Wire 0) (p0Wire 4)
+  , .CX (p0Wire 4) (p0Wire 0)
+  , .CX (p0Wire 2) (p0Wire 3)
+  , .CX (p0Wire 2) (p0Wire 1)
+  ]
+
+def fredkin4_const (f : Wire) (us vs : List Wire) (constBits : List Bool) : Program :=
+  fredkin5_const f us vs constBits
+
+def compute_and4 (lits : List (Wire × Bool)) (outF t0 t1 : Wire) : Program :=
+  match lits with
+  | [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] =>
+    let flips := ((([(w0, v0), (w1, v1), (w2, v2), (w3, v3)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1)))
+    flips ++
+    [ .CCX w0 w1 t0
+    , .CCX w2 w3 t1
+    , .CCX t0 t1 outF
+    , .measureX t1 [] [.CZ w2 w3]
+    , .measureX t0 [] [.CZ w0 w1]
+    ] ++ flips
+  | _ => []
+
+def erase_and4 (lits : List (Wire × Bool)) (outF t0 t1 : Wire) : Program :=
+  match lits with
+  | [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] =>
+    let flips := ((([(w0, v0), (w1, v1), (w2, v2), (w3, v3)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1)))
+    flips ++
+    [ .CCX w0 w1 t0
+    , .CCX w2 w3 t1
+    , .measureX outF [] [.CZ t0 t1]
+    , .measureX t1 [] [.CZ w2 w3]
+    , .measureX t0 [] [.CZ w0 w1]
+    ] ++ flips
+  | _ => []
+
+def slotSpec (k : Nat) : SlotSpec :=
+  if k < 9 then
+    ⟨[], [pkWire k 4, pkWire k 3, pkWire k 2, pkWire k 1, pkWire k 0],
+         [false, true, true, true, true]⟩
+  else if k == 9 then
+    ⟨[.CX (p0Wire 5) (p0Wire 3), .CX (p0Wire 4) (p0Wire 1)],
+     [p0Wire 6, p0Wire 3, p0Wire 2, p0Wire 1, p0Wire 0],
+     [true, false, false, true, true]⟩
+  else
+    ⟨[], [p0Wire 5, p0Wire 3, p0Wire 1, p0Wire 0],
+         [false, true, true, false]⟩
+
+def treeQCompute : Program :=
+  [ .CCX 2 1 101
+  , .CX 2 100
+  , .CX 101 100
+  , .CX 1 99
+  , .CX 101 99
+  , .X 98
+  , .CX 2 98
+  , .CX 99 98
+  ]
+
+def treeGCompute : Program :=
+  [ .CCX 6 4 103
+  , .CX 6 102
+  , .CX 103 102
+  , .CCX 102 3 104
+  , .CX 104 102
+  ]
+
+def treeFGroup (grp : Wire) (baseF : Nat) : Program :=
+  [ .CCX grp 98 (86 + baseF)
+  , .CCX grp 99 (86 + baseF + 1)
+  , .CCX grp 100 (86 + baseF + 2)
+  , .CX grp (86 + baseF + 3)
+  , .CX (86 + baseF) (86 + baseF + 3)
+  , .CX (86 + baseF + 1) (86 + baseF + 3)
+  , .CX (86 + baseF + 2) (86 + baseF + 3)
+  ]
+
+def treeFGroup3 (grp : Wire) (baseF : Nat) : Program :=
+  [ .CCX grp 98 (86 + baseF)
+  , .CCX grp 99 (86 + baseF + 1)
+  , .CX grp (86 + baseF + 2)
+  , .CX (86 + baseF) (86 + baseF + 2)
+  , .CX (86 + baseF + 1) (86 + baseF + 2)
+  ]
+
+def treeFEraseGroup (grp : Wire) (baseF : Nat) : Program :=
+  [ .measureX (86 + baseF) [] [.CZ grp 98]
+  , .measureX (86 + baseF + 1) [] [.CZ grp 99]
+  , .measureX (86 + baseF + 2) [] [.CZ grp 100]
+  , .measureX (86 + baseF + 3) [] [.CZ grp 101]
+  ]
+
+def treeFEraseGroup3 (grp : Wire) (baseF : Nat) : Program :=
+  [ .measureX (86 + baseF) [] [.CZ grp 98]
+  , .measureX (86 + baseF + 1) [] [.CZ grp 99]
+  , .measureX (86 + baseF + 2) [] [.CZ grp 2]
+  ]
+
+def treeGErase : Program :=
+  [ .CX 104 102
+  , .measureX 104 [] [.CZ 102 3]
+  , .CX 103 102
+  , .CX 6 102
+  , .measureX 103 [] [.CZ 6 4]
+  ]
+
+def treeQErase : Program :=
+  [ .CX 99 98
+  , .CX 2 98
+  , .X 98
+  , .CX 101 99
+  , .CX 1 99
+  , .CX 101 100
+  , .CX 2 100
+  , .measureX 101 [] [.CZ 2 1]
+  ]
+
+def treeDecodeCProg : Program :=
+  treeQCompute ++ treeGCompute ++
+  treeFGroup 102 0 ++ treeFGroup 104 4 ++ treeFGroup3 103 8 ++
+  treeGErase ++ treeQErase
+
+def treeEraseFProg : Program :=
+  treeQCompute ++ treeGCompute ++
+  treeFEraseGroup 102 0 ++ treeFEraseGroup 104 4 ++ treeFEraseGroup3 103 8 ++
+  treeGErase ++ treeQErase
+
+def clearOrRestoreSlotC (k : Nat) : Program :=
+  [.CX (86 + k) 6] ++
+  (if k.testBit 3 then [.CX (86 + k) 4] else []) ++
+  (if k.testBit 2 then [.CX (86 + k) 3] else []) ++
+  (if k.testBit 1 then [.CX (86 + k) 2] else []) ++
+  (if k.testBit 0 then [.CX (86 + k) 1] else [])
+
+def clearOrRestoreCProg : Program :=
+  (List.range 11).flatMap clearOrRestoreSlotC
+
+def cBus : List Wire := [5, 4, 3, 2, 1]
+def cBus4 : List Wire := [5, 4, 3, 2]
+
+def packSlotProg (k : Nat) : Program :=
+  let sp := slotSpec k
+  if k < 10 then
+    sp.cxs ++
+    fredkin5_const (86 + k) cBus sp.ws sp.vals ++
+    erase_and5 (sp.ws.zip sp.vals) (86 + k) 102 103 104 ++
+    sp.cxs.reverse
+  else
+    sp.cxs ++
+    fredkin4_const (86 + k) cBus4 sp.ws sp.vals ++
+    erase_and4 (sp.ws.zip sp.vals) (86 + k) 102 103 ++
+    sp.cxs.reverse
+
+def unpackSlotProg (k : Nat) : Program :=
+  let sp := slotSpec k
+  if k < 10 then
+    sp.cxs ++
+    compute_and5 (sp.ws.zip sp.vals) (86 + k) 102 103 104 ++
+    fredkin5_const (86 + k) cBus sp.ws sp.vals ++
+    sp.cxs.reverse
+  else
+    sp.cxs ++
+    compute_and4 (sp.ws.zip sp.vals) (86 + k) 102 103 ++
+    fredkin4_const (86 + k) cBus4 sp.ws sp.vals ++
+    sp.cxs.reverse
+
+def packSlotsProg : Program :=
+  (List.range 11).flatMap packSlotProg
+
+def unpackSlotsProg : Program :=
+  (List.range 11).reverse.flatMap unpackSlotProg
+
+def packTagProg : Program :=
+  uP0Prog ++ treeDecodeCProg ++ clearOrRestoreCProg ++ packSlotsProg
+
+def unpackTagProg : Program :=
+  unpackSlotsProg ++ clearOrRestoreCProg.reverse ++ treeEraseFProg ++ uP0Prog.reverse
+
+/-! ## Section 3: Exact counts, physicality, instruction validity, and wire support -/
+
+private theorem toffoliCount_flatMap_range11 (f : Nat → Program) :
+    toffoliCount ((List.range 11).flatMap f) =
+      toffoliCount (f 0) + toffoliCount (f 1) + toffoliCount (f 2) + toffoliCount (f 3) +
+      toffoliCount (f 4) + toffoliCount (f 5) + toffoliCount (f 6) + toffoliCount (f 7) +
+      toffoliCount (f 8) + toffoliCount (f 9) + toffoliCount (f 10) := by
+  have hr : List.range 11 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] := by decide
+  rw [hr]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, toffoliCount_append, Nat.add_assoc]
+
+private theorem toffoliCount_flatMap_range11_rev (f : Nat → Program) :
+    toffoliCount ((List.range 11).reverse.flatMap f) =
+      toffoliCount (f 10) + toffoliCount (f 9) + toffoliCount (f 8) +
+      toffoliCount (f 7) + toffoliCount (f 6) + toffoliCount (f 5) + toffoliCount (f 4) +
+      toffoliCount (f 3) + toffoliCount (f 2) + toffoliCount (f 1) + toffoliCount (f 0) := by
+  have hr : (List.range 11).reverse = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] := by decide
+  rw [hr]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, toffoliCount_append, Nat.add_assoc]
+
+private theorem measurementCount_flatMap_range11 (f : Nat → Program) :
+    measurementCount ((List.range 11).flatMap f) =
+      measurementCount (f 0) + measurementCount (f 1) + measurementCount (f 2) + measurementCount (f 3) +
+      measurementCount (f 4) + measurementCount (f 5) + measurementCount (f 6) + measurementCount (f 7) +
+      measurementCount (f 8) + measurementCount (f 9) + measurementCount (f 10) := by
+  have hr : List.range 11 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] := by decide
+  rw [hr]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, measurementCount_append, Nat.add_assoc]
+
+private theorem measurementCount_flatMap_range11_rev (f : Nat → Program) :
+    measurementCount ((List.range 11).reverse.flatMap f) =
+      measurementCount (f 10) + measurementCount (f 9) + measurementCount (f 8) +
+      measurementCount (f 7) + measurementCount (f 6) + measurementCount (f 5) + measurementCount (f 4) +
+      measurementCount (f 3) + measurementCount (f 2) + measurementCount (f 1) + measurementCount (f 0) := by
+  have hr : (List.range 11).reverse = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] := by decide
+  rw [hr]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, measurementCount_append, Nat.add_assoc]
+
+private theorem gateSlots_flatMap_range11 (f : Nat → Program) :
+    Challenge.gateSlots ((List.range 11).flatMap f) =
+      Challenge.gateSlots (f 0) + Challenge.gateSlots (f 1) + Challenge.gateSlots (f 2) + Challenge.gateSlots (f 3) +
+      Challenge.gateSlots (f 4) + Challenge.gateSlots (f 5) + Challenge.gateSlots (f 6) + Challenge.gateSlots (f 7) +
+      Challenge.gateSlots (f 8) + Challenge.gateSlots (f 9) + Challenge.gateSlots (f 10) := by
+  have hr : List.range 11 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] := by decide
+  rw [hr]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, Challenge.gateSlots_append, Nat.add_assoc]
+
+private theorem gateSlots_flatMap_range11_rev (f : Nat → Program) :
+    Challenge.gateSlots ((List.range 11).reverse.flatMap f) =
+      Challenge.gateSlots (f 10) + Challenge.gateSlots (f 9) + Challenge.gateSlots (f 8) +
+      Challenge.gateSlots (f 7) + Challenge.gateSlots (f 6) + Challenge.gateSlots (f 5) + Challenge.gateSlots (f 4) +
+      Challenge.gateSlots (f 3) + Challenge.gateSlots (f 2) + Challenge.gateSlots (f 1) + Challenge.gateSlots (f 0) := by
+  have hr : (List.range 11).reverse = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] := by decide
+  rw [hr]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, Challenge.gateSlots_append, Nat.add_assoc]
+
+private theorem toffoliCount_reverse' (p : Program) : toffoliCount p.reverse = toffoliCount p := by
+  induction p with
+  | nil => rfl
+  | cons i p ih => cases i <;> simp [toffoliCount, toffoliCount_append, ih, Nat.add_comm]
+
+private theorem measurementCount_reverse' (p : Program) : measurementCount p.reverse = measurementCount p := by
+  induction p with
+  | nil => rfl
+  | cons i p ih => cases i <;> simp [measurementCount, measurementCount_append, ih, Nat.add_comm]
+
+private theorem gateSlots_reverse' (p : Program) : Challenge.gateSlots p.reverse = Challenge.gateSlots p := by
+  simp [Challenge.gateSlots, List.map_reverse, List.sum_reverse]
+
+theorem packTagProg_toffoliCount : toffoliCount packTagProg = 99 := by
+  dsimp only [packTagProg, packSlotsProg]
+  rw [toffoliCount_append, toffoliCount_append, toffoliCount_append, toffoliCount_flatMap_range11]
+  have h0 : toffoliCount uP0Prog = 2 := by decide
+  have h1 : toffoliCount treeDecodeCProg = 11 := by decide
+  have h2 : toffoliCount clearOrRestoreCProg = 0 := by decide
+  have h3 : ∀ k < 10, toffoliCount (packSlotProg k) = 8 := by
+    intro k hk
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+           k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  have h10 : toffoliCount (packSlotProg 10) = 6 := by decide
+  rw [h0, h1, h2, h10]
+  repeat rw [h3 _ (by omega)]
+
+theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 102 := by
+  dsimp only [unpackTagProg, unpackSlotsProg]
+  rw [toffoliCount_append, toffoliCount_append, toffoliCount_append,
+      toffoliCount_flatMap_range11_rev, toffoliCount_reverse', toffoliCount_reverse']
+  have h0 : toffoliCount uP0Prog = 2 := by decide
+  have h1 : toffoliCount treeEraseFProg = 3 := by decide
+  have h2 : toffoliCount clearOrRestoreCProg = 0 := by decide
+  have h3 : ∀ k < 10, toffoliCount (unpackSlotProg k) = 9 := by
+    intro k hk
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+           k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  have h10 : toffoliCount (unpackSlotProg 10) = 7 := by decide
+  rw [h0, h1, h2, h10]
+  repeat rw [h3 _ (by omega)]
+
+theorem packTagProg_measurementCount : measurementCount packTagProg = 46 := by
+  dsimp only [packTagProg, packSlotsProg]
+  rw [measurementCount_append, measurementCount_append, measurementCount_append, measurementCount_flatMap_range11]
+  have h0 : measurementCount uP0Prog = 0 := by decide
+  have h1 : measurementCount treeDecodeCProg = 3 := by decide
+  have h2 : measurementCount clearOrRestoreCProg = 0 := by decide
+  have h3 : ∀ k < 10, measurementCount (packSlotProg k) = 4 := by
+    intro k hk
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+           k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  have h10 : measurementCount (packSlotProg 10) = 3 := by decide
+  rw [h0, h1, h2, h10]
+  repeat rw [h3 _ (by omega)]
+
+theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 46 := by
+  dsimp only [unpackTagProg, unpackSlotsProg]
+  rw [measurementCount_append, measurementCount_append, measurementCount_append,
+      measurementCount_flatMap_range11_rev, measurementCount_reverse', measurementCount_reverse']
+  have h0 : measurementCount uP0Prog = 0 := by decide
+  have h1 : measurementCount treeEraseFProg = 14 := by decide
+  have h2 : measurementCount clearOrRestoreCProg = 0 := by decide
+  have h3 : ∀ k < 10, measurementCount (unpackSlotProg k) = 3 := by
+    intro k hk
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+           k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  have h10 : measurementCount (unpackSlotProg 10) = 2 := by decide
+  rw [h0, h1, h2, h10]
+  repeat rw [h3 _ (by omega)]
+
+theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 480 := by
+  dsimp only [packTagProg, packSlotsProg]
+  rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append, gateSlots_flatMap_range11]
+  have hu : Challenge.gateSlots uP0Prog = 12 := by decide
+  have h1 : Challenge.gateSlots treeDecodeCProg = 48 := by decide
+  have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
+  have h0 : Challenge.gateSlots (packSlotProg 0) = 36 := by decide
+  have h1' : Challenge.gateSlots (packSlotProg 1) = 36 := by decide
+  have h2' : Challenge.gateSlots (packSlotProg 2) = 36 := by decide
+  have h3' : Challenge.gateSlots (packSlotProg 3) = 36 := by decide
+  have h4' : Challenge.gateSlots (packSlotProg 4) = 36 := by decide
+  have h5' : Challenge.gateSlots (packSlotProg 5) = 36 := by decide
+  have h6' : Challenge.gateSlots (packSlotProg 6) = 36 := by decide
+  have h7' : Challenge.gateSlots (packSlotProg 7) = 36 := by decide
+  have h8' : Challenge.gateSlots (packSlotProg 8) = 36 := by decide
+  have h9' : Challenge.gateSlots (packSlotProg 9) = 40 := by decide
+  have h10' : Challenge.gateSlots (packSlotProg 10) = 28 := by decide
+  omega
+
+theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 472 := by
+  dsimp only [unpackTagProg, unpackSlotsProg]
+  rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append,
+      gateSlots_flatMap_range11_rev, gateSlots_reverse', gateSlots_reverse']
+  have hu : Challenge.gateSlots uP0Prog = 12 := by decide
+  have h1 : Challenge.gateSlots treeEraseFProg = 51 := by decide
+  have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
+  have h0 : Challenge.gateSlots (unpackSlotProg 0) = 35 := by decide
+  have h1' : Challenge.gateSlots (unpackSlotProg 1) = 35 := by decide
+  have h2' : Challenge.gateSlots (unpackSlotProg 2) = 35 := by decide
+  have h3' : Challenge.gateSlots (unpackSlotProg 3) = 35 := by decide
+  have h4' : Challenge.gateSlots (unpackSlotProg 4) = 35 := by decide
+  have h5' : Challenge.gateSlots (unpackSlotProg 5) = 35 := by decide
+  have h6' : Challenge.gateSlots (unpackSlotProg 6) = 35 := by decide
+  have h7' : Challenge.gateSlots (unpackSlotProg 7) = 35 := by decide
+  have h8' : Challenge.gateSlots (unpackSlotProg 8) = 35 := by decide
+  have h9' : Challenge.gateSlots (unpackSlotProg 9) = 39 := by decide
+  have h10' : Challenge.gateSlots (unpackSlotProg 10) = 27 := by decide
+  omega
+
+private def corrValidBool : Correction → Bool
+  | .Z _ => true
+  | .CZ a b => a != b
+
+private def instrValidBool : Instr → Bool
+  | .X _ => true
+  | .CX c t => c != t
+  | .CCX a b t => (a != b) && (a != t) && (b != t)
+  | .measureX _ c₀ c₁ => c₀.all corrValidBool && c₁.all corrValidBool
+
+private theorem instrValidBool_correct (i : Instr) (h : instrValidBool i = true) :
+    Challenge.instructionValid i := by
+  cases i with
+  | X t => trivial
+  | CX c t => simpa [instrValidBool, Challenge.instructionValid] using h
+  | CCX a b t =>
+    simp only [instrValidBool, Bool.and_eq_true, bne_iff_ne] at h
+    exact ⟨h.1.1, h.1.2, h.2⟩
+  | measureX t c₀ c₁ =>
+    simp only [instrValidBool, Bool.and_eq_true, List.all_eq_true] at h
+    constructor
+    · intro c hc; have := h.1 c hc; cases c <;> simp_all [corrValidBool, Challenge.correctionValid]
+    · intro c hc; have := h.2 c hc; cases c <;> simp_all [corrValidBool, Challenge.correctionValid]
+
+private theorem gatePhysical_of_instructionValid (p : Program)
+    (h : ∀ i ∈ p, Challenge.instructionValid i) : GatePhysical p := by
+  intro i hi
+  have hv := h i hi
+  cases i with
+  | X _ => trivial
+  | CX _ _ => simpa [RecordedQuantum.PhysicalInstr, ProperGate, Challenge.instructionValid] using hv
+  | CCX _ _ _ =>
+    simp only [Challenge.instructionValid] at hv
+    exact ⟨hv.2.1, hv.2.2⟩
+  | measureX _ _ _ => trivial
+
+theorem packTagProg_instructionValid : ∀ i ∈ packTagProg, Challenge.instructionValid i := by
+  intro i hi
+  apply instrValidBool_correct i
+  dsimp only [packTagProg, packSlotsProg] at hi
+  simp only [List.mem_append, List.mem_flatMap, List.mem_range] at hi
+  rcases hi with ((hi | hi) | hi) | ⟨k, hk, hi⟩
+  · exact List.all_eq_true.mp (by decide : uP0Prog.all instrValidBool = true) i hi
+  · exact List.all_eq_true.mp (by decide : treeDecodeCProg.all instrValidBool = true) i hi
+  · exact List.all_eq_true.mp (by decide : clearOrRestoreCProg.all instrValidBool = true) i hi
+  · have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+           k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      exact List.all_eq_true.mp (by decide) i hi
+
+theorem unpackTagProg_instructionValid : ∀ i ∈ unpackTagProg, Challenge.instructionValid i := by
+  intro i hi
+  apply instrValidBool_correct i
+  dsimp only [unpackTagProg, unpackSlotsProg] at hi
+  simp only [List.mem_append, List.mem_flatMap, List.mem_reverse, List.mem_range] at hi
+  rcases hi with ((⟨k, hk, hi⟩ | hi) | hi) | hi
+  · have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+           k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      exact List.all_eq_true.mp (by decide) i hi
+  · exact List.all_eq_true.mp (by decide : clearOrRestoreCProg.all instrValidBool = true) i hi
+  · exact List.all_eq_true.mp (by decide : treeEraseFProg.all instrValidBool = true) i hi
+  · exact List.all_eq_true.mp (by decide : uP0Prog.all instrValidBool = true) i hi
+
+theorem packTagProg_physical : GatePhysical packTagProg :=
+  gatePhysical_of_instructionValid packTagProg packTagProg_instructionValid
+
+theorem unpackTagProg_physical : GatePhysical unpackTagProg :=
+  gatePhysical_of_instructionValid unpackTagProg unpackTagProg_instructionValid
+private def corrWiresLt (bound : Nat) : Correction → Bool
+  | .Z t => t < bound
+  | .CZ a b => (a < bound) && (b < bound)
+
+private def instrWiresLt (bound : Nat) : Instr → Bool
+  | .X t => t < bound
+  | .CX c t => (c < bound) && (t < bound)
+  | .CCX a b t => (a < bound) && (b < bound) && (t < bound)
+  | .measureX t c₀ c₁ => (t < bound) && c₀.all (corrWiresLt bound) && c₁.all (corrWiresLt bound)
+
+private theorem corrWiresLt_correct (bound : Nat) (cs : List Correction)
+    (h : cs.all (corrWiresLt bound) = true) : ∀ q ∈ correctionWires cs, q < bound := by
+  induction cs with
+  | nil => simp [correctionWires]
+  | cons c cs ih =>
+    simp only [List.all_cons, Bool.and_eq_true] at h
+    intro q hq
+    cases c with
+    | Z t =>
+      simp only [correctionWires, Finset.mem_union, Finset.mem_singleton] at hq
+      rcases hq with rfl | hq
+      · simpa [corrWiresLt] using h.1
+      · exact ih h.2 q hq
+    | CZ a b =>
+      simp only [correctionWires, Finset.mem_union, Finset.mem_insert, Finset.mem_singleton] at hq
+      simp only [corrWiresLt, Bool.and_eq_true, decide_eq_true_eq] at h
+      rcases hq with (rfl | rfl) | hq
+      · exact h.1.1
+      · exact h.1.2
+      · exact ih h.2 q hq
+
+private theorem wires_mem_exists (p : Program) (q : Wire) (hq : q ∈ wires p) :
+    ∃ i ∈ p, q ∈ i.wires := by
+  induction p with
+  | nil => simp [wires] at hq
+  | cons i p ih =>
+    simp only [wires, Finset.mem_union] at hq
+    rcases hq with hq | hq
+    · exact ⟨i, by simp, hq⟩
+    · obtain ⟨j, hj, hqj⟩ := ih hq
+      exact ⟨j, by simp [hj], hqj⟩
+
+private theorem instrWiresLt_correct (bound : Nat) (i : Instr)
+    (h : instrWiresLt bound i = true) : ∀ q ∈ i.wires, q < bound := by
+  intro q hq
+  cases i with
+  | X t =>
+    simp only [Instr.wires, Finset.mem_singleton] at hq
+    subst hq; simpa [instrWiresLt] using h
+  | CX c t =>
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    simp only [instrWiresLt, Bool.and_eq_true, decide_eq_true_eq] at h
+    rcases hq with rfl | rfl <;> [exact h.1; exact h.2]
+  | CCX a b t =>
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+    simp only [instrWiresLt, Bool.and_eq_true, decide_eq_true_eq] at h
+    rcases hq with rfl | rfl | rfl <;> [exact h.1.1; exact h.1.2; exact h.2]
+  | measureX t c₀ c₁ =>
+    simp only [Instr.wires, Finset.mem_union, Finset.mem_singleton] at hq
+    simp only [instrWiresLt, Bool.and_eq_true, decide_eq_true_eq] at h
+    rcases hq with (rfl | hq) | hq
+    · exact h.1.1
+    · exact corrWiresLt_correct bound c₀ h.1.2 q hq
+    · exact corrWiresLt_correct bound c₁ h.2 q hq
+private theorem wires_reverse (p : Program) : wires p.reverse = wires p := by
+  induction p with
+  | nil => rfl
+  | cons i p ih => simp [wires, wires_append, ih, Finset.union_comm]
+
+private theorem wires_lt_of_all (p : Program) (h : p.all (instrWiresLt 105) = true) :
+    ∀ q ∈ wires p, q < 105 := by
+  intro q hq
+  obtain ⟨i, hi, hqi⟩ := wires_mem_exists p q hq
+  exact instrWiresLt_correct 105 i (List.all_eq_true.mp h i hi) q hqi
+
+private theorem wires_flatMap_lt (ks : List Nat) (f : Nat → Program)
+    (hf : ∀ k ∈ ks, ∀ q ∈ wires (f k), q < 105) :
+    ∀ q ∈ wires (ks.flatMap f), q < 105 := by
+  induction ks with
+  | nil => intro q hq; simp [wires] at hq
+  | cons k ks ih =>
+    intro q hq
+    simp only [List.flatMap_cons, wires_append, Finset.mem_union] at hq
+    rcases hq with hq | hq
+    · exact hf k (by simp) q hq
+    · exact ih (fun j hj => hf j (by simp [hj])) q hq
+
+private theorem packSlotProg_wires_lt (k : Nat) (hk : k < 11) :
+    ∀ q ∈ wires (packSlotProg k), q < 105 := by
+  have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+         k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 := by omega
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    exact wires_lt_of_all _ (by decide)
+
+private theorem unpackSlotProg_wires_lt (k : Nat) (hk : k < 11) :
+    ∀ q ∈ wires (unpackSlotProg k), q < 105 := by
+  have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+         k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 := by omega
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    exact wires_lt_of_all _ (by decide)
+
+theorem packTagProg_wires_lt : ∀ q ∈ wires packTagProg, q < 105 := by
+  intro q hq
+  have h1 : wires packTagProg = wires uP0Prog ∪ wires treeDecodeCProg ∪ wires clearOrRestoreCProg ∪ wires packSlotsProg := by
+    rw [packTagProg, wires_append, wires_append, wires_append]
+  rw [h1, Finset.mem_union, Finset.mem_union, Finset.mem_union] at hq
+  rcases hq with ((hq | hq) | hq) | hq
+  · exact wires_lt_of_all uP0Prog (by decide) q hq
+  · exact wires_lt_of_all treeDecodeCProg (by decide) q hq
+  · exact wires_lt_of_all clearOrRestoreCProg (by decide) q hq
+  · have h2 : wires packSlotsProg = wires ((List.range 11).flatMap packSlotProg) := rfl
+    rw [h2] at hq
+    exact wires_flatMap_lt (List.range 11) packSlotProg
+      (fun k hk => packSlotProg_wires_lt k (List.mem_range.mp hk)) q hq
+
+theorem unpackTagProg_wires_lt : ∀ q ∈ wires unpackTagProg, q < 105 := by
+  intro q hq
+  have h1 : wires unpackTagProg = wires unpackSlotsProg ∪ wires clearOrRestoreCProg ∪ wires treeEraseFProg ∪ wires uP0Prog := by
+    rw [unpackTagProg, wires_append, wires_append, wires_append, wires_reverse, wires_reverse]
+  rw [h1, Finset.mem_union, Finset.mem_union, Finset.mem_union] at hq
+  rcases hq with ((hq | hq) | hq) | hq
+  · have h2 : wires unpackSlotsProg = wires ((List.range 11).reverse.flatMap unpackSlotProg) := rfl
+    rw [h2] at hq
+    exact wires_flatMap_lt (List.range 11).reverse unpackSlotProg
+      (fun k hk => unpackSlotProg_wires_lt k (List.mem_range.mp (List.mem_reverse.mp hk))) q hq
+  · exact wires_lt_of_all clearOrRestoreCProg (by decide) q hq
+  · exact wires_lt_of_all treeEraseFProg (by decide) q hq
+  · exact wires_lt_of_all uP0Prog (by decide) q hq
+
+/-! ## Section 4: General `run` and `writeBit` helper lemmas -/
+
+@[simp] private theorem writeBit_self (b : BasisState) (w : Wire) (v : Bool) :
+    writeBit b w v w = v := by
+  simp [writeBit]
+
+private theorem writeBit_ne (b : BasisState) {w w' : Wire} (h : w' ≠ w) (v : Bool) :
+    writeBit b w v w' = b w' := by
+  simp [writeBit, h]
+
+private theorem run_measureX_CZ (t a b : Wire) (hat : a ≠ t) (hbt : b ≠ t)
+    (m : List Bool) (s : State) (ht : s.basis t = (s.basis a && s.basis b)) :
+    run [.measureX t [] [.CZ a b]] m s = ⟨s.phase, writeBit s.basis t false⟩ := by
+  simp only [run, measureAndCorrect]
+  cases hm : m.headD false
+  · simp [correct]
+  · simp [correct, writeBit, hat, hbt, ht]
+
+private theorem bool_xor_trans {a b c d e f : Bool}
+    (h1 : (a ^^ b) = (c ^^ d)) (h2 : (b ^^ e) = (d ^^ f)) : (a ^^ e) = (c ^^ f) := by
+  revert a b c d e f; decide
+
+private theorem bool_xor_self_eq (a b : Bool) : (a ^^ a) = (b ^^ b) := by
+  cases a <;> cases b <;> rfl
+
+private theorem bool_xor_shift (a b c : Bool) : ((a ^^ c) ^^ a) = ((b ^^ c) ^^ b) := by
+  cases a <;> cases b <;> cases c <;> rfl
+
+private theorem run_congr_on_wires (p : Program) (m : List Bool) (s₁ s₂ : State)
+    (h : ∀ w ∈ wires p, s₁.basis w = s₂.basis w) :
+    (((run p m s₁).phase ^^ s₁.phase) = ((run p m s₂).phase ^^ s₂.phase)) ∧
+    (∀ w ∈ wires p, (run p m s₁).basis w = (run p m s₂).basis w) := by
+  induction p generalizing m s₁ s₂ with
+  | nil => exact ⟨bool_xor_self_eq _ _, by simp [wires]⟩
+  | cons i p ih =>
+    have hi : ∀ w ∈ i.wires, s₁.basis w = s₂.basis w :=
+      fun w hw => h w (Finset.mem_union_left _ hw)
+    have step : ∀ (s₁' s₂' : State) (m' : List Bool),
+        ((s₁'.phase ^^ s₁.phase) = (s₂'.phase ^^ s₂.phase)) →
+        (∀ w ∈ i.wires ∪ wires p, s₁'.basis w = s₂'.basis w) →
+        (((run p m' s₁').phase ^^ s₁.phase) = ((run p m' s₂').phase ^^ s₂.phase)) ∧
+        (∀ w ∈ i.wires ∪ wires p, (run p m' s₁').basis w = (run p m' s₂').basis w) := by
+      intro s₁' s₂' m' hph hst
+      obtain ⟨ihph, ihst⟩ := ih m' s₁' s₂' (fun w hw => hst w (Finset.mem_union_right _ hw))
+      refine ⟨bool_xor_trans ihph hph, fun w hw => ?_⟩
+      by_cases hwp : w ∈ wires p
+      · exact ihst w hwp
+      · rw [run_preserves_outside p m' s₁' w hwp, run_preserves_outside p m' s₂' w hwp]
+        exact hst w hw
+    cases i with
+    | X t =>
+      simp only [run, wires]
+      apply step
+      · exact bool_xor_self_eq _ _
+      · intro w hw
+        by_cases hwt : w = t
+        · subst hwt; simp [writeBit, hi w (by simp [Instr.wires])]
+        · simp [writeBit, hwt, h w (by simpa [wires] using hw)]
+    | CX c t =>
+      simp only [run, wires]
+      apply step
+      · exact bool_xor_self_eq _ _
+      · intro w hw
+        by_cases hwt : w = t
+        · subst hwt
+          simp [writeBit, hi w (by simp [Instr.wires]), hi c (by simp [Instr.wires])]
+        · simp [writeBit, hwt, h w (by simpa [wires] using hw)]
+    | CCX a b t =>
+      simp only [run, wires]
+      apply step
+      · exact bool_xor_self_eq _ _
+      · intro w hw
+        by_cases hwt : w = t
+        · subst hwt
+          simp [writeBit, hi w (by simp [Instr.wires]), hi a (by simp [Instr.wires]),
+            hi b (by simp [Instr.wires])]
+        · simp [writeBit, hwt, h w (by simpa [wires] using hw)]
+    | measureX t c₀ c₁ =>
+      simp only [run, wires]
+      have hcorr : ∀ (cs : List Correction) (u₁ u₂ : State),
+          (∀ w ∈ correctionWires cs, u₁.basis w = u₂.basis w) →
+          ((correct cs u₁).phase ^^ u₁.phase) = ((correct cs u₂).phase ^^ u₂.phase) := by
+        intro cs
+        induction cs with
+        | nil => intros; exact bool_xor_self_eq _ _
+        | cons c cs ihc =>
+          intro u₁ u₂ hu
+          cases c with
+          | Z q =>
+            have hq : u₁.basis q = u₂.basis q := hu q (by simp [correctionWires])
+            have ih1 := ihc ⟨u₁.phase ^^ u₁.basis q, u₁.basis⟩ ⟨u₂.phase ^^ u₂.basis q, u₂.basis⟩
+              (fun w hw => hu w (by simp [correctionWires, hw]))
+            exact bool_xor_trans ih1 (by rw [hq]; exact bool_xor_shift _ _ _)
+          | CZ a b =>
+            have ha : u₁.basis a = u₂.basis a := hu a (by simp [correctionWires])
+            have hb : u₁.basis b = u₂.basis b := hu b (by simp [correctionWires])
+            have ih1 := ihc ⟨u₁.phase ^^ (u₁.basis a && u₁.basis b), u₁.basis⟩
+              ⟨u₂.phase ^^ (u₂.basis a && u₂.basis b), u₂.basis⟩
+              (fun w hw => hu w (by simp [correctionWires, hw]))
+            exact bool_xor_trans ih1 (by rw [ha, hb]; exact bool_xor_shift _ _ _)
+      apply step
+      · simp only [measureAndCorrect]
+        have ht : s₁.basis t = s₂.basis t := hi t (by simp [Instr.wires])
+        have hcs : ∀ w ∈ correctionWires (if m.headD false then c₁ else c₀),
+            writeBit s₁.basis t false w = writeBit s₂.basis t false w := by
+          intro w hw
+          by_cases hwt : w = t
+          · subst hwt; simp [writeBit]
+          · simp only [writeBit, Function.update_of_ne hwt]
+            apply hi w
+            cases hm : m.headD false <;> simp_all [Instr.wires]
+        have hc := hcorr (if m.headD false then c₁ else c₀)
+          ⟨s₁.phase ^^ (m.headD false && s₁.basis t), writeBit s₁.basis t false⟩
+          ⟨s₂.phase ^^ (m.headD false && s₂.basis t), writeBit s₂.basis t false⟩ hcs
+        exact bool_xor_trans hc (by rw [ht]; exact bool_xor_shift _ _ _)
+      · intro w hw
+        simp only [measureAndCorrect, correct_basis]
+        by_cases hwt : w = t
+        · subst hwt; simp [writeBit]
+        · simp [writeBit, hwt, h w (by simpa [wires] using hw)]
+
+/-! ## Section 5: Component 1 — `fredkin5_const_spec` -/
+
+private theorem run_fredkin1 (f u v : Wire) (_hfu : f ≠ u) (hfv : f ≠ v) (huv : u ≠ v)
+    (m : List Bool) (s : State) :
+    (run (fredkin1 f u v) m s).phase = s.phase ∧
+    (run (fredkin1 f u v) m s).basis u = (if s.basis f then s.basis v else s.basis u) ∧
+    (run (fredkin1 f u v) m s).basis v = (if s.basis f then s.basis u else s.basis v) ∧
+    (∀ w, w ≠ u → w ≠ v → (run (fredkin1 f u v) m s).basis w = s.basis w) := by
+  have hvu : v ≠ u := Ne.symm huv
+  refine ⟨by simp [fredkin1, run], ?_, ?_, ?_⟩
+  · simp [fredkin1, run, writeBit, hfv, huv, hvu]
+    cases s.basis f <;> cases s.basis u <;> cases s.basis v <;> rfl
+  · simp [fredkin1, run, writeBit, hfv, huv, hvu]
+    cases s.basis f <;> cases s.basis u <;> cases s.basis v <;> rfl
+  · intro w hwu hwv
+    simp [fredkin1, run, writeBit, hwu, hwv]
+
+private theorem run_xFlips5 (v0 v1 v2 v3 v4 : Wire) (c0 c1 c2 c3 c4 : Bool)
+    (hnd : [v0, v1, v2, v3, v4].Nodup) (m : List Bool) (s : State) :
+    let flips := (([(v0, c0), (v1, c1), (v2, c2), (v3, c3), (v4, c4)].filter
+      (fun p => p.2)).map (fun p => Instr.X p.1))
+    (run flips m s).phase = s.phase ∧
+    (run flips m s).basis v0 = (s.basis v0 ^^ c0) ∧
+    (run flips m s).basis v1 = (s.basis v1 ^^ c1) ∧
+    (run flips m s).basis v2 = (s.basis v2 ^^ c2) ∧
+    (run flips m s).basis v3 = (s.basis v3 ^^ c3) ∧
+    (run flips m s).basis v4 = (s.basis v4 ^^ c4) ∧
+    (∀ w, w ∉ [v0, v1, v2, v3, v4] → (run flips m s).basis w = s.basis w) := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨h01, h02, h03, h04⟩, ⟨h12, h13, h14⟩, ⟨h23, h24⟩, h34⟩
+  have run_xIf : ∀ (w : Wire) (b : Bool) (m' : List Bool) (st : State),
+      run (if b then [.X w] else []) m' st = ⟨st.phase, writeBit st.basis w (st.basis w ^^ b)⟩ := by
+    intro w b m' st
+    cases b
+    · cases st with
+      | mk ph bs =>
+        simp only [Bool.false_eq_true, ↓reduceIte, run, Bool.xor_false]
+        congr 1; funext q; by_cases h : q = w <;> simp [writeBit, h]
+    · simp only [↓reduceIte, run, Bool.xor_true]
+  have hflips : (([(v0, c0), (v1, c1), (v2, c2), (v3, c3), (v4, c4)].filter
+      (fun p => p.2)).map (fun p => Instr.X p.1)) =
+      (if c0 then [.X v0] else []) ++ (if c1 then [.X v1] else []) ++
+      (if c2 then [.X v2] else []) ++ (if c3 then [.X v3] else []) ++
+      (if c4 then [.X v4] else []) := by
+    cases c0 <;> cases c1 <;> cases c2 <;> cases c3 <;> cases c4 <;> rfl
+  rw [hflips]
+  simp only [run_append, run_xIf]
+  refine ⟨by simp, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp [writeBit, h01, h02, h03, h04]
+  · simp [writeBit, Ne.symm h01, h12, h13, h14]
+  · simp [writeBit, Ne.symm h02, Ne.symm h12, h23, h24]
+  · simp [writeBit, Ne.symm h03, Ne.symm h13, Ne.symm h23, h34]
+  · simp [writeBit, Ne.symm h04, Ne.symm h14, Ne.symm h24, Ne.symm h34]
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hw0, hw1, hw2, hw3, hw4⟩
+    simp [writeBit, hw0, hw1, hw2, hw3, hw4]
+
+theorem fredkin5_const_spec (f u0 u1 u2 u3 u4 v0 v1 v2 v3 v4 : Wire)
+    (c0 c1 c2 c3 c4 : Bool)
+    (hnd : [f, u0, u1, u2, u3, u4, v0, v1, v2, v3, v4].Nodup)
+    (m : List Bool) (s : State) :
+    let res := run (fredkin5_const f [u0, u1, u2, u3, u4] [v0, v1, v2, v3, v4]
+      [c0, c1, c2, c3, c4]) m s
+    res.phase = s.phase ∧
+    res.basis u0 = (if s.basis f then (s.basis v0 ^^ c0) else s.basis u0) ∧
+    res.basis u1 = (if s.basis f then (s.basis v1 ^^ c1) else s.basis u1) ∧
+    res.basis u2 = (if s.basis f then (s.basis v2 ^^ c2) else s.basis u2) ∧
+    res.basis u3 = (if s.basis f then (s.basis v3 ^^ c3) else s.basis u3) ∧
+    res.basis u4 = (if s.basis f then (s.basis v4 ^^ c4) else s.basis u4) ∧
+    res.basis v0 = (if s.basis f then (s.basis u0 ^^ c0) else s.basis v0) ∧
+    res.basis v1 = (if s.basis f then (s.basis u1 ^^ c1) else s.basis v1) ∧
+    res.basis v2 = (if s.basis f then (s.basis u2 ^^ c2) else s.basis v2) ∧
+    res.basis v3 = (if s.basis f then (s.basis u3 ^^ c3) else s.basis v3) ∧
+    res.basis v4 = (if s.basis f then (s.basis u4 ^^ c4) else s.basis v4) ∧
+    (∀ w, w ∉ [u0, u1, u2, u3, u4, v0, v1, v2, v3, v4] → res.basis w = s.basis w) := by
+  have hndV : [v0, v1, v2, v3, v4].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hnd ⊢
+    exact hnd.2.2.2.2.2.2
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨hfu0, hfu1, hfu2, hfu3, hfu4, hfv0, hfv1, hfv2, hfv3, hfv4⟩,
+    ⟨hu01, hu02, hu03, hu04, hu0v0, hu0v1, hu0v2, hu0v3, hu0v4⟩,
+    ⟨hu12, hu13, hu14, hu1v0, hu1v1, hu1v2, hu1v3, hu1v4⟩,
+    ⟨hu23, hu24, hu2v0, hu2v1, hu2v2, hu2v3, hu2v4⟩,
+    ⟨hu34, hu3v0, hu3v1, hu3v2, hu3v3, hu3v4⟩,
+    ⟨hu4v0, hu4v1, hu4v2, hu4v3, hu4v4⟩,
+    ⟨hv01, hv02, hv03, hv04⟩, ⟨hv12, hv13, hv14⟩, ⟨hv23, hv24⟩, hv34⟩
+  have hprog : fredkin5_const f [u0, u1, u2, u3, u4] [v0, v1, v2, v3, v4] [c0, c1, c2, c3, c4] =
+      ((([(v0, c0), (v1, c1), (v2, c2), (v3, c3), (v4, c4)].filter (fun p => p.2)).map (fun p => Instr.X p.1)) ++
+       (fredkin1 f u0 v0 ++ fredkin1 f u1 v1 ++ fredkin1 f u2 v2 ++ fredkin1 f u3 v3 ++ fredkin1 f u4 v4)) ++
+      (([(v0, c0), (v1, c1), (v2, c2), (v3, c3), (v4, c4)].filter (fun p => p.2)).map (fun p => Instr.X p.1)) := by
+    simp [fredkin5_const, List.append_assoc]
+  dsimp only
+  rw [hprog]
+  set flips := List.map (fun p => Instr.X p.1)
+    (List.filter (fun p => p.2) [(v0, c0), (v1, c1), (v2, c2), (v3, c3), (v4, c4)])
+  simp only [run_append]
+  have hmc_flips : measurementCount flips = 0 := by
+    cases c0 <;> cases c1 <;> cases c2 <;> cases c3 <;> cases c4 <;> rfl
+  have hmc_f1 : ∀ a b c, measurementCount (fredkin1 a b c) = 0 := fun _ _ _ => rfl
+  simp only [measurementCount_append, hmc_flips, hmc_f1, Nat.add_zero, List.take_zero, List.drop_zero]
+  obtain ⟨hp1, hv0_1, hv1_1, hv2_1, hv3_1, hv4_1, hoth_1⟩ :=
+    run_xFlips5 v0 v1 v2 v3 v4 c0 c1 c2 c3 c4 hndV [] s
+  set s1 := run flips [] s
+  have hf_1 : s1.basis f = s.basis f := hoth_1 f (by simp [hfv0, hfv1, hfv2, hfv3, hfv4])
+  have hu0_1 : s1.basis u0 = s.basis u0 := hoth_1 u0 (by simp [hu0v0, hu0v1, hu0v2, hu0v3, hu0v4])
+  have hu1_1 : s1.basis u1 = s.basis u1 := hoth_1 u1 (by simp [hu1v0, hu1v1, hu1v2, hu1v3, hu1v4])
+  have hu2_1 : s1.basis u2 = s.basis u2 := hoth_1 u2 (by simp [hu2v0, hu2v1, hu2v2, hu2v3, hu2v4])
+  have hu3_1 : s1.basis u3 = s.basis u3 := hoth_1 u3 (by simp [hu3v0, hu3v1, hu3v2, hu3v3, hu3v4])
+  have hu4_1 : s1.basis u4 = s.basis u4 := hoth_1 u4 (by simp [hu4v0, hu4v1, hu4v2, hu4v3, hu4v4])
+  obtain ⟨hp2a, hu0_2a, hv0_2a, hoth_2a⟩ := run_fredkin1 f u0 v0 hfu0 hfv0 hu0v0 [] s1
+  set s2a := run (fredkin1 f u0 v0) [] s1
+  have hf_2a : s2a.basis f = s.basis f := (hoth_2a f hfu0 hfv0).trans hf_1
+  obtain ⟨hp2b, hu1_2b, hv1_2b, hoth_2b⟩ := run_fredkin1 f u1 v1 hfu1 hfv1 hu1v1 [] s2a
+  set s2b := run (fredkin1 f u1 v1) [] s2a
+  have hf_2b : s2b.basis f = s.basis f := (hoth_2b f hfu1 hfv1).trans hf_2a
+  obtain ⟨hp2c, hu2_2c, hv2_2c, hoth_2c⟩ := run_fredkin1 f u2 v2 hfu2 hfv2 hu2v2 [] s2b
+  set s2c := run (fredkin1 f u2 v2) [] s2b
+  have hf_2c : s2c.basis f = s.basis f := (hoth_2c f hfu2 hfv2).trans hf_2b
+  obtain ⟨hp2d, hu3_2d, hv3_2d, hoth_2d⟩ := run_fredkin1 f u3 v3 hfu3 hfv3 hu3v3 [] s2c
+  set s2d := run (fredkin1 f u3 v3) [] s2c
+  have hf_2d : s2d.basis f = s.basis f := (hoth_2d f hfu3 hfv3).trans hf_2c
+  obtain ⟨hp2e, hu4_2e, hv4_2e, hoth_2e⟩ := run_fredkin1 f u4 v4 hfu4 hfv4 hu4v4 [] s2d
+  set s2e := run (fredkin1 f u4 v4) [] s2d
+  obtain ⟨hp3, hv0_3, hv1_3, hv2_3, hv3_3, hv4_3, hoth_3⟩ :=
+    run_xFlips5 v0 v1 v2 v3 v4 c0 c1 c2 c3 c4 hndV m s2e
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact hp3.trans (hp2e.trans (hp2d.trans (hp2c.trans (hp2b.trans (hp2a.trans hp1)))))
+  · rw [hoth_3 u0 (by simp [hu0v0, hu0v1, hu0v2, hu0v3, hu0v4]),
+        hoth_2e u0 hu04 hu0v4, hoth_2d u0 hu03 hu0v3, hoth_2c u0 hu02 hu0v2,
+        hoth_2b u0 hu01 hu0v1, hu0_2a, hf_1, hv0_1, hu0_1]
+  · rw [hoth_3 u1 (by simp [hu1v0, hu1v1, hu1v2, hu1v3, hu1v4]),
+        hoth_2e u1 hu14 hu1v4, hoth_2d u1 hu13 hu1v3, hoth_2c u1 hu12 hu1v2,
+        hu1_2b, hf_2a, hoth_2a v1 (Ne.symm hu0v1) (Ne.symm hv01), hv1_1,
+        hoth_2a u1 (Ne.symm hu01) hu1v0, hu1_1]
+  · rw [hoth_3 u2 (by simp [hu2v0, hu2v1, hu2v2, hu2v3, hu2v4]),
+        hoth_2e u2 hu24 hu2v4, hoth_2d u2 hu23 hu2v3,
+        hu2_2c, hf_2b, hoth_2b v2 (Ne.symm hu1v2) (Ne.symm hv12),
+        hoth_2a v2 (Ne.symm hu0v2) (Ne.symm hv02), hv2_1,
+        hoth_2b u2 (Ne.symm hu12) hu2v1, hoth_2a u2 (Ne.symm hu02) hu2v0, hu2_1]
+  · rw [hoth_3 u3 (by simp [hu3v0, hu3v1, hu3v2, hu3v3, hu3v4]),
+        hoth_2e u3 hu34 hu3v4,
+        hu3_2d, hf_2c, hoth_2c v3 (Ne.symm hu2v3) (Ne.symm hv23),
+        hoth_2b v3 (Ne.symm hu1v3) (Ne.symm hv13), hoth_2a v3 (Ne.symm hu0v3) (Ne.symm hv03), hv3_1,
+        hoth_2c u3 (Ne.symm hu23) hu3v2, hoth_2b u3 (Ne.symm hu13) hu3v1,
+        hoth_2a u3 (Ne.symm hu03) hu3v0, hu3_1]
+  · rw [hoth_3 u4 (by simp [hu4v0, hu4v1, hu4v2, hu4v3, hu4v4]),
+        hu4_2e, hf_2d, hoth_2d v4 (Ne.symm hu3v4) (Ne.symm hv34),
+        hoth_2c v4 (Ne.symm hu2v4) (Ne.symm hv24), hoth_2b v4 (Ne.symm hu1v4) (Ne.symm hv14),
+        hoth_2a v4 (Ne.symm hu0v4) (Ne.symm hv04), hv4_1,
+        hoth_2d u4 (Ne.symm hu34) hu4v3, hoth_2c u4 (Ne.symm hu24) hu4v2,
+        hoth_2b u4 (Ne.symm hu14) hu4v1, hoth_2a u4 (Ne.symm hu04) hu4v0, hu4_1]
+  · rw [hv0_3, hoth_2e v0 (Ne.symm hu4v0) hv04, hoth_2d v0 (Ne.symm hu3v0) hv03,
+        hoth_2c v0 (Ne.symm hu2v0) hv02, hoth_2b v0 (Ne.symm hu1v0) hv01,
+        hv0_2a, hf_1, hu0_1, hv0_1]
+    cases s.basis f <;> simp
+  · rw [hv1_3, hoth_2e v1 (Ne.symm hu4v1) hv14, hoth_2d v1 (Ne.symm hu3v1) hv13,
+        hoth_2c v1 (Ne.symm hu2v1) hv12, hv1_2b, hf_2a,
+        hoth_2a u1 (Ne.symm hu01) hu1v0, hu1_1,
+        hoth_2a v1 (Ne.symm hu0v1) (Ne.symm hv01), hv1_1]
+    cases s.basis f <;> simp
+  · rw [hv2_3, hoth_2e v2 (Ne.symm hu4v2) hv24, hoth_2d v2 (Ne.symm hu3v2) hv23,
+        hv2_2c, hf_2b,
+        hoth_2b u2 (Ne.symm hu12) hu2v1, hoth_2a u2 (Ne.symm hu02) hu2v0, hu2_1,
+        hoth_2b v2 (Ne.symm hu1v2) (Ne.symm hv12), hoth_2a v2 (Ne.symm hu0v2) (Ne.symm hv02), hv2_1]
+    cases s.basis f <;> simp
+  · rw [hv3_3, hoth_2e v3 (Ne.symm hu4v3) hv34, hv3_2d, hf_2c,
+        hoth_2c u3 (Ne.symm hu23) hu3v2, hoth_2b u3 (Ne.symm hu13) hu3v1,
+        hoth_2a u3 (Ne.symm hu03) hu3v0, hu3_1,
+        hoth_2c v3 (Ne.symm hu2v3) (Ne.symm hv23), hoth_2b v3 (Ne.symm hu1v3) (Ne.symm hv13),
+        hoth_2a v3 (Ne.symm hu0v3) (Ne.symm hv03), hv3_1]
+    cases s.basis f <;> simp
+  · rw [hv4_3, hv4_2e, hf_2d,
+        hoth_2d u4 (Ne.symm hu34) hu4v3, hoth_2c u4 (Ne.symm hu24) hu4v2,
+        hoth_2b u4 (Ne.symm hu14) hu4v1, hoth_2a u4 (Ne.symm hu04) hu4v0, hu4_1,
+        hoth_2d v4 (Ne.symm hu3v4) (Ne.symm hv34), hoth_2c v4 (Ne.symm hu2v4) (Ne.symm hv24),
+        hoth_2b v4 (Ne.symm hu1v4) (Ne.symm hv14), hoth_2a v4 (Ne.symm hu0v4) (Ne.symm hv04), hv4_1]
+    cases s.basis f <;> simp
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hw0, hw1, hw2, hw3, hw4, hwv0, hwv1, hwv2, hwv3, hwv4⟩
+    rw [hoth_3 w (by simp [hwv0, hwv1, hwv2, hwv3, hwv4]),
+        hoth_2e w hw4 hwv4, hoth_2d w hw3 hwv3, hoth_2c w hw2 hwv2,
+        hoth_2b w hw1 hwv1, hoth_2a w hw0 hwv0,
+        hoth_1 w (by simp [hwv0, hwv1, hwv2, hwv3, hwv4])]
+
+/-! ## Section 6: Component 2 — `compute_and5_spec` and `erase_and5_spec` -/
+
+def and5Bool (b0 b1 b2 b3 b4 v0 v1 v2 v3 v4 : Bool) : Bool :=
+  (b0 == v0) && (b1 == v1) && (b2 == v2) && (b3 == v3) && (b4 == v4)
+
+private theorem run_notFlips5 (w0 w1 w2 w3 w4 : Wire) (v0 v1 v2 v3 v4 : Bool)
+    (hnd : [w0, w1, w2, w3, w4].Nodup) (m : List Bool) (s : State) :
+    let flips := (([(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1))
+    (run flips m s).phase = s.phase ∧
+    (run flips m s).basis w0 = (s.basis w0 == v0) ∧
+    (run flips m s).basis w1 = (s.basis w1 == v1) ∧
+    (run flips m s).basis w2 = (s.basis w2 == v2) ∧
+    (run flips m s).basis w3 = (s.basis w3 == v3) ∧
+    (run flips m s).basis w4 = (s.basis w4 == v4) ∧
+    (∀ w, w ∉ [w0, w1, w2, w3, w4] → (run flips m s).basis w = s.basis w) := by
+  have h := run_xFlips5 w0 w1 w2 w3 w4 (!v0) (!v1) (!v2) (!v3) (!v4) hnd m s
+  have heq : (([(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1)) =
+      (([(w0, !v0), (w1, !v1), (w2, !v2), (w3, !v3), (w4, !v4)].filter
+      (fun p => p.2)).map (fun p => Instr.X p.1)) := by
+    cases v0 <;> cases v1 <;> cases v2 <;> cases v3 <;> cases v4 <;> rfl
+  rw [heq]
+  have bne_eq : ∀ a b : Bool, (a ^^ !b) = (a == b) := by decide
+  simpa [bne_eq] using h
+
+theorem compute_and5_spec (w0 w1 w2 w3 w4 outF t0 t1 t2 : Wire)
+    (v0 v1 v2 v3 v4 : Bool)
+    (hnd : [w0, w1, w2, w3, w4, outF, t0, t1, t2].Nodup)
+    (m : List Bool) (s : State)
+    (ht0 : s.basis t0 = false) (ht1 : s.basis t1 = false) (ht2 : s.basis t2 = false) :
+    let res := run (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] outF t0 t1 t2) m s
+    res.phase = s.phase ∧
+    res.basis outF = (s.basis outF ^^ and5Bool (s.basis w0) (s.basis w1) (s.basis w2)
+      (s.basis w3) (s.basis w4) v0 v1 v2 v3 v4) ∧
+    res.basis t0 = false ∧ res.basis t1 = false ∧ res.basis t2 = false ∧
+    (∀ w, w ∉ [outF, t0, t1, t2] → res.basis w = s.basis w) := by
+  have hndW : [w0, w1, w2, w3, w4].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hnd ⊢
+    exact ⟨⟨hnd.1.1, hnd.1.2.1, hnd.1.2.2.1, hnd.1.2.2.2.1⟩,
+           ⟨hnd.2.1.1, hnd.2.1.2.1, hnd.2.1.2.2.1⟩,
+           ⟨hnd.2.2.1.1, hnd.2.2.1.2.1⟩, hnd.2.2.2.1.1⟩
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨h01, h02, h03, h04, h0f, h0t0, h0t1, h0t2⟩,
+    ⟨h12, h13, h14, h1f, h1t0, h1t1, h1t2⟩,
+    ⟨h23, h24, h2f, h2t0, h2t1, h2t2⟩,
+    ⟨h34, h3f, h3t0, h3t1, h3t2⟩,
+    ⟨h4f, h4t0, h4t1, h4t2⟩,
+    ⟨hft0, hft1, hft2⟩, ⟨ht01, ht02⟩, ht12⟩
+  dsimp only [compute_and5]
+  rw [run_append, run_append]
+  obtain ⟨hp1, hw0_1, hw1_1, hw2_1, hw3_1, hw4_1, hoth_1⟩ :=
+    run_notFlips5 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndW _ s
+  set s1 := run _ _ s
+  have hf_1 : s1.basis outF = s.basis outF := hoth_1 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f, Ne.symm h4f])
+  have ht0_1 : s1.basis t0 = false := (hoth_1 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0, Ne.symm h4t0])).trans ht0
+  have ht1_1 : s1.basis t1 = false := (hoth_1 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1, Ne.symm h4t1])).trans ht1
+  have ht2_1 : s1.basis t2 = false := (hoth_1 t2 (by simp [Ne.symm h0t2, Ne.symm h1t2, Ne.symm h2t2, Ne.symm h3t2, Ne.symm h4t2])).trans ht2
+  -- Split the middle 7 gates into 4 CCX + 3 MX
+  have hmid :
+      [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 t2, .CCX t2 w4 outF,
+       .measureX t2 [] [.CZ t0 t1], .measureX t1 [] [.CZ w2 w3], .measureX t0 [] [.CZ w0 w1]] =
+      ([Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 t2, .CCX t2 w4 outF] ++
+       [.measureX t2 [] [.CZ t0 t1]]) ++
+      [.measureX t1 [] [.CZ w2 w3]] ++ [.measureX t0 [] [.CZ w0 w1]] := rfl
+  rw [hmid, run_append, run_append, run_append]
+  -- After 4 CCX gates
+  have hs2_eq : ∀ m', run [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 t2, .CCX t2 w4 outF] m' s1 =
+      ⟨s1.phase,
+      writeBit (writeBit (writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3))
+        t2 ((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3)))
+        outF (s1.basis outF ^^ (((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3)) && s1.basis w4))⟩ := by
+    intro m'
+    simp [run, writeBit, ht0_1, ht1_1, ht2_1, h2t0, h3t0, h4t0,
+      h4t1, h4t2, ht01, Ne.symm ht01, Ne.symm ht02, Ne.symm ht12,
+      hft0, hft1, hft2]
+  set s2 : State := ⟨s1.phase,
+      writeBit (writeBit (writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3))
+        t2 ((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3)))
+        outF (s1.basis outF ^^ (((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3)) && s1.basis w4))⟩
+  rw [hs2_eq]
+  -- Measure t2
+  have hm_t2 : ∀ m', run [.measureX t2 [] [.CZ t0 t1]] m' s2 = ⟨s2.phase, writeBit s2.basis t2 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t2 t0 t1 ht02 ht12
+    simp [s2, writeBit, Ne.symm hft0, Ne.symm hft1, Ne.symm hft2, ht01, ht02, ht12]
+  rw [hm_t2]
+  -- Measure t1
+  have hm_t1 : ∀ m', run [.measureX t1 [] [.CZ w2 w3]] m' ⟨s2.phase, writeBit s2.basis t2 false⟩ =
+      ⟨s2.phase, writeBit (writeBit s2.basis t2 false) t1 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t1 w2 w3 h2t1 h3t1
+    simp [s2, writeBit, h2t0, h2t1, h2t2, h3t0, h3t1, h3t2, h2f, h3f,
+      Ne.symm hft1, ht12]
+  rw [hm_t1]
+  -- Measure t0
+  have hm_t0 : ∀ m', run [.measureX t0 [] [.CZ w0 w1]] m' ⟨s2.phase, writeBit (writeBit s2.basis t2 false) t1 false⟩ =
+      ⟨s2.phase, writeBit (writeBit (writeBit s2.basis t2 false) t1 false) t0 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t0 w0 w1 h0t0 h1t0
+    simp [s2, writeBit, h0t0, h0t1, h0t2, h1t0, h1t1, h1t2, h0f, h1f,
+      Ne.symm hft0, ht01, ht02]
+  rw [hm_t0]
+  -- Final flips
+  set s3 : State := ⟨s2.phase, writeBit (writeBit (writeBit s2.basis t2 false) t1 false) t0 false⟩
+  obtain ⟨hp4, hw0_4, hw1_4, hw2_4, hw3_4, hw4_4, hoth_4⟩ :=
+    run_notFlips5 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndW _ s3
+  have hs3_ph : s3.phase = s.phase := hp1
+  have hs3_w : ∀ w, w ∉ [outF, t0, t1, t2] → s3.basis w = s1.basis w := by
+    intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hwf, hwt0, hwt1, hwt2⟩
+    simp [s3, s2, writeBit, hwf, hwt0, hwt1, hwt2]
+  refine ⟨hp4.trans hs3_ph, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hoth_4 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f, Ne.symm h4f])]
+    simp only [s3, s2, writeBit, Function.update_of_ne hft0, Function.update_of_ne hft1,
+      Function.update_of_ne hft2, Function.update_self, hf_1, hw0_1, hw1_1, hw2_1, hw3_1, hw4_1,
+      and5Bool, Bool.and_assoc]
+  · rw [hoth_4 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0, Ne.symm h4t0])]
+    simp [s3, writeBit]
+  · rw [hoth_4 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1, Ne.symm h4t1])]
+    simp [s3, writeBit, Ne.symm ht01]
+  · rw [hoth_4 t2 (by simp [Ne.symm h0t2, Ne.symm h1t2, Ne.symm h2t2, Ne.symm h3t2, Ne.symm h4t2])]
+    simp [s3, writeBit, Ne.symm ht02, Ne.symm ht12]
+  · intro w hw
+    by_cases hww : w ∈ [w0, w1, w2, w3, w4]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hww
+      rcases hww with rfl | rfl | rfl | rfl | rfl
+      · rw [hw0_4, hs3_w w hw, hw0_1]; cases s.basis w <;> cases v0 <;> rfl
+      · rw [hw1_4, hs3_w w hw, hw1_1]; cases s.basis w <;> cases v1 <;> rfl
+      · rw [hw2_4, hs3_w w hw, hw2_1]; cases s.basis w <;> cases v2 <;> rfl
+      · rw [hw3_4, hs3_w w hw, hw3_1]; cases s.basis w <;> cases v3 <;> rfl
+      · rw [hw4_4, hs3_w w hw, hw4_1]; cases s.basis w <;> cases v4 <;> rfl
+    · rw [hoth_4 w hww, hs3_w w hw, hoth_1 w hww]
+
+theorem erase_and5_spec (w0 w1 w2 w3 w4 outF t0 t1 t2 : Wire)
+    (v0 v1 v2 v3 v4 : Bool)
+    (hnd : [w0, w1, w2, w3, w4, outF, t0, t1, t2].Nodup)
+    (m : List Bool) (s : State)
+    (hout : s.basis outF = and5Bool (s.basis w0) (s.basis w1) (s.basis w2)
+      (s.basis w3) (s.basis w4) v0 v1 v2 v3 v4)
+    (ht0 : s.basis t0 = false) (ht1 : s.basis t1 = false) (ht2 : s.basis t2 = false) :
+    let res := run (erase_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] outF t0 t1 t2) m s
+    res.phase = s.phase ∧
+    res.basis outF = false ∧
+    res.basis t0 = false ∧ res.basis t1 = false ∧ res.basis t2 = false ∧
+    (∀ w, w ∉ [outF, t0, t1, t2] → res.basis w = s.basis w) := by
+  have hndW : [w0, w1, w2, w3, w4].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hnd ⊢
+    exact ⟨⟨hnd.1.1, hnd.1.2.1, hnd.1.2.2.1, hnd.1.2.2.2.1⟩,
+           ⟨hnd.2.1.1, hnd.2.1.2.1, hnd.2.1.2.2.1⟩,
+           ⟨hnd.2.2.1.1, hnd.2.2.1.2.1⟩, hnd.2.2.2.1.1⟩
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨h01, h02, h03, h04, h0f, h0t0, h0t1, h0t2⟩,
+    ⟨h12, h13, h14, h1f, h1t0, h1t1, h1t2⟩,
+    ⟨h23, h24, h2f, h2t0, h2t1, h2t2⟩,
+    ⟨h34, h3f, h3t0, h3t1, h3t2⟩,
+    ⟨h4f, h4t0, h4t1, h4t2⟩,
+    ⟨hft0, hft1, hft2⟩, ⟨ht01, ht02⟩, ht12⟩
+  dsimp only [erase_and5]
+  rw [run_append, run_append]
+  obtain ⟨hp1, hw0_1, hw1_1, hw2_1, hw3_1, hw4_1, hoth_1⟩ :=
+    run_notFlips5 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndW _ s
+  set s1 := run _ _ s
+  have hf_1 : s1.basis outF = s.basis outF := hoth_1 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f, Ne.symm h4f])
+  have ht0_1 : s1.basis t0 = false := (hoth_1 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0, Ne.symm h4t0])).trans ht0
+  have ht1_1 : s1.basis t1 = false := (hoth_1 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1, Ne.symm h4t1])).trans ht1
+  have ht2_1 : s1.basis t2 = false := (hoth_1 t2 (by simp [Ne.symm h0t2, Ne.symm h1t2, Ne.symm h2t2, Ne.symm h3t2, Ne.symm h4t2])).trans ht2
+  have hmid :
+      [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 t2, .measureX outF [] [.CZ t2 w4],
+       .measureX t2 [] [.CZ t0 t1], .measureX t1 [] [.CZ w2 w3], .measureX t0 [] [.CZ w0 w1]] =
+      (([Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 t2] ++
+       [.measureX outF [] [.CZ t2 w4]]) ++
+       [.measureX t2 [] [.CZ t0 t1]]) ++
+      [.measureX t1 [] [.CZ w2 w3]] ++ [.measureX t0 [] [.CZ w0 w1]] := rfl
+  rw [hmid, run_append, run_append, run_append, run_append]
+  have hs2_eq : ∀ m', run [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 t2] m' s1 = ⟨s1.phase,
+      writeBit (writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3))
+        t2 ((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3))⟩ := by
+    intro m'
+    simp [run, writeBit, ht0_1, ht1_1, ht2_1, h2t0, h3t0,
+      ht01, Ne.symm ht01, Ne.symm ht02, Ne.symm ht12]
+  set s2 : State := ⟨s1.phase,
+      writeBit (writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3))
+        t2 ((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3))⟩
+  rw [hs2_eq]
+  have hm_f : ∀ m', run [.measureX outF [] [.CZ t2 w4]] m' s2 = ⟨s2.phase, writeBit s2.basis outF false⟩ := by
+    intro m'
+    apply run_measureX_CZ outF t2 w4 (Ne.symm hft2) h4f
+    simp only [s2, writeBit, Function.update_of_ne hft2, Function.update_of_ne hft1,
+      Function.update_of_ne hft0, Function.update_self, Function.update_of_ne h4t2,
+      Function.update_of_ne h4t1, Function.update_of_ne h4t0,
+      hf_1, hout, hw0_1, hw1_1, hw2_1, hw3_1, hw4_1, and5Bool, Bool.and_assoc]
+  rw [hm_f]
+  have hm_t2 : ∀ m', run [.measureX t2 [] [.CZ t0 t1]] m' ⟨s2.phase, writeBit s2.basis outF false⟩ =
+      ⟨s2.phase, writeBit (writeBit s2.basis outF false) t2 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t2 t0 t1 ht02 ht12
+    simp [s2, writeBit, Ne.symm hft0, Ne.symm hft1, Ne.symm hft2, ht01, ht02, ht12]
+  rw [hm_t2]
+  have hm_t1 : ∀ m', run [.measureX t1 [] [.CZ w2 w3]] m' ⟨s2.phase, writeBit (writeBit s2.basis outF false) t2 false⟩ =
+      ⟨s2.phase, writeBit (writeBit (writeBit s2.basis outF false) t2 false) t1 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t1 w2 w3 h2t1 h3t1
+    simp [s2, writeBit, h2t0, h2t1, h2t2, h3t0, h3t1, h3t2, h2f, h3f,
+      Ne.symm hft1, ht12]
+  rw [hm_t1]
+  have hm_t0 : ∀ m', run [.measureX t0 [] [.CZ w0 w1]] m'
+      ⟨s2.phase, writeBit (writeBit (writeBit s2.basis outF false) t2 false) t1 false⟩ =
+      ⟨s2.phase, writeBit (writeBit (writeBit (writeBit s2.basis outF false) t2 false) t1 false) t0 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t0 w0 w1 h0t0 h1t0
+    simp [s2, writeBit, h0t0, h0t1, h0t2, h1t0, h1t1, h1t2, h0f, h1f,
+      Ne.symm hft0, ht01, ht02]
+  rw [hm_t0]
+  set s3 : State := ⟨s2.phase, writeBit (writeBit (writeBit (writeBit s2.basis outF false) t2 false) t1 false) t0 false⟩
+  obtain ⟨hp4, hw0_4, hw1_4, hw2_4, hw3_4, hw4_4, hoth_4⟩ :=
+    run_notFlips5 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndW _ s3
+  have hs3_ph : s3.phase = s.phase := hp1
+  have hs3_w : ∀ w, w ∉ [outF, t0, t1, t2] → s3.basis w = s1.basis w := by
+    intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hwf, hwt0, hwt1, hwt2⟩
+    simp [s3, s2, writeBit, hwf, hwt0, hwt1, hwt2]
+  refine ⟨hp4.trans hs3_ph, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hoth_4 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f, Ne.symm h4f])]
+    simp [s3, writeBit, hft0, hft1, hft2]
+  · rw [hoth_4 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0, Ne.symm h4t0])]
+    simp [s3, writeBit]
+  · rw [hoth_4 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1, Ne.symm h4t1])]
+    simp [s3, writeBit, Ne.symm ht01]
+  · rw [hoth_4 t2 (by simp [Ne.symm h0t2, Ne.symm h1t2, Ne.symm h2t2, Ne.symm h3t2, Ne.symm h4t2])]
+    simp [s3, writeBit, Ne.symm ht02, Ne.symm ht12]
+  · intro w hw
+    by_cases hww : w ∈ [w0, w1, w2, w3, w4]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hww
+      rcases hww with rfl | rfl | rfl | rfl | rfl
+      · rw [hw0_4, hs3_w w hw, hw0_1]; cases s.basis w <;> cases v0 <;> rfl
+      · rw [hw1_4, hs3_w w hw, hw1_1]; cases s.basis w <;> cases v1 <;> rfl
+      · rw [hw2_4, hs3_w w hw, hw2_1]; cases s.basis w <;> cases v2 <;> rfl
+      · rw [hw3_4, hs3_w w hw, hw3_1]; cases s.basis w <;> cases v3 <;> rfl
+      · rw [hw4_4, hs3_w w hw, hw4_1]; cases s.basis w <;> cases v4 <;> rfl
+    · rw [hoth_4 w hww, hs3_w w hw, hoth_1 w hww]
+
+
+/-! ## Section 6b: 4-bit Fredkin and 4-way AND/erase specs for slot 10 -/
+
+private theorem run_xFlips4 (v0 v1 v2 v3 : Wire) (c0 c1 c2 c3 : Bool)
+    (hnd : [v0, v1, v2, v3].Nodup) (m : List Bool) (s : State) :
+    let flips := (([(v0, c0), (v1, c1), (v2, c2), (v3, c3)].filter
+      (fun p => p.2)).map (fun p => Instr.X p.1))
+    (run flips m s).phase = s.phase ∧
+    (run flips m s).basis v0 = (s.basis v0 ^^ c0) ∧
+    (run flips m s).basis v1 = (s.basis v1 ^^ c1) ∧
+    (run flips m s).basis v2 = (s.basis v2 ^^ c2) ∧
+    (run flips m s).basis v3 = (s.basis v3 ^^ c3) ∧
+    (∀ w, w ∉ [v0, v1, v2, v3] → (run flips m s).basis w = s.basis w) := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨h01, h02, h03⟩, ⟨h12, h13⟩, h23⟩
+  have run_xIf : ∀ (w : Wire) (b : Bool) (m' : List Bool) (st : State),
+      run (if b then [.X w] else []) m' st = ⟨st.phase, writeBit st.basis w (st.basis w ^^ b)⟩ := by
+    intro w b m' st
+    cases b
+    · cases st with
+      | mk ph bs =>
+        simp only [Bool.false_eq_true, ↓reduceIte, run, Bool.xor_false]
+        congr 1; funext q; by_cases h : q = w <;> simp [writeBit, h]
+    · simp only [↓reduceIte, run, Bool.xor_true]
+  have hflips : (([(v0, c0), (v1, c1), (v2, c2), (v3, c3)].filter
+      (fun p => p.2)).map (fun p => Instr.X p.1)) =
+      (if c0 then [.X v0] else []) ++ (if c1 then [.X v1] else []) ++
+      (if c2 then [.X v2] else []) ++ (if c3 then [.X v3] else []) := by
+    cases c0 <;> cases c1 <;> cases c2 <;> cases c3 <;> rfl
+  rw [hflips]
+  simp only [run_append, run_xIf]
+  refine ⟨by simp, ?_, ?_, ?_, ?_, ?_⟩
+  · simp [writeBit, h01, h02, h03]
+  · simp [writeBit, Ne.symm h01, h12, h13]
+  · simp [writeBit, Ne.symm h02, Ne.symm h12, h23]
+  · simp [writeBit, Ne.symm h03, Ne.symm h13, Ne.symm h23]
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hw0, hw1, hw2, hw3⟩
+    simp [writeBit, hw0, hw1, hw2, hw3]
+
+theorem fredkin4_const_spec (f u0 u1 u2 u3 v0 v1 v2 v3 : Wire)
+    (c0 c1 c2 c3 : Bool)
+    (hnd : [f, u0, u1, u2, u3, v0, v1, v2, v3].Nodup)
+    (m : List Bool) (s : State) :
+    let res := run (fredkin4_const f [u0, u1, u2, u3] [v0, v1, v2, v3]
+      [c0, c1, c2, c3]) m s
+    res.phase = s.phase ∧
+    res.basis u0 = (if s.basis f then (s.basis v0 ^^ c0) else s.basis u0) ∧
+    res.basis u1 = (if s.basis f then (s.basis v1 ^^ c1) else s.basis u1) ∧
+    res.basis u2 = (if s.basis f then (s.basis v2 ^^ c2) else s.basis u2) ∧
+    res.basis u3 = (if s.basis f then (s.basis v3 ^^ c3) else s.basis u3) ∧
+    res.basis v0 = (if s.basis f then (s.basis u0 ^^ c0) else s.basis v0) ∧
+    res.basis v1 = (if s.basis f then (s.basis u1 ^^ c1) else s.basis v1) ∧
+    res.basis v2 = (if s.basis f then (s.basis u2 ^^ c2) else s.basis v2) ∧
+    res.basis v3 = (if s.basis f then (s.basis u3 ^^ c3) else s.basis v3) ∧
+    (∀ w, w ∉ [u0, u1, u2, u3, v0, v1, v2, v3] → res.basis w = s.basis w) := by
+  have hndV : [v0, v1, v2, v3].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hnd ⊢
+    exact hnd.2.2.2.2.2
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨hfu0, hfu1, hfu2, hfu3, hfv0, hfv1, hfv2, hfv3⟩,
+    ⟨hu01, hu02, hu03, hu0v0, hu0v1, hu0v2, hu0v3⟩,
+    ⟨hu12, hu13, hu1v0, hu1v1, hu1v2, hu1v3⟩,
+    ⟨hu23, hu2v0, hu2v1, hu2v2, hu2v3⟩,
+    ⟨hu3v0, hu3v1, hu3v2, hu3v3⟩,
+    ⟨hv01, hv02, hv03⟩, ⟨hv12, hv13⟩, hv23⟩
+  dsimp only [fredkin4_const, fredkin5_const]
+  have hzip1 : List.zip [v0, v1, v2, v3] [c0, c1, c2, c3] =
+      [(v0, c0), (v1, c1), (v2, c2), (v3, c3)] := rfl
+  have hzip2 : (List.zip [u0, u1, u2, u3] [v0, v1, v2, v3]).flatMap (fun p => fredkin1 f p.1 p.2) =
+      fredkin1 f u0 v0 ++ fredkin1 f u1 v1 ++ fredkin1 f u2 v2 ++ fredkin1 f u3 v3 := by
+    simp [List.zip, List.flatMap, List.append_assoc]
+  rw [hzip1, hzip2, run_append, run_append, run_append, run_append, run_append]
+  obtain ⟨hp1, hv0_1, hv1_1, hv2_1, hv3_1, hoth_1⟩ := run_xFlips4 v0 v1 v2 v3 c0 c1 c2 c3 hndV _ s
+  set s1 := run _ _ s
+  have hf_1 : s1.basis f = s.basis f := hoth_1 f (by simp [hfv0, hfv1, hfv2, hfv3])
+  have hu0_1 : s1.basis u0 = s.basis u0 := hoth_1 u0 (by simp [hu0v0, hu0v1, hu0v2, hu0v3])
+  have hu1_1 : s1.basis u1 = s.basis u1 := hoth_1 u1 (by simp [hu1v0, hu1v1, hu1v2, hu1v3])
+  have hu2_1 : s1.basis u2 = s.basis u2 := hoth_1 u2 (by simp [hu2v0, hu2v1, hu2v2, hu2v3])
+  have hu3_1 : s1.basis u3 = s.basis u3 := hoth_1 u3 (by simp [hu3v0, hu3v1, hu3v2, hu3v3])
+  obtain ⟨hp2a, hu0_2a, hv0_2a, hoth_2a⟩ := run_fredkin1 f u0 v0 hfu0 hfv0 hu0v0 _ s1
+  set s2a := run (fredkin1 f u0 v0) _ s1
+  have hf_2a : s2a.basis f = s.basis f := (hoth_2a f hfu0 hfv0).trans hf_1
+  obtain ⟨hp2b, hu1_2b, hv1_2b, hoth_2b⟩ := run_fredkin1 f u1 v1 hfu1 hfv1 hu1v1 _ s2a
+  set s2b := run (fredkin1 f u1 v1) _ s2a
+  have hf_2b : s2b.basis f = s.basis f := (hoth_2b f hfu1 hfv1).trans hf_2a
+  obtain ⟨hp2c, hu2_2c, hv2_2c, hoth_2c⟩ := run_fredkin1 f u2 v2 hfu2 hfv2 hu2v2 _ s2b
+  set s2c := run (fredkin1 f u2 v2) _ s2b
+  have hf_2c : s2c.basis f = s.basis f := (hoth_2c f hfu2 hfv2).trans hf_2b
+  obtain ⟨hp2d, hu3_2d, hv3_2d, hoth_2d⟩ := run_fredkin1 f u3 v3 hfu3 hfv3 hu3v3 _ s2c
+  set s2d := run (fredkin1 f u3 v3) _ s2c
+  obtain ⟨hp3, hv0_3, hv1_3, hv2_3, hv3_3, hoth_3⟩ := run_xFlips4 v0 v1 v2 v3 c0 c1 c2 c3 hndV _ s2d
+  refine ⟨hp3.trans (hp2d.trans (hp2c.trans (hp2b.trans (hp2a.trans hp1)))),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hoth_3 u0 (by simp [hu0v0, hu0v1, hu0v2, hu0v3]),
+        hoth_2d u0 hu03 hu0v3, hoth_2c u0 hu02 hu0v2, hoth_2b u0 hu01 hu0v1,
+        hu0_2a, hf_1, hv0_1, hu0_1]
+  · rw [hoth_3 u1 (by simp [hu1v0, hu1v1, hu1v2, hu1v3]),
+        hoth_2d u1 hu13 hu1v3, hoth_2c u1 hu12 hu1v2,
+        hu1_2b, hf_2a, hoth_2a v1 (Ne.symm hu0v1) (Ne.symm hv01), hv1_1,
+        hoth_2a u1 (Ne.symm hu01) hu1v0, hu1_1]
+  · rw [hoth_3 u2 (by simp [hu2v0, hu2v1, hu2v2, hu2v3]),
+        hoth_2d u2 hu23 hu2v3,
+        hu2_2c, hf_2b, hoth_2b v2 (Ne.symm hu1v2) (Ne.symm hv12),
+        hoth_2a v2 (Ne.symm hu0v2) (Ne.symm hv02), hv2_1,
+        hoth_2b u2 (Ne.symm hu12) hu2v1, hoth_2a u2 (Ne.symm hu02) hu2v0, hu2_1]
+  · rw [hoth_3 u3 (by simp [hu3v0, hu3v1, hu3v2, hu3v3]),
+        hu3_2d, hf_2c,
+        hoth_2c v3 (Ne.symm hu2v3) (Ne.symm hv23), hoth_2b v3 (Ne.symm hu1v3) (Ne.symm hv13),
+        hoth_2a v3 (Ne.symm hu0v3) (Ne.symm hv03), hv3_1,
+        hoth_2c u3 (Ne.symm hu23) hu3v2, hoth_2b u3 (Ne.symm hu13) hu3v1,
+        hoth_2a u3 (Ne.symm hu03) hu3v0, hu3_1]
+  · rw [hv0_3, hoth_2d v0 (Ne.symm hu3v0) hv03, hoth_2c v0 (Ne.symm hu2v0) hv02,
+        hoth_2b v0 (Ne.symm hu1v0) hv01, hv0_2a, hf_1, hu0_1, hv0_1]
+    cases s.basis f <;> simp
+  · rw [hv1_3, hoth_2d v1 (Ne.symm hu3v1) hv13, hoth_2c v1 (Ne.symm hu2v1) hv12,
+        hv1_2b, hf_2a, hoth_2a u1 (Ne.symm hu01) hu1v0, hu1_1,
+        hoth_2a v1 (Ne.symm hu0v1) (Ne.symm hv01), hv1_1]
+    cases s.basis f <;> simp
+  · rw [hv2_3, hoth_2d v2 (Ne.symm hu3v2) hv23, hv2_2c, hf_2b,
+        hoth_2b u2 (Ne.symm hu12) hu2v1, hoth_2a u2 (Ne.symm hu02) hu2v0, hu2_1,
+        hoth_2b v2 (Ne.symm hu1v2) (Ne.symm hv12), hoth_2a v2 (Ne.symm hu0v2) (Ne.symm hv02), hv2_1]
+    cases s.basis f <;> simp
+  · rw [hv3_3, hv3_2d, hf_2c,
+        hoth_2c u3 (Ne.symm hu23) hu3v2, hoth_2b u3 (Ne.symm hu13) hu3v1,
+        hoth_2a u3 (Ne.symm hu03) hu3v0, hu3_1,
+        hoth_2c v3 (Ne.symm hu2v3) (Ne.symm hv23), hoth_2b v3 (Ne.symm hu1v3) (Ne.symm hv13),
+        hoth_2a v3 (Ne.symm hu0v3) (Ne.symm hv03), hv3_1]
+    cases s.basis f <;> simp
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hw0, hw1, hw2, hw3, hwv0, hwv1, hwv2, hwv3⟩
+    rw [hoth_3 w (by simp [hwv0, hwv1, hwv2, hwv3]),
+        hoth_2d w hw3 hwv3, hoth_2c w hw2 hwv2, hoth_2b w hw1 hwv1, hoth_2a w hw0 hwv0,
+        hoth_1 w (by simp [hwv0, hwv1, hwv2, hwv3])]
+
+def and4Bool (b0 b1 b2 b3 v0 v1 v2 v3 : Bool) : Bool :=
+  (b0 == v0) && (b1 == v1) && (b2 == v2) && (b3 == v3)
+
+private theorem run_notFlips4 (w0 w1 w2 w3 : Wire) (v0 v1 v2 v3 : Bool)
+    (hnd : [w0, w1, w2, w3].Nodup) (m : List Bool) (s : State) :
+    let flips := (([(w0, v0), (w1, v1), (w2, v2), (w3, v3)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1))
+    (run flips m s).phase = s.phase ∧
+    (run flips m s).basis w0 = (s.basis w0 == v0) ∧
+    (run flips m s).basis w1 = (s.basis w1 == v1) ∧
+    (run flips m s).basis w2 = (s.basis w2 == v2) ∧
+    (run flips m s).basis w3 = (s.basis w3 == v3) ∧
+    (∀ w, w ∉ [w0, w1, w2, w3] → (run flips m s).basis w = s.basis w) := by
+  have h := run_xFlips4 w0 w1 w2 w3 (!v0) (!v1) (!v2) (!v3) hnd m s
+  have heq : (([(w0, v0), (w1, v1), (w2, v2), (w3, v3)].filter
+      (fun p => !p.2)).map (fun p => Instr.X p.1)) =
+      (([(w0, !v0), (w1, !v1), (w2, !v2), (w3, !v3)].filter
+      (fun p => p.2)).map (fun p => Instr.X p.1)) := by
+    cases v0 <;> cases v1 <;> cases v2 <;> cases v3 <;> rfl
+  rw [heq]
+  have bne_eq : ∀ a b : Bool, (a ^^ !b) = (a == b) := by decide
+  simpa [bne_eq] using h
+
+theorem compute_and4_spec (w0 w1 w2 w3 outF t0 t1 : Wire)
+    (v0 v1 v2 v3 : Bool)
+    (hnd : [w0, w1, w2, w3, outF, t0, t1].Nodup)
+    (m : List Bool) (s : State)
+    (ht0 : s.basis t0 = false) (ht1 : s.basis t1 = false) :
+    let res := run (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] outF t0 t1) m s
+    res.phase = s.phase ∧
+    res.basis outF = (s.basis outF ^^ and4Bool (s.basis w0) (s.basis w1) (s.basis w2)
+      (s.basis w3) v0 v1 v2 v3) ∧
+    res.basis t0 = false ∧ res.basis t1 = false ∧
+    (∀ w, w ∉ [outF, t0, t1] → res.basis w = s.basis w) := by
+  have hndW : [w0, w1, w2, w3].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hnd ⊢
+    exact ⟨⟨hnd.1.1, hnd.1.2.1, hnd.1.2.2.1⟩, ⟨hnd.2.1.1, hnd.2.1.2.1⟩, hnd.2.2.1.1⟩
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨h01, h02, h03, h0f, h0t0, h0t1⟩,
+    ⟨h12, h13, h1f, h1t0, h1t1⟩,
+    ⟨h23, h2f, h2t0, h2t1⟩,
+    ⟨h3f, h3t0, h3t1⟩,
+    ⟨hft0, hft1⟩, ht01⟩
+  dsimp only [compute_and4]
+  rw [run_append, run_append]
+  obtain ⟨hp1, hw0_1, hw1_1, hw2_1, hw3_1, hoth_1⟩ :=
+    run_notFlips4 w0 w1 w2 w3 v0 v1 v2 v3 hndW _ s
+  set s1 := run _ _ s
+  have hf_1 : s1.basis outF = s.basis outF := hoth_1 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f])
+  have ht0_1 : s1.basis t0 = false := (hoth_1 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0])).trans ht0
+  have ht1_1 : s1.basis t1 = false := (hoth_1 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1])).trans ht1
+  have hmid :
+      [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 outF,
+       .measureX t1 [] [.CZ w2 w3], .measureX t0 [] [.CZ w0 w1]] =
+      ([Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 outF] ++
+       [.measureX t1 [] [.CZ w2 w3]]) ++ [.measureX t0 [] [.CZ w0 w1]] := rfl
+  rw [hmid, run_append, run_append]
+  have hs2_eq : ∀ m', run [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .CCX t0 t1 outF] m' s1 =
+      ⟨s1.phase,
+      writeBit (writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3))
+        outF (s1.basis outF ^^ ((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3)))⟩ := by
+    intro m'
+    simp [run, writeBit, ht0_1, ht1_1, h2t0, h3t0, ht01, Ne.symm ht01, hft0, hft1]
+  set s2 : State := ⟨s1.phase,
+      writeBit (writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3))
+        outF (s1.basis outF ^^ ((s1.basis w0 && s1.basis w1) && (s1.basis w2 && s1.basis w3)))⟩
+  rw [hs2_eq]
+  have hm_t1 : ∀ m', run [.measureX t1 [] [.CZ w2 w3]] m' s2 = ⟨s2.phase, writeBit s2.basis t1 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t1 w2 w3 h2t1 h3t1
+    simp [s2, writeBit, h2t0, h2t1, h3t0, h3t1, h2f, h3f, Ne.symm hft1]
+  rw [hm_t1]
+  have hm_t0 : ∀ m', run [.measureX t0 [] [.CZ w0 w1]] m' ⟨s2.phase, writeBit s2.basis t1 false⟩ =
+      ⟨s2.phase, writeBit (writeBit s2.basis t1 false) t0 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t0 w0 w1 h0t0 h1t0
+    simp [s2, writeBit, h0t0, h0t1, h1t0, h1t1, h0f, h1f, Ne.symm hft0, ht01]
+  rw [hm_t0]
+  set s3 : State := ⟨s2.phase, writeBit (writeBit s2.basis t1 false) t0 false⟩
+  obtain ⟨hp4, hw0_4, hw1_4, hw2_4, hw3_4, hoth_4⟩ :=
+    run_notFlips4 w0 w1 w2 w3 v0 v1 v2 v3 hndW _ s3
+  have hs3_ph : s3.phase = s.phase := hp1
+  have hs3_w : ∀ w, w ∉ [outF, t0, t1] → s3.basis w = s1.basis w := by
+    intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hwf, hwt0, hwt1⟩
+    simp [s3, s2, writeBit, hwf, hwt0, hwt1]
+  refine ⟨hp4.trans hs3_ph, ?_, ?_, ?_, ?_⟩
+  · rw [hoth_4 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f])]
+    simp only [s3, s2, writeBit, Function.update_of_ne hft0, Function.update_of_ne hft1,
+      Function.update_self, hf_1, hw0_1, hw1_1, hw2_1, hw3_1, and4Bool, Bool.and_assoc]
+  · rw [hoth_4 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0])]
+    simp [s3, writeBit]
+  · rw [hoth_4 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1])]
+    simp [s3, writeBit, Ne.symm ht01]
+  · intro w hw
+    by_cases hww : w ∈ [w0, w1, w2, w3]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hww
+      rcases hww with rfl | rfl | rfl | rfl
+      · rw [hw0_4, hs3_w w hw, hw0_1]; cases s.basis w <;> cases v0 <;> rfl
+      · rw [hw1_4, hs3_w w hw, hw1_1]; cases s.basis w <;> cases v1 <;> rfl
+      · rw [hw2_4, hs3_w w hw, hw2_1]; cases s.basis w <;> cases v2 <;> rfl
+      · rw [hw3_4, hs3_w w hw, hw3_1]; cases s.basis w <;> cases v3 <;> rfl
+    · rw [hoth_4 w hww, hs3_w w hw, hoth_1 w hww]
+
+theorem erase_and4_spec (w0 w1 w2 w3 outF t0 t1 : Wire)
+    (v0 v1 v2 v3 : Bool)
+    (hnd : [w0, w1, w2, w3, outF, t0, t1].Nodup)
+    (m : List Bool) (s : State)
+    (hout : s.basis outF = and4Bool (s.basis w0) (s.basis w1) (s.basis w2)
+      (s.basis w3) v0 v1 v2 v3)
+    (ht0 : s.basis t0 = false) (ht1 : s.basis t1 = false) :
+    let res := run (erase_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] outF t0 t1) m s
+    res.phase = s.phase ∧
+    res.basis outF = false ∧
+    res.basis t0 = false ∧ res.basis t1 = false ∧
+    (∀ w, w ∉ [outF, t0, t1] → res.basis w = s.basis w) := by
+  have hndW : [w0, w1, w2, w3].Nodup := by
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hnd ⊢
+    exact ⟨⟨hnd.1.1, hnd.1.2.1, hnd.1.2.2.1⟩, ⟨hnd.2.1.1, hnd.2.1.2.1⟩, hnd.2.2.1.1⟩
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hnd
+  rcases hnd with ⟨⟨h01, h02, h03, h0f, h0t0, h0t1⟩,
+    ⟨h12, h13, h1f, h1t0, h1t1⟩,
+    ⟨h23, h2f, h2t0, h2t1⟩,
+    ⟨h3f, h3t0, h3t1⟩,
+    ⟨hft0, hft1⟩, ht01⟩
+  dsimp only [erase_and4]
+  rw [run_append, run_append]
+  obtain ⟨hp1, hw0_1, hw1_1, hw2_1, hw3_1, hoth_1⟩ :=
+    run_notFlips4 w0 w1 w2 w3 v0 v1 v2 v3 hndW _ s
+  set s1 := run _ _ s
+  have hf_1 : s1.basis outF = s.basis outF := hoth_1 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f])
+  have ht0_1 : s1.basis t0 = false := (hoth_1 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0])).trans ht0
+  have ht1_1 : s1.basis t1 = false := (hoth_1 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1])).trans ht1
+  have hmid :
+      [Instr.CCX w0 w1 t0, .CCX w2 w3 t1, .measureX outF [] [.CZ t0 t1],
+       .measureX t1 [] [.CZ w2 w3], .measureX t0 [] [.CZ w0 w1]] =
+      (([Instr.CCX w0 w1 t0, .CCX w2 w3 t1] ++
+       [.measureX outF [] [.CZ t0 t1]]) ++
+       [.measureX t1 [] [.CZ w2 w3]]) ++ [.measureX t0 [] [.CZ w0 w1]] := rfl
+  rw [hmid, run_append, run_append, run_append]
+  have hs2_eq : ∀ m', run [Instr.CCX w0 w1 t0, .CCX w2 w3 t1] m' s1 = ⟨s1.phase,
+      writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3)⟩ := by
+    intro m'
+    simp [run, writeBit, ht0_1, ht1_1, h2t0, h3t0, Ne.symm ht01]
+  set s2 : State := ⟨s1.phase,
+      writeBit (writeBit s1.basis t0 (s1.basis w0 && s1.basis w1))
+        t1 (s1.basis w2 && s1.basis w3)⟩
+  rw [hs2_eq]
+  have hm_f : ∀ m', run [.measureX outF [] [.CZ t0 t1]] m' s2 = ⟨s2.phase, writeBit s2.basis outF false⟩ := by
+    intro m'
+    apply run_measureX_CZ outF t0 t1 (Ne.symm hft0) (Ne.symm hft1)
+    simp only [s2, writeBit, Function.update_of_ne hft1, Function.update_of_ne hft0,
+      Function.update_of_ne ht01, Function.update_self,
+      hf_1, hout, hw0_1, hw1_1, hw2_1, hw3_1, and4Bool, Bool.and_assoc]
+  rw [hm_f]
+  have hm_t1 : ∀ m', run [.measureX t1 [] [.CZ w2 w3]] m' ⟨s2.phase, writeBit s2.basis outF false⟩ =
+      ⟨s2.phase, writeBit (writeBit s2.basis outF false) t1 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t1 w2 w3 h2t1 h3t1
+    simp [s2, writeBit, h2t0, h2t1, h3t0, h3t1, h2f, h3f, Ne.symm hft1]
+  rw [hm_t1]
+  have hm_t0 : ∀ m', run [.measureX t0 [] [.CZ w0 w1]] m'
+      ⟨s2.phase, writeBit (writeBit s2.basis outF false) t1 false⟩ =
+      ⟨s2.phase, writeBit (writeBit (writeBit s2.basis outF false) t1 false) t0 false⟩ := by
+    intro m'
+    apply run_measureX_CZ t0 w0 w1 h0t0 h1t0
+    simp [s2, writeBit, h0t0, h0t1, h1t0, h1t1, h0f, h1f, Ne.symm hft0, ht01]
+  rw [hm_t0]
+  set s3 : State := ⟨s2.phase, writeBit (writeBit (writeBit s2.basis outF false) t1 false) t0 false⟩
+  obtain ⟨hp4, hw0_4, hw1_4, hw2_4, hw3_4, hoth_4⟩ :=
+    run_notFlips4 w0 w1 w2 w3 v0 v1 v2 v3 hndW _ s3
+  have hs3_ph : s3.phase = s.phase := hp1
+  have hs3_w : ∀ w, w ∉ [outF, t0, t1] → s3.basis w = s1.basis w := by
+    intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hwf, hwt0, hwt1⟩
+    simp [s3, s2, writeBit, hwf, hwt0, hwt1]
+  refine ⟨hp4.trans hs3_ph, ?_, ?_, ?_, ?_⟩
+  · rw [hoth_4 outF (by simp [Ne.symm h0f, Ne.symm h1f, Ne.symm h2f, Ne.symm h3f])]
+    simp [s3, writeBit, hft0, hft1]
+  · rw [hoth_4 t0 (by simp [Ne.symm h0t0, Ne.symm h1t0, Ne.symm h2t0, Ne.symm h3t0])]
+    simp [s3, writeBit]
+  · rw [hoth_4 t1 (by simp [Ne.symm h0t1, Ne.symm h1t1, Ne.symm h2t1, Ne.symm h3t1])]
+    simp [s3, writeBit, Ne.symm ht01]
+  · intro w hw
+    by_cases hww : w ∈ [w0, w1, w2, w3]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hww
+      rcases hww with rfl | rfl | rfl | rfl
+      · rw [hw0_4, hs3_w w hw, hw0_1]; cases s.basis w <;> cases v0 <;> rfl
+      · rw [hw1_4, hs3_w w hw, hw1_1]; cases s.basis w <;> cases v1 <;> rfl
+      · rw [hw2_4, hs3_w w hw, hw2_1]; cases s.basis w <;> cases v2 <;> rfl
+      · rw [hw3_4, hs3_w w hw, hw3_1]; cases s.basis w <;> cases v3 <;> rfl
+    · rw [hoth_4 w hww, hs3_w w hw, hoth_1 w hww]
+
+
+/-! ## Section 7: Component 3 — `tree_decode_C_spec` and `tree_erase_F_spec` -/
+
+def qBit (c1 c2 : Bool) : Nat → Bool
+  | 0 => !c2 && !c1
+  | 1 => !c2 && c1
+  | 2 => c2 && !c1
+  | _ => c2 && c1
+
+
+def targetF (b : BasisState) (k : Nat) : Bool :=
+  if k < 4 then
+    (b 6 && !b 4 && !b 3) && qBit (b 1) (b 2) k
+  else if k < 8 then
+    (b 6 && !b 4 && b 3) && qBit (b 1) (b 2) (k - 4)
+  else if k == 8 then
+    (b 6 && b 4) && qBit (b 1) (b 2) 0
+  else if k == 9 then
+    (b 6 && b 4) && qBit (b 1) (b 2) 1
+  else
+    (b 6 && b 4) && b 2
+
+private theorem run_treeQCompute (m : List Bool) (s : State)
+    (hq0 : s.basis 98 = false) (hq1 : s.basis 99 = false)
+    (hq2 : s.basis 100 = false) (hq3 : s.basis 101 = false) :
+    let res := run treeQCompute m s
+    res.phase = s.phase ∧
+    res.basis 98 = qBit (s.basis 1) (s.basis 2) 0 ∧
+    res.basis 99 = qBit (s.basis 1) (s.basis 2) 1 ∧
+    res.basis 100 = qBit (s.basis 1) (s.basis 2) 2 ∧
+    res.basis 101 = qBit (s.basis 1) (s.basis 2) 3 ∧
+    (∀ w : Nat, w ∉ ([98, 99, 100, 101] : List Nat) → res.basis w = s.basis w) := by
+  refine ⟨by simp [treeQCompute, run], ?_, ?_, ?_, ?_, ?_⟩
+  · simp [treeQCompute, run, writeBit, hq0, hq1, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
+  · simp [treeQCompute, run, writeBit, hq1, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
+  · simp [treeQCompute, run, writeBit, hq2, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
+  · simp [treeQCompute, run, writeBit, hq3, qBit]
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨h98, h99, h100, h101⟩
+    simp [treeQCompute, run, writeBit, h98, h99, h100, h101]
+
+private theorem run_treeGCompute (m : List Bool) (s : State)
+    (hg0 : s.basis 102 = false) (hg1 : s.basis 103 = false) (hg01 : s.basis 104 = false) :
+    let res := run treeGCompute m s
+    res.phase = s.phase ∧
+    res.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3) ∧
+    res.basis 103 = (s.basis 6 && s.basis 4) ∧
+    res.basis 104 = (s.basis 6 && !s.basis 4 && s.basis 3) ∧
+    (∀ w : Nat, w ∉ ([102, 103, 104] : List Nat) → res.basis w = s.basis w) := by
+  refine ⟨by simp [treeGCompute, run], ?_, ?_, ?_, ?_⟩
+  · simp [treeGCompute, run, writeBit, hg0, hg1, hg01]; cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
+  · simp [treeGCompute, run, writeBit, hg1]
+  · simp [treeGCompute, run, writeBit, hg0, hg1, hg01]; cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨h102, h103, h104⟩
+    simp [treeGCompute, run, writeBit, h102, h103, h104]
+
+private theorem run_treeFGroup (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 3 < 12)
+    (m : List Bool) (s : State)
+    (hf0 : s.basis (86 + baseF) = false) (hf1 : s.basis (86 + baseF + 1) = false)
+    (hf2 : s.basis (86 + baseF + 2) = false) (hf3 : s.basis (86 + baseF + 3) = false)
+    (hq0 : s.basis 98 = qBit (s.basis 1) (s.basis 2) 0)
+    (hq1 : s.basis 99 = qBit (s.basis 1) (s.basis 2) 1)
+    (hq2 : s.basis 100 = qBit (s.basis 1) (s.basis 2) 2)
+    (hq3 : s.basis 101 = qBit (s.basis 1) (s.basis 2) 3) :
+    let res := run (treeFGroup grp baseF) m s
+    res.phase = s.phase ∧
+    res.basis (86 + baseF) = (s.basis grp && s.basis 98) ∧
+    res.basis (86 + baseF + 1) = (s.basis grp && s.basis 99) ∧
+    res.basis (86 + baseF + 2) = (s.basis grp && s.basis 100) ∧
+    res.basis (86 + baseF + 3) = (s.basis grp && s.basis 101) ∧
+    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2, 86 + baseF + 3] : List Nat) → res.basis w = s.basis w) := by
+  have hg0 : grp ≠ 86 + baseF := by omega
+  have hg1 : grp ≠ 86 + baseF + 1 := by omega
+  have hg2 : grp ≠ 86 + baseF + 2 := by omega
+  have hq98_0 : (98 : Nat) ≠ 86 + baseF := by omega
+  have hq99_0 : (99 : Nat) ≠ 86 + baseF := by omega
+  have hq99_1 : (99 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hq100_0 : (100 : Nat) ≠ 86 + baseF := by omega
+  have hq100_1 : (100 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hq100_2 : (100 : Nat) ≠ 86 + baseF + 2 := by omega
+  have h01 : 86 + baseF ≠ 86 + baseF + 1 := by omega
+  have h02 : 86 + baseF ≠ 86 + baseF + 2 := by omega
+  have h03 : 86 + baseF ≠ 86 + baseF + 3 := by omega
+  have h12 : 86 + baseF + 1 ≠ 86 + baseF + 2 := by omega
+  have h13 : 86 + baseF + 1 ≠ 86 + baseF + 3 := by omega
+  have h23 : 86 + baseF + 2 ≠ 86 + baseF + 3 := by omega
+  refine ⟨by simp [treeFGroup, run], ?_, ?_, ?_, ?_, ?_⟩
+  · simp [treeFGroup, run, writeBit, hf0]
+  · simp [treeFGroup, run, writeBit, hf1, hg0, hq99_0]
+  · simp [treeFGroup, run, writeBit, hf2, hg0, hg1, hq100_0, hq100_1]
+  · simp only [treeFGroup, run, writeBit, Function.update_self,
+      Function.update_of_ne h03, Function.update_of_ne h13, Function.update_of_ne h23,
+      Function.update_of_ne h02, Function.update_of_ne h12, Function.update_of_ne h01,
+      Function.update_of_ne (Ne.symm h01), Function.update_of_ne (Ne.symm h02),
+      Function.update_of_ne (Ne.symm h12), Function.update_of_ne (Ne.symm h03),
+      Function.update_of_ne (Ne.symm h13), Function.update_of_ne (Ne.symm h23),
+      Function.update_of_ne hg0, Function.update_of_ne hg1, Function.update_of_ne hg2,
+      Function.update_of_ne hq99_0, Function.update_of_ne hq100_0, Function.update_of_ne hq100_1,
+      hf0, hf1, hf2, hf3, hq0, hq1, hq2, hq3, qBit]
+    cases s.basis grp <;> cases s.basis 1 <;> cases s.basis 2 <;> rfl
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hw0, hw1, hw2, hw3⟩
+    simp [treeFGroup, run, writeBit, hw0, hw1, hw2, hw3]
+
+private theorem run_treeFEraseGroup (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 3 < 12)
+    (m : List Bool) (s : State)
+    (hf0 : s.basis (86 + baseF) = (s.basis grp && s.basis 98))
+    (hf1 : s.basis (86 + baseF + 1) = (s.basis grp && s.basis 99))
+    (hf2 : s.basis (86 + baseF + 2) = (s.basis grp && s.basis 100))
+    (hf3 : s.basis (86 + baseF + 3) = (s.basis grp && s.basis 101)) :
+    let res := run (treeFEraseGroup grp baseF) m s
+    res.phase = s.phase ∧
+    res.basis (86 + baseF) = false ∧
+    res.basis (86 + baseF + 1) = false ∧
+    res.basis (86 + baseF + 2) = false ∧
+    res.basis (86 + baseF + 3) = false ∧
+    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2, 86 + baseF + 3] : List Nat) → res.basis w = s.basis w) := by
+  have hg0 : grp ≠ 86 + baseF := by omega
+  have hg1 : grp ≠ 86 + baseF + 1 := by omega
+  have hg2 : grp ≠ 86 + baseF + 2 := by omega
+  have hg3 : grp ≠ 86 + baseF + 3 := by omega
+  have hq0 : (98 : Nat) ≠ 86 + baseF := by omega
+  have hq1 : (99 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hq2 : (100 : Nat) ≠ 86 + baseF + 2 := by omega
+  have hq3 : (101 : Nat) ≠ 86 + baseF + 3 := by omega
+  have hq1_0 : (99 : Nat) ≠ 86 + baseF := by omega
+  have hq2_0 : (100 : Nat) ≠ 86 + baseF := by omega
+  have hq2_1 : (100 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hq3_0 : (101 : Nat) ≠ 86 + baseF := by omega
+  have hq3_1 : (101 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hq3_2 : (101 : Nat) ≠ 86 + baseF + 2 := by omega
+  have h01 : 86 + baseF ≠ 86 + baseF + 1 := by omega
+  have h02 : 86 + baseF ≠ 86 + baseF + 2 := by omega
+  have h03 : 86 + baseF ≠ 86 + baseF + 3 := by omega
+  have h12 : 86 + baseF + 1 ≠ 86 + baseF + 2 := by omega
+  have h13 : 86 + baseF + 1 ≠ 86 + baseF + 3 := by omega
+  have h23 : 86 + baseF + 2 ≠ 86 + baseF + 3 := by omega
+  have hsplit : treeFEraseGroup grp baseF =
+      ([.measureX (86 + baseF) [] [.CZ grp 98]] ++ [.measureX (86 + baseF + 1) [] [.CZ grp 99]]) ++
+      [.measureX (86 + baseF + 2) [] [.CZ grp 100]] ++ [.measureX (86 + baseF + 3) [] [.CZ grp 101]] := rfl
+  rw [hsplit, run_append, run_append, run_append]
+  rw [run_measureX_CZ (86 + baseF) grp 98 hg0 hq0 _ s hf0]
+  rw [run_measureX_CZ (86 + baseF + 1) grp 99 hg1 hq1 _ _ (by simp [writeBit, hg0, hq1_0, hf1])]
+  rw [run_measureX_CZ (86 + baseF + 2) grp 100 hg2 hq2 _ _ (by simp [writeBit, hg0, hg1, hq2_0, hq2_1, hf2])]
+  rw [run_measureX_CZ (86 + baseF + 3) grp 101 hg3 hq3 _ _ (by simp [writeBit, hg0, hg1, hg2, hq3_0, hq3_1, hq3_2, hf3])]
+  refine ⟨rfl, by simp [writeBit], by simp [writeBit],
+    by simp [writeBit], by simp [writeBit], ?_⟩
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  rcases hw with ⟨hw0, hw1, hw2, hw3⟩
+  simp [writeBit, hw0, hw1, hw2, hw3]
+
+private theorem run_treeGErase (m : List Bool) (s : State)
+    (hg0 : s.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3))
+    (hg1 : s.basis 103 = (s.basis 6 && s.basis 4))
+    (hg01 : s.basis 104 = (s.basis 6 && !s.basis 4 && s.basis 3)) :
+    let res := run treeGErase m s
+    res.phase = s.phase ∧
+    res.basis 102 = false ∧ res.basis 103 = false ∧ res.basis 104 = false ∧
+    (∀ w : Nat, w ∉ ([102, 103, 104] : List Nat) → res.basis w = s.basis w) := by
+  have hsplit : treeGErase =
+      ([.CX 104 102] ++ [.measureX 104 [] [.CZ 102 3]]) ++
+      ([.CX 103 102, .CX 6 102] ++ [.measureX 103 [] [.CZ 6 4]]) := rfl
+  rw [hsplit, run_append, run_append, run_append]
+  have h1 : run [.CX 104 102] (m.take 0) s = ⟨s.phase, writeBit s.basis 102 (s.basis 6 && !s.basis 4)⟩ := by
+    simp only [run, hg0, hg01]
+    congr 1; funext w; by_cases hw : w = 102
+    · subst hw; simp [writeBit]; cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
+    · simp [writeBit, hw]
+  simp only [measurementCount, List.take_zero] at h1 ⊢
+  rw [h1]
+  rw [run_measureX_CZ 104 102 3 (by decide) (by decide) _ _ (by simp [writeBit, hg01])]
+  have h2 : ∀ m', run [.CX 103 102, .CX 6 102] m' ⟨s.phase, writeBit (writeBit s.basis 102 (s.basis 6 && !s.basis 4)) 104 false⟩ =
+      ⟨s.phase, writeBit (writeBit s.basis 102 false) 104 false⟩ := by
+    intro m'
+    simp only [run]
+    congr 1; funext w
+    by_cases h104 : w = 104
+    · subst h104; simp [writeBit]
+    · by_cases h102 : w = 102
+      · subst h102; simp [writeBit, hg1]; cases s.basis 6 <;> cases s.basis 4 <;> rfl
+      · simp [writeBit, h102, h104]
+  rw [h2]
+  rw [run_measureX_CZ 103 6 4 (by decide) (by decide) _ _ (by simp [writeBit, hg1])]
+  refine ⟨rfl, by simp [writeBit], by simp [writeBit], by simp [writeBit], ?_⟩
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  rcases hw with ⟨h102, h103, h104⟩
+  simp [writeBit, h102, h103, h104]
+
+private theorem run_treeQErase (m : List Bool) (s : State)
+    (hq0 : s.basis 98 = qBit (s.basis 1) (s.basis 2) 0)
+    (hq1 : s.basis 99 = qBit (s.basis 1) (s.basis 2) 1)
+    (hq2 : s.basis 100 = qBit (s.basis 1) (s.basis 2) 2)
+    (hq3 : s.basis 101 = qBit (s.basis 1) (s.basis 2) 3) :
+    let res := run treeQErase m s
+    res.phase = s.phase ∧
+    res.basis 98 = false ∧ res.basis 99 = false ∧
+    res.basis 100 = false ∧ res.basis 101 = false ∧
+    (∀ w : Nat, w ∉ ([98, 99, 100, 101] : List Nat) → res.basis w = s.basis w) := by
+  have hsplit : treeQErase =
+      [.CX 99 98, .CX 2 98, .X 98, .CX 101 99, .CX 1 99, .CX 101 100, .CX 2 100] ++
+      [.measureX 101 [] [.CZ 2 1]] := rfl
+  rw [hsplit, run_append]
+  have h1 : ∀ m', run [.CX 99 98, .CX 2 98, .X 98, .CX 101 99, .CX 1 99, .CX 101 100, .CX 2 100] m' s =
+      ⟨s.phase, writeBit (writeBit (writeBit s.basis 98 false) 99 false) 100 false⟩ := by
+    intro m'
+    simp only [run]
+    congr 1; funext w
+    by_cases h100 : w = 100
+    · subst h100; simp [writeBit, hq2, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
+    · by_cases h99 : w = 99
+      · subst h99; simp [writeBit, hq1, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
+      · by_cases h98 : w = 98
+        · subst h98; cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;> simp [writeBit, hq0, hq1, qBit, hb1, hb2]
+        · simp [writeBit, h98, h99, h100]
+  rw [h1]
+  rw [run_measureX_CZ 101 2 1 (by decide) (by decide) _ _ (by simp [writeBit, hq3, qBit])]
+  refine ⟨rfl, by simp [writeBit], by simp [writeBit], by simp [writeBit], by simp [writeBit], ?_⟩
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  rcases hw with ⟨h98, h99, h100, h101⟩
+  simp [writeBit, h98, h99, h100, h101]
+
+
+private theorem run_treeFGroup3 (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 2 < 11)
+    (m : List Bool) (s : State)
+    (hf0 : s.basis (86 + baseF) = false) (hf1 : s.basis (86 + baseF + 1) = false)
+    (hf2 : s.basis (86 + baseF + 2) = false)
+    (hq0 : s.basis 98 = qBit (s.basis 1) (s.basis 2) 0)
+    (hq1 : s.basis 99 = qBit (s.basis 1) (s.basis 2) 1) :
+    let res := run (treeFGroup3 grp baseF) m s
+    res.phase = s.phase ∧
+    res.basis (86 + baseF) = (s.basis grp && s.basis 98) ∧
+    res.basis (86 + baseF + 1) = (s.basis grp && s.basis 99) ∧
+    res.basis (86 + baseF + 2) = (s.basis grp && s.basis 2) ∧
+    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2] : List Nat) → res.basis w = s.basis w) := by
+  have hg0 : grp ≠ 86 + baseF := by omega
+  have hg1 : grp ≠ 86 + baseF + 1 := by omega
+  have hq99_0 : (99 : Nat) ≠ 86 + baseF := by omega
+  have h01 : 86 + baseF ≠ 86 + baseF + 1 := by omega
+  have h02 : 86 + baseF ≠ 86 + baseF + 2 := by omega
+  have h12 : 86 + baseF + 1 ≠ 86 + baseF + 2 := by omega
+  refine ⟨by simp [treeFGroup3, run], ?_, ?_, ?_, ?_⟩
+  · simp [treeFGroup3, run, writeBit, hf0]
+  · simp [treeFGroup3, run, writeBit, hf1, hg0, hq99_0]
+  · simp only [treeFGroup3, run, writeBit, Function.update_self,
+      Function.update_of_ne h02, Function.update_of_ne h12,
+      Function.update_of_ne h01, Function.update_of_ne (Ne.symm h01),
+      Function.update_of_ne (Ne.symm h02), Function.update_of_ne (Ne.symm h12),
+      Function.update_of_ne hg0, Function.update_of_ne hg1,
+      Function.update_of_ne hq99_0,
+      hf0, hf1, hf2, hq0, hq1, qBit]
+    cases s.basis grp <;> cases s.basis 1 <;> cases s.basis 2 <;> rfl
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨hw0, hw1, hw2⟩
+    simp [treeFGroup3, run, writeBit, hw0, hw1, hw2]
+
+private theorem run_treeFEraseGroup3 (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 2 < 11)
+    (m : List Bool) (s : State)
+    (hf0 : s.basis (86 + baseF) = (s.basis grp && s.basis 98))
+    (hf1 : s.basis (86 + baseF + 1) = (s.basis grp && s.basis 99))
+    (hf2 : s.basis (86 + baseF + 2) = (s.basis grp && s.basis 2)) :
+    let res := run (treeFEraseGroup3 grp baseF) m s
+    res.phase = s.phase ∧
+    res.basis (86 + baseF) = false ∧
+    res.basis (86 + baseF + 1) = false ∧
+    res.basis (86 + baseF + 2) = false ∧
+    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2] : List Nat) → res.basis w = s.basis w) := by
+  have hg0 : grp ≠ 86 + baseF := by omega
+  have hg1 : grp ≠ 86 + baseF + 1 := by omega
+  have hg2 : grp ≠ 86 + baseF + 2 := by omega
+  have hq0 : (98 : Nat) ≠ 86 + baseF := by omega
+  have hq1 : (99 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hc2 : (2 : Nat) ≠ 86 + baseF + 2 := by omega
+  have hq1_0 : (99 : Nat) ≠ 86 + baseF := by omega
+  have hc2_0 : (2 : Nat) ≠ 86 + baseF := by omega
+  have hc2_1 : (2 : Nat) ≠ 86 + baseF + 1 := by omega
+  have hsplit : treeFEraseGroup3 grp baseF =
+      ([.measureX (86 + baseF) [] [.CZ grp 98]] ++ [.measureX (86 + baseF + 1) [] [.CZ grp 99]]) ++
+      [.measureX (86 + baseF + 2) [] [.CZ grp 2]] := rfl
+  rw [hsplit, run_append, run_append]
+  rw [run_measureX_CZ (86 + baseF) grp 98 hg0 hq0 _ s hf0]
+  rw [run_measureX_CZ (86 + baseF + 1) grp 99 hg1 hq1 _ _ (by simp [writeBit, hg0, hq1_0, hf1])]
+  rw [run_measureX_CZ (86 + baseF + 2) grp 2 hg2 hc2 _ _ (by simp [writeBit, hg0, hg1, hc2_0, hc2_1, hf2])]
+  refine ⟨rfl, by simp [writeBit], by simp [writeBit], by simp [writeBit], ?_⟩
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  rcases hw with ⟨hw0, hw1, hw2⟩
+  simp [writeBit, hw0, hw1, hw2]
+
+theorem tree_decode_C_spec (m : List Bool) (s : State)
+    (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false) :
+    let res := run treeDecodeCProg m s
+    res.phase = s.phase ∧
+    (∀ k : Nat, k < 11 → res.basis (86 + k) = targetF s.basis k) ∧
+    (∀ a : Nat, 97 ≤ a → a < 105 → res.basis a = false) ∧
+    (∀ w : Nat, (w < 86 ∨ 105 ≤ w) → res.basis w = s.basis w) := by
+  dsimp only [treeDecodeCProg]
+  simp only [run_append]
+  have hmcQ : measurementCount treeQCompute = 0 := rfl
+  have hmcG : measurementCount treeGCompute = 0 := rfl
+  have hmcF : ∀ g b, measurementCount (treeFGroup g b) = 0 := fun _ _ => rfl
+  have hmcF3 : ∀ g b, measurementCount (treeFGroup3 g b) = 0 := fun _ _ => rfl
+  simp only [measurementCount_append, hmcQ, hmcG, hmcF, hmcF3, Nat.add_zero, Nat.zero_add, List.take_zero, List.drop_zero]
+  obtain ⟨hp1, hq0_1, hq1_1, hq2_1, hq3_1, hoth1⟩ :=
+    run_treeQCompute [] s (hanc 98 (by omega) (by omega)) (hanc 99 (by omega) (by omega))
+      (hanc 100 (by omega) (by omega)) (hanc 101 (by omega) (by omega))
+  set s1 := run treeQCompute [] s
+  have h1_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s1.basis w = s.basis w :=
+    fun w hw => hoth1 w (by simp; omega)
+  obtain ⟨hp2, hg0_2, hg1_2, hg01_2, hoth2⟩ :=
+    run_treeGCompute [] s1
+      ((h1_eq 102 (by omega)).trans (hanc 102 (by omega) (by omega)))
+      ((h1_eq 103 (by omega)).trans (hanc 103 (by omega) (by omega)))
+      ((h1_eq 104 (by omega)).trans (hanc 104 (by omega) (by omega)))
+  set s2 := run treeGCompute [] s1
+  have h2_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s2.basis w = s1.basis w :=
+    fun w hw => hoth2 w (by simp; omega)
+  have h2_c : ∀ w : Nat, w < 86 → s2.basis w = s.basis w :=
+    fun w hw => (h2_eq w (by omega)).trans (h1_eq w (by omega))
+  have h2_q : ∀ i : Nat, i < 4 → s2.basis (98 + i) = qBit (s.basis 1) (s.basis 2) i := by
+    intro i hi
+    rw [h2_eq (98 + i) (by omega)]
+    match i with
+    | 0 => exact hq0_1
+    | 1 => exact hq1_1
+    | 2 => exact hq2_1
+    | 3 => exact hq3_1
+  obtain ⟨hp3, hf0_3, hf1_3, hf2_3, hf3_3, hoth3⟩ :=
+    run_treeFGroup 102 0 (by omega) (by omega) [] s2
+      ((h2_eq 86 (by omega)).trans ((h1_eq 86 (by omega)).trans (hanc 86 (by omega) (by omega))))
+      ((h2_eq 87 (by omega)).trans ((h1_eq 87 (by omega)).trans (hanc 87 (by omega) (by omega))))
+      ((h2_eq 88 (by omega)).trans ((h1_eq 88 (by omega)).trans (hanc 88 (by omega) (by omega))))
+      ((h2_eq 89 (by omega)).trans ((h1_eq 89 (by omega)).trans (hanc 89 (by omega) (by omega))))
+      (by rw [h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+  set s3 := run (treeFGroup 102 0) [] s2
+  have h3_eq : ∀ w : Nat, (w < 86 ∨ 90 ≤ w) → s3.basis w = s2.basis w :=
+    fun w hw => hoth3 w (by simp; omega)
+  obtain ⟨hp4, hf4_4, hf5_4, hf6_4, hf7_4, hoth4⟩ :=
+    run_treeFGroup 104 4 (by omega) (by omega) [] s3
+      ((h3_eq 90 (by omega)).trans ((h2_eq 90 (by omega)).trans ((h1_eq 90 (by omega)).trans (hanc 90 (by omega) (by omega)))))
+      ((h3_eq 91 (by omega)).trans ((h2_eq 91 (by omega)).trans ((h1_eq 91 (by omega)).trans (hanc 91 (by omega) (by omega)))))
+      ((h3_eq 92 (by omega)).trans ((h2_eq 92 (by omega)).trans ((h1_eq 92 (by omega)).trans (hanc 92 (by omega) (by omega)))))
+      ((h3_eq 93 (by omega)).trans ((h2_eq 93 (by omega)).trans ((h1_eq 93 (by omega)).trans (hanc 93 (by omega) (by omega)))))
+      (by rw [h3_eq 98 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h3_eq 99 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h3_eq 100 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h3_eq 101 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+  set s4 := run (treeFGroup 104 4) [] s3
+  have h4_eq : ∀ w : Nat, (w < 90 ∨ 94 ≤ w) → s4.basis w = s3.basis w :=
+    fun w hw => hoth4 w (by simp; omega)
+  obtain ⟨hp5, hf8_5, hf9_5, hf10_5, hoth5⟩ :=
+    run_treeFGroup3 103 8 (by omega) (by omega) [] s4
+      ((h4_eq 94 (by omega)).trans ((h3_eq 94 (by omega)).trans ((h2_eq 94 (by omega)).trans ((h1_eq 94 (by omega)).trans (hanc 94 (by omega) (by omega))))))
+      ((h4_eq 95 (by omega)).trans ((h3_eq 95 (by omega)).trans ((h2_eq 95 (by omega)).trans ((h1_eq 95 (by omega)).trans (hanc 95 (by omega) (by omega))))))
+      ((h4_eq 96 (by omega)).trans ((h3_eq 96 (by omega)).trans ((h2_eq 96 (by omega)).trans ((h1_eq 96 (by omega)).trans (hanc 96 (by omega) (by omega))))))
+      (by rw [h4_eq 98 (by omega), h3_eq 98 (by omega), h4_eq 1 (by omega), h3_eq 1 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h4_eq 99 (by omega), h3_eq 99 (by omega), h4_eq 1 (by omega), h3_eq 1 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+  set s5 := run (treeFGroup3 103 8) [] s4
+  have h5_eq : ∀ w : Nat, (w < 94 ∨ 97 ≤ w) → s5.basis w = s4.basis w :=
+    fun w hw => hoth5 w (by simp; omega)
+  have h5_to_2 : ∀ w : Nat, (w < 86 ∨ 97 ≤ w) → s5.basis w = s2.basis w :=
+    fun w hw => (h5_eq w (by omega)).trans ((h4_eq w (by omega)).trans (h3_eq w (by omega)))
+  obtain ⟨hp6, hg0_6, hg1_6, hg01_6, hoth6⟩ :=
+    run_treeGErase (m.take (measurementCount treeGErase)) s5
+      (by rw [h5_to_2 102 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
+              hg0_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
+      (by rw [h5_to_2 103 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega),
+              hg1_2, h2_c 6 (by omega), h2_c 4 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)])
+      (by rw [h5_to_2 104 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
+              hg01_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
+  set s6 := run treeGErase (m.take (measurementCount treeGErase)) s5
+  have h6_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s6.basis w = s5.basis w :=
+    fun w hw => hoth6 w (by simp; omega)
+  obtain ⟨hp7, hq0_7, hq1_7, hq2_7, hq3_7, hoth7⟩ :=
+    run_treeQErase (m.drop (measurementCount treeGErase)) s6
+      (by rw [h6_eq 98 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 98 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h6_eq 99 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 99 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h6_eq 100 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 100 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h6_eq 101 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 101 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+  set s7 := run treeQErase (m.drop (measurementCount treeGErase)) s6
+  have h7_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s7.basis w = s6.basis w :=
+    fun w hw => hoth7 w (by simp; omega)
+  refine ⟨hp7.trans (hp6.trans (hp5.trans (hp4.trans (hp3.trans (hp2.trans hp1))))), ?_, ?_, ?_⟩
+  · intro k hk
+    have hfin : ∀ k, k < 11 → s7.basis (86 + k) = targetF s.basis k := by
+      intro k hk
+      match k with
+      | 0 => rw [h7_eq 86 (by omega), h6_eq 86 (by omega), h5_eq 86 (by omega), h4_eq 86 (by omega), hf0_3, hg0_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 1 => rw [h7_eq 87 (by omega), h6_eq 87 (by omega), h5_eq 87 (by omega), h4_eq 87 (by omega), hf1_3, hg0_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 2 => rw [h7_eq 88 (by omega), h6_eq 88 (by omega), h5_eq 88 (by omega), h4_eq 88 (by omega), hf2_3, hg0_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 3 => rw [h7_eq 89 (by omega), h6_eq 89 (by omega), h5_eq 89 (by omega), h4_eq 89 (by omega), hf3_3, hg0_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 4 => rw [h7_eq 90 (by omega), h6_eq 90 (by omega), h5_eq 90 (by omega), hf4_4, h3_eq 104 (by omega), h3_eq 98 (by omega), hg01_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 5 => rw [h7_eq 91 (by omega), h6_eq 91 (by omega), h5_eq 91 (by omega), hf5_4, h3_eq 104 (by omega), h3_eq 99 (by omega), hg01_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 6 => rw [h7_eq 92 (by omega), h6_eq 92 (by omega), h5_eq 92 (by omega), hf6_4, h3_eq 104 (by omega), h3_eq 100 (by omega), hg01_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 7 => rw [h7_eq 93 (by omega), h6_eq 93 (by omega), h5_eq 93 (by omega), hf7_4, h3_eq 104 (by omega), h3_eq 101 (by omega), hg01_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
+      | 8 => rw [h7_eq 94 (by omega), h6_eq 94 (by omega), hf8_5, h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 98 (by omega), h3_eq 98 (by omega), hg1_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl
+      | 9 => rw [h7_eq 95 (by omega), h6_eq 95 (by omega), hf9_5, h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 99 (by omega), h3_eq 99 (by omega), hg1_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl
+      | 10 => rw [h7_eq 96 (by omega), h6_eq 96 (by omega), hf10_5, h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), hg1_2, h2_c 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl
+    exact hfin k hk
+  · intro a ha1 ha2
+    have : a = 97 ∨ a = 98 ∨ a = 99 ∨ a = 100 ∨ a = 101 ∨ a = 102 ∨ a = 103 ∨ a = 104 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [h7_eq 97 (by omega), h6_eq 97 (by omega), h5_to_2 97 (by omega), h2_eq 97 (by omega), h1_eq 97 (by omega)]
+      exact hanc 97 (by omega) (by omega)
+    · exact hq0_7
+    · exact hq1_7
+    · exact hq2_7
+    · exact hq3_7
+    · exact (h7_eq 102 (by omega)).trans hg0_6
+    · exact (h7_eq 103 (by omega)).trans hg1_6
+    · exact (h7_eq 104 (by omega)).trans hg01_6
+  · intro w hw
+    rw [h7_eq w (by omega), h6_eq w (by omega), h5_to_2 w (by omega), h2_eq w (by omega), h1_eq w (by omega)]
+
+theorem tree_erase_F_spec (m : List Bool) (s : State)
+    (hF : ∀ k : Nat, k < 11 → s.basis (86 + k) = targetF s.basis k)
+    (hQT : ∀ a : Nat, 97 ≤ a → a < 105 → s.basis a = false) :
+    let res := run treeEraseFProg m s
+    res.phase = s.phase ∧
+    (∀ a : Nat, 86 ≤ a → a < 105 → res.basis a = false) ∧
+    (∀ w : Nat, (w < 86 ∨ 105 ≤ w) → res.basis w = s.basis w) := by
+  dsimp only [treeEraseFProg]
+  simp only [run_append]
+  have hmcQ : measurementCount treeQCompute = 0 := rfl
+  have hmcG : measurementCount treeGCompute = 0 := rfl
+  simp only [measurementCount_append, hmcQ, hmcG, Nat.zero_add, List.take_zero, List.drop_zero]
+  obtain ⟨hp1, hq0_1, hq1_1, hq2_1, hq3_1, hoth1⟩ :=
+    run_treeQCompute [] s (hQT 98 (by omega) (by omega)) (hQT 99 (by omega) (by omega))
+      (hQT 100 (by omega) (by omega)) (hQT 101 (by omega) (by omega))
+  set s1 := run treeQCompute [] s
+  have h1_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s1.basis w = s.basis w :=
+    fun w hw => hoth1 w (by simp; omega)
+  obtain ⟨hp2, hg0_2, hg1_2, hg01_2, hoth2⟩ :=
+    run_treeGCompute [] s1
+      ((h1_eq 102 (by omega)).trans (hQT 102 (by omega) (by omega)))
+      ((h1_eq 103 (by omega)).trans (hQT 103 (by omega) (by omega)))
+      ((h1_eq 104 (by omega)).trans (hQT 104 (by omega) (by omega)))
+  set s2 := run treeGCompute [] s1
+  have h2_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s2.basis w = s1.basis w :=
+    fun w hw => hoth2 w (by simp; omega)
+  have h2_c : ∀ w : Nat, w < 98 → s2.basis w = s.basis w :=
+    fun w hw => (h2_eq w (by omega)).trans (h1_eq w (by omega))
+  have h2_q : ∀ i : Nat, i < 4 → s2.basis (98 + i) = qBit (s.basis 1) (s.basis 2) i := by
+    intro i hi
+    rw [h2_eq (98 + i) (by omega)]
+    match i with
+    | 0 => exact hq0_1
+    | 1 => exact hq1_1
+    | 2 => exact hq2_1
+    | 3 => exact hq3_1
+  set m3 := (((m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).take
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8))).take
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4))).take
+    (measurementCount (treeFEraseGroup 102 0))
+  obtain ⟨hp3, hf0_3, hf1_3, hf2_3, hf3_3, hoth3⟩ :=
+    run_treeFEraseGroup 102 0 (by omega) (by omega) m3 s2
+      (by rw [h2_c 86 (by omega), hF 0 (by omega), hg0_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+      (by rw [h2_c 87 (by omega), hF 1 (by omega), hg0_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+      (by rw [h2_c 88 (by omega), hF 2 (by omega), hg0_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+      (by rw [h2_c 89 (by omega), hF 3 (by omega), hg0_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+  set s3 := run (treeFEraseGroup 102 0) m3 s2
+  have h3_eq : ∀ w : Nat, (w < 86 ∨ 90 ≤ w) → s3.basis w = s2.basis w :=
+    fun w hw => hoth3 w (by simp; omega)
+  set m4 := (((m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).take
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8))).take
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4))).drop
+    (measurementCount (treeFEraseGroup 102 0))
+  obtain ⟨hp4, hf4_4, hf5_4, hf6_4, hf7_4, hoth4⟩ :=
+    run_treeFEraseGroup 104 4 (by omega) (by omega) m4 s3
+      (by rw [h3_eq 90 (by omega), h3_eq 104 (by omega), h3_eq 98 (by omega), h2_c 90 (by omega), hF 4 (by omega), hg01_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+      (by rw [h3_eq 91 (by omega), h3_eq 104 (by omega), h3_eq 99 (by omega), h2_c 91 (by omega), hF 5 (by omega), hg01_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+      (by rw [h3_eq 92 (by omega), h3_eq 104 (by omega), h3_eq 100 (by omega), h2_c 92 (by omega), hF 6 (by omega), hg01_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+      (by rw [h3_eq 93 (by omega), h3_eq 104 (by omega), h3_eq 101 (by omega), h2_c 93 (by omega), hF 7 (by omega), hg01_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
+  set s4 := run (treeFEraseGroup 104 4) m4 s3
+  have h4_eq : ∀ w : Nat, (w < 90 ∨ 94 ≤ w) → s4.basis w = s3.basis w :=
+    fun w hw => hoth4 w (by simp; omega)
+  set m5 := ((m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).take
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8))).drop
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4))
+  obtain ⟨hp5, hf8_5, hf9_5, hf10_5, hoth5⟩ :=
+    run_treeFEraseGroup3 103 8 (by omega) (by omega) m5 s4
+      (by rw [h4_eq 94 (by omega), h3_eq 94 (by omega), h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 98 (by omega), h3_eq 98 (by omega), h2_c 94 (by omega), hF 8 (by omega), hg1_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl)
+      (by rw [h4_eq 95 (by omega), h3_eq 95 (by omega), h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 99 (by omega), h3_eq 99 (by omega), h2_c 95 (by omega), hF 9 (by omega), hg1_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl)
+      (by rw [h4_eq 96 (by omega), h3_eq 96 (by omega), h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), h2_c 96 (by omega), h2_c 2 (by omega), hF 10 (by omega), hg1_2, h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl)
+  set s5 := run (treeFEraseGroup3 103 8) m5 s4
+  have h5_eq : ∀ w : Nat, (w < 94 ∨ 97 ≤ w) → s5.basis w = s4.basis w :=
+    fun w hw => hoth5 w (by simp; omega)
+  have h5_to_2 : ∀ w : Nat, (w < 86 ∨ 97 ≤ w) → s5.basis w = s2.basis w :=
+    fun w hw => (h5_eq w (by omega)).trans ((h4_eq w (by omega)).trans (h3_eq w (by omega)))
+  set m6 := (m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).drop
+    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8))
+  obtain ⟨hp6, hg0_6, hg1_6, hg01_6, hoth6⟩ :=
+    run_treeGErase m6 s5
+      (by rw [h5_to_2 102 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
+              hg0_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
+      (by rw [h5_to_2 103 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega),
+              hg1_2, h2_c 6 (by omega), h2_c 4 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)])
+      (by rw [h5_to_2 104 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
+              hg01_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
+  set s6 := run treeGErase m6 s5
+  have h6_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s6.basis w = s5.basis w :=
+    fun w hw => hoth6 w (by simp; omega)
+  set m7 := m.drop (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
+    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)
+  obtain ⟨hp7, hq0_7, hq1_7, hq2_7, hq3_7, hoth7⟩ :=
+    run_treeQErase m7 s6
+      (by rw [h6_eq 98 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 98 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h6_eq 99 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 99 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h6_eq 100 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 100 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+      (by rw [h6_eq 101 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 101 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
+  set s7 := run treeQErase m7 s6
+  have h7_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s7.basis w = s6.basis w :=
+    fun w hw => hoth7 w (by simp; omega)
+  refine ⟨hp7.trans (hp6.trans (hp5.trans (hp4.trans (hp3.trans (hp2.trans hp1))))), ?_, ?_⟩
+  · intro a ha1 ha2
+    have : a = 86 ∨ a = 87 ∨ a = 88 ∨ a = 89 ∨ a = 90 ∨ a = 91 ∨ a = 92 ∨ a = 93 ∨
+           a = 94 ∨ a = 95 ∨ a = 96 ∨ a = 97 ∨ a = 98 ∨ a = 99 ∨ a = 100 ∨ a = 101 ∨
+           a = 102 ∨ a = 103 ∨ a = 104 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+                     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact (h7_eq 86 (by omega)).trans ((h6_eq 86 (by omega)).trans ((h5_eq 86 (by omega)).trans ((h4_eq 86 (by omega)).trans hf0_3)))
+    · exact (h7_eq 87 (by omega)).trans ((h6_eq 87 (by omega)).trans ((h5_eq 87 (by omega)).trans ((h4_eq 87 (by omega)).trans hf1_3)))
+    · exact (h7_eq 88 (by omega)).trans ((h6_eq 88 (by omega)).trans ((h5_eq 88 (by omega)).trans ((h4_eq 88 (by omega)).trans hf2_3)))
+    · exact (h7_eq 89 (by omega)).trans ((h6_eq 89 (by omega)).trans ((h5_eq 89 (by omega)).trans ((h4_eq 89 (by omega)).trans hf3_3)))
+    · exact (h7_eq 90 (by omega)).trans ((h6_eq 90 (by omega)).trans ((h5_eq 90 (by omega)).trans hf4_4))
+    · exact (h7_eq 91 (by omega)).trans ((h6_eq 91 (by omega)).trans ((h5_eq 91 (by omega)).trans hf5_4))
+    · exact (h7_eq 92 (by omega)).trans ((h6_eq 92 (by omega)).trans ((h5_eq 92 (by omega)).trans hf6_4))
+    · exact (h7_eq 93 (by omega)).trans ((h6_eq 93 (by omega)).trans ((h5_eq 93 (by omega)).trans hf7_4))
+    · exact (h7_eq 94 (by omega)).trans ((h6_eq 94 (by omega)).trans hf8_5)
+    · exact (h7_eq 95 (by omega)).trans ((h6_eq 95 (by omega)).trans hf9_5)
+    · exact (h7_eq 96 (by omega)).trans ((h6_eq 96 (by omega)).trans hf10_5)
+    · rw [h7_eq 97 (by omega), h6_eq 97 (by omega), h5_to_2 97 (by omega), h2_c 97 (by omega)]
+      exact hQT 97 (by omega) (by omega)
+    · exact hq0_7
+    · exact hq1_7
+    · exact hq2_7
+    · exact hq3_7
+    · exact (h7_eq 102 (by omega)).trans hg0_6
+    · exact (h7_eq 103 (by omega)).trans hg1_6
+    · exact (h7_eq 104 (by omega)).trans hg01_6
+  · intro w hw
+    rw [h7_eq w (by omega), h6_eq w (by omega), h5_to_2 w (by omega), h2_eq w (by omega), h1_eq w (by omega)]
+
+
+/-! ## Section 8: Component 4 — `clear_or_restore_C_spec` -/
+
+private theorem run_clearOrRestoreSlotC_false (k : Nat) (m : List Bool) (s : State)
+    (hf : s.basis (86 + k) = false) :
+    run (clearOrRestoreSlotC k) m s = s := by
+  have hcx : ∀ (t : Wire) (m' : List Bool) (st : State), st.basis (86 + k) = false →
+      run [.CX (86 + k) t] m' st = st := by
+    intro t m' st hst
+    simp only [run, hst, Bool.xor_false]
+    cases st; congr 1; funext w; by_cases hw : w = t <;> simp [writeBit, hw]
+  have hcx_if : ∀ (t : Wire) (b : Bool) (m' : List Bool) (st : State), st.basis (86 + k) = false →
+      run (if b then [.CX (86 + k) t] else []) m' st = st := by
+    intro t b m' st hst
+    cases b
+    · rfl
+    · exact hcx t m' st hst
+  dsimp only [clearOrRestoreSlotC]
+  simp only [run_append]
+  rw [hcx 6 _ s hf, hcx_if 4 _ _ s hf, hcx_if 3 _ _ s hf, hcx_if 2 _ _ s hf, hcx_if 1 _ _ s hf]
+
+private theorem run_clearOrRestoreSlotC_true (k : Nat) (m : List Bool) (s : State)
+    (hf : s.basis (86 + k) = true) :
+    let res := run (clearOrRestoreSlotC k) m s
+    res.phase = s.phase ∧
+    res.basis 6 = !s.basis 6 ∧
+    res.basis 4 = (s.basis 4 ^^ k.testBit 3) ∧
+    res.basis 3 = (s.basis 3 ^^ k.testBit 2) ∧
+    res.basis 2 = (s.basis 2 ^^ k.testBit 1) ∧
+    res.basis 1 = (s.basis 1 ^^ k.testBit 0) ∧
+    (∀ w : Nat, w ∉ ([1, 2, 3, 4, 6] : List Nat) → res.basis w = s.basis w) := by
+  have hcx : ∀ (t : Wire) (b : Bool) (m' : List Bool) (st : State), st.basis (86 + k) = true →
+      run (if b then [.CX (86 + k) t] else []) m' st =
+      ⟨st.phase, writeBit st.basis t (st.basis t ^^ b)⟩ := by
+    intro t b m' st hst
+    cases b
+    · cases st with
+      | mk ph bs =>
+        simp only [Bool.false_eq_true, ↓reduceIte, run, Bool.xor_false]
+        congr 1; funext w; by_cases hw : w = t <;> simp [writeBit, hw]
+    · simp only [↓reduceIte, run, hst, Bool.xor_true]
+  have hne : ∀ t ∈ ([1, 2, 3, 4, 6] : List Nat), 86 + k ≠ t := by
+    intro t ht; simp only [List.mem_cons, List.not_mem_nil, or_false] at ht; omega
+  dsimp only [clearOrRestoreSlotC]
+  simp only [run_append]
+  have h0 : run [.CX (86 + k) 6] (m.take 0) s = ⟨s.phase, writeBit s.basis 6 (!s.basis 6)⟩ := by
+    simp [run, hf]
+  simp only [measurementCount, List.take_zero] at h0 ⊢
+  rw [h0]
+  rw [hcx 4 (k.testBit 3) _ _ (by simp [writeBit, hf, hne 6 (by simp)])]
+  rw [hcx 3 (k.testBit 2) _ _ (by simp [writeBit, hf, hne 6 (by simp), hne 4 (by simp)])]
+  rw [hcx 2 (k.testBit 1) _ _ (by simp [writeBit, hf, hne 6 (by simp), hne 4 (by simp), hne 3 (by simp)])]
+  rw [hcx 1 (k.testBit 0) _ _ (by simp [writeBit, hf, hne 6 (by simp), hne 4 (by simp), hne 3 (by simp), hne 2 (by simp)])]
+  refine ⟨rfl, by simp [writeBit], by simp [writeBit], by simp [writeBit],
+    by simp [writeBit], by simp [writeBit], ?_⟩
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  rcases hw with ⟨h1, h2, h3, h4, h6⟩
+  simp [writeBit, h1, h2, h3, h4, h6]
+
+private theorem run_clearOrRestore_comm_helper (p : Program)
+    (hp : ∀ i ∈ p, ∃ c t : Nat, i = .CX c t ∧ 86 ≤ c ∧ t ∈ ([1, 2, 3, 4, 6] : List Nat))
+    (m : List Bool) (s : State) :
+    run p.reverse m s = run p m s := by
+  have hcomm : ∀ (c1 t1 c2 t2 : Nat), 86 ≤ c1 → 86 ≤ c2 →
+      t1 ∈ ([1, 2, 3, 4, 6] : List Nat) → t2 ∈ ([1, 2, 3, 4, 6] : List Nat) →
+      ∀ (st : State) (m' : List Bool),
+      run [.CX c1 t1, .CX c2 t2] m' st = run [.CX c2 t2, .CX c1 t1] m' st := by
+    intro c1 t1 c2 t2 hc1 hc2 ht1 ht2 st m'
+    have h1 : c2 ≠ t1 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at ht1; omega
+    have h2 : c1 ≠ t2 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at ht2; omega
+    simp only [run]
+    congr 1; funext w
+    by_cases hw1 : w = t1 <;> by_cases hw2 : w = t2
+    · subst hw1; subst hw2; simp [writeBit, h1, h2]
+      cases st.basis w <;> cases st.basis c1 <;> cases st.basis c2 <;> rfl
+    · subst hw1; simp [writeBit, hw2, h1, h2]
+    · subst hw2; simp [writeBit, hw1, h1, h2]
+    · simp [writeBit, hw1, hw2]
+  have hmove : ∀ (c t : Nat) (q : Program),
+      86 ≤ c → t ∈ ([1, 2, 3, 4, 6] : List Nat) →
+      (∀ i ∈ q, ∃ c' t' : Nat, i = .CX c' t' ∧ 86 ≤ c' ∧ t' ∈ ([1, 2, 3, 4, 6] : List Nat)) →
+      ∀ (st : State) (m' : List Bool),
+      run (q ++ [.CX c t]) m' st = run (.CX c t :: q) m' st := by
+    intro c t q hc ht hq
+    induction q with
+    | nil => intros; rfl
+    | cons i q ih =>
+      intro st m'
+      obtain ⟨c', t', rfl, hc', ht'⟩ := hq i (by simp)
+      have hq' : ∀ j ∈ q, ∃ c'' t'' : Nat, j = .CX c'' t'' ∧ 86 ≤ c'' ∧ t'' ∈ ([1, 2, 3, 4, 6] : List Nat) :=
+        fun j hj => hq j (by simp [hj])
+      have hstep : run (.CX c' t' :: (q ++ [.CX c t])) m' st =
+          run (.CX c' t' :: .CX c t :: q) m' st := by
+        simp only [run]
+        exact ih hq' _ m'
+      have hswap : run [.CX c' t', .CX c t] [] st = run [.CX c t, .CX c' t'] [] st :=
+        hcomm c' t' c t hc' hc ht' ht st []
+      calc run ((.CX c' t' :: q) ++ [.CX c t]) m' st
+          = run (.CX c' t' :: .CX c t :: q) m' st := hstep
+        _ = run ([.CX c' t', .CX c t] ++ q) m' st := rfl
+        _ = run ([.CX c t, .CX c' t'] ++ q) m' st := by
+            simp only [run_append, measurementCount, List.drop_zero, List.take_zero]
+            rw [hswap]
+        _ = run (.CX c t :: .CX c' t' :: q) m' st := rfl
+  induction p generalizing m s with
+  | nil => rfl
+  | cons i p ih =>
+    obtain ⟨c, t, rfl, hc, ht⟩ := hp i (by simp)
+    have hp' : ∀ j ∈ p, ∃ c' t' : Nat, j = .CX c' t' ∧ 86 ≤ c' ∧ t' ∈ ([1, 2, 3, 4, 6] : List Nat) :=
+      fun j hj => hp j (by simp [hj])
+    have hp_rev : ∀ j ∈ p.reverse, ∃ c' t' : Nat, j = .CX c' t' ∧ 86 ≤ c' ∧ t' ∈ ([1, 2, 3, 4, 6] : List Nat) :=
+      fun j hj => hp' j (List.mem_reverse.mp hj)
+    rw [List.reverse_cons, hmove c t p.reverse hc ht hp_rev s m]
+    simp only [run]
+    exact ih hp' m _
+
+theorem clear_or_restore_C_reverse_eq (m : List Bool) (s : State) :
+    run clearOrRestoreCProg.reverse m s = run clearOrRestoreCProg m s := by
+  apply run_clearOrRestore_comm_helper
+  intro i hi
+  have hall : clearOrRestoreCProg.all (fun j =>
+      match j with
+      | .CX c t => (86 ≤ c) && (([1, 2, 3, 4, 6] : List Nat).contains t)
+      | _ => false) = true := by decide
+  have hj := List.all_eq_true.mp hall i hi
+  cases i with
+  | CX c t =>
+    simp only [Bool.and_eq_true, decide_eq_true_eq, List.contains_eq_mem] at hj
+    exact ⟨c, t, rfl, hj.1, hj.2⟩
+  | X _ => simp at hj
+  | CCX _ _ _ => simp at hj
+  | measureX _ _ _ => simp at hj
+
+
+theorem clear_or_restore_C_all_false (m : List Bool) (s : State)
+    (hF : ∀ k : Nat, k < 11 → s.basis (86 + k) = false) :
+    run clearOrRestoreCProg m s = s := by
+  have hloop : ∀ (ks : List Nat) (m' : List Bool), (∀ k ∈ ks, s.basis (86 + k) = false) →
+      run (ks.flatMap clearOrRestoreSlotC) m' s = s := by
+    intro ks
+    induction ks with
+    | nil => intros; rfl
+    | cons k ks ih =>
+      intro m' hks
+      simp only [List.flatMap_cons, run_append]
+      rw [run_clearOrRestoreSlotC_false k _ s (hks k (by simp))]
+      exact ih _ (fun j hj => hks j (by simp [hj]))
+  exact hloop (List.range 11) m (fun k hk => hF k (List.mem_range.mp hk))
+
+theorem clear_or_restore_C_spec (k0 : Nat) (hk0 : k0 < 11) (m : List Bool) (s : State)
+    (hF : ∀ k : Nat, k < 11 → s.basis (86 + k) = decide (k = k0)) :
+    let res := run clearOrRestoreCProg m s
+    res.phase = s.phase ∧
+    res.basis 6 = !s.basis 6 ∧
+    res.basis 4 = (s.basis 4 ^^ k0.testBit 3) ∧
+    res.basis 3 = (s.basis 3 ^^ k0.testBit 2) ∧
+    res.basis 2 = (s.basis 2 ^^ k0.testBit 1) ∧
+    res.basis 1 = (s.basis 1 ^^ k0.testBit 0) ∧
+    (∀ w : Nat, w ∉ ([1, 2, 3, 4, 6] : List Nat) → res.basis w = s.basis w) := by
+  have hsplit : List.range 11 = List.range k0 ++ [k0] ++ (List.range (11 - (k0 + 1))).map (· + (k0 + 1)) := by
+    have : ∀ n : Nat, n ≤ 11 → List.range 11 = List.range n ++ (List.range (11 - n)).map (· + n) := by
+      intro n hn
+      apply List.ext_getElem
+      · simp; omega
+      · intro i hi1 hi2
+        by_cases h : i < n
+        · simp [List.getElem_append_left, h]
+        · rw [List.getElem_append_right (by simp; omega)]
+          simp; omega
+    have h1 := this k0 (by omega)
+    have h2 : (List.range (11 - k0)).map (· + k0) = k0 :: (List.range (11 - (k0 + 1))).map (· + (k0 + 1)) := by
+      have : 11 - k0 = (11 - (k0 + 1)) + 1 := by omega
+      rw [this, List.range_succ_eq_map, List.map_cons, List.map_map]
+      simp only [Nat.zero_add, Function.comp_def]
+      congr 1; apply List.map_congr_left; intro x _; omega
+    rw [h1, h2]; simp [List.append_assoc]
+  have hloop_false : ∀ (ks : List Nat) (st : State) (m' : List Bool),
+      (∀ k ∈ ks, st.basis (86 + k) = false) →
+      run (ks.flatMap clearOrRestoreSlotC) m' st = st := by
+    intro ks
+    induction ks with
+    | nil => intros; rfl
+    | cons k ks ih =>
+      intro st m' hks
+      simp only [List.flatMap_cons, run_append]
+      rw [run_clearOrRestoreSlotC_false k _ st (hks k (by simp))]
+      exact ih st _ (fun j hj => hks j (by simp [hj]))
+  dsimp only [clearOrRestoreCProg]
+  rw [hsplit, List.flatMap_append, List.flatMap_append, List.flatMap_singleton,
+      run_append, run_append]
+  rw [hloop_false (List.range k0) s _ (fun k hk => by
+    have hk' : k < k0 := List.mem_range.mp hk
+    rw [hF k (by omega)]; simp [Nat.ne_of_lt hk'])]
+  obtain ⟨hp, h6, h4, h3, h2, h1, hoth⟩ :=
+    run_clearOrRestoreSlotC_true k0 _ s (by rw [hF k0 hk0]; simp)
+  set s1 := run (clearOrRestoreSlotC k0) _ s
+  rw [hloop_false ((List.range (11 - (k0 + 1))).map (· + (k0 + 1))) s1 _ (fun k hk => by
+    simp only [List.mem_map, List.mem_range] at hk
+    obtain ⟨j, hj, rfl⟩ := hk
+    rw [hoth (86 + (j + (k0 + 1))) (by simp; omega), hF (j + (k0 + 1)) (by omega)]
+    have : j + (k0 + 1) ≠ k0 := by omega
+    simp [this])]
+  exact ⟨hp, h6, h4, h3, h2, h1, hoth⟩
+
+
+/-! ## Section 9: Basis map `uP0Prog`, slot predicates, disjointness, and per-slot specs -/
+
+def slotPred (k : Nat) (b : BasisState) : Bool :=
+  if k < 9 then
+    and5Bool (b (pkWire k 4)) (b (pkWire k 3)) (b (pkWire k 2)) (b (pkWire k 1)) (b (pkWire k 0))
+      false true true true true
+  else if k == 9 then
+    and5Bool (b 13) (b 10 ^^ b 12) (b 9) (b 8 ^^ b 11) (b 7) true false false true true
+  else
+    and4Bool (b 12) (b 10) (b 8) (b 7) false true true false
+
+private theorem run_uP0_inv_helper (p : Program)
+    (hmeas : ∀ i ∈ p, match i with
+      | .X _ => True
+      | .CX c t => c ≠ t
+      | .CCX a b t => a ≠ t ∧ b ≠ t
+      | .measureX _ _ _ => False) :
+    ∀ (m1 m2 : List Bool) (s : State), run p.reverse m2 (run p m1 s) = s := by
+  have hstep : ∀ (i : Instr),
+      (match i with
+        | .X _ => True
+        | .CX c t => c ≠ t
+        | .CCX a b t => a ≠ t ∧ b ≠ t
+        | .measureX _ _ _ => False) →
+      ∀ (m1 m2 : List Bool) (s : State), run [i] m2 (run [i] m1 s) = s := by
+    intro i hi m1 m2 s
+    cases i with
+    | X t =>
+      cases s; simp only [run]; congr 1; funext w
+      by_cases h : w = t <;> simp [writeBit, h]
+    | CX c t =>
+      cases s; simp only [run]; congr 1; funext w
+      by_cases h : w = t
+      · subst h; simp [writeBit, hi]
+      · simp [writeBit, h]
+    | CCX a b t =>
+      cases s; simp only [run]; congr 1; funext w
+      by_cases h : w = t
+      · subst h; simp [writeBit, hi.1, hi.2]
+      · simp [writeBit, h]
+    | measureX _ _ _ => exact hi.elim
+  have hmc0 : ∀ (q : Program), (∀ i ∈ q, match i with | .measureX _ _ _ => False | _ => True) →
+      measurementCount q = 0 := by
+    intro q hq
+    induction q with
+    | nil => rfl
+    | cons i q ih =>
+      have hi := hq i (by simp)
+      cases i with
+      | X _ => exact ih (fun j hj => hq j (by simp [hj]))
+      | CX _ _ => exact ih (fun j hj => hq j (by simp [hj]))
+      | CCX _ _ _ => exact ih (fun j hj => hq j (by simp [hj]))
+      | measureX _ _ _ => exact hi.elim
+  induction p with
+  | nil => intros; rfl
+  | cons i p ih =>
+    intro m1 m2 s
+    have hi := hmeas i (by simp)
+    have hp : ∀ j ∈ p, match j with
+        | .X _ => True | .CX c t => c ≠ t | .CCX a b t => a ≠ t ∧ b ≠ t | .measureX _ _ _ => False :=
+      fun j hj => hmeas j (by simp [hj])
+    have hp_m : ∀ j ∈ p.reverse, match j with | .measureX _ _ _ => False | _ => True := by
+      intro j hj
+      have hj' := hp j (List.mem_reverse.mp hj)
+      cases j <;> trivial
+    have hi_m : measurementCount [i] = 0 := by
+      cases i with
+      | X _ => rfl
+      | CX _ _ => rfl
+      | CCX _ _ _ => rfl
+      | measureX _ _ _ => exact hi.elim
+    have h1 : run (i :: p) m1 s = run p m1 (run [i] [] s) := by
+      change run ([i] ++ p) m1 s = _
+      rw [run_append, hi_m, List.take_zero, List.drop_zero]
+    rw [h1, List.reverse_cons, run_append, hmc0 p.reverse hp_m, List.take_zero, List.drop_zero]
+    rw [ih hp m1 [] (run [i] [] s)]
+    exact hstep i hi [] m2 s
+
+private theorem uP0Prog_inv (m1 m2 : List Bool) (s : State) :
+    run uP0Prog.reverse m2 (run uP0Prog m1 s) = s := by
+  apply run_uP0_inv_helper
+  intro i hi
+  simp only [uP0Prog, p0Wire, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+private theorem uP0Prog_phase_and_outside (m : List Bool) (s : State) :
+    (run uP0Prog m s).phase = s.phase ∧
+    (∀ w : Nat, (w < 7 ∨ 14 ≤ w) → (run uP0Prog m s).basis w = s.basis w) := by
+  constructor
+  · simp [uP0Prog, run]
+  · intro w hw
+    apply run_preserves_outside uP0Prog m s w
+    intro hmem
+    have hsub : wires uP0Prog ⊆ ({7, 8, 9, 10, 11, 12, 13} : Finset Wire) := by decide
+    have hmem' := hsub hmem
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hmem'
+    rcases hmem' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
+
+private def uP0Bits (b0 b1 b2 b3 b4 b5 b6 : Bool) : Bool × Bool × Bool × Bool × Bool × Bool × Bool :=
+  let b2 := b2 ^^ b3
+  let b2 := b2 ^^ b1
+  let b3 := b3 ^^ b5
+  let b1 := b1 ^^ b5
+  let b5 := b5 ^^ b6
+  let b6 := b6 ^^ (b2 && b5)
+  let b5 := b5 ^^ b6
+  let b0 := b0 ^^ b4
+  let b4 := b4 ^^ (b2 && b0)
+  let b0 := b0 ^^ b4
+  let b3 := b3 ^^ b2
+  let b1 := b1 ^^ b2
+  (b0, b1, b2, b3, b4, b5, b6)
+
+private theorem run_uP0Prog_bits (m : List Bool) (s : State) :
+    let res := run uP0Prog m s
+    (res.basis 7, res.basis 8, res.basis 9, res.basis 10, res.basis 11, res.basis 12, res.basis 13) =
+      uP0Bits (s.basis 7) (s.basis 8) (s.basis 9) (s.basis 10) (s.basis 11) (s.basis 12) (s.basis 13) := by
+  simp only [uP0Prog, p0Wire, run, writeBit, uP0Bits, Function.update_self,
+    Function.update_of_ne (show (7 : Nat) ≠ 8 by decide),
+    Function.update_of_ne (show (7 : Nat) ≠ 9 by decide),
+    Function.update_of_ne (show (7 : Nat) ≠ 10 by decide),
+    Function.update_of_ne (show (7 : Nat) ≠ 11 by decide),
+    Function.update_of_ne (show (7 : Nat) ≠ 12 by decide),
+    Function.update_of_ne (show (7 : Nat) ≠ 13 by decide),
+    Function.update_of_ne (show (8 : Nat) ≠ 7 by decide),
+    Function.update_of_ne (show (8 : Nat) ≠ 9 by decide),
+    Function.update_of_ne (show (8 : Nat) ≠ 10 by decide),
+    Function.update_of_ne (show (8 : Nat) ≠ 11 by decide),
+    Function.update_of_ne (show (8 : Nat) ≠ 12 by decide),
+    Function.update_of_ne (show (8 : Nat) ≠ 13 by decide),
+    Function.update_of_ne (show (9 : Nat) ≠ 7 by decide),
+    Function.update_of_ne (show (9 : Nat) ≠ 8 by decide),
+    Function.update_of_ne (show (9 : Nat) ≠ 10 by decide),
+    Function.update_of_ne (show (9 : Nat) ≠ 11 by decide),
+    Function.update_of_ne (show (9 : Nat) ≠ 12 by decide),
+    Function.update_of_ne (show (9 : Nat) ≠ 13 by decide),
+    Function.update_of_ne (show (10 : Nat) ≠ 7 by decide),
+    Function.update_of_ne (show (10 : Nat) ≠ 8 by decide),
+    Function.update_of_ne (show (10 : Nat) ≠ 9 by decide),
+    Function.update_of_ne (show (10 : Nat) ≠ 11 by decide),
+    Function.update_of_ne (show (10 : Nat) ≠ 12 by decide),
+    Function.update_of_ne (show (10 : Nat) ≠ 13 by decide),
+    Function.update_of_ne (show (11 : Nat) ≠ 7 by decide),
+    Function.update_of_ne (show (11 : Nat) ≠ 8 by decide),
+    Function.update_of_ne (show (11 : Nat) ≠ 9 by decide),
+    Function.update_of_ne (show (11 : Nat) ≠ 10 by decide),
+    Function.update_of_ne (show (11 : Nat) ≠ 12 by decide),
+    Function.update_of_ne (show (11 : Nat) ≠ 13 by decide),
+    Function.update_of_ne (show (12 : Nat) ≠ 7 by decide),
+    Function.update_of_ne (show (12 : Nat) ≠ 8 by decide),
+    Function.update_of_ne (show (12 : Nat) ≠ 9 by decide),
+    Function.update_of_ne (show (12 : Nat) ≠ 10 by decide),
+    Function.update_of_ne (show (12 : Nat) ≠ 11 by decide),
+    Function.update_of_ne (show (12 : Nat) ≠ 13 by decide),
+    Function.update_of_ne (show (13 : Nat) ≠ 7 by decide),
+    Function.update_of_ne (show (13 : Nat) ≠ 8 by decide),
+    Function.update_of_ne (show (13 : Nat) ≠ 9 by decide),
+    Function.update_of_ne (show (13 : Nat) ≠ 10 by decide),
+    Function.update_of_ne (show (13 : Nat) ≠ 11 by decide),
+    Function.update_of_ne (show (13 : Nat) ≠ 12 by decide)]
+
+private theorem used8_slotPred_false (k : Nat) (hk : k < 9) (s : State)
+    (h : pkVal k s ∈ used8) : slotPred k s.basis = false := by
+  simp only [used8, List.mem_filter, List.mem_range] at h
+  have hnot := h.2
+  have hval : pkVal k s =
+      (if s.basis (pkWire k 0) then 1 else 0) + 2 * ((if s.basis (pkWire k 1) then 1 else 0) +
+      2 * ((if s.basis (pkWire k 2) then 1 else 0) + 2 * ((if s.basis (pkWire k 3) then 1 else 0) +
+      2 * ((if s.basis (pkWire k 4) then 1 else 0) + 2 * ((if s.basis (pkWire k 5) then 1 else 0) +
+      2 * ((if s.basis (pkWire k 6) then 1 else 0) + 2 * (if s.basis (pkWire k 7) then 1 else 0))))))) := rfl
+  simp only [slotPred, hk, ↓reduceIte, and5Bool]
+  cases h0 : s.basis (pkWire k 0) <;> cases h1 : s.basis (pkWire k 1) <;>
+  cases h2 : s.basis (pkWire k 2) <;> cases h3 : s.basis (pkWire k 3) <;>
+  cases h4 : s.basis (pkWire k 4)
+  all_goals try rfl
+  cases h5 : s.basis (pkWire k 5) <;> cases h6 : s.basis (pkWire k 6) <;> cases h7 : s.basis (pkWire k 7) <;>
+    (simp [h0, h1, h2, h3, h4, h5, h6, h7] at hval; rw [hval] at hnot; simp [unused8] at hnot)
+
+set_option maxHeartbeats 2000000 in
+private theorem used7_uP0_slotPred_false (m : List Bool) (s : State) (h : p0Val s ∈ used7) :
+    slotPred 9 (run uP0Prog m s).basis = false ∧ slotPred 10 (run uP0Prog m s).basis = false := by
+  have hdec : ∀ b0 b1 b2 b3 b4 b5 b6 : Bool,
+      unused7.contains ((if b0 then 1 else 0) + 2 * ((if b1 then 1 else 0) +
+        2 * ((if b2 then 1 else 0) + 2 * ((if b3 then 1 else 0) +
+        2 * ((if b4 then 1 else 0) + 2 * ((if b5 then 1 else 0) +
+        2 * (if b6 then 1 else 0))))))) = false →
+      let (u0, u1, u2, u3, u4, u5, u6) := uP0Bits b0 b1 b2 b3 b4 b5 b6
+      and5Bool u6 (u3 ^^ u5) u2 (u1 ^^ u4) u0 true false false true true = false ∧
+      and4Bool u5 u3 u1 u0 false true true false = false := by
+    decide +kernel
+  simp only [used7, List.mem_filter, List.mem_range, Bool.not_eq_true'] at h
+  have hbits := run_uP0Prog_bits m s
+  have hval : p0Val s =
+      (if s.basis 7 then 1 else 0) + 2 * ((if s.basis 8 then 1 else 0) +
+      2 * ((if s.basis 9 then 1 else 0) + 2 * ((if s.basis 10 then 1 else 0) +
+      2 * ((if s.basis 11 then 1 else 0) + 2 * ((if s.basis 12 then 1 else 0) +
+      2 * (if s.basis 13 then 1 else 0)))))) := rfl
+  have hnot := h.2
+  rw [hval] at hnot
+  have hres := hdec (s.basis 7) (s.basis 8) (s.basis 9) (s.basis 10) (s.basis 11) (s.basis 12) (s.basis 13) hnot
+  have hmatch : ∀ (a0 a1 a2 a3 a4 a5 a6 : Bool) (t : Bool × Bool × Bool × Bool × Bool × Bool × Bool),
+      (a0, a1, a2, a3, a4, a5, a6) = t →
+      (let (u0, u1, u2, u3, u4, u5, u6) := t
+       and5Bool u6 (u3 ^^ u5) u2 (u1 ^^ u4) u0 true false false true true = false ∧
+       and4Bool u5 u3 u1 u0 false true true false = false) →
+      and5Bool a6 (a3 ^^ a5) a2 (a1 ^^ a4) a0 true false false true true = false ∧
+      and4Bool a5 a3 a1 a0 false true true false = false := by
+    rintro a0 a1 a2 a3 a4 a5 a6 _ rfl h; exact h
+  simpa [slotPred] using hmatch _ _ _ _ _ _ _ _ hbits hres
+
+private theorem p0_flats_disjoint (b : BasisState) :
+    (slotPred 9 b = true → slotPred 10 b = false) ∧
+    (slotPred 10 b = true → slotPred 9 b = false) := by
+  have hdec : ∀ b7 b8 b9 b10 b11 b12 b13 : Bool,
+      (and5Bool b13 (b10 ^^ b12) b9 (b8 ^^ b11) b7 true false false true true = true →
+        and4Bool b12 b10 b8 b7 false true true false = false) ∧
+      (and4Bool b12 b10 b8 b7 false true true false = true →
+        and5Bool b13 (b10 ^^ b12) b9 (b8 ^^ b11) b7 true false false true true = false) := by
+    decide
+  simpa [slotPred] using hdec (b 7) (b 8) (b 9) (b 10) (b 11) (b 12) (b 13)
+
+private theorem cVal_lt87_props (s : State) (hc : cVal s < 87) :
+    (s.basis 6 = false → ∀ k, k < 11 → targetF s.basis k = false) ∧
+    (s.basis 6 = true →
+      s.basis 5 = false ∧
+      (s.basis 4 = true → s.basis 3 = false) ∧
+      ∃ k0, k0 < 11 ∧
+        k0.testBit 3 = s.basis 4 ∧ k0.testBit 2 = s.basis 3 ∧
+        k0.testBit 1 = s.basis 2 ∧ (k0 < 10 → k0.testBit 0 = s.basis 1) ∧
+        ∀ k, k < 11 → targetF s.basis k = decide (k = k0)) := by
+  have hbits : cVal s = (if s.basis 0 then 1 else 0) + 2 * ((if s.basis 1 then 1 else 0) +
+      2 * ((if s.basis 2 then 1 else 0) + 2 * ((if s.basis 3 then 1 else 0) +
+      2 * ((if s.basis 4 then 1 else 0) + 2 * ((if s.basis 5 then 1 else 0) +
+      2 * (if s.basis 6 then 1 else 0)))))) := rfl
+  constructor
+  · intro h6 k hk
+    simp only [targetF, h6, Bool.false_and]
+    split <;> [rfl; split <;> [rfl; split <;> [rfl; split <;> rfl]]]
+  · intro h6
+    have h5 : s.basis 5 = false := by
+      cases hb5 : s.basis 5
+      · rfl
+      · simp [h6, hb5] at hbits; omega
+    have h43 : s.basis 4 = true → s.basis 3 = false := by
+      intro h4
+      cases hb3 : s.basis 3
+      · rfl
+      · simp [h6, h5, h4, hb3] at hbits; omega
+    let raw := (if s.basis 1 then 1 else 0) + 2 * (if s.basis 2 then 1 else 0) +
+               4 * (if s.basis 3 then 1 else 0) + 8 * (if s.basis 4 then 1 else 0)
+    let k0 := if raw ≥ 10 then 10 else raw
+    refine ⟨h5, h43, k0, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;>
+      cases hb3 : s.basis 3 <;> cases hb4 : s.basis 4 <;> simp_all [k0, raw]
+    · cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;>
+      cases hb3 : s.basis 3 <;> cases hb4 : s.basis 4 <;> simp_all [k0, raw] <;> decide
+    · cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;>
+      cases hb3 : s.basis 3 <;> cases hb4 : s.basis 4 <;> simp_all [k0, raw] <;> decide
+    · cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;>
+      cases hb3 : s.basis 3 <;> cases hb4 : s.basis 4 <;> simp_all [k0, raw] <;> decide
+    · intro hlt10
+      cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;>
+      cases hb3 : s.basis 3 <;> cases hb4 : s.basis 4 <;> simp_all [k0, raw]
+    · intro k hk
+      have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨
+             k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 := by omega
+      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      · cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;>
+        cases hb3 : s.basis 3 <;> cases hb4 : s.basis 4 <;>
+        simp_all [targetF, qBit, k0, raw]
+
+/-! ### Helper: `cxs` effect for slot 9 -/
+
+private theorem run_cxs9 (m : List Bool) (s : State) :
+    let res := run [.CX 12 10, .CX 11 8] m s
+    res.phase = s.phase ∧
+    res.basis 10 = (s.basis 10 ^^ s.basis 12) ∧
+    res.basis 8 = (s.basis 8 ^^ s.basis 11) ∧
+    (∀ w, w ≠ 10 → w ≠ 8 → res.basis w = s.basis w) := by
+  refine ⟨by simp [run], by simp [run, writeBit], by simp [run, writeBit], ?_⟩
+  intro w h10 h8; simp [run, writeBit, h10, h8]
+
+private theorem run_cxs9_rev (m : List Bool) (s : State) :
+    let res := run ([.CX 12 10, .CX 11 8] : Program).reverse m s
+    res.phase = s.phase ∧
+    res.basis 10 = (s.basis 10 ^^ s.basis 12) ∧
+    res.basis 8 = (s.basis 8 ^^ s.basis 11) ∧
+    (∀ w, w ≠ 10 → w ≠ 8 → res.basis w = s.basis w) := by
+  refine ⟨by simp [run], by simp [run, writeBit], by simp [run, writeBit], ?_⟩
+  intro w h10 h8; simp [run, writeBit, h10, h8]
+
+private def slotDataRange (k : Nat) (w : Nat) : Prop :=
+  if k < 9 then 14 + 8 * k ≤ w ∧ w < 14 + 8 * k + 5
+  else 7 ≤ w ∧ w < 14
+
+private theorem packSlotProg9_eq : packSlotProg 9 =
+    ([Instr.CX 12 10, .CX 11 8] ++
+    (fredkin5_const 95 cBus [13, 10, 9, 8, 7] [true, false, false, true, true] ++
+     erase_and5 [(13, true), (10, false), (9, false), (8, true), (7, true)] 95 102 103 104)) ++
+    ([Instr.CX 12 10, .CX 11 8] : Program).reverse := by decide
+
+private theorem unpackSlotProg9_eq : unpackSlotProg 9 =
+    ([Instr.CX 12 10, .CX 11 8] ++
+    (compute_and5 [(13, true), (10, false), (9, false), (8, true), (7, true)] 95 102 103 104 ++
+     fredkin5_const 95 cBus [13, 10, 9, 8, 7] [true, false, false, true, true])) ++
+    ([Instr.CX 12 10, .CX 11 8] : Program).reverse := by decide
+
+private theorem packSlotProg10_eq : packSlotProg 10 =
+    fredkin4_const 96 cBus4 [12, 10, 8, 7] [false, true, true, false] ++
+    erase_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103 := by decide
+
+private theorem unpackSlotProg10_eq : unpackSlotProg 10 =
+    compute_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103 ++
+    fredkin4_const 96 cBus4 [12, 10, 8, 7] [false, true, true, false] := by decide
+
+/-- Generic inactive-slot theorem for `packSlotProg k` when `F[k] = false` and `slotPred k = false`. -/
+private theorem packSlot_inactive (k : Nat) (hk : k < 11) (m : List Bool) (s : State)
+    (hf : s.basis (86 + k) = false)
+    (hpred : slotPred k s.basis = false)
+    (ht0 : s.basis 102 = false) (ht1 : s.basis 103 = false) (ht2 : s.basis 104 = false) :
+    run (packSlotProg k) m s = s := by
+  have hcore5 : ∀ (w0 w1 w2 w3 w4 : Nat) (v0 v1 v2 v3 v4 : Bool) (st : State) (m' : List Bool),
+      ([86 + k, 5, 4, 3, 2, 1, w0, w1, w2, w3, w4] : List Nat).Nodup →
+      ([w0, w1, w2, w3, w4, 86 + k, 102, 103, 104] : List Nat).Nodup →
+      st.basis (86 + k) = false →
+      and5Bool (st.basis w0) (st.basis w1) (st.basis w2) (st.basis w3) (st.basis w4)
+        v0 v1 v2 v3 v4 = false →
+      st.basis 102 = false → st.basis 103 = false → st.basis 104 = false →
+      run (fredkin5_const (86 + k) cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4] ++
+           erase_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104) m' st = st := by
+    intro w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 st m' hndF hndA hsf hand hst0 hst1 hst2
+    rw [run_append]
+    have hs1 : ∀ m'', run (fredkin5_const (86 + k) cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]) m'' st = st := by
+      intro m''
+      cases st with
+      | mk ph bs =>
+        obtain ⟨hp1, hu0, hu1, hu2, hu3, hu4, hv0, hv1, hv2, hv3, hv4, hoth1⟩ :=
+          fredkin5_const_spec (86 + k) 5 4 3 2 1 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndF m'' ⟨ph, bs⟩
+        cases hres : run (fredkin5_const (86 + k) [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]) m'' ⟨ph, bs⟩ with
+        | mk ph1 bs1 =>
+          simp only [cBus, hres]
+          simp only [hres] at hp1 hu0 hu1 hu2 hu3 hu4 hv0 hv1 hv2 hv3 hv4 hoth1
+          simp only at hsf hp1 hu0 hu1 hu2 hu3 hu4 hv0 hv1 hv2 hv3 hv4 hoth1
+          simp only [hsf, Bool.false_eq_true, ↓reduceIte] at hu0 hu1 hu2 hu3 hu4 hv0 hv1 hv2 hv3 hv4
+          congr 1
+          funext w
+          by_cases hw : w ∈ [5, 4, 3, 2, 1, w0, w1, w2, w3, w4]
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+            rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+          · exact hoth1 w hw
+    rw [hs1]
+    obtain ⟨hp2, hf2, ht0_2, ht1_2, ht2_2, hoth2⟩ :=
+      erase_and5_spec w0 w1 w2 w3 w4 (86 + k) 102 103 104 v0 v1 v2 v3 v4 hndA
+        (m'.drop (measurementCount (fredkin5_const (86 + k) cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]))) st
+        (hsf.trans hand.symm) hst0 hst1 hst2
+    cases st with
+    | mk ph bs =>
+      cases hres : run (erase_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104)
+          (m'.drop (measurementCount (fredkin5_const (86 + k) cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]))) ⟨ph, bs⟩ with
+      | mk ph2 bs2 =>
+        simp only [hres] at hp2 hf2 ht0_2 ht1_2 ht2_2 hoth2
+        congr 1
+        funext w
+        by_cases hw : w ∈ [86 + k, 102, 103, 104]
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+          rcases hw with rfl | rfl | rfl | rfl
+          · exact hf2.trans hsf.symm
+          · exact ht0_2.trans hst0.symm
+          · exact ht1_2.trans hst1.symm
+          · exact ht2_2.trans hst2.symm
+        · exact hoth2 w hw
+  have hcase : k < 9 ∨ k = 9 ∨ k = 10 := by omega
+  rcases hcase with hk9 | rfl | rfl
+  · dsimp only [packSlotProg, slotSpec]
+    have hk10 : k < 10 := by omega
+    simp only [hk9, hk10, ↓reduceIte, List.nil_append, List.reverse_nil, List.append_nil,
+      List.zip, List.zipWith]
+    apply hcore5
+    · simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+        not_or, not_false_eq_true, and_true, pkWire]; omega
+    · simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+        not_or, not_false_eq_true, and_true, pkWire]; omega
+    · exact hf
+    · simpa [slotPred, hk9] using hpred
+    · exact ht0
+    · exact ht1
+    · exact ht2
+  · rw [packSlotProg9_eq, run_append, run_append]
+    obtain ⟨hp1, h10_1, h8_1, hoth1⟩ := run_cxs9 _ s
+    set s1 := run [.CX 12 10, .CX 11 8] _ s
+    have hmid : ∀ m'', run (fredkin5_const 95 cBus [13, 10, 9, 8, 7] [true, false, false, true, true] ++
+        erase_and5 [(13, true), (10, false), (9, false), (8, true), (7, true)] 95 102 103 104) m'' s1 = s1 := by
+      intro m''
+      apply hcore5
+      · decide
+      · decide
+      · rw [hoth1 95 (by decide) (by decide)]; exact hf
+      · rw [hoth1 13 (by decide) (by decide), h10_1, hoth1 9 (by decide) (by decide),
+            h8_1, hoth1 7 (by decide) (by decide)]
+        simpa [slotPred] using hpred
+      · rw [hoth1 102 (by decide) (by decide)]; exact ht0
+      · rw [hoth1 103 (by decide) (by decide)]; exact ht1
+      · rw [hoth1 104 (by decide) (by decide)]; exact ht2
+    rw [hmid]
+    have hrev : ∀ m'', run ([Instr.CX 12 10, .CX 11 8] : Program).reverse m'' s1 = s := by
+      intro m''
+      obtain ⟨hp2, h10_2, h8_2, hoth2⟩ := run_cxs9_rev m'' s1
+      cases s with
+      | mk ph bs =>
+        cases hres : run ([Instr.CX 12 10, .CX 11 8] : Program).reverse m'' s1 with
+        | mk ph2 bs2 =>
+          simp only [hres] at hp2 h10_2 h8_2 hoth2
+          congr 1
+          funext w
+          by_cases hw10 : w = 10
+          · subst hw10; rw [h10_2, h10_1, hoth1 12 (by decide) (by decide)]; simp
+          · by_cases hw8 : w = 8
+            · subst hw8; rw [h8_2, h8_1, hoth1 11 (by decide) (by decide)]; simp
+            · rw [hoth2 w hw10 hw8, hoth1 w hw10 hw8]
+    exact hrev _
+  · rw [packSlotProg10_eq, run_append]
+    have hs1 : ∀ m'', run (fredkin4_const 96 cBus4 [12, 10, 8, 7] [false, true, true, false]) m'' s = s := by
+      intro m''
+      cases s with
+      | mk ph bs =>
+        obtain ⟨hp1, hu0, hu1, hu2, hu3, hv0, hv1, hv2, hv3, hoth1⟩ :=
+          fredkin4_const_spec 96 5 4 3 2 12 10 8 7 false true true false (by decide) m'' ⟨ph, bs⟩
+        cases hres : run (fredkin4_const 96 [5, 4, 3, 2] [12, 10, 8, 7] [false, true, true, false]) m'' ⟨ph, bs⟩ with
+        | mk ph1 bs1 =>
+          simp only [cBus4, hres]
+          simp only [hres] at hp1 hu0 hu1 hu2 hu3 hv0 hv1 hv2 hv3 hoth1
+          simp only at hf hp1 hu0 hu1 hu2 hu3 hv0 hv1 hv2 hv3 hoth1
+          simp only [hf, Bool.false_eq_true, ↓reduceIte] at hu0 hu1 hu2 hu3 hv0 hv1 hv2 hv3
+          congr 1
+          funext w
+          by_cases hw : w ∈ ([5, 4, 3, 2, 12, 10, 8, 7] : List Nat)
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+            rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+          · exact hoth1 w hw
+    rw [hs1]
+    have hand : and4Bool (s.basis 12) (s.basis 10) (s.basis 8) (s.basis 7) false true true false = false := by
+      simpa [slotPred] using hpred
+    obtain ⟨hp2, hf2, ht0_2, ht1_2, hoth2⟩ :=
+      erase_and4_spec 12 10 8 7 96 102 103 false true true false (by decide)
+        (m.drop (measurementCount (fredkin4_const 96 cBus4 [12, 10, 8, 7] [false, true, true, false]))) s
+        (hf.trans hand.symm) ht0 ht1
+    cases s with
+    | mk ph bs =>
+      cases hres : run (erase_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103)
+          (m.drop (measurementCount (fredkin4_const 96 cBus4 [12, 10, 8, 7] [false, true, true, false]))) ⟨ph, bs⟩ with
+      | mk ph2 bs2 =>
+        simp only [hres] at hp2 hf2 ht0_2 ht1_2 hoth2
+        congr 1
+        funext w
+        by_cases hw : w ∈ ([96, 102, 103] : List Nat)
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+          rcases hw with rfl | rfl | rfl
+          · exact hf2.trans hf.symm
+          · exact ht0_2.trans ht0.symm
+          · exact ht1_2.trans ht1.symm
+        · exact hoth2 w hw
+
+/-- Generic inactive-slot theorem for `unpackSlotProg k` when `F[k] = false` and `slotPred k = false`. -/
+private theorem unpackSlot_inactive (k : Nat) (hk : k < 11) (m : List Bool) (s : State)
+    (hf : s.basis (86 + k) = false)
+    (hpred : slotPred k s.basis = false)
+    (ht0 : s.basis 102 = false) (ht1 : s.basis 103 = false) (ht2 : s.basis 104 = false) :
+    run (unpackSlotProg k) m s = s := by
+  have hcore5 : ∀ (w0 w1 w2 w3 w4 : Nat) (v0 v1 v2 v3 v4 : Bool) (st : State) (m' : List Bool),
+      ([86 + k, 5, 4, 3, 2, 1, w0, w1, w2, w3, w4] : List Nat).Nodup →
+      ([w0, w1, w2, w3, w4, 86 + k, 102, 103, 104] : List Nat).Nodup →
+      st.basis (86 + k) = false →
+      and5Bool (st.basis w0) (st.basis w1) (st.basis w2) (st.basis w3) (st.basis w4)
+        v0 v1 v2 v3 v4 = false →
+      st.basis 102 = false → st.basis 103 = false → st.basis 104 = false →
+      run (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104 ++
+           fredkin5_const (86 + k) cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]) m' st = st := by
+    intro w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 st m' hndF hndA hsf hand hst0 hst1 hst2
+    rw [run_append]
+    have hs1 : ∀ m'', run (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104) m'' st = st := by
+      intro m''
+      obtain ⟨hp1, hf1, ht0_1, ht1_1, ht2_1, hoth1⟩ :=
+        compute_and5_spec w0 w1 w2 w3 w4 (86 + k) 102 103 104 v0 v1 v2 v3 v4 hndA m'' st hst0 hst1 hst2
+      cases st with
+      | mk ph bs =>
+        cases hres : run (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104) m'' ⟨ph, bs⟩ with
+        | mk ph1 bs1 =>
+          simp only [hres] at hp1 hf1 ht0_1 ht1_1 ht2_1 hoth1
+          congr 1
+          funext w
+          by_cases hw : w ∈ [86 + k, 102, 103, 104]
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+            rcases hw with rfl | rfl | rfl | rfl
+            · rw [hf1, hand, Bool.xor_false]
+            · exact ht0_1.trans hst0.symm
+            · exact ht1_1.trans hst1.symm
+            · exact ht2_1.trans hst2.symm
+          · exact hoth1 w hw
+    rw [hs1]
+    cases st with
+    | mk ph bs =>
+      obtain ⟨hp2, hu0, hu1, hu2, hu3, hu4, hv0, hv1, hv2, hv3, hv4, hoth2⟩ :=
+        fredkin5_const_spec (86 + k) 5 4 3 2 1 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndF
+          (m'.drop (measurementCount (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104))) ⟨ph, bs⟩
+      cases hres : run (fredkin5_const (86 + k) [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4])
+          (m'.drop (measurementCount (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] (86 + k) 102 103 104))) ⟨ph, bs⟩ with
+      | mk ph2 bs2 =>
+        simp only [cBus, hres]
+        simp only [hres] at hp2 hu0 hu1 hu2 hu3 hu4 hv0 hv1 hv2 hv3 hv4 hoth2
+        simp only at hsf hp2 hu0 hu1 hu2 hu3 hu4 hv0 hv1 hv2 hv3 hv4 hoth2
+        simp only [hsf, Bool.false_eq_true, ↓reduceIte] at hu0 hu1 hu2 hu3 hu4 hv0 hv1 hv2 hv3 hv4
+        congr 1
+        funext w
+        by_cases hw : w ∈ [5, 4, 3, 2, 1, w0, w1, w2, w3, w4]
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+          rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+        · exact hoth2 w hw
+  have hcase : k < 9 ∨ k = 9 ∨ k = 10 := by omega
+  rcases hcase with hk9 | rfl | rfl
+  · dsimp only [unpackSlotProg, slotSpec]
+    have hk10 : k < 10 := by omega
+    simp only [hk9, hk10, ↓reduceIte, List.nil_append, List.reverse_nil, List.append_nil,
+      List.zip, List.zipWith]
+    apply hcore5
+    · simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+        not_or, not_false_eq_true, and_true, pkWire]; omega
+    · simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+        not_or, not_false_eq_true, and_true, pkWire]; omega
+    · exact hf
+    · simpa [slotPred, hk9] using hpred
+    · exact ht0
+    · exact ht1
+    · exact ht2
+  · rw [unpackSlotProg9_eq, run_append, run_append]
+    obtain ⟨hp1, h10_1, h8_1, hoth1⟩ := run_cxs9 _ s
+    set s1 := run [.CX 12 10, .CX 11 8] _ s
+    have hmid : ∀ m'', run (compute_and5 [(13, true), (10, false), (9, false), (8, true), (7, true)] 95 102 103 104 ++
+        fredkin5_const 95 cBus [13, 10, 9, 8, 7] [true, false, false, true, true]) m'' s1 = s1 := by
+      intro m''
+      apply hcore5
+      · decide
+      · decide
+      · rw [hoth1 95 (by decide) (by decide)]; exact hf
+      · rw [hoth1 13 (by decide) (by decide), h10_1, hoth1 9 (by decide) (by decide),
+            h8_1, hoth1 7 (by decide) (by decide)]
+        simpa [slotPred] using hpred
+      · rw [hoth1 102 (by decide) (by decide)]; exact ht0
+      · rw [hoth1 103 (by decide) (by decide)]; exact ht1
+      · rw [hoth1 104 (by decide) (by decide)]; exact ht2
+    rw [hmid]
+    have hrev : ∀ m'', run ([Instr.CX 12 10, .CX 11 8] : Program).reverse m'' s1 = s := by
+      intro m''
+      obtain ⟨hp2, h10_2, h8_2, hoth2⟩ := run_cxs9_rev m'' s1
+      cases s with
+      | mk ph bs =>
+        cases hres : run ([Instr.CX 12 10, .CX 11 8] : Program).reverse m'' s1 with
+        | mk ph2 bs2 =>
+          simp only [hres] at hp2 h10_2 h8_2 hoth2
+          congr 1
+          funext w
+          by_cases hw10 : w = 10
+          · subst hw10; rw [h10_2, h10_1, hoth1 12 (by decide) (by decide)]; simp
+          · by_cases hw8 : w = 8
+            · subst hw8; rw [h8_2, h8_1, hoth1 11 (by decide) (by decide)]; simp
+            · rw [hoth2 w hw10 hw8, hoth1 w hw10 hw8]
+    exact hrev _
+  · rw [unpackSlotProg10_eq, run_append]
+    have hand : and4Bool (s.basis 12) (s.basis 10) (s.basis 8) (s.basis 7) false true true false = false := by
+      simpa [slotPred] using hpred
+    have hs1 : ∀ m'', run (compute_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103) m'' s = s := by
+      intro m''
+      obtain ⟨hp1, hf1, ht0_1, ht1_1, hoth1⟩ :=
+        compute_and4_spec 12 10 8 7 96 102 103 false true true false (by decide) m'' s ht0 ht1
+      cases s with
+      | mk ph bs =>
+        cases hres : run (compute_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103) m'' ⟨ph, bs⟩ with
+        | mk ph1 bs1 =>
+          simp only [hres] at hp1 hf1 ht0_1 ht1_1 hoth1
+          congr 1
+          funext w
+          by_cases hw : w ∈ ([96, 102, 103] : List Nat)
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+            rcases hw with rfl | rfl | rfl
+            · rw [hf1, hand, Bool.xor_false]
+            · exact ht0_1.trans ht0.symm
+            · exact ht1_1.trans ht1.symm
+          · exact hoth1 w hw
+    rw [hs1]
+    cases s with
+    | mk ph bs =>
+      obtain ⟨hp2, hu0, hu1, hu2, hu3, hv0, hv1, hv2, hv3, hoth2⟩ :=
+        fredkin4_const_spec 96 5 4 3 2 12 10 8 7 false true true false (by decide)
+          (m.drop (measurementCount (compute_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103))) ⟨ph, bs⟩
+      cases hres : run (fredkin4_const 96 [5, 4, 3, 2] [12, 10, 8, 7] [false, true, true, false])
+          (m.drop (measurementCount (compute_and4 [(12, false), (10, true), (8, true), (7, false)] 96 102 103))) ⟨ph, bs⟩ with
+      | mk ph2 bs2 =>
+        simp only [cBus4, hres]
+        simp only [hres] at hp2 hu0 hu1 hu2 hu3 hv0 hv1 hv2 hv3 hoth2
+        simp only at hf hp2 hu0 hu1 hu2 hu3 hv0 hv1 hv2 hv3 hoth2
+        simp only [hf, Bool.false_eq_true, ↓reduceIte] at hu0 hu1 hu2 hu3 hv0 hv1 hv2 hv3
+        congr 1
+        funext w
+        by_cases hw : w ∈ ([5, 4, 3, 2, 12, 10, 8, 7] : List Nat)
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+          rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+        · exact hoth2 w hw
+
+private theorem packSlot_core_active_and_roundtrip (f : Nat)
+    (w0 w1 w2 w3 w4 : Nat) (v0 v1 v2 v3 v4 : Bool) (st : State) (m1' : List Bool)
+    (hndF : ([f, 5, 4, 3, 2, 1, w0, w1, w2, w3, w4] : List Nat).Nodup)
+    (hndA : ([w0, w1, w2, w3, w4, f, 102, 103, 104] : List Nat).Nodup)
+    (hsf : st.basis f = true)
+    (h1 : st.basis 1 = false) (h2 : st.basis 2 = false) (h3 : st.basis 3 = false)
+    (h4 : st.basis 4 = false) (h5 : st.basis 5 = false)
+    (hst0 : st.basis 102 = false) (hst1 : st.basis 103 = false) (hst2 : st.basis 104 = false) :
+    let mid := run (fredkin5_const f cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4] ++
+      erase_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104) m1' st
+    mid.phase = st.phase ∧
+    mid.basis f = false ∧
+    mid.basis 102 = false ∧ mid.basis 103 = false ∧ mid.basis 104 = false ∧
+    mid.basis w0 = v0 ∧ mid.basis w1 = v1 ∧ mid.basis w2 = v2 ∧ mid.basis w3 = v3 ∧ mid.basis w4 = v4 ∧
+    (∀ w : Nat, w ∉ ([1, 2, 3, 4, 5, w0, w1, w2, w3, w4, f, 102, 103, 104] : List Nat) → mid.basis w = st.basis w) ∧
+    (∀ m2', run (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104 ++
+      fredkin5_const f cBus [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]) m2' mid = st) := by
+    have hndF' := hndF
+    have hndA' := hndA
+    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+      not_or, not_false_eq_true, and_true] at hndF' hndA'
+    have hft_not_uv : ∀ t ∈ ([f, 102, 103, 104] : List Wire), t ∉ [5, 4, 3, 2, 1, w0, w1, w2, w3, w4] := by
+      intro t ht
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
+      rcases ht with rfl | rfl | rfl | rfl
+      · simp [hndF'.1]
+      · simp [Ne.symm hndA'.1.2.2.2.2.2.1, Ne.symm hndA'.2.1.2.2.2.2.1,
+              Ne.symm hndA'.2.2.1.2.2.2.1, Ne.symm hndA'.2.2.2.1.2.2.1,
+              Ne.symm hndA'.2.2.2.2.1.2.1]
+      · simp [Ne.symm hndA'.1.2.2.2.2.2.2.1, Ne.symm hndA'.2.1.2.2.2.2.2.1,
+              Ne.symm hndA'.2.2.1.2.2.2.2.1, Ne.symm hndA'.2.2.2.1.2.2.2.1,
+              Ne.symm hndA'.2.2.2.2.1.2.2.1]
+      · simp [Ne.symm hndA'.1.2.2.2.2.2.2.2, Ne.symm hndA'.2.1.2.2.2.2.2.2,
+              Ne.symm hndA'.2.2.1.2.2.2.2.2, Ne.symm hndA'.2.2.2.1.2.2.2.2,
+              Ne.symm hndA'.2.2.2.2.1.2.2.2]
+    have huv_not_ft : ∀ u ∈ ([5, 4, 3, 2, 1, w0, w1, w2, w3, w4] : List Wire), u ∉ [f, 102, 103, 104] := by
+      intro u hu hcontra
+      exact hft_not_uv u hcontra hu
+    dsimp only [cBus]
+    rw [run_append]
+    set s1 := run (fredkin5_const f [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4])
+      (m1'.take (measurementCount (fredkin5_const f [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]))) st
+    obtain ⟨hp1, hu5_1, hu4_1, hu3_1, hu2_1, hu1_1, hv0_1, hv1_1, hv2_1, hv3_1, hv4_1, hoth1⟩ :=
+      fredkin5_const_spec f 5 4 3 2 1 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndF
+        (m1'.take (measurementCount (fredkin5_const f [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]))) st
+    simp only [hsf, ↓reduceIte, h1, h2, h3, h4, h5, Bool.false_xor] at hu5_1 hu4_1 hu3_1 hu2_1 hu1_1 hv0_1 hv1_1 hv2_1 hv3_1 hv4_1
+    have hf_1 : s1.basis f = true := (hoth1 f (hft_not_uv _ (by simp))).trans hsf
+    have ht0_1 : s1.basis 102 = false := (hoth1 102 (hft_not_uv _ (by simp))).trans hst0
+    have ht1_1 : s1.basis 103 = false := (hoth1 103 (hft_not_uv _ (by simp))).trans hst1
+    have ht2_1 : s1.basis 104 = false := (hoth1 104 (hft_not_uv _ (by simp))).trans hst2
+    set mid := run (erase_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104)
+      (m1'.drop (measurementCount (fredkin5_const f [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]))) s1
+    obtain ⟨hp2, hf_2, ht0_2, ht1_2, ht2_2, hoth2⟩ :=
+      erase_and5_spec w0 w1 w2 w3 w4 f 102 103 104 v0 v1 v2 v3 v4 hndA
+        (m1'.drop (measurementCount (fredkin5_const f [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4]))) s1
+        (by rw [hf_1, hv0_1, hv1_1, hv2_1, hv3_1, hv4_1]; simp [and5Bool]) ht0_1 ht1_1 ht2_1
+    have hmid_uv : ∀ u ∈ ([5, 4, 3, 2, 1, w0, w1, w2, w3, w4] : List Wire), mid.basis u = s1.basis u :=
+      fun u hu => hoth2 u (huv_not_ft u hu)
+    have hmid_v0 : mid.basis w0 = v0 := (hmid_uv w0 (by simp)).trans hv0_1
+    have hmid_v1 : mid.basis w1 = v1 := (hmid_uv w1 (by simp)).trans hv1_1
+    have hmid_v2 : mid.basis w2 = v2 := (hmid_uv w2 (by simp)).trans hv2_1
+    have hmid_v3 : mid.basis w3 = v3 := (hmid_uv w3 (by simp)).trans hv3_1
+    have hmid_v4 : mid.basis w4 = v4 := (hmid_uv w4 (by simp)).trans hv4_1
+    refine ⟨hp2.trans hp1, hf_2, ht0_2, ht1_2, ht2_2,
+      hmid_v0, hmid_v1, hmid_v2, hmid_v3, hmid_v4, ?_, ?_⟩
+    · intro w hw
+      have hw1 : w ∉ [f, 102, 103, 104] := by
+        intro hmem; apply hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem ⊢
+        rcases hmem with rfl | rfl | rfl | rfl <;> simp
+      have hw2 : w ∉ [5, 4, 3, 2, 1, w0, w1, w2, w3, w4] := by
+        intro hmem; apply hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem ⊢
+        rcases hmem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+      exact (hoth2 w hw1).trans (hoth1 w hw2)
+    · intro m2'
+      rw [run_append]
+      set s3 := run (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104)
+        (m2'.take (measurementCount (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104))) mid
+      obtain ⟨hp3, hf_3, ht0_3, ht1_3, ht2_3, hoth3⟩ :=
+        compute_and5_spec w0 w1 w2 w3 w4 f 102 103 104 v0 v1 v2 v3 v4 hndA
+          (m2'.take (measurementCount (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104))) mid ht0_2 ht1_2 ht2_2
+      have hf3_true : s3.basis f = true := by
+        rw [hf_3, hf_2, hmid_v0, hmid_v1, hmid_v2, hmid_v3, hmid_v4]; simp [and5Bool]
+      obtain ⟨hp4, hu5_4, hu4_4, hu3_4, hu2_4, hu1_4, hv0_4, hv1_4, hv2_4, hv3_4, hv4_4, hoth4⟩ :=
+        fredkin5_const_spec f 5 4 3 2 1 w0 w1 w2 w3 w4 v0 v1 v2 v3 v4 hndF
+          (m2'.drop (measurementCount (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104))) s3
+      cases st with
+      | mk ph bs =>
+        dsimp only at h1 h2 h3 h4 h5 hsf hst0 hst1 hst2 hu5_1 hu4_1 hu3_1 hu2_1 hu1_1 hoth1
+        cases hs4 : run (fredkin5_const f [5, 4, 3, 2, 1] [w0, w1, w2, w3, w4] [v0, v1, v2, v3, v4])
+            (m2'.drop (measurementCount (compute_and5 [(w0, v0), (w1, v1), (w2, v2), (w3, v3), (w4, v4)] f 102 103 104))) s3 with
+        | mk ph4 bs4 =>
+          simp only [hs4] at hp4 hu5_4 hu4_4 hu3_4 hu2_4 hu1_4 hv0_4 hv1_4 hv2_4 hv3_4 hv4_4 hoth4
+          congr 1
+          · exact hp4.trans (hp3.trans (hp2.trans hp1))
+          · funext w
+            have hs3_uv : ∀ u ∈ ([5, 4, 3, 2, 1, w0, w1, w2, w3, w4] : List Wire), s3.basis u = s1.basis u :=
+              fun u hu => (hoth3 u (huv_not_ft u hu)).trans (hmid_uv u hu)
+            by_cases hw : w ∈ [5, 4, 3, 2, 1, w0, w1, w2, w3, w4]
+            · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+              rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+              · rw [hu5_4, hf3_true, if_pos rfl, hs3_uv w0 (by simp), hv0_1, h5]; simp
+              · rw [hu4_4, hf3_true, if_pos rfl, hs3_uv w1 (by simp), hv1_1, h4]; simp
+              · rw [hu3_4, hf3_true, if_pos rfl, hs3_uv w2 (by simp), hv2_1, h3]; simp
+              · rw [hu2_4, hf3_true, if_pos rfl, hs3_uv w3 (by simp), hv3_1, h2]; simp
+              · rw [hu1_4, hf3_true, if_pos rfl, hs3_uv w4 (by simp), hv4_1, h1]; simp
+              · rw [hv0_4, hf3_true, if_pos rfl, hs3_uv 5 (by simp), hu5_1]; simp
+              · rw [hv1_4, hf3_true, if_pos rfl, hs3_uv 4 (by simp), hu4_1]; simp
+              · rw [hv2_4, hf3_true, if_pos rfl, hs3_uv 3 (by simp), hu3_1]; simp
+              · rw [hv3_4, hf3_true, if_pos rfl, hs3_uv 2 (by simp), hu2_1]; simp
+              · rw [hv4_4, hf3_true, if_pos rfl, hs3_uv 1 (by simp), hu1_1]; simp
+            · rw [hoth4 w hw]
+              by_cases hwft : w ∈ [f, 102, 103, 104]
+              · simp only [List.mem_cons, List.not_mem_nil, or_false] at hwft
+                rcases hwft with rfl | rfl | rfl | rfl
+                · exact hf3_true.trans hsf.symm
+                · exact ht0_3.trans hst0.symm
+                · exact ht1_3.trans hst1.symm
+                · exact ht2_3.trans hst2.symm
+              · exact (hoth3 w hwft).trans ((hoth2 w hwft).trans (hoth1 w hw))
+
+
+private theorem packSlot4_core_active_and_roundtrip (f : Nat)
+    (w0 w1 w2 w3 : Nat) (v0 v1 v2 v3 : Bool) (st : State) (m1' : List Bool)
+    (hndF : ([f, 5, 4, 3, 2, w0, w1, w2, w3] : List Nat).Nodup)
+    (hndA : ([w0, w1, w2, w3, f, 102, 103] : List Nat).Nodup)
+    (hsf : st.basis f = true)
+    (h2 : st.basis 2 = false) (h3 : st.basis 3 = false)
+    (h4 : st.basis 4 = false) (h5 : st.basis 5 = false)
+    (hst0 : st.basis 102 = false) (hst1 : st.basis 103 = false) :
+    let mid := run (fredkin4_const f cBus4 [w0, w1, w2, w3] [v0, v1, v2, v3] ++
+      erase_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103) m1' st
+    mid.phase = st.phase ∧
+    mid.basis f = false ∧
+    mid.basis 102 = false ∧ mid.basis 103 = false ∧
+    mid.basis w0 = v0 ∧ mid.basis w1 = v1 ∧ mid.basis w2 = v2 ∧ mid.basis w3 = v3 ∧
+    (∀ w : Nat, w ∉ ([2, 3, 4, 5, w0, w1, w2, w3, f, 102, 103] : List Nat) → mid.basis w = st.basis w) ∧
+    (∀ m2', run (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103 ++
+      fredkin4_const f cBus4 [w0, w1, w2, w3] [v0, v1, v2, v3]) m2' mid = st) := by
+  have hndF' := hndF
+  have hndA' := hndA
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+    not_or, not_false_eq_true, and_true] at hndF' hndA'
+  have hft_not_uv : ∀ t ∈ ([f, 102, 103] : List Wire), t ∉ [5, 4, 3, 2, w0, w1, w2, w3] := by
+    intro t ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
+    rcases ht with rfl | rfl | rfl
+    · simp [hndF'.1]
+    · simp [Ne.symm hndA'.1.2.2.2.2.1, Ne.symm hndA'.2.1.2.2.2.1,
+            Ne.symm hndA'.2.2.1.2.2.1, Ne.symm hndA'.2.2.2.1.2.1]
+    · simp [Ne.symm hndA'.1.2.2.2.2.2, Ne.symm hndA'.2.1.2.2.2.2,
+            Ne.symm hndA'.2.2.1.2.2.2, Ne.symm hndA'.2.2.2.1.2.2]
+  have huv_not_ft : ∀ u ∈ ([5, 4, 3, 2, w0, w1, w2, w3] : List Wire), u ∉ [f, 102, 103] := by
+    intro u hu hcontra; exact hft_not_uv u hcontra hu
+  dsimp only [cBus4]
+  rw [run_append]
+  set s1 := run (fredkin4_const f [5, 4, 3, 2] [w0, w1, w2, w3] [v0, v1, v2, v3])
+    (m1'.take (measurementCount (fredkin4_const f [5, 4, 3, 2] [w0, w1, w2, w3] [v0, v1, v2, v3]))) st
+  obtain ⟨hp1, hu5_1, hu4_1, hu3_1, hu2_1, hv0_1, hv1_1, hv2_1, hv3_1, hoth1⟩ :=
+    fredkin4_const_spec f 5 4 3 2 w0 w1 w2 w3 v0 v1 v2 v3 hndF
+      (m1'.take (measurementCount (fredkin4_const f [5, 4, 3, 2] [w0, w1, w2, w3] [v0, v1, v2, v3]))) st
+  simp only [hsf, ↓reduceIte, h2, h3, h4, h5, Bool.false_xor] at hu5_1 hu4_1 hu3_1 hu2_1 hv0_1 hv1_1 hv2_1 hv3_1
+  have hf_1 : s1.basis f = true := (hoth1 f (hft_not_uv _ (by simp))).trans hsf
+  have ht0_1 : s1.basis 102 = false := (hoth1 102 (hft_not_uv _ (by simp))).trans hst0
+  have ht1_1 : s1.basis 103 = false := (hoth1 103 (hft_not_uv _ (by simp))).trans hst1
+  set mid := run (erase_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103)
+    (m1'.drop (measurementCount (fredkin4_const f [5, 4, 3, 2] [w0, w1, w2, w3] [v0, v1, v2, v3]))) s1
+  obtain ⟨hp2, hf_2, ht0_2, ht1_2, hoth2⟩ :=
+    erase_and4_spec w0 w1 w2 w3 f 102 103 v0 v1 v2 v3 hndA
+      (m1'.drop (measurementCount (fredkin4_const f [5, 4, 3, 2] [w0, w1, w2, w3] [v0, v1, v2, v3]))) s1
+      (by rw [hf_1, hv0_1, hv1_1, hv2_1, hv3_1]; simp [and4Bool]) ht0_1 ht1_1
+  have hmid_uv : ∀ u ∈ ([5, 4, 3, 2, w0, w1, w2, w3] : List Wire), mid.basis u = s1.basis u :=
+    fun u hu => hoth2 u (huv_not_ft u hu)
+  have hmid_v0 : mid.basis w0 = v0 := (hmid_uv w0 (by simp)).trans hv0_1
+  have hmid_v1 : mid.basis w1 = v1 := (hmid_uv w1 (by simp)).trans hv1_1
+  have hmid_v2 : mid.basis w2 = v2 := (hmid_uv w2 (by simp)).trans hv2_1
+  have hmid_v3 : mid.basis w3 = v3 := (hmid_uv w3 (by simp)).trans hv3_1
+  refine ⟨hp2.trans hp1, hf_2, ht0_2, ht1_2, hmid_v0, hmid_v1, hmid_v2, hmid_v3, ?_, ?_⟩
+  · intro w hw
+    have hw1 : w ∉ [f, 102, 103] := by
+      intro hmem; apply hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem ⊢
+      rcases hmem with rfl | rfl | rfl <;> simp
+    have hw2 : w ∉ [5, 4, 3, 2, w0, w1, w2, w3] := by
+      intro hmem; apply hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hmem ⊢
+      rcases hmem with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+    exact (hoth2 w hw1).trans (hoth1 w hw2)
+  · intro m2'
+    rw [run_append]
+    set s3 := run (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103)
+      (m2'.take (measurementCount (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103))) mid
+    obtain ⟨hp3, hf_3, ht0_3, ht1_3, hoth3⟩ :=
+      compute_and4_spec w0 w1 w2 w3 f 102 103 v0 v1 v2 v3 hndA
+        (m2'.take (measurementCount (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103))) mid ht0_2 ht1_2
+    have hf3_true : s3.basis f = true := by
+      rw [hf_3, hf_2, hmid_v0, hmid_v1, hmid_v2, hmid_v3]; simp [and4Bool]
+    obtain ⟨hp4, hu5_4, hu4_4, hu3_4, hu2_4, hv0_4, hv1_4, hv2_4, hv3_4, hoth4⟩ :=
+      fredkin4_const_spec f 5 4 3 2 w0 w1 w2 w3 v0 v1 v2 v3 hndF
+        (m2'.drop (measurementCount (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103))) s3
+    cases st with
+    | mk ph bs =>
+      dsimp only at h2 h3 h4 h5 hsf hst0 hst1 hu5_1 hu4_1 hu3_1 hu2_1 hoth1
+      cases hs4 : run (fredkin4_const f [5, 4, 3, 2] [w0, w1, w2, w3] [v0, v1, v2, v3])
+          (m2'.drop (measurementCount (compute_and4 [(w0, v0), (w1, v1), (w2, v2), (w3, v3)] f 102 103))) s3 with
+      | mk ph4 bs4 =>
+        simp only [hs4] at hp4 hu5_4 hu4_4 hu3_4 hu2_4 hv0_4 hv1_4 hv2_4 hv3_4 hoth4
+        congr 1
+        · exact hp4.trans (hp3.trans (hp2.trans hp1))
+        · funext w
+          have hs3_uv : ∀ u ∈ ([5, 4, 3, 2, w0, w1, w2, w3] : List Wire), s3.basis u = s1.basis u :=
+            fun u hu => (hoth3 u (huv_not_ft u hu)).trans (hmid_uv u hu)
+          by_cases hw : w ∈ [5, 4, 3, 2, w0, w1, w2, w3]
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+            rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+            · rw [hu5_4, hf3_true, if_pos rfl, hs3_uv w0 (by simp), hv0_1, h5]; simp
+            · rw [hu4_4, hf3_true, if_pos rfl, hs3_uv w1 (by simp), hv1_1, h4]; simp
+            · rw [hu3_4, hf3_true, if_pos rfl, hs3_uv w2 (by simp), hv2_1, h3]; simp
+            · rw [hu2_4, hf3_true, if_pos rfl, hs3_uv w3 (by simp), hv3_1, h2]; simp
+            · rw [hv0_4, hf3_true, if_pos rfl, hs3_uv 5 (by simp), hu5_1]; simp
+            · rw [hv1_4, hf3_true, if_pos rfl, hs3_uv 4 (by simp), hu4_1]; simp
+            · rw [hv2_4, hf3_true, if_pos rfl, hs3_uv 3 (by simp), hu3_1]; simp
+            · rw [hv3_4, hf3_true, if_pos rfl, hs3_uv 2 (by simp), hu2_1]; simp
+          · rw [hoth4 w hw]
+            by_cases hwft : w ∈ [f, 102, 103]
+            · simp only [List.mem_cons, List.not_mem_nil, or_false] at hwft
+              rcases hwft with rfl | rfl | rfl
+              · exact hf3_true.trans hsf.symm
+              · exact ht0_3.trans hst0.symm
+              · exact ht1_3.trans hst1.symm
+            · exact (hoth3 w hwft).trans ((hoth2 w hwft).trans (hoth1 w hw))
+
+private theorem packSlot_active_and_roundtrip (k : Nat) (hk : k < 11) (m1 : List Bool) (s : State)
+    (hf : s.basis (86 + k) = true)
+    (hc1 : k < 10 → s.basis 1 = false) (hc2 : s.basis 2 = false) (hc3 : s.basis 3 = false)
+    (hc4 : s.basis 4 = false) (hc5 : s.basis 5 = false)
+    (ht0 : s.basis 102 = false) (ht1 : s.basis 103 = false) (ht2 : s.basis 104 = false) :
+    let mid := run (packSlotProg k) m1 s
+    mid.phase = s.phase ∧
+    mid.basis (86 + k) = false ∧
+    mid.basis 102 = false ∧ mid.basis 103 = false ∧ mid.basis 104 = false ∧
+    slotPred k mid.basis = true ∧
+    (∀ w : Nat, w ∉ ([1, 2, 3, 4, 5, 86 + k, 102, 103, 104] : List Nat) → ¬ slotDataRange k w → mid.basis w = s.basis w) ∧
+    (∀ m2, run (unpackSlotProg k) m2 mid = s) := by
+  have hcase : k < 9 ∨ k = 9 ∨ k = 10 := by omega
+  rcases hcase with hk9 | rfl | rfl
+  · dsimp only [packSlotProg, unpackSlotProg, slotSpec]
+    have hk10 : k < 10 := by omega
+    simp only [hk9, hk10, ↓reduceIte, List.nil_append, List.reverse_nil, List.append_nil,
+      List.zip, List.zipWith]
+    have hndF : ([86 + k, 5, 4, 3, 2, 1, pkWire k 4, pkWire k 3, pkWire k 2, pkWire k 1, pkWire k 0] : List Nat).Nodup := by
+      simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+        not_or, not_false_eq_true, and_true, pkWire]; omega
+    have hndA : ([pkWire k 4, pkWire k 3, pkWire k 2, pkWire k 1, pkWire k 0, 86 + k, 102, 103, 104] : List Nat).Nodup := by
+      simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
+        not_or, not_false_eq_true, and_true, pkWire]; omega
+    obtain ⟨hp, hfm, ht0m, ht1m, ht2m, hv0, hv1, hv2, hv3, hv4, hoth, hrt⟩ :=
+      packSlot_core_active_and_roundtrip (86 + k) _ _ _ _ _ false true true true true s m1 hndF hndA hf (hc1 hk10) hc2 hc3 hc4 hc5 ht0 ht1 ht2
+    refine ⟨hp, hfm, ht0m, ht1m, ht2m, ?_, ?_, hrt⟩
+    · simp [slotPred, hk9, hv0, hv1, hv2, hv3, hv4, and5Bool]
+    · intro w hw hnot
+      apply hoth w
+      simp only [slotDataRange, hk9, ↓reduceIte] at hnot
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, pkWire] at hw ⊢
+      omega
+  · dsimp only
+    rw [packSlotProg9_eq, run_append, run_append]
+    set s1 := run [.CX 12 10, .CX 11 8] _ s
+    obtain ⟨hp1, h10_1, h8_1, hoth1⟩ := run_cxs9 _ s
+    set s2 := run (fredkin5_const 95 cBus [13, 10, 9, 8, 7] [true, false, false, true, true] ++
+        erase_and5 [(13, true), (10, false), (9, false), (8, true), (7, true)] 95 102 103 104) _ s1
+    obtain ⟨hp2, hfm2, ht0m2, ht1m2, ht2m2, hv0, hv1, hv2, hv3, hv4, hoth2, hrt2⟩ :=
+      packSlot_core_active_and_roundtrip 95 13 10 9 8 7 true false false true true s1 _
+        (by decide) (by decide)
+        ((hoth1 95 (by decide) (by decide)).trans hf)
+        ((hoth1 1 (by decide) (by decide)).trans (hc1 (by omega)))
+        ((hoth1 2 (by decide) (by decide)).trans hc2)
+        ((hoth1 3 (by decide) (by decide)).trans hc3)
+        ((hoth1 4 (by decide) (by decide)).trans hc4)
+        ((hoth1 5 (by decide) (by decide)).trans hc5)
+        ((hoth1 102 (by decide) (by decide)).trans ht0)
+        ((hoth1 103 (by decide) (by decide)).trans ht1)
+        ((hoth1 104 (by decide) (by decide)).trans ht2)
+    set mid := run ([Instr.CX 12 10, .CX 11 8]).reverse _ s2
+    obtain ⟨hp3, h10_3, h8_3, hoth3⟩ := run_cxs9_rev _ s2
+    refine ⟨hp3.trans (hp2.trans hp1),
+      (hoth3 95 (by decide) (by decide)).trans hfm2,
+      (hoth3 102 (by decide) (by decide)).trans ht0m2,
+      (hoth3 103 (by decide) (by decide)).trans ht1m2,
+      (hoth3 104 (by decide) (by decide)).trans ht2m2, ?_, ?_, ?_⟩
+    · simp only [slotPred, show ¬(9 < 9) by omega, ↓reduceIte, beq_self_eq_true, and5Bool]
+      rw [hoth3 13 (by decide) (by decide), h10_3, hoth3 12 (by decide) (by decide),
+          hoth3 9 (by decide) (by decide), h8_3, hoth3 11 (by decide) (by decide),
+          hoth3 7 (by decide) (by decide), hv0, hv1, hv2, hv3, hv4]
+      simp
+    · intro w hw hnot
+      simp only [slotDataRange, show ¬(9 < 9) by omega, ↓reduceIte] at hnot
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+      have hw10 : w ≠ 10 := by intro h; subst h; exact hnot (by omega)
+      have hw8 : w ≠ 8 := by intro h; subst h; exact hnot (by omega)
+      rw [hoth3 w hw10 hw8, hoth2 w (by simp; omega), hoth1 w hw10 hw8]
+    · intro m2
+      rw [unpackSlotProg9_eq, run_append, run_append]
+      have hback1 : ∀ m', run [.CX 12 10, .CX 11 8] m' mid = s2 := by
+        intro m'
+        obtain ⟨hpb, h10b, h8b, hothb⟩ := run_cxs9 m' mid
+        cases hs2 : s2 with
+        | mk ph2 bs2 =>
+          cases hr : run [.CX 12 10, .CX 11 8] m' mid with
+          | mk phr bsr =>
+            simp only [hr] at hpb h10b h8b hothb
+            have hp3' : mid.phase = ph2 := by rw [hp3, hs2]
+            have h10_3' : mid.basis 10 = (bs2 10 ^^ bs2 12) := by rw [h10_3, hs2]
+            have h8_3' : mid.basis 8 = (bs2 8 ^^ bs2 11) := by rw [h8_3, hs2]
+            have hoth3' : ∀ w : Wire, w ≠ 10 → w ≠ 8 → mid.basis w = bs2 w := by
+              intro w hw10 hw8; rw [hoth3 w hw10 hw8, hs2]
+            congr 1
+            · exact hpb.trans hp3'
+            · funext w
+              by_cases hw10 : w = 10
+              · subst hw10; rw [h10b, h10_3', hoth3' 12 (by decide) (by decide)]; simp
+              · by_cases hw8 : w = 8
+                · subst hw8; rw [h8b, h8_3', hoth3' 11 (by decide) (by decide)]; simp
+                · rw [hothb w hw10 hw8, hoth3' w hw10 hw8]
+      rw [hback1, hrt2]
+      have hrev : ∀ m', run ([Instr.CX 12 10, .CX 11 8] : Program).reverse m' s1 = s := by
+        intro m'
+        obtain ⟨hpf, h10f, h8f, hothf⟩ := run_cxs9_rev m' s1
+        cases s with
+        | mk ph bs =>
+          cases hr : run ([Instr.CX 12 10, .CX 11 8] : Program).reverse m' s1 with
+          | mk phr bsr =>
+            simp only [hr] at hpf h10f h8f hothf
+            congr 1
+            funext w
+            by_cases hw10 : w = 10
+            · subst hw10; rw [h10f, h10_1, hoth1 12 (by decide) (by decide)]; simp
+            · by_cases hw8 : w = 8
+              · subst hw8; rw [h8f, h8_1, hoth1 11 (by decide) (by decide)]; simp
+              · rw [hothf w hw10 hw8, hoth1 w hw10 hw8]
+      exact hrev _
+  · dsimp only
+    rw [packSlotProg10_eq]
+    obtain ⟨hp, hfm, ht0m, ht1m, hv0, hv1, hv2, hv3, hoth, hrt⟩ :=
+      packSlot4_core_active_and_roundtrip 96 12 10 8 7 false true true false s m1
+        (by decide) (by decide) hf hc2 hc3 hc4 hc5 ht0 ht1
+    refine ⟨hp, hfm, ht0m, ht1m, (hoth 104 (by decide)).trans ht2, ?_, ?_, ?_⟩
+    · simp [slotPred, hv0, hv1, hv2, hv3, and4Bool]
+    · intro w hw hnot
+      apply hoth w
+      simp only [slotDataRange, show ¬(10 < 9) by omega, ↓reduceIte] at hnot
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw ⊢
+      omega
+    · intro m2
+      rw [unpackSlotProg10_eq]
+      exact hrt m2
+
+/-! ## Section 10: Main theorems — `packTag_spec` and `unpackTag_packTag_roundtrip` -/
+
+private theorem slotPred_preserved_of_disjoint (k0 k : Nat) (hk0 : k0 < 11) (hk : k < 11)
+    (hne : k ≠ k0) (b1 b2 : BasisState)
+    (hagree : ∀ w : Nat, w ∉ ([1, 2, 3, 4, 5, 86 + k0, 102, 103, 104] : List Nat) → ¬ slotDataRange k0 w → b2 w = b1 w)
+    (hpred0 : slotPred k0 b2 = true) (hpredk : slotPred k b1 = false) :
+    slotPred k b2 = false := by
+  by_cases hk9 : k < 9
+  · have hrange : ∀ i, i < 5 → b2 (pkWire k i) = b1 (pkWire k i) := by
+      intro i hi
+      apply hagree (pkWire k i)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, pkWire]; omega
+      · simp only [slotDataRange, pkWire]
+        split <;> omega
+    simp only [slotPred, hk9, ↓reduceIte] at hpredk ⊢
+    rw [hrange 4 (by omega), hrange 3 (by omega), hrange 2 (by omega),
+        hrange 1 (by omega), hrange 0 (by omega)]
+    exact hpredk
+  · by_cases hk09 : k0 < 9
+    · have hrange : ∀ w : Nat, 7 ≤ w → w < 14 → b2 w = b1 w := by
+        intro w hw1 hw2
+        apply hagree w
+        · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; omega
+        · simp only [slotDataRange, hk09, ↓reduceIte]; omega
+      have hcase : k = 9 ∨ k = 10 := by omega
+      rcases hcase with rfl | rfl
+      · simp only [slotPred] at hpredk ⊢
+        rw [hrange 13 (by omega) (by omega), hrange 10 (by omega) (by omega),
+            hrange 12 (by omega) (by omega), hrange 9 (by omega) (by omega),
+            hrange 8 (by omega) (by omega), hrange 11 (by omega) (by omega),
+            hrange 7 (by omega) (by omega)]
+        exact hpredk
+      · simp only [slotPred] at hpredk ⊢
+        rw [hrange 12 (by omega) (by omega), hrange 10 (by omega) (by omega),
+            hrange 8 (by omega) (by omega), hrange 7 (by omega) (by omega)]
+        exact hpredk
+    · have hd := p0_flats_disjoint b2
+      have h0 : k0 = 9 ∨ k0 = 10 := by omega
+      have h1 : k = 9 ∨ k = 10 := by omega
+      rcases h0 with rfl | rfl <;> rcases h1 with rfl | rfl
+      · exact absurd rfl hne
+      · exact hd.1 hpred0
+      · exact hd.2 hpred0
+      · exact absurd rfl hne
+
+private theorem run_packSlots_all_inactive (ks : List Nat) (m : List Bool) (s : State)
+    (hks : ∀ k ∈ ks, k < 11 ∧ s.basis (86 + k) = false ∧ slotPred k s.basis = false)
+    (ht0 : s.basis 102 = false) (ht1 : s.basis 103 = false) (ht2 : s.basis 104 = false) :
+    run (ks.flatMap packSlotProg) m s = s := by
+  induction ks generalizing m with
+  | nil => rfl
+  | cons k ks ih =>
+    simp only [List.flatMap_cons, run_append]
+    obtain ⟨hk, hf, hpred⟩ := hks k (by simp)
+    rw [packSlot_inactive k hk _ s hf hpred ht0 ht1 ht2]
+    exact ih _ (fun j hj => hks j (by simp [hj]))
+
+private theorem run_unpackSlots_all_inactive (ks : List Nat) (m : List Bool) (s : State)
+    (hks : ∀ k ∈ ks, k < 11 ∧ s.basis (86 + k) = false ∧ slotPred k s.basis = false)
+    (ht0 : s.basis 102 = false) (ht1 : s.basis 103 = false) (ht2 : s.basis 104 = false) :
+    run (ks.flatMap unpackSlotProg) m s = s := by
+  induction ks generalizing m with
+  | nil => rfl
+  | cons k ks ih =>
+    simp only [List.flatMap_cons, run_append]
+    obtain ⟨hk, hf, hpred⟩ := hks k (by simp)
+    rw [unpackSlot_inactive k hk _ s hf hpred ht0 ht1 ht2]
+    exact ih _ (fun j hj => hks j (by simp [hj]))
+
+private theorem range11_split (k0 : Nat) (hk0 : k0 < 11) :
+    List.range 11 = List.range k0 ++ [k0] ++ (List.range (11 - (k0 + 1))).map (· + (k0 + 1)) := by
+  have h1 : List.range 11 = List.range k0 ++ (List.range (11 - k0)).map (· + k0) := by
+    apply List.ext_getElem
+    · simp; omega
+    · intro i hi1 hi2
+      by_cases h : i < k0
+      · simp [List.getElem_append_left, h]
+      · rw [List.getElem_append_right (by simp; omega)]
+        simp; omega
+  have h2 : (List.range (11 - k0)).map (· + k0) = k0 :: (List.range (11 - (k0 + 1))).map (· + (k0 + 1)) := by
+    have : 11 - k0 = (11 - (k0 + 1)) + 1 := by omega
+    rw [this, List.range_succ_eq_map, List.map_cons, List.map_map]
+    simp only [Nat.zero_add, Function.comp_def]
+    congr 1; apply List.map_congr_left; intro x _; omega
+  rw [h1, h2]; simp [List.append_assoc]
+
+private theorem packTag_inner_roundtrip (s0 : State) (m1 m2 : List Bool)
+    (hc : cVal s0 < 87)
+    (hallPred : ∀ k, k < 11 → slotPred k s0.basis = false)
+    (hs0_anc : ∀ a : Nat, 86 ≤ a → a < 105 → s0.basis a = false) :
+    let packed := run (treeDecodeCProg ++ clearOrRestoreCProg ++ packSlotsProg) m1 s0
+    packed.phase = s0.phase ∧
+    packed.basis 6 = false ∧
+    (∀ a : Nat, 86 ≤ a → a < 105 → packed.basis a = false) ∧
+    (∀ w : Nat, 105 ≤ w → packed.basis w = s0.basis w) ∧
+    run (unpackSlotsProg ++ clearOrRestoreCProg.reverse ++ treeEraseFProg) m2 packed = s0 := by
+  rw [run_append, run_append]
+  have hprops := cVal_lt87_props s0 hc
+  obtain ⟨hp1, hF1, hQT1, hoth1⟩ := tree_decode_C_spec _ s0 hs0_anc
+  set s1 := run treeDecodeCProg _ s0
+  cases hb6 : s0.basis 6 with
+  | false =>
+    have hF1_false : ∀ k, k < 11 → s1.basis (86 + k) = false := by
+      intro k hk; rw [hF1 k hk, hprops.1 hb6 k hk]
+    have hs1_eq : s1 = s0 := by
+      cases s0 with
+      | mk ph bs =>
+        simp only at hs0_anc
+        cases hs1 : s1 with
+        | mk ph1 bs1 =>
+          simp only [hs1] at hp1 hF1_false hQT1 hoth1
+          congr 1
+          funext (w : Nat)
+          by_cases hw : w < 86 ∨ 105 ≤ w
+          · exact hoth1 w hw
+          · by_cases hw97 : w < 97
+            · have hk : w - 86 < 11 := by omega
+              have hw_eq : 86 + (w - 86) = w := by omega
+              rw [← hw_eq, hF1_false (w - 86) hk, hs0_anc (86 + (w - 86)) (by omega) (by omega)]
+            · rw [hQT1 w (by omega) (by omega), hs0_anc w (by omega) (by omega)]
+    rw [hs1_eq]
+    rw [clear_or_restore_C_all_false _ s0 (fun k hk => hs0_anc (86 + k) (by omega) (by omega))]
+    dsimp only [packSlotsProg]
+    rw [run_packSlots_all_inactive (List.range 11) _ s0
+      (fun k hk => by
+        have hk' : k < 11 := List.mem_range.mp hk
+        exact ⟨hk', hs0_anc (86 + k) (by omega) (by omega), hallPred k hk'⟩)
+      (hs0_anc 102 (by omega) (by omega)) (hs0_anc 103 (by omega) (by omega)) (hs0_anc 104 (by omega) (by omega))]
+    refine ⟨rfl, hb6, hs0_anc, fun _ _ => rfl, ?_⟩
+    rw [run_append, run_append]
+    dsimp only [unpackSlotsProg]
+    rw [run_unpackSlots_all_inactive (List.range 11).reverse _ s0
+      (fun k hk => by
+        have hk' : k < 11 := List.mem_range.mp (List.mem_reverse.mp hk)
+        exact ⟨hk', hs0_anc (86 + k) (by omega) (by omega), hallPred k hk'⟩)
+      (hs0_anc 102 (by omega) (by omega)) (hs0_anc 103 (by omega) (by omega)) (hs0_anc 104 (by omega) (by omega))]
+    rw [clear_or_restore_C_reverse_eq,
+        clear_or_restore_C_all_false _ s0 (fun k hk => hs0_anc (86 + k) (by omega) (by omega))]
+    have hrt_e : ∀ m', run treeEraseFProg m' s0 = s0 := by
+      intro m'
+      obtain ⟨hpe, hance, hothe⟩ := tree_erase_F_spec m' s0
+        (fun k hk => by rw [hs0_anc (86 + k) (by omega) (by omega), hprops.1 hb6 k hk])
+        (fun a ha1 ha2 => hs0_anc a (by omega) ha2)
+      cases s0 with
+      | mk ph bs =>
+        simp only at hs0_anc
+        cases hre : run treeEraseFProg m' ⟨ph, bs⟩ with
+        | mk phe bse =>
+          simp only [hre] at hpe hance hothe
+          congr 1
+          funext (w : Nat)
+          by_cases hw : w < 86 ∨ 105 ≤ w
+          · exact hothe w hw
+          · rw [hance w (by omega) (by omega), hs0_anc w (by omega) (by omega)]
+    exact hrt_e _
+  | true =>
+    obtain ⟨hb5, _, k0, hk0, htb3, htb2, htb1, htb0, hFtarget⟩ := hprops.2 hb6
+    have hF1_eq : ∀ k, k < 11 → s1.basis (86 + k) = decide (k = k0) := by
+      intro k hk; rw [hF1 k hk, hFtarget k hk]
+    obtain ⟨hp2, h6_2, h4_2, h3_2, h2_2, h1_2, hoth2⟩ :=
+      clear_or_restore_C_spec k0 hk0 _ s1 hF1_eq
+    set s2 := run clearOrRestoreCProg _ s1
+    have hs2_c1 : k0 < 10 → s2.basis 1 = false := by
+      intro hlt10; rw [h1_2, hoth1 1 (by omega), htb0 hlt10]; simp
+    have hs2_c2 : s2.basis 2 = false := by rw [h2_2, hoth1 2 (by omega), htb1]; simp
+    have hs2_c3 : s2.basis 3 = false := by rw [h3_2, hoth1 3 (by omega), htb2]; simp
+    have hs2_c4 : s2.basis 4 = false := by rw [h4_2, hoth1 4 (by omega), htb3]; simp
+    have hs2_c5 : s2.basis 5 = false := by rw [hoth2 5 (by decide), hoth1 5 (by omega), hb5]
+    have hs2_c6 : s2.basis 6 = false := by rw [h6_2, hoth1 6 (by omega), hb6]; rfl
+    have hs2_F : ∀ k : Nat, k < 11 → s2.basis (86 + k) = decide (k = k0) :=
+      fun k hk => (hoth2 (86 + k) (by simp; omega)).trans (hF1_eq k hk)
+    have hs2_QT : ∀ a : Nat, 97 ≤ a → a < 105 → s2.basis a = false :=
+      fun a ha1 ha2 => (hoth2 a (by simp; omega)).trans (hQT1 a ha1 ha2)
+    have hs2_data : ∀ w : Nat, 7 ≤ w → w < 86 → s2.basis w = s0.basis w :=
+      fun w hw1 hw2 => (hoth2 w (by simp; omega)).trans (hoth1 w (by omega))
+    have hs2_pred : ∀ k : Nat, k < 11 → slotPred k s2.basis = false := by
+      intro k hk
+      have hagree := hs2_data
+      by_cases hk9 : k < 9
+      · simp only [slotPred, hk9, ↓reduceIte]
+        rw [hagree (pkWire k 4) (by simp [pkWire]; omega) (by simp [pkWire]; omega),
+            hagree (pkWire k 3) (by simp [pkWire]; omega) (by simp [pkWire]; omega),
+            hagree (pkWire k 2) (by simp [pkWire]; omega) (by simp [pkWire]; omega),
+            hagree (pkWire k 1) (by simp [pkWire]; omega) (by simp [pkWire]; omega),
+            hagree (pkWire k 0) (by simp [pkWire]; omega) (by simp [pkWire]; omega)]
+        simpa [slotPred, hk9] using hallPred k hk
+      · have hcase : k = 9 ∨ k = 10 := by omega
+        rcases hcase with rfl | rfl
+        · simp only [slotPred]
+          rw [hagree 13 (by omega) (by omega), hagree 10 (by omega) (by omega),
+              hagree 12 (by omega) (by omega), hagree 9 (by omega) (by omega),
+              hagree 8 (by omega) (by omega), hagree 11 (by omega) (by omega),
+              hagree 7 (by omega) (by omega)]
+          simpa [slotPred] using hallPred 9 (by omega)
+        · simp only [slotPred]
+          rw [hagree 12 (by omega) (by omega), hagree 10 (by omega) (by omega),
+              hagree 8 (by omega) (by omega), hagree 7 (by omega) (by omega)]
+          simpa [slotPred] using hallPred 10 (by omega)
+    have hsplit := range11_split k0 hk0
+    have hpack_split : packSlotsProg =
+        (List.range k0).flatMap packSlotProg ++ packSlotProg k0 ++
+        ((List.range (11 - (k0 + 1))).map (· + (k0 + 1))).flatMap packSlotProg := by
+      dsimp only [packSlotsProg]
+      rw [hsplit, List.flatMap_append, List.flatMap_append, List.flatMap_singleton]
+    rw [hpack_split, run_append, run_append]
+    rw [run_packSlots_all_inactive (List.range k0) _ s2
+      (fun k hk => by
+        have hk' : k < k0 := List.mem_range.mp hk
+        exact ⟨by omega, by rw [hs2_F k (by omega)]; simp [Nat.ne_of_lt hk'], hs2_pred k (by omega)⟩)
+      (hs2_QT 102 (by omega) (by omega)) (hs2_QT 103 (by omega) (by omega)) (hs2_QT 104 (by omega) (by omega))]
+    have hrev_split : unpackSlotsProg =
+        (((List.range (11 - (k0 + 1))).map (· + (k0 + 1))).reverse).flatMap unpackSlotProg ++
+        unpackSlotProg k0 ++
+        ((List.range k0).reverse).flatMap unpackSlotProg := by
+      dsimp only [unpackSlotsProg]
+      rw [hsplit, List.reverse_append, List.reverse_append, List.reverse_singleton,
+          List.flatMap_append, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
+    obtain ⟨hp3, hfk0_3, ht0_3, ht1_3, ht2_3, hpred0_3, hoth3, hrt3⟩ :=
+      packSlot_active_and_roundtrip k0 hk0
+        (((m1.drop (measurementCount (treeDecodeCProg ++ clearOrRestoreCProg))).take
+          (measurementCount ((List.range k0).flatMap packSlotProg ++ packSlotProg k0))).drop
+          (measurementCount ((List.range k0).flatMap packSlotProg)))
+        s2 (by rw [hs2_F k0 hk0]; simp)
+        hs2_c1 hs2_c2 hs2_c3 hs2_c4 hs2_c5
+        (hs2_QT 102 (by omega) (by omega)) (hs2_QT 103 (by omega) (by omega)) (hs2_QT 104 (by omega) (by omega))
+    set s3 := run (packSlotProg k0) _ s2
+    have hs3_F_all : ∀ k : Nat, k < 11 → s3.basis (86 + k) = false := by
+      intro k hk
+      by_cases hkk : k = k0
+      · subst hkk; exact hfk0_3
+      · rw [hoth3 (86 + k) (by simp; omega) (by simp only [slotDataRange]; split <;> omega),
+            hs2_F k hk]
+        simp [hkk]
+    have hs3_pred_other : ∀ k : Nat, k < 11 → k ≠ k0 → slotPred k s3.basis = false :=
+      fun k hk hne => slotPred_preserved_of_disjoint k0 k hk0 hk hne s2.basis s3.basis hoth3 hpred0_3 (hs2_pred k hk)
+    rw [run_packSlots_all_inactive ((List.range (11 - (k0 + 1))).map (· + (k0 + 1))) _ s3
+      (fun k hk => by
+        simp only [List.mem_map, List.mem_range] at hk
+        obtain ⟨j, hj, rfl⟩ := hk
+        exact ⟨by omega, hs3_F_all (j + (k0 + 1)) (by omega), hs3_pred_other (j + (k0 + 1)) (by omega) (by omega)⟩)
+      ht0_3 ht1_3 ht2_3]
+    refine ⟨hp3.trans (hp2.trans hp1), ?_, ?_, ?_, ?_⟩
+    · rw [hoth3 6 (by simp; omega) (by simp only [slotDataRange]; split <;> omega), hs2_c6]
+    · intro a ha1 ha2
+      by_cases ha97 : a < 97
+      · have hk : a - 86 < 11 := by omega
+        have ha_eq : 86 + (a - 86) = a := by omega
+        rw [← ha_eq]; exact hs3_F_all (a - 86) hk
+      · by_cases ha102 : a < 102
+        · rw [hoth3 a (by simp; omega) (by simp only [slotDataRange]; split <;> omega)]
+          exact hs2_QT a (by omega) (by omega)
+        · have : a = 102 ∨ a = 103 ∨ a = 104 := by omega
+          rcases this with rfl | rfl | rfl <;> assumption
+    · intro w hw
+      rw [hoth3 w (by simp; omega) (by simp only [slotDataRange]; split <;> omega),
+          hoth2 w (by simp; omega), hoth1 w (by omega)]
+    · rw [run_append, run_append, hrev_split, run_append, run_append]
+      rw [run_unpackSlots_all_inactive (((List.range (11 - (k0 + 1))).map (· + (k0 + 1))).reverse) _ s3
+        (fun k hk => by
+          have hk' := List.mem_reverse.mp hk
+          simp only [List.mem_map, List.mem_range] at hk'
+          obtain ⟨j, hj, rfl⟩ := hk'
+          exact ⟨by omega, hs3_F_all (j + (k0 + 1)) (by omega), hs3_pred_other (j + (k0 + 1)) (by omega) (by omega)⟩)
+        ht0_3 ht1_3 ht2_3]
+      rw [hrt3]
+      rw [run_unpackSlots_all_inactive (List.range k0).reverse _ s2
+        (fun k hk => by
+          have hk' : k < k0 := List.mem_range.mp (List.mem_reverse.mp hk)
+          exact ⟨by omega, by rw [hs2_F k (by omega)]; simp [Nat.ne_of_lt hk'], hs2_pred k (by omega)⟩)
+        (hs2_QT 102 (by omega) (by omega)) (hs2_QT 103 (by omega) (by omega)) (hs2_QT 104 (by omega) (by omega))]
+      rw [clear_or_restore_C_reverse_eq]
+      have hclr_back : ∀ m', run clearOrRestoreCProg m' s2 = s1 := by
+        intro m'
+        obtain ⟨hp4, h6_4, h4_4, h3_4, h2_4, h1_4, hoth4⟩ :=
+          clear_or_restore_C_spec k0 hk0 m' s2 hs2_F
+        cases hs1 : s1 with
+        | mk ph1 bs1 =>
+          cases hs4 : run clearOrRestoreCProg m' s2 with
+          | mk ph4 bs4 =>
+            simp only [hs4] at hp4 h6_4 h4_4 h3_4 h2_4 h1_4 hoth4
+            simp only [hs1] at hp2 h6_2 h4_2 h3_2 h2_2 h1_2 hoth2
+            congr 1
+            · exact hp4.trans hp2
+            · funext (w : Nat)
+              by_cases hw : w ∈ ([1, 2, 3, 4, 6] : List Nat)
+              · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+                rcases hw with rfl | rfl | rfl | rfl | rfl
+                · rw [h1_4, h1_2]; simp
+                · rw [h2_4, h2_2]; simp
+                · rw [h3_4, h3_2]; simp
+                · rw [h4_4, h4_2]; simp
+                · rw [h6_4, h6_2]; simp
+              · rw [hoth4 w hw, hoth2 w hw]
+      rw [hclr_back]
+      have hF1_self : ∀ k, k < 11 → s1.basis (86 + k) = targetF s1.basis k := by
+        intro k hk
+        rw [hF1 k hk]
+        simp only [targetF, hoth1 6 (by omega), hoth1 4 (by omega), hoth1 3 (by omega),
+          hoth1 2 (by omega), hoth1 1 (by omega)]
+      have hrt5 : ∀ m', run treeEraseFProg m' s1 = s0 := by
+        intro m'
+        obtain ⟨hp5, hanc5, hoth5⟩ := tree_erase_F_spec m' s1 hF1_self hQT1
+        cases s0 with
+        | mk ph bs =>
+          simp only at hs0_anc hp1 hoth1
+          cases hr5 : run treeEraseFProg m' s1 with
+          | mk ph5 bs5 =>
+            simp only [hr5] at hp5 hanc5 hoth5
+            congr 1
+            · exact hp5.trans hp1
+            · funext (w : Nat)
+              by_cases hw : w < 86 ∨ 105 ≤ w
+              · exact (hoth5 w hw).trans (hoth1 w hw)
+              · rw [hanc5 w (by omega) (by omega), hs0_anc w (by omega) (by omega)]
+      exact hrt5 _
+
+private theorem packTag_and_direct_roundtrip (s : State) (m1 m2 : List Bool)
+    (hc : cVal s < 87)
+    (hp0 : p0Val s ∈ used7)
+    (hpk : ∀ k : Nat, k < 9 → pkVal k s ∈ used8)
+    (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false) :
+    let packed := run packTagProg m1 s
+    packed.phase = s.phase ∧
+    packed.basis 6 = false ∧
+    (∀ a : Nat, 86 ≤ a → a < 105 → packed.basis a = false) ∧
+    (∀ w : Nat, 105 ≤ w → packed.basis w = s.basis w) ∧
+    run unpackTagProg m2 packed = s := by
+  have hpack_assoc : packTagProg = uP0Prog ++ (treeDecodeCProg ++ clearOrRestoreCProg ++ packSlotsProg) := by
+    simp [packTagProg, List.append_assoc]
+  have hunpack_assoc : unpackTagProg = (unpackSlotsProg ++ clearOrRestoreCProg.reverse ++ treeEraseFProg) ++ uP0Prog.reverse := by
+    simp [unpackTagProg, List.append_assoc]
+  rw [hpack_assoc, hunpack_assoc, run_append]
+  have hmcU : measurementCount uP0Prog = 0 := rfl
+  simp only [hmcU, List.take_zero, List.drop_zero]
+  obtain ⟨hp0u, hoth0u⟩ := uP0Prog_phase_and_outside [] s
+  have hc0 : cVal (run uP0Prog [] s) < 87 := by
+    have hceq : cVal (run uP0Prog [] s) = cVal s := by
+      simp only [cVal, cWires, regValue, List.foldr]
+      rw [hoth0u 0 (by omega), hoth0u 1 (by omega), hoth0u 2 (by omega),
+          hoth0u 3 (by omega), hoth0u 4 (by omega), hoth0u 5 (by omega), hoth0u 6 (by omega)]
+    rw [hceq]; exact hc
+  have hanc0 : ∀ a : Nat, 86 ≤ a → a < 105 → (run uP0Prog [] s).basis a = false :=
+    fun a ha1 ha2 => (hoth0u a (by omega)).trans (hanc a ha1 ha2)
+  have hpred0 : ∀ k, k < 11 → slotPred k (run uP0Prog [] s).basis = false := by
+    intro k hk
+    by_cases hk9 : k < 9
+    · have hpk0 : pkVal k (run uP0Prog [] s) = pkVal k s := by
+        simp only [pkVal, pkWires, pkWire, regValue, List.foldr]
+        rw [hoth0u (14 + 8 * k + 0) (by omega), hoth0u (14 + 8 * k + 1) (by omega),
+            hoth0u (14 + 8 * k + 2) (by omega), hoth0u (14 + 8 * k + 3) (by omega),
+            hoth0u (14 + 8 * k + 4) (by omega), hoth0u (14 + 8 * k + 5) (by omega),
+            hoth0u (14 + 8 * k + 6) (by omega), hoth0u (14 + 8 * k + 7) (by omega)]
+      have hpk_s0 : pkVal k (run uP0Prog [] s) ∈ used8 := by rw [hpk0]; exact hpk k hk9
+      exact used8_slotPred_false k hk9 (run uP0Prog [] s) hpk_s0
+    · have hp := used7_uP0_slotPred_false [] s hp0
+      have : k = 9 ∨ k = 10 := by omega
+      rcases this with rfl | rfl <;> [exact hp.1; exact hp.2]
+  obtain ⟨hph, hb6, hanca, hotha, hrt⟩ :=
+    packTag_inner_roundtrip (run uP0Prog [] s) m1
+      (m2.take (measurementCount (unpackSlotsProg ++ clearOrRestoreCProg.reverse ++ treeEraseFProg)))
+      hc0 hpred0 hanc0
+  refine ⟨hph.trans hp0u, hb6, hanca, fun w hw => (hotha w hw).trans (hoth0u w (by omega)), ?_⟩
+  rw [run_append, hrt]
+  exact uP0Prog_inv [] _ s
+
+/-- Main specification of `packTagProg` (99 T):
+    phase-safe for any measurement tape `m`, clears `C[6]` (wire 6) to `false`,
+    restores all 19 ancillas `86..104` to `false`, and leaves wires `≥ 105` untouched. -/
+theorem packTag_spec (s : State) (m : List Bool)
+    (hc : cVal s < 87)
+    (hp0 : p0Val s ∈ used7)
+    (hpk : ∀ k : Nat, k < 9 → pkVal k s ∈ used8)
+    (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false) :
+    let res := run packTagProg m s
+    res.phase = s.phase ∧
+    res.basis 6 = false ∧
+    (∀ a : Nat, 86 ≤ a → a < 105 → res.basis a = false) ∧
+    (∀ w : Nat, 105 ≤ w → res.basis w = s.basis w) := by
+  have h := packTag_and_direct_roundtrip s m [] hc hp0 hpk hanc
+  exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
+
+/-- Roundtrip specification of `unpackTagProg` (102 T) after `packTagProg` (99 T):
+    if `u` agrees with `run packTagProg m1 s` on wires `0..104` (e.g. after any
+    wire-disjoint computation on wires outside `0..104`), then for any tape `m2`,
+    `run unpackTagProg m2 u` preserves `u.phase`, restores wires `0..104` identically
+    to `s.basis`, and leaves wires `≥ 105` untouched. -/
+theorem unpackTag_packTag_roundtrip (s u : State) (m1 m2 : List Bool)
+    (hc : cVal s < 87)
+    (hp0 : p0Val s ∈ used7)
+    (hpk : ∀ k : Nat, k < 9 → pkVal k s ∈ used8)
+    (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false)
+    (hagree : ∀ w : Nat, w < 105 → u.basis w = (run packTagProg m1 s).basis w) :
+    let res := run unpackTagProg m2 u
+    res.phase = u.phase ∧
+    (∀ w : Nat, w < 105 → res.basis w = s.basis w) ∧
+    (∀ w : Nat, 105 ≤ w → res.basis w = u.basis w) := by
+  obtain ⟨_, _, _, _, hrt⟩ := packTag_and_direct_roundtrip s m1 m2 hc hp0 hpk hanc
+  have hcongr := run_congr_on_wires unpackTagProg m2 u (run packTagProg m1 s)
+    (fun w hw => hagree w (unpackTagProg_wires_lt w hw))
+  have hrt_ph : (run unpackTagProg m2 (run packTagProg m1 s)).phase = (run packTagProg m1 s).phase := by
+    have hp := (packTag_spec s m1 hc hp0 hpk hanc).1
+    rw [hrt, hp]
+  refine ⟨?_, ?_, ?_⟩
+  · have hph := hcongr.1
+    rw [hrt_ph, Bool.xor_self] at hph
+    cases h1 : (run unpackTagProg m2 u).phase <;> cases h2 : u.phase <;> simp_all
+  · intro w hw
+    by_cases hmem : w ∈ wires unpackTagProg
+    · rw [hcongr.2 w hmem, hrt]
+    · rw [run_preserves_outside unpackTagProg m2 u w hmem, hagree w hw]
+      have hsame := run_preserves_outside unpackTagProg m2 (run packTagProg m1 s) w hmem
+      rw [hrt] at hsame
+      exact hsame.symm
+  · intro w hw
+    apply run_preserves_outside unpackTagProg m2 u w
+    intro hmem
+    have hlt : w < 105 := unpackTagProg_wires_lt w hmem
+    exact Nat.not_lt.mpr hw hlt
+
+end ECDSAAdd.Entrant.TagPack1542
+
+end
