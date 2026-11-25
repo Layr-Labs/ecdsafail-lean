@@ -1007,8 +1007,8 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2011038 ∧
-    measurementCount (program C) ≤ 1445926 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2010950 ∧
+    measurementCount (program C) ≤ 1446014 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -1587,7 +1587,7 @@ private theorem cap (C : Point) (cx cy : Fp) :
     slots.measure (Stair44Outer.finite C cx cy)+10891404 :=
   finite_upper C cx cy 10891404 (sum_caps div (mul _))
 
-theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 67241868 := by
+theorem slotBound (C : Point) : gateSlots (WindowCallerCosts.program C) ≤ 67242484 := by
   have h := Stair44Resources.slotBound C
   cases C with
   | zero => change gateSlots [] ≤ _; simp [gateSlots]
@@ -5278,8 +5278,8 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2011038 ∧
-    measurementCount (program C) ≤ 1445926 ∧ gateSlots (program C) ≤ 67241868 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2010950 ∧
+    measurementCount (program C) ≤ 1446014 ∧ gateSlots (program C) ≤ 67242484 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
@@ -5477,7 +5477,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2011038,1445926,1543,67241868⟩
+def bounds : Challenge.Bounds := ⟨2010950,1446014,1543,67242484⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -5486,7 +5486,7 @@ theorem certificateOfSemantics
   physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
   toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1445926
+    change measurementCount (normalizeProgram _) ≤ 1446014
     rw [normalize_measurements]
     exact (WindowParityCaller.metrics C).2.1
   qubits_le C := by
@@ -5494,7 +5494,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 67241868
+    change gateSlots (normalizeProgram _) ≤ 67242484
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 

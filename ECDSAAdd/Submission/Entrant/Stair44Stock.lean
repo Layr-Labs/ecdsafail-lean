@@ -7458,20 +7458,20 @@ private theorem wrapper_facts (d : Nat) (L : ControlledPointLayout) (C : Point) 
   simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
-private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 359≤s) (hy : y≤2151272) :
-    x≤2147597 := by
+private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 359≤s) (hy : y≤2151184) :
+    x≤2147509 := by
   omega
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2147597 :=
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2147509 :=
   toffoli_of_saved _ _ _ (wrapper_facts _ layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
     KnownStageCounts.saved_actual (ReflectionE1TickGap.wrapper_toffoli cx cy hc)
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1498893 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1498981 := by
   have diff:=(wrapper_facts _ layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).2.1
   have old:=ReflectionE1TickGap.wrapper_measurements cx cy hc
   omega
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50463355+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50463971+Rolling1588.slotGrowth := by
   have diff:=(wrapper_facts _ layout C cy _ _ (gen_facts layout layout_widths cx cy)).2.2
   have old:=ReflectionE1TickGap.wrapper_slots C cx cy
   omega
@@ -8383,19 +8383,19 @@ theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (
                                                                        
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2147580 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2147492 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := A161Generic.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1498877 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1498965 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
   have old := A161Generic.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50464717+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50465333+Rolling1588.slotGrowth := by
   have h := (wrapper_counts layout layout_widths C cx cy).2.2
   have old := A161Generic.wrapper_slots C cx cy
   omega
@@ -11019,24 +11019,24 @@ def program (C : Point) : Program :=
                                                                   
                                                                     
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2147568 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2147480 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2147568
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2147480
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1498871 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1498959 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).2.1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
     have old := FiniteFlagInterval.wrapper_measurements cx cy hc
-    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤1498871
+    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤1498959
     omega
 
                                                                   
@@ -11054,7 +11054,7 @@ theorem program_measurements (C : Point) : measurementCount (program C)≤149887
                                                                               
                                                             
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50489632 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50490248 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -11063,7 +11063,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50489632 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=24925 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50489632
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50490248
     omega
 
                                                               
@@ -24508,7 +24508,7 @@ def program (C : Point) : Program :=
                      
                                                                                   
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147321 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147233 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -24517,11 +24517,11 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147321 := by
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
     change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      2147568 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147321
+      2147480 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147233
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498624 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498712 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -24530,8 +24530,8 @@ theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498
     have st := (stage_counts hc).2.1
     have old := CodexYParityProbe.program_measurements (.some hc)
     change measurementCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      1498871 at old
-    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498624
+      1498959 at old
+    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498712
     omega
 
                                                                     
@@ -24556,7 +24556,7 @@ theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498
                                         
                                                 
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50493251 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50493867 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -24564,8 +24564,8 @@ theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50493251 := by
     have st := (stage_counts hc).2.2
     have old := CodexYParityProbe.program_gateSlots (.some hc)
     change gateSlots (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      50489632 at old
-    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50493251
+      50490248 at old
+    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50493867
     omega
 
                                                               
@@ -27672,7 +27672,7 @@ def program2 (C : Point) : Program :=
                      
                                                                                   
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147077 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2146989 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -27680,11 +27680,11 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147077 := 
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147321 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147077
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147233 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2146989
     omega
 
-theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498380 := by
+theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498468 := by
   cases C with
   | zero => simp [program2, measurementCount]
   | @some cx cy hc =>
@@ -27692,8 +27692,8 @@ theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 14
     have o : 505 ≤ measurementCount (oldOut layout (.some hc)) := (old_out_counts hc).2
     have st := (outStage_counts hc).2.1
     have old := program_measurements (.some hc)
-    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498624 at old
-    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498380
+    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498712 at old
+    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498468
     omega
 
                                                                       
@@ -27718,15 +27718,15 @@ theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 14
                                          
                                                 
 
-theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50498912 := by
+theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50499528 := by
   cases C with
   | zero => simp [program2]
   | @some cx cy hc =>
     have r := (counts2_rel hc).2.2
     have st := (outStage_counts hc).2.2
     have old := program_gateSlots (.some hc)
-    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50493251 at old
-    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50498912
+    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50493867 at old
+    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50499528
     omega
 
                                                                  
@@ -28462,24 +28462,24 @@ def program530 (C : Point) : Program :=
                      
                                                                                       
 
-theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤ 2147075 := by
+theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤ 2146987 := by
   cases C with
   | zero => simp [program530, toffoliCount]
   | @some cx cy hc =>
     have old := InputSentinel.program2_toffoli (.some hc)
     have delta := (wrapper_metrics530 hc).1
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147077 at old
-    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤ 2147075
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2146989 at old
+    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤ 2146987
     omega
 
-theorem program_measurements530 (C : Point) : measurementCount (program530 C) ≤ 1498380 := by
+theorem program_measurements530 (C : Point) : measurementCount (program530 C) ≤ 1498468 := by
   cases C with
   | zero => simp [program530, measurementCount]
   | @some cx cy hc =>
     have old := InputSentinel.program2_measurements (.some hc)
     have delta := (wrapper_metrics530 hc).2.1
-    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498380 at old
-    change measurementCount (wrapper530 layout (.some hc) cx cy) ≤ 1498380
+    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498468 at old
+    change measurementCount (wrapper530 layout (.some hc) cx cy) ≤ 1498468
     omega
 
                                                                           
@@ -28498,14 +28498,14 @@ theorem program_measurements530 (C : Point) : measurementCount (program530 C) �
                                           
                                                   
 
-theorem program_slots530 (C : Point) : gateSlots (program530 C) ≤ 50499996 := by
+theorem program_slots530 (C : Point) : gateSlots (program530 C) ≤ 50500612 := by
   cases C with
   | zero => simp [program530]
   | @some cx cy hc =>
     have old := InputSentinel.program2_gateSlots (.some hc)
     have delta := (wrapper_metrics530 hc).2.2
-    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50498912 at old
-    change gateSlots (wrapper530 layout (.some hc) cx cy) ≤ 50499996
+    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50499528 at old
+    change gateSlots (wrapper530 layout (.some hc) cx cy) ≤ 50500612
     omega
 
                                                                        
@@ -34691,38 +34691,38 @@ def programOpt (C : Point) : Program :=
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147066 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2146978 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147075 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147066
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2146987 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2146978
     omega
 
-theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498380 := by
+theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498468 := by
   cases C with
   | zero=>simp [programOpt,measurementCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_measurements530 (.some hc)
     have delta:=(wrapper_metrics hc).2.1
-    change measurementCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤1498380 at old
-    change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498380
+    change measurementCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤1498468 at old
+    change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498468
     omega
 
 
 
 
 
-theorem program_slots (C : Point) : gateSlots (programOpt C)≤50500876 := by
+theorem program_slots (C : Point) : gateSlots (programOpt C)≤50501492 := by
   cases C with
   | zero=>simp [programOpt]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_slots530 (.some hc)
     have delta:=(wrapper_metrics hc).2.2
-    change gateSlots (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤50499996 at old
-    change gateSlots (wrapperOpt layout (.some hc) cx cy)≤50500876
+    change gateSlots (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤50500612 at old
+    change gateSlots (wrapperOpt layout (.some hc) cx cy)≤50501492
     omega
 
 
@@ -41942,38 +41942,38 @@ def programB (C : Point) : Program :=
 
 
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2146562 := by
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2146474 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146562
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146474
     omega
 
-theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498385 := by
+theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498473 := by
   cases C with
   | zero=>simp [programB,measurementCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_measurements (.some hc)
     have delta:=(wrapperN_metrics hc).2.1
-    change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498380 at old
-    change measurementCount (wrapperN layout (.some hc) cx cy)≤1498385
+    change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498468 at old
+    change measurementCount (wrapperN layout (.some hc) cx cy)≤1498473
     omega
 
 
 
 
 
-theorem program_slots_B (C : Point) : Challenge.gateSlots (programB C)≤50506584 := by
+theorem program_slots_B (C : Point) : Challenge.gateSlots (programB C)≤50507200 := by
   cases C with
   | zero=>simp [programB]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_slots (.some hc)
     have delta:=(wrapperN_metrics hc).2.2
-    change Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy)≤50500876 at old
-    change Challenge.gateSlots (wrapperN layout (.some hc) cx cy)≤50506584
+    change Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy)≤50501492 at old
+    change Challenge.gateSlots (wrapperN layout (.some hc) cx cy)≤50507200
     omega
 
 
@@ -49817,32 +49817,32 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147057 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2146969 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146562 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147057
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146474 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2146969
   omega
- theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498884 := by
+ theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498972 := by
  cases C with
  | zero=>simp [programQ,measurementCount]
  | @some cx cy hc=>
   have h:=program_measurements_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.1
-  change measurementCount (wrapperN layout (.some hc) cx cy)≤1498385 at h
-  change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498884
+  change measurementCount (wrapperN layout (.some hc) cx cy)≤1498473 at h
+  change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498972
   omega
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50515743 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50516359 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50506584 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50515743
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50507200 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50516359
   omega
 end ECDSAAdd.Entrant.AboveFieldPointDevelop
 
@@ -57340,8 +57340,8 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10548 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 21460 + 151 + δET + δXT ∧
-      measurementCount (concreteAssembly.program C) ≤ 1498884 + 21096 + δEM + δXM := by
+    toffoliCount (concreteAssembly.program C) ≤ 2146969 + 21460 + 151 + δET + δXT ∧
+      measurementCount (concreteAssembly.program C) ≤ 1498972 + 21096 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
   have qM := AboveFieldPointDevelop.program_measurements_Q C
@@ -57351,8 +57351,8 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
     + the PSQ hole-free square, +151 T): **T ≤ 2,169,074, M ≤ 1,520,242**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2168925 ∧
-      measurementCount (concreteAssembly.program C) ≤ 1520247 := by
+    toffoliCount (concreteAssembly.program C) ≤ 2168837 ∧
+      measurementCount (concreteAssembly.program C) ≤ 1520335 := by
   intro C
   have h := count_totals_of 82 92 175 175
     (fun L => by
@@ -82936,7 +82936,23 @@ theorem undo_on_domain (w:Nat→Wire) (hn:(skywalkPoolWires w).Nodup) (x p i:Nat
       intro q hq
       exact read q (by simp only [SkywalkIntegerLayout.wires,List.mem_append,List.mem_cons]; itauto))]
     exact loc.2.2.2.2.2
-  exact W.ReverseCarry.compactReceiverTick_roundtrip w i hi hn t a b hh clean tops
+  have atop : W.highTick i →
+      t.basis (w (i+W.compactSkywalkTickPreWidth i-1))=t.basis (w (i+W.compactSkywalkTickPreWidth i-2)) := by
+    intro hg
+    have st := W.compactSkywalkStage_atop w hn x p i hp0 hx0 hpo hp hgap hx hc hi hg raw hraw
+    have split := W.compactSkywalkTick_aMid_split w i hi
+    have mem (q : Wire) (h : q∈(W.compactSkywalkTickLayout w i).aMid ∨ q=(W.compactSkywalkTickLayout w i).aSign ∨
+        q∈(W.compactSkywalkTickLayout w i).bMid ∨ q=(W.compactSkywalkTickLayout w i).bSign) :
+        q∈(W.compactSkywalkTickLayout w i).wires := by
+      simp only [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh,
+        List.mem_cons,List.mem_append]
+      itauto
+    have ra := read _ (mem _ (Or.inr (Or.inl rfl)))
+    have la := read (w (i+W.compactSkywalkTickPreWidth i-2))
+      (mem _ (Or.inl (by rw [split.1]; simp)))
+    simp only [W.compactSkywalkTickLayout] at ra
+    rw [ra,la]; exact st
+  exact W.ReverseCarry.compactReceiverTick_roundtrip w i hi hn t a b hh clean tops atop
 
 end ECDSAAdd.Entrant.StairPacket.EndTick4207
 
