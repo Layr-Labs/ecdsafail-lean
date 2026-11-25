@@ -14348,6 +14348,196 @@ theorem template_action20 (n : Nat) (hn : UsedWidth20 n) (slot : Fin 22) (mir : 
 
 end Packed20
 
+/-! Width 94 uses 93 residue coordinates and the leading coefficient.
+For a positive shift the incoming leading coefficient vanishes and the outgoing
+constant coefficient vanishes. In ordinary coordinates adding the monic odd
+modulus P exchanges those two coefficients when they differ. Conjugate one CCX
+by the fan from the leading wire onto supp(P) and by the control-wire swap.
+The correction follows the forward decoder and precedes the inverse encoder. -/
+namespace Endpoint94
+
+private def parts : List (Nat × Nat) := [(257, 1), (21, 1), (31, 1), (11, 1), (13, 1), (19, 1), (25, 1), (73, 1), (2047, 1), (8191, 1), (91, 1), (97, 1), (103, 1), (109, 1), (115, 1), (37, 1)]
+private def pivots : List (Nat × Nat) := [(94, 314397470290195105628885248), (94, 943192410870585316886655745), (94, 1571987351450975528144426241), (94, 4715962054352926584425742087), (94, 5344756994933316795017716737), (94, 7059205699980943390483864595), (94, 9782083262264712151442030869), (94, 1361687241651614034780844927), (94, 3921968581880403758849692673), (94, 7606882043336820051034953730), (94, 7824973603941954797427802373), (94, 7293812983184040217461092874), (94, 2247003280535109211285447957), (94, 4491854931190194458344409642), (94, 8529406077938666038115107137), (94, 6137104167904437343290720898), (94, 7410972020297908845879005843), (94, 3460836976788738018183292198), (94, 6919517621428927660908235340), (20, 6631238232437956054357517101), (21, 4906346941501712796092221018), (94, 3427513400713558286568697753), (25, 5853404292942071937817360113), (94, 6178176274779718390343326483), (94, 5512614946636019227736539351), (94, 2269243453273287001847366062), (28, 8383777512585951947498173443), (28, 2550826147911685165173496837), (94, 3536111358263428061035367433), (94, 9196306919809548796335887387), (94, 5329894893154465025757631531), (94, 2303664434493028975667488854), (94, 4607284615159697510596169900), (94, 4086303470077024920005506419), (94, 8172496547631753358261349094), (94, 5513015982646526686741386700), (41, 6910579836336325990550273971), (94, 2989077487401380066798993254), (41, 4141545996777175503644982809), (94, 8282980445638450855755250738), (41, 4546880372086976973500119217), (94, 8876154079828168314579448162), (94, 7249882512663518371416960021), (94, 6534977159054694266711624537), (94, 5569938200875231967260214721), (94, 8027337196742671092987730161), (94, 3066382991297976382513816209), (94, 8651774087841241200837748659), (94, 5925137789620526324344868710), (94, 1018259523529804566341983948), (94, 2033830839939235587146071448), (94, 4002118192357512448350518064), (53, 5788338445262472903070075453), (94, 7952597187474806574975050266), (94, 1579754888755756080657894921), (56, 4503302006552841186451981921), (57, 8924362795715304811200646338), (94, 3563222757795427083139615060), (94, 8029388944886565019674018191), (62, 4601488718297034996964065937), (63, 8808640373959456855007560994), (62, 7025861689387725356429479032), (63, 2995236107108163917330782448), (94, 5071933262432990568334503724), (94, 4996412911873708962477471193), (94, 1636616041183891480489421746), (94, 9901880478109659259016071439), (94, 8423311079685829038965297694), (94, 6008336553411846109146457148), (94, 1184654081186648268707350648), (94, 8470164608992289395225966777), (74, 2751686951715170046359488971), (75, 4956939432964527705751786390), (94, 7025017121326607114895775326), (75, 400280086309393887383348599), (94, 5069720446265748274054618859), (78, 1886895005354337180715455055), (79, 3773790010708674361430910110), (80, 7547580021417348722861820220), (80, 8028889131877237422735275750), (94, 4601746175569335388138232618), (94, 6404395342019109768681520945), (94, 3975353644641443237605151531), (94, 6389164124126387726237316477), (86, 403373379678960431959407057), (87, 806746759357920863918814114), (94, 2842613317351674666953051582), (94, 5685226634703349333906103164), (90, 1497122595597302705591134317), (91, 2994245191194605411182268634), (92, 5988490382389210822364537268), (92, 5544967271863253067842708188), (94, 1408326976475494915799344140), (94, 8747132895279024927681021049)]
+private def coords : List (Wire × Wire) :=
+  ((pivots.zipIdx.flatMap (fun (row,i) => elimStep 94 i row))).reverse
+private def gather : List (Wire × Wire) := [(93, 0), (93, 3), (93, 4), (93, 5), (93, 6), (93, 10), (93, 18), (93, 25), (93, 26), (93, 27), (93, 31), (93, 33), (93, 35), (93, 36), (93, 40), (93, 41), (93, 42), (93, 43), (93, 44), (93, 47), (93, 48), (93, 49), (93, 50), (93, 51), (93, 53), (93, 54), (93, 56), (93, 57), (93, 58), (93, 61), (93, 62), (93, 68), (93, 69), (93, 70), (93, 72), (93, 74), (93, 76), (93, 77), (93, 78), (93, 80), (93, 81), (93, 86), (93, 90), (93, 91), (93, 92), (0, 92), (92, 0), (0, 92)]
+private def quotientStep : R8Step := ⟨List.range' 1 20, [], 14, 15⟩
+
+private inductive Stage where
+  | encode | decode | collect | scatter | correct | residues
+
+private def pairs : Stage → List (Wire × Wire)
+  | .encode => coords
+  | .decode => coords.reverse
+  | .collect => gather
+  | .scatter => gather.reverse
+  | _ => []
+
+private def emit (mir : Bool) : Stage → Program
+  | .correct => r8Step20 94 78 quotientStep
+  | .residues => components20 94 mir 0 parts
+  | stage => cnotProgram (pairs stage)
+
+private def layers (mir : Bool) : List Stage :=
+  if mir then [.collect,.correct,.scatter,.encode,.residues,.decode]
+  else [.encode,.residues,.decode,.collect,.correct,.scatter]
+
+def program (mir : Bool) : Program := (layers mir).flatMap (emit mir)
+
+private def next (mir : Bool) (slot : Nat) (r : Rows) : Stage → Rows
+  | .correct => r8StepRows20 r slot 78 quotientStep
+  | .residues => componentRows20 mir slot 0 parts r
+  | stage => applyOps (pairs stage) r
+
+private theorem fields : ∀ a ∈ parts, UsedField20 a.1 := by
+  intro a ha
+  simp only [parts, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals simp [UsedField20]
+
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 4000000 in
+private theorem paired (st : Stage) : ∀ a ∈ pairs st, a.1 < 94 ∧ a.2 < 94 := by
+  have h : (pairs st).all (fun a => decide (a.1 < 94 ∧ a.2 < 94)) = true := by
+    cases st <;> decide +kernel
+  exact fun a ha => of_decide_eq_true (List.all_eq_true.mp h _ ha)
+
+private theorem next_size (mir : Bool) (slot : Nat) (r : Rows) (s : Stage) :
+    (next mir slot r s).size = r.size := by cases s <;> simp [next]
+
+private theorem run_stage (mir : Bool) (slot : Fin 22) (x : Nat → Bool)
+    (dim : Nat) (ph : Bool) (r : Rows) (size : r.size = 94) (st : Stage) (m : List Bool) :
+    run (emit mir st) m (frame20 r x dim slot.val ph) =
+      frame20 (next mir slot.val r st) x dim slot.val ph := by
+  have linear (s : Stage) : run (cnotProgram (pairs s)) m (frame20 r x dim slot.val ph) =
+      frame20 (applyOps (pairs s) r) x dim slot.val ph := by
+    simpa only [frame20, applyOps_size] using run_ops (pairs s) r x dim (flags20 r.size slot.val) ph m
+      (fun a ha => by rw [size]; exact paired s a ha)
+  cases st with
+  | encode => exact linear .encode
+  | decode => exact linear .decode
+  | collect => exact linear .collect
+  | scatter => exact linear .scatter
+  | correct =>
+    simpa only [emit, next, size] using frame_r8Step20 r 78 quotientStep
+      (by decide) (by omega) x dim slot.val ph m
+  | residues =>
+    simpa only [emit, next, size] using frame_components20 r mir 0 slot.val dim parts
+      (by have := slot.isLt; omega) (by rw [size]; decide) fields x ph m
+
+private theorem run_layers (mir : Bool) (slot : Fin 22) (x : Nat → Bool) (dim : Nat) (ph : Bool)
+    (xs : List Stage) (r : Rows) (size : r.size = 94) (m : List Bool) :
+    run (xs.flatMap (emit mir)) m (frame20 r x dim slot.val ph) =
+      frame20 (xs.foldl (next mir slot.val) r) x dim slot.val ph := by
+  induction xs generalizing r m with
+  | nil => rfl
+  | cons a tail ih =>
+    rw [List.flatMap_cons, run_append, run_take, run_stage mir slot x dim ph r size a]
+    exact ih _ ((next_size ..).trans size) _
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+private theorem rows_checked : ∀ (slot : Fin 22) (mir : Bool),
+    let dim := 94 - (slot.val - 1)
+    (layers mir).foldl (next mir slot.val) (plain20 94 dim (entryShift mir slot.val)) =
+      plain20 94 dim (exitShift mir slot.val) := by
+  decide +kernel
+
+theorem action (slot : Fin 22) (mir : Bool) (x : Nat → Bool) (ph : Bool) (m : List Bool) :
+    let dim := 94 - (slot.val - 1)
+    run (program mir) m (frame20 (plain20 94 dim (entryShift mir slot.val)) x dim slot.val ph) =
+      frame20 (plain20 94 dim (exitShift mir slot.val)) x dim slot.val ph := by
+  dsimp only
+  rw [program, run_layers _ _ _ _ _ _ _ (plain20_size ..), rows_checked]
+
+def price (mir : Bool) : Count := ⟨213,49,if mir then 16360 else 16336⟩
+
+private def stageCount (mir : Bool) : Stage → Count
+  | .correct => r8StepPrice20 quotientStep
+  | .residues => partsPrice20 mir parts
+  | stage => ⟨0, 0, (pairs stage).length⟩
+
+private theorem count_stage (mir : Bool) (stage : Stage) :
+    count (emit mir stage) = stageCount mir stage := by
+  have linear (s : Stage) :
+      count (cnotProgram (pairs s)) = ⟨0, 0, (pairs s).length⟩ :=
+    count_map_cx Prod.fst Prod.snd (pairs s)
+  cases stage with
+  | encode => exact linear .encode
+  | decode => exact linear .decode
+  | collect => exact linear .collect
+  | scatter => exact linear .scatter
+  | correct => exact r8Step20_count 94 78 quotientStep
+  | residues =>
+    exact components20_count 94 mir 0 parts
+      (fun pair hp => field20_count pair.1 (fields pair hp) mir)
+
+set_option maxRecDepth 50000 in
+set_option maxHeartbeats 4000000 in
+theorem metrics (mir : Bool) : count (program mir) = price mir := by
+  unfold program
+  rw [count_flatMap _ _ (count_stage mir)]
+  cases mir <;> decide +kernel
+
+private def physical : Instr → Bool
+  | .X _ | .measureX _ _ _ => true
+  | .CX a t => a != t
+  | .CCX a b t => a != t && b != t
+
+private theorem physical_of {i : Instr} (h : physical i = true) :
+    RecordedQuantum.PhysicalInstr (.gate i) := by
+  cases i with
+  | X _ => trivial
+  | measureX _ _ _ => trivial
+  | CX _ _ => exact bne_iff_ne.mp h
+  | CCX _ _ _ => simpa only [physical, Bool.and_eq_true, bne_iff_ne] using h
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+theorem fits (mir : Bool) : Fits (· < 94 + 31) (program mir) := by
+  have receipt : (program mir).all (fun i =>
+      physical i && (StairWireCheck.instrWs i).all (fun q => decide (q < 125))) = true := by
+    cases mir <;> decide +kernel
+  intro i hi
+  have ok := List.all_eq_true.mp receipt i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨hp, hw⟩ := ok
+  exact ⟨physical_of hp, fun q hq => of_decide_eq_true
+    (List.all_eq_true.mp hw q ((StairWireCheck.mem_instrWs q i).mpr hq))⟩
+
+end Endpoint94
+
+/-- Only width 94 uses the leading-coefficient extension. -/
+def selectedLogical20 (n : Nat) (mir : Bool) : Program :=
+  if n = 94 then Endpoint94.program mir else logical20 n mir
+
+def selectedPrice20 (n : Nat) (mir : Bool) : Count :=
+  if n = 94 then Endpoint94.price mir else listedPrice20 n mir
+
+theorem selected20_metrics (n : Nat) (hn : UsedWidth20 n) (mir : Bool) :
+    count (selectedLogical20 n mir) = selectedPrice20 n mir := by
+  by_cases h : n = 94
+  · subst n; exact Endpoint94.metrics mir
+  · simpa [selectedLogical20, selectedPrice20, h] using logical20_metrics n hn mir
+
+theorem selected20_fits (n : Nat) (hn : UsedWidth20 n) (mir : Bool) :
+    Fits (· < n + 31) (selectedLogical20 n mir) := by
+  by_cases h : n = 94
+  · subst n; exact Endpoint94.fits mir
+  · simpa [selectedLogical20, h] using logical20_fits n hn mir
+
+theorem selected20_action (n : Nat) (hn : UsedWidth20 n) (slot : Fin 22) (mir : Bool)
+    (x : Nat → Bool) (ph : Bool) (m : List Bool) :
+    let dim := n - (slot.val - 1)
+    run (selectedLogical20 n mir) m (frame20 (plain20 n dim (entryShift mir slot.val)) x dim slot.val ph) =
+      frame20 (plain20 n dim (exitShift mir slot.val)) x dim slot.val ph := by
+  by_cases h : n = 94
+  · subst n; exact Endpoint94.action slot mir x ph m
+  · simpa only [selectedLogical20, if_neg h] using logical20_action n hn mir slot.val
+      (by have := slot.isLt; omega) (Packed20.coordinates_checked20 n hn)
+      (Packed20.template_action20 n hn slot mir) x ph m
+
+
 /-! ## Generic physical barrel theorem (decoupled from any caller layout) -/
 
 theorem barrel20_result (n : Nat) (hn : UsedWidth20 n) (mir : Bool) (slot : Fin 22)
@@ -14361,16 +14551,16 @@ theorem barrel20_result (n : Nat) (hn : UsedWidth20 n) (mir : Bool) (slot : Fin 
     (input : ∀ i < n, s.basis (bank i) = (v <<< entryShift mir slot.val).testBit i)
     (tag : ∀ k < 21, s.basis (tagW k) = decide (slot.val = k + 1))
     (scratch : ∀ k < 10, s.basis (scrW k) = false) :
-    let s' := run (renameProgram f (logical20 n mir)) tape s
+    let s' := run (renameProgram f (selectedLogical20 n mir)) tape s
     (∀ i < n, s'.basis (bank i) = (v <<< exitShift mir slot.val).testBit i) ∧
     s'.phase = s.phase ∧
     (∀ q, (∀ i < n, q ≠ bank i) → s'.basis q = s.basis q) := by
   let dim := n - (slot.val - 1)
-  let P := logical20 n mir
+  let P := selectedLogical20 n mir
   let S := Finset.range (n + 31)
   let before := entryShift mir slot.val
   let after := exitShift mir slot.val
-  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support (logical20_fits n hn mir) _ hw)
+  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support (selected20_fits n hn mir) _ hw)
   have inj : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b :=
     fun a ha b hb => hinj a (Finset.mem_range.mp ha) b (Finset.mem_range.mp hb)
   have bankBit (k i : Nat) (ik : i < n) :
@@ -14397,8 +14587,7 @@ theorem barrel20_result (n : Nat) (hn : UsedWidth20 n) (mir : Bool) (slot : Fin 
       by_cases low : q < n
       · rw [bankBit before q low, hf_bank q low]; exact (input q low).symm
       · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq))
-  have shift := logical20_action n hn mir slot.val (by have := slot.isLt; omega)
-    (Packed20.coordinates_checked20 n hn) (Packed20.template_action20 n hn slot mir) v.testBit s.phase tape
+  have shift := selected20_action n hn slot mir v.testBit s.phase tape
   change run P tape (frame20 (plain20 n dim before) _ _ _ _) = frame20 (plain20 n dim after) _ _ _ _ at shift
   rw [shift] at result
   refine ⟨?_, result.1, ?_⟩
@@ -15542,11 +15731,11 @@ def place20 (s : Nat) (q : Nat) : Wire :=
   else poolW20 s (22 + (q - n - 21))
 
 def barrel20 (s : Nat) (mir : Bool) : Program :=
-  renameProgram (place20 s) (CRTBarrel20.logical20 (liveW20 s) mir)
+  renameProgram (place20 s) (CRTBarrel20.selectedLogical20 (liveW20 s) mir)
 
-def barrel20T (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).t
-def barrel20M (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).m
-def barrel20Slots (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).slots
+def barrel20T (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.selectedPrice20 (liveW20 s) mir).t
+def barrel20M (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.selectedPrice20 (liveW20 s) mir).m
+def barrel20Slots (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.selectedPrice20 (liveW20 s) mir).slots
 
 theorem place20_inj (j : Fin 9) :
     ∀ a < liveW20 (start20 j) + 31, ∀ b < liveW20 (start20 j) + 31,
@@ -15607,8 +15796,8 @@ theorem barrel20_metrics (j : Fin 9) (mir : Bool) :
     measurementCount (barrel20 (start20 j) mir) = barrel20M (start20 j) mir ∧
     gateSlots (barrel20 (start20 j) mir) = barrel20Slots (start20 j) mir := by
   have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
-  have hm := CRTBarrel20.logical20_metrics (liveW20 (start20 j)) hu mir
-  have hr : CRTBarrel20.count (barrel20 (start20 j) mir) = CRTBarrel20.count (CRTBarrel20.logical20 (liveW20 (start20 j)) mir) :=
+  have hm := CRTBarrel20.selected20_metrics (liveW20 (start20 j)) hu mir
+  have hr : CRTBarrel20.count (barrel20 (start20 j) mir) = CRTBarrel20.count (CRTBarrel20.selectedLogical20 (liveW20 (start20 j)) mir) :=
     CRTBarrel20.count_rename (place20 (start20 j)) _
   rw [hm] at hr
   exact ⟨congrArg CRTBarrel20.Count.t hr,
@@ -15618,7 +15807,7 @@ theorem barrel20_metrics (j : Fin 9) (mir : Bool) :
 theorem barrel20_phys (j : Fin 9) (mir : Bool) :
     GatePhysical (barrel20 (start20 j) mir) := by
   have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
-  have hf := CRTBarrel20.logical20_fits (liveW20 (start20 j)) hu mir
+  have hf := CRTBarrel20.selected20_fits (liveW20 (start20 j)) hu mir
   have hr := CRTBarrel20.fits_rename (Q := fun _ => True) (f := place20 (start20 j)) hf
     (fun _ _ => trivial) (fun a ha b hb => place20_inj j a ha b hb)
   intro g hg
@@ -15630,7 +15819,7 @@ theorem barrel20_wires (j : Fin 9) (mir : Bool) (q : Wire)
     (∃ k < 10, q = poolW20 (start20 j) (22 + k)) ∨
     q ∈ tagsP20 := by
   have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
-  have hf := CRTBarrel20.logical20_fits (liveW20 (start20 j)) hu mir
+  have hf := CRTBarrel20.selected20_fits (liveW20 (start20 j)) hu mir
   rw [barrel20, renameProgram_support] at hq
   obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hq
   have hxlt : x < liveW20 (start20 j) + 31 := CRTBarrel20.support hf x hx
