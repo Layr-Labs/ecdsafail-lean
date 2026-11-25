@@ -3079,7 +3079,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (6 + 30 * (Shadow7.smallBits j20 + 16) + 9 + 9 + 41 +
       (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 3 * Shadow7.lowsP 345 + 95 + CRTBarrel.barrelT 345 false)) +
     (suffixPairs.map (fun p => b15TF p.2)).sum +
-    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126819 ∧
+    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126691 ∧
     (4 * Shadow7.wpP 45 - 7 + 2 + 15 * (Shadow7.smallBits j0 + 16) + 4 +
       (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 87 + CRTBarrel.barrelM 45 false)) +
     (prefixPairs.map (fun p => b15MF d p.2)).sum +
@@ -3088,7 +3088,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (2 + 15 * (Shadow7.smallBits j20 + 16) + 4 + 4 + (if d then 48 else 49) +
       (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 87 + CRTBarrel.barrelM 345 false)) +
     (suffixPairs.map (fun p => b15MF d p.2)).sum +
-    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65393 else 65415) ∧
+    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65319 else 65341) ∧
     ((if d then 50 else 51) + 11 + WindowParams.recvT 420 + (4 * Shadow7.wpP 420 - 2) + 0) +
     (suffixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 125 + CRTBarrel.barrelT 345 true) +
@@ -3097,7 +3097,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (457 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
     (prefixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 125 + CRTBarrel.barrelT 45 true) +
-      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126969 else 126991) ∧
+      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126757 else 126779) ∧
     ((if d then 43 else 44) + 2 + WindowParams.recvM 420 + (4 * Shadow7.wpP 420 - 7) + 0) +
     (suffixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 57 + CRTBarrel.barrelM 345 true) +
@@ -3106,7 +3106,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (262 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
     (prefixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 57 + CRTBarrel.barrelM 45 true) +
-      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64977 else 64999) := by
+      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64987 else 65009) := by
   cases d <;> decide +kernel
 
 attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shadow7.enterInvP
@@ -3116,10 +3116,10 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   archiveLoadP20 archiveRestoreP20 leave150To20Red leaveInv150To20Red archiveLoad150To20 archiveRestore150To20
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forwardMixed d) = 126819 ∧
-    toffoliCount (reverseMixed d) = (if d then 126927 else 126949) ∧
-    measurementCount (forwardMixed d) = (if d then 65393 else 65415) ∧
-    measurementCount (reverseMixed d) = (if d then 65019 else 65041) := by
+    toffoliCount (forwardMixed d) = 126691 ∧
+    toffoliCount (reverseMixed d) = (if d then 126715 else 126737) ∧
+    measurementCount (forwardMixed d) = (if d then 65319 else 65341) ∧
+    measurementCount (reverseMixed d) = (if d then 65029 else 65051) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
   have hfM := measure_flatten measurementCount measurementCount_append (forwardL d)
@@ -9114,10 +9114,10 @@ theorem mixedCut_run_eq (d : Bool) :
    funext fun m => funext fun s => (MixedFredCut.rev_mixed_cut d).run_eq m s⟩
 
 theorem mixedCut_counts (d : Bool) :
-    toffoliCount (forwardMixedCut d) = 126727 ∧
-    toffoliCount (reverseMixedCut d) = (if d then 126835 else 126857) ∧
-    measurementCount (forwardMixedCut d) = (if d then 65393 else 65415) ∧
-    measurementCount (reverseMixedCut d) = (if d then 65019 else 65041) := by
+    toffoliCount (forwardMixedCut d) = 126599 ∧
+    toffoliCount (reverseMixedCut d) = (if d then 126623 else 126645) ∧
+    measurementCount (forwardMixedCut d) = (if d then 65319 else 65341) ∧
+    measurementCount (reverseMixedCut d) = (if d then 65029 else 65051) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
   have htr := (MixedFredCut.rev_mixed_cut d).tc_eq
@@ -9812,10 +9812,10 @@ theorem resource_delta (d : Bool) :
   simpa only [pieces_old,pieces_new,pieces_saving,reverse,MixedWindow.reverseMixedCut] using h
 
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forward d) = 126727 ∧
-    toffoliCount (reverse d) = (if d then 126664 else 126686) ∧
-    measurementCount (forward d) = (if d then 65393 else 65415) ∧
-    measurementCount (reverse d) = (if d then 65190 else 65212) := by
+    toffoliCount (forward d) = 126599 ∧
+    toffoliCount (reverse d) = (if d then 126452 else 126474) ∧
+    measurementCount (forward d) = (if d then 65319 else 65341) ∧
+    measurementCount (reverse d) = (if d then 65200 else 65222) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d
   cases d <;> simp only [Bool.false_eq_true,↓reduceIte,forward] at old h ⊢ <;>
@@ -12111,7 +12111,7 @@ theorem core20_result (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.St
       href_out _ (by omega) (by unfold Wire at *; omega) (by unfold Wire at *; omega)]
     exact (keptE _ (by omega)).trans (hp ▸ crtScratch r hr)
   let n3 := n2.drop (measurementCount (GateMirror.forward (leaveAdjust20 (start20 j))))
-  have hBar := barrel20_result j false slot H uAdj n3 hH_narrow hBar_in hBar_tags hBar_scr
+  have hBar := barrel20_result j false slot H uAdj n3 hH_lt_wp hH_narrow hBar_in hBar_tags hBar_scr
   generalize huBar_def : run (barrel20 (start20 j) false) n3 uAdj = uBar at hBar
   have hBar_out_pad : ∀ i, liveW20 (start20 j) ≤ i → i < wpP20 (start20 j) + 20 →
       uBar.basis (bankW20 (start20 j) i) = ((H <<< (slot.val - 1)).testBit i) := by
@@ -17564,6 +17564,7 @@ private theorem phase_step_any20 (P Q : Program) (s : State)
 
 attribute [local irreducible] run barrel20 in
 theorem barrel20_roundtrip (j : Fin 9) (slot : Fin 22) (v : Nat) (u : State) (m n : List Bool)
+    (admitted : v < 2 ^ wpP20 (start20 j))
     (small : v < 2 ^ (liveW20 (start20 j) - (slot.val - 1)))
     (input : HighBankBarrel.holds (bankW20 (start20 j)) (liveW20 (start20 j))
       (v <<< CRTBarrel20.entryShift false slot.val) u)
@@ -17573,7 +17574,7 @@ theorem barrel20_roundtrip (j : Fin 9) (slot : Fin 22) (v : Nat) (u : State) (m 
   have hg := geom20_facts j; dsimp only at hg
   have hb0 : b0P20 (start20 j) = 787 + sbP20 (start20 j) := rfl
   have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
-  have hf := barrel20_result j false slot v u m small input tag scratch
+  have hf := barrel20_result j false slot v u m admitted small input tag scratch
   have htag_out : ∀ k < 21, HighBankBarrel.outside (bankW20 (start20 j)) (liveW20 (start20 j)) (tagsP20.getD k 0) := by
     intro k hk i hi e
     have tr := tagsP20_getD_range hk
@@ -17589,7 +17590,7 @@ theorem barrel20_roundtrip (j : Fin 9) (slot : Fin 22) (v : Nat) (u : State) (m 
     simp [CRTBarrel20.exitShift, CRTBarrel20.entryShift]
   have hshift0 : CRTBarrel20.exitShift true slot.val = CRTBarrel20.entryShift false slot.val := by
     simp [CRTBarrel20.exitShift, CRTBarrel20.entryShift]
-  have hb := barrel20_result j true slot v (run (barrel20 (start20 j) false) m u) n small
+  have hb := barrel20_result j true slot v (run (barrel20 (start20 j) false) m u) n admitted small
     (hshift ▸ hf.bits)
     (fun k hk => (hf.frame _ (htag_out k hk)).trans (tag k hk))
     (fun k hk => (hf.frame _ (hscr_out k hk)).trans (scratch k hk))
@@ -18135,6 +18136,9 @@ theorem barrel20_mid_rt (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
     exact (LeaveReadoutFrame.preserved _ _ _ _ hnotDst).trans (hcrt r hr)
   -- Value H = regValue (ys20 j) uB.basis, and padding bits wpP20..liveW20-1 are false in uB
   let H := regValue (ys20 j) uB.basis
+  have hH_lt_wp : H < 2 ^ wpP20 (start20 j) := by
+    simpa only [H, ys20, List.length_map, List.length_range] using
+      regValue_lt (ys20 j) uB.basis
   have hH_holds : HighBankBarrel.holds (bankW20 (start20 j)) (liveW20 (start20 j)) (H <<< CRTBarrel20.entryShift false slot.val) uB := by
     simp only [CRTBarrel20.entryShift, Bool.false_eq_true, ↓reduceIte, Nat.shiftLeft_zero]
     intro i hi
@@ -18280,8 +18284,8 @@ theorem barrel20_mid_rt (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
       rw [hH0]; exact Nat.two_pow_pos _
   dsimp only
   intro t
-  exact ⟨barrel20_roundtrip j slot H uB _ t hH_small hH_holds htag_uB hscr_uB,
-    (barrel20_result j false slot H uB t hH_small hH_holds htag_uB hscr_uB).phase⟩
+  exact ⟨barrel20_roundtrip j slot H uB _ t hH_lt_wp hH_small hH_holds htag_uB hscr_uB,
+    (barrel20_result j false slot H uB t hH_lt_wp hH_small hH_holds htag_uB hscr_uB).phase⟩
 
 theorem leaveAfter20_valid (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.State) (g0 s0 : Bool)
     (h : Inputs20 j s z g0 s0) :

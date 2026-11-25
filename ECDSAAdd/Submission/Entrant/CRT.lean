@@ -4200,8 +4200,43 @@ theorem after7S_counts (j : Fin 26) (hi : j.val ≤ 24) :
     (selectorSources (start j)) false
   simpa only [selectorPop, selectorSources, List.length_cons, List.length_nil, Bool.toNat_false, Nat.add_zero] using c
 
+-- The first seven low-store carries supply the fixed receiver wires.
+-- The close-flag pop supplies the remaining selector wire.
+private def recvWireWitness (s : Nat) : List Gate :=
+  (lowRest7 s).take (3 + 2 * (Shadow7.lowsP s - 1) + 7) ++
+    [.pop (Shadow7.e0P s + 7) 1556 (Shadow7.e0P s + 4)]
+
+private theorem recv_localCoverage : ∀ j : Fin 26, j.val ≤ 24 →
+    (receiver 1565 false (selectorSources (start j))).all (fun g =>
+      g.wires.all (fun q => ((recvWireWitness (start j)).flatMap Gate.wires).contains q)) = true := by
+  decide +kernel
+
 theorem recv_wiresCovered : ∀ j : Fin 26, j.val ≤ 24 → (receiver 1565 false (selectorSources (start j))).all (fun g =>
-    g.wires.all (fun q => ((after7K (start j)).flatMap Gate.wires).contains q)) = true := by decide +kernel
+    g.wires.all (fun q => ((after7K (start j)).flatMap Gate.wires).contains q)) = true := by
+  intro j hi
+  let s := start j
+  apply List.all_eq_true.mpr
+  intro g hg
+  apply List.all_eq_true.mpr
+  intro q hq
+  have found := List.all_eq_true.mp (List.all_eq_true.mp (recv_localCoverage j hi) g hg) q hq
+  obtain ⟨k, hk, hwire⟩ := List.mem_flatMap.mp (List.contains_iff_mem.mp found)
+  apply List.contains_iff_mem.mpr
+  apply List.mem_flatMap.mpr
+  refine ⟨k, ?_, hwire⟩
+  change k ∈ recvWireWitness s at hk
+  rw [recvWireWitness] at hk
+  rcases List.mem_append.mp hk with hlow | hflag
+  · have used : k ∈ lowRest7 s := List.mem_of_mem_take hlow
+    simp only [after7K, afterRest7, afterPre7Tail, List.mem_append]
+    tauto
+  · rw [List.mem_singleton] at hflag
+    subst k
+    have used : Gate.pop (Shadow7.e0P s + 7) 1556 (Shadow7.e0P s + 4) ∈ Shadow7.leaveClose s := by
+      simp only [Shadow7.leaveClose, Shadow7.closeFlag, Shadow7.parityG, List.mem_append]
+      exact Or.inl (Or.inr (Or.inl (by simp)))
+    simp only [after7K, afterRest7, afterPost7, List.mem_append]
+    tauto
 
 theorem recv_physical : ∀ j : Fin 26, j.val ≤ 24 →
     (receiver 1565 false (selectorSources (start j))).all proper = true := by decide +kernel
@@ -8634,47 +8669,6 @@ private theorem components_eq_fast (mir : Bool) (slot : Nat) (r : Rows) :
   have h31 : CRTBarrel.fieldDegree 31 = 4 := by decide +kernel
   simp [factors,CRTBarrel.componentRows,primary_one_fast,fastComponents,h7,h11,h31]
 
-private theorem fast_forward_rows : ∀ (slot : Fin 17),
-    (boundaryRows (fastComponents false slot.val (fastCoded slot.val 0)) slot.val).toList =
-      (fastCoded slot.val (slot.val-1)).toList := by
-  decide +kernel
-
-private theorem fast_reverse_rows : ∀ (slot : Fin 17),
-    (fastComponents true slot.val (boundaryRows (fastCoded slot.val (slot.val-1)) slot.val)).toList =
-      (fastCoded slot.val 0).toList := by
-  decide +kernel
-
-attribute [local irreducible] componentRows fastComponents CRTResidueS45.coded fastCoded boundaryRows
-
-theorem forward_rows_export (slot : Fin 17) :
-    boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
-      coded slot.val (slot.val-1) := by
-  let k := slot.val - 1
-  let r := coded slot.val 0
-  let fastR := fastCoded slot.val 0
-  let applyForward (rows : Rows) := boundaryRows (fastComponents false slot.val rows) slot.val
-  have head : boundaryRows (componentRows false slot.val 0 factors r) slot.val = applyForward r :=
-    congrArg (fun w => boundaryRows w slot.val) (components_eq_fast false slot.val r)
-  have codedInput : r = fastR := coded_fast slot.val 0
-  have step : applyForward fastR = fastCoded slot.val k :=
-    Array.toList_inj.mp (fast_forward_rows slot)
-  have decodedOutput : fastCoded slot.val k = coded slot.val k := (coded_fast slot.val k).symm
-  exact head.trans ((congrArg applyForward codedInput).trans (step.trans decodedOutput))
-
-theorem reverse_rows_export (slot : Fin 17) :
-    componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val) =
-      coded slot.val 0 := by
-  let k := slot.val - 1
-  let r := coded slot.val k
-  let fastR := fastCoded slot.val k
-  let applyReverse (rows : Rows) := fastComponents true slot.val (boundaryRows rows slot.val)
-  have head : componentRows true slot.val 0 factors (boundaryRows r slot.val) = applyReverse r :=
-    components_eq_fast true slot.val (boundaryRows r slot.val)
-  have codedInput : r = fastR := coded_fast slot.val k
-  have step : applyReverse fastR = fastCoded slot.val 0 :=
-    Array.toList_inj.mp (fast_reverse_rows slot)
-  have decodedOutput : fastCoded slot.val 0 = coded slot.val 0 := (coded_fast slot.val 0).symm
-  exact head.trans ((congrArg applyReverse codedInput).trans (step.trans decodedOutput))
 end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
 end
 
@@ -9099,126 +9093,6 @@ theorem fields_run (r : Rows) (sz : r.size = width) (mir : Bool) (slot : Fin 17)
 
 
 end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
-
-namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
-open Arithmetic CRTBarrel CRTBarrel.Matrix
-set_option maxHeartbeats 100000
-attribute [local irreducible] run frame components componentRows CRTResidueS45.coded
-  CRTBarrel.plain corrections boundaryRows cnotProgram
-
-def residueFrame (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (rows : Rows) : State :=
-  frame rows x (dim slot.val) slot.val ph
-
-private theorem run_four (a b c d : Program) (s0 s1 s2 s3 s4 : State)
-    (tape : List Bool) (ha : ∀ m, run a m s0 = s1) (hb : ∀ m, run b m s1 = s2)
-    (hc : ∀ m, run c m s2 = s3) (hd : ∀ m, run d m s3 = s4) :
-    run (a ++ (b ++ (c ++ d))) tape s0 = s4 := by
-  simp only [run_append,ha,hb,hc,hd]
-
-private theorem forward_rows (slot : Fin 17) :
-    boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
-      coded slot.val (slot.val-1) :=
-  forward_rows_export slot
-
-
-private theorem forward_program :
-    logicalResidue false =
-      cnotProgram encoding ++ (components width false 0 factors ++
-        (corrections false ++ (cnotProgram encoding).reverse)) := by
-  simp only [logicalResidue,cnotProgram,Bool.false_eq_true,if_false,List.append_assoc]
-
-
-theorem logical_forward_stages (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (tape : List Bool)
-    (encode : ∀ m, run (cnotProgram encoding) m
-      (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) =
-      residueFrame slot x ph (coded slot.val 0))
-    (scalar : ∀ m, run (components width false 0 factors) m (residueFrame slot x ph (coded slot.val 0)) =
-      residueFrame slot x ph (componentRows false slot.val 0 factors (coded slot.val 0)))
-    (correct : ∀ m, run (corrections false) m
-      (residueFrame slot x ph (componentRows false slot.val 0 factors (coded slot.val 0))) =
-      residueFrame slot x ph (boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val))
-    (decode : ∀ m, run (cnotProgram encoding).reverse m
-      (residueFrame slot x ph (coded slot.val (slot.val-1))) =
-      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) :
-    run (logicalResidue false) tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) =
-      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1)) := by
-  have corrected (m : List Bool) := (correct m).trans (congrArg (residueFrame slot x ph) (forward_rows slot))
-  have stages := run_four _ _ _ _ _ _ _ _ _ tape encode scalar corrected decode
-  have shape := congrArg (fun p =>
-    run p tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0))) forward_program
-  exact shape.trans stages
-
-
-private theorem reverse_program :
-    logicalResidue true =
-      cnotProgram encoding ++ (corrections true ++
-        (components width true 0 factors ++ (cnotProgram encoding).reverse)) := by
-  simp only [logicalResidue,cnotProgram,if_true,List.append_assoc]
-
-
-theorem logical_reverse_stages (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (tape : List Bool)
-    (encode : ∀ m, run (cnotProgram encoding) m
-      (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) =
-      residueFrame slot x ph (coded slot.val (slot.val-1)))
-    (correct : ∀ m, run (corrections true) m (residueFrame slot x ph (coded slot.val (slot.val-1))) =
-      residueFrame slot x ph (boundaryRows (coded slot.val (slot.val-1)) slot.val))
-    (scalar : ∀ m, run (components width true 0 factors) m
-      (residueFrame slot x ph (boundaryRows (coded slot.val (slot.val-1)) slot.val)) =
-      residueFrame slot x ph (componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val)))
-    (decode : ∀ m, run (cnotProgram encoding).reverse m (residueFrame slot x ph (coded slot.val 0)) =
-      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) :
-    run (logicalResidue true) tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) =
-      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0) := by
-  have reduced (m : List Bool) := (scalar m).trans (congrArg (residueFrame slot x ph) (reverse_rows_export slot))
-  have stages := run_four _ _ _ _ _ _ _ _ _ tape encode correct reduced decode
-  have shape := congrArg (fun p =>
-    run p tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1)))) reverse_program
-  exact shape.trans stages
-
-
-end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
-
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
-namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
-open Arithmetic CRTBarrel CRTBarrel.Matrix
-attribute [local irreducible] run frame components componentRows CRTResidueS45.coded
-  CRTBarrel.plain corrections boundaryRows cnotProgram
-theorem logical_run (slot : Fin 17) (mir : Bool) (x : Nat → Bool)
-    (ph : Bool) (tape : List Bool) :
-    run (logicalResidue mir) tape (frame (CRTBarrel.plain width (dim slot.val) (entryShift mir slot.val))
-      x (dim slot.val) slot.val ph) =
-      frame (CRTBarrel.plain width (dim slot.val) (exitShift mir slot.val))
-        x (dim slot.val) slot.val ph := by
-  let k := slot.val - 1
-  let unshifted := coded slot.val 0
-  let shifted := coded slot.val k
-  have uSize : unshifted.size = width := coded_size slot.val 0
-  have sSize : shifted.size = width := coded_size slot.val k
-  cases mir
-  · have enters : entryShift false slot.val = 0 := rfl
-    have exits : exitShift false slot.val = k := rfl
-    rw [enters,exits]
-    let core := componentRows false slot.val 0 factors unshifted
-    have coreSize : core.size = width := (componentRows_size ..).trans uSize
-    exact logical_forward_stages slot x ph tape (encode_run slot 0 x ph)
-      (fields_run unshifted uSize false slot (dim slot.val) x ph)
-      (fun m => corrections_run core coreSize slot false x (dim slot.val) ph m (by
-        intro impossible
-        cases impossible))
-      (decode_run slot k x ph)
-  · have enters : entryShift true slot.val = k := rfl
-    have exits : exitShift true slot.val = 0 := rfl
-    rw [enters,exits]
-    let clear := boundaryRows shifted slot.val
-    have clearSize : clear.size = width := (boundary_size ..).trans sSize
-    exact logical_reverse_stages slot x ph tape (encode_run slot k x ph)
-      (fun t => corrections_run shifted sSize slot true x (dim slot.val) ph t
-        (fun _ => reversePrepared slot))
-      (fields_run clear clearSize true slot (dim slot.val) x ph)
-      (decode_run slot 0 x ph)
-end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
-end
 
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
@@ -10074,6 +9948,208 @@ theorem correction_boundary (n D : Nat) (sources : List (List Nat)) (rs : Rows)
 end ECDSAAdd.Entrant.StairPacket.CRTResidueCorrection
 
 
+
+
+section
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+open CRTBarrel CRTBarrel.Matrix
+set_option maxRecDepth 30000
+set_option maxHeartbeats 1200000
+
+private theorem encoded_size_reusable : encodedRows.size = width := rfl
+
+private theorem reusable_prefix :
+    CRTBarrel.Packed.residueTable width encodedRows 0 factors = true := by
+  decide +kernel
+
+private theorem quotientMasksReusable : ∀ i : Fin 14,
+    let sites := quotientParity.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (17+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ sites.Nodup ∧ (∀ j ∈ sites, j < 17) ∧
+      q &&& (2^(17+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  decide +kernel
+
+private theorem reusable_masks : CRTResidueCorrection.MaskOK width retained quotientParity encodedRows := by
+  intro i
+  have h := quotientMasksReusable i
+  exact ⟨h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
+
+private theorem coded_as_window (slot k : Nat) :
+    coded slot k = _root_.ECDSAAdd.Entrant.StairPacket.CRTBarrel.Packed.windowRows encodedRows (dim slot) k :=
+  coded_fast slot k
+
+private theorem boundary_as_correction (rs : Rows) (slot : Nat) :
+    boundaryRows rs slot = CRTResidueCorrection.correctionRows width retained quotientParity rs slot := rfl
+
+attribute [local irreducible] coded boundaryRows componentRows encodedRows in
+private theorem reusable_row_motion (slot : Fin 17) :
+    (boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
+      coded slot.val (slot.val-1)) ∧
+    (componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val) =
+      coded slot.val 0) := by
+  let k := slot.val-1
+  let d := dim slot.val
+  let core (h : Nat) := _root_.ECDSAAdd.Entrant.StairPacket.CRTBarrel.Packed.windowRows (_root_.ECDSAAdd.Entrant.StairPacket.CRTBarrel.Packed.keepPrefix encodedRows retained) d h
+  have size : encodedRows.size = width := encoded_size_reusable
+  have inDim : d ≤ retained := Nat.min_le_left ..
+  have fits : d ≤ width-k := Nat.min_le_right ..
+  have factorExtent : CRTBarrel.Placement.extent factors = retained := by decide +kernel
+  have retained_le : retained ≤ width := by decide
+  have prefixF : componentRows false slot.val 0 factors (core 0) = core k :=
+    CRTBarrel.Packed.componentRows_keepPrefix width d retained slot false
+      encodedRows size (by decide) fits factors factorExtent retained_le reusable_prefix
+  have prefixR : componentRows true slot.val 0 factors (core k) = core 0 :=
+    CRTBarrel.Packed.componentRows_keepPrefix width d retained slot true
+      encodedRows size (by decide) fits factors factorExtent retained_le reusable_prefix
+  have inlet : coded slot.val 0 = core 0 :=
+    (coded_as_window slot.val 0).trans
+      (CRTResidueCorrection.unshifted_core width retained quotientParity encodedRows size d inDim reusable_masks)
+  have boundary := CRTResidueCorrection.correction_boundary width retained quotientParity encodedRows
+    size retained_le d slot.val inDim reusable_masks
+  have cleared : boundaryRows (coded slot.val k) slot.val = core k := by
+    rw [boundary_as_correction, coded_as_window]
+    exact boundary.1
+  have filled : boundaryRows (core k) slot.val = coded slot.val k := by
+    rw [boundary_as_correction, coded_as_window]
+    exact boundary.2
+  have stepF := congrArg (fun r => boundaryRows (componentRows false slot.val 0 factors r) slot.val) inlet
+  have scalarF := congrArg (fun r => boundaryRows r slot.val) prefixF
+  have stepR := congrArg (componentRows true slot.val 0 factors) cleared
+  exact ⟨stepF.trans (scalarF.trans filled), stepR.trans (prefixR.trans inlet.symm)⟩
+
+theorem forward_rows_export (slot : Fin 17) :
+    boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
+      coded slot.val (slot.val-1) :=
+  (reusable_row_motion slot).1
+
+theorem reverse_rows_export (slot : Fin 17) :
+    componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val) =
+      coded slot.val 0 :=
+  (reusable_row_motion slot).2
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic CRTBarrel CRTBarrel.Matrix
+set_option maxHeartbeats 100000
+attribute [local irreducible] run frame components componentRows CRTResidueS45.coded
+  CRTBarrel.plain corrections boundaryRows cnotProgram
+
+def residueFrame (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (rows : Rows) : State :=
+  frame rows x (dim slot.val) slot.val ph
+
+private theorem run_four (a b c d : Program) (s0 s1 s2 s3 s4 : State)
+    (tape : List Bool) (ha : ∀ m, run a m s0 = s1) (hb : ∀ m, run b m s1 = s2)
+    (hc : ∀ m, run c m s2 = s3) (hd : ∀ m, run d m s3 = s4) :
+    run (a ++ (b ++ (c ++ d))) tape s0 = s4 := by
+  simp only [run_append,ha,hb,hc,hd]
+
+private theorem forward_rows (slot : Fin 17) :
+    boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val =
+      coded slot.val (slot.val-1) :=
+  forward_rows_export slot
+
+
+private theorem forward_program :
+    logicalResidue false =
+      cnotProgram encoding ++ (components width false 0 factors ++
+        (corrections false ++ (cnotProgram encoding).reverse)) := by
+  simp only [logicalResidue,cnotProgram,Bool.false_eq_true,if_false,List.append_assoc]
+
+
+theorem logical_forward_stages (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (tape : List Bool)
+    (encode : ∀ m, run (cnotProgram encoding) m
+      (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) =
+      residueFrame slot x ph (coded slot.val 0))
+    (scalar : ∀ m, run (components width false 0 factors) m (residueFrame slot x ph (coded slot.val 0)) =
+      residueFrame slot x ph (componentRows false slot.val 0 factors (coded slot.val 0)))
+    (correct : ∀ m, run (corrections false) m
+      (residueFrame slot x ph (componentRows false slot.val 0 factors (coded slot.val 0))) =
+      residueFrame slot x ph (boundaryRows (componentRows false slot.val 0 factors (coded slot.val 0)) slot.val))
+    (decode : ∀ m, run (cnotProgram encoding).reverse m
+      (residueFrame slot x ph (coded slot.val (slot.val-1))) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) :
+    run (logicalResidue false) tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1)) := by
+  have corrected (m : List Bool) := (correct m).trans (congrArg (residueFrame slot x ph) (forward_rows slot))
+  have stages := run_four _ _ _ _ _ _ _ _ _ tape encode scalar corrected decode
+  have shape := congrArg (fun p =>
+    run p tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0))) forward_program
+  exact shape.trans stages
+
+
+private theorem reverse_program :
+    logicalResidue true =
+      cnotProgram encoding ++ (corrections true ++
+        (components width true 0 factors ++ (cnotProgram encoding).reverse)) := by
+  simp only [logicalResidue,cnotProgram,if_true,List.append_assoc]
+
+
+theorem logical_reverse_stages (slot : Fin 17) (x : Nat → Bool) (ph : Bool) (tape : List Bool)
+    (encode : ∀ m, run (cnotProgram encoding) m
+      (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) =
+      residueFrame slot x ph (coded slot.val (slot.val-1)))
+    (correct : ∀ m, run (corrections true) m (residueFrame slot x ph (coded slot.val (slot.val-1))) =
+      residueFrame slot x ph (boundaryRows (coded slot.val (slot.val-1)) slot.val))
+    (scalar : ∀ m, run (components width true 0 factors) m
+      (residueFrame slot x ph (boundaryRows (coded slot.val (slot.val-1)) slot.val)) =
+      residueFrame slot x ph (componentRows true slot.val 0 factors (boundaryRows (coded slot.val (slot.val-1)) slot.val)))
+    (decode : ∀ m, run (cnotProgram encoding).reverse m (residueFrame slot x ph (coded slot.val 0)) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0)) :
+    run (logicalResidue true) tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1))) =
+      residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) 0) := by
+  have reduced (m : List Bool) := (scalar m).trans (congrArg (residueFrame slot x ph) (reverse_rows_export slot))
+  have stages := run_four _ _ _ _ _ _ _ _ _ tape encode correct reduced decode
+  have shape := congrArg (fun p =>
+    run p tape (residueFrame slot x ph (CRTBarrel.plain width (dim slot.val) (slot.val-1)))) reverse_program
+  exact shape.trans stages
+
+
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Entrant.StairPacket
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+open Arithmetic CRTBarrel CRTBarrel.Matrix
+attribute [local irreducible] run frame components componentRows CRTResidueS45.coded
+  CRTBarrel.plain corrections boundaryRows cnotProgram
+theorem logical_run (slot : Fin 17) (mir : Bool) (x : Nat → Bool)
+    (ph : Bool) (tape : List Bool) :
+    run (logicalResidue mir) tape (frame (CRTBarrel.plain width (dim slot.val) (entryShift mir slot.val))
+      x (dim slot.val) slot.val ph) =
+      frame (CRTBarrel.plain width (dim slot.val) (exitShift mir slot.val))
+        x (dim slot.val) slot.val ph := by
+  let k := slot.val - 1
+  let unshifted := coded slot.val 0
+  let shifted := coded slot.val k
+  have uSize : unshifted.size = width := coded_size slot.val 0
+  have sSize : shifted.size = width := coded_size slot.val k
+  cases mir
+  · have enters : entryShift false slot.val = 0 := rfl
+    have exits : exitShift false slot.val = k := rfl
+    rw [enters,exits]
+    let core := componentRows false slot.val 0 factors unshifted
+    have coreSize : core.size = width := (componentRows_size ..).trans uSize
+    exact logical_forward_stages slot x ph tape (encode_run slot 0 x ph)
+      (fields_run unshifted uSize false slot (dim slot.val) x ph)
+      (fun m => corrections_run core coreSize slot false x (dim slot.val) ph m (by
+        intro impossible
+        cases impossible))
+      (decode_run slot k x ph)
+  · have enters : entryShift true slot.val = k := rfl
+    have exits : exitShift true slot.val = 0 := rfl
+    rw [enters,exits]
+    let clear := boundaryRows shifted slot.val
+    have clearSize : clear.size = width := (boundary_size ..).trans sSize
+    exact logical_reverse_stages slot x ph tape (encode_run slot k x ph)
+      (fun t => corrections_run shifted sSize slot true x (dim slot.val) ph t
+        (fun _ => reversePrepared slot))
+      (fields_run clear clearSize true slot (dim slot.val) x ph)
+      (decode_run slot 0 x ph)
+end ECDSAAdd.Entrant.StairPacket.CRTResidueS45
+end
 
 namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarlyLogic
 open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Packed CRTResidueCorrection CRTResidueGroupedBasis
@@ -12704,6 +12780,46 @@ theorem postPrefix_split (s : Nat) :
     DeadJoin.beforePost5 s = postPrefix s ++ Shadow7.leaveAdjustCore s := by
   simp only [DeadJoin.beforePost5, postPrefix, Shadow7.leaveAdjust, List.append_assoc]
 
+private theorem adjust_resources (n : Nat) (hn : 1 ≤ n)
+    (ys cs : List Wire) (hy : ys.length = n) (hc : cs.length = n-1) (cin neg : Wire) :
+    Counts (adjustG ys cs cin neg) 0 (n-1) (n-1) (5*n-2) := by
+  have ripple := counts_addG cs ys cin (by omega)
+  have flip := counts_cxsG neg ys
+  exact (flip.app (ripple.app flip)).congr rfl (by omega) (by omega) (by omega)
+
+private theorem sizedAdjust (s n : Nat) (hn : 1 ≤ n) :
+    Counts (adjustG ((List.range n).map (Shadow7.bankW s))
+      ((List.range (n-1)).map (Shadow7.poolW s)) (Shadow7.e0P s+3) 1596)
+      0 (n-1) (n-1) (5*n-2) :=
+  adjust_resources _ hn _ _ (by simp) (by simp) _ _
+
+private theorem adjustment_deltas (j : Fin 26) (hi : j.val ≤ 24) :
+    let s := start j
+    let delta := if trimAdjust s then 1 else 0
+    let old := Shadow7.leaveAdjustCore s
+    let newRow := leaveAdjustCoreTrim s
+    toffoliCount (GateMirror.forward newRow) + delta = toffoliCount (GateMirror.forward old) ∧
+    toffoliCount (inverse newRow) + delta = toffoliCount (inverse old) ∧
+    measurementCount (GateMirror.forward newRow) + delta = measurementCount (GateMirror.forward old) ∧
+    measurementCount (inverse newRow) + delta = measurementCount (inverse old) ∧
+    Challenge.gateSlots (GateMirror.forward newRow) + 6*delta = Challenge.gateSlots (GateMirror.forward old) ∧
+    Challenge.gateSlots (inverse newRow) + 6*delta = Challenge.gateSlots (inverse old) := by
+  dsimp only
+  have width := (Shadow7.window_geom j (Nat.zero_le _) hi).1
+  have short : 1 ≤ adjustWidth (start j) := by
+    unfold adjustWidth
+    split <;> omega
+  have fullCost := (sizedAdjust (start j) _ (show 1 ≤ Shadow7.wpP (start j) by omega)).programs
+  have trimCost := (sizedAdjust (start j) _ short).programs
+  obtain ⟨ft,bt,fm,bm,fs,bs⟩ := fullCost
+  obtain ⟨ft',bt',fm',bm',fs',bs'⟩ := trimCost
+  unfold Shadow7.leaveAdjustCore leaveAdjustCoreTrim
+  rw [ft,bt,fm,bm,fs,bs,ft',bt',fm',bm',fs',bs']
+  by_cases cut : trimAdjust (start j) = true
+  · simp only [adjustWidth,cut,if_true]
+    repeat' apply And.intro <;> omega
+  · simp [adjustWidth,cut]
+
 set_option maxHeartbeats 6000000 in
 theorem trimmed_counts : ∀ j : Fin 26, j.val ≤ 24 →
     let s := start j
@@ -12716,7 +12832,10 @@ theorem trimmed_counts : ∀ j : Fin 26, j.val ≤ 24 →
     measurementCount (inverse newRow) + price = measurementCount (inverse old) ∧
     Challenge.gateSlots (GateMirror.forward newRow) ≤ Challenge.gateSlots (GateMirror.forward old) ∧
     Challenge.gateSlots (inverse newRow) ≤ Challenge.gateSlots (inverse old) := by
-  decide +kernel
+  intro j hi
+  dsimp only
+  obtain ⟨a,b,c,d,e,f⟩ := adjustment_deltas j hi
+  exact ⟨a,b,c,d,by omega,by omega⟩
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
 
 namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveAdjustTrim
@@ -12742,7 +12861,11 @@ theorem exact_adjust_cost : ∀ j : Fin 26, j.val ≤ 24 →
     Challenge.gateSlots (GateMirror.forward (leaveAdjustCoreTrim s)) + d =
       Challenge.gateSlots (GateMirror.forward (Shadow7.leaveAdjustCore s)) ∧
     Challenge.gateSlots (inverse (leaveAdjustCoreTrim s)) + d =
-      Challenge.gateSlots (inverse (Shadow7.leaveAdjustCore s)) := by decide +kernel
+      Challenge.gateSlots (inverse (Shadow7.leaveAdjustCore s)) := by
+  intro j hi
+  dsimp only
+  obtain ⟨_,_,_,_,a,b⟩ := adjustment_deltas j hi
+  by_cases trim : trimAdjust (start j) = true <;> simpa [trim] using And.intro a b
 
 theorem row_before_deltas (j : Fin 26) (hi : j.val ≤ 24) :
     toffoliCount (GateMirror.forward (rowBefore (start j))) + (if trimAdjust (start j) then 1 else 0) =
@@ -18528,12 +18651,1920 @@ def place20 (s : Nat) (q : Nat) : Wire :=
   else if q < n + 21 then tagsP20.getD (q - n) 0
   else poolW20 s (22 + (q - n - 21))
 
-def barrel20 (s : Nat) (mir : Bool) : Program :=
-  renameProgram (place20 s) (CRTBarrel20.logical20 (liveW20 s) mir)
+end ECDSAAdd.Entrant.StairPacket.Shadow20
 
-def barrel20T (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).t
-def barrel20M (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).m
-def barrel20Slots (s : Nat) (mir : Bool) : Nat := (CRTBarrel20.listedPrice20 (liveW20 s) mir).slots
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel20.Packed20
+open Matrix20
+
+/-- Across a factor slice, all bank digits agree with the same cropped certified
+prototype20 in the applicable input or output orientation. -/
+def PrefixAligned (dim slot : Nat) (mir : Bool) (src dst : Nat) :
+    Nat → List (Nat × Nat) → Prop
+  | _, [] => True
+  | off, (p,m) :: tail =>
+    let len := fieldDegree p * m
+    let psize := 135 - (slot - 1)
+    UsedPrimary20 p m ∧
+      (∀ j < len, digit width src (off+j) =
+        clipShift dim 0 (digit width (prototypeWord20 p m psize (entryShift mir slot)) j)) ∧
+      (∀ j < len, digit width dst (off+j) =
+        clipShift dim 0 (digit width (prototypeWord20 p m psize (exitShift mir slot)) j)) ∧
+      PrefixAligned dim slot mir src dst (off+len) tail
+
+/-- Use the stock primary proofs for the residue prefix, while preserving every
+quotient digit from the source. This avoids running a bank for each selector in
+the kernel checker. -/
+theorem prefix_action (n dim : Nat) (slot : Fin 22) (mir : Bool) (src dst : Nat)
+    (parts : List (Nat × Nat)) (aligned : PrefixAligned dim slot.val mir src dst 0 parts) (q : Nat) :
+    digit width (componentWord20 n mir slot.val 0 parts src) q =
+      if q < extent20 parts then digit width dst q else digit width src q := by
+  let crop := clipShift dim 0
+  let D := extent20 parts
+  have run (ps : List (Nat × Nat)) (off bank : Nat) (last : off+extent20 ps = D)
+      (ok : PrefixAligned dim slot.val mir src dst off ps)
+      (inv : ∀ q, digit width bank q =
+        if q < off then digit width dst q else digit width src q) :
+      ∀ q, digit width (componentWord20 n mir slot.val off ps bank) q =
+        if q < D then digit width dst q else digit width src q := by
+    induction ps generalizing off bank with
+    | nil =>
+      intro q
+      change off+0 = D at last
+      simp only [Nat.add_zero] at last
+      simpa only [componentWord20,last] using inv q
+    | cons pair tail ih =>
+      obtain ⟨p,m⟩ := pair
+      let len := fieldDegree p*m
+      change off+(len+extent20 tail) = D at last
+      rcases ok with ⟨factor,inputRows,outputRows,next⟩
+      let pdim := 135 - (slot.val - 1)
+      let input := prototypeWord20 p m pdim (entryShift mir slot.val)
+      let output := prototypeWord20 p m pdim (exitShift mir slot.val)
+      have before : Slice crop off len bank bank input := by
+        refine ⟨?_,fun _ _ => rfl⟩
+        intro j hj
+        rw [inv,if_neg (by omega)]
+        exact inputRows j hj
+      have after := primary20_slice crop (clip_zero dim 0) (clip_xor dim 0)
+        n off p m slot.val bank bank input mir before
+      have action : primaryWord20 len input 0 p m slot.val mir = output :=
+        beq_iff_eq.mp (prototype_checked20 p m factor slot mir)
+      rw [action] at after
+      change ∀ q, digit width (componentWord20 n mir slot.val (off+len) tail _) q = _
+      apply ih _ _ (by omega) next
+      intro q
+      by_cases earlier : q < off
+      · rw [after.exterior q (Or.inl earlier),inv,if_pos earlier,if_pos (by omega)]
+      · by_cases contains : q < off+len
+        · have localIdx : q-off < len := by omega
+          have place : off+(q-off) = q := Nat.add_sub_of_le (Nat.le_of_not_lt earlier)
+          rw [if_pos contains,←place,after.same _ localIdx,outputRows _ localIdx]
+        · rw [after.exterior q (Or.inr (Nat.le_of_not_lt contains)),inv,if_neg earlier,if_neg contains]
+  exact run parts 0 src (Nat.zero_add _) aligned (by intro i; simp) q
+
+/-- The closed check visits the residue rows once. The quotient rows can be arbitrary. -/
+def residueTable (n : Nat) (rs : Rows) : Nat → List (Nat × Nat) → Bool
+  | _, [] => true
+  | off, (p,m) :: tail =>
+    (decide (UsedPrimary20 p m) &&
+      (List.range (fieldDegree p*m)).all (fun j =>
+        Matrix20.read rs (off+j) == (Matrix20.read (prototype20 p) j &&& (2^n-1)))) &&
+    residueTable n rs (off+fieldDegree p*m) tail
+
+def residueWord (rs : Rows) (dim k : Nat) : Nat :=
+  pack width (rs.toList.map (clipShift dim k))
+
+private theorem residue_clip_bound (dim k v : Nat) (room : dim ≤ width) :
+    clipShift dim k v < 2^width :=
+  lt_of_le_of_lt Nat.and_le_right
+    (lt_of_lt_of_le (Nat.sub_lt (Nat.two_pow_pos _) (by decide : 0<1))
+      (Nat.pow_le_pow_right (by decide) room))
+
+private theorem residue_word_digit (rs : Rows) (dim k q : Nat)
+    (room : dim ≤ width) (hq : q < rs.size) :
+    digit width (residueWord rs dim k) q = clipShift dim k (Matrix20.read rs q) := by
+  let xs := rs.toList.map (clipShift dim k)
+  have small : ∀ a ∈ xs, a < 2^width := by
+    intro a ha
+    obtain ⟨b,_,rfl⟩ := List.mem_map.mp ha
+    exact residue_clip_bound dim k b room
+  have h := digit_pack xs q (by simpa [xs] using hq) small
+  simpa [xs,residueWord,Matrix20.read,List.getElem?_map,hq] using h
+
+private theorem residue_prototype_digit (p m dim k : Nat)
+    (use : UsedPrimary20 p m) (room : dim ≤ width) (q : Nat) (hq : q < fieldDegree p*m) :
+    digit width (prototypeWord20 p m dim k) q = clipShift dim k (Matrix20.read (prototype20 p) q) := by
+  let xs := ((prototype20 p).toList.take (fieldDegree p*m)).map (clipShift dim k)
+  have small : ∀ a ∈ xs, a < 2^width := by
+    intro a ha
+    obtain ⟨b,_,rfl⟩ := List.mem_map.mp ha
+    exact residue_clip_bound dim k b room
+  have len : xs.length = fieldDegree p*m := by simp [xs,Nat.min_eq_left (prototype_size20 p m use)]
+  have h := digit_pack xs q (len ▸ hq) small
+  have inside : q < (prototype20 p).size := lt_of_lt_of_le hq (prototype_size20 p m use)
+  simpa [xs,prototypeWord20,Matrix20.read,List.getElem?_map,List.getElem?_take,hq,inside] using h
+
+private theorem residue_clip_factor (n sh dim k v : Nat)
+    (high : n ≤ 135) (fit : dim ≤ n-sh) (hk : k ≤ sh) :
+    clipShift dim k (v &&& (2^n-1)) = clipShift dim 0 (clipShift (135-sh) k v) := by
+  apply Nat.eq_of_testBit_eq
+  intro i
+  simp only [clipShift,Nat.testBit_and,Nat.testBit_two_pow_sub_one,Nat.testBit_shiftRight,Nat.zero_add]
+  by_cases h : i < dim
+  · simp [h,show k+i<n by omega,show i<135-sh by omega]
+  · simp [h]
+
+private theorem residue_table_aligned (n dim : Nat) (slot : Fin 22) (mir : Bool)
+    (rs : Rows) (size : rs.size = n) (high : n ≤ 135) (fit : dim ≤ n-(slot.val-1))
+    (parts : List (Nat × Nat)) (off : Nat) (endp : off+extent20 parts ≤ n)
+    (checked : residueTable n rs off parts = true) :
+    PrefixAligned dim slot.val mir
+      (residueWord rs dim (entryShift mir slot.val))
+      (residueWord rs dim (exitShift mir slot.val)) off parts := by
+  induction parts generalizing off with
+  | nil => trivial
+  | cons pair tail ih =>
+    obtain ⟨p,m⟩ := pair
+    let len := fieldDegree p*m
+    change off+(len+extent20 tail) ≤ n at endp
+    simp only [residueTable,Bool.and_eq_true] at checked
+    obtain ⟨⟨used,table⟩,rest⟩ := checked
+    have valid : UsedPrimary20 p m := of_decide_eq_true used
+    have word (k : Nat) (fits : k ≤ slot.val-1) (j : Nat) (hj : j < len) :
+        digit width (residueWord rs dim k) (off+j) =
+          clipShift dim 0 (digit width (prototypeWord20 p m (135-(slot.val-1)) k) j) := by
+      have rn : dim ≤ width := by unfold width; omega
+      have hn : 135-(slot.val-1) ≤ width := by unfold width; omega
+      have inside : off+j < rs.size := by rw [size]; omega
+      have row := beq_iff_eq.mp (List.all_eq_true.mp table j (List.mem_range.mpr hj))
+      rw [residue_word_digit rs dim k (off+j) rn inside, row,
+          residue_prototype_digit p m (135-(slot.val-1)) k valid hn j hj,
+          residue_clip_factor n (slot.val-1) dim k _ high fit fits]
+    have shifts : entryShift mir slot.val ≤ slot.val-1 ∧ exitShift mir slot.val ≤ slot.val-1 := by
+      cases mir <;> simp [entryShift,exitShift]
+    exact ⟨valid,word _ shifts.1,word _ shifts.2,ih (off+len) (by omega) rest⟩
+
+theorem residue_table_action (n dim : Nat) (slot : Fin 22) (mir : Bool) (rs : Rows)
+    (size : rs.size = n) (high : n ≤ 135) (fit : dim ≤ n-(slot.val-1))
+    (parts : List (Nat × Nat)) (extent_le : extent20 parts ≤ n)
+    (checked : residueTable n rs 0 parts = true) (q : Nat) :
+    digit width (componentWord20 n mir slot.val 0 parts
+      (residueWord rs dim (entryShift mir slot.val))) q =
+      if q < extent20 parts then digit width (residueWord rs dim (exitShift mir slot.val)) q
+      else digit width (residueWord rs dim (entryShift mir slot.val)) q :=
+  prefix_action n dim slot mir _ _ parts
+    (residue_table_aligned n dim slot mir rs size high fit parts 0 (by simpa only [Nat.zero_add] using extent_le) checked) q
+
+
+open Matrix20
+
+/-- The array kept between the scalar field circuit and the quotient correction. -/
+def keepPrefix (rs : Rows) (D : Nat) : Rows :=
+  Array.ofFn (fun q : Fin rs.size => if q.val < D then Matrix20.read rs q else 0)
+
+@[simp] theorem keepPrefix_size (rs : Rows) (D : Nat) : (keepPrefix rs D).size = rs.size := by
+  simp [keepPrefix]
+
+theorem read_keepPrefix (rs : Rows) (D q : Nat) (hq : q < rs.size) :
+    Matrix20.read (keepPrefix rs D) q = if q < D then Matrix20.read rs q else 0 := by
+  simp [Matrix20.read,keepPrefix,hq]
+
+def windowRows (rs : Rows) (d k : Nat) : Rows := rs.map (clipShift d k)
+
+@[simp] theorem windowRows_size (rs : Rows) (d k : Nat) : (windowRows rs d k).size = rs.size := by
+  simp [windowRows]
+
+theorem read_windowRows (rs : Rows) (dim k q : Nat) (hq : q < rs.size) :
+    Matrix20.read (windowRows rs dim k) q = clipShift dim k (Matrix20.read rs q) := by
+  simp [Matrix20.read,windowRows,hq]
+
+/-- Zeroing the quotient preserves the one check of the certified prototype prefix. -/
+theorem table_keepPrefix (n : Nat) (rs : Rows) (size : rs.size = n)
+    (D : Nat) (fits : D ≤ n) (parts : List (Nat × Nat)) (off : Nat)
+    (within : off+extent20 parts ≤ D) (tested : residueTable n rs off parts = true) :
+    residueTable n (keepPrefix rs D) off parts = true := by
+  induction parts generalizing off with
+  | nil => rfl
+  | cons pair tail ih =>
+    obtain ⟨p,m⟩ := pair
+    change off+(fieldDegree p*m+extent20 tail) ≤ D at within
+    simp only [residueTable,Bool.and_eq_true] at tested ⊢
+    refine ⟨⟨tested.1.1,?_⟩,ih (off+fieldDegree p*m) (by omega) tested.2⟩
+    apply List.all_eq_true.mpr
+    intro j hj
+    have bound := List.mem_range.mp hj
+    rw [read_keepPrefix rs D (off+j) (by omega),if_pos (by omega)]
+    exact List.all_eq_true.mp tested.1.2 j hj
+
+/-- Lift the proved digit action to the array used by the circuit semantics. -/
+theorem componentRows_keepPrefix (n dim D : Nat) (slot : Fin 22) (mir : Bool)
+    (rs : Rows) (size : rs.size = n) (high : n ≤ 135) (fit : dim ≤ n-(slot.val-1))
+    (parts : List (Nat × Nat)) (extent_eq : extent20 parts = D) (bound : D ≤ n)
+    (test : residueTable n rs 0 parts = true) :
+    componentRows20 mir slot.val 0 parts (windowRows (keepPrefix rs D) dim (entryShift mir slot.val)) =
+      windowRows (keepPrefix rs D) dim (exitShift mir slot.val) := by
+  let core := keepPrefix rs D
+  have coreSize : core.size = n := (keepPrefix_size rs D).trans size
+  have accepted : residueTable n core 0 parts = true :=
+    table_keepPrefix n rs size D bound parts 0 (by omega) test
+  have room : dim ≤ width := by unfold width; omega
+  have matchRows (k : Nat) : Matches (residueWord core dim k) (windowRows core dim k) := by
+    intro q hq
+    have inCore : q < core.size := by simpa only [windowRows_size] using hq
+    rw [read_windowRows core dim k q inCore]
+    exact (residue_word_digit core dim k q room inCore).symm
+  let left := windowRows core dim (entryShift mir slot.val)
+  let right := windowRows core dim (exitShift mir slot.val)
+  let out := componentRows20 mir slot.val 0 parts left
+  have leftSize : left.size = n := (windowRows_size ..).trans coreSize
+  have rightSize : right.size = n := (windowRows_size ..).trans coreSize
+  have outSize : out.size = n := (componentRows20_size ..).trans leftSize
+  have agree := components20_match n _ 0 slot.val mir parts left leftSize (by omega)
+    (matchRows (entryShift mir slot.val))
+  change out = right
+  apply Array.ext (outSize.trans rightSize.symm)
+  intro q ho hr
+  have testBit := residue_table_action n dim slot mir core coreSize high fit parts (by omega) accepted q
+  have result : Matrix20.read out q = Matrix20.read right q := by
+    rw [agree q ho,testBit]
+    by_cases kept : q < D
+    · rw [if_pos (by omega)]
+      exact (matchRows (exitShift mir slot.val) q hr).symm
+    · have inside : q < core.size := coreSize ▸ (outSize ▸ ho)
+      have eq (k : Nat) : digit width (residueWord core dim k) q = 0 := by
+        rw [residue_word_digit core dim k q room inside]
+        change clipShift dim k (Matrix20.read (keepPrefix rs D) q) = 0
+        rw [read_keepPrefix rs D q (by omega),if_neg kept,clip_zero]
+      rw [if_neg (by omega),eq]
+      exact (matchRows (exitShift mir slot.val) q hr).trans (eq _) |>.symm
+  simpa only [Matrix20.read,Array.getElem?_eq_getElem ho,Array.getElem?_eq_getElem hr,Option.getD_some] using result
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel20.Packed20
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTBarrel20
+theorem fitsComponents (n : Nat) (mir : Bool) : ∀ (off : Nat) (parts : List (Nat × Nat)),
+    off + (parts.map (fun x => fieldDegree x.1 * x.2)).sum ≤ n →
+    (∀ pair ∈ parts, UsedField20 pair.1) →
+    Fits (· < n + 31) (components20 n mir off parts) := by
+  intro off parts
+  induction parts generalizing off with
+  | nil => intro _ _; exact fits_nil
+  | cons pair tail ih =>
+    intro hend huf
+    obtain ⟨p, m⟩ := pair
+    simp only [List.map_cons, List.sum_cons] at hend
+    have hp := huf (p, m) (List.mem_cons_self ..)
+    have hd := used_degree20 p hp
+    have hsc : ∀ (k : Nat) (o : Nat), o + fieldDegree p * k ≤ n →
+        Fits (· < n + 31) ((List.range k).flatMap fun j =>
+          renameProgram (fieldPlace20 n (o + fieldDegree p * j)) (fieldCore20 p mir)) := by
+      intro k; induction k with
+      | zero => intro _ _; exact fits_nil
+      | succ k ihk =>
+        intro o ho
+        rw [Nat.mul_succ] at ho
+        rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+        refine fits_append (ihk o (by omega)) ?_
+        have hm := fieldPlace20_maps hd.2 (show o + fieldDegree p * k + fieldDegree p ≤ n by omega)
+        exact fits_rename (fits_core20 p hp mir) hm.1 hm.2
+    have hprim : Fits (· < n + 31) (primary20 n off p m mir) := by
+      unfold primary20
+      refine fits_append (hsc m off (by omega)) ?_
+      split_ifs with h8
+      · simp only [Bool.and_eq_true, beq_iff_eq] at h8
+        exact pascalR8_20_fits n off mir (by rw [h8.1, h8.2] at hend; omega)
+      · exact fits_nil
+    exact fits_append hprim (ih (off + fieldDegree p * m) (by omega)
+      (fun x hx => huf x (List.mem_cons_of_mem _ hx)))
+
+
+
+open CRTResidueEarlyLogic CRTResidueGroupedBasis
+
+theorem residueBasisPrice (n : Nat) (pivots : List (Nat × Nat)) :
+    count (basisProgram n pivots) = ⟨0, 0, (ops n pivots).length⟩ ∧
+    count (basisProgram n pivots).reverse = ⟨0, 0, (ops n pivots).length⟩ :=
+  ⟨count_map_cx Prod.fst Prod.snd (ops n pivots), count_map_cx_rev Prod.fst Prod.snd (ops n pivots)⟩
+
+theorem residueFieldPrice (n : Nat) (mir : Bool) (parts : List (Nat × Nat))
+    (allowed : ∀ pair ∈ parts, UsedField20 pair.1) :
+    count (components20 n mir 0 parts) = partsPrice20 mir parts :=
+  components20_count n mir 0 parts (fun p hp => field20_count p.1 (allowed p hp) mir)
+
+private def correctionPulsePrice (tags : Nat) (sources : List (List Wire)) (mir : Bool)
+    (i : Nat) : Count :=
+  let len := tags - (i + 1) + (CRTResidueCorrection.paritySources sources i).tail.length
+  if mir then ⟨0, 1, len + (2 + len)⟩ else ⟨1, 0, len + (1 + len)⟩
+
+private theorem correctionPulse_count (width retained tags scratch : Nat)
+    (sources : List (List Wire)) (mir : Bool) (i : Nat) :
+    count (CRTResidueCorrection.pulseCorrection width retained tags scratch sources mir i) =
+      correctionPulsePrice tags sources mir i := by
+  let flags := CRTResidueThreshold.sites width tags i
+  let ps := CRTResidueCorrection.paritySources sources i
+  let a := ps.headD 0
+  let p : Program := flags.map (fun w => .CX w scratch) ++ ps.tail.map (fun w => .CX w a)
+  let len := tags - (i + 1) + ps.tail.length
+  have flagsLen : flags.length = tags - (i + 1) := by
+    simp only [flags, CRTResidueThreshold.sites, List.length_map, List.length_drop, List.length_range]
+  have prep : count p = ⟨0, 0, len⟩ := by
+    simp only [p, count_append, count_map_cx, cadd, Nat.zero_add, flagsLen, len]
+  have rev : count p.reverse = ⟨0, 0, len⟩ := by
+    apply (count_reverse_cxs p ?_).trans prep
+    intro op hop
+    rcases List.mem_append.mp hop with h | h
+    · obtain ⟨_, _, rfl⟩ := List.mem_map.mp h
+      trivial
+    · obtain ⟨_, _, rfl⟩ := List.mem_map.mp h
+      trivial
+  change count (p ++ [if mir then .measureX (retained + i) [] [.CZ scratch a]
+    else .CCX scratch a (retained + i)] ++ p.reverse) = _
+  simp only [count_append, prep, rev]
+  cases mir <;>
+    simp [correctionPulsePrice, len, ps, cadd, count, toffoliCount, measurementCount,
+      Challenge.gateSlots, Challenge.instructionSlots, Nat.add_assoc]
+
+private theorem correctionProgram_count (width retained tags scratch : Nat)
+    (sources : List (List Wire)) (mir : Bool) :
+    count (CRTResidueCorrection.correctionProgram width retained tags scratch sources mir) =
+      csumBy (correctionPulsePrice tags sources mir) (List.range (width - retained)) := by
+  exact count_flatMap _ _ (correctionPulse_count width retained tags scratch sources mir) _
+
+
+open Matrix20
+
+theorem placed_from_rows20 (n : Nat) (P : Program) (dim : Nat) (fits : Fits (· < n+31) P) (mir : Bool) (slot : Fin 22)
+    (bank tagW scrW : Nat → Wire) (f : Wire → Wire)
+    (hf_bank : ∀ i < n, f i = bank i)
+    (hf_tag : ∀ k < 21, f (n + k) = tagW k)
+    (hf_scr : ∀ k < 10, f (n + 21 + k) = scrW k)
+    (hinj : ∀ a < n + 31, ∀ b < n + 31, f a = f b → a = b)
+    (v : Nat) (s : State) (tape : List Bool)
+    (small : v < 2 ^ dim)
+    (shift : run P tape (frame20 (plain20 n dim (entryShift mir slot.val)) v.testBit dim slot.val s.phase) =
+      frame20 (plain20 n dim (exitShift mir slot.val)) v.testBit dim slot.val s.phase)
+    (input : ∀ i < n, s.basis (bank i) = (v <<< entryShift mir slot.val).testBit i)
+    (tag : ∀ k < 21, s.basis (tagW k) = decide (slot.val = k + 1))
+    (scratch : ∀ k < 10, s.basis (scrW k) = false) :
+    let s' := run (renameProgram f P) tape s
+    (∀ i < n, s'.basis (bank i) = (v <<< exitShift mir slot.val).testBit i) ∧
+    s'.phase = s.phase ∧
+    (∀ q, (∀ i < n, q ≠ bank i) → s'.basis q = s.basis q) := by
+  let S := Finset.range (n + 31)
+  let before := entryShift mir slot.val
+  let after := exitShift mir slot.val
+  have scope : wires P ⊆ S := fun _ hw => Finset.mem_range.mpr (support fits _ hw)
+  have inj : ∀ a ∈ S, ∀ b ∈ S, f a = f b → a = b :=
+    fun a ha b hb => hinj a (Finset.mem_range.mp ha) b (Finset.mem_range.mp hb)
+  have bankBit (k i : Nat) (ik : i < n) :
+      (frame20 (plain20 n dim k) v.testBit dim slot.val s.phase).basis i = (v <<< k).testBit i := by
+    simpa only [frame20, Matrix20.basis, plain20_size, if_pos ik] using plain20_bits n dim k v i small ik
+  have other (k q : Nat) (qn : n ≤ q) (high : q < n + 31) :
+      (frame20 (plain20 n dim k) v.testBit dim slot.val s.phase).basis q = s.basis (f q) := by
+    have outside : ¬q < n := Nat.not_lt.mpr qn
+    simp only [frame20, Matrix20.basis, plain20_size, if_neg outside]
+    by_cases mid : q < n + 21
+    · have k21 : q - n < 21 := by omega
+      have hfq : f q = tagW (q - n) := by
+        simpa only [show n + (q - n) = q by omega] using hf_tag (q - n) k21
+      rw [hfq, tag (q - n) k21]
+      simp [flags20, qn, mid]
+    · have pos : q - n - 21 < 10 := by omega
+      have hfq : f q = scrW (q - n - 21) := by
+        simpa only [show n + 21 + (q - n - 21) = q by omega] using hf_scr (q - n - 21) pos
+      rw [hfq, scratch _ pos]
+      simp [flags20, mid]
+  have result := run_rename_pool f S inj P scope tape
+    (frame20 (plain20 n dim before) v.testBit dim slot.val s.phase) s rfl (by
+      intro q hq
+      by_cases low : q < n
+      · rw [bankBit before q low, hf_bank q low]; exact (input q low).symm
+      · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq))
+  change run P tape (frame20 (plain20 n dim before) _ _ _ _) = frame20 (plain20 n dim after) _ _ _ _ at shift
+  rw [shift] at result
+  refine ⟨?_, result.1, ?_⟩
+  · intro i bound
+    have hi : i ∈ S := Finset.mem_range.mpr (Nat.lt_of_lt_of_le bound (Nat.le_add_right _ _))
+    have bit := (result.2 i hi).trans (bankBit after i bound)
+    rwa [hf_bank i bound] at bit
+  · intro q free
+    by_cases hit : q ∈ S.image f
+    · obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hit
+      have above : n ≤ a := by
+        by_contra! low
+        exact free a low (hf_bank a low)
+      exact Eq.trans (result.2 a ha) (other after a above (Finset.mem_range.mp ha))
+    · exact run_rename_pool_outside f S P scope tape s q hit
+end ECDSAAdd.Entrant.StairPacket.CRTBarrel20
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+open CRTBarrel.Packed
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option profiler.threshold 10
+
+def encodedRows : Array Nat := #[
+  4522867545105641319316485353, 6082477043417931429425618234, 12164954086835862858851236468, 3587101846118267253251005625, 7174203692236534506502011250,
+  11697071237342175825818496604, 2375007252102302487296931217, 2772755985083548360710364850, 5545511970167096721420729700, 11091023940334193442841459400,
+  1571987351473498761776665681, 3143974702946997523553331362, 5344756995009895790040663316, 10689513990019791580081326632, 1498509284286487112753650417,
+  2997018568572974225507300834, 5994037137145948451014601668, 10652774956426285755569819000, 1916810383409621070811547185, 3194683972349368451352578642,
+  5750431150228863212434641556, 10861925505987852734598767384, 13522984161907668163039317281, 7238927695249251927692646978, 1690373020238458520379914660,
+  3380746040476917040759829320, 6761492080953834081519658640, 10815712122131713196007168065, 12098421377027728648916904130, 4389802125489372899447820676,
+  8779604250978745798895641352, 17559208501957491597791282704, 15311376375348898797196577824, 1395407950349078352919560769, 2790815900698156705839121538,
+  5581631801396313411678243076, 10077946308076676993307938888, 348851987587269588229890192, 697703975174539176459780384, 6221607471078794662103009601,
+  18625532305363925154733579202, 13703473486379114370184412868, 7599906344192144341982838152, 11458922182052740864718746192, 3110803735539397331051504800,
+  19807040628566084398385987583, 13204693752377389598923991722, 3961408125713216879677197516, 2640938750475477919784798344, 15146560480668182187001049328,
+  10097706987112121458000699552, 233024007394895110569246912, 155349338263263407046164608, 464454299057729385013447681, 774090498429548975022412802,
+  1393362897173188155040343044, 2631907694660466515076203528, 5108997289635023235147924496, 10063176479584136675291366432, 164494230916279157192262720,
+  174170362146648519380042880, 193522624607387243755603200, 232227149528864692506723840, 3714273520385484755941994497, 6190455867309141259903324162,
+  11142820561156454267825983492, 1240509320284995885285314568, 1242927467108163518589964304, 1247763760754498785199263776, 1257436348047169318417862720,
+  1276781522632510384855060608, 1315471871803192517729456384, 1392852570144556783478247936, 1547613966827285314975831040, 1857136760192742377970997248,
+  17552658427507841687690936320, 15298276226449598976995885056, 10789511824333113555605782528, 1771983020100142712825577472, 3543966040200285425651154944,
+  7087932080400570851302309888, 14175864160801141702604619776, 8544687693036199006823251968, 17089375386072398013646503936, 14371710143578711628907020288,
+  8936379658591338859428052992, 17872759317182677718856105984, 15938478005799271039326224384, 12069915383032457680266461184, 4332790137498830962146934784,
+  8665580274997661924293869568, 17331160549995323848587739136, 14855280471424563298789490688, 9903520314283042199192993792
+]
+
+def factors : List (Nat × Nat) := [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (37,1), (67,1), (73,1), (87,1), (257,1), (2047,1), (8191,1)]
+
+def paritySourcesTable : List (List Nat) := [[0, 2, 3, 4, 7, 8, 9, 11, 13, 15, 18, 19, 22, 23, 24, 26, 27, 30, 32, 34, 35, 38, 40, 41, 42, 43, 44, 46, 48, 49, 50, 51, 52, 53, 54, 56, 57, 61, 63, 65, 66, 70, 71, 72, 74], [1, 3, 4, 5, 6, 8, 9, 12, 16, 19, 20, 23, 24, 25, 28, 31, 35, 36, 39, 41, 42, 43, 44, 47, 48, 50, 52, 53, 54, 55, 57, 58, 62, 63, 64, 66, 67, 71, 72, 73], [2, 4, 5, 7, 9, 13, 14, 17, 20, 21, 22, 24, 25, 26, 29, 32, 33, 36, 37, 39, 40, 42, 43, 44, 48, 51, 52, 54, 55, 56, 58, 59, 63, 64, 65, 67, 68, 72, 73, 74], [0, 5, 6, 8, 10, 14, 15, 21, 22, 23, 25, 26, 27, 30, 34, 37, 38, 40, 41, 43, 44, 45, 46, 47, 48, 52, 53, 55, 56, 57, 59, 60, 64, 65, 66, 68, 69, 73, 74], [0, 1, 3, 6, 7, 9, 11, 15, 16, 18, 23, 24, 26, 27, 28, 31, 33, 35, 38, 41, 42, 44, 45, 47, 49, 50, 51, 52, 54, 56, 57, 58, 60, 61, 63, 65, 66, 67, 69, 70, 74], [0, 1, 2, 4, 7, 8, 10, 12, 14, 16, 17, 18, 19, 24, 25, 27, 28, 29, 32, 34, 36, 42, 43, 46, 47, 50, 52, 55, 57, 58, 59, 61, 62, 63, 64, 66, 67, 68, 70, 71], [1, 2, 3, 5, 8, 9, 11, 13, 15, 17, 19, 20, 25, 26, 28, 29, 30, 35, 37, 39, 43, 44, 47, 51, 52, 56, 58, 59, 60, 62, 63, 64, 65, 67, 68, 69, 71, 72], [0, 2, 3, 4, 6, 9, 12, 14, 16, 20, 21, 22, 26, 29, 30, 31, 33, 36, 38, 40, 44, 45, 46, 47, 52, 53, 57, 59, 60, 61, 64, 65, 66, 68, 69, 70, 72, 73], [1, 3, 4, 5, 7, 13, 14, 15, 17, 21, 22, 23, 30, 31, 32, 33, 34, 37, 41, 46, 48, 49, 50, 51, 52, 53, 54, 58, 60, 61, 62, 65, 66, 67, 69, 70, 71, 73, 74], [2, 4, 5, 8, 10, 14, 15, 16, 18, 22, 23, 24, 27, 31, 32, 34, 35, 38, 42, 47, 48, 50, 52, 54, 55, 59, 61, 62, 66, 67, 68, 70, 71, 72, 74], [0, 5, 9, 11, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 28, 32, 35, 36, 39, 43, 48, 51, 52, 53, 55, 56, 60, 62, 63, 67, 68, 69, 71, 72, 73], [0, 1, 3, 6, 10, 12, 15, 16, 17, 19, 20, 22, 23, 24, 25, 26, 27, 29, 33, 36, 37, 39, 40, 44, 45, 46, 47, 48, 52, 53, 54, 56, 57, 61, 63, 64, 68, 69, 70, 72, 73, 74], [0, 1, 2, 4, 6, 7, 11, 13, 16, 17, 20, 21, 23, 24, 25, 26, 27, 28, 30, 34, 37, 38, 39, 40, 41, 45, 47, 49, 50, 51, 52, 53, 54, 55, 57, 58, 62, 64, 65, 69, 70, 71, 73, 74], [1, 2, 3, 5, 6, 7, 8, 12, 17, 21, 24, 25, 26, 27, 28, 29, 31, 33, 35, 38, 40, 41, 42, 46, 47, 50, 52, 54, 55, 56, 58, 59, 63, 65, 66, 70, 71, 72, 74], [0, 2, 3, 4, 6, 7, 8, 9, 13, 14, 18, 22, 25, 26, 27, 28, 29, 30, 32, 34, 36, 41, 42, 43, 47, 51, 52, 53, 55, 56, 57, 59, 60, 63, 64, 66, 67, 71, 72, 73], [1, 3, 4, 5, 7, 8, 9, 10, 15, 18, 19, 22, 23, 26, 28, 29, 30, 31, 35, 37, 39, 42, 43, 44, 45, 46, 47, 52, 54, 56, 57, 58, 60, 61, 63, 64, 65, 67, 68, 72, 73, 74], [2, 4, 5, 6, 8, 9, 11, 16, 19, 20, 23, 24, 29, 30, 31, 32, 33, 36, 38, 39, 40, 43, 44, 46, 48, 49, 50, 51, 52, 55, 57, 58, 59, 61, 62, 64, 65, 66, 68, 69, 73, 74], [0, 5, 7, 9, 10, 12, 14, 17, 20, 21, 22, 24, 25, 27, 30, 31, 32, 33, 34, 37, 39, 40, 41, 44, 47, 48, 50, 52, 56, 58, 59, 60, 62, 63, 65, 66, 67, 69, 70, 74], [0, 1, 3, 6, 8, 11, 13, 14, 15, 21, 23, 25, 26, 28, 31, 32, 34, 35, 38, 39, 40, 41, 42, 48, 51, 52, 53, 57, 59, 60, 61, 63, 64, 66, 67, 68, 70, 71]]
+
+def pivotPlan : List (Nat × Nat) := [(94,9232414978966045768), (94,18464865142304180368), (94,36929695100236271904), (4,101556635137370681075), (94,267739928836891550637), (94,360064641576348628039), (7,1172516653863373931967), (8,2345028868929876462462), (94,2381953918561164138498), (94,5862565104566845633659), (11,17571806741250295421809), (12,35143610702935078794978), (94,27530993999580000814167), (94,37465675285417991671775), (15,32231863041256303275429), (94,21446702479715383195375), (94,1061511801413821530235), (94,2123019863457182253302), (94,11922127202331700353757), (20,35605287741730481139559), (21,4350351517931801468622), (94,17612957463701367077263), (25,8334227876021271166763), (24,10711364381398330671485), (94,33318472465388493470892), (94,33907080486014885591775), (94,23190887658602093840495), (94,5969016958528881714919), (29,17796298288120682818345), (94,32077609169825663627445), (94,29060873183957031033873), (94,17445333507142428080162), (94,34890667373765028900932), (94,14869078607366875583209), (94,29738159806832413648338), (37,28585658706642889571487), (94,30969014156700366786053), (94,11245732840595927412368), (94,815638478233125698997), (94,16834571981006452113377), (94,33669127671648627097538), (94,8225664486860577374084), (44,4347772215409370513641), (94,12622848265104144236250), (94,32041355160517537284693), (94,37138874191107245980151), (94,35872599956908267063833), (94,34651688947112176082475), (94,28444209012657847526013), (94,28064705064961319118471), (94,9091067738548254829449), (94,10432486606566011747483), (94,30079453636948257785261), (54,24130996864803366129399), (55,27297269089835826847214), (94,20972536859168516684764), (57,30445055492250519798419), (94,35035906607007194103546), (94,20073142067562599512641), (94,35414694280218699035778), (62,30018616596622852396643), (94,19228082526359891104673), (94,32377298149273558404678), (64,17878573982279300591021), (65,35757147964558601182042), (94,3999212619340243449524), (94,27897052541412604681119), (68,5130183502951159634453), (69,10260367005902319268906), (70,20520734011804638537812), (94,5394608310543429129148), (94,25431194964541610320147), (73,29943462992559288349597), (94,25589919575731283305756), (94,5592964382682516577951), (94,27728340356483696231579), (94,55456680712967392463158), (94,110913361425934784926316), (94,221826722851869569852632), (94,443653445703739139705264), (94,887306891407478279410528), (94,1774613782814956558821056), (94,3549227565629913117642112), (94,7098455131259826235284224), (94,14196910262519652470568448), (94,28393820525039304941136896), (94,56787641050078609882273792), (94,113575282100157219764547584), (94,227150564200314439529095168), (94,454301128400628879058190336), (94,908602256801257758116380672), (94,1817204513602515516232761344), (94,3634409027205031032465522688), (94,7268818054410062064931045376)]
+
+def packedEncoding : Nat := 0x2000000000000000000000000000000000003000000000000000000000000000000000003800000000000000000000000000000000001c00000000000000000000000000000000000e000000000000000000000000000000000027000000000000000000000000000000000033800000000000000000000000000000000039c0000000000000000000000000000000001ce0000000000000000000000000000000002e70000000000000000000000000000000003738000000000000000000000000000000001b9c000000000000000000000000000000002dce0000000000000000000000000000000016e7000000000000000000000000000000000b738000000000000000000000000000000005b9c000000000000000000000000000000022dce0000000000000000000000000000000316e7000000000000000000000000000000038b73800000000000000000000000000000006003001800c00600300180000000000000005002801400a0050028014000000000000000480240120090048024012000000000000000440220110088044022011000000000000000420210108084042021010800000000000000410208104082041020810400000000000000408204102081040820410200000000000000404202101080840420210100000000000000402201100880440220110080000000000002401200900480240120090040000000000001400a005002801400a0050020000000000000c006003001800c00600300100000000000000c0180300600c018030060000000000000000a0140280500a01402805000000000000000090120240480901202404800000000000000088110220440881102204400000000000002084108210420841082104200000000000001082104208410821042084100000000000000881102204408811022044080000000000000480901202404809012024040000000000000280500a0140280500a014020000000000000180300600c0180300600c0100000000000000808080808080808080808000000000000000c0c0c0c0c0c0c0c0c0c0c000000000000020a0a0a0a0a0a0a0a0a0a0a000000000000030f0f0f0f0f0f0f0f0f0f0f00000000000000888888888888888888888880000000000000ccccccccccccccccccccccc0000000000002aaaaaaaaaaaaaaaaaaaaaaa0000000000003fffffffffffffffffffffff0000000000000a0d32506992834c941a64a00000000000002506992834c941a64a0d3250000000000000188e7ec473f6239fb11cfd880000000000002c473f6239fb11cfd88e7ec40000000000003c2eade1756f0bab785d5bc2000000000000141a64a0d32506992834c941000000000000024120904824120904824120000000000000012090482412090482412090000000000000209048241209048241209048000000000000120904824120904824120904000000000000090482412090482412090482000000000000048241209048241209048241000000000000317946107eacdda4e2f28c2000000000000038bca3083f566ed2717946100000000000001c5e51841fab376938bca3080000000000000e2f28c20fd59bb49c5e51840000000000002717946107eacdda4e2f28c200000000000022f28c20fd59bb49c5e5184100000000000015d8f9a42bb1f3485763e6900000000000000aec7cd215d8f9a42bb1f34800000000000005763e690aec7cd215d8f9a40000000000001763e690aec7cd215d8f9a420000000000002bb1f3485763e690aec7cd210000000000002318c6318c6318c6318c63180000000000001294a5294a5294a5294a52940000000000000a5294a5294a5294a5294a5200000000000006318c6318c6318c6318c631000000000000226bc4d789af135e26bc4d78000000000000135e26bc4d789af135e26bc400000000000009af135e26bc4d789af135e200000000000004d789af135e26bc4d789af1000000000000228a28a28a28a28a28a28a280000000000001145145145145145145145140000000000000a28a28a28a28a28a28a28a200000000000005145145145145145145145100000000000023d647ac8f591eb23d647ac800000000000011eb23d647ac8f591eb23d6400000000000008f591eb23d647ac8f591eb200000000000007ac8f591eb23d647ac8f59100000000000025cb972e5cb972e5cb972e5c000000000000172e5cb972e5cb972e5cb9720000000000000b972e5cb972e5cb972e5cb9000000000000274e9d3a74e9d3a74e9d3a7400000000000013a74e9d3a74e9d3a74e9d3a0000000000000e9d3a74e9d3a74e9d3a74e9
+
+theorem prefixTable :
+    CRTBarrel20.Packed20.residueTable 94 encodedRows 0 factors = true := by
+  decide +kernel
+
+private theorem quotientMasksCheck : ∀ i : Fin 19,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (75+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ PeakNodup.nodupMask sites 0 = true ∧ (∀ j ∈ sites, j < 75) ∧
+      q &&& (2^(75+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  decide +kernel
+
+theorem quotientMasks : ∀ i : Fin 19,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (75+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ sites.Nodup ∧ (∀ j ∈ sites, j < 75) ∧
+      q &&& (2^(75+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  intro i
+  have h := quotientMasksCheck i
+  exact ⟨h.1, PeakNodup.nodup_of_mask _ h.2.1, h.2.2⟩
+
+theorem basisShape : ∀ v ∈ pivotPlan.zipIdx,
+    v.2 < 94 ∧ (v.1.1 < 94 → v.1.1 ≠ v.2) ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+theorem packedBasis :
+    pivotPlan.zipIdx.reverse.foldl (quickStep 94) (identityWord CRTBarrel.Packed.width 94) =
+      packedEncoding := by
+  decide +kernel
+
+theorem packedRows : ∀ j : Fin 94,
+    digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val := by
+  decide +kernel
+
+
+open CRTResidueEarlyLogic
+def field (mir : Bool) : Program := CRTBarrel20.components20 94 mir 0 factors
+def logicalProgram (mir : Bool) : Program :=
+  circuit 94 75 21 123 pivotPlan paritySourcesTable field mir
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨167, 50, 13674⟩ else ⟨186, 31, 13739⟩
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Packed CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic
+private theorem encoded_size : encodedRows.size = 94 := rfl
+private theorem packed_room : 94 ≤ CRTBarrel.Packed.width := by decide
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates_from
+    (shape : CRTResidueGroupedBasis.Good 94 pivotPlan)
+    (basis : pivotPlan.zipIdx.reverse.foldl (quickStep 94) (identityWord CRTBarrel.Packed.width 94) = packedEncoding)
+    (rows : ∀ j : Fin 94, digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val) :
+    CRTBarrel.Matrix.applyOps (ops 94 pivotPlan) (CRTBarrel.Matrix.units 94) = encodedRows :=
+  @CRTResidueGroupedBasis.coordinates 94 pivotPlan shape encodedRows encoded_size packed_room packedEncoding basis rows
+end
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates : CRTBarrel.Matrix.applyOps (ops 94 pivotPlan) (CRTBarrel.Matrix.units 94) = encodedRows :=
+  coordinates_from basisShape packedBasis packedRows
+end
+
+private theorem parities : ∀ i : Fin 19, (paritySources paritySourcesTable i.val).Nodup ∧
+    paritySources paritySourcesTable i.val ≠ [] ∧ ∀ q ∈ paritySources paritySourcesTable i.val, q < 75 := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.1,h.1,h.2.2.1⟩
+
+private theorem tested : MaskOK 94 75 paritySourcesTable encodedRows := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
+
+
+
+private theorem rowValue_agrees (x : Nat → Bool) (row dim : Nat) :
+    CRTBarrel.rowValue x row dim = CRTBarrel20.rowValue x row dim := by
+  induction dim with
+  | zero => rfl
+  | succ dim ih => simp only [CRTBarrel.rowValue, CRTBarrel20.rowValue, ih]
+
+private theorem frame21 (rs : Rows) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) :
+    frameTagged 21 rs x dim slot ph = CRTBarrel20.frame20 rs x dim slot ph := by
+  change State.mk ph (CRTBarrel.Matrix.basis rs x dim _) =
+    State.mk ph (CRTBarrel20.Matrix20.basis rs x dim _)
+  apply congrArg (State.mk ph)
+  funext q
+  unfold CRTBarrel.Matrix.basis CRTBarrel20.Matrix20.basis
+  split
+  · exact rowValue_agrees x _ dim
+  · rfl
+
+private theorem field_extent : CRTBarrel20.extent20 factors = 75 := by decide +kernel
+
+private theorem field_allowed : ∀ pair ∈ factors, CRTBarrel20.UsedField20 pair.1 := by
+  intro pair hp
+  unfold CRTBarrel20.UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel20.componentRows20 encodedRows in
+set_option maxHeartbeats 180000 in
+private theorem fields_run (slot : Fin 22) (dim : Nat) (fit : dim ≤ 94-(slot.val-1))
+    (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (field mir) tape (frameTagged 21
+      (windowRows (keepPrefix encodedRows 75) dim (entryShift mir slot.val)) x dim slot.val phase) =
+    frameTagged 21
+      (windowRows (keepPrefix encodedRows 75) dim (exitShift mir slot.val)) x dim slot.val phase := by
+  let rs := windowRows (keepPrefix encodedRows 75) dim (entryShift mir slot.val)
+  let dst := windowRows (keepPrefix encodedRows 75) dim (exitShift mir slot.val)
+  let S (rows : Rows) := CRTBarrel20.frame20 rows x dim slot.val phase
+  have size : rs.size = 94 := (windowRows_size ..).trans ((keepPrefix_size ..).trans encoded_size)
+  have shortSlot : slot.val < 32 := Nat.lt_trans slot.isLt (by decide)
+  have small : 0+CRTBarrel20.extent20 factors ≤ rs.size := by rw [size,field_extent]; decide
+  have fieldName : field mir = CRTBarrel20.components20 rs.size mir 0 factors :=
+    congrArg (fun n => CRTBarrel20.components20 n mir 0 factors) size.symm
+  have mapped : run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) =
+      S (CRTBarrel20.componentRows20 mir slot.val 0 factors rs) :=
+    CRTBarrel20.frame_components20 rs mir 0 slot.val dim factors shortSlot small field_allowed x phase tape
+  have result : CRTBarrel20.componentRows20 mir slot.val 0 factors rs = dst :=
+    CRTBarrel20.Packed20.componentRows_keepPrefix 94 dim 75 slot mir encodedRows encoded_size
+      (by decide) fit factors field_extent (by decide) prefixTable
+  have atField : run (field mir) tape (S rs) =
+      run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) :=
+    congrArg (fun p => run p tape (S rs)) fieldName
+  rw [frame21, frame21]
+  exact atField.trans (mapped.trans (congrArg S result))
+
+def liveDim (slot : Fin 22) : Nat := min 75 (94-(slot.val-1))
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel.Matrix.applyOps ops pivotPlan encodedRows in
+set_option maxHeartbeats 180000 in
+theorem logical_run (slot : Fin 22) (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (logicalProgram mir) tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 94 (liveDim slot) (CRTBarrel20.entryShift mir slot.val))
+        x (liveDim slot) slot.val phase) =
+    CRTBarrel20.frame20 (CRTBarrel20.plain20 94 (liveDim slot) (CRTBarrel20.exitShift mir slot.val))
+      x (liveDim slot) slot.val phase := by
+  let dim := liveDim slot
+  have inside : dim ≤ 75 := Nat.min_le_left ..
+  have fits : dim ≤ 94-(slot.val-1) := Nat.min_le_right ..
+  let inlet := frameTagged 21 (plain 94 dim (entryShift mir slot.val)) x dim slot.val phase
+  let outlet := frameTagged 21 (plain 94 dim (exitShift mir slot.val)) x dim slot.val phase
+  have typed : run (logicalProgram mir) tape inlet = outlet :=
+    run_circuit 94 75 21 123 pivotPlan paritySourcesTable encodedRows encoded_size (by decide) (by decide)
+      basisShape coordinates parities tested slot dim inside field x phase tape mir
+      (fun b m => fields_run slot dim fits b x phase m)
+  dsimp only [inlet, outlet] at typed
+  rw [frame21, frame21] at typed
+  exact typed
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+open Arithmetic Challenge CRTBarrel CRTBarrel.Placement CRTBarrel.Resources
+open CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic ECDSAAdd.RecordedQuantum
+
+private def correctionCheck (mir : Bool) : Bool :=
+  (correctionProgram 94 75 21 123 paritySourcesTable mir).all fun i =>
+    physicalBit i && decide (∀ q ∈ i.wires, q < 125)
+
+private theorem correction_checked (mir : Bool) : correctionCheck mir = true := by
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 125)
+    (correctionProgram 94 75 21 123 paritySourcesTable mir) := by
+  intro i hi
+  have ok := List.all_eq_true.mp (correction_checked mir) i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨physical,cover⟩ := ok
+  refine ⟨?_,of_decide_eq_true cover⟩
+  cases i <;> simp_all [physicalBit,PhysicalInstr,ProperGate]
+
+private theorem basis_fits : Fits (· < 125) (basisProgram 94 pivotPlan) := by
+  apply fits_map
+  intro pair hp
+  obtain ⟨a,b⟩ := pair
+  obtain ⟨ha,hb,separate⟩ := ops_bounds 94 pivotPlan basisShape (a,b) hp
+  refine ⟨separate,?_⟩
+  intro q hq
+  simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem field_fits (mir : Bool) : Fits (· < 125) (field mir) :=
+  CRTBarrel20.fitsComponents 94 mir 0 factors (by decide +kernel) field_allowed
+
+theorem program_fits (mir : Bool) : Fits (· < 125) (logicalProgram mir) := by
+  have b := basis_fits
+  have r := fits_reverse b
+  have c := correction_fits mir
+  have f := field_fits mir
+  cases mir
+  · exact fits_append b (fits_append f (fits_append c r))
+  · exact fits_append b (fits_append c (fits_append f r))
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+open CRTBarrel20 CRTResidueGroupedBasis CRTResidueCorrection CRTResidueEarlyLogic
+
+private theorem correction_price (mir : Bool) :
+    count (correctionProgram 94 75 21 123 paritySourcesTable mir) =
+      (if mir then ⟨0, 19, 1932⟩ else ⟨19, 0, 1913⟩) := by
+  cases mir <;> rw [correctionProgram_count] <;> decide +kernel
+
+attribute [local irreducible] count in
+theorem costs (mir : Bool) : count (logicalProgram mir) = bounds mir := by
+  let P := basisProgram 94 pivotPlan
+  let c := correctionProgram 94 75 21 123 paritySourcesTable
+  have len : (ops 94 pivotPlan).length = 3441 := by decide +kernel
+  have basisPrice : count P = ⟨0, 0, 3441⟩ :=
+    (CRTBarrel20.residueBasisPrice 94 pivotPlan).1.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have basisRevPrice : count P.reverse = ⟨0, 0, 3441⟩ :=
+    (CRTBarrel20.residueBasisPrice 94 pivotPlan).2.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have fieldPrice : count (field mir) = partsPrice20 mir factors :=
+    CRTBarrel20.residueFieldPrice 94 mir factors field_allowed
+  cases mir
+  · change count (P ++ (field false ++ (c false ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+  · change count (P ++ (c true ++ (field true ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+
+open Shadow20
+theorem width_at_start : liveW20 165 = 94 := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+open CRTBarrel.Packed
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option profiler.threshold 10
+
+def encodedRows : Array Nat := #[
+  13255433048055816103839542179049, 18525665464752706843920324009274, 16768921325853743263893396732532, 18206257439498349829369973595321, 16130105275345029234792695904626,
+  9103128719749174914684986797660, 16977008825933236631904088290705, 9728029704611030987968230268594, 19456059409222061975936460537188, 18629709214792453527925669788360,
+  6438860191635450928237222630481, 12877720383270901856474445260962, 1609715047908862732059305657620, 3219430095817725464118611315240, 8538333020196268862817114299121,
+  17076666040392537725634228598242, 13870922477133405027321205910468, 4269166510098134431408557149560, 1962813832611451976511024318001, 3271356387685753294185040530002,
+  5888441497834355929533072954004, 11122611718131561200229137802008, 13006941636501259033504247172385, 5731473669350847643061243058754, 4161168905019116182181437307300,
+  8322337810038232364362874614600, 16644675620076464728725749229200, 13063655486347181331732372985921, 18789172937257675738318833133762, 17295936270863681052690414981508,
+  14309462938075691681433578677000, 8336516272499712938919906067984, 16673032544999425877839812135968, 714448870578728116694815113793, 1428897741157456233389630227586,
+  2857795482314912466779260455172, 5159908509735258620573664710728, 10319817019470517241147329421456, 357224435289364058347407556896, 6067176039812300620568215210305,
+  16933838229100800001376366975938, 18374830136167139351673994903236, 16467250668682608279400738520456, 16728601212691827973102492267088, 13174792821731985522257733248160,
+  17071670212342294904905670147905, 9629509574518354507192531370434, 19259019149036709014385062740868, 3908162329812287870952234563656, 14409122354911408938200043179984,
+  8535835106171147452452835073952, 9060390475229210101854465601473, 18120780950458420203708931202946, 15959152297265169983470611119876, 11635894990878669542993970953736,
+  2989380378105668662040690621456, 4530195237614605050927232800736, 20282409603651670423947251286015, 13521606402434446949298167524010, 16225927682921336339157801028812,
+  10817285121947557559438534019208, 19089326685789807457832707092720, 12726217790526538305221804728480, 15271461348631845966266165674176, 10180974232421230644177443782784,
+  78919881726271091143763623680, 52613254484180727429175749120, 63135905381016872915010898944, 42090603587344581943340599296, 74277535742372791664718704640,
+  49518357161581861109812469760, 59422028593898233331774963712, 39614685729265488887849975808, 10144919075346220696729567637505, 10147395257693144353233528967170,
+  10152347622386991666241451626500, 10162252351774686292257296945160, 10182061810550075544288987582480, 10221680728100854048352368857120, 10300918563202411056479131406400,
+  10459394233405525072732656504960, 10776345573811753105239706702080, 11410248254624209170253807096320, 12678053616249121300282007884800, 15213664339498945560338409461760,
+  13076940919364886865763308142592, 5871472235078103307579364999168, 11742944470156206615158729998336, 3203479336660742806370208710656, 6406958673321485612740417421312,
+  12813917346642971225480834842624, 5345425089634272027014418399232, 10690850179268544054028836798464, 1099290754885417684110422310912, 2198581509770835368220844621824,
+  4397163019541670736441689243648, 8794326039083341472883378487296, 17588652078166682945766756974592, 14894894552681695467586262663168, 9507379501711720511225274040320,
+  19014759003423441022450548080640, 17747108403195211620953844875264, 15211807202738752817960438464512, 10141204801825835211973625643008
+]
+
+def factors : List (Nat × Nat) := [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (37,1), (67,1), (73,1), (87,1), (91,1), (97,1), (257,2), (8191,1)]
+
+def paritySourcesTable : List (List Nat) := [[0, 2, 5, 6, 8, 10, 11, 12, 13, 14, 15, 16, 18, 22, 23, 24, 25, 27, 30, 32, 33, 35, 36, 38, 41, 42, 44, 48, 50, 52, 54, 56, 57, 60, 62, 66, 70, 71, 72, 74, 75, 76, 78, 79, 82], [1, 3, 6, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 28, 31, 34, 36, 37, 42, 43, 49, 51, 53, 55, 57, 61, 62, 67, 68, 69, 70, 72, 75, 76, 77, 79, 80, 83], [2, 4, 7, 8, 12, 13, 15, 16, 17, 19, 20, 23, 24, 25, 26, 29, 32, 35, 37, 38, 39, 43, 44, 50, 51, 52, 54, 56, 58, 59, 60, 61, 63, 64, 65, 66, 67, 69, 71, 72, 76, 77, 78, 80, 81, 84], [0, 3, 5, 8, 9, 10, 13, 16, 17, 20, 21, 24, 25, 26, 27, 30, 36, 38, 40, 44, 45, 51, 52, 53, 55, 59, 61, 64, 66, 68, 69, 72, 77, 78, 79, 81, 82], [0, 1, 3, 4, 6, 9, 10, 11, 17, 21, 22, 25, 26, 27, 28, 31, 33, 37, 41, 45, 46, 51, 52, 53, 54, 56, 57, 58, 59, 62, 63, 64, 67, 68, 70, 71, 72, 73, 78, 79, 80, 82, 83], [0, 1, 2, 3, 4, 5, 7, 10, 11, 12, 14, 18, 22, 23, 26, 27, 28, 29, 32, 34, 38, 42, 45, 46, 47, 51, 52, 53, 54, 55, 57, 59, 63, 65, 66, 67, 69, 70, 72, 74, 79, 80, 81, 83, 84], [1, 2, 4, 5, 8, 10, 11, 12, 13, 15, 18, 19, 23, 24, 28, 29, 30, 33, 35, 39, 43, 46, 47, 48, 51, 52, 53, 54, 55, 56, 57, 60, 61, 62, 63, 66, 68, 69, 71, 72, 75, 80, 81, 82, 84], [0, 2, 5, 9, 11, 12, 13, 16, 19, 20, 22, 24, 25, 29, 30, 31, 33, 34, 36, 39, 40, 44, 47, 48, 49, 52, 53, 54, 55, 56, 58, 59, 60, 62, 64, 65, 66, 69, 72, 73, 76, 81, 82, 83], [1, 3, 6, 12, 13, 14, 17, 20, 21, 23, 25, 26, 30, 31, 32, 34, 35, 37, 39, 40, 41, 48, 49, 50, 53, 54, 55, 56, 57, 58, 60, 63, 64, 66, 70, 71, 72, 73, 74, 77, 82, 83, 84], [2, 4, 6, 7, 10, 13, 14, 15, 21, 24, 26, 27, 31, 32, 33, 35, 36, 38, 40, 41, 42, 49, 50, 54, 55, 56, 57, 59, 60, 64, 67, 68, 69, 70, 72, 74, 75, 78, 83, 84], [0, 3, 5, 6, 7, 8, 10, 11, 15, 16, 18, 22, 25, 28, 32, 34, 36, 37, 41, 42, 43, 45, 50, 55, 56, 57, 60, 65, 66, 67, 69, 71, 72, 73, 75, 76, 79, 84], [0, 1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17, 18, 19, 23, 26, 27, 29, 35, 37, 38, 39, 42, 43, 44, 46, 56, 58, 59, 60, 66, 68, 69, 72, 73, 74, 76, 77, 80], [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 15, 17, 19, 20, 24, 27, 28, 30, 36, 38, 39, 40, 43, 44, 47, 51, 57, 58, 60, 67, 68, 70, 71, 72, 73, 74, 75, 77, 78, 81], [1, 2, 4, 5, 6, 8, 9, 11, 12, 13, 14, 16, 20, 21, 25, 27, 28, 29, 31, 33, 37, 39, 40, 41, 44, 45, 48, 52, 58, 61, 62, 63, 64, 65, 66, 67, 69, 70, 72, 74, 75, 76, 78, 79, 82], [0, 2, 5, 7, 9, 12, 13, 14, 15, 17, 21, 26, 27, 28, 29, 30, 32, 34, 38, 39, 40, 41, 42, 46, 49, 53, 57, 58, 62, 64, 66, 68, 69, 71, 72, 75, 76, 77, 79, 80, 83], [1, 3, 6, 8, 10, 13, 14, 15, 16, 18, 22, 28, 29, 30, 31, 33, 35, 39, 40, 41, 42, 43, 47, 50, 54, 57, 59, 60, 61, 62, 65, 66, 69, 72, 76, 77, 78, 80, 81, 84], [2, 4, 6, 7, 9, 10, 11, 14, 15, 16, 17, 18, 19, 23, 29, 30, 31, 32, 33, 34, 36, 39, 40, 41, 42, 43, 44, 48, 55, 57, 60, 62, 66, 70, 71, 72, 77, 78, 79, 81, 82], [0, 3, 5, 7, 8, 10, 11, 12, 15, 16, 17, 19, 20, 22, 24, 27, 30, 31, 32, 34, 35, 37, 40, 41, 42, 43, 44, 45, 49, 51, 56, 57, 61, 62, 67, 68, 69, 70, 72, 73, 78, 79, 80, 82, 83], [0, 1, 3, 4, 8, 9, 10, 11, 12, 13, 16, 17, 20, 21, 23, 25, 28, 31, 32, 33, 35, 36, 38, 39, 41, 42, 43, 44, 45, 46, 50, 51, 52, 58, 59, 60, 61, 63, 64, 65, 66, 67, 69, 71, 72, 74, 79, 80, 81, 83, 84]]
+
+def pivotPlan : List (Nat × Nat) := [(104,9444879368470036497480), (104,18889902852128148850832), (104,37779661589068221845792), (4,103893961283546553183987), (104,273901069340066823349165), (104,368352168867776245216327), (7,1199499458120869533746623), (8,2398980899937707504503678), (104,2436778372065901492770818), (104,5997533671763239076164731), (11,17992490927879348533812081), (12,35984785933412307638220514), (104,28183833702130694842352727), (104,38366701714115567402160095), (15,33003942239037426068794789), (104,21967094508616399088072431), (104,1086162127143311336800379), (104,2172308906783321761513718), (104,12209347003594509694130909), (20,36460728472223037009588071), (21,4455037789961773818633934), (104,18037783135198141644585359), (25,8533285581111914805231403), (24,10974718433416107677090173), (104,34119228077348328818998444), (104,34723270946344988276980447), (104,23753125003743643294992495), (104,6114653120782049190110951), (29,18226711707485007359814441), (104,32840149226266267675340981), (104,29756297208735712599841809), (104,17866708055485113376389154), (104,35728031174143758626091076), (104,15226914362009387096937193), (104,30453175449824497095026130), (37,29274084388167990460513439), (104,31714537318450619919486469), (104,11516197379879931449781904), (104,834016421984497431657909), (104,17237557901219641193218017), (104,34474790822690171331444674), (104,8419802648778113334706052), (44,4453991574171705382846697), (104,12922301339084310084878042), (104,32804362366844287279284821), (48,38025281734134929697782263), (104,1315177586386739022754798), (104,3905393947706646861550642), (104,29124405622627215909839485), (50,27592004216617983112861033), (104,6799414426363297409174613), (104,18992584857940088618018577), (104,37970081288034199353806370), (54,21699908296000383867598199), (55,33979320486246510520789742), (104,32632788500229804042494838), (104,33783355919710569947919259), (104,24350387065426448209789297), (104,4319974093408876217123731), (104,5702635710763996828583093), (104,16750990878472163352595935), (104,27117341630034940744554081), (104,6406558474615532168837795), (104,19141080474096244389220325), (104,19931053791499853825544239), (104,18715342058323109839155313), (104,21223565495870826194522259), (104,16228419231812381619417525), (104,28660206156795940394406623), (104,8623209863866093367179105), (104,11363110031758094294112675), (104,33444052384412381510724325), (104,22972373343969586483019567), (104,13282752152100117184299377), (104,26565504304200234368598754), (104,37402743998857500572239029), (104,10739082095997437118728219), (104,21478164191994874237456438), (104,27252192841759894759399709), (104,29125117227439294518068043), (82,5044905955340599085680615), (83,10089811910681198171361230), (84,20179623821362396342722460), (84,21009151101003678626545225), (104,3338783854914180686364131), (104,22793690386412547638714159), (104,45587380772825095277428318), (104,91174761545650190554856636), (104,182349523091300381109713272), (104,364699046182600762219426544), (104,729398092365201524438853088), (104,1458796184730403048877706176), (104,2917592369460806097755412352), (104,5835184738921612195510824704), (104,11670369477843224391021649408), (104,23340738955686448782043298816), (104,46681477911372897564086597632), (104,93362955822745795128173195264), (104,186725911645491590256346390528), (104,373451823290983180512692781056), (104,746903646581966361025385562112), (104,1493807293163932722050771124224), (104,2987614586327865444101542248448), (104,5975229172655730888203084496896)]
+
+def packedEncoding : Nat := 0x800000000000000000000000000000000000c00000000000000000000000000000000000e00000000000000000000000000000000000f00000000000000000000000000000000000780000000000000000000000000000000000bc0000000000000000000000000000000000de00000000000000000000000000000000006f00000000000000000000000000000000003780000000000000000000000000000000001bc0000000000000000000000000000000000de00000000000000000000000000000000086f000000000000000000000000000000000437800000000000000000000000000000000a1bc0000000000000000000000000000000050de00000000000000000000000000000000286f000000000000000000000000000000009437800000000000000000000000000000004a1bc0000000000000000000000000000000a50de0000000000000000000000000000000c006003001800c0060030018000000000000a005002801400a0050028014000000000000900480240120090048024012000000000000880440220110088044022011000000000000840420210108084042021010800000000000820410208104082041020810400000000000810408204102081040820410200000000000808404202101080840420210100000000000804402201100880440220110080000000000802401200900480240120090040000000000801400a005002801400a0050020000000000800c006003001800c006003001000000000000800080008000800080008000000000000000c000c000c000c000c000c000000000000000a000a000a000a000a000a000000000000000f000f000f000f000f000f000000000000000880088008800880088008800000000000000cc00cc00cc00cc00cc00cc00000000000000aa00aa00aa00aa00aa00aa00000000000000ff00ff00ff00ff00ff00ff000000000000808080808080808080808080800000000000c0c0c0c0c0c0c0c0c0c0c0c0c00000000000a0a0a0a0a0a0a0a0a0a0a0a0a00000000000f0f0f0f0f0f0f0f0f0f0f0f0f00000000000888888888888888888888888880000000000cccccccccccccccccccccccccc0000000000aaaaaaaaaaaaaaaaaaaaaaaaaa0000000000ffffffffffffffffffffffffff0000000000392dd9abf04314f4725bb357e0000000000025bb357e08629e8e4b766afc10000000000092dd9abf04314f4725bb357e080000000000c96ecd5f8218a7a392dd9abf040000000000e4b766afc10c53d1c96ecd5f820000000000725bb357e08629e8e4b766afc100000000006bbcc54fd07091b2d7798a9fa00000000000b5de62a7e83848d96bbcc54fd000000000003153f41c246cb5de62a7e838480000000000f3153f41c246cb5de62a7e83840000000000798a9fa0e12365aef3153f41c20000000000d7798a9fa0e12365aef3153f410000000000a64a0d32506992834c941a64a00000000000d32506992834c941a64a0d32500000000000cfd88e7ec473f6239fb11cfd880000000000e7ec473f6239fb11cfd88e7ec40000000000d5bc2eade1756f0bab785d5bc200000000004c941a64a0d32506992834c9410000000000048241209048241209048241200000000000824120904824120904824120900000000000412090482412090482412090480000000000241209048241209048241209040000000000120904824120904824120904820000000000090482412090482412090482410000000000d2717946107eacdda4e2f28c2000000000006938bca3083f566ed2717946100000000000b49c5e51841fab376938bca3080000000000da4e2f28c20fd59bb49c5e51840000000000ed2717946107eacdda4e2f28c20000000000a4e2f28c20fd59bb49c5e518410000000000d215d8f9a42bb1f3485763e6900000000000690aec7cd215d8f9a42bb1f34800000000003485763e690aec7cd215d8f9a40000000000485763e690aec7cd215d8f9a420000000000a42bb1f3485763e690aec7cd2100000000008c6318c6318c6318c6318c631800000000004a5294a5294a5294a5294a52940000000000294a5294a5294a5294a5294a52000000000018c6318c6318c6318c6318c631000000000035e26bc4d789af135e26bc4d780000000000af135e26bc4d789af135e26bc40000000000d789af135e26bc4d789af135e200000000006bc4d789af135e26bc4d789af1000000000028a28a28a28a28a28a28a28a280000000000145145145145145145145145140000000000a28a28a28a28a28a28a28a28a20000000000514514514514514514514514510000000000eb23d647ac8f591eb23d647ac80000000000f591eb23d647ac8f591eb23d6400000000007ac8f591eb23d647ac8f591eb20000000000d647ac8f591eb23d647ac8f591000000000072e5cb972e5cb972e5cb972e5c0000000000cb972e5cb972e5cb972e5cb9720000000000e5cb972e5cb972e5cb972e5cb90000000000d3a74e9d3a74e9d3a74e9d3a740000000000e9d3a74e9d3a74e9d3a74e9d3a0000000000a74e9d3a74e9d3a74e9d3a74e9
+
+theorem prefixTable :
+    CRTBarrel20.Packed20.residueTable 104 encodedRows 0 factors = true := by
+  decide +kernel
+
+private theorem quotientMasksCheck : ∀ i : Fin 19,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (85+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ PeakNodup.nodupMask sites 0 = true ∧ (∀ j ∈ sites, j < 85) ∧
+      q &&& (2^(85+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  decide +kernel
+
+theorem quotientMasks : ∀ i : Fin 19,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (85+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ sites.Nodup ∧ (∀ j ∈ sites, j < 85) ∧
+      q &&& (2^(85+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  intro i
+  have h := quotientMasksCheck i
+  exact ⟨h.1, PeakNodup.nodup_of_mask _ h.2.1, h.2.2⟩
+
+theorem basisShape : ∀ v ∈ pivotPlan.zipIdx,
+    v.2 < 104 ∧ (v.1.1 < 104 → v.1.1 ≠ v.2) ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+theorem packedBasis :
+    pivotPlan.zipIdx.reverse.foldl (quickStep 104) (identityWord CRTBarrel.Packed.width 104) =
+      packedEncoding := by
+  decide +kernel
+
+theorem packedRows : ∀ j : Fin 104,
+    digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val := by
+  decide +kernel
+
+
+open CRTResidueEarlyLogic
+def field (mir : Bool) : Program := CRTBarrel20.components20 104 mir 0 factors
+def logicalProgram (mir : Bool) : Program :=
+  circuit 104 85 21 133 pivotPlan paritySourcesTable field mir
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨192, 62, 17608⟩ else ⟨211, 43, 17621⟩
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Packed CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic
+private theorem encoded_size : encodedRows.size = 104 := rfl
+private theorem packed_room : 104 ≤ CRTBarrel.Packed.width := by decide
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates_from
+    (shape : CRTResidueGroupedBasis.Good 104 pivotPlan)
+    (basis : pivotPlan.zipIdx.reverse.foldl (quickStep 104) (identityWord CRTBarrel.Packed.width 104) = packedEncoding)
+    (rows : ∀ j : Fin 104, digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val) :
+    CRTBarrel.Matrix.applyOps (ops 104 pivotPlan) (CRTBarrel.Matrix.units 104) = encodedRows :=
+  @CRTResidueGroupedBasis.coordinates 104 pivotPlan shape encodedRows encoded_size packed_room packedEncoding basis rows
+end
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates : CRTBarrel.Matrix.applyOps (ops 104 pivotPlan) (CRTBarrel.Matrix.units 104) = encodedRows :=
+  coordinates_from basisShape packedBasis packedRows
+end
+
+private theorem parities : ∀ i : Fin 19, (paritySources paritySourcesTable i.val).Nodup ∧
+    paritySources paritySourcesTable i.val ≠ [] ∧ ∀ q ∈ paritySources paritySourcesTable i.val, q < 85 := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.1,h.1,h.2.2.1⟩
+
+private theorem tested : MaskOK 104 85 paritySourcesTable encodedRows := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
+
+
+
+private theorem rowValue_agrees (x : Nat → Bool) (row dim : Nat) :
+    CRTBarrel.rowValue x row dim = CRTBarrel20.rowValue x row dim := by
+  induction dim with
+  | zero => rfl
+  | succ dim ih => simp only [CRTBarrel.rowValue, CRTBarrel20.rowValue, ih]
+
+private theorem frame21 (rs : Rows) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) :
+    frameTagged 21 rs x dim slot ph = CRTBarrel20.frame20 rs x dim slot ph := by
+  change State.mk ph (CRTBarrel.Matrix.basis rs x dim _) =
+    State.mk ph (CRTBarrel20.Matrix20.basis rs x dim _)
+  apply congrArg (State.mk ph)
+  funext q
+  unfold CRTBarrel.Matrix.basis CRTBarrel20.Matrix20.basis
+  split
+  · exact rowValue_agrees x _ dim
+  · rfl
+
+private theorem field_extent : CRTBarrel20.extent20 factors = 85 := by decide +kernel
+
+private theorem field_allowed : ∀ pair ∈ factors, CRTBarrel20.UsedField20 pair.1 := by
+  intro pair hp
+  unfold CRTBarrel20.UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel20.componentRows20 encodedRows in
+set_option maxHeartbeats 180000 in
+private theorem fields_run (slot : Fin 22) (dim : Nat) (fit : dim ≤ 104-(slot.val-1))
+    (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (field mir) tape (frameTagged 21
+      (windowRows (keepPrefix encodedRows 85) dim (entryShift mir slot.val)) x dim slot.val phase) =
+    frameTagged 21
+      (windowRows (keepPrefix encodedRows 85) dim (exitShift mir slot.val)) x dim slot.val phase := by
+  let rs := windowRows (keepPrefix encodedRows 85) dim (entryShift mir slot.val)
+  let dst := windowRows (keepPrefix encodedRows 85) dim (exitShift mir slot.val)
+  let S (rows : Rows) := CRTBarrel20.frame20 rows x dim slot.val phase
+  have size : rs.size = 104 := (windowRows_size ..).trans ((keepPrefix_size ..).trans encoded_size)
+  have shortSlot : slot.val < 32 := Nat.lt_trans slot.isLt (by decide)
+  have small : 0+CRTBarrel20.extent20 factors ≤ rs.size := by rw [size,field_extent]; decide
+  have fieldName : field mir = CRTBarrel20.components20 rs.size mir 0 factors :=
+    congrArg (fun n => CRTBarrel20.components20 n mir 0 factors) size.symm
+  have mapped : run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) =
+      S (CRTBarrel20.componentRows20 mir slot.val 0 factors rs) :=
+    CRTBarrel20.frame_components20 rs mir 0 slot.val dim factors shortSlot small field_allowed x phase tape
+  have result : CRTBarrel20.componentRows20 mir slot.val 0 factors rs = dst :=
+    CRTBarrel20.Packed20.componentRows_keepPrefix 104 dim 85 slot mir encodedRows encoded_size
+      (by decide) fit factors field_extent (by decide) prefixTable
+  have atField : run (field mir) tape (S rs) =
+      run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) :=
+    congrArg (fun p => run p tape (S rs)) fieldName
+  rw [frame21, frame21]
+  exact atField.trans (mapped.trans (congrArg S result))
+
+def liveDim (slot : Fin 22) : Nat := min 85 (104-(slot.val-1))
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel.Matrix.applyOps ops pivotPlan encodedRows in
+set_option maxHeartbeats 180000 in
+theorem logical_run (slot : Fin 22) (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (logicalProgram mir) tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 104 (liveDim slot) (CRTBarrel20.entryShift mir slot.val))
+        x (liveDim slot) slot.val phase) =
+    CRTBarrel20.frame20 (CRTBarrel20.plain20 104 (liveDim slot) (CRTBarrel20.exitShift mir slot.val))
+      x (liveDim slot) slot.val phase := by
+  let dim := liveDim slot
+  have inside : dim ≤ 85 := Nat.min_le_left ..
+  have fits : dim ≤ 104-(slot.val-1) := Nat.min_le_right ..
+  let inlet := frameTagged 21 (plain 104 dim (entryShift mir slot.val)) x dim slot.val phase
+  let outlet := frameTagged 21 (plain 104 dim (exitShift mir slot.val)) x dim slot.val phase
+  have typed : run (logicalProgram mir) tape inlet = outlet :=
+    run_circuit 104 85 21 133 pivotPlan paritySourcesTable encodedRows encoded_size (by decide) (by decide)
+      basisShape coordinates parities tested slot dim inside field x phase tape mir
+      (fun b m => fields_run slot dim fits b x phase m)
+  dsimp only [inlet, outlet] at typed
+  rw [frame21, frame21] at typed
+  exact typed
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+open Arithmetic Challenge CRTBarrel CRTBarrel.Placement CRTBarrel.Resources
+open CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic ECDSAAdd.RecordedQuantum
+
+private def correctionCheck (mir : Bool) : Bool :=
+  (correctionProgram 104 85 21 133 paritySourcesTable mir).all fun i =>
+    physicalBit i && decide (∀ q ∈ i.wires, q < 135)
+
+private theorem correction_checked (mir : Bool) : correctionCheck mir = true := by
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 135)
+    (correctionProgram 104 85 21 133 paritySourcesTable mir) := by
+  intro i hi
+  have ok := List.all_eq_true.mp (correction_checked mir) i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨physical,cover⟩ := ok
+  refine ⟨?_,of_decide_eq_true cover⟩
+  cases i <;> simp_all [physicalBit,PhysicalInstr,ProperGate]
+
+private theorem basis_fits : Fits (· < 135) (basisProgram 104 pivotPlan) := by
+  apply fits_map
+  intro pair hp
+  obtain ⟨a,b⟩ := pair
+  obtain ⟨ha,hb,separate⟩ := ops_bounds 104 pivotPlan basisShape (a,b) hp
+  refine ⟨separate,?_⟩
+  intro q hq
+  simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem field_fits (mir : Bool) : Fits (· < 135) (field mir) :=
+  CRTBarrel20.fitsComponents 104 mir 0 factors (by decide +kernel) field_allowed
+
+theorem program_fits (mir : Bool) : Fits (· < 135) (logicalProgram mir) := by
+  have b := basis_fits
+  have r := fits_reverse b
+  have c := correction_fits mir
+  have f := field_fits mir
+  cases mir
+  · exact fits_append b (fits_append f (fits_append c r))
+  · exact fits_append b (fits_append c (fits_append f r))
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+open CRTBarrel20 CRTResidueGroupedBasis CRTResidueCorrection CRTResidueEarlyLogic
+
+private theorem correction_price (mir : Bool) :
+    count (correctionProgram 104 85 21 133 paritySourcesTable mir) =
+      (if mir then ⟨0, 19, 2052⟩ else ⟨19, 0, 2033⟩) := by
+  cases mir <;> rw [correctionProgram_count] <;> decide +kernel
+
+attribute [local irreducible] count in
+theorem costs (mir : Bool) : count (logicalProgram mir) = bounds mir := by
+  let P := basisProgram 104 pivotPlan
+  let c := correctionProgram 104 85 21 133 paritySourcesTable
+  have len : (ops 104 pivotPlan).length = 4466 := by decide +kernel
+  have basisPrice : count P = ⟨0, 0, 4466⟩ :=
+    (CRTBarrel20.residueBasisPrice 104 pivotPlan).1.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have basisRevPrice : count P.reverse = ⟨0, 0, 4466⟩ :=
+    (CRTBarrel20.residueBasisPrice 104 pivotPlan).2.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have fieldPrice : count (field mir) = partsPrice20 mir factors :=
+    CRTBarrel20.residueFieldPrice 104 mir factors field_allowed
+  cases mir
+  · change count (P ++ (field false ++ (c false ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+  · change count (P ++ (c true ++ (field true ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+
+open Shadow20
+theorem width_at_start : liveW20 185 = 104 := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+open CRTBarrel.Packed
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option profiler.threshold 10
+
+def encodedRows : Array Nat := #[
+  9485140717953385904087205892748521, 2371285179488346476021801473187130, 4742570358976692952043602946374260, 7522697810790616406689852949421241, 4660801904511577556318713240402290,
+  3761348905395308203344926474710620, 5919158203488569330000554212521361, 7230265848604605701913189688090290, 4075937980139556146765386717740388, 8151875960279112293530773435480776,
+  5604383910799496487937678577570897, 824174104529337718814364496701602, 6593392836234701750514915973612820, 2802191955399748243968839288785448, 9784659761980301413205392234158833,
+  9184725806890947569349791809877474, 7984857896712239881638590961314756, 4892329880990150706602696117079416, 2009921364594126823947288901633585, 3349868940990211373245481502722642,
+  6029764093782380471841866704900756, 1004960682297063411973644450816792, 5063326932945767194596369817390369, 10126653865891534389192739634780738, 5825212725153048527855042556393892,
+  1265831733236441798649092454347592, 2531663466472883597298184908695184, 4495476177893366345024074907195457, 7279891811044555687511434793527490, 4175189905019456117961876928614788,
+  8350379810038912235923753857229576, 6316165903008169214786515056018960, 2247738088946683172512037453597728, 365797821736308795747745338262081, 731595643472617591495490676524162,
+  1463191286945235182990981353048324, 2641873156984452413733716331892808, 5283746313968904827467432663785616, 182898910868154397873872669131040, 2663062834118181126157658133678401,
+  7906791174049600594916857117236162, 7969079394767621945538996499021508, 5553565072465588634017000339602824, 3261914137796959095804662698029648, 6523828275593918191609325396059296,
+  8819637438197167258898012728278849, 4370347574359627495655851557863874, 8740695148719254991311703115727748, 4851404057602561519194345291921480, 2204909359549291814724503182069712,
+  4409818719098583629449006364139424, 4957968333766236793544983779389377, 9915936667532473587089967558778754, 9447279617995291917118942459117316, 8509965518920928577176892259794440,
+  6635337320772201897292791861148688, 2478984166883118396772491889694688, 10384593717069655257060992658440191, 3461531239023218419020330886146730, 4153837486827862102824397063376076,
+  2769224991218574735216264708917384, 4886867631562190709205173015736560, 3257911754374793806136782010491040, 3909494105249752567364138412589248, 2606329403499835044909425608392832,
+  5172093368812902229197692841557760, 3448062245875268152798461894371840, 4137674695050321783358154273246208, 2758449796700214522238769515497472, 4867852582412143274539005027348480,
+  3245235054941428849692670018232320, 3894282065929714619631204021878784, 2596188043953143079754136014585856, 1948062524355030590479443664309249, 3246770873925050984132406107182082,
+  5844187573065091771438330992927748, 654427254275518088989188105978888, 659500333766025981151894990521360, 669646492747041765477308759606304, 689938810709073334128136297776192,
+  730523446633136471429791374115968, 811692718481262746033101526795520, 974031262177515295239721832154624, 30427328678997891120676818923521, 50712214464996485201128031539202,
+  91281986036993673362030456770564, 172421529180988049683835307233288, 334700615468976802327445008158736, 659258788044954307614664410009632, 1308375133196909318189103213711424,
+  2606607823500819339337980821115008, 5203073204108639381635736035922176, 11410248254624209170253807096320, 12678053616249121300282007884800, 15213664339498945560338409461760,
+  7633197703355540473281195123146752, 4881801689641425689501397587853312, 9763603379282851379002795175706624, 9142613041496047500944597692973056, 7900632365922439744828202727505920,
+  5416671014775224232595412796571648, 448748312480793208129832934703104, 897496624961586416259665869406208, 1794993249923172832519331738812416, 3589986499846345665038663477624832,
+  7179972999692691330077326955249664, 3975352282315727403093661252059136, 7950704564631454806187322504118272, 5516815412193254355313652349796352, 649037107316853453566312041152512,
+  1298074214633706907132624082305024, 2596148429267413814265248164610048, 5192296858534827628530496329220096
+]
+
+def factors : List (Nat × Nat) := [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (37,1), (67,1), (73,1), (87,1), (91,1), (97,1), (257,2), (2047,1), (8191,1)]
+
+def paritySourcesTable : List (List Nat) := [[2, 3, 6, 10, 11, 12, 15, 16, 17, 18, 22, 23, 24, 25, 26, 27, 29, 32, 34, 35, 37, 38, 43, 44, 46, 48, 49, 51, 52, 54, 55, 56, 57, 59, 62, 63, 66, 72, 74, 75, 77, 78, 80, 81, 83, 85, 86, 88, 89, 90], [0, 4, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19, 23, 24, 25, 26, 28, 30, 35, 36, 38, 39, 44, 45, 47, 49, 50, 52, 53, 55, 56, 58, 59, 63, 67, 68, 69, 70, 71, 72, 75, 76, 78, 79, 81, 82, 84, 86, 87, 89, 90, 91], [0, 1, 3, 5, 6, 7, 8, 11, 12, 13, 17, 19, 20, 24, 25, 26, 29, 31, 36, 37, 40, 45, 46, 48, 50, 53, 54, 56, 57, 58, 60, 61, 62, 63, 68, 70, 72, 76, 77, 79, 80, 82, 85, 87, 88, 90, 91, 92], [0, 1, 2, 3, 4, 6, 7, 8, 9, 12, 13, 14, 20, 21, 22, 25, 26, 30, 32, 37, 38, 39, 41, 45, 46, 47, 49, 51, 54, 55, 57, 59, 60, 62, 64, 65, 66, 67, 68, 71, 72, 73, 77, 78, 80, 81, 86, 88, 89, 91, 92, 93], [1, 2, 3, 4, 5, 7, 8, 9, 10, 13, 15, 21, 22, 23, 26, 27, 31, 33, 38, 39, 40, 42, 46, 47, 48, 50, 51, 52, 55, 56, 57, 60, 63, 64, 66, 68, 72, 73, 74, 78, 79, 81, 82, 87, 89, 90, 92, 93, 94], [0, 2, 4, 5, 6, 8, 9, 10, 11, 16, 18, 23, 24, 27, 28, 32, 33, 34, 39, 40, 41, 43, 45, 47, 48, 49, 52, 53, 56, 57, 61, 62, 63, 65, 66, 69, 70, 71, 72, 74, 75, 79, 80, 82, 88, 90, 91, 93, 94], [1, 5, 7, 9, 10, 11, 12, 14, 17, 18, 19, 22, 24, 25, 28, 29, 34, 35, 40, 41, 42, 44, 45, 46, 48, 49, 50, 51, 53, 54, 58, 59, 60, 61, 63, 66, 70, 72, 73, 75, 76, 80, 81, 83, 89, 91, 92, 94], [2, 3, 6, 8, 10, 11, 12, 13, 14, 15, 19, 20, 23, 25, 26, 29, 30, 33, 35, 36, 39, 41, 42, 43, 45, 46, 47, 49, 50, 52, 54, 55, 59, 61, 64, 65, 66, 71, 72, 73, 74, 76, 77, 81, 82, 83, 84, 90, 92, 93], [0, 4, 6, 7, 9, 11, 12, 13, 15, 16, 20, 21, 24, 26, 30, 31, 33, 34, 36, 37, 40, 42, 43, 44, 45, 46, 47, 48, 50, 51, 53, 55, 56, 57, 58, 59, 62, 63, 64, 66, 72, 74, 75, 77, 78, 82, 83, 84, 85, 91, 93, 94], [0, 1, 3, 5, 7, 8, 12, 13, 14, 16, 17, 21, 22, 25, 31, 32, 34, 35, 37, 38, 39, 41, 43, 44, 46, 47, 48, 49, 52, 54, 56, 58, 60, 61, 62, 64, 67, 68, 69, 70, 71, 72, 73, 75, 76, 78, 79, 84, 85, 86, 92, 94], [0, 1, 2, 3, 4, 8, 9, 10, 13, 15, 17, 18, 23, 26, 27, 32, 35, 36, 38, 40, 42, 44, 47, 48, 49, 50, 51, 53, 55, 57, 58, 61, 63, 64, 68, 70, 72, 73, 74, 76, 77, 79, 80, 83, 85, 86, 87, 93], [1, 2, 3, 4, 5, 6, 9, 10, 11, 14, 16, 18, 19, 24, 28, 36, 37, 39, 41, 43, 45, 48, 49, 50, 51, 52, 54, 56, 58, 62, 63, 65, 66, 67, 68, 71, 72, 74, 75, 77, 78, 80, 81, 83, 84, 86, 87, 88, 94], [0, 2, 4, 5, 7, 10, 11, 12, 14, 15, 17, 19, 20, 25, 29, 37, 38, 39, 40, 42, 44, 45, 46, 49, 50, 51, 52, 53, 55, 57, 58, 63, 66, 68, 72, 75, 76, 78, 79, 81, 82, 84, 85, 87, 88, 89], [1, 5, 8, 10, 11, 12, 13, 14, 15, 16, 20, 21, 26, 30, 33, 38, 40, 41, 43, 46, 47, 50, 51, 52, 53, 54, 56, 58, 64, 65, 66, 69, 70, 71, 72, 76, 77, 79, 80, 82, 83, 85, 86, 88, 89, 90], [2, 3, 9, 11, 12, 13, 14, 15, 16, 17, 21, 22, 31, 33, 34, 39, 41, 42, 44, 47, 48, 51, 52, 53, 54, 55, 59, 60, 61, 62, 63, 64, 66, 70, 72, 73, 77, 78, 80, 81, 84, 86, 87, 89, 90, 91], [0, 4, 6, 12, 13, 15, 16, 17, 18, 23, 32, 34, 35, 39, 40, 42, 43, 48, 49, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 63, 65, 66, 71, 72, 73, 74, 78, 79, 81, 82, 85, 87, 88, 90, 91, 92], [0, 1, 3, 5, 6, 7, 10, 13, 16, 17, 18, 19, 22, 24, 27, 33, 35, 36, 39, 40, 41, 43, 44, 45, 49, 50, 52, 53, 54, 55, 56, 57, 59, 62, 63, 66, 72, 74, 75, 79, 80, 82, 86, 88, 89, 91, 92, 93], [0, 1, 2, 3, 4, 6, 7, 8, 10, 11, 17, 19, 20, 23, 25, 27, 28, 33, 34, 36, 37, 39, 40, 41, 42, 44, 46, 50, 53, 54, 55, 56, 58, 59, 63, 67, 68, 69, 70, 71, 72, 73, 75, 76, 80, 81, 87, 89, 90, 92, 93, 94]]
+
+def pivotPlan : List (Nat × Nat) := [(113,9680851436285503434146888), (113,19361703016686194944149648), (113,38723405889257201812443424), (4,106489366087370913927327475), (113,280744691219934035355181997), (113,377553207888632078753543239), (7,1229468132186584111035221439), (8,2458936246356864190507453310), (113,2497659670056660518086318082), (113,6147340697314079446583538811), (11,18425370917636229602032442225), (12,36850741639350112814635480802), (113,28868337075894655765213742167), (113,39285605085724004584683802591), (15,33797555950171336871668526501), (113,22488502855232398892471236335), (113,1113071242581424409096224891), (113,2226142469815345517280362742), (113,12501263089589630420547394269), (20,37334854022865535388922310503), (21,4561680364753655494391684814), (113,18468531415832148255944259983), (25,8739074433917128678658703147), (24,11231685826317356967745454461), (113,34936950453040547056728013996), (113,35554153887577833291738282719), (113,24317410256881654827018848367), (113,6258971778889582058773702375), (29,18660778989262743592500505385), (113,33635811665580697932643250357), (113,30472539052692732279143242769), (113,18292763865453410340049991714), (113,36585522345969994211973296196), (113,15591357739930692549176267497), (113,31182714826587190821253686738), (37,29974234409981012297866509471), (113,32473371132938544873225702917), (113,11792007183410222795859242640), (113,855261228900555145236102581), (113,17652320170001068116444004321), (113,35304640015022387121833017282), (113,8625236921344328081151950724), (44,4558968680176698249603236073), (113,13236011245289412133664620250), (113,33597798607466038265438650965), (48,38942929874667837626148174327), (113,1351968660084899705882375150), (113,4000378035269527216179483698), (113,29825915760448953535090909821), (50,28250267494575039723922216297), (113,6961475757413318500071410773), (113,19443162628458885131658389265), (113,38886310168489924285434547746), (54,22223679253916459613089084791), (55,34790483297611246411838221038), (113,33421926666237775762381087606), (113,34588510057964656270574547867), (113,24936609194000363937056538993), (113,4426164498726195607803937683), (113,5832743975719208097493206197), (113,17149591038059202391545957855), (113,27769414823885024891835897441), (113,6565631932186066644636170915), (113,19600188138635970901428572133), (113,20410080050929362303908286511), (113,19168081435288117758604128369), (113,21739377575480403424691998867), (113,16621910695929804114607894965), (113,29343090158956885218867712735), (113,8830107691926986484746008417), (113,11634892078904479691090745763), (113,34247017554973889172609526501), (113,23521505771035187126996025135), (75,13609599208709547480583291249), (76,27219198417419094961166582498), (77,24795535737887482558537729476), (113,29646666650955168478713482120), (113,30851605699460858304618258187), (113,28172254199289941711093883165), (113,23893563993367932294248016047), (81,30120135554193226762621270987), (82,18991722143135306084267816854), (113,20775246543578547632123048495), (88,29406777073931736724278789935), (113,20398727303789016793094131294), (88,10868745140229905072356449171), (113,2366746700891729578832574840), (88,5375705643907367855466167169), (113,30528046911559555881074162012), (90,1509839255616107217538960587), (91,3019678511232214435077921174), (92,6039357022464428870155842348), (93,12078714044928857740311684696), (94,24157428089857715480623369392), (113,15487530515545199724830710670), (113,4221226223132644024043627237), (113,8442452446265288048087254474), (113,16884904892530576096174508948), (113,33769809785061152192349017896), (113,67539619570122304384698035792), (113,135079239140244608769396071584), (113,270158478280489217538792143168), (113,540316956560978435077584286336), (113,1080633913121956870155168572672), (113,2161267826243913740310337145344), (113,4322535652487827480620674290688), (113,8645071304975654961241348581376), (113,17290142609951309922482697162752), (113,34580285219902619844965394325504), (113,69160570439805239689930788651008), (113,138321140879610479379861577302016), (113,276642281759220958759723154604032), (113,553284563518441917519446309208064)]
+
+def packedEncoding : Nat := 0x1000000000000000000000000000000000000800000000000000000000000000000000000400000000000000000000000000000000000200000000000000000000000000000000001100000000000000000000000000000000001880000000000000000000000000000000000c40000000000000000000000000000000001620000000000000000000000000000000000b100000000000000000000000000000000005880000000000000000000000000000000002c40000000000000000000000000000000001620000000000000000000000000000000010b1000000000000000000000000000000001858800000000000000000000000000000001c2c400000000000000000000000000000001e16200000000000000000000000000000000f0b10000000000000000000000000000000178588000000000000000000000000000000000c006003001800c0060030018000000000000a005002801400a0050028014000000000000900480240120090048024012000000000100880440220110088044022011000000000080840420210108084042021010800000000040820410208104082041020810400000000020810408204102081040820410200000000010808404202101080840420210100000000008804402201100880440220110080000000004802401200900480240120090040000000002801400a005002801400a0050020000000001800c006003001800c00600300100000000300600c0180300600c018030060000000000280500a0140280500a014028050000000000240480901202404809012024048000000000220440881102204408811022044000000000210420841082104208410821042000000000208410821042084108210420841000000000204408811022044088110220440800000001202404809012024048090120240400000000a0140280500a0140280500a0140200000000600c0180300600c0180300600c0100000000800080008000800080008000800000000000c000c000c000c000c000c000c00000000000a000a000a000a000a000a000a00000000000f000f000f000f000f000f000f00000000000880088008800880088008800880000000000cc00cc00cc00cc00cc00cc00cc0000000000aa00aa00aa00aa00aa00aa00aa0000000000ff00ff00ff00ff00ff00ff00ff0000000000808080808080808080808080808000000000c0c0c0c0c0c0c0c0c0c0c0c0c0c000000000a0a0a0a0a0a0a0a0a0a0a0a0a0a000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f000000000888888888888888888888888888800000000cccccccccccccccccccccccccccc00000000aaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001ffffffffffffffffffffffffffff000000007a392dd9abf04314f4725bb357e0000000014725bb357e08629e8e4b766afc1000000001a392dd9abf04314f4725bb357e0800000001d1c96ecd5f8218a7a392dd9abf0400000001e8e4b766afc10c53d1c96ecd5f8200000000f4725bb357e08629e8e4b766afc100000000d96bbcc54fd07091b2d7798a9fa0000000006cb5de62a7e83848d96bbcc54fd000000000ef3153f41c246cb5de62a7e8384800000001aef3153f41c246cb5de62a7e838400000000d7798a9fa0e12365aef3153f41c200000001b2d7798a9fa0e12365aef3153f410000000141a64a0d32506992834c941a64a000000000a0d32506992834c941a64a0d32500000000111cfd88e7ec473f6239fb11cfd880000000188e7ec473f6239fb11cfd88e7ec40000000185d5bc2eade1756f0bab785d5bc200000000834c941a64a0d32506992834c941000000000904824120904824120904824120000000010482412090482412090482412090000000008241209048241209048241209048000000004824120904824120904824120904000000002412090482412090482412090482000000001209048241209048241209048241000000006ed2717946107eacdda4e2f28c2000000001376938bca3083f566ed271794610000000019bb49c5e51841fab376938bca30800000000cdda4e2f28c20fd59bb49c5e51840000000166ed2717946107eacdda4e2f28c200000000dda4e2f28c20fd59bb49c5e51841000000007cd215d8f9a42bb1f3485763e690000000003e690aec7cd215d8f9a42bb1f348000000011f3485763e690aec7cd215d8f9a400000001f3485763e690aec7cd215d8f9a4200000000f9a42bb1f3485763e690aec7cd2100000000318c6318c6318c6318c6318c631800000001294a5294a5294a5294a5294a529400000000a5294a5294a5294a5294a5294a52000000006318c6318c6318c6318c6318c63100000000f135e26bc4d789af135e26bc4d780000000189af135e26bc4d789af135e26bc400000001c4d789af135e26bc4d789af135e200000001e26bc4d789af135e26bc4d789af1000000008a28a28a28a28a28a28a28a28a280000000145145145145145145145145145140000000028a28a28a28a28a28a28a28a28a20000000114514514514514514514514514510000000191eb23d647ac8f591eb23d647ac800000000c8f591eb23d647ac8f591eb23d6400000001647ac8f591eb23d647ac8f591eb20000000123d647ac8f591eb23d647ac8f59100000000b972e5cb972e5cb972e5cb972e5c00000000e5cb972e5cb972e5cb972e5cb9720000000172e5cb972e5cb972e5cb972e5cb900000000e9d3a74e9d3a74e9d3a74e9d3a740000000074e9d3a74e9d3a74e9d3a74e9d3a00000001d3a74e9d3a74e9d3a74e9d3a74e9
+
+theorem prefixTable :
+    CRTBarrel20.Packed20.residueTable 113 encodedRows 0 factors = true := by
+  decide +kernel
+
+private theorem quotientMasksCheck : ∀ i : Fin 18,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (95+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ PeakNodup.nodupMask sites 0 = true ∧ (∀ j ∈ sites, j < 95) ∧
+      q &&& (2^(95+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  decide +kernel
+
+theorem quotientMasks : ∀ i : Fin 18,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (95+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ sites.Nodup ∧ (∀ j ∈ sites, j < 95) ∧
+      q &&& (2^(95+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  intro i
+  have h := quotientMasksCheck i
+  exact ⟨h.1, PeakNodup.nodup_of_mask _ h.2.1, h.2.2⟩
+
+theorem basisShape : ∀ v ∈ pivotPlan.zipIdx,
+    v.2 < 113 ∧ (v.1.1 < 113 → v.1.1 ≠ v.2) ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+theorem packedBasis :
+    pivotPlan.zipIdx.reverse.foldl (quickStep 113) (identityWord CRTBarrel.Packed.width 113) =
+      packedEncoding := by
+  decide +kernel
+
+theorem packedRows : ∀ j : Fin 113,
+    digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val := by
+  decide +kernel
+
+
+open CRTResidueEarlyLogic
+def field (mir : Bool) : Program := CRTBarrel20.components20 113 mir 0 factors
+def logicalProgram (mir : Bool) : Program :=
+  circuit 113 95 21 142 pivotPlan paritySourcesTable field mir
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨217, 61, 19809⟩ else ⟨235, 43, 19823⟩
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Packed CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic
+private theorem encoded_size : encodedRows.size = 113 := rfl
+private theorem packed_room : 113 ≤ CRTBarrel.Packed.width := by decide
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates_from
+    (shape : CRTResidueGroupedBasis.Good 113 pivotPlan)
+    (basis : pivotPlan.zipIdx.reverse.foldl (quickStep 113) (identityWord CRTBarrel.Packed.width 113) = packedEncoding)
+    (rows : ∀ j : Fin 113, digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val) :
+    CRTBarrel.Matrix.applyOps (ops 113 pivotPlan) (CRTBarrel.Matrix.units 113) = encodedRows :=
+  @CRTResidueGroupedBasis.coordinates 113 pivotPlan shape encodedRows encoded_size packed_room packedEncoding basis rows
+end
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates : CRTBarrel.Matrix.applyOps (ops 113 pivotPlan) (CRTBarrel.Matrix.units 113) = encodedRows :=
+  coordinates_from basisShape packedBasis packedRows
+end
+
+private theorem parities : ∀ i : Fin 18, (paritySources paritySourcesTable i.val).Nodup ∧
+    paritySources paritySourcesTable i.val ≠ [] ∧ ∀ q ∈ paritySources paritySourcesTable i.val, q < 95 := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.1,h.1,h.2.2.1⟩
+
+private theorem tested : MaskOK 113 95 paritySourcesTable encodedRows := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
+
+
+
+private theorem rowValue_agrees (x : Nat → Bool) (row dim : Nat) :
+    CRTBarrel.rowValue x row dim = CRTBarrel20.rowValue x row dim := by
+  induction dim with
+  | zero => rfl
+  | succ dim ih => simp only [CRTBarrel.rowValue, CRTBarrel20.rowValue, ih]
+
+private theorem frame21 (rs : Rows) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) :
+    frameTagged 21 rs x dim slot ph = CRTBarrel20.frame20 rs x dim slot ph := by
+  change State.mk ph (CRTBarrel.Matrix.basis rs x dim _) =
+    State.mk ph (CRTBarrel20.Matrix20.basis rs x dim _)
+  apply congrArg (State.mk ph)
+  funext q
+  unfold CRTBarrel.Matrix.basis CRTBarrel20.Matrix20.basis
+  split
+  · exact rowValue_agrees x _ dim
+  · rfl
+
+private theorem field_extent : CRTBarrel20.extent20 factors = 95 := by decide +kernel
+
+private theorem field_allowed : ∀ pair ∈ factors, CRTBarrel20.UsedField20 pair.1 := by
+  intro pair hp
+  unfold CRTBarrel20.UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel20.componentRows20 encodedRows in
+set_option maxHeartbeats 180000 in
+private theorem fields_run (slot : Fin 22) (dim : Nat) (fit : dim ≤ 113-(slot.val-1))
+    (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (field mir) tape (frameTagged 21
+      (windowRows (keepPrefix encodedRows 95) dim (entryShift mir slot.val)) x dim slot.val phase) =
+    frameTagged 21
+      (windowRows (keepPrefix encodedRows 95) dim (exitShift mir slot.val)) x dim slot.val phase := by
+  let rs := windowRows (keepPrefix encodedRows 95) dim (entryShift mir slot.val)
+  let dst := windowRows (keepPrefix encodedRows 95) dim (exitShift mir slot.val)
+  let S (rows : Rows) := CRTBarrel20.frame20 rows x dim slot.val phase
+  have size : rs.size = 113 := (windowRows_size ..).trans ((keepPrefix_size ..).trans encoded_size)
+  have shortSlot : slot.val < 32 := Nat.lt_trans slot.isLt (by decide)
+  have small : 0+CRTBarrel20.extent20 factors ≤ rs.size := by rw [size,field_extent]; decide
+  have fieldName : field mir = CRTBarrel20.components20 rs.size mir 0 factors :=
+    congrArg (fun n => CRTBarrel20.components20 n mir 0 factors) size.symm
+  have mapped : run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) =
+      S (CRTBarrel20.componentRows20 mir slot.val 0 factors rs) :=
+    CRTBarrel20.frame_components20 rs mir 0 slot.val dim factors shortSlot small field_allowed x phase tape
+  have result : CRTBarrel20.componentRows20 mir slot.val 0 factors rs = dst :=
+    CRTBarrel20.Packed20.componentRows_keepPrefix 113 dim 95 slot mir encodedRows encoded_size
+      (by decide) fit factors field_extent (by decide) prefixTable
+  have atField : run (field mir) tape (S rs) =
+      run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) :=
+    congrArg (fun p => run p tape (S rs)) fieldName
+  rw [frame21, frame21]
+  exact atField.trans (mapped.trans (congrArg S result))
+
+def liveDim (slot : Fin 22) : Nat := min 95 (113-(slot.val-1))
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel.Matrix.applyOps ops pivotPlan encodedRows in
+set_option maxHeartbeats 180000 in
+theorem logical_run (slot : Fin 22) (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (logicalProgram mir) tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 113 (liveDim slot) (CRTBarrel20.entryShift mir slot.val))
+        x (liveDim slot) slot.val phase) =
+    CRTBarrel20.frame20 (CRTBarrel20.plain20 113 (liveDim slot) (CRTBarrel20.exitShift mir slot.val))
+      x (liveDim slot) slot.val phase := by
+  let dim := liveDim slot
+  have inside : dim ≤ 95 := Nat.min_le_left ..
+  have fits : dim ≤ 113-(slot.val-1) := Nat.min_le_right ..
+  let inlet := frameTagged 21 (plain 113 dim (entryShift mir slot.val)) x dim slot.val phase
+  let outlet := frameTagged 21 (plain 113 dim (exitShift mir slot.val)) x dim slot.val phase
+  have typed : run (logicalProgram mir) tape inlet = outlet :=
+    run_circuit 113 95 21 142 pivotPlan paritySourcesTable encodedRows encoded_size (by decide) (by decide)
+      basisShape coordinates parities tested slot dim inside field x phase tape mir
+      (fun b m => fields_run slot dim fits b x phase m)
+  dsimp only [inlet, outlet] at typed
+  rw [frame21, frame21] at typed
+  exact typed
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+open Arithmetic Challenge CRTBarrel CRTBarrel.Placement CRTBarrel.Resources
+open CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic ECDSAAdd.RecordedQuantum
+
+private def correctionCheck (mir : Bool) : Bool :=
+  (correctionProgram 113 95 21 142 paritySourcesTable mir).all fun i =>
+    physicalBit i && decide (∀ q ∈ i.wires, q < 144)
+
+private theorem correction_checked (mir : Bool) : correctionCheck mir = true := by
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 144)
+    (correctionProgram 113 95 21 142 paritySourcesTable mir) := by
+  intro i hi
+  have ok := List.all_eq_true.mp (correction_checked mir) i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨physical,cover⟩ := ok
+  refine ⟨?_,of_decide_eq_true cover⟩
+  cases i <;> simp_all [physicalBit,PhysicalInstr,ProperGate]
+
+private theorem basis_fits : Fits (· < 144) (basisProgram 113 pivotPlan) := by
+  apply fits_map
+  intro pair hp
+  obtain ⟨a,b⟩ := pair
+  obtain ⟨ha,hb,separate⟩ := ops_bounds 113 pivotPlan basisShape (a,b) hp
+  refine ⟨separate,?_⟩
+  intro q hq
+  simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem field_fits (mir : Bool) : Fits (· < 144) (field mir) :=
+  CRTBarrel20.fitsComponents 113 mir 0 factors (by decide +kernel) field_allowed
+
+theorem program_fits (mir : Bool) : Fits (· < 144) (logicalProgram mir) := by
+  have b := basis_fits
+  have r := fits_reverse b
+  have c := correction_fits mir
+  have f := field_fits mir
+  cases mir
+  · exact fits_append b (fits_append f (fits_append c r))
+  · exact fits_append b (fits_append c (fits_append f r))
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+open CRTBarrel20 CRTResidueGroupedBasis CRTResidueCorrection CRTResidueEarlyLogic
+
+private theorem correction_price (mir : Bool) :
+    count (correctionProgram 113 95 21 142 paritySourcesTable mir) =
+      (if mir then ⟨0, 18, 2180⟩ else ⟨18, 0, 2162⟩) := by
+  cases mir <;> rw [correctionProgram_count] <;> decide +kernel
+
+attribute [local irreducible] count in
+theorem costs (mir : Bool) : count (logicalProgram mir) = bounds mir := by
+  let P := basisProgram 113 pivotPlan
+  let c := correctionProgram 113 95 21 142 paritySourcesTable
+  have len : (ops 113 pivotPlan).length = 5349 := by decide +kernel
+  have basisPrice : count P = ⟨0, 0, 5349⟩ :=
+    (CRTBarrel20.residueBasisPrice 113 pivotPlan).1.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have basisRevPrice : count P.reverse = ⟨0, 0, 5349⟩ :=
+    (CRTBarrel20.residueBasisPrice 113 pivotPlan).2.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have fieldPrice : count (field mir) = partsPrice20 mir factors :=
+    CRTBarrel20.residueFieldPrice 113 mir factors field_allowed
+  cases mir
+  · change count (P ++ (field false ++ (c false ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+  · change count (P ++ (c true ++ (field true ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+
+open Shadow20
+theorem width_at_start : liveW20 205 = 113 := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+open CRTBarrel.Packed
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option profiler.threshold 10
+
+def encodedRows : Array Nat := #[
+  6531009995037696887338390595393189097, 6949664481899087713449825889969675578, 3265504997518848443669195297696594548, 6279817302920862391671529418647297209, 1925810639562397800112602355051837810,
+  8456820634600094687450992950445026908, 2550144618885554107309943755530368401, 2977224068930526009221357090001985202, 5954448137861052018442714180003970404, 1275072309442777053654971877765184200,
+  1687908566076083648131818489244882001, 3375817132152167296263636978489764002, 5738889124658684403648182863432598804, 843954283038041824065909244622441000, 1609012092190707211000598261633948401,
+  3218024184381414422001196523267896802, 6436048368762828844002393046535793604, 804506046095353605500299130816974200, 2058159477344385867722023835272791601, 3430265795573976446203373058787986002,
+  6174478432033157603166071505818374804, 1029079738672192933861011917636395800, 8872938510555378955875111805215119425, 5261884312648290115760373719964264642, 10523768625296580231520747439928529284,
+  10413713284313833479811038397614301960, 10193602602348339976391620312985847312, 9753381238417352969552784143728938016, 187288484728990103422845613190185537, 374576969457980206845691226380371074,
+  749153938915960413691382452760742148, 1352639056376039635831662761929117768, 2705278112752079271663325523858235536, 5410556225504158543326651047716471072, 2089966399965118887795417182480156993,
+  3611360810997219974795081309595982786, 6633339870885207675950452312583864004, 2632855775491088368670448142924971400, 3180947591561111467756468416180728400, 6361895183122222935512936832361456800,
+  756510385067212345767289484135972673, 2257827184178474818277891258439385538, 4515654368356949636555782516878771076, 8447526096035232285509781376603797576, 5506039579406466578057050612155371472,
+  378255192533606172883644742067986336, 4096487892859210408075576091204825025, 8192975785718420816151152182409650050, 5752127605157514649071847882576543492, 870431244035702314913239282910330376,
+  1740862488071404629826478565820660752, 2048243946429605204037788045602412512, 8492972067459966037215323905963234241, 3514869200623904529545651983067624514, 4207363312393741651808024429782760260,
+  8414726624787483303616048859565520520, 6195629283295639624001641236888284432, 9563398016869646510222890194102995424, 10078774174927984025148596768126083521, 9523724383576641067066737054009410434,
+  2333903560360663359908364236476491460, 5440985066932632808842458336895593544, 248146167585938634454460191548430480, 10356299070603655504189526625184420064, 1549419360408718134643903987621351105,
+  4645661735905728779627553994884862786, 9291323471811457559255107989769725572, 7948822977343588135279759497296694536, 3819871425546263940714502619281904848, 6091621663344022558937180234932053856,
+  3185526347712456903667309887397376705, 6371052695424913807334619774794753410, 5252188247930528589418178452256586180, 10504376495861057178836356904513172360, 7537307015555483348642782459448972752,
+  1592763173856228451833654943698688352, 10633823966279326983230456482242756607, 3544607988759775661076818827414252202, 6380294379767596189938273889345653964, 708921597751955132215363765482850440,
+  1251038113679920821556524292028559600, 834025409119947214371016194685706400, 1000830490943936657245219433622847680, 667220327295957771496812955748565120, 9309768063863224012555847114803969792,
+  2661904053815707013960412582455060992, 5321049657834713813398586395394624512, 2758449796700214522238769515497472, 4867852582412143274539005027348480, 3245235054941428849692670018232320,
+  3894282065929714619631204021878784, 2596188043953143079754136014585856, 249260676538350724060584500621488129, 415434460897251206767640834369146882, 747782029615052172181753501864464388,
+  1412477167050654103009978836855099400, 2741867441921857964666429506836369424, 5400647991664265687979330846798909472, 84385124869754151374677044481232960, 85683357560058061395825922088636544,
+  88279822940665881438123677303443712, 93472753701881521522719187733058048, 103858615224312801691910208592286720, 124630338269175362030292250310744064, 1827992730348314100299093916654764032,
+  3655985460696628200598187833309528064, 7311970921393256401196375666619056128, 3990117876507185819162294850995355648, 7980235753014371638324589701990711296, 5326647539749416293418722921738665984,
+  19471113219505603606989361234575360, 38942226439011207213978722469150720, 77884452878022414427957444938301440, 155768905756044828855914889876602880, 311537811512089657711829779753205760,
+  623075623024179315423659559506411520, 1246151246048358630847319119012823040, 2492302492096717261694638238025646080, 4984604984193434523389276476051292160, 9969209968386869046778552952102584320,
+  9304595970494411110326649421962412032, 7975367974709495237422842361682067456, 5316911983139663491615228241121378304
+]
+
+def factors : List (Nat × Nat) := [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (67,1), (73,1), (87,1), (91,1), (97,1), (103,1), (109,1), (115,1), (117,1), (257,2), (8191,1)]
+
+def paritySourcesTable : List (List Nat) := [[0, 1, 2, 4, 6, 9, 10, 12, 17, 18, 22, 24, 26, 27, 30, 31, 35, 36, 39, 41, 44, 45, 46, 47, 48, 52, 59, 61, 64, 65, 66, 68, 69, 71, 74, 76, 77, 79, 80, 82, 83, 85, 86, 88, 90, 91, 95, 97, 98, 99, 100, 102], [1, 2, 3, 5, 7, 11, 13, 14, 18, 19, 23, 25, 27, 28, 31, 32, 36, 37, 40, 42, 45, 47, 48, 49, 52, 53, 58, 60, 62, 64, 65, 66, 67, 69, 72, 75, 76, 78, 79, 81, 82, 84, 85, 87, 88, 91, 96, 98, 99, 100, 101, 103], [0, 2, 3, 4, 8, 12, 15, 19, 20, 22, 24, 26, 29, 32, 33, 34, 37, 38, 40, 41, 43, 48, 49, 50, 53, 54, 59, 61, 63, 64, 65, 66, 67, 68, 70, 73, 77, 78, 80, 81, 83, 84, 86, 87, 89, 90, 91, 97, 99, 100, 101, 102], [1, 3, 4, 5, 9, 13, 16, 20, 21, 22, 23, 25, 27, 28, 30, 33, 35, 38, 39, 41, 42, 44, 46, 49, 50, 51, 52, 54, 55, 60, 62, 64, 65, 66, 67, 68, 69, 70, 71, 74, 76, 77, 79, 80, 82, 83, 85, 86, 88, 89, 91, 92, 98, 100, 101, 102, 103], [2, 4, 5, 6, 10, 14, 17, 21, 23, 24, 26, 29, 31, 36, 39, 40, 42, 43, 45, 47, 50, 51, 52, 53, 55, 56, 61, 63, 65, 66, 67, 68, 69, 71, 72, 75, 76, 78, 79, 81, 82, 84, 85, 87, 88, 90, 91, 93, 99, 101, 102, 103], [0, 5, 6, 7, 11, 14, 15, 18, 24, 25, 27, 30, 32, 34, 37, 41, 43, 44, 48, 51, 52, 53, 54, 56, 57, 58, 62, 64, 66, 67, 68, 69, 72, 73, 76, 79, 82, 85, 88, 91, 92, 94, 100, 102, 103], [0, 1, 3, 6, 7, 8, 10, 12, 15, 16, 18, 19, 22, 25, 26, 28, 31, 33, 35, 38, 40, 42, 44, 45, 46, 49, 53, 54, 55, 57, 58, 59, 63, 65, 67, 68, 69, 70, 73, 74, 77, 78, 79, 83, 84, 85, 89, 90, 91, 92, 93, 95, 101, 103], [0, 1, 2, 4, 6, 7, 8, 9, 11, 13, 14, 16, 17, 19, 20, 22, 23, 26, 27, 28, 29, 32, 34, 36, 39, 40, 41, 43, 45, 47, 50, 54, 55, 56, 59, 60, 64, 66, 68, 69, 71, 74, 75, 76, 77, 79, 84, 86, 87, 88, 89, 91, 92, 93, 94, 96, 102], [1, 2, 3, 5, 7, 8, 9, 12, 15, 17, 20, 21, 23, 24, 27, 29, 30, 33, 35, 37, 40, 41, 42, 44, 46, 48, 51, 52, 55, 56, 57, 60, 61, 64, 65, 67, 69, 70, 72, 75, 76, 78, 79, 85, 86, 88, 90, 91, 92, 93, 94, 95, 97, 103], [0, 2, 3, 4, 6, 8, 9, 13, 14, 16, 21, 22, 24, 25, 30, 31, 36, 38, 41, 42, 43, 45, 46, 47, 49, 52, 53, 56, 57, 58, 61, 62, 64, 65, 66, 68, 70, 71, 73, 77, 78, 80, 81, 82, 83, 84, 85, 87, 88, 91, 93, 94, 95, 96, 98], [1, 3, 4, 5, 7, 9, 10, 14, 15, 17, 18, 22, 23, 25, 26, 28, 31, 32, 37, 39, 40, 42, 43, 44, 47, 48, 50, 53, 54, 57, 58, 59, 62, 63, 65, 66, 67, 69, 71, 72, 74, 76, 77, 79, 80, 82, 84, 86, 87, 89, 90, 91, 92, 94, 95, 96, 97, 99], [2, 4, 5, 6, 8, 11, 14, 15, 16, 18, 19, 22, 23, 24, 26, 27, 29, 32, 33, 38, 40, 41, 43, 44, 45, 46, 48, 49, 51, 54, 55, 58, 59, 60, 63, 66, 67, 68, 72, 73, 75, 76, 78, 79, 81, 82, 85, 86, 88, 89, 91, 93, 95, 96, 97, 98, 100], [0, 5, 6, 7, 9, 10, 12, 14, 15, 16, 17, 19, 20, 23, 24, 25, 27, 28, 30, 33, 39, 40, 41, 42, 44, 45, 46, 47, 49, 50, 55, 56, 58, 59, 60, 61, 67, 68, 69, 73, 74, 77, 78, 80, 81, 83, 84, 85, 87, 88, 90, 91, 94, 96, 97, 98, 99, 101], [0, 1, 3, 7, 8, 11, 13, 15, 16, 17, 20, 21, 22, 24, 25, 26, 29, 31, 34, 40, 41, 42, 43, 45, 46, 47, 48, 50, 51, 52, 56, 57, 59, 60, 61, 62, 64, 68, 69, 74, 75, 76, 77, 79, 80, 82, 83, 85, 88, 91, 95, 97, 98, 99, 100, 102], [0, 1, 2, 4, 8, 9, 12, 16, 17, 21, 22, 23, 25, 26, 27, 30, 32, 34, 35, 41, 42, 43, 44, 47, 48, 49, 51, 52, 53, 57, 58, 60, 61, 62, 63, 64, 65, 69, 75, 76, 78, 79, 81, 82, 84, 85, 89, 90, 91, 96, 98, 99, 100, 101, 103], [1, 2, 3, 5, 6, 9, 13, 17, 18, 23, 24, 26, 27, 28, 31, 33, 35, 36, 42, 43, 44, 45, 46, 48, 49, 50, 52, 53, 54, 58, 59, 61, 62, 63, 65, 66, 70, 77, 78, 80, 81, 83, 84, 86, 87, 88, 89, 91, 97, 99, 100, 101, 102], [0, 2, 3, 4, 7, 10, 14, 18, 19, 22, 24, 25, 27, 28, 29, 32, 34, 36, 37, 40, 43, 44, 45, 46, 47, 49, 50, 51, 53, 54, 55, 58, 59, 60, 62, 63, 66, 67, 71, 76, 77, 79, 80, 82, 83, 85, 86, 88, 90, 91, 92, 98, 100, 101, 102, 103], [1, 3, 4, 5, 8, 11, 15, 19, 20, 23, 25, 26, 29, 30, 33, 35, 37, 38, 40, 41, 44, 45, 47, 48, 50, 51, 52, 54, 55, 56, 59, 60, 61, 63, 64, 67, 68, 70, 72, 76, 78, 79, 81, 82, 84, 85, 87, 88, 91, 93, 99, 101, 102, 103], [2, 4, 5, 9, 10, 12, 16, 20, 21, 24, 26, 27, 30, 31, 36, 38, 39, 41, 42, 45, 48, 49, 51, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 68, 69, 71, 73, 77, 78, 80, 81, 83, 84, 86, 87, 89, 90, 91, 92, 94, 100, 102, 103]]
+
+def pivotPlan : List (Nat × Nat) := [(123,4951836914336417266528437320), (123,9903749386536560447380293776), (123,19807423215209394980437168416), (4,54470357173428041760459648755), (123,143603043842164922986346914733), (123,193122621911348710280804381767), (7,628883147838241891334931383743), (8,1257756850943517983831873883006), (123,1277573686045259326022587455490), (123,3144434879861548553419060475003), (11,9433247076973146046229667339121), (12,18866391456402178451528738993890), (123,14776445754259224959793932141655), (123,20115201330478351268484341108703), (15,17303570864959424168726487018917), (123,11517084052203461094964397422319), (123,569461715272814498597980864635), (123,1138915496969782425887019892982), (123,6401214155840233748812783540957), (20,19115922428051869249919555891047), (21,2335722838243850366469635104462), (123,9456993217652101242477795654031), (123,4473899210570730464963013017387), (123,8945383516258916982235227029078), (123,17888301806097897757621485173932), (123,4790915694060455146873123240280), (123,9579443230697776678694539489968), (123,19156322844230289630453751080288), (123,6725837142497546160268715838397), (123,20057322325449823895832244772039), (33,6446425863288621692110533751347), (123,19510806079660543906107097919451), (123,5670746547974369223576863118347), (123,10981960503810816768677405757848), (123,4173438855524782326686051596565), (38,7440705625691149436560431778623), (39,14879528665472368140946192471678), (123,7208408329031820879613987375272), (39,18382974187003060533153626430063), (123,1699801526277812471447575677669), (123,18782568890264971695566283881339), (123,2996513040588986131381352953590), (44,13208514693444165101303132640919), (45,14149971145046670530603218742574), (123,7914392577736197257122190858910), (123,19936198920918084772826474854903), (47,4189172582830850665830260735781), (48,8368502469427717650491680882250), (49,16737020744376245792727667834004), (123,8690260965330275982580870219277), (123,18984801752034445438738651083583), (123,11903464239766209279722527714409), (53,8040732133904039884696751493829), (123,16075583321829334251900515755402), (57,1209475586212569371747458718161), (123,16829496951020454488704339580456), (123,12506318748208576211550499277274), (123,157581914521086154760518840303), (123,15924043087283817365328659535291), (123,8722502387660752817082027584374), (123,9726033194446788944389702821921), (123,19452842580420727085056730615874), (63,5671538883930793555018476260875), (123,17451236279770616881503193412249), (67,11393829623346075323491480958767), (68,17782262904385378472535246368350), (67,6391596682842902829255422952909), (123,16398373421736609617803440460523), (123,4016609413164667396289673945115), (123,15965372397946530261139700086539), (123,12233154502918226326011128006049), (123,6446853721766561957094291001059), (73,4497528732012581838890973583463), (74,8996368619634399469036239433934), (75,17986493666315535459785385402780), (123,778993966705193155288718348204), (123,10150282953225805398754180715861), (123,10124698884254230952328566964223), (123,10162662026207398637232340369409), (123,10080132589529668395093677146115), (123,10246841042221333273101019021317), (123,9827592217163221476141926154255), (123,10459761893385820686309227266065), (123,9188809112594908574474877632563), (123,11732350956214365146490732183637), (123,5370995988691265629058485944575), (123,15550074623075344495205603639553), (123,14199869505680994330884524049155), (123,3378417261471565692111788606725), (123,10134323329385233041129191477007), (123,10151190871624219381632651006225), (123,10108028069217433326930846397235), (123,10192373090857041440543651583317), (123,9992651694870911303293729734655), (123,19985303389741822606587459469310), (123,9751665832426982999442980459863), (123,19503331664853965998885960919726), (123,12128505267707171605513196590425), (102,5341289455262943603678429719223), (103,10682578910525887207356859438446), (123,8629234625865025777979340303065), (123,12577388892100118321136976559877), (123,10609886707014319613518497262525), (123,9012535042822598475032008360903), (123,12168950480392434215089350890291), (123,24337900960784868430178701780582), (123,48675801921569736860357403561164), (123,97351603843139473720714807122328), (123,194703207686278947441429614244656), (123,389406415372557894882859228489312), (123,778812830745115789765718456978624), (123,1557625661490231579531436913957248), (123,3115251322980463159062873827914496), (123,6230502645960926318125747655828992), (123,12461005291921852636251495311657984), (123,24922010583843705272502990623315968), (123,49844021167687410545005981246631936), (123,99688042335374821090011962493263872), (123,199376084670749642180023924986527744), (123,398752169341499284360047849973055488), (123,797504338682998568720095699946110976), (123,1595008677365997137440191399892221952), (123,3190017354731994274880382799784443904)]
+
+def packedEncoding : Nat := 0x4000000000000000000000000000000000006000000000000000000000000000000000007000000000000000000000000000000000007800000000000000000000000000000000003c00000000000000000000000000000000001e00000000000000000000000000000000000f000000000000000000000000000000000007800000000000000000000000000000000003c00000000000000000000000000000000001e00000000000000000000000000000000000f000000000000000000000000000000000007800000000000000000000000000000000003c00000000000000000000000000000000401e00000000000000000000000000000000600f000000000000000000000000000000003007800000000000000000000000000000005803c00000000000000000000000000000002c01e00000000000000000000000000000001600f000000000000000000000000000000001800c006003001800c0060030018000000001400a005002801400a0050028014000000001200900480240120090048024012000000001100880440220110088044022011000000001080840420210108084042021010800000001040820410208104082041020810400000041020810408204102081040820410200000021010808404202101080840420210100000011008804402201100880440220110080000009004802401200900480240120090040000005002801400a005002801400a0050020000003001800c006003001800c00600300100000000800080008000800080008000800000000000c000c000c000c000c000c000c00000000000a000a000a000a000a000a000a00000000000f000f000f000f000f000f000f00000000000880088008800880088008800880000000400cc00cc00cc00cc00cc00cc00cc0000000200aa00aa00aa00aa00aa00aa00aa0000000700ff00ff00ff00ff00ff00ff00ff00000000808080808080808080808080808080000000c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0000000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0000000888888888888888888888888888888000004cccccccccccccccccccccccccccccc000002aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000007ffffffffffffffffffffffffffffff00000132c149960a4cb0526582932c149960000005aba1ed5d0f6ae87b5743daba1ed5d0000007e711bf388df9c46fce237e711bf388000003f388df9c46fce237e711bf388df9c4000004cb0526582932c149960a4cb05265820000026582932c149960a4cb0526582932c1000004953422dfae33b0792a6845bf5c6760000002dfae33b0792a6845bf5c6760f254d0000005fae33b0792a6845bf5c6760f254d08000006fd719d83c953422dfae33b0792a6840000037eb8cec1e4a9a116fd719d83c953420000012a6845bf5c6760f254d08b7eb8cec1000007ca8cf75a6c48705f9519eeb4d890e00000002fca8cf75a6c48705f9519eeb4d89000000417e5467bad3624382fca8cf75a6c48000001c17e5467bad3624382fca8cf75a6c40000072a33dd69b121c17e5467bad36243820000079519eeb4d890e0bf2a33dd69b121c100000731d7ed10b2a4f06e63afda216549e0000004a93c1b98ebf6885952783731d7ed10000006549e0dcc75fb442ca93c1b98ebf6880000032a4f06e63afda216549e0dcc75fb44000002a4f06e63afda216549e0dcc75fb44200000663afda216549e0dcc75fb442ca93c10000018a7a392dd9abf04314f4725bb357e00000014f4725bb357e08629e8e4b766afc10000000a7a392dd9abf04314f4725bb357e0800000453d1c96ecd5f8218a7a392dd9abf0400000629e8e4b766afc10c53d1c96ecd5f8200000314f4725bb357e08629e8e4b766afc100000048d96bbcc54fd07091b2d7798a9fa0000004246cb5de62a7e83848d96bbcc54fd00000065aef3153f41c246cb5de62a7e8384800000365aef3153f41c246cb5de62a7e8384000001b2d7798a9fa0e12365aef3153f41c200000091b2d7798a9fa0e12365aef3153f41000004c941a64a0d32506992834c941a64a000000264a0d32506992834c941a64a0d3250000001fb11cfd88e7ec473f6239fb11cfd88000004fd88e7ec473f6239fb11cfd88e7ec4000002b785d5bc2eade1756f0bab785d5bc200000192834c941a64a0d32506992834c941000004120904824120904824120904824120000002090482412090482412090482412090000001048241209048241209048241209048000000904824120904824120904824120904000000482412090482412090482412090482000000241209048241209048241209048241000007566ed2717946107eacdda4e2f28c20000007ab376938bca3083f566ed271794610000007d59bb49c5e51841fab376938bca308000007eacdda4e2f28c20fd59bb49c5e5184000003f566ed2717946107eacdda4e2f28c2000006acdda4e2f28c20fd59bb49c5e51841000000c6318c6318c6318c6318c6318c6318000004a5294a5294a5294a5294a5294a529400000294a5294a5294a5294a5294a5294a520000018c6318c6318c6318c6318c6318c6310000009af135e26bc4d789af135e26bc4d78000004d789af135e26bc4d789af135e26bc40000026bc4d789af135e26bc4d789af135e200000135e26bc4d789af135e26bc4d789af1000000a28a28a28a28a28a28a28a28a28a280000045145145145145145145145145145140000028a28a28a28a28a28a28a28a28a28a2000001451451451451451451451451451451000000f591eb23d647ac8f591eb23d647ac80000047ac8f591eb23d647ac8f591eb23d640000023d647ac8f591eb23d647ac8f591eb2000001eb23d647ac8f591eb23d647ac8f5910000065cb972e5cb972e5cb972e5cb972e5c00000172e5cb972e5cb972e5cb972e5cb972000004b972e5cb972e5cb972e5cb972e5cb900000274e9d3a74e9d3a74e9d3a74e9d3a740000053a74e9d3a74e9d3a74e9d3a74e9d3a000004e9d3a74e9d3a74e9d3a74e9d3a74e9
+
+theorem prefixTable :
+    CRTBarrel20.Packed20.residueTable 123 encodedRows 0 factors = true := by
+  decide +kernel
+
+private theorem quotientMasksCheck : ∀ i : Fin 19,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (104+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ PeakNodup.nodupMask sites 0 = true ∧ (∀ j ∈ sites, j < 104) ∧
+      q &&& (2^(104+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  decide +kernel
+
+theorem quotientMasks : ∀ i : Fin 19,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (104+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ sites.Nodup ∧ (∀ j ∈ sites, j < 104) ∧
+      q &&& (2^(104+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  intro i
+  have h := quotientMasksCheck i
+  exact ⟨h.1, PeakNodup.nodup_of_mask _ h.2.1, h.2.2⟩
+
+theorem basisShape : ∀ v ∈ pivotPlan.zipIdx,
+    v.2 < 123 ∧ (v.1.1 < 123 → v.1.1 ≠ v.2) ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+theorem packedBasis :
+    pivotPlan.zipIdx.reverse.foldl (quickStep 123) (identityWord CRTBarrel.Packed.width 123) =
+      packedEncoding := by
+  decide +kernel
+
+theorem packedRows : ∀ j : Fin 123,
+    digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val := by
+  decide +kernel
+
+
+open CRTResidueEarlyLogic
+def field (mir : Bool) : Program := CRTBarrel20.components20 123 mir 0 factors
+def logicalProgram (mir : Bool) : Program :=
+  circuit 123 104 21 152 pivotPlan paritySourcesTable field mir
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨239, 81, 23826⟩ else ⟨258, 62, 23855⟩
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Packed CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic
+private theorem encoded_size : encodedRows.size = 123 := rfl
+private theorem packed_room : 123 ≤ CRTBarrel.Packed.width := by decide
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates_from
+    (shape : CRTResidueGroupedBasis.Good 123 pivotPlan)
+    (basis : pivotPlan.zipIdx.reverse.foldl (quickStep 123) (identityWord CRTBarrel.Packed.width 123) = packedEncoding)
+    (rows : ∀ j : Fin 123, digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val) :
+    CRTBarrel.Matrix.applyOps (ops 123 pivotPlan) (CRTBarrel.Matrix.units 123) = encodedRows :=
+  @CRTResidueGroupedBasis.coordinates 123 pivotPlan shape encodedRows encoded_size packed_room packedEncoding basis rows
+end
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates : CRTBarrel.Matrix.applyOps (ops 123 pivotPlan) (CRTBarrel.Matrix.units 123) = encodedRows :=
+  coordinates_from basisShape packedBasis packedRows
+end
+
+private theorem parities : ∀ i : Fin 19, (paritySources paritySourcesTable i.val).Nodup ∧
+    paritySources paritySourcesTable i.val ≠ [] ∧ ∀ q ∈ paritySources paritySourcesTable i.val, q < 104 := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.1,h.1,h.2.2.1⟩
+
+private theorem tested : MaskOK 123 104 paritySourcesTable encodedRows := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
+
+
+
+private theorem rowValue_agrees (x : Nat → Bool) (row dim : Nat) :
+    CRTBarrel.rowValue x row dim = CRTBarrel20.rowValue x row dim := by
+  induction dim with
+  | zero => rfl
+  | succ dim ih => simp only [CRTBarrel.rowValue, CRTBarrel20.rowValue, ih]
+
+private theorem frame21 (rs : Rows) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) :
+    frameTagged 21 rs x dim slot ph = CRTBarrel20.frame20 rs x dim slot ph := by
+  change State.mk ph (CRTBarrel.Matrix.basis rs x dim _) =
+    State.mk ph (CRTBarrel20.Matrix20.basis rs x dim _)
+  apply congrArg (State.mk ph)
+  funext q
+  unfold CRTBarrel.Matrix.basis CRTBarrel20.Matrix20.basis
+  split
+  · exact rowValue_agrees x _ dim
+  · rfl
+
+private theorem field_extent : CRTBarrel20.extent20 factors = 104 := by decide +kernel
+
+private theorem field_allowed : ∀ pair ∈ factors, CRTBarrel20.UsedField20 pair.1 := by
+  intro pair hp
+  unfold CRTBarrel20.UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel20.componentRows20 encodedRows in
+set_option maxHeartbeats 180000 in
+private theorem fields_run (slot : Fin 22) (dim : Nat) (fit : dim ≤ 123-(slot.val-1))
+    (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (field mir) tape (frameTagged 21
+      (windowRows (keepPrefix encodedRows 104) dim (entryShift mir slot.val)) x dim slot.val phase) =
+    frameTagged 21
+      (windowRows (keepPrefix encodedRows 104) dim (exitShift mir slot.val)) x dim slot.val phase := by
+  let rs := windowRows (keepPrefix encodedRows 104) dim (entryShift mir slot.val)
+  let dst := windowRows (keepPrefix encodedRows 104) dim (exitShift mir slot.val)
+  let S (rows : Rows) := CRTBarrel20.frame20 rows x dim slot.val phase
+  have size : rs.size = 123 := (windowRows_size ..).trans ((keepPrefix_size ..).trans encoded_size)
+  have shortSlot : slot.val < 32 := Nat.lt_trans slot.isLt (by decide)
+  have small : 0+CRTBarrel20.extent20 factors ≤ rs.size := by rw [size,field_extent]; decide
+  have fieldName : field mir = CRTBarrel20.components20 rs.size mir 0 factors :=
+    congrArg (fun n => CRTBarrel20.components20 n mir 0 factors) size.symm
+  have mapped : run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) =
+      S (CRTBarrel20.componentRows20 mir slot.val 0 factors rs) :=
+    CRTBarrel20.frame_components20 rs mir 0 slot.val dim factors shortSlot small field_allowed x phase tape
+  have result : CRTBarrel20.componentRows20 mir slot.val 0 factors rs = dst :=
+    CRTBarrel20.Packed20.componentRows_keepPrefix 123 dim 104 slot mir encodedRows encoded_size
+      (by decide) fit factors field_extent (by decide) prefixTable
+  have atField : run (field mir) tape (S rs) =
+      run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) :=
+    congrArg (fun p => run p tape (S rs)) fieldName
+  rw [frame21, frame21]
+  exact atField.trans (mapped.trans (congrArg S result))
+
+def liveDim (slot : Fin 22) : Nat := min 104 (123-(slot.val-1))
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel.Matrix.applyOps ops pivotPlan encodedRows in
+set_option maxHeartbeats 180000 in
+theorem logical_run (slot : Fin 22) (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (logicalProgram mir) tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.entryShift mir slot.val))
+        x (liveDim slot) slot.val phase) =
+    CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.exitShift mir slot.val))
+      x (liveDim slot) slot.val phase := by
+  let dim := liveDim slot
+  have inside : dim ≤ 104 := Nat.min_le_left ..
+  have fits : dim ≤ 123-(slot.val-1) := Nat.min_le_right ..
+  let inlet := frameTagged 21 (plain 123 dim (entryShift mir slot.val)) x dim slot.val phase
+  let outlet := frameTagged 21 (plain 123 dim (exitShift mir slot.val)) x dim slot.val phase
+  have typed : run (logicalProgram mir) tape inlet = outlet :=
+    run_circuit 123 104 21 152 pivotPlan paritySourcesTable encodedRows encoded_size (by decide) (by decide)
+      basisShape coordinates parities tested slot dim inside field x phase tape mir
+      (fun b m => fields_run slot dim fits b x phase m)
+  dsimp only [inlet, outlet] at typed
+  rw [frame21, frame21] at typed
+  exact typed
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+open Arithmetic Challenge CRTBarrel CRTBarrel.Placement CRTBarrel.Resources
+open CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic ECDSAAdd.RecordedQuantum
+
+private def correctionCheck (mir : Bool) : Bool :=
+  (correctionProgram 123 104 21 152 paritySourcesTable mir).all fun i =>
+    physicalBit i && decide (∀ q ∈ i.wires, q < 154)
+
+private theorem correction_checked (mir : Bool) : correctionCheck mir = true := by
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 154)
+    (correctionProgram 123 104 21 152 paritySourcesTable mir) := by
+  intro i hi
+  have ok := List.all_eq_true.mp (correction_checked mir) i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨physical,cover⟩ := ok
+  refine ⟨?_,of_decide_eq_true cover⟩
+  cases i <;> simp_all [physicalBit,PhysicalInstr,ProperGate]
+
+private theorem basis_fits : Fits (· < 154) (basisProgram 123 pivotPlan) := by
+  apply fits_map
+  intro pair hp
+  obtain ⟨a,b⟩ := pair
+  obtain ⟨ha,hb,separate⟩ := ops_bounds 123 pivotPlan basisShape (a,b) hp
+  refine ⟨separate,?_⟩
+  intro q hq
+  simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem field_fits (mir : Bool) : Fits (· < 154) (field mir) :=
+  CRTBarrel20.fitsComponents 123 mir 0 factors (by decide +kernel) field_allowed
+
+theorem program_fits (mir : Bool) : Fits (· < 154) (logicalProgram mir) := by
+  have b := basis_fits
+  have r := fits_reverse b
+  have c := correction_fits mir
+  have f := field_fits mir
+  cases mir
+  · exact fits_append b (fits_append f (fits_append c r))
+  · exact fits_append b (fits_append c (fits_append f r))
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+open CRTBarrel20 CRTResidueGroupedBasis CRTResidueCorrection CRTResidueEarlyLogic
+
+private theorem correction_price (mir : Bool) :
+    count (correctionProgram 123 104 21 152 paritySourcesTable mir) =
+      (if mir then ⟨0, 19, 2478⟩ else ⟨19, 0, 2459⟩) := by
+  cases mir <;> rw [correctionProgram_count] <;> decide +kernel
+
+attribute [local irreducible] count in
+theorem costs (mir : Bool) : count (logicalProgram mir) = bounds mir := by
+  let P := basisProgram 123 pivotPlan
+  let c := correctionProgram 123 104 21 152 paritySourcesTable
+  have len : (ops 123 pivotPlan).length = 5968 := by decide +kernel
+  have basisPrice : count P = ⟨0, 0, 5968⟩ :=
+    (CRTBarrel20.residueBasisPrice 123 pivotPlan).1.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have basisRevPrice : count P.reverse = ⟨0, 0, 5968⟩ :=
+    (CRTBarrel20.residueBasisPrice 123 pivotPlan).2.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have fieldPrice : count (field mir) = partsPrice20 mir factors :=
+    CRTBarrel20.residueFieldPrice 123 mir factors field_allowed
+  cases mir
+  · change count (P ++ (field false ++ (c false ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+  · change count (P ++ (c true ++ (field true ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+
+open Shadow20
+theorem width_at_start : liveW20 225 = 123 := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+open CRTBarrel.Packed
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option profiler.threshold 10
+
+def encodedRows : Array Nat := #[
+  6531009995037696887338390595393189097, 6949664481899087713449825889969675578, 3265504997518848443669195297696594548, 6279817302920862391671529418647297209, 1925810639562397800112602355051837810,
+  8456820634600094687450992950445026908, 2550144618885554107309943755530368401, 2977224068930526009221357090001985202, 5954448137861052018442714180003970404, 1275072309442777053654971877765184200,
+  1687908566076083648131818489244882001, 3375817132152167296263636978489764002, 5738889124658684403648182863432598804, 843954283038041824065909244622441000, 1609012092190707211000598261633948401,
+  3218024184381414422001196523267896802, 6436048368762828844002393046535793604, 804506046095353605500299130816974200, 2058159477344385867722023835272791601, 3430265795573976446203373058787986002,
+  6174478432033157603166071505818374804, 1029079738672192933861011917636395800, 8872938510555378955875111805215119425, 5261884312648290115760373719964264642, 10523768625296580231520747439928529284,
+  10413713284313833479811038397614301960, 10193602602348339976391620312985847312, 9753381238417352969552784143728938016, 187288484728990103422845613190185537, 374576969457980206845691226380371074,
+  749153938915960413691382452760742148, 1352639056376039635831662761929117768, 2705278112752079271663325523858235536, 5410556225504158543326651047716471072, 2089966399965118887795417182480156993,
+  3611360810997219974795081309595982786, 6633339870885207675950452312583864004, 2632855775491088368670448142924971400, 3180947591561111467756468416180728400, 6361895183122222935512936832361456800,
+  756510385067212345767289484135972673, 2257827184178474818277891258439385538, 4515654368356949636555782516878771076, 8447526096035232285509781376603797576, 5506039579406466578057050612155371472,
+  378255192533606172883644742067986336, 4096487892859210408075576091204825025, 8192975785718420816151152182409650050, 5752127605157514649071847882576543492, 870431244035702314913239282910330376,
+  1740862488071404629826478565820660752, 2048243946429605204037788045602412512, 8492972067459966037215323905963234241, 3514869200623904529545651983067624514, 4207363312393741651808024429782760260,
+  8414726624787483303616048859565520520, 6195629283295639624001641236888284432, 9563398016869646510222890194102995424, 10078774174927984025148596768126083521, 9523724383576641067066737054009410434,
+  2333903560360663359908364236476491460, 5440985066932632808842458336895593544, 248146167585938634454460191548430480, 10356299070603655504189526625184420064, 1549419360408718134643903987621351105,
+  4645661735905728779627553994884862786, 9291323471811457559255107989769725572, 7948822977343588135279759497296694536, 3819871425546263940714502619281904848, 6091621663344022558937180234932053856,
+  3185526347712456903667309887397376705, 6371052695424913807334619774794753410, 5252188247930528589418178452256586180, 10504376495861057178836356904513172360, 7537307015555483348642782459448972752,
+  1592763173856228451833654943698688352, 10633823966279326983230456482242756607, 3544607988759775661076818827414252202, 6380294379767596189938273889345653964, 708921597751955132215363765482850440,
+  1251038113679920821556524292028559600, 834025409119947214371016194685706400, 1000830490943936657245219433622847680, 667220327295957771496812955748565120, 9309768063863224012555847114803969792,
+  2661904053815707013960412582455060992, 5321049657834713813398586395394624512, 2758449796700214522238769515497472, 4867852582412143274539005027348480, 3245235054941428849692670018232320,
+  3894282065929714619631204021878784, 2596188043953143079754136014585856, 3989632049879102649301900624505342977, 6649386749798504415503167707508904962, 1335072183357980964675245391273272324,
+  1340267016756261046249857241044763656, 1350656683552821209399080940587746320, 1371436017145941535697528339673711648, 1412994684332182188294423137845642304, 1496112018704663493488212734189503616,
+  1662346687449626103875791926877226240, 1994816024939551324650950312252671488, 249260676538350724060584500621488129, 415434460897251206767640834369146882, 747782029615052172181753501864464388,
+  1412477167050654103009978836855099400, 2741867441921857964666429506836369424, 5400647991664265687979330846798909472, 84385124869754151374677044481232960, 85683357560058061395825922088636544,
+  88279822940665881438123677303443712, 93472753701881521522719187733058048, 103858615224312801691910208592286720, 124630338269175362030292250310744064, 353076186380368278740073750386966528,
+  706152372760736557480147500773933056, 1412304745521473114960295001547866112, 2824609491042946229920590003095732224, 5649218982085892459841180006191464448, 664613997892457936451903530140172288,
+  1329227995784915872903807060280344576, 2658455991569831745807614120560689152, 5316911983139663491615228241121378304
+]
+
+def factors : List (Nat × Nat) := [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (67,1), (73,1), (87,1), (91,1), (97,1), (103,1), (109,1), (115,1), (117,1), (257,2), (2047,1), (8191,1)]
+
+def paritySourcesTable : List (List Nat) := [[0, 2, 3, 5, 7, 8, 9, 11, 15, 18, 22, 25, 27, 28, 29, 30, 32, 33, 35, 36, 37, 40, 41, 42, 45, 46, 47, 48, 51, 52, 54, 57, 58, 59, 69, 72, 76, 79, 82, 83, 84, 87, 89, 91, 97, 98, 101, 102, 103, 106, 108, 111, 112, 113], [1, 3, 4, 6, 8, 9, 10, 12, 16, 18, 19, 23, 26, 29, 30, 31, 33, 36, 37, 38, 40, 41, 42, 43, 46, 47, 48, 49, 53, 55, 58, 59, 60, 64, 73, 77, 78, 79, 83, 85, 86, 87, 90, 91, 92, 98, 99, 102, 103, 104, 107, 109, 112, 113], [2, 3, 4, 5, 7, 9, 11, 13, 14, 17, 19, 20, 24, 27, 30, 31, 32, 34, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 50, 52, 54, 56, 59, 60, 61, 64, 65, 70, 74, 76, 77, 79, 84, 85, 87, 91, 92, 93, 99, 100, 102, 103, 104, 105, 108, 110, 113], [0, 4, 5, 6, 8, 12, 14, 15, 20, 21, 22, 25, 28, 31, 32, 33, 34, 35, 38, 39, 40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 51, 53, 55, 57, 60, 61, 62, 64, 65, 66, 70, 71, 75, 76, 78, 79, 85, 88, 89, 90, 91, 93, 94, 100, 101, 102, 103, 104, 105, 106, 109, 111], [0, 1, 5, 6, 7, 9, 13, 15, 16, 21, 22, 23, 26, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 43, 44, 45, 47, 49, 50, 51, 54, 56, 61, 62, 63, 64, 65, 66, 67, 71, 72, 77, 78, 80, 81, 82, 83, 84, 85, 89, 91, 94, 95, 101, 102, 103, 104, 105, 106, 107, 110, 112], [0, 1, 2, 3, 7, 8, 10, 14, 16, 17, 18, 22, 23, 24, 27, 28, 29, 30, 33, 34, 35, 36, 37, 40, 42, 43, 44, 45, 48, 50, 51, 52, 55, 57, 62, 63, 65, 66, 67, 68, 70, 72, 73, 78, 81, 83, 85, 90, 91, 92, 95, 96, 103, 104, 105, 106, 107, 108, 111, 113], [1, 2, 4, 8, 9, 11, 15, 17, 18, 19, 23, 24, 25, 29, 30, 31, 34, 35, 36, 37, 38, 41, 43, 44, 45, 49, 51, 53, 56, 63, 66, 67, 68, 69, 70, 71, 73, 74, 79, 80, 81, 84, 85, 91, 92, 93, 96, 97, 104, 105, 106, 107, 108, 109, 112], [0, 2, 3, 5, 6, 9, 10, 12, 14, 16, 19, 20, 24, 25, 26, 28, 30, 31, 32, 34, 35, 36, 37, 38, 39, 42, 44, 45, 46, 50, 54, 57, 58, 64, 67, 68, 69, 70, 71, 72, 74, 75, 80, 82, 83, 84, 86, 87, 88, 89, 90, 91, 93, 94, 97, 98, 102, 105, 106, 107, 108, 109, 110, 113], [1, 3, 4, 7, 11, 13, 14, 15, 17, 20, 21, 25, 26, 27, 28, 29, 31, 32, 33, 35, 36, 37, 38, 39, 43, 45, 46, 47, 51, 52, 55, 59, 65, 68, 69, 70, 71, 72, 73, 75, 81, 82, 84, 87, 89, 91, 94, 95, 98, 99, 103, 106, 107, 108, 109, 110, 111]]
+
+def pivotPlan : List (Nat × Nat) := [(123,5075554237827254023253341258824), (123,10151108551212371772421005936784), (123,20302217026866879818927688454432), (4,55831096767215521707615400685299), (123,147191072670316775496603918738349), (123,197946616257515135343766504420423), (7,644595388063778777851660159714751), (8,1289190766682824589904482330545022), (123,1309492993121578001670620295403522), (123,3222976959459564228355045202130043), (11,9660200867659040683752519468276593), (12,19320401632620537253864108340868834), (123,15135322708796893809054668958860375), (123,20596971319206255044361042122051551), (15,17719653013999768835903318626839973), (123,11790452184970553936985836634322671), (123,583569895576486942680691139412091), (123,1167139783219398038790073336987894), (123,6554262222748787829378248524028637), (20,19574215945958932815609536974319463), (21,2391634275061384903738273334877902), (123,9682829398917070682768425604921743), (123,4581791856789364287552172006735659), (123,9161575835810203715111316633222742), (123,18317023879079603432415583430900908), (123,4907286011032180561323484471621976), (123,9808662184039468154360098615456432), (123,19617321804461771044993261903013216), (123,6885894262569312894000407274146749), (123,20535967176187128675294556341918919), (33,6596902475327967581820275340538419), (123,19978258510580089724220432557322203), (123,5806004138298523656615726239192075), (123,11241885957790680586482806945190296), (123,4270535713846302238922533829736725), (38,7617855360498223484138512072706879), (39,15235708838410537037544849474328190), (123,7379190859875042773114894706264232), (39,18826054416078628529077476610382447), (123,1741703754904394053179760216460005), (123,19234647407575694590564026892958587), (123,3071419067295375375270645409019638), (44,13527502817962512134909066496235159), (45,14488442016079141335917139435564334), (123,8105042505055865782359513108191902), (123,20417310818140943204089409629305335), (47,4288159906692403556291843181838117), (48,8572462453046474167008131044998730), (49,17142483704140998374605905323097236), (123,8897877169379031868570929448551949), (123,19439916883825165877604788986114879), (123,12189371077885337727829419624295529), (53,8232280527845856471613729744147141), (123,16463936204726091507572516938950026), (57,1240248805626478261954982105029073), (123,17231148314278432971210364534822440), (123,12806071931145328149973043739658714), (123,159995448026892245728635842146287), (123,16305021330333274541190682199250363), (123,8933408579367909910168437892164470), (123,9959624533109276474756204284749857), (123,19919249842410080098708685894471746), (63,5810748716865021658160581296360971), (123,17869546858326696768188992995865241), (67,11665807017870058720122810610415407), (68,18211836537883190693875959931465310), (67,6544725418733450211863067503412685), (123,16791411884888024798946561220580075), (123,4113779469434341519217398237749275), (123,16352233126900867384081249469232907), (123,12526702709163070246350947013838241), (123,6599972994483873265167008925863651), (73,4607624060249827746897196909123687), (74,9211322685850651503353668088475854), (75,18420356366695907502002135098417564), (123,800770509674017917442799967375276), (123,10393441687101552842410552960472405), (123,10365507982786931655046801490214911), (123,10406239510900273843128189275111425), (123,10322744581616547189963347621675011), (123,10494405599591521155083680440549381), (123,10060231968041494361046466605580303), (123,10709277323254770582164396789235729), (123,9406460971970116556629121212973107), (123,12013075759332576261225739627167829), (123,5498987411845737594591101247783167), (123,15924471024044368644377938497667329), (123,14539539609899747600733161027371779), (123,3461895684935709845536488273642757), (123,10375579583871374228009982196420367), (123,10396185870147007659082607890043153), (123,10353453583029883819628284685693747), (93,10443293532659870639193183593616725), (123,20656845201069003265449488117246634), (123,10136226631575985282443646810204843), (123,20272453263151970564887293620409686), (123,989137196782270885471460420266668), (123,1978274393564541770942920840533336), (123,3956548787129083541885841681066672), (123,7913097574258167083771683362133344), (123,13052476594876029023864956272126671), (123,15431335135830366487127671554987422), (123,18206506094965958584254954221873971), (123,18115578161334338738130834098781525), (123,13065919230205017777214967068545433), (106,7545078037434701945882075925153793), (107,15090156074869403891764151850307586), (123,8445678180802441516452204547279671), (110,4032252348110195084547302934613613), (111,8064504696220390169094605869227226), (112,16129009392440780338189211738454452), (112,6669470100010132330230904331269634), (123,12199677650392110087099807617227270), (123,8730404571287042092559249420990935), (123,1397121663120908450193152086784273), (123,2794243326241816900386304173568546), (123,5588486652483633800772608347137092), (123,11176973304967267601545216694274184), (123,22353946609934535203090433388548368), (123,44707893219869070406180866777096736), (123,89415786439738140812361733554193472), (123,178831572879476281624723467108386944), (123,357663145758952563249446934216773888)]
+
+def packedEncoding : Nat := 0x40000000000000000000000000000000000020000000000000000000000000000000000010000000000000000000000000000000000008000000000000000000000000000000000044000000000000000000000000000000000022000000000000000000000000000000000011000000000000000000000000000000000008800000000000000000000000000000000004400000000000000000000000000000000001800c006003001800c0060030018000000001400a005002801400a0050028014000000001200900480240120090048024012000000001100880440220110088044022011000000001080840420210108084042021010800000001040820410208104082041020810400000041020810408204102081040820410200000021010808404202101080840420210100000011008804402201100880440220110080000009004802401200900480240120090040000005002801400a005002801400a0050020000003001800c006003001800c00600300100000180300600c0180300600c018030060000000140280500a0140280500a014028050000000120240480901202404809012024048000000110220440881102204408811022044000000108210420841082104208410821042000000104208410821042084108210420841000000102204408811022044088110220440800000101202404809012024048090120240400000500a0140280500a0140280500a0140200000300600c0180300600c0180300600c0100000000800080008000800080008000800000000000c000c000c000c000c000c000c00000000000a000a000a000a000a000a000a00000000000f000f000f000f000f000f000f00000000000880088008800880088008800880000000400cc00cc00cc00cc00cc00cc00cc0000000200aa00aa00aa00aa00aa00aa00aa0000000700ff00ff00ff00ff00ff00ff00ff00000000808080808080808080808080808080000000c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0000000a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0000000888888888888888888888888888888000004cccccccccccccccccccccccccccccc000002aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000007ffffffffffffffffffffffffffffff00000132c149960a4cb0526582932c149960000005aba1ed5d0f6ae87b5743daba1ed5d0000007e711bf388df9c46fce237e711bf388000003f388df9c46fce237e711bf388df9c4000004cb0526582932c149960a4cb05265820000026582932c149960a4cb0526582932c1000004953422dfae33b0792a6845bf5c6760000002dfae33b0792a6845bf5c6760f254d0000005fae33b0792a6845bf5c6760f254d08000006fd719d83c953422dfae33b0792a6840000037eb8cec1e4a9a116fd719d83c953420000012a6845bf5c6760f254d08b7eb8cec1000007ca8cf75a6c48705f9519eeb4d890e00000002fca8cf75a6c48705f9519eeb4d89000000417e5467bad3624382fca8cf75a6c48000001c17e5467bad3624382fca8cf75a6c40000072a33dd69b121c17e5467bad36243820000079519eeb4d890e0bf2a33dd69b121c100000731d7ed10b2a4f06e63afda216549e0000004a93c1b98ebf6885952783731d7ed10000006549e0dcc75fb442ca93c1b98ebf6880000032a4f06e63afda216549e0dcc75fb44000002a4f06e63afda216549e0dcc75fb44200000663afda216549e0dcc75fb442ca93c10000018a7a392dd9abf04314f4725bb357e00000014f4725bb357e08629e8e4b766afc10000000a7a392dd9abf04314f4725bb357e0800000453d1c96ecd5f8218a7a392dd9abf0400000629e8e4b766afc10c53d1c96ecd5f8200000314f4725bb357e08629e8e4b766afc100000048d96bbcc54fd07091b2d7798a9fa0000004246cb5de62a7e83848d96bbcc54fd00000065aef3153f41c246cb5de62a7e8384800000365aef3153f41c246cb5de62a7e8384000001b2d7798a9fa0e12365aef3153f41c200000091b2d7798a9fa0e12365aef3153f41000004c941a64a0d32506992834c941a64a000000264a0d32506992834c941a64a0d3250000001fb11cfd88e7ec473f6239fb11cfd88000004fd88e7ec473f6239fb11cfd88e7ec4000002b785d5bc2eade1756f0bab785d5bc200000192834c941a64a0d32506992834c941000004120904824120904824120904824120000002090482412090482412090482412090000001048241209048241209048241209048000000904824120904824120904824120904000000482412090482412090482412090482000000241209048241209048241209048241000007566ed2717946107eacdda4e2f28c20000007ab376938bca3083f566ed271794610000007d59bb49c5e51841fab376938bca308000007eacdda4e2f28c20fd59bb49c5e5184000003f566ed2717946107eacdda4e2f28c2000006acdda4e2f28c20fd59bb49c5e51841000000c6318c6318c6318c6318c6318c6318000004a5294a5294a5294a5294a5294a529400000294a5294a5294a5294a5294a5294a520000018c6318c6318c6318c6318c6318c6310000009af135e26bc4d789af135e26bc4d78000004d789af135e26bc4d789af135e26bc40000026bc4d789af135e26bc4d789af135e200000135e26bc4d789af135e26bc4d789af1000000a28a28a28a28a28a28a28a28a28a280000045145145145145145145145145145140000028a28a28a28a28a28a28a28a28a28a2000001451451451451451451451451451451000000f591eb23d647ac8f591eb23d647ac80000047ac8f591eb23d647ac8f591eb23d640000023d647ac8f591eb23d647ac8f591eb2000001eb23d647ac8f591eb23d647ac8f5910000065cb972e5cb972e5cb972e5cb972e5c00000172e5cb972e5cb972e5cb972e5cb972000004b972e5cb972e5cb972e5cb972e5cb900000274e9d3a74e9d3a74e9d3a74e9d3a740000053a74e9d3a74e9d3a74e9d3a74e9d3a000004e9d3a74e9d3a74e9d3a74e9d3a74e9
+
+theorem prefixTable :
+    CRTBarrel20.Packed20.residueTable 123 encodedRows 0 factors = true := by
+  decide +kernel
+
+private theorem quotientMasksCheck : ∀ i : Fin 9,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (114+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ PeakNodup.nodupMask sites 0 = true ∧ (∀ j ∈ sites, j < 114) ∧
+      q &&& (2^(114+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  decide +kernel
+
+theorem quotientMasks : ∀ i : Fin 9,
+    let sites := paritySourcesTable.getD i.val []
+    let q := CRTBarrel.Matrix.read encodedRows (114+i.val)
+    let mix := sites.foldl (fun x j => x ^^^ CRTBarrel.Matrix.read encodedRows j) 0
+    sites ≠ [] ∧ sites.Nodup ∧ (∀ j ∈ sites, j < 114) ∧
+      q &&& (2^(114+i.val)-1) = 0 ∧ q ^^^ mix < 2^(i.val+1) := by
+  intro i
+  have h := quotientMasksCheck i
+  exact ⟨h.1, PeakNodup.nodup_of_mask _ h.2.1, h.2.2⟩
+
+theorem basisShape : ∀ v ∈ pivotPlan.zipIdx,
+    v.2 < 123 ∧ (v.1.1 < 123 → v.1.1 ≠ v.2) ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+theorem packedBasis :
+    pivotPlan.zipIdx.reverse.foldl (quickStep 123) (identityWord CRTBarrel.Packed.width 123) =
+      packedEncoding := by
+  decide +kernel
+
+theorem packedRows : ∀ j : Fin 123,
+    digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val := by
+  decide +kernel
+
+
+open CRTResidueEarlyLogic
+def field (mir : Bool) : Program := CRTBarrel20.components20 123 mir 0 factors
+def logicalProgram (mir : Bool) : Program :=
+  circuit 123 114 21 152 pivotPlan paritySourcesTable field mir
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨264, 71, 23219⟩ else ⟨273, 62, 23258⟩
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+open Arithmetic CRTBarrel CRTBarrel.Matrix CRTBarrel.Packed CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic
+private theorem encoded_size : encodedRows.size = 123 := rfl
+private theorem packed_room : 123 ≤ CRTBarrel.Packed.width := by decide
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates_from
+    (shape : CRTResidueGroupedBasis.Good 123 pivotPlan)
+    (basis : pivotPlan.zipIdx.reverse.foldl (quickStep 123) (identityWord CRTBarrel.Packed.width 123) = packedEncoding)
+    (rows : ∀ j : Fin 123, digit CRTBarrel.Packed.width packedEncoding j.val = CRTBarrel.Matrix.read encodedRows j.val) :
+    CRTBarrel.Matrix.applyOps (ops 123 pivotPlan) (CRTBarrel.Matrix.units 123) = encodedRows :=
+  @CRTResidueGroupedBasis.coordinates 123 pivotPlan shape encodedRows encoded_size packed_room packedEncoding basis rows
+end
+
+
+section
+attribute [local irreducible] CRTBarrel.Matrix.applyOps ops CRTBarrel.Matrix.units pivotPlan packedEncoding encodedRows
+set_option maxHeartbeats 130000 in
+private theorem coordinates : CRTBarrel.Matrix.applyOps (ops 123 pivotPlan) (CRTBarrel.Matrix.units 123) = encodedRows :=
+  coordinates_from basisShape packedBasis packedRows
+end
+
+private theorem parities : ∀ i : Fin 9, (paritySources paritySourcesTable i.val).Nodup ∧
+    paritySources paritySourcesTable i.val ≠ [] ∧ ∀ q ∈ paritySources paritySourcesTable i.val, q < 114 := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.1,h.1,h.2.2.1⟩
+
+private theorem tested : MaskOK 123 114 paritySourcesTable encodedRows := by
+  intro i
+  have h := quotientMasks i
+  exact ⟨h.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
+
+
+
+private theorem rowValue_agrees (x : Nat → Bool) (row dim : Nat) :
+    CRTBarrel.rowValue x row dim = CRTBarrel20.rowValue x row dim := by
+  induction dim with
+  | zero => rfl
+  | succ dim ih => simp only [CRTBarrel.rowValue, CRTBarrel20.rowValue, ih]
+
+private theorem frame21 (rs : Rows) (x : Nat → Bool) (dim slot : Nat) (ph : Bool) :
+    frameTagged 21 rs x dim slot ph = CRTBarrel20.frame20 rs x dim slot ph := by
+  change State.mk ph (CRTBarrel.Matrix.basis rs x dim _) =
+    State.mk ph (CRTBarrel20.Matrix20.basis rs x dim _)
+  apply congrArg (State.mk ph)
+  funext q
+  unfold CRTBarrel.Matrix.basis CRTBarrel20.Matrix20.basis
+  split
+  · exact rowValue_agrees x _ dim
+  · rfl
+
+private theorem field_extent : CRTBarrel20.extent20 factors = 114 := by decide +kernel
+
+private theorem field_allowed : ∀ pair ∈ factors, CRTBarrel20.UsedField20 pair.1 := by
+  intro pair hp
+  unfold CRTBarrel20.UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel20.componentRows20 encodedRows in
+set_option maxHeartbeats 180000 in
+private theorem fields_run (slot : Fin 22) (dim : Nat) (fit : dim ≤ 123-(slot.val-1))
+    (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (field mir) tape (frameTagged 21
+      (windowRows (keepPrefix encodedRows 114) dim (entryShift mir slot.val)) x dim slot.val phase) =
+    frameTagged 21
+      (windowRows (keepPrefix encodedRows 114) dim (exitShift mir slot.val)) x dim slot.val phase := by
+  let rs := windowRows (keepPrefix encodedRows 114) dim (entryShift mir slot.val)
+  let dst := windowRows (keepPrefix encodedRows 114) dim (exitShift mir slot.val)
+  let S (rows : Rows) := CRTBarrel20.frame20 rows x dim slot.val phase
+  have size : rs.size = 123 := (windowRows_size ..).trans ((keepPrefix_size ..).trans encoded_size)
+  have shortSlot : slot.val < 32 := Nat.lt_trans slot.isLt (by decide)
+  have small : 0+CRTBarrel20.extent20 factors ≤ rs.size := by rw [size,field_extent]; decide
+  have fieldName : field mir = CRTBarrel20.components20 rs.size mir 0 factors :=
+    congrArg (fun n => CRTBarrel20.components20 n mir 0 factors) size.symm
+  have mapped : run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) =
+      S (CRTBarrel20.componentRows20 mir slot.val 0 factors rs) :=
+    CRTBarrel20.frame_components20 rs mir 0 slot.val dim factors shortSlot small field_allowed x phase tape
+  have result : CRTBarrel20.componentRows20 mir slot.val 0 factors rs = dst :=
+    CRTBarrel20.Packed20.componentRows_keepPrefix 123 dim 114 slot mir encodedRows encoded_size
+      (by decide) fit factors field_extent (by decide) prefixTable
+  have atField : run (field mir) tape (S rs) =
+      run (CRTBarrel20.components20 rs.size mir 0 factors) tape (S rs) :=
+    congrArg (fun p => run p tape (S rs)) fieldName
+  rw [frame21, frame21]
+  exact atField.trans (mapped.trans (congrArg S result))
+
+def liveDim (slot : Fin 22) : Nat := min 114 (123-(slot.val-1))
+
+attribute [local irreducible] run CRTBarrel20.components20 CRTBarrel.Matrix.applyOps ops pivotPlan encodedRows in
+set_option maxHeartbeats 180000 in
+theorem logical_run (slot : Fin 22) (mir : Bool) (x : Nat → Bool) (phase : Bool) (tape : List Bool) :
+    run (logicalProgram mir) tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.entryShift mir slot.val))
+        x (liveDim slot) slot.val phase) =
+    CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.exitShift mir slot.val))
+      x (liveDim slot) slot.val phase := by
+  let dim := liveDim slot
+  have inside : dim ≤ 114 := Nat.min_le_left ..
+  have fits : dim ≤ 123-(slot.val-1) := Nat.min_le_right ..
+  let inlet := frameTagged 21 (plain 123 dim (entryShift mir slot.val)) x dim slot.val phase
+  let outlet := frameTagged 21 (plain 123 dim (exitShift mir slot.val)) x dim slot.val phase
+  have typed : run (logicalProgram mir) tape inlet = outlet :=
+    run_circuit 123 114 21 152 pivotPlan paritySourcesTable encodedRows encoded_size (by decide) (by decide)
+      basisShape coordinates parities tested slot dim inside field x phase tape mir
+      (fun b m => fields_run slot dim fits b x phase m)
+  dsimp only [inlet, outlet] at typed
+  rw [frame21, frame21] at typed
+  exact typed
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+open Arithmetic Challenge CRTBarrel CRTBarrel.Placement CRTBarrel.Resources
+open CRTResidueCorrection CRTResidueGroupedBasis CRTResidueEarlyLogic ECDSAAdd.RecordedQuantum
+
+private def correctionCheck (mir : Bool) : Bool :=
+  (correctionProgram 123 114 21 152 paritySourcesTable mir).all fun i =>
+    physicalBit i && decide (∀ q ∈ i.wires, q < 154)
+
+private theorem correction_checked (mir : Bool) : correctionCheck mir = true := by
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 154)
+    (correctionProgram 123 114 21 152 paritySourcesTable mir) := by
+  intro i hi
+  have ok := List.all_eq_true.mp (correction_checked mir) i hi
+  simp only [Bool.and_eq_true] at ok
+  obtain ⟨physical,cover⟩ := ok
+  refine ⟨?_,of_decide_eq_true cover⟩
+  cases i <;> simp_all [physicalBit,PhysicalInstr,ProperGate]
+
+private theorem basis_fits : Fits (· < 154) (basisProgram 123 pivotPlan) := by
+  apply fits_map
+  intro pair hp
+  obtain ⟨a,b⟩ := pair
+  obtain ⟨ha,hb,separate⟩ := ops_bounds 123 pivotPlan basisShape (a,b) hp
+  refine ⟨separate,?_⟩
+  intro q hq
+  simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem field_fits (mir : Bool) : Fits (· < 154) (field mir) :=
+  CRTBarrel20.fitsComponents 123 mir 0 factors (by decide +kernel) field_allowed
+
+theorem program_fits (mir : Bool) : Fits (· < 154) (logicalProgram mir) := by
+  have b := basis_fits
+  have r := fits_reverse b
+  have c := correction_fits mir
+  have f := field_fits mir
+  cases mir
+  · exact fits_append b (fits_append f (fits_append c r))
+  · exact fits_append b (fits_append c (fits_append f r))
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+open CRTBarrel20 CRTResidueGroupedBasis CRTResidueCorrection CRTResidueEarlyLogic
+
+private theorem correction_price (mir : Bool) :
+    count (correctionProgram 123 114 21 152 paritySourcesTable mir) =
+      (if mir then ⟨0, 9, 1340⟩ else ⟨9, 0, 1331⟩) := by
+  cases mir <;> rw [correctionProgram_count] <;> decide +kernel
+
+attribute [local irreducible] count in
+theorem costs (mir : Bool) : count (logicalProgram mir) = bounds mir := by
+  let P := basisProgram 123 pivotPlan
+  let c := correctionProgram 123 114 21 152 paritySourcesTable
+  have len : (ops 123 pivotPlan).length = 6080 := by decide +kernel
+  have basisPrice : count P = ⟨0, 0, 6080⟩ :=
+    (CRTBarrel20.residueBasisPrice 123 pivotPlan).1.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have basisRevPrice : count P.reverse = ⟨0, 0, 6080⟩ :=
+    (CRTBarrel20.residueBasisPrice 123 pivotPlan).2.trans
+      (congrArg (fun y => (⟨0, 0, y⟩ : CRTBarrel20.Count)) len)
+  have fieldPrice : count (field mir) = partsPrice20 mir factors :=
+    CRTBarrel20.residueFieldPrice 123 mir factors field_allowed
+  cases mir
+  · change count (P ++ (field false ++ (c false ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+  · change count (P ++ (c true ++ (field true ++ P.reverse))) = _
+    rw [count_append, count_append, count_append, basisPrice, basisRevPrice, fieldPrice, correction_price]
+    decide +kernel
+
+open Shadow20
+theorem width_at_start : liveW20 245 = 123 := by decide +kernel
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed ECDSAAdd.Entrant.IntegerPacket
+open ECDSAAdd.Entrant.StairPacket ECDSAAdd.Entrant.StairPacket.Partial ECDSAAdd.Entrant.StairPacket.GateMirror
+open ECDSAAdd.Baselines ECDSAAdd.Challenge
+
+def wideLogicalAt (s : Nat) (mir : Bool) : Program :=
+  if s = 165 then CRTResidueEarly165.logicalProgram mir
+  else if s = 185 then CRTResidueEarly185.logicalProgram mir
+  else if s = 205 then CRTResidueEarly205.logicalProgram mir
+  else if s = 225 then CRTResidueEarly225.logicalProgram mir
+  else if s = 245 then CRTResidueEarly245.logicalProgram mir
+  else CRTBarrel20.logical20 (liveW20 s) mir
+
+def widePriceAt (s : Nat) (mir : Bool) : CRTBarrel20.Count :=
+  if s = 165 then CRTResidueEarly165.bounds mir
+  else if s = 185 then CRTResidueEarly185.bounds mir
+  else if s = 205 then CRTResidueEarly205.bounds mir
+  else if s = 225 then CRTResidueEarly225.bounds mir
+  else if s = 245 then CRTResidueEarly245.bounds mir
+  else CRTBarrel20.listedPrice20 (liveW20 s) mir
+
+def barrel20 (s : Nat) (mir : Bool) : Program := renameProgram (place20 s) (wideLogicalAt s mir)
+
+def barrel20T (s : Nat) (mir : Bool) : Nat := (widePriceAt s mir).t
+def barrel20M (s : Nat) (mir : Bool) : Nat := (widePriceAt s mir).m
+def barrel20Slots (s : Nat) (mir : Bool) : Nat := (widePriceAt s mir).slots
 
 theorem place20_inj (j : Fin 9) :
     ∀ a < liveW20 (start20 j) + 31, ∀ b < liveW20 (start20 j) + 31,
@@ -18589,23 +20620,63 @@ theorem place20_inj (j : Fin 9) :
       rw [hscr (a - liveW20 (start20 j) - 21) (by omega), hscr (b - liveW20 (start20 j) - 21) (by omega)] at eq
       unfold Wire at *; omega
 
+
+theorem wideLogical_metrics (j : Fin 9) (mir : Bool) :
+    CRTBarrel20.count (wideLogicalAt (start20 j) mir) = widePriceAt (start20 j) mir := by
+  by_cases h165 : start20 j = 165
+  · simp only [wideLogicalAt, widePriceAt, if_pos h165]
+    exact CRTResidueEarly165.costs mir
+  by_cases h185 : start20 j = 185
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_pos h185]
+    exact CRTResidueEarly185.costs mir
+  by_cases h205 : start20 j = 205
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_pos h205]
+    exact CRTResidueEarly205.costs mir
+  by_cases h225 : start20 j = 225
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_pos h225]
+    exact CRTResidueEarly225.costs mir
+  by_cases h245 : start20 j = 245
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_pos h245]
+    exact CRTResidueEarly245.costs mir
+  simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245]
+  exact CRTBarrel20.logical20_metrics _ (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1 mir
+
 theorem barrel20_metrics (j : Fin 9) (mir : Bool) :
     toffoliCount (barrel20 (start20 j) mir) = barrel20T (start20 j) mir ∧
     measurementCount (barrel20 (start20 j) mir) = barrel20M (start20 j) mir ∧
     gateSlots (barrel20 (start20 j) mir) = barrel20Slots (start20 j) mir := by
-  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
-  have hm := CRTBarrel20.logical20_metrics (liveW20 (start20 j)) hu mir
-  have hr : CRTBarrel20.count (barrel20 (start20 j) mir) = CRTBarrel20.count (CRTBarrel20.logical20 (liveW20 (start20 j)) mir) :=
-    CRTBarrel20.count_rename (place20 (start20 j)) _
-  rw [hm] at hr
-  exact ⟨congrArg CRTBarrel20.Count.t hr,
-    congrArg CRTBarrel20.Count.m hr,
-    congrArg CRTBarrel20.Count.slots hr⟩
+  have h := (CRTBarrel20.count_rename (place20 (start20 j)) (wideLogicalAt (start20 j) mir)).trans
+    (wideLogical_metrics j mir)
+  exact ⟨congrArg CRTBarrel20.Count.t h, congrArg CRTBarrel20.Count.m h, congrArg CRTBarrel20.Count.slots h⟩
+
+private theorem wideLogical_fits (j : Fin 9) (mir : Bool) :
+    CRTBarrel20.Fits (· < liveW20 (start20 j) + 31) (wideLogicalAt (start20 j) mir) := by
+  by_cases h165 : start20 j = 165
+  · have width : liveW20 (start20 j) = 94 := (congrArg liveW20 h165).trans CRTResidueEarly165.width_at_start
+    rw [wideLogicalAt, if_pos h165, width]
+    exact CRTResidueEarly165.program_fits mir
+  by_cases h185 : start20 j = 185
+  · have width : liveW20 (start20 j) = 104 := (congrArg liveW20 h185).trans CRTResidueEarly185.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_pos h185, width]
+    exact CRTResidueEarly185.program_fits mir
+  by_cases h205 : start20 j = 205
+  · have width : liveW20 (start20 j) = 113 := (congrArg liveW20 h205).trans CRTResidueEarly205.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_pos h205, width]
+    exact CRTResidueEarly205.program_fits mir
+  by_cases h225 : start20 j = 225
+  · have width : liveW20 (start20 j) = 123 := (congrArg liveW20 h225).trans CRTResidueEarly225.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_pos h225, width]
+    exact CRTResidueEarly225.program_fits mir
+  by_cases h245 : start20 j = 245
+  · have width : liveW20 (start20 j) = 123 := (congrArg liveW20 h245).trans CRTResidueEarly245.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_pos h245, width]
+    exact CRTResidueEarly245.program_fits mir
+  rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245]
+  exact CRTBarrel20.logical20_fits _ (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1 mir
 
 theorem barrel20_phys (j : Fin 9) (mir : Bool) :
     GatePhysical (barrel20 (start20 j) mir) := by
-  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
-  have hf := CRTBarrel20.logical20_fits (liveW20 (start20 j)) hu mir
+  have hf := wideLogical_fits j mir
   have hr := CRTBarrel20.fits_rename (Q := fun _ => True) (f := place20 (start20 j)) hf
     (fun _ _ => trivial) (fun a ha b hb => place20_inj j a ha b hb)
   intro g hg
@@ -18616,8 +20687,7 @@ theorem barrel20_wires (j : Fin 9) (mir : Bool) (q : Wire)
     (∃ i < liveW20 (start20 j), q = bankW20 (start20 j) i) ∨
     (∃ k < 10, q = poolW20 (start20 j) (22 + k)) ∨
     q ∈ tagsP20 := by
-  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
-  have hf := CRTBarrel20.logical20_fits (liveW20 (start20 j)) hu mir
+  have hf := wideLogical_fits j mir
   rw [barrel20, renameProgram_support] at hq
   obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hq
   have hxlt : x < liveW20 (start20 j) + 31 := CRTBarrel20.support hf x hx
@@ -18646,8 +20716,331 @@ theorem barrel20_cov (j : Fin 9) (mir : Bool) :
   · rcases pool20_cases j (22 + k) with ⟨_, e⟩ | ⟨_, e⟩ <;> (rw [e]; unfold Wire at *; omega)
   · have := tagsP20_range q ht; unfold Wire at *; omega
 
+end ECDSAAdd.Entrant.StairPacket.Shadow20
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 0
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(94-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 125) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 94 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 94 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^75 at admitted
+    unfold liveDim
+    by_cases bound : 75 ≤ 94-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 94 := by decide +kernel
+  have hr := placed_from_rows20 94 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 165 ∧ liveW20 (start20 j) = 94 ∧
+    wpP20 (start20 j) = 75 ∧ place20 (start20 j) 123 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(94-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 1
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(104-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 135) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 104 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 104 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^85 at admitted
+    unfold liveDim
+    by_cases bound : 85 ≤ 104-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 104 := by decide +kernel
+  have hr := placed_from_rows20 104 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 185 ∧ liveW20 (start20 j) = 104 ∧
+    wpP20 (start20 j) = 85 ∧ place20 (start20 j) 133 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(104-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 2
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(113-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 144) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 113 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 113 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^95 at admitted
+    unfold liveDim
+    by_cases bound : 95 ≤ 113-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 113 := by decide +kernel
+  have hr := placed_from_rows20 113 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 205 ∧ liveW20 (start20 j) = 113 ∧
+    wpP20 (start20 j) = 95 ∧ place20 (start20 j) 142 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(113-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 3
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 154) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^104 at admitted
+    unfold liveDim
+    by_cases bound : 104 ≤ 123-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 123 := by decide +kernel
+  have hr := placed_from_rows20 123 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 225 ∧ liveW20 (start20 j) = 123 ∧
+    wpP20 (start20 j) = 104 ∧ place20 (start20 j) 152 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 4
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 154) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^114 at admitted
+    unfold liveDim
+    by_cases bound : 114 ≤ 123-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 123 := by decide +kernel
+  have hr := placed_from_rows20 123 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 245 ∧ liveW20 (start20 j) = 123 ∧
+    wpP20 (start20 j) = 114 ∧ place20 (start20 j) 152 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed ECDSAAdd.Entrant.IntegerPacket
+open ECDSAAdd.Entrant.StairPacket ECDSAAdd.Entrant.StairPacket.Partial ECDSAAdd.Entrant.StairPacket.GateMirror
+open ECDSAAdd.Baselines ECDSAAdd.Challenge
+
 /-- Physical barrel semantics for all 9 20-tick blocks (`j : Fin 9`), returning `HighBankBarrel.Result`. -/
 theorem barrel20_result (j : Fin 9) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2 ^ wpP20 (start20 j))
     (small : v < 2 ^ (liveW20 (start20 j) - (slot.val - 1)))
     (input : HighBankBarrel.holds (bankW20 (start20 j)) (liveW20 (start20 j))
       (v <<< CRTBarrel20.entryShift mir slot.val) s)
@@ -18655,6 +21048,47 @@ theorem barrel20_result (j : Fin 9) (mir : Bool) (slot : Fin 22) (v : Nat) (s : 
     (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false) :
     HighBankBarrel.Result (bankW20 (start20 j)) (liveW20 (start20 j))
       (v <<< CRTBarrel20.exitShift mir slot.val) s (run (barrel20 (start20 j) mir) tape s) := by
+  by_cases h165 : start20 j = 165
+  · have fixed : j = CRTResidueEarly165.j := Fin.ext (by
+      change j.val = 0
+      unfold start20 at h165
+      omega)
+    rw [barrel20, wideLogicalAt, if_pos h165]
+    subst j
+    exact CRTResidueEarly165.placed_exact mir slot v s tape admitted small input tag scratch
+  by_cases h185 : start20 j = 185
+  · have fixed : j = CRTResidueEarly185.j := Fin.ext (by
+      change j.val = 1
+      unfold start20 at h185
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_pos h185]
+    subst j
+    exact CRTResidueEarly185.placed_exact mir slot v s tape admitted small input tag scratch
+  by_cases h205 : start20 j = 205
+  · have fixed : j = CRTResidueEarly205.j := Fin.ext (by
+      change j.val = 2
+      unfold start20 at h205
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_pos h205]
+    subst j
+    exact CRTResidueEarly205.placed_exact mir slot v s tape admitted small input tag scratch
+  by_cases h225 : start20 j = 225
+  · have fixed : j = CRTResidueEarly225.j := Fin.ext (by
+      change j.val = 3
+      unfold start20 at h225
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_pos h225]
+    subst j
+    exact CRTResidueEarly225.placed_exact mir slot v s tape admitted small input tag scratch
+  by_cases h245 : start20 j = 245
+  · have fixed : j = CRTResidueEarly245.j := Fin.ext (by
+      change j.val = 4
+      unfold start20 at h245
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_pos h245]
+    subst j
+    exact CRTResidueEarly245.placed_exact mir slot v s tape admitted small input tag scratch
+  rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245]
   have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
   have hr := CRTBarrel20.barrel20_result (liveW20 (start20 j)) hu mir slot
     (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22 + k))

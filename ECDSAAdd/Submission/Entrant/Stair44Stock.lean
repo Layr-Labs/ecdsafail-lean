@@ -1084,7 +1084,24 @@ theorem ext_in:ext.toFinset⊆S:=by
  · have eq:q=4762:=List.mem_singleton.mp h
    exact eq ▸ mod_old
 
-theorem finite_scope:∀q∈domain++hosts++ports,q∈ext:=by decide +kernel
+private theorem finite_scope_covered {a b : List Wire}
+    (h : StairLoan.maskOf a &&& StairLoan.maskOf b = StairLoan.maskOf a) (u : Wire)
+    (hu : u ∈ a) : u ∈ b := by
+  have ha : (StairLoan.maskOf a).testBit u = true := by
+    rw [StairLoan.testBit_maskOf]
+    exact decide_eq_true hu
+  have both := congrArg (fun v : Nat => v.testBit u) h
+  change (StairLoan.maskOf a &&& StairLoan.maskOf b).testBit u = (StairLoan.maskOf a).testBit u at both
+  rw [Nat.testBit_and, ha, Bool.true_and] at both
+  exact StairLoan.mem_of_maskOf both
+
+private theorem finite_scope_mask :
+    StairLoan.maskOf (domain ++ hosts ++ ports) &&& StairLoan.maskOf ext =
+      StairLoan.maskOf (domain ++ hosts ++ ports) := by
+  decide +kernel
+
+theorem finite_scope:∀q∈domain++hosts++ports,q∈ext:=
+  finite_scope_covered finite_scope_mask
 
 theorem scope_in(q:Wire)(hq:q∈domain++hosts++ports):q∈S:=
  ext_in (List.mem_toFinset.mpr (finite_scope q hq))
@@ -45254,7 +45271,15 @@ theorem aux_sites : auxPorts⊆(WrapperOB5.sites layout).toFinset := by
   simp [WrapperOB5.sites,PointAddLayout.pointWires,hq]
  have hy(q : Wire)(hq:q∈layout.point.y):q∈(WrapperOB5.sites layout).toFinset:=by
   simp [WrapperOB5.sites,PointAddLayout.pointWires,hq]
- have hf:∀q∈[layout.control,layout.point.finite,layout.genericSelect,pkW layout],q∈WrapperOB5.sites layout:=by decide +kernel
+ have hf:∀q∈[layout.control,layout.point.finite,layout.genericSelect,pkW layout],q∈WrapperOB5.sites layout:=by
+  intro q hq
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl
+  · simp [WrapperOB5.sites]
+  · simp [WrapperOB5.sites, PointAddLayout.pointWires]
+  · simp [WrapperOB5.sites, ECDSAAdd.Entrant.flagsN]
+  · change layout.core.poolWire 724 ∈ WrapperOB5.sites layout
+    exact List.mem_toFinset.mp (sites_pool 724 (Or.inr (by omega)))
  intro q hq
  unfold auxPorts ControlStageSupportDevelop.ports at hq
  simp only [Finset.mem_union,List.mem_toFinset,List.mem_append] at hq
@@ -81101,11 +81126,27 @@ theorem frontReady_frame (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s 
 /-- dadon's `oddRead`: the history letters, negated. -/
 def oddRead (j : Fin 26) (v : BasisState) := (List.range 15).map (fun i => !v ((ports j).g + i))
 
+private theorem history_masks_disjoint : ∀ j : Fin 26, j.val ≤ 24 →
+    let s := start j
+    let h := Shadow7.sbP s
+    ((history j).foldr (fun q m => m ||| 2^q) 0) &&&
+      (((Shadow7.fix0P s h ++ Shadow7.fix2P s h).map GateMirror.target).foldr (fun q m => m ||| 2^q) 0) = 0 := by
+  decide +kernel
+
 /-- The scan and the erase never write the history letters (dadon's `historyGeom`). -/
 theorem history_untouched : ∀ j : Fin 26, 0 ≤ j.val → j.val ≤ 24 → ∀ i < 15,
     start j + 16 + i ∉ (GateMirror.forward (Shadow7.fix0P (start j) (Shadow7.sbP (start j)))).map destination ∧
     start j + 16 + i ∉ (GateMirror.forward (Shadow7.fix2P (start j) (Shadow7.sbP (start j)))).map destination := by
-  decide +kernel
+  intro j _ hi i hi15
+  let s := start j
+  let h := Shadow7.sbP s
+  have mem : s + 16 + i ∈ history j := by
+    change s + 16 + i ∈ (List.range 15).map (s + 16 + ·)
+    exact List.mem_map.mpr ⟨i, List.mem_range.mpr hi15, rfl⟩
+  have off : s + 16 + i ∉ (Shadow7.fix0P s h ++ Shadow7.fix2P s h).map GateMirror.target :=
+    ECDSAAdd.Entrant.B95Research.k7_mask_disjoint (history j)
+      ((Shadow7.fix0P s h ++ Shadow7.fix2P s h).map GateMirror.target) (history_masks_disjoint j hi) _ mem
+  simpa only [ECDSAAdd.Entrant.StairPacket.LeaveJ.dest_forward, List.map_append, List.mem_append, not_or] using off
 
 /-- dadon's `Leave{s}EntryAction.parity`. -/
 theorem entry_parity (j : Fin 26) (h0 : 0 ≤ j.val) (h1 : j.val ≤ 24) (s : State) (m : List Bool) :
