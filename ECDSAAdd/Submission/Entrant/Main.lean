@@ -431,9 +431,9 @@ attribute [local irreducible] Shadow20.MixedWindow.forwardMixedCut TickCut.Mixed
 private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b) : x+n=y := by omega
 
 theorem exactWalks (d : Bool) (tail : Nat) :
-    toffoliCount (forward d tail)+(if d then 39195 else 39195)=
+    toffoliCount (forward d tail)+(if d then 39213 else 39213)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 39119 else 39097)=
+    toffoliCount (backward d tail)+(if d then 39137 else 39115)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
     measurementCount (forward d tail)+(if d then 17800 else 17778)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
     measurementCount (backward d tail)+(if d then 17796 else 17774)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
@@ -441,17 +441,17 @@ theorem exactWalks (d : Bool) (tail : Nat) :
   have mcw := TickCut.Mixed.mixed_counts d
   cases d
   · simp only [Bool.false_eq_true, ↓reduceIte] at mcw ⊢
-    have t := walk tc false tail 39195 39097 (subEq 39195 mcw.1 sf.1 (by omega)) (subEq 39097 mcw.2.1 sf.2.2.1 (by omega))
+    have t := walk tc false tail 39213 39115 (subEq 39213 mcw.1 sf.1 (by omega)) (subEq 39115 mcw.2.1 sf.2.2.1 (by omega))
     have mv := walk mc false tail 17778 17774 (subEq 17778 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17774 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
   · simp only [↓reduceIte] at mcw ⊢
-    have t := walk tc true tail 39195 39119 (subEq 39195 mcw.1 sf.1 (by omega)) (subEq 39119 mcw.2.1 sf.2.2.1 (by omega))
+    have t := walk tc true tail 39213 39137 (subEq 39213 mcw.1 sf.1 (by omega)) (subEq 39137 mcw.2.1 sf.2.2.1 (by omega))
     have mv := walk mc true tail 17800 17796 (subEq 17800 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17796 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 39195 else 39195)=f) (hr : (if d then 39119 else 39097)=r) :
+    (hf : (if d then 39213 else 39213)=f) (hr : (if d then 39137 else 39115)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+(if d then 17800 else 17778)=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -513,17 +513,30 @@ theorem oddFirstHalf_physical (divide : Bool) : GatePhysical (oddFirstHalf divid
 
 theorem oddFirstHalf_support (divide : Bool) :
     JointOdd1588.OddHalfSupport (oddFirstHalf divide) := by
-  have hchk : (base 2409 :: base 768 :: base 1797 :: base 1027 ::
-      (wireBlock base 2056 256 ++ wireBlock base 770 256 ++ (wireBlock base 512 253 ++ [base 1540]))).all
-      (fun q => decide (q = base 760 ∨ (q ∈ StairFirstPacketKernel.LT48T.env ∧ q ∉ StairFirstPacketKernel.LT48T.bad))) = true := by
-    decide +kernel
   intro q hq
   have hsub := (P1Life.half_resources (base 760) divide base (base 2409)
     Rolling1588Lifetime.half_ports_nodup RouteA.Rolling1588.route_retired_member).2 hq
   have hne := (Finset.mem_erase.mp hsub).1
   have hmem := Finset.mem_of_mem_erase hsub
   rw [P1Life.junction_footprint_ports, List.mem_toFinset] at hmem
-  exact (of_decide_eq_true (List.all_eq_true.mp hchk q hmem)).resolve_left hne
+  have hindices : q ∈ (2409 :: 768 :: 1797 :: 1027 ::
+      (List.range' 2056 256 ++ List.range' 770 256 ++ (List.range' 512 253 ++ [1540]))).map base := by
+    simpa only [List.map_cons, List.map_append, List.map_nil, wireBlock] using hmem
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hindices
+  have h760 : i ≠ 760 := fun e => hne (congrArg base e)
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_range'_1] at hi
+  have inside : i = 2409 ∨ i ∈ Q6EndpointCell.ids := by
+    simp only [Q6EndpointCell.ids, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_range'_1]
+    omega
+  refine ⟨?_, ?_⟩
+  · rw [StairFirstPacketKernel.LT48T.env]
+    rcases inside with rfl | hi
+    · exact List.mem_cons_self
+    · exact List.mem_cons_of_mem _ (List.mem_map.mpr ⟨i, hi, rfl⟩)
+  · intro hit
+    simp only [StairFirstPacketKernel.LT48T.bad, List.mem_cons, List.not_mem_nil, or_false,
+      base_injective.eq_iff] at hit
+    omega
 
 theorem oddFirstHalf_slots_le (divide : Bool) :
     Challenge.gateSlots (oddFirstHalf divide) ≤ Challenge.gateSlots (R2Life760.half760 divide) := by
@@ -971,17 +984,17 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+39195+39097+1021=tc.measure Stair44Outer.divide+1050 := by
-  have k := kernels tc 39195 39097 956 1050 (WindowWalkCosts.inst true 4 409 39195 39119 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 39195 39097 rfl rfl rfl).2.1 (field_delta_tc_div 1050 fieldTcDiv)
+theorem tc_div : tc.measure divide+39213+39115+1021=tc.measure Stair44Outer.divide+1050 := by
+  have k := kernels tc 39213 39115 956 1050 (WindowWalkCosts.inst true 4 409 39213 39137 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 39213 39115 rfl rfl rfl).2.1 (field_delta_tc_div 1050 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+39195+39119+1068=tc.measure (Stair44Outer.multiply k)+962 :=
-  kernelsM tc k 39195 39119 1068 962 (WindowWalkCosts.inst false 84 489 39195 39097 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 39195 39119 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+39213+39137+1068=tc.measure (Stair44Outer.multiply k)+962 :=
+  kernelsM tc k 39213 39137 1068 962 (WindowWalkCosts.inst false 84 489 39213 39115 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 39213 39137 rfl rfl rfl).2.1 (field_delta_tc_mul 962 fieldTcMul)
 
 theorem mc_div : mc.measure divide+17800+17774+1746=mc.measure Stair44Outer.divide+652 := by
   have k := kernels mc 17800 17774 1721 652 (WindowWalkCosts.instMeasurements true 4 409 17800 17796 rfl rfl rfl).1
@@ -996,9 +1009,9 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+17778+17796+2046=mc.measure (
     (WindowWalkCosts.instMeasurements true 4 409 17800 17796 rfl rfl rfl).2 (field_delta_mc_mul 542 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+156683=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+156755=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+73746=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 156683
+  ⟨finite_delta tc C cx cy 156755
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
@@ -1007,7 +1020,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2011038 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2010966 ∧
     measurementCount (program C) ≤ 1445926 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -5278,7 +5291,7 @@ theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2011038 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2010966 ∧
     measurementCount (program C) ≤ 1445926 ∧ gateSlots (program C) ≤ 67241868 := by
   rw [program_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -5477,7 +5490,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2011038,1445926,1543,67241868⟩
+def bounds : Challenge.Bounds := ⟨2010966,1445926,1543,67241868⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -16427,16 +16440,32 @@ theorem stored (d : Bool) (x : Nat) (good : Bounds x p) (s : State) (m : List Bo
     (lim : row < 63145) (truth : ArchiveStockRows.Chronology (MixedGeo.bankTick b) x p row) :
     StockArchiveBanksW.nativeAt (MixedGeo.siteAt StockWindowChainP.ExitPorts420 b) d row
       (run (Rolling1588TickGap.forward d 45 376) m (pullState (OB5.sig 44) s)) := by
-  intro j
-  obtain ⟨addr, clock, used, hj⟩ := MixedGeo.chart b j
-  have dom := WideReference.initial 45 x p (by decide) d s stage
-  have bit := receipt_mixed d x good s dom (MixedGeo.groupOf b j) used row lim (by rw [clock]; exact truth) (MixedGeo.index j)
-  rw [StockArchiveBanksW.stock_state 45 25 (by decide) (by decide) (by decide) d x good s m stage,
-    StockArchiveBanksW.readback 420 (by decide) _ _ _ ((MixedGeo.site_eq StockWindowChainP.ExitPorts420 StockArchiveBanks.exitCells b j).trans addr)]
-  have hbyte : CodecBitSliceVerify.get (StairArchiveNativeRows.storage (StairArchiveNativeRows.native d (MixedGeo.high (MixedGeo.groupOf b j))))
-      (MixedGeo.index j) = CodecBitSliceVerify.get (StairArchiveNativeCut.canonical d d) j := by
-    rw [hj]; exact StockArchiveBanksW.byte d j
-  exact bit.trans (congrArg (fun n : Nat => n.testBit row) hbyte)
+  let ports := MixedGeo.siteAt StockWindowChainP.ExitPorts420 b
+  let z := run (StockGroupsW.batch 45 d (StockGroupsW.all 25)) [] (run (span 45 376) [] s)
+  have stock :
+      run (Rolling1588TickGap.forward d 45 376) m (pullState (OB5.sig 44) s) =
+        pullState (OB5.sig 420) z :=
+    StockArchiveBanksW.stock_state 45 25 (by decide) (by decide) (by decide) d x good s m stage
+  have saved : StockArchiveBanksW.nativeAt ports d row (pullState (OB5.sig 420) z) := by
+    intro j
+    obtain ⟨addr, clock, used, hj⟩ := MixedGeo.chart b j
+    let i := MixedGeo.groupOf b j
+    let k := MixedGeo.index j
+    have chronology : ArchiveStockRows.Chronology (MixedGeo.packet i) x p row :=
+      (congrArg (fun t : Nat => ArchiveStockRows.Chronology t x p row) clock).mpr truth
+    have dom := WideReference.initial 45 x p (by decide) d s stage
+    have bit := receipt_mixed d x good s dom i used row lim chronology k
+    have hbyte : CodecBitSliceVerify.get
+        (StairArchiveNativeRows.storage (StairArchiveNativeRows.native d (MixedGeo.high i))) k =
+          CodecBitSliceVerify.get (StairArchiveNativeCut.canonical d d) j :=
+      (congrArg (fun h : Bool =>
+        CodecBitSliceVerify.get (StairArchiveNativeRows.storage (StairArchiveNativeRows.native d h)) k) hj).trans
+        (StockArchiveBanksW.byte d j)
+    have haddr : ports j = OB5.sig 420 (MixedGeo.slot i k) :=
+      (MixedGeo.site_eq StockWindowChainP.ExitPorts420 StockArchiveBanks.exitCells b j).trans addr
+    exact (StockArchiveBanksW.readback 420 (by decide) z _ _ haddr).trans
+      (bit.trans (congrArg (fun n : Nat => n.testBit row) hbyte))
+  exact (congrArg (StockArchiveBanksW.nativeAt ports d row) stock).mpr saved
 
 theorem common_phase (d : Bool) (x : Nat) (good : Bounds x p) (s : State)
     (stage : Rolling1588.Integer.Stage base d x p 45 s.basis) :
