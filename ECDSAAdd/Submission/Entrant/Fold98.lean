@@ -62240,7 +62240,20 @@ open ECDSAAdd
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryLoopAnchor.build SixCarryLoopAnchor.output LocalSevenCore.core
-theorem build_length : SixCarryLoopAnchor.build.length=4009 := by decide +kernel
+private theorem mappedLength {α β : Type} {p : List α} {f : α → β} {q : List β} {n : Nat}
+    (h : p.map f = q) (count : q.length = n) : p.length = n := by
+  rw [← count, ← h, List.length_map]
+
+private theorem lengthOfThree {x y z : Program} {a b c : Nat}
+    (hx : x.length = a) (hy : y.length = b) (hz : z.length = c) :
+    (x ++ y ++ z).length = a + b + c := by
+  simp only [List.length_append, hx, hy, hz, Nat.add_assoc]
+
+open SixCarryLoopAnchor in
+theorem build_length : SixCarryLoopAnchor.build.length=4009 := by
+  unfold SixCarryLoopAnchor.build
+  exact lengthOfThree (mappedLength peak_anchor_pre peak_anchor_pre_len)
+    (mappedLength peak_anchor_mid peak_anchor_mid_len) (mappedLength peak_anchor_post peak_anchor_post_len)
 
 theorem output_length : SixCarryLoopAnchor.output.length=8783 := LocalSevenOutputLength.length
 
@@ -66838,8 +66851,34 @@ theorem inside_spec(ranges:List (Nat×Nat)) (u:Wire):inside ranges u=true ↔ u�
  simp [inside,sites,List.mem_flatMap,List.mem_range'_1]
 def copyRanges:List (Nat×Nat):=[(4115,256),(4501,256)]
 def knownRanges:List (Nat×Nat):=[(2,256),(4373,128),(4757,4),(4762,1),(4764,126)]
-theorem copy_sites_checked:((sites copyRanges).all (C163Touch.touched copyW))=true:=by decide +kernel
-theorem known_sites_checked:((sites knownRanges).all (fun u=>known.contains u))=true:=by decide +kernel
+private theorem covered {a b : List Wire}
+    (h : StairLoan.maskOf a &&& StairLoan.maskOf b = StairLoan.maskOf a) (u : Wire)
+    (hu : u ∈ a) : u ∈ b := by
+  have ha : (StairLoan.maskOf a).testBit u = true := by
+    rw [StairLoan.testBit_maskOf]
+    exact decide_eq_true hu
+  have both := congrArg (fun v : Nat => v.testBit u) h
+  change (StairLoan.maskOf a &&& StairLoan.maskOf b).testBit u = (StairLoan.maskOf a).testBit u at both
+  rw [Nat.testBit_and, ha, Bool.true_and] at both
+  exact StairLoan.mem_of_maskOf both
+
+theorem known_sites_checked : ((sites knownRanges).all (fun u => known.contains u)) = true := by
+  have check : StairLoan.maskOf (sites knownRanges) &&& StairLoan.maskOf known =
+      StairLoan.maskOf (sites knownRanges) := by decide +kernel
+  exact List.all_eq_true.mpr (fun u hu => List.contains_iff_mem.mpr (covered check u hu))
+
+private abbrev copySrc := (negRot L).src
+private abbrev copyDst := L.foldDestination (negRot L)
+
+theorem copy_sites_checked : ((sites copyRanges).all (C163Touch.touched copyW)) = true := by
+  have check : StairLoan.maskOf (sites copyRanges) &&& StairLoan.maskOf (copySrc ++ copyDst) =
+      StairLoan.maskOf (sites copyRanges) := by decide +kernel
+  have len : copySrc.length = copyDst.length := by decide +kernel
+  have used : copySrc.isEmpty = false := by decide +kernel
+  refine List.all_eq_true.mpr (fun u hu => (C163Touch.touched_spec _ _).mpr ?_)
+  change u ∈ wires (copyRegister none copySrc copyDst)
+  rw [copyRegister_wires _ _ _ len, used]
+  exact List.mem_toFinset.mpr (covered check u hu)
 
 theorem copy_fast (u:Wire) (h:inside copyRanges u=true):u∈wires copyW:=
  (C163Touch.touched_spec _ _).mp (List.all_eq_true.mp copy_sites_checked u ((inside_spec _ _).mp h))
@@ -76394,50 +76433,50 @@ attribute [local irreducible] run wires toffoliCount measurementCount Challenge.
   Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
   Rolling1588TickGap.forward Five506.tick506 Five506.cand
 
-theorem cv21 : cv 21 = true := by decide +kernel
-theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
-theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
-theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
-theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
-theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
-theorem cv32 : cv 32 = true := by decide +kernel
-theorem cv33 : cv 33 = true := by decide +kernel
-theorem cv34 : cv 34 = true := by decide +kernel
-theorem cv35 : cv 35 = true := by decide +kernel
-theorem cv36 : cv 36 = true := by decide +kernel
-theorem cv37 : cv 37 = true := by decide +kernel
-theorem cv38 : cv 38 = true := by decide +kernel
-theorem cv39 : cv 39 = true := by decide +kernel
-theorem cv40 : cv 40 = true := by decide +kernel
-theorem cv41 : cv 41 = true := by decide +kernel
-theorem cv42 : cv 42 = true := by decide +kernel
-theorem cv43 : cv 43 = true := by decide +kernel
-theorem cv44 : cv 44 = true := by decide +kernel
-theorem cv45 : cv 45 = true := by decide +kernel
-theorem cv46 : cv 46 = true := by decide +kernel
-theorem cv47 : cv 47 = true := by decide +kernel
-theorem cv48 : cv 48 = true := by decide +kernel
-theorem cv49 : cv 49 = true := by decide +kernel
-theorem cv50 : cv 50 = true := by decide +kernel
-theorem cv51 : cv 51 = true := by decide +kernel
-theorem cv52 : cv 52 = true := by decide +kernel
-theorem cv53 : cv 53 = true := by decide +kernel
-theorem cv54 : cv 54 = true := by decide +kernel
-theorem cv55 : cv 55 = true := by decide +kernel
-theorem cv56 : cv 56 = true := by decide +kernel
-theorem cv57 : cv 57 = true := by decide +kernel
-theorem cv58 : cv 58 = true := by decide +kernel
-theorem cv59 : cv 59 = true := by decide +kernel
-theorem cv60 : cv 60 = true := by decide +kernel
-theorem cv61 : cv 61 = true := by decide +kernel
-theorem cv62 : cv 62 = true := by decide +kernel
-theorem cv63 : cv 63 = true := by decide +kernel
-theorem cv64 : cv 64 = true := by decide +kernel
+theorem cv21 : cv 21 = true := cv_of_checked (by decide +kernel)
+theorem cv22 : cv 22 = true := cv_of_checked (by decide +kernel)
+theorem cv23 : cv 23 = true := cv_of_checked (by decide +kernel)
+theorem cv24 : cv 24 = true := cv_of_checked (by decide +kernel)
+theorem cv25 : cv 25 = true := cv_of_checked (by decide +kernel)
+theorem cv26 : cv 26 = true := cv_of_checked (by decide +kernel)
+theorem cv27 : cv 27 = true := cv_of_checked (by decide +kernel)
+theorem cv28 : cv 28 = true := cv_of_checked (by decide +kernel)
+theorem cv29 : cv 29 = true := cv_of_checked (by decide +kernel)
+theorem cv30 : cv 30 = true := cv_of_checked (by decide +kernel)
+theorem cv31 : cv 31 = true := cv_of_checked (by decide +kernel)
+theorem cv32 : cv 32 = true := cv_of_checked (by decide +kernel)
+theorem cv33 : cv 33 = true := cv_of_checked (by decide +kernel)
+theorem cv34 : cv 34 = true := cv_of_checked (by decide +kernel)
+theorem cv35 : cv 35 = true := cv_of_checked (by decide +kernel)
+theorem cv36 : cv 36 = true := cv_of_checked (by decide +kernel)
+theorem cv37 : cv 37 = true := cv_of_checked (by decide +kernel)
+theorem cv38 : cv 38 = true := cv_of_checked (by decide +kernel)
+theorem cv39 : cv 39 = true := cv_of_checked (by decide +kernel)
+theorem cv40 : cv 40 = true := cv_of_checked (by decide +kernel)
+theorem cv41 : cv 41 = true := cv_of_checked (by decide +kernel)
+theorem cv42 : cv 42 = true := cv_of_checked (by decide +kernel)
+theorem cv43 : cv 43 = true := cv_of_checked (by decide +kernel)
+theorem cv44 : cv 44 = true := cv_of_checked (by decide +kernel)
+theorem cv45 : cv 45 = true := cv_of_checked (by decide +kernel)
+theorem cv46 : cv 46 = true := cv_of_checked (by decide +kernel)
+theorem cv47 : cv 47 = true := cv_of_checked (by decide +kernel)
+theorem cv48 : cv 48 = true := cv_of_checked (by decide +kernel)
+theorem cv49 : cv 49 = true := cv_of_checked (by decide +kernel)
+theorem cv50 : cv 50 = true := cv_of_checked (by decide +kernel)
+theorem cv51 : cv 51 = true := cv_of_checked (by decide +kernel)
+theorem cv52 : cv 52 = true := cv_of_checked (by decide +kernel)
+theorem cv53 : cv 53 = true := cv_of_checked (by decide +kernel)
+theorem cv54 : cv 54 = true := cv_of_checked (by decide +kernel)
+theorem cv55 : cv 55 = true := cv_of_checked (by decide +kernel)
+theorem cv56 : cv 56 = true := cv_of_checked (by decide +kernel)
+theorem cv57 : cv 57 = true := cv_of_checked (by decide +kernel)
+theorem cv58 : cv 58 = true := cv_of_checked (by decide +kernel)
+theorem cv59 : cv 59 = true := cv_of_checked (by decide +kernel)
+theorem cv60 : cv 60 = true := cv_of_checked (by decide +kernel)
+theorem cv61 : cv 61 = true := cv_of_checked (by decide +kernel)
+theorem cv62 : cv 62 = true := cv_of_checked (by decide +kernel)
+theorem cv63 : cv 63 = true := cv_of_checked (by decide +kernel)
+theorem cv64 : cv 64 = true := cv_of_checked (by decide +kernel)
 
 theorem rows_complete : ∀ v, v < 65 → ∀ u, u < 65 → ∀ g s : Bool,
     (u+v ≤ 64 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
