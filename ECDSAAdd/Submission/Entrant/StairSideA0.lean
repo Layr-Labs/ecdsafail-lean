@@ -1,7 +1,4 @@
 import ECDSAAdd.Submission.Entrant.QTop
-import ECDSAAdd.Framework.WireRenamePool
-import ECDSAAdd.Framework.FiniteUnitary
-import ECDSAAdd.Challenge.Contract
 import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
 import ECDSAAdd.Arithmetic.SignedWord
 import ECDSAAdd.Math.SkywalkTerminationBudget
@@ -21,9 +18,11 @@ import ECDSAAdd.Arithmetic.DisjointPrograms
 import ECDSAAdd.Arithmetic.PointSquarePhysical
 import ECDSAAdd.Framework.WireRenameComposition
 import ECDSAAdd.Framework.WireRenameEquivalence
+import ECDSAAdd.Challenge.Contract
 import ECDSAAdd.Submission.Entrant.DeadCarry
 import ECDSAAdd.Submission.Entrant.NumericCarryTrace
 import ECDSAAdd.Framework.CleanWireRebind
+import ECDSAAdd.Framework.WireRenamePool
 import ECDSAAdd.Submission.Entrant.MainPart07Core
 import ECDSAAdd.Arithmetic.Copy
 import ECDSAAdd.Arithmetic.MappedSubtract
@@ -38,6 +37,10 @@ import ECDSAAdd.Arithmetic.Registers
 import ECDSAAdd.Arithmetic.Rotate
 import ECDSAAdd.Arithmetic.Shift
 import ECDSAAdd.Framework.GateInverse
+import ECDSAAdd.Framework.FiniteUnitary
+
+-- ==== inlined Decoder87 ====
+section
 
 namespace ECDSAAdd.Entrant.Decoder87
 
@@ -426,7 +429,8 @@ theorem placed_run (f : Wire → Wire)
         (run_rename_pool_outside f (Finset.range 7) full support_full m s q hq).symm
 
 end ECDSAAdd.Entrant.Decoder2
-
+end
+-- ==== end inlined Decoder87 ====
 
 -- StairSideA = StairSideA ++ PrizeStairArchiveEnter09fd522f ++ PrizeStair44PointMap486a9e3 ++ PrizeHighBankJoin5ab3264 ++ PrizeHighBankFirstHit91f0292
 -- ==== begin StairSideA ====
