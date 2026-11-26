@@ -34568,7 +34568,7 @@ end
 
 
 
--- ==== Inlined TagPack1542 v2 (Site A: 99-T packTag / 102-T unpackTag) ====
+-- ==== Inlined TagPack1542 v2 (Site A: 99-T packTag / 99-T unpackTag) ====
 section
 set_option maxRecDepth 8192
 
@@ -34579,7 +34579,7 @@ open ECDSAAdd.Arithmetic
 open ECDSAAdd.Challenge
 
 /-!
-# TagPack1542 v2: 99-T `packTag` and 102-T `unpackTag` (2-CCX 8-flat merge on P0)
+# TagPack1542 v2: 99-T `packTag` and 99-T `unpackTag` (2-CCX 8-flat merge on P0)
 
 Logical 105-wire programs (wires `0..104`, wire `97` unused):
 - `0..6`    : `C[0..6]` (`rest87_A[0..6]`, value in `0..86`; wire `6` is cleared to `false`)
@@ -34794,15 +34794,44 @@ def treeQErase : Program :=
   , .measureX 101 [] [.CZ 2 1]
   ]
 
+/-- Split a parent flag in place, using one clean sibling wire. -/
+def splitFlags (left right selector : Wire) : Program :=
+  [.CCX left selector right, .CX right left]
+
 def treeDecodeCProg : Program :=
-  treeQCompute ++ treeGCompute ++
-  treeFGroup 102 0 ++ treeFGroup 104 4 ++ treeFGroup3 103 8 ++
-  treeGErase ++ treeQErase
+  [.CX 6 86] ++ (
+  splitFlags 86 94 4 ++ (
+  splitFlags 86 90 3 ++ (
+  splitFlags 94 96 2 ++ (
+  splitFlags 90 92 2 ++ (
+  splitFlags 86 88 2 ++ (
+  splitFlags 94 95 1 ++ (
+  splitFlags 92 93 1 ++ (
+  splitFlags 90 91 1 ++ (
+  splitFlags 88 89 1 ++ (
+  splitFlags 86 87 1))))))))))
+
+/-- Before erasing F, each group bit is the parity of its disjoint flags. -/
+def groupsFromFlags : Program :=
+  [ .CX 86 102, .CX 87 102, .CX 88 102, .CX 89 102
+  , .CX 90 104, .CX 91 104, .CX 92 104, .CX 93 104
+  , .CX 94 103, .CX 95 103, .CX 96 103 ]
+
+/-- Move the parent indicator into the left flag, then erase its right child. -/
+def mergeFlags (left right selector : Wire) : Program :=
+  [.CX right left, .measureX right [] [.CZ left selector]]
 
 def treeEraseFProg : Program :=
-  treeQCompute ++ treeGCompute ++
-  treeFEraseGroup 102 0 ++ treeFEraseGroup 104 4 ++ treeFEraseGroup3 103 8 ++
-  treeGErase ++ treeQErase
+  mergeFlags 86 87 1 ++ (
+  mergeFlags 88 89 1 ++ (
+  mergeFlags 90 91 1 ++ (
+  mergeFlags 92 93 1 ++ (
+  mergeFlags 94 95 1 ++ (
+  mergeFlags 86 88 2 ++ (
+  mergeFlags 90 92 2 ++ (
+  mergeFlags 94 96 2 ++ (
+  mergeFlags 86 90 3 ++ (
+  mergeFlags 86 94 4 ++ [.CX 6 86])))))))))
 
 def clearOrRestoreSlotC (k : Nat) : Program :=
   [.CX (86 + k) 6] ++
@@ -34924,11 +34953,11 @@ private theorem measurementCount_reverse' (p : Program) : measurementCount p.rev
 private theorem gateSlots_reverse' (p : Program) : Challenge.gateSlots p.reverse = Challenge.gateSlots p := by
   simp [Challenge.gateSlots, List.map_reverse, List.sum_reverse]
 
-theorem packTagProg_toffoliCount : toffoliCount packTagProg = 99 := by
+theorem packTagProg_toffoliCount : toffoliCount packTagProg = 98 := by
   dsimp only [packTagProg, packSlotsProg]
   rw [toffoliCount_append, toffoliCount_append, toffoliCount_append, toffoliCount_flatMap_range11]
   have h0 : toffoliCount uP0Prog = 2 := by decide
-  have h1 : toffoliCount treeDecodeCProg = 11 := by decide
+  have h1 : toffoliCount treeDecodeCProg = 10 := by decide
   have h2 : toffoliCount clearOrRestoreCProg = 0 := by decide
   have h3 : ∀ k < 10, toffoliCount (packSlotProg k) = 8 := by
     intro k hk
@@ -34939,12 +34968,12 @@ theorem packTagProg_toffoliCount : toffoliCount packTagProg = 99 := by
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 102 := by
+theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 99 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   rw [toffoliCount_append, toffoliCount_append, toffoliCount_append,
       toffoliCount_flatMap_range11_rev, toffoliCount_reverse', toffoliCount_reverse']
   have h0 : toffoliCount uP0Prog = 2 := by decide
-  have h1 : toffoliCount treeEraseFProg = 3 := by decide
+  have h1 : toffoliCount treeEraseFProg = 0 := by decide
   have h2 : toffoliCount clearOrRestoreCProg = 0 := by decide
   have h3 : ∀ k < 10, toffoliCount (unpackSlotProg k) = 9 := by
     intro k hk
@@ -34955,11 +34984,11 @@ theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 102 := by
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem packTagProg_measurementCount : measurementCount packTagProg = 46 := by
+theorem packTagProg_measurementCount : measurementCount packTagProg = 43 := by
   dsimp only [packTagProg, packSlotsProg]
   rw [measurementCount_append, measurementCount_append, measurementCount_append, measurementCount_flatMap_range11]
   have h0 : measurementCount uP0Prog = 0 := by decide
-  have h1 : measurementCount treeDecodeCProg = 3 := by decide
+  have h1 : measurementCount treeDecodeCProg = 0 := by decide
   have h2 : measurementCount clearOrRestoreCProg = 0 := by decide
   have h3 : ∀ k < 10, measurementCount (packSlotProg k) = 4 := by
     intro k hk
@@ -34970,12 +34999,12 @@ theorem packTagProg_measurementCount : measurementCount packTagProg = 46 := by
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 46 := by
+theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 42 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   rw [measurementCount_append, measurementCount_append, measurementCount_append,
       measurementCount_flatMap_range11_rev, measurementCount_reverse', measurementCount_reverse']
   have h0 : measurementCount uP0Prog = 0 := by decide
-  have h1 : measurementCount treeEraseFProg = 14 := by decide
+  have h1 : measurementCount treeEraseFProg = 10 := by decide
   have h2 : measurementCount clearOrRestoreCProg = 0 := by decide
   have h3 : ∀ k < 10, measurementCount (unpackSlotProg k) = 3 := by
     intro k hk
@@ -34986,11 +35015,11 @@ theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 46 := 
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 480 := by
+theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 453 := by
   dsimp only [packTagProg, packSlotsProg]
   rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append, gateSlots_flatMap_range11]
   have hu : Challenge.gateSlots uP0Prog = 12 := by decide
-  have h1 : Challenge.gateSlots treeDecodeCProg = 48 := by decide
+  have h1 : Challenge.gateSlots treeDecodeCProg = 21 := by decide
   have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
   have h0 : Challenge.gateSlots (packSlotProg 0) = 36 := by decide
   have h1' : Challenge.gateSlots (packSlotProg 1) = 36 := by decide
@@ -35005,12 +35034,12 @@ theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 480 := by
   have h10' : Challenge.gateSlots (packSlotProg 10) = 28 := by decide
   omega
 
-theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 472 := by
+theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 452 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append,
       gateSlots_flatMap_range11_rev, gateSlots_reverse', gateSlots_reverse']
   have hu : Challenge.gateSlots uP0Prog = 12 := by decide
-  have h1 : Challenge.gateSlots treeEraseFProg = 51 := by decide
+  have h1 : Challenge.gateSlots treeEraseFProg = 31 := by decide
   have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
   have h0 : Challenge.gateSlots (unpackSlotProg 0) = 35 := by decide
   have h1' : Challenge.gateSlots (unpackSlotProg 1) = 35 := by decide
@@ -36186,6 +36215,47 @@ private theorem run_treeGCompute (m : List Bool) (s : State)
     rcases hw with ⟨h102, h103, h104⟩
     simp [treeGCompute, run, writeBit, h102, h103, h104]
 
+private theorem run_groupsFromFlags (m : List Bool) (s : State)
+    (hg0 : s.basis 102 = false) (hg1 : s.basis 103 = false) (hg01 : s.basis 104 = false)
+    (flags : ∀ k < 11, s.basis (86 + k) = targetF s.basis k) :
+    let res := run groupsFromFlags m s
+    res.phase = s.phase ∧
+    res.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3) ∧
+    res.basis 103 = (s.basis 6 && s.basis 4) ∧
+    res.basis 104 = (s.basis 6 && !s.basis 4 && s.basis 3) ∧
+    (∀ w : Nat, w ∉ ([102, 103, 104] : List Nat) → res.basis w = s.basis w) := by
+  refine ⟨by simp [groupsFromFlags, run], ?_, ?_, ?_, ?_⟩
+  · simp [groupsFromFlags, run, writeBit, hg0]
+    have f0 : s.basis 86 = targetF s.basis 0 := flags 0 (by decide)
+    have f1 : s.basis 87 = targetF s.basis 1 := flags 1 (by decide)
+    have f2 : s.basis 88 = targetF s.basis 2 := flags 2 (by decide)
+    have f3 : s.basis 89 = targetF s.basis 3 := flags 3 (by decide)
+    rw [f0, f1, f2, f3]
+    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
+      cases h3 : s.basis 3 <;> cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
+      simp [targetF, qBit, h1, h2, h3, h4, h6]
+  · simp [groupsFromFlags, run, writeBit, hg1]
+    have f8 : s.basis 94 = targetF s.basis 8 := flags 8 (by decide)
+    have f9 : s.basis 95 = targetF s.basis 9 := flags 9 (by decide)
+    have f10 : s.basis 96 = targetF s.basis 10 := flags 10 (by decide)
+    rw [f8, f9, f10]
+    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
+      cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
+      simp [targetF, qBit, h1, h2, h4, h6]
+  · simp [groupsFromFlags, run, writeBit, hg01]
+    have f4 : s.basis 90 = targetF s.basis 4 := flags 4 (by decide)
+    have f5 : s.basis 91 = targetF s.basis 5 := flags 5 (by decide)
+    have f6 : s.basis 92 = targetF s.basis 6 := flags 6 (by decide)
+    have f7 : s.basis 93 = targetF s.basis 7 := flags 7 (by decide)
+    rw [f4, f5, f6, f7]
+    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
+      cases h3 : s.basis 3 <;> cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
+      simp [targetF, qBit, h1, h2, h3, h4, h6]
+  · intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+    rcases hw with ⟨h102, h103, h104⟩
+    simp [groupsFromFlags, run, writeBit, h102, h103, h104]
+
 private theorem run_treeFGroup (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 3 < 12)
     (m : List Bool) (s : State)
     (hf0 : s.basis (86 + baseF) = false) (hf1 : s.basis (86 + baseF + 1) = false)
@@ -36423,6 +36493,14 @@ private theorem run_treeFEraseGroup3 (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 1
   rcases hw with ⟨hw0, hw1, hw2⟩
   simp [writeBit, hw0, hw1, hw2]
 
+private theorem run_splitFlags (l r c : Wire) (lr : l ≠ r) (s : State) (m : List Bool)
+    (h : s.basis r = false) :
+    run (splitFlags l r c) m s =
+      ⟨s.phase, writeBit (writeBit s.basis r (s.basis l && s.basis c))
+        l (s.basis l && !s.basis c)⟩ := by
+  have hx (p q : Bool) : (p ^^ (p && q)) = (p && !q) := by cases p <;> cases q <;> rfl
+  simp [splitFlags, run, writeBit, h, lr, hx]
+
 theorem tree_decode_C_spec (m : List Bool) (s : State)
     (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false) :
     let res := run treeDecodeCProg m s
@@ -36430,126 +36508,108 @@ theorem tree_decode_C_spec (m : List Bool) (s : State)
     (∀ k : Nat, k < 11 → res.basis (86 + k) = targetF s.basis k) ∧
     (∀ a : Nat, 97 ≤ a → a < 105 → res.basis a = false) ∧
     (∀ w : Nat, (w < 86 ∨ 105 ≤ w) → res.basis w = s.basis w) := by
+  let s0 : State := ⟨s.phase, writeBit s.basis 86 (s.basis 6)⟩
+  have seed (t : List Bool) : run [.CX 6 86] t s = s0 := by
+    simp [s0, run, hanc 86 (by decide) (by decide)]
+  let s1 : State := ⟨s.phase, writeBit (writeBit s0.basis 94 (s.basis 6 && s.basis 4)) 86 (s.basis 6 && !s.basis 4)⟩
+  have step1 (t : List Bool) : run (splitFlags 86 94 4) t s0 = s1 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s0.basis 94 = false from hanc 94 (by decide) (by decide))]
+    rfl
+  let s2 : State := ⟨s.phase, writeBit (writeBit s1.basis 90 ((s.basis 6 && !s.basis 4) && s.basis 3)) 86 ((s.basis 6 && !s.basis 4) && !s.basis 3)⟩
+  have step2 (t : List Bool) : run (splitFlags 86 90 3) t s1 = s2 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s1.basis 90 = false from hanc 90 (by decide) (by decide))]
+    rfl
+  let s3 : State := ⟨s.phase, writeBit (writeBit s2.basis 96 ((s.basis 6 && s.basis 4) && s.basis 2)) 94 ((s.basis 6 && s.basis 4) && !s.basis 2)⟩
+  have step3 (t : List Bool) : run (splitFlags 94 96 2) t s2 = s3 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s2.basis 96 = false from hanc 96 (by decide) (by decide))]
+    rfl
+  let s4 : State := ⟨s.phase, writeBit (writeBit s3.basis 92 (((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2)) 90 (((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2)⟩
+  have step4 (t : List Bool) : run (splitFlags 90 92 2) t s3 = s4 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s3.basis 92 = false from hanc 92 (by decide) (by decide))]
+    rfl
+  let s5 : State := ⟨s.phase, writeBit (writeBit s4.basis 88 (((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2)) 86 (((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2)⟩
+  have step5 (t : List Bool) : run (splitFlags 86 88 2) t s4 = s5 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s4.basis 88 = false from hanc 88 (by decide) (by decide))]
+    rfl
+  let s6 : State := ⟨s.phase, writeBit (writeBit s5.basis 95 (((s.basis 6 && s.basis 4) && !s.basis 2) && s.basis 1)) 94 (((s.basis 6 && s.basis 4) && !s.basis 2) && !s.basis 1)⟩
+  have step6 (t : List Bool) : run (splitFlags 94 95 1) t s5 = s6 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s5.basis 95 = false from hanc 95 (by decide) (by decide))]
+    rfl
+  let s7 : State := ⟨s.phase, writeBit (writeBit s6.basis 93 ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && s.basis 1)) 92 ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && !s.basis 1)⟩
+  have step7 (t : List Bool) : run (splitFlags 92 93 1) t s6 = s7 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s6.basis 93 = false from hanc 93 (by decide) (by decide))]
+    rfl
+  let s8 : State := ⟨s.phase, writeBit (writeBit s7.basis 91 ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && s.basis 1)) 90 ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && !s.basis 1)⟩
+  have step8 (t : List Bool) : run (splitFlags 90 91 1) t s7 = s8 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s7.basis 91 = false from hanc 91 (by decide) (by decide))]
+    rfl
+  let s9 : State := ⟨s.phase, writeBit (writeBit s8.basis 89 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && s.basis 1)) 88 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && !s.basis 1)⟩
+  have step9 (t : List Bool) : run (splitFlags 88 89 1) t s8 = s9 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s8.basis 89 = false from hanc 89 (by decide) (by decide))]
+    rfl
+  let s10 : State := ⟨s.phase, writeBit (writeBit s9.basis 87 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && s.basis 1)) 86 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && !s.basis 1)⟩
+  have step10 (t : List Bool) : run (splitFlags 86 87 1) t s9 = s10 := by
+    rw [run_splitFlags _ _ _ (by decide) _ _ (show s9.basis 87 = false from hanc 87 (by decide) (by decide))]
+    rfl
   dsimp only [treeDecodeCProg]
-  simp only [run_append]
-  have hmcQ : measurementCount treeQCompute = 0 := rfl
-  have hmcG : measurementCount treeGCompute = 0 := rfl
-  have hmcF : ∀ g b, measurementCount (treeFGroup g b) = 0 := fun _ _ => rfl
-  have hmcF3 : ∀ g b, measurementCount (treeFGroup3 g b) = 0 := fun _ _ => rfl
-  simp only [measurementCount_append, hmcQ, hmcG, hmcF, hmcF3, Nat.add_zero, Nat.zero_add, List.take_zero, List.drop_zero]
-  obtain ⟨hp1, hq0_1, hq1_1, hq2_1, hq3_1, hoth1⟩ :=
-    run_treeQCompute [] s (hanc 98 (by omega) (by omega)) (hanc 99 (by omega) (by omega))
-      (hanc 100 (by omega) (by omega)) (hanc 101 (by omega) (by omega))
-  set s1 := run treeQCompute [] s
-  have h1_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s1.basis w = s.basis w :=
-    fun w hw => hoth1 w (by simp; omega)
-  obtain ⟨hp2, hg0_2, hg1_2, hg01_2, hoth2⟩ :=
-    run_treeGCompute [] s1
-      ((h1_eq 102 (by omega)).trans (hanc 102 (by omega) (by omega)))
-      ((h1_eq 103 (by omega)).trans (hanc 103 (by omega) (by omega)))
-      ((h1_eq 104 (by omega)).trans (hanc 104 (by omega) (by omega)))
-  set s2 := run treeGCompute [] s1
-  have h2_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s2.basis w = s1.basis w :=
-    fun w hw => hoth2 w (by simp; omega)
-  have h2_c : ∀ w : Nat, w < 86 → s2.basis w = s.basis w :=
-    fun w hw => (h2_eq w (by omega)).trans (h1_eq w (by omega))
-  have h2_q : ∀ i : Nat, i < 4 → s2.basis (98 + i) = qBit (s.basis 1) (s.basis 2) i := by
-    intro i hi
-    rw [h2_eq (98 + i) (by omega)]
-    match i with
-    | 0 => exact hq0_1
-    | 1 => exact hq1_1
-    | 2 => exact hq2_1
-    | 3 => exact hq3_1
-  obtain ⟨hp3, hf0_3, hf1_3, hf2_3, hf3_3, hoth3⟩ :=
-    run_treeFGroup 102 0 (by omega) (by omega) [] s2
-      ((h2_eq 86 (by omega)).trans ((h1_eq 86 (by omega)).trans (hanc 86 (by omega) (by omega))))
-      ((h2_eq 87 (by omega)).trans ((h1_eq 87 (by omega)).trans (hanc 87 (by omega) (by omega))))
-      ((h2_eq 88 (by omega)).trans ((h1_eq 88 (by omega)).trans (hanc 88 (by omega) (by omega))))
-      ((h2_eq 89 (by omega)).trans ((h1_eq 89 (by omega)).trans (hanc 89 (by omega) (by omega))))
-      (by rw [h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-  set s3 := run (treeFGroup 102 0) [] s2
-  have h3_eq : ∀ w : Nat, (w < 86 ∨ 90 ≤ w) → s3.basis w = s2.basis w :=
-    fun w hw => hoth3 w (by simp; omega)
-  obtain ⟨hp4, hf4_4, hf5_4, hf6_4, hf7_4, hoth4⟩ :=
-    run_treeFGroup 104 4 (by omega) (by omega) [] s3
-      ((h3_eq 90 (by omega)).trans ((h2_eq 90 (by omega)).trans ((h1_eq 90 (by omega)).trans (hanc 90 (by omega) (by omega)))))
-      ((h3_eq 91 (by omega)).trans ((h2_eq 91 (by omega)).trans ((h1_eq 91 (by omega)).trans (hanc 91 (by omega) (by omega)))))
-      ((h3_eq 92 (by omega)).trans ((h2_eq 92 (by omega)).trans ((h1_eq 92 (by omega)).trans (hanc 92 (by omega) (by omega)))))
-      ((h3_eq 93 (by omega)).trans ((h2_eq 93 (by omega)).trans ((h1_eq 93 (by omega)).trans (hanc 93 (by omega) (by omega)))))
-      (by rw [h3_eq 98 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h3_eq 99 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h3_eq 100 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h3_eq 101 (by omega), h3_eq 1 (by omega), h3_eq 2 (by omega), h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-  set s4 := run (treeFGroup 104 4) [] s3
-  have h4_eq : ∀ w : Nat, (w < 90 ∨ 94 ≤ w) → s4.basis w = s3.basis w :=
-    fun w hw => hoth4 w (by simp; omega)
-  obtain ⟨hp5, hf8_5, hf9_5, hf10_5, hoth5⟩ :=
-    run_treeFGroup3 103 8 (by omega) (by omega) [] s4
-      ((h4_eq 94 (by omega)).trans ((h3_eq 94 (by omega)).trans ((h2_eq 94 (by omega)).trans ((h1_eq 94 (by omega)).trans (hanc 94 (by omega) (by omega))))))
-      ((h4_eq 95 (by omega)).trans ((h3_eq 95 (by omega)).trans ((h2_eq 95 (by omega)).trans ((h1_eq 95 (by omega)).trans (hanc 95 (by omega) (by omega))))))
-      ((h4_eq 96 (by omega)).trans ((h3_eq 96 (by omega)).trans ((h2_eq 96 (by omega)).trans ((h1_eq 96 (by omega)).trans (hanc 96 (by omega) (by omega))))))
-      (by rw [h4_eq 98 (by omega), h3_eq 98 (by omega), h4_eq 1 (by omega), h3_eq 1 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h4_eq 99 (by omega), h3_eq 99 (by omega), h4_eq 1 (by omega), h3_eq 1 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-  set s5 := run (treeFGroup3 103 8) [] s4
-  have h5_eq : ∀ w : Nat, (w < 94 ∨ 97 ≤ w) → s5.basis w = s4.basis w :=
-    fun w hw => hoth5 w (by simp; omega)
-  have h5_to_2 : ∀ w : Nat, (w < 86 ∨ 97 ≤ w) → s5.basis w = s2.basis w :=
-    fun w hw => (h5_eq w (by omega)).trans ((h4_eq w (by omega)).trans (h3_eq w (by omega)))
-  obtain ⟨hp6, hg0_6, hg1_6, hg01_6, hoth6⟩ :=
-    run_treeGErase (m.take (measurementCount treeGErase)) s5
-      (by rw [h5_to_2 102 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
-              hg0_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
-      (by rw [h5_to_2 103 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega),
-              hg1_2, h2_c 6 (by omega), h2_c 4 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)])
-      (by rw [h5_to_2 104 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
-              hg01_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
-  set s6 := run treeGErase (m.take (measurementCount treeGErase)) s5
-  have h6_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s6.basis w = s5.basis w :=
-    fun w hw => hoth6 w (by simp; omega)
-  obtain ⟨hp7, hq0_7, hq1_7, hq2_7, hq3_7, hoth7⟩ :=
-    run_treeQErase (m.drop (measurementCount treeGErase)) s6
-      (by rw [h6_eq 98 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 98 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h6_eq 99 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 99 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h6_eq 100 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 100 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h6_eq 101 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 101 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-  set s7 := run treeQErase (m.drop (measurementCount treeGErase)) s6
-  have h7_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s7.basis w = s6.basis w :=
-    fun w hw => hoth7 w (by simp; omega)
-  refine ⟨hp7.trans (hp6.trans (hp5.trans (hp4.trans (hp3.trans (hp2.trans hp1))))), ?_, ?_, ?_⟩
+  rw [run_append, seed, run_append, step1, run_append, step2, run_append, step3, run_append, step4, run_append, step5, run_append, step6, run_append, step7, run_append, step8, run_append, step9, step10]
+  have frame (w : Nat) (outside : w < 86 ∨ 97 ≤ w) : s10.basis w = s.basis w := by
+    have n86 : w ≠ 86 := by omega
+    have n87 : w ≠ 87 := by omega
+    have n88 : w ≠ 88 := by omega
+    have n89 : w ≠ 89 := by omega
+    have n90 : w ≠ 90 := by omega
+    have n91 : w ≠ 91 := by omega
+    have n92 : w ≠ 92 := by omega
+    have n93 : w ≠ 93 := by omega
+    have n94 : w ≠ 94 := by omega
+    have n95 : w ≠ 95 := by omega
+    have n96 : w ≠ 96 := by omega
+    simp [s10, s9, s8, s7, s6, s5, s4, s3, s2, s1, s0, writeBit, n86, n87, n88, n89, n90, n91, n92, n93, n94, n95, n96]
+  refine ⟨rfl, ?_, ?_, ?_⟩
   · intro k hk
-    have hfin : ∀ k, k < 11 → s7.basis (86 + k) = targetF s.basis k := by
-      intro k hk
-      match k with
-      | 0 => rw [h7_eq 86 (by omega), h6_eq 86 (by omega), h5_eq 86 (by omega), h4_eq 86 (by omega), hf0_3, hg0_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 1 => rw [h7_eq 87 (by omega), h6_eq 87 (by omega), h5_eq 87 (by omega), h4_eq 87 (by omega), hf1_3, hg0_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 2 => rw [h7_eq 88 (by omega), h6_eq 88 (by omega), h5_eq 88 (by omega), h4_eq 88 (by omega), hf2_3, hg0_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 3 => rw [h7_eq 89 (by omega), h6_eq 89 (by omega), h5_eq 89 (by omega), h4_eq 89 (by omega), hf3_3, hg0_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 4 => rw [h7_eq 90 (by omega), h6_eq 90 (by omega), h5_eq 90 (by omega), hf4_4, h3_eq 104 (by omega), h3_eq 98 (by omega), hg01_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 5 => rw [h7_eq 91 (by omega), h6_eq 91 (by omega), h5_eq 91 (by omega), hf5_4, h3_eq 104 (by omega), h3_eq 99 (by omega), hg01_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 6 => rw [h7_eq 92 (by omega), h6_eq 92 (by omega), h5_eq 92 (by omega), hf6_4, h3_eq 104 (by omega), h3_eq 100 (by omega), hg01_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 7 => rw [h7_eq 93 (by omega), h6_eq 93 (by omega), h5_eq 93 (by omega), hf7_4, h3_eq 104 (by omega), h3_eq 101 (by omega), hg01_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl
-      | 8 => rw [h7_eq 94 (by omega), h6_eq 94 (by omega), hf8_5, h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 98 (by omega), h3_eq 98 (by omega), hg1_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl
-      | 9 => rw [h7_eq 95 (by omega), h6_eq 95 (by omega), hf9_5, h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 99 (by omega), h3_eq 99 (by omega), hg1_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl
-      | 10 => rw [h7_eq 96 (by omega), h6_eq 96 (by omega), hf10_5, h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), hg1_2, h2_c 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl
-    exact hfin k hk
-  · intro a ha1 ha2
-    have : a = 97 ∨ a = 98 ∨ a = 99 ∨ a = 100 ∨ a = 101 ∨ a = 102 ∨ a = 103 ∨ a = 104 := by omega
-    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [h7_eq 97 (by omega), h6_eq 97 (by omega), h5_to_2 97 (by omega), h2_eq 97 (by omega), h1_eq 97 (by omega)]
-      exact hanc 97 (by omega) (by omega)
-    · exact hq0_7
-    · exact hq1_7
-    · exact hq2_7
-    · exact hq3_7
-    · exact (h7_eq 102 (by omega)).trans hg0_6
-    · exact (h7_eq 103 (by omega)).trans hg1_6
-    · exact (h7_eq 104 (by omega)).trans hg01_6
+    interval_cases k
+    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && !s.basis 1) = targetF s.basis 0
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && s.basis 1) = targetF s.basis 1
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && !s.basis 1) = targetF s.basis 2
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && s.basis 1) = targetF s.basis 3
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && !s.basis 1) = targetF s.basis 4
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && s.basis 1) = targetF s.basis 5
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && !s.basis 1) = targetF s.basis 6
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && s.basis 1) = targetF s.basis 7
+      simp [targetF, qBit, Bool.and_assoc]
+    · change (((s.basis 6 && s.basis 4) && !s.basis 2) && !s.basis 1) = targetF s.basis 8
+      simp [targetF, qBit, Bool.and_assoc]
+    · change (((s.basis 6 && s.basis 4) && !s.basis 2) && s.basis 1) = targetF s.basis 9
+      simp [targetF, qBit, Bool.and_assoc]
+    · change ((s.basis 6 && s.basis 4) && s.basis 2) = targetF s.basis 10
+      simp [targetF, Bool.and_assoc]
+  · intro a ha hb
+    rw [frame a (by omega)]
+    exact hanc a (by omega) hb
   · intro w hw
-    rw [h7_eq w (by omega), h6_eq w (by omega), h5_to_2 w (by omega), h2_eq w (by omega), h1_eq w (by omega)]
+    exact frame w (by omega)
+
+private theorem run_mergeFlags (l r c : Wire) (lr : l ≠ r) (cr : c ≠ r) (cl : c ≠ l)
+    (p : Bool) (s : State) (m : List Bool)
+    (left : s.basis l = (p && !s.basis c)) (right : s.basis r = (p && s.basis c)) :
+    run (mergeFlags l r c) m s =
+      ⟨s.phase, writeBit (writeBit s.basis l p) r false⟩ := by
+  have parent : (s.basis l ^^ s.basis r) = p := by
+    rw [left, right]
+    cases p <;> cases s.basis c <;> rfl
+  change run [.measureX r [] [.CZ l c]] m
+    ⟨s.phase, writeBit s.basis l (s.basis l ^^ s.basis r)⟩ = _
+  rw [parent]
+  apply run_measureX_CZ _ _ _ lr cr
+  simp [writeBit, Ne.symm lr, cl, right]
 
 theorem tree_erase_F_spec (m : List Bool) (s : State)
     (hF : ∀ k : Nat, k < 11 → s.basis (86 + k) = targetF s.basis k)
@@ -36558,136 +36618,136 @@ theorem tree_erase_F_spec (m : List Bool) (s : State)
     res.phase = s.phase ∧
     (∀ a : Nat, 86 ≤ a → a < 105 → res.basis a = false) ∧
     (∀ w : Nat, (w < 86 ∨ 105 ≤ w) → res.basis w = s.basis w) := by
+  let firstTwo := s.basis 6 && !s.basis 4
+  let lowGroup := firstTwo && !s.basis 3
+  let middleGroup := firstTwo && s.basis 3
+  let highGroup := s.basis 6 && s.basis 4
+  have f0 : s.basis 86 = targetF s.basis 0 := hF 0 (by decide)
+  have f1 : s.basis 87 = targetF s.basis 1 := hF 1 (by decide)
+  have f2 : s.basis 88 = targetF s.basis 2 := hF 2 (by decide)
+  have f3 : s.basis 89 = targetF s.basis 3 := hF 3 (by decide)
+  have f4 : s.basis 90 = targetF s.basis 4 := hF 4 (by decide)
+  have f5 : s.basis 91 = targetF s.basis 5 := hF 5 (by decide)
+  have f6 : s.basis 92 = targetF s.basis 6 := hF 6 (by decide)
+  have f7 : s.basis 93 = targetF s.basis 7 := hF 7 (by decide)
+  have f8 : s.basis 94 = targetF s.basis 8 := hF 8 (by decide)
+  have f9 : s.basis 95 = targetF s.basis 9 := hF 9 (by decide)
+  have f10 : s.basis 96 = targetF s.basis 10 := hF 10 (by decide)
+  let s1 : State := ⟨s.phase, writeBit (writeBit s.basis 86 ((lowGroup && !s.basis 2))) 87 false⟩
+  have step1 (t : List Bool) : run (mergeFlags 86 87 1) t s = s1 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change s.basis 86 = (((lowGroup && !s.basis 2)) && !s.basis 1)
+      rw [f0]
+      simp [lowGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+    · change s.basis 87 = (((lowGroup && !s.basis 2)) && s.basis 1)
+      rw [f1]
+      simp [lowGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+  let s2 : State := ⟨s.phase, writeBit (writeBit s1.basis 88 ((lowGroup && s.basis 2))) 89 false⟩
+  have step2 (t : List Bool) : run (mergeFlags 88 89 1) t s1 = s2 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change s.basis 88 = (((lowGroup && s.basis 2)) && !s.basis 1)
+      rw [f2]
+      simp [lowGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+    · change s.basis 89 = (((lowGroup && s.basis 2)) && s.basis 1)
+      rw [f3]
+      simp [lowGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+  let s3 : State := ⟨s.phase, writeBit (writeBit s2.basis 90 ((middleGroup && !s.basis 2))) 91 false⟩
+  have step3 (t : List Bool) : run (mergeFlags 90 91 1) t s2 = s3 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change s.basis 90 = (((middleGroup && !s.basis 2)) && !s.basis 1)
+      rw [f4]
+      simp [middleGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+    · change s.basis 91 = (((middleGroup && !s.basis 2)) && s.basis 1)
+      rw [f5]
+      simp [middleGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+  let s4 : State := ⟨s.phase, writeBit (writeBit s3.basis 92 ((middleGroup && s.basis 2))) 93 false⟩
+  have step4 (t : List Bool) : run (mergeFlags 92 93 1) t s3 = s4 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change s.basis 92 = (((middleGroup && s.basis 2)) && !s.basis 1)
+      rw [f6]
+      simp [middleGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+    · change s.basis 93 = (((middleGroup && s.basis 2)) && s.basis 1)
+      rw [f7]
+      simp [middleGroup, firstTwo, targetF, qBit, Bool.and_assoc]
+  let s5 : State := ⟨s.phase, writeBit (writeBit s4.basis 94 ((highGroup && !s.basis 2))) 95 false⟩
+  have step5 (t : List Bool) : run (mergeFlags 94 95 1) t s4 = s5 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change s.basis 94 = (((highGroup && !s.basis 2)) && !s.basis 1)
+      rw [f8]
+      simp [highGroup, targetF, qBit, Bool.and_assoc]
+    · change s.basis 95 = (((highGroup && !s.basis 2)) && s.basis 1)
+      rw [f9]
+      simp [highGroup, targetF, qBit, Bool.and_assoc]
+  let s6 : State := ⟨s.phase, writeBit (writeBit s5.basis 86 (lowGroup)) 88 false⟩
+  have step6 (t : List Bool) : run (mergeFlags 86 88 2) t s5 = s6 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change (lowGroup && !s.basis 2) = ((lowGroup) && !s.basis 2)
+      rfl
+    · change (lowGroup && s.basis 2) = ((lowGroup) && s.basis 2)
+      rfl
+  let s7 : State := ⟨s.phase, writeBit (writeBit s6.basis 90 (middleGroup)) 92 false⟩
+  have step7 (t : List Bool) : run (mergeFlags 90 92 2) t s6 = s7 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change (middleGroup && !s.basis 2) = ((middleGroup) && !s.basis 2)
+      rfl
+    · change (middleGroup && s.basis 2) = ((middleGroup) && s.basis 2)
+      rfl
+  let s8 : State := ⟨s.phase, writeBit (writeBit s7.basis 94 (highGroup)) 96 false⟩
+  have step8 (t : List Bool) : run (mergeFlags 94 96 2) t s7 = s8 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change (highGroup && !s.basis 2) = ((highGroup) && !s.basis 2)
+      rfl
+    · change s.basis 96 = ((highGroup) && s.basis 2)
+      rw [f10]
+      simp [highGroup, targetF, Bool.and_assoc]
+  let s9 : State := ⟨s.phase, writeBit (writeBit s8.basis 86 (firstTwo)) 90 false⟩
+  have step9 (t : List Bool) : run (mergeFlags 86 90 3) t s8 = s9 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change lowGroup = ((firstTwo) && !s.basis 3)
+      rfl
+    · change middleGroup = ((firstTwo) && s.basis 3)
+      rfl
+  let s10 : State := ⟨s.phase, writeBit (writeBit s9.basis 86 (s.basis 6)) 94 false⟩
+  have step10 (t : List Bool) : run (mergeFlags 86 94 4) t s9 = s10 := by
+    apply run_mergeFlags _ _ _ (by decide) (by decide) (by decide)
+    · change firstTwo = ((s.basis 6) && !s.basis 4)
+      rfl
+    · change highGroup = ((s.basis 6) && s.basis 4)
+      rfl
   dsimp only [treeEraseFProg]
-  simp only [run_append]
-  have hmcQ : measurementCount treeQCompute = 0 := rfl
-  have hmcG : measurementCount treeGCompute = 0 := rfl
-  simp only [measurementCount_append, hmcQ, hmcG, Nat.zero_add, List.take_zero, List.drop_zero]
-  obtain ⟨hp1, hq0_1, hq1_1, hq2_1, hq3_1, hoth1⟩ :=
-    run_treeQCompute [] s (hQT 98 (by omega) (by omega)) (hQT 99 (by omega) (by omega))
-      (hQT 100 (by omega) (by omega)) (hQT 101 (by omega) (by omega))
-  set s1 := run treeQCompute [] s
-  have h1_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s1.basis w = s.basis w :=
-    fun w hw => hoth1 w (by simp; omega)
-  obtain ⟨hp2, hg0_2, hg1_2, hg01_2, hoth2⟩ :=
-    run_treeGCompute [] s1
-      ((h1_eq 102 (by omega)).trans (hQT 102 (by omega) (by omega)))
-      ((h1_eq 103 (by omega)).trans (hQT 103 (by omega) (by omega)))
-      ((h1_eq 104 (by omega)).trans (hQT 104 (by omega) (by omega)))
-  set s2 := run treeGCompute [] s1
-  have h2_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s2.basis w = s1.basis w :=
-    fun w hw => hoth2 w (by simp; omega)
-  have h2_c : ∀ w : Nat, w < 98 → s2.basis w = s.basis w :=
-    fun w hw => (h2_eq w (by omega)).trans (h1_eq w (by omega))
-  have h2_q : ∀ i : Nat, i < 4 → s2.basis (98 + i) = qBit (s.basis 1) (s.basis 2) i := by
-    intro i hi
-    rw [h2_eq (98 + i) (by omega)]
-    match i with
-    | 0 => exact hq0_1
-    | 1 => exact hq1_1
-    | 2 => exact hq2_1
-    | 3 => exact hq3_1
-  set m3 := (((m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).take
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8))).take
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4))).take
-    (measurementCount (treeFEraseGroup 102 0))
-  obtain ⟨hp3, hf0_3, hf1_3, hf2_3, hf3_3, hoth3⟩ :=
-    run_treeFEraseGroup 102 0 (by omega) (by omega) m3 s2
-      (by rw [h2_c 86 (by omega), hF 0 (by omega), hg0_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-      (by rw [h2_c 87 (by omega), hF 1 (by omega), hg0_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-      (by rw [h2_c 88 (by omega), hF 2 (by omega), hg0_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-      (by rw [h2_c 89 (by omega), hF 3 (by omega), hg0_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-  set s3 := run (treeFEraseGroup 102 0) m3 s2
-  have h3_eq : ∀ w : Nat, (w < 86 ∨ 90 ≤ w) → s3.basis w = s2.basis w :=
-    fun w hw => hoth3 w (by simp; omega)
-  set m4 := (((m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).take
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8))).take
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4))).drop
-    (measurementCount (treeFEraseGroup 102 0))
-  obtain ⟨hp4, hf4_4, hf5_4, hf6_4, hf7_4, hoth4⟩ :=
-    run_treeFEraseGroup 104 4 (by omega) (by omega) m4 s3
-      (by rw [h3_eq 90 (by omega), h3_eq 104 (by omega), h3_eq 98 (by omega), h2_c 90 (by omega), hF 4 (by omega), hg01_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-      (by rw [h3_eq 91 (by omega), h3_eq 104 (by omega), h3_eq 99 (by omega), h2_c 91 (by omega), hF 5 (by omega), hg01_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-      (by rw [h3_eq 92 (by omega), h3_eq 104 (by omega), h3_eq 100 (by omega), h2_c 92 (by omega), hF 6 (by omega), hg01_2, h2_q 2 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-      (by rw [h3_eq 93 (by omega), h3_eq 104 (by omega), h3_eq 101 (by omega), h2_c 93 (by omega), hF 7 (by omega), hg01_2, h2_q 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)]; rfl)
-  set s4 := run (treeFEraseGroup 104 4) m4 s3
-  have h4_eq : ∀ w : Nat, (w < 90 ∨ 94 ≤ w) → s4.basis w = s3.basis w :=
-    fun w hw => hoth4 w (by simp; omega)
-  set m5 := ((m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).take
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8))).drop
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4))
-  obtain ⟨hp5, hf8_5, hf9_5, hf10_5, hoth5⟩ :=
-    run_treeFEraseGroup3 103 8 (by omega) (by omega) m5 s4
-      (by rw [h4_eq 94 (by omega), h3_eq 94 (by omega), h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 98 (by omega), h3_eq 98 (by omega), h2_c 94 (by omega), hF 8 (by omega), hg1_2, h2_q 0 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl)
-      (by rw [h4_eq 95 (by omega), h3_eq 95 (by omega), h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 99 (by omega), h3_eq 99 (by omega), h2_c 95 (by omega), hF 9 (by omega), hg1_2, h2_q 1 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl)
-      (by rw [h4_eq 96 (by omega), h3_eq 96 (by omega), h4_eq 103 (by omega), h3_eq 103 (by omega), h4_eq 2 (by omega), h3_eq 2 (by omega), h2_c 96 (by omega), h2_c 2 (by omega), hF 10 (by omega), hg1_2, h1_eq 6 (by omega), h1_eq 4 (by omega)]; rfl)
-  set s5 := run (treeFEraseGroup3 103 8) m5 s4
-  have h5_eq : ∀ w : Nat, (w < 94 ∨ 97 ≤ w) → s5.basis w = s4.basis w :=
-    fun w hw => hoth5 w (by simp; omega)
-  have h5_to_2 : ∀ w : Nat, (w < 86 ∨ 97 ≤ w) → s5.basis w = s2.basis w :=
-    fun w hw => (h5_eq w (by omega)).trans ((h4_eq w (by omega)).trans (h3_eq w (by omega)))
-  set m6 := (m.take (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)).drop
-    (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8))
-  obtain ⟨hp6, hg0_6, hg1_6, hg01_6, hoth6⟩ :=
-    run_treeGErase m6 s5
-      (by rw [h5_to_2 102 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
-              hg0_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
-      (by rw [h5_to_2 103 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega),
-              hg1_2, h2_c 6 (by omega), h2_c 4 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega)])
-      (by rw [h5_to_2 104 (by omega), h5_to_2 6 (by omega), h5_to_2 4 (by omega), h5_to_2 3 (by omega),
-              hg01_2, h2_c 6 (by omega), h2_c 4 (by omega), h2_c 3 (by omega), h1_eq 6 (by omega), h1_eq 4 (by omega), h1_eq 3 (by omega)])
-  set s6 := run treeGErase m6 s5
-  have h6_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s6.basis w = s5.basis w :=
-    fun w hw => hoth6 w (by simp; omega)
-  set m7 := m.drop (measurementCount (treeFEraseGroup 102 0) + measurementCount (treeFEraseGroup 104 4) +
-    measurementCount (treeFEraseGroup3 103 8) + measurementCount treeGErase)
-  obtain ⟨hp7, hq0_7, hq1_7, hq2_7, hq3_7, hoth7⟩ :=
-    run_treeQErase m7 s6
-      (by rw [h6_eq 98 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 98 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 0 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h6_eq 99 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 99 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 1 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h6_eq 100 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 100 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 2 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-      (by rw [h6_eq 101 (by omega), h6_eq 1 (by omega), h6_eq 2 (by omega), h5_to_2 101 (by omega), h5_to_2 1 (by omega), h5_to_2 2 (by omega), h2_q 3 (by omega), h2_c 1 (by omega), h2_c 2 (by omega)])
-  set s7 := run treeQErase m7 s6
-  have h7_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s7.basis w = s6.basis w :=
-    fun w hw => hoth7 w (by simp; omega)
-  refine ⟨hp7.trans (hp6.trans (hp5.trans (hp4.trans (hp3.trans (hp2.trans hp1))))), ?_, ?_⟩
-  · intro a ha1 ha2
-    have : a = 86 ∨ a = 87 ∨ a = 88 ∨ a = 89 ∨ a = 90 ∨ a = 91 ∨ a = 92 ∨ a = 93 ∨
-           a = 94 ∨ a = 95 ∨ a = 96 ∨ a = 97 ∨ a = 98 ∨ a = 99 ∨ a = 100 ∨ a = 101 ∨
-           a = 102 ∨ a = 103 ∨ a = 104 := by omega
-    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-                     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact (h7_eq 86 (by omega)).trans ((h6_eq 86 (by omega)).trans ((h5_eq 86 (by omega)).trans ((h4_eq 86 (by omega)).trans hf0_3)))
-    · exact (h7_eq 87 (by omega)).trans ((h6_eq 87 (by omega)).trans ((h5_eq 87 (by omega)).trans ((h4_eq 87 (by omega)).trans hf1_3)))
-    · exact (h7_eq 88 (by omega)).trans ((h6_eq 88 (by omega)).trans ((h5_eq 88 (by omega)).trans ((h4_eq 88 (by omega)).trans hf2_3)))
-    · exact (h7_eq 89 (by omega)).trans ((h6_eq 89 (by omega)).trans ((h5_eq 89 (by omega)).trans ((h4_eq 89 (by omega)).trans hf3_3)))
-    · exact (h7_eq 90 (by omega)).trans ((h6_eq 90 (by omega)).trans ((h5_eq 90 (by omega)).trans hf4_4))
-    · exact (h7_eq 91 (by omega)).trans ((h6_eq 91 (by omega)).trans ((h5_eq 91 (by omega)).trans hf5_4))
-    · exact (h7_eq 92 (by omega)).trans ((h6_eq 92 (by omega)).trans ((h5_eq 92 (by omega)).trans hf6_4))
-    · exact (h7_eq 93 (by omega)).trans ((h6_eq 93 (by omega)).trans ((h5_eq 93 (by omega)).trans hf7_4))
-    · exact (h7_eq 94 (by omega)).trans ((h6_eq 94 (by omega)).trans hf8_5)
-    · exact (h7_eq 95 (by omega)).trans ((h6_eq 95 (by omega)).trans hf9_5)
-    · exact (h7_eq 96 (by omega)).trans ((h6_eq 96 (by omega)).trans hf10_5)
-    · rw [h7_eq 97 (by omega), h6_eq 97 (by omega), h5_to_2 97 (by omega), h2_c 97 (by omega)]
-      exact hQT 97 (by omega) (by omega)
-    · exact hq0_7
-    · exact hq1_7
-    · exact hq2_7
-    · exact hq3_7
-    · exact (h7_eq 102 (by omega)).trans hg0_6
-    · exact (h7_eq 103 (by omega)).trans hg1_6
-    · exact (h7_eq 104 (by omega)).trans hg01_6
-  · intro w hw
-    rw [h7_eq w (by omega), h6_eq w (by omega), h5_to_2 w (by omega), h2_eq w (by omega), h1_eq w (by omega)]
-
+  rw [run_append, step1, run_append, step2, run_append, step3, run_append, step4, run_append, step5, run_append, step6, run_append, step7, run_append, step8, run_append, step9, run_append, step10]
+  have rootVal : s10.basis 86 = s10.basis 6 := rfl
+  simp only [run, rootVal, Bool.xor_self]
+  refine ⟨rfl, ?_, ?_⟩
+  · intro a ha hb
+    by_cases flags : a < 97
+    · interval_cases a <;> rfl
+    · have clean := hQT a (by omega) hb
+      have n86 : a ≠ 86 := by omega
+      have n87 : a ≠ 87 := by omega
+      have n88 : a ≠ 88 := by omega
+      have n89 : a ≠ 89 := by omega
+      have n90 : a ≠ 90 := by omega
+      have n91 : a ≠ 91 := by omega
+      have n92 : a ≠ 92 := by omega
+      have n93 : a ≠ 93 := by omega
+      have n94 : a ≠ 94 := by omega
+      have n95 : a ≠ 95 := by omega
+      have n96 : a ≠ 96 := by omega
+      simp [s10, s9, s8, s7, s6, s5, s4, s3, s2, s1, writeBit, n86, n87, n88, n89, n90, n91, n92, n93, n94, n95, n96, clean]
+  · intro w outside
+    have n86 : w ≠ 86 := by omega
+    have n87 : w ≠ 87 := by omega
+    have n88 : w ≠ 88 := by omega
+    have n89 : w ≠ 89 := by omega
+    have n90 : w ≠ 90 := by omega
+    have n91 : w ≠ 91 := by omega
+    have n92 : w ≠ 92 := by omega
+    have n93 : w ≠ 93 := by omega
+    have n94 : w ≠ 94 := by omega
+    have n95 : w ≠ 95 := by omega
+    have n96 : w ≠ 96 := by omega
+    simp [s10, s9, s8, s7, s6, s5, s4, s3, s2, s1, writeBit, n86, n87, n88, n89, n90, n91, n92, n93, n94, n95, n96]
 
 /-! ## Section 8: Component 4 — `clear_or_restore_C_spec` -/
 
@@ -38236,7 +38296,7 @@ theorem packTag_spec (s : State) (m : List Bool)
   have h := packTag_and_direct_roundtrip s m [] hc hp0 hpk hanc
   exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
-/-- Roundtrip specification of `unpackTagProg` (102 T) after `packTagProg` (99 T):
+/-- Roundtrip specification of `unpackTagProg` (99 T) after `packTagProg` (99 T):
     if `u` agrees with `run packTagProg m1 s` on wires `0..104` (e.g. after any
     wire-disjoint computation on wires outside `0..104`), then for any tape `m2`,
     `run unpackTagProg m2 u` preserves `u.phase`, restores wires `0..104` identically
