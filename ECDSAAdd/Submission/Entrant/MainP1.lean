@@ -34568,7 +34568,7 @@ end
 
 
 
--- ==== Inlined TagPack1542 v2 (Site A: 99-T packTag / 100-T unpackTag) ====
+-- ==== Inlined TagPack1542 v2 (Site A: 99-T packTag / 102-T unpackTag) ====
 section
 set_option maxRecDepth 8192
 
@@ -34579,7 +34579,7 @@ open ECDSAAdd.Arithmetic
 open ECDSAAdd.Challenge
 
 /-!
-# TagPack1542 v2: 99-T `packTag` and 100-T `unpackTag` (2-CCX 8-flat merge on P0)
+# TagPack1542 v2: 99-T `packTag` and 102-T `unpackTag` (2-CCX 8-flat merge on P0)
 
 Logical 105-wire programs (wires `0..104`, wire `97` unused):
 - `0..6`    : `C[0..6]` (`rest87_A[0..6]`, value in `0..86`; wire `6` is cleared to `false`)
@@ -34799,14 +34799,8 @@ def treeDecodeCProg : Program :=
   treeFGroup 102 0 ++ treeFGroup 104 4 ++ treeFGroup3 103 8 ++
   treeGErase ++ treeQErase
 
-/-- Before erasing F, each group bit is the parity of its disjoint flags. -/
-def groupsFromFlags : Program :=
-  [ .CX 86 102, .CX 87 102, .CX 88 102, .CX 89 102
-  , .CX 90 104, .CX 91 104, .CX 92 104, .CX 93 104
-  , .CX 94 103, .CX 95 103, .CX 96 103 ]
-
 def treeEraseFProg : Program :=
-  treeQCompute ++ groupsFromFlags ++
+  treeQCompute ++ treeGCompute ++
   treeFEraseGroup 102 0 ++ treeFEraseGroup 104 4 ++ treeFEraseGroup3 103 8 ++
   treeGErase ++ treeQErase
 
@@ -34945,12 +34939,12 @@ theorem packTagProg_toffoliCount : toffoliCount packTagProg = 99 := by
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 100 := by
+theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 102 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   rw [toffoliCount_append, toffoliCount_append, toffoliCount_append,
       toffoliCount_flatMap_range11_rev, toffoliCount_reverse', toffoliCount_reverse']
   have h0 : toffoliCount uP0Prog = 2 := by decide
-  have h1 : toffoliCount treeEraseFProg = 1 := by decide
+  have h1 : toffoliCount treeEraseFProg = 3 := by decide
   have h2 : toffoliCount clearOrRestoreCProg = 0 := by decide
   have h3 : ∀ k < 10, toffoliCount (unpackSlotProg k) = 9 := by
     intro k hk
@@ -35011,12 +35005,12 @@ theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 480 := by
   have h10' : Challenge.gateSlots (packSlotProg 10) = 28 := by decide
   omega
 
-theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 478 := by
+theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 472 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append,
       gateSlots_flatMap_range11_rev, gateSlots_reverse', gateSlots_reverse']
   have hu : Challenge.gateSlots uP0Prog = 12 := by decide
-  have h1 : Challenge.gateSlots treeEraseFProg = 57 := by decide
+  have h1 : Challenge.gateSlots treeEraseFProg = 51 := by decide
   have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
   have h0 : Challenge.gateSlots (unpackSlotProg 0) = 35 := by decide
   have h1' : Challenge.gateSlots (unpackSlotProg 1) = 35 := by decide
@@ -36192,47 +36186,6 @@ private theorem run_treeGCompute (m : List Bool) (s : State)
     rcases hw with ⟨h102, h103, h104⟩
     simp [treeGCompute, run, writeBit, h102, h103, h104]
 
-private theorem run_groupsFromFlags (m : List Bool) (s : State)
-    (hg0 : s.basis 102 = false) (hg1 : s.basis 103 = false) (hg01 : s.basis 104 = false)
-    (flags : ∀ k < 11, s.basis (86 + k) = targetF s.basis k) :
-    let res := run groupsFromFlags m s
-    res.phase = s.phase ∧
-    res.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3) ∧
-    res.basis 103 = (s.basis 6 && s.basis 4) ∧
-    res.basis 104 = (s.basis 6 && !s.basis 4 && s.basis 3) ∧
-    (∀ w : Nat, w ∉ ([102, 103, 104] : List Nat) → res.basis w = s.basis w) := by
-  refine ⟨by simp [groupsFromFlags, run], ?_, ?_, ?_, ?_⟩
-  · simp [groupsFromFlags, run, writeBit, hg0]
-    have f0 : s.basis 86 = targetF s.basis 0 := flags 0 (by decide)
-    have f1 : s.basis 87 = targetF s.basis 1 := flags 1 (by decide)
-    have f2 : s.basis 88 = targetF s.basis 2 := flags 2 (by decide)
-    have f3 : s.basis 89 = targetF s.basis 3 := flags 3 (by decide)
-    rw [f0, f1, f2, f3]
-    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
-      cases h3 : s.basis 3 <;> cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
-      simp [targetF, qBit, h1, h2, h3, h4, h6]
-  · simp [groupsFromFlags, run, writeBit, hg1]
-    have f8 : s.basis 94 = targetF s.basis 8 := flags 8 (by decide)
-    have f9 : s.basis 95 = targetF s.basis 9 := flags 9 (by decide)
-    have f10 : s.basis 96 = targetF s.basis 10 := flags 10 (by decide)
-    rw [f8, f9, f10]
-    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
-      cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
-      simp [targetF, qBit, h1, h2, h4, h6]
-  · simp [groupsFromFlags, run, writeBit, hg01]
-    have f4 : s.basis 90 = targetF s.basis 4 := flags 4 (by decide)
-    have f5 : s.basis 91 = targetF s.basis 5 := flags 5 (by decide)
-    have f6 : s.basis 92 = targetF s.basis 6 := flags 6 (by decide)
-    have f7 : s.basis 93 = targetF s.basis 7 := flags 7 (by decide)
-    rw [f4, f5, f6, f7]
-    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
-      cases h3 : s.basis 3 <;> cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
-      simp [targetF, qBit, h1, h2, h3, h4, h6]
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-    rcases hw with ⟨h102, h103, h104⟩
-    simp [groupsFromFlags, run, writeBit, h102, h103, h104]
-
 private theorem run_treeFGroup (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 3 < 12)
     (m : List Bool) (s : State)
     (hf0 : s.basis (86 + baseF) = false) (hf1 : s.basis (86 + baseF + 1) = false)
@@ -36608,7 +36561,7 @@ theorem tree_erase_F_spec (m : List Bool) (s : State)
   dsimp only [treeEraseFProg]
   simp only [run_append]
   have hmcQ : measurementCount treeQCompute = 0 := rfl
-  have hmcG : measurementCount groupsFromFlags = 0 := rfl
+  have hmcG : measurementCount treeGCompute = 0 := rfl
   simp only [measurementCount_append, hmcQ, hmcG, Nat.zero_add, List.take_zero, List.drop_zero]
   obtain ⟨hp1, hq0_1, hq1_1, hq2_1, hq3_1, hoth1⟩ :=
     run_treeQCompute [] s (hQT 98 (by omega) (by omega)) (hQT 99 (by omega) (by omega))
@@ -36617,16 +36570,11 @@ theorem tree_erase_F_spec (m : List Bool) (s : State)
   have h1_eq : ∀ w : Nat, (w < 98 ∨ 102 ≤ w) → s1.basis w = s.basis w :=
     fun w hw => hoth1 w (by simp; omega)
   obtain ⟨hp2, hg0_2, hg1_2, hg01_2, hoth2⟩ :=
-    run_groupsFromFlags [] s1
+    run_treeGCompute [] s1
       ((h1_eq 102 (by omega)).trans (hQT 102 (by omega) (by omega)))
       ((h1_eq 103 (by omega)).trans (hQT 103 (by omega) (by omega)))
       ((h1_eq 104 (by omega)).trans (hQT 104 (by omega) (by omega)))
-      (fun (k : Nat) (hk : k < 11) => by
-        have inside : 86 + k < 98 := by omega
-        rw [h1_eq (86 + k) (Or.inl inside), hF k hk]
-        simp only [targetF, h1_eq 1 (by omega), h1_eq 2 (by omega), h1_eq 3 (by omega),
-          h1_eq 4 (by omega), h1_eq 6 (by omega)])
-  set s2 := run groupsFromFlags [] s1
+  set s2 := run treeGCompute [] s1
   have h2_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s2.basis w = s1.basis w :=
     fun w hw => hoth2 w (by simp; omega)
   have h2_c : ∀ w : Nat, w < 98 → s2.basis w = s.basis w :=
@@ -38288,7 +38236,7 @@ theorem packTag_spec (s : State) (m : List Bool)
   have h := packTag_and_direct_roundtrip s m [] hc hp0 hpk hanc
   exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
-/-- Roundtrip specification of `unpackTagProg` (100 T) after `packTagProg` (99 T):
+/-- Roundtrip specification of `unpackTagProg` (102 T) after `packTagProg` (99 T):
     if `u` agrees with `run packTagProg m1 s` on wires `0..104` (e.g. after any
     wire-disjoint computation on wires outside `0..104`), then for any tape `m2`,
     `run unpackTagProg m2 u` preserves `u.phase`, restores wires `0..104` identically
