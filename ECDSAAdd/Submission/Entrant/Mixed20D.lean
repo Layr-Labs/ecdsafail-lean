@@ -3093,10 +3093,10 @@ private theorem leave15_counts (j : Fin 26) (hj : j.val ≤ 24) :
       CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 3 * Shadow7.lowsP (start j) + 95 +
         CRTBarrel.barrelT (start j) false ∧
     toffoliCount (CRTBarrel.unleave j) =
-      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 125 +
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 124 +
         CRTBarrel.barrelT (start j) true ∧
     measurementCount (CRTBarrel.leave j) =
-      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 +
+      CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 86 +
         CRTBarrel.barrelM (start j) false ∧
     measurementCount (CRTBarrel.unleave j) =
       CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 57 +
@@ -3153,7 +3153,7 @@ private theorem block15F_counts (d : Bool) (i j : Fin 26) (hj : j.val ≤ 24)
         CRTBarrel.barrelT (start j) false) ∧
     ((block15F d i j).map measurementCount).sum =
       (if d then 54 else 55) + 15 * (Shadow7.smallBits j + 16) +
-      (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 +
+      (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 86 +
         CRTBarrel.barrelM (start j) false) := by
   have e := Shadow7.enter_counts j
   have r0 := WindowFold7.routed_counts j 0 1 (by decide)
@@ -3176,7 +3176,7 @@ private theorem block15R_counts (d : Bool) (i j : Fin 26) (hj : j.val ≤ 24)
     (h5 : start j - 10 ≠ 5) (hd : History5.packDue (start j - 10) = true) :
     ((block15R d i j).map toffoliCount).sum + 14 =
       (if d then 67 else 68) + 15 * (2 * (Shadow7.smallBits j + 16) - 1) +
-      (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 125 +
+      (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 124 +
         CRTBarrel.barrelT (start j) true) ∧
     ((block15R d i j).map measurementCount).sum =
       (if d then 48 else 49) + 15 * (Shadow7.smallBits j + 16) +
@@ -3277,12 +3277,12 @@ def b15TF (j : Fin 26) : Nat :=
 
 def b15TR (d : Bool) (j : Fin 26) : Nat :=
   (if d then 67 else 68) + 15 * (2 * (Shadow7.smallBits j + 16) - 1) +
-  (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 125 +
+  (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + 2 * Shadow7.lowsP (start j) + 124 +
     CRTBarrel.barrelT (start j) true)
 
 def b15MF (d : Bool) (j : Fin 26) : Nat :=
   (if d then 54 else 55) + 15 * (Shadow7.smallBits j + 16) +
-  (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 87 +
+  (CRTBarrel.adjustWidth (start j) + Shadow7.liveW (start j) + Shadow7.lowsP (start j) + 86 +
     CRTBarrel.barrelM (start j) false)
 
 def b15MR (d : Bool) (j : Fin 26) : Nat :=
@@ -3310,23 +3310,23 @@ private theorem mixed_sum_vals (d : Bool) :
     (suffixPairs.map (fun p => b15TF p.2)).sum +
     (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126681 ∧
     (4 * Shadow7.wpP 45 - 7 + 2 + 15 * (Shadow7.smallBits j0 + 16) + 4 +
-      (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 87 + CRTBarrel.barrelM 45 false)) +
+      (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 86 + CRTBarrel.barrelM 45 false)) +
     (prefixPairs.map (fun p => b15MF d p.2)).sum +
     (2 + 15 * (Shadow7.smallBits j7 + 16) + 4 + (if d then 48 else 49) + 267) +
     ((List.finRange 9).map (b20MF d)).sum +
     (2 + 15 * (Shadow7.smallBits j20 + 16) + 4 + 4 + (if d then 48 else 49) +
-      (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 87 + CRTBarrel.barrelM 345 false)) +
+      (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 86 + CRTBarrel.barrelM 345 false)) +
     (suffixPairs.map (fun p => b15MF d p.2)).sum +
-    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65297 else 65319) ∧
+    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65285 else 65307) ∧
     ((if d then 50 else 51) + 11 + WindowParams.recvT 420 + (4 * Shadow7.wpP 420 - 2) + 0) +
     (suffixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
-    ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 125 + CRTBarrel.barrelT 345 true) +
+    ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 124 + CRTBarrel.barrelT 345 true) +
       15 * (2 * (Shadow7.smallBits j20 + 16) - 1) + (if d then 50 else 51) + 11 + 11 + 6) +
     ((List.finRange 9).reverse.map (b20TR d)).sum +
     (457 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
     (prefixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
-    ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 125 + CRTBarrel.barrelT 45 true) +
-      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126720 else 126742) ∧
+    ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 124 + CRTBarrel.barrelT 45 true) +
+      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126708 else 126730) ∧
     ((if d then 43 else 44) + 2 + WindowParams.recvM 420 + (4 * Shadow7.wpP 420 - 7) + 0) +
     (suffixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 57 + CRTBarrel.barrelM 345 true) +
@@ -3346,8 +3346,8 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
     toffoliCount (forwardMixed d) = 126681 ∧
-    toffoliCount (reverseMixed d) = (if d then 126678 else 126700) ∧
-    measurementCount (forwardMixed d) = (if d then 65297 else 65319) ∧
+    toffoliCount (reverseMixed d) = (if d then 126666 else 126688) ∧
+    measurementCount (forwardMixed d) = (if d then 65285 else 65307) ∧
     measurementCount (reverseMixed d) = (if d then 65034 else 65056) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
@@ -9344,8 +9344,8 @@ theorem mixedCut_run_eq (d : Bool) :
 
 theorem mixedCut_counts (d : Bool) :
     toffoliCount (forwardMixedCut d) = 126589 ∧
-    toffoliCount (reverseMixedCut d) = (if d then 126586 else 126608) ∧
-    measurementCount (forwardMixedCut d) = (if d then 65297 else 65319) ∧
+    toffoliCount (reverseMixedCut d) = (if d then 126574 else 126596) ∧
+    measurementCount (forwardMixedCut d) = (if d then 65285 else 65307) ∧
     measurementCount (reverseMixedCut d) = (if d then 65034 else 65056) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
@@ -10042,8 +10042,8 @@ theorem resource_delta (d : Bool) :
 
 theorem mixed_counts (d : Bool) :
     toffoliCount (forward d) = 126589 ∧
-    toffoliCount (reverse d) = (if d then 126415 else 126437) ∧
-    measurementCount (forward d) = (if d then 65297 else 65319) ∧
+    toffoliCount (reverse d) = (if d then 126403 else 126425) ∧
+    measurementCount (forward d) = (if d then 65285 else 65307) ∧
     measurementCount (reverse d) = (if d then 65205 else 65227) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d

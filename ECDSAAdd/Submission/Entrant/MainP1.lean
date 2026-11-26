@@ -15425,13 +15425,13 @@ def tcV : Pieces Nat := { WindowParams7.tcV with
       CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+95+CRTBarrel.barrelT (start j) false
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+112 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+125+CRTBarrel.barrelT (start j) true
+      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+124+CRTBarrel.barrelT (start j) true
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+144 else toffoliCount (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.tcV.unrouted j a n - (if a=1 ∧ n=14 then 14 else 0) }
 
 def mcV : Pieces Nat := { WindowParams7.mcV with
   leave := fun j => if crtBlocks j then
-      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+87+CRTBarrel.barrelM (start j) false
+      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+86+CRTBarrel.barrelM (start j) false
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+89 else measurementCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
       CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+57+CRTBarrel.barrelM (start j) true
@@ -15440,11 +15440,11 @@ def mcV : Pieces Nat := { WindowParams7.mcV with
 
 def slotsV : Pieces Nat := { WindowParams7.slotsV with
   leave := fun j => if crtBlocks j then
-      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+646+3*Shadow7.wpP (start j+15)+
+      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+643+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) false
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+725+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+616+3*Shadow7.wpP (start j+15)+
+      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+614+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) true
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+693+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.slotsV.unrouted j a n + (if a=1 ∧ n=14 then 98 else 0) }
@@ -15607,10 +15607,10 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 theorem ship_counts :
     toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127041 ∧
     toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127041 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=126971 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=126996 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65200 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65225 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=126946 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=126971 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65175 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65200 ∧
     measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65019 ∧
     measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65044 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
@@ -15698,14 +15698,14 @@ theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first 
 theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127041 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 126971 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 126946 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 126996 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 126971 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65200 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65225 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65175 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65200 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
 theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65019 ∧
@@ -15767,14 +15767,14 @@ theorem cut_toffoliF : toffoliCount (forwardCut true) = 126937 ∧ toffoliCount 
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 126867 ∧ toffoliCount (reverseCut false) = 126892 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 126842 ∧ toffoliCount (reverseCut false) = 126867 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
   rw [ship_toffoliR_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_measureF : measurementCount (forwardCut true) = 65200 ∧ measurementCount (forwardCut false) = 65225 := by
+theorem cut_measureF : measurementCount (forwardCut true) = 65175 ∧ measurementCount (forwardCut false) = 65200 := by
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
