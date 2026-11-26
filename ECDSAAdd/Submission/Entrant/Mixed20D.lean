@@ -1412,8 +1412,21 @@ def beforeRow (s : Nat) : List Gate :=
 def tailD0 (s : Nat) : List Gate :=
   fix8P20 s ++ KeptParity20.placed20 s ++ CRTBarrel.wordPre 1624 (colsC20 s)
 
+/-- Selector receiver, 20-tick port (idea: spariev 59c20890 `DI7Affine`, 15-tick `afterRest7S`):
+in front of the pop of `1570` in `leaveFix12_20` the relation
+`1570 ⊕ 1559 ⊕ 1561..1569 ⊕ e0P20+7 = 0` holds, so the pop is replaced by its XOR receiver. -/
+def sel20Sources (s : Nat) : List Wire := 1559 :: ((List.range 9).map (1561 + ·) ++ [e0P20 s + 7])
+
+def sel20Pop (s : Nat) : Gate := .pop 1560 (OB5.sig (s + 19) (s + 1044 + 9)) 1570
+
+def sel20Recv (s : Nat) : List Gate := DI7Affine.clear false (sel20Sources s) 1570
+
+/-- `leaveFix12_20` with its selector pop (index 21) replaced by the XOR receiver. -/
+def leaveFix12S (s : Nat) : List Gate :=
+  (leaveFix12_20 s).take 21 ++ (sel20Recv s ++ (leaveFix12_20 s).drop 22)
+
 def tailD1 (s : Nat) : List Gate :=
-  CRTBarrel.wordPost 1624 (colsC20 s) ++ fix10 s ++ leaveFix11_20 s ++ leaveFix12_20 s ++
+  CRTBarrel.wordPost 1624 (colsC20 s) ++ fix10 s ++ leaveFix11_20 s ++ leaveFix12S s ++
   [.cx (e0P20 s + 3) 1560, .cx 1559 1560]
 
 def afterRow (s : Nat) : List Gate :=
@@ -1525,15 +1538,46 @@ def joinCore (s : Nat) : List Gate :=
   KeptParity20.placed20 s ++ CRTBarrel.wordPre 1624 (colsC20 s) ++
     CRTBarrel.wordPost 1624 (colsC20 s) ++ fix10P20 s
 
-def afterRest (s : Nat) : List Gate :=
+def afterRestOld (s : Nat) : List Gate :=
   let top := a0P20 s + lowsP20 s - 2
   leaveFix11_20 s ++ leaveFix12_20 s ++
     [.cx (e0P20 s + 3) 1560, .cx 1559 1560, .cx (e0P20 s + 4) 1559] ++ tailE0_20 s ++
     [.cx top 1559] ++ chainMid20 s ++ [.cx top 1559] ++ tailE1_20 s
 
+def afterRest (s : Nat) : List Gate :=
+  let top := a0P20 s + lowsP20 s - 2
+  leaveFix11_20 s ++ leaveFix12S s ++
+    [.cx (e0P20 s + 3) 1560, .cx 1559 1560, .cx (e0P20 s + 4) 1559] ++ tailE0_20 s ++
+    [.cx top 1559] ++ chainMid20 s ++ [.cx top 1559] ++ tailE1_20 s
+
 theorem afterParts (s : Nat) :
-    afterRow20 s = fix8P20 s ++ glueG3_20 s ++ joinCore s ++ afterRest s := by
-  simp [afterRow20, tailD0_20, tailD1_20, joinCore, afterRest, List.append_assoc]
+    afterRow20 s = fix8P20 s ++ glueG3_20 s ++ joinCore s ++ afterRestOld s := by
+  simp [afterRow20, tailD0_20, tailD1_20, joinCore, afterRestOld, List.append_assoc]
+
+theorem list_split_at {l : List Gate} {i : Nat} {g : Gate} (h : l[i]? = some g) :
+    l = l.take i ++ g :: l.drop (i + 1) := by
+  obtain ⟨hi, e⟩ := List.getElem?_eq_some_iff.mp h
+  conv_lhs => rw [← List.take_append_drop i l]
+  rw [List.drop_eq_getElem_cons hi, e]
+
+theorem sel20_at : ∀ j : Fin 9, (leaveFix12_20 (start20 j))[21]? = some (sel20Pop (start20 j)) := by
+  decide +kernel
+
+theorem sel20_split (j : Fin 9) :
+    leaveFix12_20 (start20 j) =
+      (leaveFix12_20 (start20 j)).take 21 ++ sel20Pop (start20 j) :: (leaveFix12_20 (start20 j)).drop 22 :=
+  list_split_at (sel20_at j)
+
+theorem sel20_away : ∀ j : Fin 9, (sel20Sources (start20 j)).all (fun q => decide (q ≠ 1570)) = true := by
+  decide +kernel
+
+theorem sel20_proper : ∀ j : Fin 9, (sel20Recv (start20 j)).all proper = true := by
+  decide +kernel
+
+/-- Every receiver wire already occurs in the original tail. -/
+theorem sel20_wires : ∀ j : Fin 9, (sel20Recv (start20 j)).all (fun g =>
+    g.wires.all (fun q => ((afterRestOld (start20 j)).flatMap Gate.wires).contains q)) = true := by
+  decide +kernel
 
 theorem normalizedAfterParts (s : Nat) :
     afterRow s = fix8P20 s ++ joinCore s ++ copyCompanion s ++ afterRest s := by
@@ -1573,6 +1617,32 @@ private theorem changedProper : ∀ j : Fin 9,
     (copyCompanion s).all proper = true := by
   decide +kernel
 
+theorem afterRest_mem (s : Nat) (g : Gate) (hg : g ∈ afterRest s) :
+    g ∈ sel20Recv s ∨ g ∈ afterRestOld s := by
+  have key : g ∈ leaveFix12S s → g ∈ sel20Recv s ∨ g ∈ leaveFix12_20 s := by
+    intro h
+    simp only [leaveFix12S, List.mem_append] at h
+    rcases h with h | h | h
+    · exact Or.inr (List.mem_of_mem_take h)
+    · exact Or.inl h
+    · exact Or.inr (List.mem_of_mem_drop h)
+  unfold afterRest afterRestOld at *
+  simp only [List.mem_append] at hg ⊢
+  tauto
+
+theorem properAfterRest (j : Fin 9) (old : Proper (afterRestOld (start20 j))) :
+    Proper (afterRest (start20 j)) := fun g hg =>
+  (afterRest_mem _ g hg).elim (fun h => List.all_eq_true.mp (sel20_proper j) g h) (fun h => old g h)
+
+theorem allWAfterRest {P : Wire → Prop} (j : Fin 9) (old : AllW P (afterRestOld (start20 j))) :
+    AllW P (afterRest (start20 j)) := by
+  intro g hg q hq
+  rcases afterRest_mem _ g hg with h | h
+  · have found := List.all_eq_true.mp (List.all_eq_true.mp (sel20_wires j) g h) q hq
+    obtain ⟨k, hk, hw⟩ := List.mem_flatMap.mp (List.contains_iff_mem.mp found)
+    exact old k hk q hw
+  · exact old g h q hq
+
 theorem properNormalizedRows (j : Fin 9)
     (before : Proper (TrimHigh.beforeWideTrim (start20 j))) (after : Proper (afterRow20 (start20 j))) :
     Proper (beforeRow (start20 j)) ∧ Proper (afterRow (start20 j)) := by
@@ -1589,7 +1659,7 @@ theorem properNormalizedRows (j : Fin 9)
   obtain ⟨early, _⟩ := properSplit gluePrefix
   rw [normalizedBeforeParts, entryG2Split, normalizedAfterParts]
   exact ⟨proper_append (proper_append (proper_append (proper_append head properG2) suffix) properCopy) rest,
-    proper_append (proper_append (proper_append early join) properCopy) tail⟩
+    proper_append (proper_append (proper_append early join) properCopy) (properAfterRest j tail)⟩
 
 private theorem g2AllW {P : Wire → Prop} (w : Wire → Wire) (old : AllW P (oldG2Gates w)) :
     AllW P (newG2Gates w) := by
@@ -1638,21 +1708,22 @@ theorem allWNormalizedBefore {P : Wire → Prop} (s : Nat) (old : AllW P (TrimHi
   rw [normalizedBeforeParts, entryG2Split]
   exact allW_append (allW_append (allW_append (allW_append head (g2AllW _ glue)) tail) copy) rest
 
-theorem allWNormalizedAfter {P : Wire → Prop} (s : Nat) (old : AllW P (afterRow20 s)) :
-    AllW P (afterRow s) := by
+theorem allWNormalizedAfter {P : Wire → Prop} (j : Fin 9) (old : AllW P (afterRow20 (start20 j))) :
+    AllW P (afterRow (start20 j)) := by
+  let s := start20 j
   rw [afterParts] at old
   rcases allW_append_iff.mp old with ⟨joinPrefix, rest⟩
   rcases allW_append_iff.mp joinPrefix with ⟨gluePrefix, join⟩
   rcases allW_append_iff.mp gluePrefix with ⟨early, glue⟩
-  have aAt : .cx (a0P20 s - 1) 1557 ∈ afterRest s := by
-    simp only [afterRest, tailE0_20, lowRest20_pub, List.mem_append, List.mem_cons,
+  have aAt : .cx (a0P20 s - 1) 1557 ∈ afterRestOld s := by
+    simp only [afterRestOld, tailE0_20, lowRest20_pub, List.mem_append, List.mem_cons,
       List.not_mem_nil, or_false, true_or, or_true]
   have bAt : .ccx (tagsP20.getD 0 0) (bankW20 s 0) (b0P20 s - 1) ∈ glueG3_20 s := by
     simp [glueG3_20]
   have a := rest _ aAt (a0P20 s - 1) (by simp [Gate.wires])
   have b := glue _ bAt (b0P20 s - 1) (by simp [Gate.wires])
   rw [normalizedAfterParts]
-  exact allW_append (allW_append (allW_append early join) (copyAllW s a b)) rest
+  exact allW_append (allW_append (allW_append early join) (copyAllW s a b)) (allWAfterRest j rest)
 
 end WideSelectorNormalized
 
@@ -1895,44 +1966,54 @@ private theorem fix2MetricChange (metric : List Gate → Nat)
 attribute [local irreducible] fix2 fix2P20 oldG2 newG2 firstCopy glueG3_20 fix10 fix10P20
 
 private theorem gateMetricChange (metric : List Gate → Nat)
-    (additive : ∀ a b, metric (a ++ b) = metric a + metric b) (s : Nat) :
+    (additive : ∀ a b, metric (a ++ b) = metric a + metric b) (s : Nat)
+    (shape : leaveFix12_20 s = (leaveFix12_20 s).take 21 ++ sel20Pop s :: (leaveFix12_20 s).drop 22) :
     metric (beforeRow s) + metric (afterRow s) +
-        (metric (oldG2 s (sbP20 s)) + metric (glueG3_20 s) + metric (fix10P20 s)) =
+        (metric (oldG2 s (sbP20 s)) + metric (glueG3_20 s) + metric (fix10P20 s) + metric [sel20Pop s]) =
       metric (TrimHigh.beforeWideTrim s) + metric (afterRow20 s) +
-        (metric (newG2 s (sbP20 s)) + metric (firstCopy s (sbP20 s)) + metric (fix10 s)) := by
+        (metric (newG2 s (sbP20 s)) + metric (firstCopy s (sbP20 s)) + metric (fix10 s) +
+          metric (sel20Recv s)) := by
   have fix := fix2MetricChange metric additive s (sbP20 s)
+  have sh := congrArg metric shape
+  rw [additive, show sel20Pop s :: (leaveFix12_20 s).drop 22 = [sel20Pop s] ++ (leaveFix12_20 s).drop 22 from rfl,
+    additive] at sh
   simp only [beforeRow, TrimHigh.beforeWideTrim, TrimHigh.beforeCore, headC1Trim,
     headA1_20, afterRow, afterRow20, tailD0, tailD0_20,
-    tailD1, tailD1_20, additive]
+    tailD1, tailD1_20, leaveFix12S, additive]
   omega
 
 attribute [local irreducible] beforeRow TrimHigh.beforeWideTrim afterRow afterRow20 barrel20
 
+private theorem popCounts (s : Nat) : Counts [sel20Pop s] 0 0 1 1 := ⟨rfl, rfl, rfl, rfl⟩
+
+private theorem recvCounts (s : Nat) : Counts (sel20Recv s) 0 0 0 11 := ⟨rfl, rfl, rfl, rfl⟩
+
 theorem normalizedCounts (j : Fin 9) :
     toffoliCount (countedLeave j) + 2 = toffoliCount (leaveP20BaselineRed j) ∧
-    toffoliCount (countedUnleave j) + 3 = toffoliCount (leaveInvP20BaselineRed j) ∧
-    measurementCount (countedLeave j) = measurementCount (leaveP20BaselineRed j) ∧
+    toffoliCount (countedUnleave j) + 4 = toffoliCount (leaveInvP20BaselineRed j) ∧
+    measurementCount (countedLeave j) + 1 = measurementCount (leaveP20BaselineRed j) ∧
     measurementCount (countedUnleave j) = measurementCount (leaveInvP20BaselineRed j) + 1 ∧
-    gateSlots (countedLeave j) = gateSlots (leaveP20BaselineRed j) ∧
-    gateSlots (countedUnleave j) = gateSlots (leaveInvP20BaselineRed j) + 1 := by
+    gateSlots (countedLeave j) = gateSlots (leaveP20BaselineRed j) + 9 ∧
+    gateSlots (countedUnleave j) = gateSlots (leaveInvP20BaselineRed j) + 11 := by
+  have shape := sel20_split j
   simp only [countedLeave, countedUnleave, leaveP20BaselineRed, leaveInvP20BaselineRed,
     toffoliCount_append, measurementCount_append, gateSlots_append, toffoli_forward,
     toffoli_inverse, meas_forward, meas_inverse, slots_forward, slots_inverse]
-  generalize start20 j = s
-  have cc := gateMetricChange (fun gs => gs.countP isCCX) (fun _ _ => List.countP_append) s
-  have mk := gateMetricChange (fun gs => gs.countP isMake) (fun _ _ => List.countP_append) s
-  have pop := gateMetricChange (fun gs => gs.countP isPop) (fun _ _ => List.countP_append) s
-  have len := gateMetricChange List.length (fun _ _ => List.length_append) s
+  generalize start20 j = s at shape ⊢
+  have cc := gateMetricChange (fun gs => gs.countP isCCX) (fun _ _ => List.countP_append) s shape
+  have mk := gateMetricChange (fun gs => gs.countP isMake) (fun _ _ => List.countP_append) s shape
+  have pop := gateMetricChange (fun gs => gs.countP isPop) (fun _ _ => List.countP_append) s shape
+  have len := gateMetricChange List.length (fun _ _ => List.length_append) s shape
   have oldG2Spec := oldG2Counts s (sbP20 s)
   have newG2Spec := newG2Counts s (sbP20 s)
   have copySpec := copyCounts s (sbP20 s)
-  simp only [oldG2Spec.ccx, newG2Spec.ccx, copySpec.ccx,
+  simp only [oldG2Spec.ccx, newG2Spec.ccx, copySpec.ccx, (popCounts s).ccx, (recvCounts s).ccx,
     (oldGlueCounts s).ccx, (oldClearCounts s).ccx, (newClearCounts s).ccx] at cc
-  simp only [oldG2Spec.make, newG2Spec.make, copySpec.make,
+  simp only [oldG2Spec.make, newG2Spec.make, copySpec.make, (popCounts s).make, (recvCounts s).make,
     (oldGlueCounts s).make, (oldClearCounts s).make, (newClearCounts s).make] at mk
-  simp only [oldG2Spec.pop, newG2Spec.pop, copySpec.pop,
+  simp only [oldG2Spec.pop, newG2Spec.pop, copySpec.pop, (popCounts s).pop, (recvCounts s).pop,
     (oldGlueCounts s).pop, (oldClearCounts s).pop, (newClearCounts s).pop] at pop
-  simp only [oldG2Spec.len, newG2Spec.len, copySpec.len,
+  simp only [oldG2Spec.len, newG2Spec.len, copySpec.len, (popCounts s).len, (recvCounts s).len,
     (oldGlueCounts s).len, (oldClearCounts s).len, (newClearCounts s).len] at len
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
 
@@ -1941,11 +2022,11 @@ end WideSelectorNormalized
 theorem leave20Red_counts (j : Fin 9) :
     let s := start20 j
     toffoliCount (leaveP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 3 * lowsP20 s + 126 + barrel20T s false ∧
-    toffoliCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 167 + barrel20T s true ∧
-    measurementCount (leaveP20Red j) = TrimHigh.adjustWidth s + liveW20 s + lowsP20 s + 118 + barrel20M s false ∧
+    toffoliCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 166 + barrel20T s true ∧
+    measurementCount (leaveP20Red j) = TrimHigh.adjustWidth s + liveW20 s + lowsP20 s + 117 + barrel20M s false ∧
     measurementCount (leaveInvP20Red j) = TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 77 + barrel20M s true ∧
-    gateSlots (leaveP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 10 * lowsP20 s + 842 + 3 * nextWp20 s + barrel20Slots s false ∧
-    gateSlots (leaveInvP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 11 * lowsP20 s + 801 + 3 * nextWp20 s + barrel20Slots s true := by
+    gateSlots (leaveP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 10 * lowsP20 s + 851 + 3 * nextWp20 s + barrel20Slots s false ∧
+    gateSlots (leaveInvP20Red j) = 6 * TrimHigh.adjustWidth s + 5 * liveW20 s + 11 * lowsP20 s + 811 + 3 * nextWp20 s + barrel20Slots s true := by
   have old := leave20BaselineRed_counts j
   have diff := WideSelectorNormalized.normalizedCounts j
   have f : WideSelectorNormalized.countedLeave j = leaveP20Red j := rfl
@@ -1954,7 +2035,7 @@ theorem leave20Red_counts (j : Fin 9) :
   dsimp only at old ⊢
   obtain ⟨tF, tR, mF, mR, sF, sR⟩ := old
   obtain ⟨dtF, dtR, dmF, dmR, dsF, dsR⟩ := diff
-  exact ⟨by omega, by omega, dmF.trans mF, by omega, dsF.trans sF, by omega⟩
+  exact ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
 
 private theorem red20_patches_proper : ∀ j : Fin 9,
     let s := start20 j; let h := sbP20 s; let top := a0P20 s + lowsP20 s - 2
@@ -2065,7 +2146,7 @@ theorem leave20Red_cov (j : Fin 9) :
     WindowCovered.CoveredW (leaveP20Red j) ∧ WindowCovered.CoveredW (leaveInvP20Red j) := by
   have ok := leave20Red_ok j
   obtain ⟨bf, bi⟩ := allW_programs (WideSelectorNormalized.allWNormalizedBefore _ (TrimHigh.before_allW j ok.2.1))
-  obtain ⟨af, ai⟩ := allW_programs (WideSelectorNormalized.allWNormalizedAfter _ ok.2.2.2)
+  obtain ⟨af, ai⟩ := allW_programs (WideSelectorNormalized.allWNormalizedAfter j ok.2.2.2)
   exact ⟨WindowCovered.appW (WindowCovered.appW bf (barrel20_cov j false)) af,
     WindowCovered.appW (WindowCovered.appW ai (barrel20_cov j true)) bi⟩
 
@@ -2972,12 +3053,12 @@ def b20TF (j : Fin 9) : Nat :=
 def b20TR (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 67 else 68) else (if d then 78 else 79)) + 20 * (2 * (sbP20 s + 21) - 1) +
-  (TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 167 + barrel20T s true)
+  (TrimHigh.adjustWidth s + liveW20 s + 2 * lowsP20 s + 166 + barrel20T s true)
 
 def b20MF (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
   (if j.val = 0 then (if d then 54 else 55) else (if d then 58 else 59)) + 20 * (sbP20 s + 21) +
-  (TrimHigh.adjustWidth s + liveW20 s + lowsP20 s + 118 + barrel20M s false)
+  (TrimHigh.adjustWidth s + liveW20 s + lowsP20 s + 117 + barrel20M s false)
 
 def b20MR (d : Bool) (j : Fin 9) : Nat :=
   let s := start20 j
@@ -3087,7 +3168,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (2 + 15 * (Shadow7.smallBits j20 + 16) + 4 + 4 + (if d then 48 else 49) +
       (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 87 + CRTBarrel.barrelM 345 false)) +
     (suffixPairs.map (fun p => b15MF d p.2)).sum +
-    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65315 else 65337) ∧
+    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65306 else 65328) ∧
     ((if d then 50 else 51) + 11 + WindowParams.recvT 420 + (4 * Shadow7.wpP 420 - 2) + 0) +
     (suffixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 125 + CRTBarrel.barrelT 345 true) +
@@ -3096,7 +3177,7 @@ private theorem mixed_sum_vals (d : Bool) :
     (457 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
     (prefixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 125 + CRTBarrel.barrelT 45 true) +
-      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126738 else 126760) ∧
+      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126729 else 126751) ∧
     ((if d then 43 else 44) + 2 + WindowParams.recvM 420 + (4 * Shadow7.wpP 420 - 7) + 0) +
     (suffixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 57 + CRTBarrel.barrelM 345 true) +
@@ -3116,8 +3197,8 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
     toffoliCount (forwardMixed d) = 126681 ∧
-    toffoliCount (reverseMixed d) = (if d then 126696 else 126718) ∧
-    measurementCount (forwardMixed d) = (if d then 65315 else 65337) ∧
+    toffoliCount (reverseMixed d) = (if d then 126687 else 126709) ∧
+    measurementCount (forwardMixed d) = (if d then 65306 else 65328) ∧
     measurementCount (reverseMixed d) = (if d then 65034 else 65056) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
@@ -9114,8 +9195,8 @@ theorem mixedCut_run_eq (d : Bool) :
 
 theorem mixedCut_counts (d : Bool) :
     toffoliCount (forwardMixedCut d) = 126589 ∧
-    toffoliCount (reverseMixedCut d) = (if d then 126604 else 126626) ∧
-    measurementCount (forwardMixedCut d) = (if d then 65315 else 65337) ∧
+    toffoliCount (reverseMixedCut d) = (if d then 126595 else 126617) ∧
+    measurementCount (forwardMixedCut d) = (if d then 65306 else 65328) ∧
     measurementCount (reverseMixedCut d) = (if d then 65034 else 65056) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
@@ -9812,8 +9893,8 @@ theorem resource_delta (d : Bool) :
 
 theorem mixed_counts (d : Bool) :
     toffoliCount (forward d) = 126589 ∧
-    toffoliCount (reverse d) = (if d then 126433 else 126455) ∧
-    measurementCount (forward d) = (if d then 65315 else 65337) ∧
+    toffoliCount (reverse d) = (if d then 126424 else 126446) ∧
+    measurementCount (forward d) = (if d then 65306 else 65328) ∧
     measurementCount (reverse d) = (if d then 65205 else 65227) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d
@@ -18936,7 +19017,7 @@ attribute [local irreducible] run barrel20 GateMirror.forward leaveBefore20 leav
 theorem leaveP20Red_keeps (j : Fin 9) (q : Wire) (hq : ¬ leaveBox20 (start20 j) q) (m : List Bool) (s : State) :
     (run (leaveP20Red j) m s).basis q = s.basis q := by
   have h1 := WideSelectorNormalized.allWNormalizedBefore _ (TrimHigh.before_allW j (beforeRow20_allW j (leaveBefore20_inBox j)))
-  have h2 := WideSelectorNormalized.allWNormalizedAfter _ (afterRow20_allW j (leaveAfter20_inBox j))
+  have h2 := WideSelectorNormalized.allWNormalizedAfter j (afterRow20_allW j (leaveAfter20_inBox j))
   refine run_preserves_outside (leaveP20Red j) m s q (fun hm => hq ?_)
   unfold leaveP20Red at hm; simp only [wires_append, Finset.mem_union] at hm
   rcases hm with (h | h) | h
@@ -18955,7 +19036,7 @@ theorem leaveP20Red_keeps_mirror (j : Fin 9) (q : Wire) (lo : 2070 ≤ (q : Nat)
     rcases bank20_cases j hi with ⟨_, eb⟩ | ⟨_, _, eb, _, _⟩ | ⟨_, eb, _, _⟩ <;>
       (unfold leaveBound20; try rw [eb]; unfold Wire at *; omega)
   have h1 := WideSelectorNormalized.allWNormalizedBefore _ (TrimHigh.before_allW j (beforeRow20_allW j (leaveBefore20_bound j)))
-  have h2 := WideSelectorNormalized.allWNormalizedAfter _ (afterRow20_allW j (leaveAfter20_bound j))
+  have h2 := WideSelectorNormalized.allWNormalizedAfter j (afterRow20_allW j (leaveAfter20_bound j))
   refine run_preserves_outside (leaveP20Red j) m s q (fun hm => ?_)
   have hle : leaveBound20 (start20 j) q := by
     unfold leaveP20Red at hm; simp only [wires_append, Finset.mem_union] at hm
@@ -19942,7 +20023,7 @@ theorem originalLeaveParts (j : Fin 9) :
     let s := start20 j
     leaveP20BaselineRed j = GateMirror.forward (beforeEntry s) ++ beforeJoin s ++
       GateMirror.forward (glueG3_20 s) ++ GateMirror.forward (joinCore s) ++
-      GateMirror.forward (afterRest s) := by
+      GateMirror.forward (afterRestOld s) := by
   simp only [leaveP20BaselineRed, wideTrimParts, afterParts, beforeJoin, forward_app, List.append_assoc]
 
 theorem normalizedLeaveParts (j : Fin 9) :
@@ -20463,32 +20544,39 @@ private theorem tailDistinct : ∀ j : Fin 9,
     e0P20 s + 4 ≠ 1559 ∧ topWire s ≠ 1559 := by
   decide +kernel
 
-theorem afterRestPair (j : Fin 9) (joined : State)
-    (valid : CRTBarrel.LeaveSplice.Valid joined (fullAfterRest (start20 j)))
+def restFull (s : Nat) : List Gate :=
+  sidePop s ++ (tailE0_20 s ++ (topMake s ++ (chainMid20 s ++ (topPop s ++ tailE1_20 s))))
+
+def restWith (lead : List Gate) (s : Nat) : List Gate :=
+  lead ++ [.cx (e0P20 s + 4) 1559] ++ tailE0_20 s ++
+    [.cx (topWire s) 1559] ++ chainMid20 s ++ [.cx (topWire s) 1559] ++ tailE1_20 s
+
+theorem afterRestPairG (j : Fin 9) (lead : List Gate) (joined : State)
+    (valid : CRTBarrel.LeaveSplice.Valid joined (lead ++ restFull (start20 j)))
     (side : let s := start20 j
-      let u := run (GateMirror.forward (tailLead s)) [] joined
+      let u := run (GateMirror.forward lead) [] joined
       u.basis 1559 = u.basis (e0P20 s + 4))
     (seed : let s := start20 j
-      let u := run (GateMirror.forward (tailLead s ++ (sidePop s ++ tailE0_20 s))) [] joined
+      let u := run (GateMirror.forward (lead ++ (sidePop s ++ tailE0_20 s))) [] joined
       u.basis 1558 = true)
     (top : let s := start20 j
-      let u := run (GateMirror.forward (tailLead s ++
+      let u := run (GateMirror.forward (lead ++
         (sidePop s ++ (tailE0_20 s ++ (topMake s ++ chainMid20 s))))) [] joined
       u.basis 1559 = u.basis (topWire s)) :
     let s := start20 j
-    (∀ m, run (GateMirror.forward (afterRest s)) m joined =
-      run (GateMirror.forward (fullAfterRest s)) [] joined) ∧
-    (∀ m n, run (inverse (afterRest s)) n (run (GateMirror.forward (afterRest s)) m joined) =
+    (∀ m, run (GateMirror.forward (restWith lead s)) m joined =
+      run (GateMirror.forward (lead ++ restFull s)) [] joined) ∧
+    (∀ m n, run (inverse (restWith lead s)) n (run (GateMirror.forward (restWith lead s)) m joined) =
       joined) := by
   let s := start20 j
   let t := topWire s
   obtain ⟨sideDiff, topDiff⟩ := tailDistinct j
   have expanded : CRTBarrel.LeaveSplice.Valid joined
-      (tailLead s ++ (sidePop s ++ (tailE0_20 s ++ (topMake s ++
+      (lead ++ (sidePop s ++ (tailE0_20 s ++ (topMake s ++
         (chainMid20 s ++ (topPop s ++ (tailE1_20 s ++ ([] ++ [])))))))) := by
-    simpa only [fullAfterRest, List.nil_append, List.append_nil, List.append_assoc] using valid
+    simpa only [restFull, List.nil_append, List.append_nil, List.append_assoc] using valid
   have routed := CRTBarrel.FlagCut4.replace4
-    (tailLead s) (sidePop s) (tailE0_20 s) (topMake s) (chainMid20 s) (topPop s) (tailE1_20 s) [] []
+    lead (sidePop s) (tailE0_20 s) (topMake s) (chainMid20 s) (topPop s) (tailE1_20 s) [] []
     [.CX (e0P20 s + 4) 1559] [.CX (e0P20 s + 4) 1559]
     [.CX t 1559] [.CX t 1559] [.CX t 1559] [.CX t 1559] [] [] joined expanded
     (fun tape => CRTBarrel.FlagCut.erase_cx _ _ _ _ side tape)
@@ -20500,23 +20588,103 @@ theorem afterRestPair (j : Fin 9) (joined : State)
     (fun _ => rfl) (fun _ => rfl)
   have emptyForward : GateMirror.forward ([] : List Gate) = [] := rfl
   have emptyInverse : inverse ([] : List Gate) = [] := rfl
-  have fwd : GateMirror.forward (afterRest s) =
-      GateMirror.forward (tailLead s) ++ [.CX (e0P20 s + 4) 1559] ++ GateMirror.forward (tailE0_20 s) ++
+  have fwd : GateMirror.forward (restWith lead s) =
+      GateMirror.forward lead ++ [.CX (e0P20 s + 4) 1559] ++ GateMirror.forward (tailE0_20 s) ++
         [.CX t 1559] ++ GateMirror.forward (chainMid20 s) ++ [.CX t 1559] ++
         GateMirror.forward (tailE1_20 s) := by
-    simp only [afterRest, tailLead, t, topWire, forward_app, fwd_cons, front, emptyForward, List.append_assoc,
+    simp only [restWith, t, forward_app, fwd_cons, front, emptyForward, List.append_assoc,
       List.cons_append, List.nil_append]
-  have rev : inverse (afterRest s) =
+  have rev : inverse (restWith lead s) =
       inverse (tailE1_20 s) ++ [.CX t 1559] ++ inverse (chainMid20 s) ++ [.CX t 1559] ++
-        inverse (tailE0_20 s) ++ [.CX (e0P20 s + 4) 1559] ++ inverse (tailLead s) := by
-    simp only [afterRest, tailLead, t, topWire, inv_app, inv_cons, GateMirror.back, emptyInverse,
+        inverse (tailE0_20 s) ++ [.CX (e0P20 s + 4) 1559] ++ inverse lead := by
+    simp only [restWith, t, inv_app, inv_cons, GateMirror.back, emptyInverse,
       List.append_assoc, List.cons_append, List.nil_append, List.append_nil]
   dsimp only
   rw [fwd, rev]
   refine ⟨fun m => ?_, fun m n => ?_⟩
-  · simpa only [fullAfterRest, emptyForward, List.append_nil, List.nil_append,
+  · simpa only [restFull, emptyForward, List.append_nil, List.nil_append,
       List.append_assoc] using (routed.1 m).trans (expanded.default_run m)
   · simpa only [emptyForward, emptyInverse, List.nil_append, List.append_nil] using routed.2 m n
+
+theorem runNilAppendS (x y : List Gate) (t : State) :
+    run (GateMirror.forward (x ++ y)) [] t = run (GateMirror.forward y) [] (run (GateMirror.forward x) [] t) := by
+  simp only [forward_app, run_append, List.drop_nil, List.take_nil]
+
+def tailLeadS (s : Nat) : List Gate :=
+  leaveFix11_20 s ++ leaveFix12S s ++ [.cx (e0P20 s + 3) 1560, .cx 1559 1560]
+
+/-- The state in front of the selector pop. -/
+def selPoint (s : Nat) : List Gate := leaveFix11_20 s ++ (leaveFix12_20 s).take 21
+
+def sel20Expr (s : Nat) : DI7Affine.Expr := (false, 1570 :: sel20Sources s)
+
+theorem afterRestPair (j : Fin 9) (joined : State)
+    (valid : CRTBarrel.LeaveSplice.Valid joined (fullAfterRest (start20 j)))
+    (side : let s := start20 j
+      let u := run (GateMirror.forward (tailLead s)) [] joined
+      u.basis 1559 = u.basis (e0P20 s + 4))
+    (seed : let s := start20 j
+      let u := run (GateMirror.forward (tailLead s ++ (sidePop s ++ tailE0_20 s))) [] joined
+      u.basis 1558 = true)
+    (top : let s := start20 j
+      let u := run (GateMirror.forward (tailLead s ++
+        (sidePop s ++ (tailE0_20 s ++ (topMake s ++ chainMid20 s))))) [] joined
+      u.basis 1559 = u.basis (topWire s))
+    (sel : DI7Affine.eval (sel20Expr (start20 j))
+      (run (GateMirror.forward (selPoint (start20 j))) [] joined).basis = false) :
+    let s := start20 j
+    (∀ m, run (GateMirror.forward (afterRest s)) m joined =
+      run (GateMirror.forward (fullAfterRest s)) [] joined) ∧
+    (∀ m n, run (inverse (afterRest s)) n (run (GateMirror.forward (afterRest s)) m joined) =
+      joined) := by
+  dsimp only at side seed top ⊢
+  have split := sel20_split j
+  have away := sel20_away j
+  generalize hs : start20 j = s at *
+  let C : List Gate := (leaveFix12_20 s).drop 22 ++ [.cx (e0P20 s + 3) 1560, .cx 1559 1560]
+  have fullShape : fullAfterRest s = tailLead s ++ restFull s := by
+    simp only [fullAfterRest, restFull, List.append_assoc]
+  have leadShape : tailLead s = selPoint s ++ (sel20Pop s :: C) := by
+    show leaveFix11_20 s ++ leaveFix12_20 s ++ [.cx (e0P20 s + 3) 1560, .cx 1559 1560] = _
+    conv_lhs => rw [split]
+    simp only [selPoint, C, List.append_assoc, List.cons_append]
+  have leadSShape : tailLeadS s = selPoint s ++ (DI7Affine.clear false (sel20Sources s) 1570 ++ C) := by
+    simp only [tailLeadS, leaveFix12S, sel20Recv, selPoint, C, List.append_assoc]
+  rw [fullShape] at valid
+  obtain ⟨vLead, vRest⟩ := valid.parts
+  have raw : DeadJoin.RawValid joined (selPoint s ++ (Gate.pop 1560 (OB5.sig (s + 19) (s + 1044 + 9)) 1570 :: C)) := by
+    have v := vLead
+    rw [leadShape] at v
+    exact ⟨v.physical, v.prepared, v.ready⟩
+  obtain ⟨vS, sameS⟩ := DI7Affine.raw_replace_pop _ _ _ _ _ false (sel20Sources s) joined raw
+    (fun q hq => of_decide_eq_true (List.all_eq_true.mp away q hq)) sel
+  have leadEq : run (GateMirror.forward (tailLeadS s)) [] joined = run (GateMirror.forward (tailLead s)) [] joined := by
+    rw [leadSShape, leadShape]; exact sameS []
+  have vLeadS : DeadJoin.RawValid joined (tailLeadS s) := by rw [leadSShape]; exact vS
+  have vRestS : DeadJoin.RawValid (run (GateMirror.forward (tailLeadS s)) [] joined) (restFull s) := by
+    rw [leadEq]; exact ⟨vRest.physical, vRest.prepared, vRest.ready⟩
+  have vAll := DeadJoin.raw_append vLeadS vRestS
+  have validS : CRTBarrel.LeaveSplice.Valid joined (tailLeadS s ++ restFull s) :=
+    ⟨vAll.physical, vAll.prepared, vAll.ready⟩
+  have side' : (run (GateMirror.forward (tailLeadS s)) [] joined).basis 1559 =
+      (run (GateMirror.forward (tailLeadS s)) [] joined).basis (e0P20 s + 4) := by
+    rw [leadEq]; exact side
+  have seed' : (run (GateMirror.forward (tailLeadS s ++ (sidePop s ++ tailE0_20 s))) [] joined).basis 1558 = true := by
+    rw [runNilAppendS, leadEq, ← runNilAppendS]; exact seed
+  have top' : (run (GateMirror.forward (tailLeadS s ++
+      (sidePop s ++ (tailE0_20 s ++ (topMake s ++ chainMid20 s))))) [] joined).basis 1559 =
+      (run (GateMirror.forward (tailLeadS s ++
+      (sidePop s ++ (tailE0_20 s ++ (topMake s ++ chainMid20 s))))) [] joined).basis (topWire s) := by
+    rw [runNilAppendS, leadEq, ← runNilAppendS]; exact top
+  have restEq : afterRest s = restWith (tailLeadS s) s := by
+    simp only [afterRest, restWith, tailLeadS, topWire, List.append_assoc, List.cons_append, List.nil_append]
+  have endEq : run (GateMirror.forward (tailLeadS s ++ restFull s)) [] joined =
+      run (GateMirror.forward (fullAfterRest s)) [] joined := by
+    rw [fullShape, runNilAppendS, leadEq, ← runNilAppendS]
+  rw [restEq]
+  subst hs
+  have pair := afterRestPairG j (tailLeadS (start20 j)) joined validS side' seed' top'
+  exact ⟨fun m => (pair.1 m).trans endEq, pair.2⟩
 
 private theorem replaceRecordedCenter (oldEntry newEntry oldMiddle newMiddle tail : Program)
     (m : List Bool) (s : State)
@@ -20534,9 +20702,14 @@ private theorem replaceRecordedCenter (oldEntry newEntry oldMiddle newMiddle tai
   simpa only [run_take] using middleEq
 
 attribute [local irreducible] run in
-theorem normalizedForward (j : Fin 9) (s : State) (m : List Bool)
-    (atJoin : reducedJoinCondition j s m) :
-    run (normalizedLeave j) m s = run (leaveP20BaselineRed j) m s := by
+theorem normalizedForwardAny (j : Fin 9) (s : State) (m : List Bool)
+    (atJoin : reducedJoinCondition j s m) (tail : Program) :
+    run (GateMirror.forward (beforeEntryG2 (start20 j)) ++
+      (([.CX (a0P20 (start20 j) - 1) (b0P20 (start20 j) - 1)] ++ beforeJoin (start20 j) ++
+        GateMirror.forward (joinCore (start20 j)) ++ [.CX (a0P20 (start20 j) - 1) (b0P20 (start20 j) - 1)]) ++ tail)) m s =
+    run (GateMirror.forward (beforeEntry (start20 j)) ++
+      ((beforeJoin (start20 j) ++ GateMirror.forward (glueG3_20 (start20 j)) ++
+        GateMirror.forward (joinCore (start20 j))) ++ tail)) m s := by
   let start := start20 j
   let a := a0P20 start - 1
   let b := b0P20 start - 1
@@ -20545,15 +20718,9 @@ theorem normalizedForward (j : Fin 9) (s : State) (m : List Bool)
   let oldGlue := GateMirror.forward (glueG3_20 start)
   let mid := beforeJoin start
   let rows := GateMirror.forward (joinCore start)
-  let tail := GateMirror.forward (afterRest start)
   let copy : Program := [.CX a b]
   let rest := m.drop (measurementCount oldEntry)
   let first := run oldEntry (m.take (measurementCount oldEntry)) s
-  have oldShape : leaveP20BaselineRed j = oldEntry ++ ((mid ++ oldGlue ++ rows) ++ tail) := by
-    simpa only [List.append_assoc] using originalLeaveParts j
-  have copyF : GateMirror.forward (copyCompanion (start20 j)) = copy := rfl
-  have newShape : normalizedLeave j = newEntry ++ ((copy ++ mid ++ rows ++ copy) ++ tail) := by
-    simpa only [copyF, List.append_assoc] using normalizedLeaveParts j
   have countGlue : measurementCount oldGlue = 0 := rfl
   have countCopy : measurementCount copy = 0 := rfl
   have countMiddle :
@@ -20565,13 +20732,21 @@ theorem normalizedForward (j : Fin 9) (s : State) (m : List Bool)
       run (copy ++ mid ++ rows ++ copy) rest first = run (mid ++ oldGlue ++ rows) rest first := by
     exact moveRecordedXor mid oldGlue rows rest first _ a b (lowDistinct j) freeP freeQ countGlue
       (runOldGlue j _ []) atJoin
-  rw [oldShape, newShape]
   exact replaceRecordedCenter oldEntry newEntry (mid ++ oldGlue ++ rows) (copy ++ mid ++ rows ++ copy)
     tail m s entry countEntry countMiddle middleEq
 
+theorem normalizedLeaveShape (j : Fin 9) :
+    normalizedLeave j = GateMirror.forward (beforeEntryG2 (start20 j)) ++
+      (([.CX (a0P20 (start20 j) - 1) (b0P20 (start20 j) - 1)] ++ beforeJoin (start20 j) ++
+        GateMirror.forward (joinCore (start20 j)) ++ [.CX (a0P20 (start20 j) - 1) (b0P20 (start20 j) - 1)]) ++
+        GateMirror.forward (afterRest (start20 j))) := by
+  have copyF : GateMirror.forward (copyCompanion (start20 j)) =
+      [.CX (a0P20 (start20 j) - 1) (b0P20 (start20 j) - 1)] := rfl
+  simpa only [copyF, List.append_assoc] using normalizedLeaveParts j
+
 theorem originalUnleaveParts (j : Fin 9) :
     let s := start20 j
-    leaveInvP20BaselineRed j = inverse (afterRest s) ++ inverse (joinCore s) ++ inverse (glueG3_20 s) ++
+    leaveInvP20BaselineRed j = inverse (afterRestOld s) ++ inverse (joinCore s) ++ inverse (glueG3_20 s) ++
       beforeJoinInv s ++ inverse (beforeEntry s) := by
   simp only [leaveInvP20BaselineRed, wideTrimParts, afterParts, beforeJoinInv, inv_app, List.append_assoc]
 
@@ -20698,6 +20873,18 @@ theorem admittedRestTrimPair (j : Fin 9) (initial : State)
     rw [oldCoreBoundary, Partial.run_forward_append] at ready
     exact ready
   exact restTrimPair j entered full.parts.2 fit
+/-- Selector receiver (20-tick): the selector relation pulls back through the join, is untouched by the
+barrel, and pulls back through `leaveBefore20` to the clean wire `e0P20+7`. -/
+def sel20Check (j : Fin 9) : Bool :=
+  let s := start20 j
+  match DI7Affine.pull (fix8P20 s ++ glueG3_20 s ++ fullJoinThroughClear s ++ selPoint s) (sel20Expr s) with
+  | none => false
+  | some e1 => e1.2.all (fun q => decide (q ∉ (barrel20 s false).map LeaveReadoutFrame.destination)) &&
+      decide (DI7Affine.pull (leaveBefore20 s) e1 = some (false, [e0P20 s + 7]))
+
+theorem sel20Check_ok : ∀ j : Fin 9, sel20Check j = true := by
+  decide +kernel
+
 attribute [local irreducible] run SkywalkNat.step barrel20 leaveBefore20 leaveAfter20 beforeRow20 afterRow20
   fix0P20 leaveFix1_20 fix2P20 leaveFix3_20 leaveFix4_20 leaveFix5Pre20 leaveFix5Post20 leaveFix5Move20 leaveAdjust20
   firstRows20 headEnd20 headA1_20 headC0_20 headC1_20 tailD0_20 tailD1_20 lowRest20_pub storeHead20 tailE0_20 chainMid20 tailE1_20 pairGM in
@@ -20953,9 +21140,6 @@ theorem leaveP20Red_pair (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 :
     rw [vBef.default_run, hbar_def, vAft.default_run]
   have joinedInput (m : List Bool) : reducedJoinCondition j s m :=
     admittedReducedJoin j s z g0 s0 h m uB uA shortForward (fun t => vBef.default_run t) hbar_def
-  have movedForward (m : List Bool) :
-      run (normalizedLeave j) m s = run (leaveP20BaselineRed j) m s :=
-    normalizedForward j s m (joinedInput m)
 
   let entered := run (GateMirror.forward (entryLeave20 sc)) [] s
   have fullB : leaveBefore20 sc = entryLeave20 sc ++ fullBeforeRest sc := by
@@ -21028,7 +21212,35 @@ theorem leaveP20Red_pair (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 :
       u.basis 1559 = u.basis (topWire sc) := by
     simpa only [tailD0_20, tailD1_20, tailLead, sidePop, topMake, topWire, top, fullJoinThroughClear,
       joinLead, highLast, joinTail, joined, glued, edge, List.append_assoc, run_nil_append] using hvPop59
-  have tailPair := afterRestPair j joined tailValid tailSide tailSeed tailTop
+  have selRel : DI7Affine.eval (sel20Expr sc) (run (GateMirror.forward (selPoint sc)) [] joined).basis = false := by
+    have hc := sel20Check_ok j
+    unfold sel20Check at hc
+    dsimp only at hc
+    split at hc
+    · exact absurd hc (by simp)
+    · rename_i e1 hp
+      rw [Bool.and_eq_true] at hc
+      obtain ⟨quiet, hbefore⟩ := hc
+      have hb := of_decide_eq_true hbefore
+      have p1 := DI7Affine.pull_sound _ _ _ hp uA
+      have p2 := DI7Affine.pull_sound _ _ _ hb s
+      have z : s.basis (e0P20 sc + 7) = false := h.zero _ (by simp [watched20, sc])
+      have s1 : run (GateMirror.forward (selPoint sc)) [] joined =
+          run (GateMirror.forward (fix8P20 sc ++ glueG3_20 sc ++ fullJoinThroughClear sc ++ selPoint sc)) [] uA := by
+        simp only [joined, glued, edge, run_nil_append]
+      have s2 : DI7Affine.eval e1 uA.basis = DI7Affine.eval e1 uB.basis := by
+        unfold DI7Affine.eval; congr 1
+        apply DI7Affine.parity_congr
+        intro q hq
+        exact LeaveReadoutFrame.preserved _ _ _ q (of_decide_eq_true (List.all_eq_true.mp quiet q hq))
+      calc DI7Affine.eval (sel20Expr sc) (run (GateMirror.forward (selPoint sc)) [] joined).basis
+          = DI7Affine.eval (sel20Expr sc) (run (GateMirror.forward
+              (fix8P20 sc ++ glueG3_20 sc ++ fullJoinThroughClear sc ++ selPoint sc)) [] uA).basis := by rw [s1]
+        _ = DI7Affine.eval e1 uA.basis := p1.symm
+        _ = DI7Affine.eval e1 uB.basis := s2
+        _ = DI7Affine.eval (false, [e0P20 sc + 7]) s.basis := p2.symm
+        _ = false := by simp [DI7Affine.eval, DI7Affine.parity, z]
+  have tailPair := afterRestPair j joined tailValid tailSide tailSeed tailTop selRel
 
   have barrelDefault (t : List Bool) : run (barrel20 sc false) t uB = uA := hbar_def t
   have fix8Default (t : List Bool) : run (GateMirror.forward (fix8P20 sc)) t uA = edge :=
@@ -21069,15 +21281,26 @@ theorem leaveP20Red_pair (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 :
     rw [← fwdEq]
     exact pair [] n
 
-  refine ⟨fun m => (movedForward m).trans ((hred_eq m).trans (hold_eq m).symm), ?_⟩
-  intro m n
-  let midTape := m.drop (measurementCount (GateMirror.forward (beforeEntry sc)))
   have endState : run (GateMirror.forward (fullAfterRest sc)) [] joined =
       run (GateMirror.forward (leaveAfter20 sc)) [] uA := by
     simp only [fullA, joined, glued, edge, run_nil_append]
+  have glueAny (t : List Bool) : run (GateMirror.forward (glueG3_20 sc)) t edge = glued := by
+    rw [← run_take]; rfl
+  have oldPrefix (t : List Bool) :
+      run (GateMirror.forward (beforeEntry sc) ++ (beforeJoin sc ++ GateMirror.forward (glueG3_20 sc) ++
+        GateMirror.forward (joinCore sc))) t s = joined := by
+    rw [run_append, firstForward, run_append, run_append, fixedEdge, glueAny]
+    exact joinPair.1 _
+  have movedForward (m : List Bool) :
+      run (normalizedLeave j) m s = run (GateMirror.forward (leaveAfter20 sc)) [] uA := by
+    rw [normalizedLeaveShape j, normalizedForwardAny j s m (joinedInput m), ← List.append_assoc, run_append,
+      oldPrefix, tailPair.1, endState]
+  refine ⟨fun m => (movedForward m).trans (hold_eq m).symm, ?_⟩
+  intro m n
+  let midTape := m.drop (measurementCount (GateMirror.forward (beforeEntry sc)))
   have undoTail (l : List Bool) :
       run (inverse (afterRest sc)) l (run (normalizedLeave j) m s) = joined := by
-    rw [movedForward m, hred_eq m, ← endState, ← tailPair.1 []]
+    rw [movedForward m, ← endState, ← tailPair.1 []]
     exact tailPair.2 [] l
   let p := beforeJoin sc
   let q := GateMirror.forward (joinCore sc)
