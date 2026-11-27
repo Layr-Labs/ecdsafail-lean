@@ -10,9 +10,11 @@ import ECDSAAdd.Submission.Entrant.OddField
 import ECDSAAdd.Framework.RecordedPaths
 import ECDSAAdd.Framework.MeasuredLocality
 import ECDSAAdd.Submission.Entrant.MainP1
+import ECDSAAdd.Submission.Entrant.SquareOdd
 import ECDSAAdd.Submission.Entrant.RawPacket
 import ECDSAAdd.Submission.Entrant.Mixed20D
 import ECDSAAdd.Submission.Entrant.ChainMidTop
+import ECDSAAdd.Submission.Entrant.SqOddContract
 
 section
 
@@ -7544,11 +7546,48 @@ def exitFieldHosted (p : StairSchedule.StairPrimitives)
     WindowFieldParity.setup ++ StairSchedule.hostedX ++
     StairSchedule.fieldRename (WindowCallerCosts.exitLowSuffix p)
 
+/-- `exitHeadPrefixOdd` without `center760OddLoan`: the register already holds `oddWord (Y / 2)`. -/
+def exitHeadPrefixOddNC (h : StairHostsSchedule.HostPlan) : Program :=
+  HalfFieldOB5.copyN ++ renameProgram (OB5.sig 511) OddFullPass.InverseTailCOdd.endPacket760OddLoan44 ++
+    OddFullPass.P1LifeLoan.hostedGroup h false 44 100 2
+
+def exitLowPrefixOddNC (h : StairHostsSchedule.HostPlan) : Program :=
+  FourScratchWindow.clearProgram ++ renameProgram Prefix1590.borrow (exitHeadPrefixOddNC h) ++
+    FourScratchWindow.unprefix
+
+def exitFieldHostedNC (p : StairSchedule.StairPrimitives) : Program :=
+  WindowFieldParity.setup ++ StairSchedule.hostedX ++
+    StairSchedule.fieldRename (exitLowPrefixOddNC OddFullPass.P1LifeLoan.hostPlan1542) ++
+    WindowFieldParity.setup ++ StairSchedule.hostedX ++
+    StairSchedule.fieldRename (WindowCallerCosts.exitLowSuffix p)
+
 def entryFieldHostedCut : Program :=
   StairSchedule.fieldRename WindowCallerCosts.entryLowPrefixCut ++
     WindowFieldParity.setup ++ StairSchedule.hostedX ++
     StairSchedule.fieldRename (OddFullPass.P1LifeLoan.entryLowSuffixOdd OddFullPass.P1LifeLoan.hostPlan1542) ++
     StairSchedule.hostedX ++ WindowFieldParity.setup
+
+/-- `OddFullPass.P1LifeLoan.entryTailSuffixOdd` without the trailing `canon760OddLoan`: the
+    division leaves `λ` as `oddWord (λ / 2)` on its numerator register. -/
+def entryTailSuffixOddNC (h : StairHostsSchedule.HostPlan) : Program :=
+  OddFullPass.P1LifeLoan.hostedGroup h true 44 100 2 ++
+    renameProgram (OB5.sig 511) OddFullPass.CompareDecoderOdd.endPacket760DivOddLoan ++
+    HalfFieldOB5.copyN
+
+def entryLowSuffixOddNC (h : StairHostsSchedule.HostPlan) : Program :=
+  FourScratchWindow.clearProgram ++
+    renameProgram Prefix1590.borrow (entryTailSuffixOddNC h) ++
+    FourScratchWindow.unprefix
+
+def entryFieldHostedCutNC : Program :=
+  StairSchedule.fieldRename WindowCallerCosts.entryLowPrefixCut ++
+    WindowFieldParity.setup ++ StairSchedule.hostedX ++
+    StairSchedule.fieldRename (entryLowSuffixOddNC OddFullPass.P1LifeLoan.hostPlan1542) ++
+    StairSchedule.hostedX ++ WindowFieldParity.setup
+
+theorem entryTailSuffixOdd_eqNC (h : StairHostsSchedule.HostPlan) :
+    OddFullPass.P1LifeLoan.entryTailSuffixOdd h =
+      entryTailSuffixOddNC h ++ OddFullPass.HalfConvertOdd.canon760OddLoan := rfl
 
 theorem field_sublist : entryFieldHostedCut.Sublist (entryFieldHosted checkpointPrimitives) := by
   have f : (StairSchedule.fieldRename WindowCallerCosts.entryLowPrefixCut).Sublist
@@ -7566,17 +7605,73 @@ def divide : Program :=
     phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 85) ++
     phasePlace (renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base))
 
+def divideNC : Program :=
+  phasePlace (WindowWalkCosts.forward true 4) ++ phasePlace checkpointPrimitives.firstPack ++
+    kernelPlace entryFieldHostedCutNC ++
+    phasePlace reverseEnd ++ phasePlace (WindowWalkCosts.backward false 85) ++
+    phasePlace (renameProgram Stair44WalkMap.first (FrontierEntry1591NativeH.inverse base))
+
 def multiply (k : Nat) : Program :=
   phasePlace (WindowWalkCosts.forward false 84) ++ phasePlace forwardEnd ++
     kernelPlace (exitFieldHosted checkpointPrimitives) ++
     phasePlace checkpointPrimitives.firstUnpack ++ phasePlace (WindowWalkCosts.backward true 4) ++
     Stair44PointMap.switchX (phasePlace (ParityXExitInverse23Kernel.x1N k))
 
-def generic (cx cy : Fp) : Program :=
+/-- `multiply` with the multiplication kernel that reads its input in odd-word form. -/
+def multiplyNC (k : Nat) : Program :=
+  phasePlace (WindowWalkCosts.forward false 84) ++ phasePlace forwardEnd ++
+    kernelPlace (exitFieldHostedNC checkpointPrimitives) ++
+    phasePlace checkpointPrimitives.firstUnpack ++ phasePlace (WindowWalkCosts.backward true 4) ++
+    Stair44PointMap.switchX (phasePlace (ParityXExitInverse23Kernel.x1N k))
+
+/-- The square reading `λ` in odd-word form (`SquareOdd.program`). -/
+def squareNC (k : Fp) : Program := SquareOdd.program k
+
+/-- `generic` with both field converters deleted: `divideNC`, `squareNC`, `multiplyNC`. -/
+def genericNC (cx cy : Fp) : Program :=
+  Stair44PointMap.encodeY (EntryFuseOdd.entryYAllOdd layout (-cy)) ++
+    Stair44PointMap.switchX (FlagEntry.entryXNew layout (FlagEntry.pkW layout) (-cx)) ++
+    divideNC ++ squareNC (ReflectionE1.correction cx) ++ multiplyNC cx.val ++
+    Stair44PointMap.encodeY (EntryFuseOdd.exitYAllOdd layout cy)
+
+/-- The circuit: both field converters deleted (`divideNC`, `multiplyNC`) and the square reading
+    the slope in odd-word form (`squareNC`). -/
+def generic (cx cy : Fp) : Program := genericNC cx cy
+
+def borrowGenericNC (cx cy : Fp) := renameProgram (Equiv.swap layout.doubleSelect layout.control)
+  (renameProgram (FlagTop.rho layout) (genericNC cx cy))
+
+def finiteNC (C : Point) (cx cy : Fp) : Program :=
+  Stair44PointMap.encode (FlagTop.stageNew layout C (FlagEntry.pkW layout) ++
+    AboveFieldPointDevelop.encode C ++ AboveFieldPointDevelop.eraseB) ++
+    borrowGenericNC cx cy ++ Stair44PointMap.encode (AboveFieldPointDevelop.loadB ++
+      AboveFieldPointDevelop.decode C ++ ControlPointEncodingDevelop.borrowOut C)
+
+def programNC (C : Point) : Program := match C with
+  | .zero => []
+  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy hc =>
+      renameProgram (Wrapper5.U layout) (finiteNC (.some hc) cx cy)
+
+/-- The circuit before the switch (with the two field converters), kept for the cost comparison. -/
+def genericOld (cx cy : Fp) : Program :=
   Stair44PointMap.encodeY (EntryFuseOdd.entryYAllOdd layout (-cy)) ++
     Stair44PointMap.switchX (FlagEntry.entryXNew layout (FlagEntry.pkW layout) (-cx)) ++
     divide ++ Stair44Square.program (ReflectionE1.correction cx) ++ multiply cx.val ++
     Stair44PointMap.encodeY (EntryFuseOdd.exitYAllOdd layout cy)
+
+def borrowGenericOld (cx cy : Fp) := renameProgram (Equiv.swap layout.doubleSelect layout.control)
+  (renameProgram (FlagTop.rho layout) (genericOld cx cy))
+
+def finiteOld (C : Point) (cx cy : Fp) : Program :=
+  Stair44PointMap.encode (FlagTop.stageNew layout C (FlagEntry.pkW layout) ++
+    AboveFieldPointDevelop.encode C ++ AboveFieldPointDevelop.eraseB) ++
+    borrowGenericOld cx cy ++ Stair44PointMap.encode (AboveFieldPointDevelop.loadB ++
+      AboveFieldPointDevelop.decode C ++ ControlPointEncodingDevelop.borrowOut C)
+
+def programOld (C : Point) : Program := match C with
+  | .zero => []
+  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy hc =>
+      renameProgram (Wrapper5.U layout) (finiteOld (.some hc) cx cy)
 
 def borrowGeneric (cx cy : Fp) := renameProgram (Equiv.swap layout.doubleSelect layout.control)
   (renameProgram (FlagTop.rho layout) (generic cx cy))
@@ -8041,21 +8136,22 @@ private theorem setup_eq : setup = StairSchedule.paritySetup := by
   have empty : correction = [] := rfl
   rw [setup, empty, List.append_nil]
 
-theorem program_eq (C : Point) : program C = WindowCallerCosts.program C := by
+theorem programOld_eq (C : Point) : programOld C = WindowCallerCosts.program C := by
   cases C with
   | zero => rfl
   | @some cx cy hc =>
-    simp only [program, WindowCallerCosts.program, finite, WindowCallerCosts.finite,
-      borrowGeneric, WindowCallerCosts.borrowGeneric, generic, WindowCallerCosts.generic,
+    simp only [programOld, WindowCallerCosts.program, finiteOld, WindowCallerCosts.finite,
+      borrowGenericOld, WindowCallerCosts.borrowGeneric, genericOld, WindowCallerCosts.generic,
       divide, WindowCallerCosts.divide, multiply, WindowCallerCosts.multiply,
       entryFieldHosted, WindowCallerCosts.entryFieldHosted, entryFieldHostedCut,
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2009614 ∧
-    measurementCount (program C) ≤ 1446655 ∧ gateSlots (program C) ≤ 67209132 := by
-  rw [program_eq]
+theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2009614 ∧
+    measurementCount (programOld C) ≤ 1446655 ∧ gateSlots (programOld C) ≤ 67209132 := by
+  rw [programOld_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
+
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
 
 end
@@ -8077,9 +8173,6 @@ open Arithmetic MappedCompressed Secp256k1 Baselines Stair44Outer StairConcreteA
 set_option maxRecDepth 16000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
-theorem physical (C : Point) : GatePhysical (program C) := by
-  rw [program_eq]
-  exact WindowCallerCosts.physical C
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
 
 end
@@ -8090,9 +8183,6 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityCaller
 open Arithmetic MappedCompressed Secp256k1 Challenge Baselines Stair44Outer WindowFieldParity
 set_option maxHeartbeats 3000000
 set_option maxRecDepth 16000
-theorem width (C : Point) : qubits (program C) ≤ 1542 := by
-  rw [program_eq]
-  exact WindowCallerCosts.qubitBound C
 end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
 
 end
@@ -8249,28 +8339,6 @@ section
 
 namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
-
-def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2009614,1446655,1542,67209132⟩
-
-theorem certificateOfSemantics
-    (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
-      (encodes b (if b then R+C else R))) : Certificate entry bounds where
-  correct C b R := (normalize_triple _ _ _).mpr (sem C b R)
-  physical C := Baselines.normalize_physical _ (WindowParityCaller.physical C)
-  toffoli_le C := (normalize_toffoli _).trans (WindowParityCaller.metrics C).1
-  measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1446655
-    rw [normalize_measurements]
-    exact (WindowParityCaller.metrics C).2.1
-  qubits_le C := by
-    change qubits (normalizeProgram _) ≤ 1542
-    rw [normalize_qubits]
-    exact WindowParityCaller.width C
-  gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 67209132
-    rw [normalize_slots]
-    exact (WindowParityCaller.metrics C).2.2
 
 end ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 
@@ -18453,3 +18521,365 @@ end
 
 end
 
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowParityCaller
+open Arithmetic MappedCompressed Secp256k1 Baselines Challenge Stair44Resources Stair44Outer
+open StairConcreteAssembly WindowFieldParity
+set_option maxRecDepth 16000
+set_option maxHeartbeats 1500000
+set_option linter.unusedSimpArgs false
+
+/-! ### NC caller (converters deleted, square reads the odd word): counts -/
+
+theorem squareNC_counts (k : Fp) :
+    toffoliCount (squareNC k) = toffoliCount (Stair44Square.program k) ∧
+    measurementCount (squareNC k) = measurementCount (Stair44Square.program k) ∧
+    Challenge.gateSlots (squareNC k) = Challenge.gateSlots (Stair44Square.program k) + 510 :=
+  SquareOdd.program_counts k
+
+theorem squareNC_physical (k : Fp) : GatePhysical (squareNC k) := SquareOdd.program_physical k
+
+theorem squareNC_sites (k : Fp) :
+    StairSiteAvoidance.PieceOK Stair44Release.holes StairSiteAvoidance.UG (squareNC k) :=
+  SquareOdd.program_sites k
+
+theorem squareNC_rc (k : Fp) : 1 ≤ Baselines.repeatedControls (squareNC k) := SquareOdd.program_rc k
+
+theorem tc_measure : tc.measure = toffoliCount := rfl
+theorem mc_measure : mc.measure = measurementCount := rfl
+theorem slots_measure : slots.measure = gateSlots := rfl
+
+theorem slots_ge (P : Program) : toffoliCount P + measurementCount P ≤ gateSlots P := by
+  induction P with
+  | nil => simp [toffoliCount, measurementCount, gateSlots_nil]
+  | cons i P ih =>
+    cases i <;> simp only [toffoliCount, measurementCount, gateSlots_cons, instructionSlots] <;> omega
+
+theorem fieldNC_cost (c : Cost) :
+    c.measure entryFieldHostedCut =
+      c.measure entryFieldHostedCutNC + c.measure OddFullPass.HalfConvertOdd.canon760OddLoan := by
+  simp only [entryFieldHostedCut, entryFieldHostedCutNC, OddFullPass.P1LifeLoan.entryLowSuffixOdd, entryLowSuffixOddNC,
+    entryTailSuffixOdd_eqNC, StairSchedule.fieldRename, StairSchedule.parityRename, c.append, c.rename]
+  omega
+
+theorem exitNC_cost (c : Cost) (p : StairSchedule.StairPrimitives) :
+    c.measure (exitFieldHosted p) =
+      c.measure (exitFieldHostedNC p) + c.measure OddFullPass.HalfConvertOdd.center760OddLoan := by
+  simp only [exitFieldHosted, exitFieldHostedNC, OddFullPass.P1LifeLoan.exitLowPrefixOdd, exitLowPrefixOddNC,
+    OddFullPass.P1LifeLoan.exitHeadPrefixOdd, exitHeadPrefixOddNC, StairSchedule.fieldRename,
+    StairSchedule.parityRename, c.append, c.rename]
+  omega
+
+theorem divideNC_cost (c : Cost) :
+    c.measure divide = c.measure divideNC + c.measure OddFullPass.HalfConvertOdd.canon760OddLoan := by
+  simp only [divide, divideNC, kernelPlace, c.append, c.rename, fieldNC_cost c]
+  omega
+
+theorem multiplyNC_cost (c : Cost) (k : Nat) :
+    c.measure (multiply k) = c.measure (multiplyNC k) + c.measure OddFullPass.HalfConvertOdd.center760OddLoan := by
+  simp only [multiply, multiplyNC, kernelPlace, c.append, c.rename, exitNC_cost c]
+  omega
+
+theorem genericNC_cost (c : Cost) (cx cy : Fp) :
+    c.measure (genericNC cx cy) + c.measure OddFullPass.HalfConvertOdd.canon760OddLoan +
+        c.measure OddFullPass.HalfConvertOdd.center760OddLoan + c.measure (Stair44Square.program (ReflectionE1.correction cx)) =
+      c.measure (genericOld cx cy) + c.measure (squareNC (ReflectionE1.correction cx)) := by
+  simp only [genericNC, genericOld, Stair44PointMap.encodeY, Stair44PointMap.switchX, c.append, c.rename,
+    divideNC_cost c, multiplyNC_cost c]
+  omega
+
+theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    c.measure (programNC (.some hc)) + c.measure OddFullPass.HalfConvertOdd.canon760OddLoan +
+        c.measure OddFullPass.HalfConvertOdd.center760OddLoan + c.measure (Stair44Square.program (ReflectionE1.correction cx)) =
+      c.measure (programOld (.some hc)) + c.measure (squareNC (ReflectionE1.correction cx)) := by
+  have g := genericNC_cost c cx cy
+  simp only [programNC, programOld, finiteNC, finiteOld, borrowGenericNC, borrowGenericOld, Stair44PointMap.encode,
+    c.append, c.rename]
+  omega
+
+/-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2009112 ∧
+    measurementCount (programNC C) ≤ 1446153 ∧ gateSlots (programNC C) ≤ 67209132 := by
+  have m := metricsOld C
+  cases C with
+  | zero =>
+    show toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _ ∧ gateSlots [] ≤ _
+    simp [toffoliCount, measurementCount, gateSlots_nil]
+  | @some cx cy hc =>
+    have hct := OddFullPass.HalfConvertOdd.canon760OddLoan_counts
+    have hce := OddFullPass.HalfConvertOdd.center760OddLoan_counts
+    have st := slots_ge OddFullPass.HalfConvertOdd.canon760OddLoan
+    have se := slots_ge OddFullPass.HalfConvertOdd.center760OddLoan
+    have sq := squareNC_counts (ReflectionE1.correction cx)
+    have t := programNC_cost tc hc
+    have u := programNC_cost mc hc
+    have v := programNC_cost slots hc
+    rw [tc_measure] at t
+    rw [mc_measure] at u
+    rw [slots_measure] at v
+    exact ⟨by omega, by omega, by omega⟩
+
+end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowPhysical
+open Arithmetic MappedCompressed Secp256k1 Baselines StairPhysicalV3 StairRestSupport
+open Stair44Outer StairConcreteAssembly Stair44WalkMap
+set_option maxHeartbeats 1400000
+set_option maxRecDepth 20000
+attribute [local irreducible] wires GatePhysical
+
+/-! ### NC caller: physical validity -/
+
+theorem setup_eqNC : WindowFieldParity.setup = StairSchedule.paritySetup := by
+  rw [WindowFieldParity.setup, show WindowFieldParity.correction = [] from rfl, List.append_nil]
+
+theorem lowSuffixNC_sub (h : StairHostsSchedule.HostPlan) :
+    (WindowParityCaller.entryLowSuffixOddNC h).Sublist (OddFullPass.P1LifeLoan.entryLowSuffixOdd h) := by
+  unfold WindowParityCaller.entryLowSuffixOddNC OddFullPass.P1LifeLoan.entryLowSuffixOdd
+  rw [WindowParityCaller.entryTailSuffixOdd_eqNC]
+  exact ((List.Sublist.refl _).append (PackCutSub.rename_sub _ (List.sublist_append_left _ _))).append
+    (List.Sublist.refl _)
+
+theorem fieldNC_sub :
+    WindowParityCaller.entryFieldHostedCutNC.Sublist (WindowCallerCosts.entryFieldHosted checkpointPrimitives) := by
+  have f : (StairSchedule.fieldRename WindowCallerCosts.entryLowPrefixCut).Sublist
+      (StairSchedule.fieldRename (WindowCallerCosts.entryLowPrefix checkpointPrimitives)) :=
+    PackCutSub.rename_sub _ (PackCutSub.rename_sub _ WindowCallerCosts.low_sublist)
+  have g : (StairSchedule.fieldRename (WindowParityCaller.entryLowSuffixOddNC OddFullPass.P1LifeLoan.hostPlan1542)).Sublist
+      (StairSchedule.fieldRename (OddFullPass.P1LifeLoan.entryLowSuffixOdd OddFullPass.P1LifeLoan.hostPlan1542)) :=
+    PackCutSub.rename_sub _ (PackCutSub.rename_sub _ (lowSuffixNC_sub _))
+  unfold WindowParityCaller.entryFieldHostedCutNC WindowCallerCosts.entryFieldHosted
+  rw [setup_eqNC]
+  exact ((((f.append (List.Sublist.refl _)).append (List.Sublist.refl _)).append g).append
+    (List.Sublist.refl _)).append (List.Sublist.refl _)
+
+theorem headPrefixNC_sub (h : StairHostsSchedule.HostPlan) :
+    (WindowParityCaller.exitHeadPrefixOddNC h).Sublist (OddFullPass.P1LifeLoan.exitHeadPrefixOdd h) := by
+  have e : OddFullPass.P1LifeLoan.exitHeadPrefixOdd h =
+      OddFullPass.HalfConvertOdd.center760OddLoan ++ WindowParityCaller.exitHeadPrefixOddNC h := by
+    simp only [OddFullPass.P1LifeLoan.exitHeadPrefixOdd, WindowParityCaller.exitHeadPrefixOddNC, List.append_assoc]
+  rw [e]; exact List.sublist_append_right _ _
+
+theorem exitNC_sub (p : StairSchedule.StairPrimitives) :
+    (WindowParityCaller.exitFieldHostedNC p).Sublist (WindowCallerCosts.exitFieldHosted p) := by
+  have g : (StairSchedule.fieldRename (WindowParityCaller.exitLowPrefixOddNC OddFullPass.P1LifeLoan.hostPlan1542)).Sublist
+      (StairSchedule.fieldRename (OddFullPass.P1LifeLoan.exitLowPrefixOdd OddFullPass.P1LifeLoan.hostPlan1542)) := by
+    apply PackCutSub.rename_sub _ (PackCutSub.rename_sub _ _)
+    unfold WindowParityCaller.exitLowPrefixOddNC OddFullPass.P1LifeLoan.exitLowPrefixOdd
+    exact ((List.Sublist.refl _).append (PackCutSub.rename_sub _ (headPrefixNC_sub _))).append (List.Sublist.refl _)
+  unfold WindowParityCaller.exitFieldHostedNC WindowCallerCosts.exitFieldHosted
+  rw [setup_eqNC]
+  exact ((((((List.Sublist.refl _).append (List.Sublist.refl _)).append g).append (List.Sublist.refl _)).append
+    (List.Sublist.refl _)).append (List.Sublist.refl _))
+
+variable (ff : ∀d,GatePhysical (Shadow20.MergeCut.forward d)) (rr : ∀d,GatePhysical (Shadow20.MergeCut.reverse d))
+
+include ff rr in
+theorem dividePhysicalNC : GatePhysical WindowParityCaller.divideNC := by
+  have eq : InverseFive23.lastPhase15 false = reverseEnd ++
+      Rolling1588.reverse false 1 505 ++ FrontierEntry1591NativeH.inverse base := by
+    simp only [InverseFive23.lastPhase15,InverseFive23.stackReverse15,InverseFive23.reverseTail15,
+      reverseEnd,List.append_assoc]
+  have h := sound_lastPhase15
+  rw [eq] at h
+  have ⟨a,native⟩ := parts h
+  have ⟨tail,walk⟩ := parts a
+  let P := primitiveSlots_v3 primitiveChecks
+  have field := PackCutSub.sound_sub fieldNC_sub
+    (sound_entryFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3)
+  simp only [WindowParityCaller.divideNC,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨phase (fw true 4 424 rfl sound_forward424 (ff _)),phase P.firstPack⟩,rest_physical _ field⟩,
+    phase tail⟩,phase (bw false 85 505 rfl walk (rr _))⟩,phase (sound_rename _ first.injective firstDom native)⟩
+
+include ff rr in
+theorem multiplyPhysicalNC (k : Nat) : GatePhysical (WindowParityCaller.multiplyNC k) := by
+  have eq : Rolling1588TickGap.tailPhase false = Rolling1588TickGap.forward false 1 504 ++ forwardEnd := by
+    simp only [Rolling1588TickGap.tailPhase,Rolling1588TickGap.stackForward,Six505.stackForward6,
+      forwardEnd,List.append_assoc]
+  have h := sound_tailPhase
+  rw [eq] at h
+  have ⟨walk,tail⟩ := parts h
+  let P := primitiveSlots_v3 primitiveChecks
+  have field := PackCutSub.sound_sub (exitNC_sub _)
+    (sound_exitFieldHosted StairOpenWiring.half760 P boundarySlots_current hostSlots_v3)
+  simp only [WindowParityCaller.multiplyNC,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨phase (fw false 84 504 rfl walk (ff _)),phase tail⟩,rest_physical _ field⟩,phase P.firstUnpack⟩,
+    phase (bw true 4 424 rfl sound_reverse424 (rr _))⟩,
+    gatePhysical_rename _ Stair44PointMap.duringX.injective _ (phase (sound_x1N k))⟩
+
+include ff rr in
+theorem genericPhysicalNC (cx cy : Fp) : GatePhysical (WindowParityCaller.genericNC cx cy) := by
+  have g := FlagTop2.genericN_physical cx cy
+  simp only [FlagExit.genericN,FlagExit.secondStageN,gatePhysical_append] at g
+  simp only [WindowParityCaller.genericNC,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨gatePhysical_rename _ Stair44PointMap.duringY.injective _
+      (EntryFuseOdd.entryYAllOdd_physical layout layout_widths layout_nodup (-cy)),
+    gatePhysical_rename _ Stair44PointMap.duringX.injective _ g.1.1.2⟩,dividePhysicalNC ff rr⟩,
+    WindowParityCaller.squareNC_physical _⟩,multiplyPhysicalNC ff rr _⟩,
+    gatePhysical_rename _ Stair44PointMap.duringY.injective _
+      (EntryFuseOdd.exitYAllOdd_physical layout layout_widths layout_nodup cy)⟩
+
+include ff rr in
+theorem physicalNC_of (C : Point) : GatePhysical (WindowParityCaller.programNC C) := by
+  cases C with
+  | zero => simp [WindowParityCaller.programNC,GatePhysical]
+  | @some cx cy hc =>
+    let C : Point := .some hc
+    have m := AboveFieldPointDevelop.middle_physical C cx cy
+    simp only [AboveFieldPointDevelop.middle,gatePhysical_append] at m
+    apply gatePhysical_rename _ (Wrapper5.U layout).injective
+    simp only [WindowParityCaller.finiteNC,gatePhysical_append]
+    refine ⟨⟨gatePhysical_rename _ Stair44PointMap.outer.injective _ ?_,?_⟩,
+      gatePhysical_rename _ Stair44PointMap.outer.injective _ ?_⟩
+    · simp only [gatePhysical_append]
+      exact ⟨⟨FlagTop.stageNew_physical hc,m.1.1.1.1⟩,m.1.1.1.2⟩
+    · exact gatePhysical_rename _ (Equiv.swap _ _).injective _
+        (gatePhysical_rename _ FlagTop.rho_injective _ (genericPhysicalNC ff rr cx cy))
+    · simp only [gatePhysical_append]
+      exact ⟨⟨m.1.2,m.2⟩,ControlPointEncodingDevelop.borrowOut_physical hc⟩
+
+theorem physicalNC (C : Point) : GatePhysical (WindowParityCaller.programNC C) :=
+  physicalNC_of (fun d => (Shadow20.MergeCut.physical d).1) (fun d => Shadow20.MergeCut.rphysical d) C
+
+end ECDSAAdd.Entrant.StairPacket.WindowPhysical
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowSites
+open Arithmetic MappedCompressed Secp256k1 Baselines StairSiteAvoidance StairSiteEasy
+open StairConcreteAssembly Stair44Outer
+set_option maxRecDepth 18000
+set_option maxHeartbeats 3000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] wires renameProgram
+
+/-! ### NC caller: sites and width -/
+
+private theorem entryFieldCutNC : PieceOK reserved KP WindowParityCaller.entryFieldHostedCutNC :=
+  pieceOK_sub (PackCutSub.wires_sub WindowPhysical.fieldNC_sub) entryField
+
+private theorem exitFieldNC : PieceOK reserved KP (WindowParityCaller.exitFieldHostedNC checkpointPrimitives) :=
+  pieceOK_sub (PackCutSub.wires_sub (WindowPhysical.exitNC_sub _)) exitField
+
+theorem divisionSitesNC (f : GoodWindow (Shadow20.MergeCut.forward true))
+    (r : GoodWindow (Shadow20.MergeCut.reverse false)) :
+    PieceOK reserved UG WindowParityCaller.divideNC :=
+  (((((phase (walkF true 4 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.pack)))).append
+    (ok_kernel entryFieldCutNC)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.reverseTail)))).append
+    (phase (walkR false 85 (by decide) r))).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.native)))
+
+theorem multiplicationSitesNC (k : Nat) (f : GoodWindow (Shadow20.MergeCut.forward false))
+    (r : GoodWindow (Shadow20.MergeCut.reverse true)) :
+    PieceOK reserved UG (WindowParityCaller.multiplyNC k) :=
+  (((((phase (walkF false 84 (by decide) f)).append (weaken (ok_kernel (ok_phase Stair44PhaseSites.forwardTail)))).append
+    (ok_kernel exitFieldNC)).append (weaken (ok_kernel (ok_phase Stair44FirstRow.unpack)))).append
+    (phase (walkR true 4 (by decide) r))).append (weaken (Stair44PhaseSites.exitX k))
+
+theorem program_widthNC (C : Point) (f : ∀d, GoodWindow (Shadow20.MergeCut.forward d))
+    (r : ∀d,GoodWindow (Shadow20.MergeCut.reverse d)) :
+    Challenge.qubits (WindowParityCaller.programNC C) ≤ 1542 := by
+  apply width
+  cases C with
+  | zero => exact pieceOK_nil _ _
+  | @some cx cy hc =>
+    apply ok_wrapper
+    exact ((weaken (Stair44OuterSites.initial hc)).append (ok_generic
+      ((((((weaken (Stair44OuterSites.entryY (-cy))).append (weaken (Stair44OuterSites.entryX (-cx)))).append
+        (divisionSitesNC (f _) (r _))).append (weaken (WindowParityCaller.squareNC_sites (ReflectionE1.correction cx)))).append
+          (multiplicationSitesNC cx.val (f _) (r _))).append (weaken (Stair44OuterSites.exitY cy))))).append
+      (weaken (Stair44OuterSites.finalPart hc))
+
+theorem widthNC (C : Point) : Challenge.qubits (WindowParityCaller.programNC C) ≤ 1542 :=
+  program_widthNC C PartialSites.forwardMixed_fits PartialSites.reverseMixed_fits
+
+end ECDSAAdd.Entrant.StairPacket.WindowSites
+
+end
+
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowParityCaller
+open Arithmetic MappedCompressed Secp256k1 Baselines Challenge Stair44Resources Stair44Outer
+set_option maxRecDepth 16000
+set_option maxHeartbeats 1500000
+
+/-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
+turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2009111 := by
+  have m := (metricsNC C).1
+  cases C with
+  | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
+  | @some cx cy hc =>
+    have e := normalize_toffoli_exact (programNC (.some hc))
+    have hg : 1 ≤ repeatedControls (genericNC cx cy) := by
+      have s := squareNC_rc (ReflectionE1.correction cx)
+      rw [genericNC, SquareOdd.rc_append, SquareOdd.rc_append, SquareOdd.rc_append, SquareOdd.rc_append, SquareOdd.rc_append]
+      omega
+    have hb : 1 ≤ repeatedControls (borrowGenericNC cx cy) :=
+      hg.trans ((SquareOdd.rc_rename _ _).trans (SquareOdd.rc_rename _ _))
+    have hf : 1 ≤ repeatedControls (finiteNC (.some hc) cx cy) := by
+      rw [finiteNC, SquareOdd.rc_append, SquareOdd.rc_append]; omega
+    have hp : 1 ≤ repeatedControls (programNC (.some hc)) := hf.trans (SquareOdd.rc_rename _ _)
+    omega
+
+end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
+open Arithmetic Secp256k1 Challenge Baselines
+
+/-- The NC entry: both field converters deleted, square reading the odd word. -/
+def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
+def boundsNC : Challenge.Bounds := ⟨2009111,1446153,1542,67209132⟩
+
+theorem certificateOfSemanticsNC
+    (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
+      (encodes b (if b then R+C else R))) : Certificate entryNC boundsNC where
+  correct C b R := (normalize_triple _ _ _).mpr (sem C b R)
+  physical C := Baselines.normalize_physical _ (WindowPhysical.physicalNC C)
+  toffoli_le C := WindowParityCaller.toffoliNC_normalized C
+  measurements_le C := by
+    change measurementCount (normalizeProgram _) ≤ 1446153
+    rw [normalize_measurements]
+    exact (WindowParityCaller.metricsNC C).2.1
+  qubits_le C := by
+    change qubits (normalizeProgram _) ≤ 1542
+    rw [normalize_qubits]
+    exact WindowSites.widthNC C
+  gateSlots_le C := by
+    change gateSlots (normalizeProgram _) ≤ 67209132
+    rw [normalize_slots]
+    exact (WindowParityCaller.metricsNC C).2.2
+
+end ECDSAAdd.Entrant.StairPacket.WindowParityRelease
+
+end
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowParityCaller
+open Secp256k1
+
+theorem squareNC_eq (k : Fp) : squareNC k = SquareOdd.program k := rfl
+
+/-- The square reading `λ` in odd-word form satisfies the square contract `SqOddContract.SquareOddNC`. -/
+theorem squareNC_correct (k : Fp) : SqOddContract.SquareOddNC (squareNC k) k := by
+  rw [squareNC_eq]
+  exact fun X Y G origin s t m v hph hag hy =>
+    SquareOdd.program_run k SqOddContract.oddWord_square (SqOddContract.routed_avoids_y _)
+      SquareOdd.placedO_counts.2.1 X Y G origin s t m v hph hag hy
+
+end ECDSAAdd.Entrant.StairPacket.WindowParityCaller
+
+end
