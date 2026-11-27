@@ -2972,8 +2972,11 @@ private theorem tagSwap_caller (q : Wire) (hq : q ∈ callerDomain) : tagSwap q 
 
 theorem group84Body_good (d:Bool):GoodP (group84Body d):=by
   have ord {a b:Program} (x:GoodP a) (y:GoodP b):GoodP (ordered d a b):=by cases d <;> first | exact app x y | exact app y x
-  have og (j n:Nat) (hi:j+n≤102):GoodP (ogroup d j n):=
-    Finset.Subset.trans (WindowFieldCosts.ot_ogroup_sub d j n) (ordinary d j n hi)
+  have og (j n:Nat) (hi:j+n≤102):GoodP (rgroup d j n):= by
+    intro q hq
+    rcases Finset.mem_insert.mp (WindowFieldCosts.rgroup_sub d j n hq) with e|h
+    · subst e; exact callerDomain_of_range (by decide) (by decide)
+    · exact Finset.Subset.trans (WindowFieldCosts.ot_ogroup_sub d j n) (ordinary d j n hi) h
   have ot (j:Nat) (hj:j∈[10,13,16,19,22,25,28,31,35,39,43,47,51,55,59,63,67,70,73,76,79,82]) (hi:j≤83):GoodP (oten j (!d)):=
     Finset.Subset.trans (WindowFieldCosts.ot_oten_sub j (!d)) (pair d j hj hi)
   have c43 := ord (ot 82 (by decide) (by decide)) (og 84 1 (by decide))
