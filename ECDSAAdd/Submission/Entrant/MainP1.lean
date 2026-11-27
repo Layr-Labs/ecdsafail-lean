@@ -15425,13 +15425,13 @@ def tcV : Pieces Nat := { WindowParams7.tcV with
       CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+95+CRTBarrel.barrelT (start j) false
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+112 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+124+CRTBarrel.barrelT (start j) true
+      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+125+CRTBarrel.barrelT (start j) true
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+144 else toffoliCount (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.tcV.unrouted j a n - (if a=1 ∧ n=14 then 14 else 0) }
 
 def mcV : Pieces Nat := { WindowParams7.mcV with
   leave := fun j => if crtBlocks j then
-      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+86+CRTBarrel.barrelM (start j) false
+      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+87+CRTBarrel.barrelM (start j) false
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+89 else measurementCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
       CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+57+CRTBarrel.barrelM (start j) true
@@ -15440,11 +15440,11 @@ def mcV : Pieces Nat := { WindowParams7.mcV with
 
 def slotsV : Pieces Nat := { WindowParams7.slotsV with
   leave := fun j => if crtBlocks j then
-      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+643+3*Shadow7.wpP (start j+15)+
+      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+646+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) false
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+725+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+614+3*Shadow7.wpP (start j+15)+
+      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+616+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) true
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+693+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.slotsV.unrouted j a n + (if a=1 ∧ n=14 then 98 else 0) }
@@ -15607,10 +15607,10 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 theorem ship_counts :
     toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127041 ∧
     toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127041 ∧
-    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=126946 ∧
-    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=126971 ∧
-    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65175 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65200 ∧
+    toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=126971 ∧
+    toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=126996 ∧
+    measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65200 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65225 ∧
     measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65019 ∧
     measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65044 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
@@ -15698,14 +15698,14 @@ theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first 
 theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127041 :=
   ship_counts.2.1
 
-theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 126946 :=
+theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 126971 :=
   ship_counts.2.2.1
 
-theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 126971 :=
+theorem ship_toffoliR_false : toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 126996 :=
   ship_counts.2.2.2.1
 
-theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65175 ∧
-    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65200 :=
+theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 65200 ∧
+    measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65225 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
 theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65019 ∧
@@ -15767,14 +15767,14 @@ theorem cut_toffoliF : toffoliCount (forwardCut true) = 126937 ∧ toffoliCount 
   rw [ship_toffoliF_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_toffoliR : toffoliCount (reverseCut true) = 126842 ∧ toffoliCount (reverseCut false) = 126867 := by
+theorem cut_toffoliR : toffoliCount (reverseCut true) = 126867 ∧ toffoliCount (reverseCut false) = 126892 := by
   have a := (cut_toffoli true).2
   have b := (cut_toffoli false).2
   rw [ship_toffoliR_true] at a
   rw [ship_toffoliR_false] at b
   exact ⟨by omega, by omega⟩
 
-theorem cut_measureF : measurementCount (forwardCut true) = 65175 ∧ measurementCount (forwardCut false) = 65200 := by
+theorem cut_measureF : measurementCount (forwardCut true) = 65200 ∧ measurementCount (forwardCut false) = 65225 := by
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
@@ -34568,7 +34568,7 @@ end
 
 
 
--- ==== Inlined TagPack1542 v2 (Site A: 99-T packTag / 100-T unpackTag) ====
+-- ==== Inlined TagPack1542 v2 (Site A: 98-T packTag / 99-T unpackTag) ====
 section
 set_option maxRecDepth 8192
 
@@ -34579,14 +34579,14 @@ open ECDSAAdd.Arithmetic
 open ECDSAAdd.Challenge
 
 /-!
-# TagPack1542 v2: 99-T `packTag` and 100-T `unpackTag` (2-CCX 8-flat merge on P0)
+# TagPack1542 v2: 98-T `packTag` and 99-T `unpackTag` (2-CCX 8-flat merge on P0)
 
 Logical 105-wire programs (wires `0..104`, wire `97` unused):
 - `0..6`    : `C[0..6]` (`rest87_A[0..6]`, value in `0..86`; wire `6` is cleared to `false`)
 - `7..13`   : `P0[0..6]` (value in `used7`, 114 states)
 - `14..85`  : `PK[0..8]`, where `PK[k]` is wires `14 + 8*k .. 21 + 8*k` (each in `used8`, 243 states)
 - `86..96`  : `F[0..10]` (11 one-hot flags for `C ∈ 64..86`; wire `97` untouched)
-- `98..101` : `Q[0..3]` (2-bit one-hot of `(C[2], C[1])`)
+- `98..101` : unused (the flag tree splits each group bit directly on `C[2]`, `C[1]`)
 - `102..104`: `G0 = 102`, `G1 = 103`, `G01 = 104` (reused as `TMP = [102, 103, 104]`)
 -/
 
@@ -34725,54 +34725,12 @@ def slotSpec (k : Nat) : SlotSpec :=
     ⟨[], [p0Wire 5, p0Wire 3, p0Wire 1, p0Wire 0],
          [false, true, true, false]⟩
 
-def treeQCompute : Program :=
-  [ .CCX 2 1 101
-  , .CX 2 100
-  , .CX 101 100
-  , .CX 1 99
-  , .CX 101 99
-  , .X 98
-  , .CX 2 98
-  , .CX 99 98
-  ]
-
 def treeGCompute : Program :=
   [ .CCX 6 4 103
   , .CX 6 102
   , .CX 103 102
   , .CCX 102 3 104
   , .CX 104 102
-  ]
-
-def treeFGroup (grp : Wire) (baseF : Nat) : Program :=
-  [ .CCX grp 98 (86 + baseF)
-  , .CCX grp 99 (86 + baseF + 1)
-  , .CCX grp 100 (86 + baseF + 2)
-  , .CX grp (86 + baseF + 3)
-  , .CX (86 + baseF) (86 + baseF + 3)
-  , .CX (86 + baseF + 1) (86 + baseF + 3)
-  , .CX (86 + baseF + 2) (86 + baseF + 3)
-  ]
-
-def treeFGroup3 (grp : Wire) (baseF : Nat) : Program :=
-  [ .CCX grp 98 (86 + baseF)
-  , .CCX grp 99 (86 + baseF + 1)
-  , .CX grp (86 + baseF + 2)
-  , .CX (86 + baseF) (86 + baseF + 2)
-  , .CX (86 + baseF + 1) (86 + baseF + 2)
-  ]
-
-def treeFEraseGroup (grp : Wire) (baseF : Nat) : Program :=
-  [ .measureX (86 + baseF) [] [.CZ grp 98]
-  , .measureX (86 + baseF + 1) [] [.CZ grp 99]
-  , .measureX (86 + baseF + 2) [] [.CZ grp 100]
-  , .measureX (86 + baseF + 3) [] [.CZ grp 101]
-  ]
-
-def treeFEraseGroup3 (grp : Wire) (baseF : Nat) : Program :=
-  [ .measureX (86 + baseF) [] [.CZ grp 98]
-  , .measureX (86 + baseF + 1) [] [.CZ grp 99]
-  , .measureX (86 + baseF + 2) [] [.CZ grp 2]
   ]
 
 def treeGErase : Program :=
@@ -34783,72 +34741,58 @@ def treeGErase : Program :=
   , .measureX 103 [] [.CZ 6 4]
   ]
 
-def treeQErase : Program :=
-  [ .CX 99 98
-  , .CX 2 98
-  , .X 98
-  , .CX 101 99
-  , .CX 1 99
-  , .CX 101 100
-  , .CX 2 100
-  , .measureX 101 [] [.CZ 2 1]
+/-- Split a group bit into its four `(C2, C1)` leaves with three Toffolis (no `Q` register). -/
+def treeFSplit (grp : Wire) (baseF : Nat) : Program :=
+  [ .CCX grp 2 (86 + baseF + 2)
+  , .CX grp (86 + baseF)
+  , .CX (86 + baseF + 2) (86 + baseF)
+  , .CCX (86 + baseF + 2) 1 (86 + baseF + 3)
+  , .CX (86 + baseF + 3) (86 + baseF + 2)
+  , .CCX (86 + baseF) 1 (86 + baseF + 1)
+  , .CX (86 + baseF + 1) (86 + baseF)
   ]
 
-/-- Split a parent flag in place, using one clean sibling wire. -/
-def splitFlags (left right selector : Wire) : Program :=
-  [.CCX left selector right, .CX right left]
+def treeFSplit3 (grp : Wire) (baseF : Nat) : Program :=
+  [ .CCX grp 2 (86 + baseF + 2)
+  , .CX grp (86 + baseF)
+  , .CX (86 + baseF + 2) (86 + baseF)
+  , .CCX (86 + baseF) 1 (86 + baseF + 1)
+  , .CX (86 + baseF + 1) (86 + baseF)
+  ]
+
+def treeDecodeCompute : Program :=
+  treeGCompute ++ treeFSplit 102 0 ++ treeFSplit 104 4 ++ treeFSplit3 103 8
 
 def treeDecodeCProg : Program :=
-  [.CX 6 86] ++ (
-  splitFlags 86 94 4 ++ (
-  splitFlags 86 90 3 ++ (
-  splitFlags 94 96 2 ++ (
-  splitFlags 90 92 2 ++ (
-  splitFlags 86 88 2 ++ (
-  splitFlags 94 95 1 ++ (
-  splitFlags 92 93 1 ++ (
-  splitFlags 90 91 1 ++ (
-  splitFlags 88 89 1 ++ (
-  splitFlags 86 87 1))))))))))
+  treeDecodeCompute ++ treeGErase
 
-/-- Before erasing F, each group bit is the parity of its disjoint flags. -/
-def groupsFromFlags : Program :=
-  [ .CX 86 102, .CX 87 102, .CX 88 102, .CX 89 102
-  , .CX 90 104, .CX 91 104, .CX 92 104, .CX 93 104
-  , .CX 94 103, .CX 95 103, .CX 96 103 ]
+/-- Measured inverse of `treeFSplit`: leaves the group bit on the first flag wire. -/
+def treeFMerge (baseF : Nat) : Program :=
+  [ .CX (86 + baseF + 1) (86 + baseF)
+  , .measureX (86 + baseF + 1) [] [.CZ (86 + baseF) 1]
+  , .CX (86 + baseF + 3) (86 + baseF + 2)
+  , .measureX (86 + baseF + 3) [] [.CZ (86 + baseF + 2) 1]
+  , .CX (86 + baseF + 2) (86 + baseF)
+  , .measureX (86 + baseF + 2) [] [.CZ (86 + baseF) 2]
+  ]
 
-/-- Subset sums of the eleven one-hot tag indicators. -/
-def tagSubsetSums : Program :=
-  [.CX 87 86,
-   .CX 89 88,
-   .CX 91 90,
-   .CX 93 92,
-   .CX 95 94,
-   .CX 88 86,
-   .CX 89 87,
-   .CX 92 90,
-   .CX 93 91,
-   .CX 96 94,
-   .CX 90 86,
-   .CX 91 87,
-   .CX 92 88,
-   .CX 93 89,
-   .CX 94 86,
-   .CX 95 87,
-   .CX 96 88]
+def treeFMerge3 (baseF : Nat) : Program :=
+  [ .CX (86 + baseF + 1) (86 + baseF)
+  , .measureX (86 + baseF + 1) [] [.CZ (86 + baseF) 1]
+  , .CX (86 + baseF + 2) (86 + baseF)
+  , .measureX (86 + baseF + 2) [] [.CZ (86 + baseF) 2]
+  ]
+
+def treeGMerge : Program :=
+  [ .CX 90 86
+  , .measureX 90 [] [.CZ 86 3]
+  , .CX 94 86
+  , .CX 6 86
+  , .measureX 94 [] [.CZ 6 4]
+  ]
 
 def treeEraseFProg : Program :=
-  tagSubsetSums ++ (
-  [.measureX 93 [] [.CZ 92 1]] ++ (
-  [.measureX 92 [] [.CZ 90 2]] ++ (
-  [.measureX 91 [] [.CZ 90 1]] ++ (
-  [.measureX 90 [] [.CZ 6 3, .CZ 94 3]] ++ (
-  [.measureX 95 [] [.CZ 94 1, .CZ 96 1]] ++ (
-  [.measureX 89 [] [.CZ 88 1, .CZ 96 1]] ++ (
-  [.measureX 87 [] [.CZ 6 1, .CZ 96 1]] ++ (
-  [.measureX 96 [] [.CZ 94 2]] ++ (
-  [.measureX 88 [] [.CZ 6 2]] ++ (
-  [.measureX 94 [] [.CZ 6 4]] ++ [.CX 6 86]))))))))))
+  treeFMerge 0 ++ treeFMerge 4 ++ treeFMerge3 8 ++ treeGMerge
 
 def clearOrRestoreSlotC (k : Nat) : Program :=
   [.CX (86 + k) 6] ++
@@ -35001,11 +34945,11 @@ theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 99 := by
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem packTagProg_measurementCount : measurementCount packTagProg = 43 := by
+theorem packTagProg_measurementCount : measurementCount packTagProg = 45 := by
   dsimp only [packTagProg, packSlotsProg]
   rw [measurementCount_append, measurementCount_append, measurementCount_append, measurementCount_flatMap_range11]
   have h0 : measurementCount uP0Prog = 0 := by decide
-  have h1 : measurementCount treeDecodeCProg = 0 := by decide
+  have h1 : measurementCount treeDecodeCProg = 2 := by decide
   have h2 : measurementCount clearOrRestoreCProg = 0 := by decide
   have h3 : ∀ k < 10, measurementCount (packSlotProg k) = 4 := by
     intro k hk
@@ -35032,11 +34976,11 @@ theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 42 := 
   rw [h0, h1, h2, h10]
   repeat rw [h3 _ (by omega)]
 
-theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 453 := by
+theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 463 := by
   dsimp only [packTagProg, packSlotsProg]
   rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append, gateSlots_flatMap_range11]
   have hu : Challenge.gateSlots uP0Prog = 12 := by decide
-  have h1 : Challenge.gateSlots treeDecodeCProg = 21 := by decide
+  have h1 : Challenge.gateSlots treeDecodeCProg = 31 := by decide
   have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
   have h0 : Challenge.gateSlots (packSlotProg 0) = 36 := by decide
   have h1' : Challenge.gateSlots (packSlotProg 1) = 36 := by decide
@@ -35051,12 +34995,12 @@ theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 453 := by
   have h10' : Challenge.gateSlots (packSlotProg 10) = 28 := by decide
   omega
 
-theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 463 := by
+theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 452 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   rw [Challenge.gateSlots_append, Challenge.gateSlots_append, Challenge.gateSlots_append,
       gateSlots_flatMap_range11_rev, gateSlots_reverse', gateSlots_reverse']
   have hu : Challenge.gateSlots uP0Prog = 12 := by decide
-  have h1 : Challenge.gateSlots treeEraseFProg = 42 := by decide
+  have h1 : Challenge.gateSlots treeEraseFProg = 31 := by decide
   have h2 : Challenge.gateSlots clearOrRestoreCProg = 28 := by decide
   have h0 : Challenge.gateSlots (unpackSlotProg 0) = 35 := by decide
   have h1' : Challenge.gateSlots (unpackSlotProg 1) = 35 := by decide
@@ -36195,180 +36139,56 @@ def targetF (b : BasisState) (k : Nat) : Bool :=
   else
     (b 6 && b 4) && b 2
 
-private theorem run_treeQCompute (m : List Bool) (s : State)
-    (hq0 : s.basis 98 = false) (hq1 : s.basis 99 = false)
-    (hq2 : s.basis 100 = false) (hq3 : s.basis 101 = false) :
-    let res := run treeQCompute m s
+/-- The compute half of the decoder: all flags and the three group bits, no measurement. -/
+private theorem run_treeDecodeCompute (m : List Bool) (s : State)
+    (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false) :
+    let res := run treeDecodeCompute m s
     res.phase = s.phase ∧
-    res.basis 98 = qBit (s.basis 1) (s.basis 2) 0 ∧
-    res.basis 99 = qBit (s.basis 1) (s.basis 2) 1 ∧
-    res.basis 100 = qBit (s.basis 1) (s.basis 2) 2 ∧
-    res.basis 101 = qBit (s.basis 1) (s.basis 2) 3 ∧
-    (∀ w : Nat, w ∉ ([98, 99, 100, 101] : List Nat) → res.basis w = s.basis w) := by
-  refine ⟨by simp [treeQCompute, run], ?_, ?_, ?_, ?_, ?_⟩
-  · simp [treeQCompute, run, writeBit, hq0, hq1, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
-  · simp [treeQCompute, run, writeBit, hq1, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
-  · simp [treeQCompute, run, writeBit, hq2, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
-  · simp [treeQCompute, run, writeBit, hq3, qBit]
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-    rcases hw with ⟨h98, h99, h100, h101⟩
-    simp [treeQCompute, run, writeBit, h98, h99, h100, h101]
-
-private theorem run_treeGCompute (m : List Bool) (s : State)
-    (hg0 : s.basis 102 = false) (hg1 : s.basis 103 = false) (hg01 : s.basis 104 = false) :
-    let res := run treeGCompute m s
-    res.phase = s.phase ∧
+    (∀ k : Nat, k < 11 → res.basis (86 + k) = targetF s.basis k) ∧
     res.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3) ∧
     res.basis 103 = (s.basis 6 && s.basis 4) ∧
     res.basis 104 = (s.basis 6 && !s.basis 4 && s.basis 3) ∧
-    (∀ w : Nat, w ∉ ([102, 103, 104] : List Nat) → res.basis w = s.basis w) := by
-  refine ⟨by simp [treeGCompute, run], ?_, ?_, ?_, ?_⟩
-  · simp [treeGCompute, run, writeBit, hg0, hg1, hg01]; cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
-  · simp [treeGCompute, run, writeBit, hg1]
-  · simp [treeGCompute, run, writeBit, hg0, hg1, hg01]; cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-    rcases hw with ⟨h102, h103, h104⟩
-    simp [treeGCompute, run, writeBit, h102, h103, h104]
-
-private theorem run_groupsFromFlags (m : List Bool) (s : State)
-    (hg0 : s.basis 102 = false) (hg1 : s.basis 103 = false) (hg01 : s.basis 104 = false)
-    (flags : ∀ k < 11, s.basis (86 + k) = targetF s.basis k) :
-    let res := run groupsFromFlags m s
-    res.phase = s.phase ∧
-    res.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3) ∧
-    res.basis 103 = (s.basis 6 && s.basis 4) ∧
-    res.basis 104 = (s.basis 6 && !s.basis 4 && s.basis 3) ∧
-    (∀ w : Nat, w ∉ ([102, 103, 104] : List Nat) → res.basis w = s.basis w) := by
-  refine ⟨by simp [groupsFromFlags, run], ?_, ?_, ?_, ?_⟩
-  · simp [groupsFromFlags, run, writeBit, hg0]
-    have f0 : s.basis 86 = targetF s.basis 0 := flags 0 (by decide)
-    have f1 : s.basis 87 = targetF s.basis 1 := flags 1 (by decide)
-    have f2 : s.basis 88 = targetF s.basis 2 := flags 2 (by decide)
-    have f3 : s.basis 89 = targetF s.basis 3 := flags 3 (by decide)
-    rw [f0, f1, f2, f3]
-    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
-      cases h3 : s.basis 3 <;> cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
-      simp [targetF, qBit, h1, h2, h3, h4, h6]
-  · simp [groupsFromFlags, run, writeBit, hg1]
-    have f8 : s.basis 94 = targetF s.basis 8 := flags 8 (by decide)
-    have f9 : s.basis 95 = targetF s.basis 9 := flags 9 (by decide)
-    have f10 : s.basis 96 = targetF s.basis 10 := flags 10 (by decide)
-    rw [f8, f9, f10]
-    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
-      cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
-      simp [targetF, qBit, h1, h2, h4, h6]
-  · simp [groupsFromFlags, run, writeBit, hg01]
-    have f4 : s.basis 90 = targetF s.basis 4 := flags 4 (by decide)
-    have f5 : s.basis 91 = targetF s.basis 5 := flags 5 (by decide)
-    have f6 : s.basis 92 = targetF s.basis 6 := flags 6 (by decide)
-    have f7 : s.basis 93 = targetF s.basis 7 := flags 7 (by decide)
-    rw [f4, f5, f6, f7]
-    cases h1 : s.basis 1 <;> cases h2 : s.basis 2 <;>
-      cases h3 : s.basis 3 <;> cases h4 : s.basis 4 <;> cases h6 : s.basis 6 <;>
-      simp [targetF, qBit, h1, h2, h3, h4, h6]
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-    rcases hw with ⟨h102, h103, h104⟩
-    simp [groupsFromFlags, run, writeBit, h102, h103, h104]
-
-private theorem run_treeFGroup (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 3 < 12)
-    (m : List Bool) (s : State)
-    (hf0 : s.basis (86 + baseF) = false) (hf1 : s.basis (86 + baseF + 1) = false)
-    (hf2 : s.basis (86 + baseF + 2) = false) (hf3 : s.basis (86 + baseF + 3) = false)
-    (hq0 : s.basis 98 = qBit (s.basis 1) (s.basis 2) 0)
-    (hq1 : s.basis 99 = qBit (s.basis 1) (s.basis 2) 1)
-    (hq2 : s.basis 100 = qBit (s.basis 1) (s.basis 2) 2)
-    (hq3 : s.basis 101 = qBit (s.basis 1) (s.basis 2) 3) :
-    let res := run (treeFGroup grp baseF) m s
-    res.phase = s.phase ∧
-    res.basis (86 + baseF) = (s.basis grp && s.basis 98) ∧
-    res.basis (86 + baseF + 1) = (s.basis grp && s.basis 99) ∧
-    res.basis (86 + baseF + 2) = (s.basis grp && s.basis 100) ∧
-    res.basis (86 + baseF + 3) = (s.basis grp && s.basis 101) ∧
-    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2, 86 + baseF + 3] : List Nat) → res.basis w = s.basis w) := by
-  have hg0 : grp ≠ 86 + baseF := by omega
-  have hg1 : grp ≠ 86 + baseF + 1 := by omega
-  have hg2 : grp ≠ 86 + baseF + 2 := by omega
-  have hq98_0 : (98 : Nat) ≠ 86 + baseF := by omega
-  have hq99_0 : (99 : Nat) ≠ 86 + baseF := by omega
-  have hq99_1 : (99 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hq100_0 : (100 : Nat) ≠ 86 + baseF := by omega
-  have hq100_1 : (100 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hq100_2 : (100 : Nat) ≠ 86 + baseF + 2 := by omega
-  have h01 : 86 + baseF ≠ 86 + baseF + 1 := by omega
-  have h02 : 86 + baseF ≠ 86 + baseF + 2 := by omega
-  have h03 : 86 + baseF ≠ 86 + baseF + 3 := by omega
-  have h12 : 86 + baseF + 1 ≠ 86 + baseF + 2 := by omega
-  have h13 : 86 + baseF + 1 ≠ 86 + baseF + 3 := by omega
-  have h23 : 86 + baseF + 2 ≠ 86 + baseF + 3 := by omega
-  refine ⟨by simp [treeFGroup, run], ?_, ?_, ?_, ?_, ?_⟩
-  · simp [treeFGroup, run, writeBit, hf0]
-  · simp [treeFGroup, run, writeBit, hf1, hg0, hq99_0]
-  · simp [treeFGroup, run, writeBit, hf2, hg0, hg1, hq100_0, hq100_1]
-  · simp only [treeFGroup, run, writeBit, Function.update_self,
-      Function.update_of_ne h03, Function.update_of_ne h13, Function.update_of_ne h23,
-      Function.update_of_ne h02, Function.update_of_ne h12, Function.update_of_ne h01,
-      Function.update_of_ne (Ne.symm h01), Function.update_of_ne (Ne.symm h02),
-      Function.update_of_ne (Ne.symm h12), Function.update_of_ne (Ne.symm h03),
-      Function.update_of_ne (Ne.symm h13), Function.update_of_ne (Ne.symm h23),
-      Function.update_of_ne hg0, Function.update_of_ne hg1, Function.update_of_ne hg2,
-      Function.update_of_ne hq99_0, Function.update_of_ne hq100_0, Function.update_of_ne hq100_1,
-      hf0, hf1, hf2, hf3, hq0, hq1, hq2, hq3, qBit]
-    cases s.basis grp <;> cases s.basis 1 <;> cases s.basis 2 <;> rfl
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-    rcases hw with ⟨hw0, hw1, hw2, hw3⟩
-    simp [treeFGroup, run, writeBit, hw0, hw1, hw2, hw3]
-
-private theorem run_treeFEraseGroup (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 3 < 12)
-    (m : List Bool) (s : State)
-    (hf0 : s.basis (86 + baseF) = (s.basis grp && s.basis 98))
-    (hf1 : s.basis (86 + baseF + 1) = (s.basis grp && s.basis 99))
-    (hf2 : s.basis (86 + baseF + 2) = (s.basis grp && s.basis 100))
-    (hf3 : s.basis (86 + baseF + 3) = (s.basis grp && s.basis 101)) :
-    let res := run (treeFEraseGroup grp baseF) m s
-    res.phase = s.phase ∧
-    res.basis (86 + baseF) = false ∧
-    res.basis (86 + baseF + 1) = false ∧
-    res.basis (86 + baseF + 2) = false ∧
-    res.basis (86 + baseF + 3) = false ∧
-    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2, 86 + baseF + 3] : List Nat) → res.basis w = s.basis w) := by
-  have hg0 : grp ≠ 86 + baseF := by omega
-  have hg1 : grp ≠ 86 + baseF + 1 := by omega
-  have hg2 : grp ≠ 86 + baseF + 2 := by omega
-  have hg3 : grp ≠ 86 + baseF + 3 := by omega
-  have hq0 : (98 : Nat) ≠ 86 + baseF := by omega
-  have hq1 : (99 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hq2 : (100 : Nat) ≠ 86 + baseF + 2 := by omega
-  have hq3 : (101 : Nat) ≠ 86 + baseF + 3 := by omega
-  have hq1_0 : (99 : Nat) ≠ 86 + baseF := by omega
-  have hq2_0 : (100 : Nat) ≠ 86 + baseF := by omega
-  have hq2_1 : (100 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hq3_0 : (101 : Nat) ≠ 86 + baseF := by omega
-  have hq3_1 : (101 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hq3_2 : (101 : Nat) ≠ 86 + baseF + 2 := by omega
-  have h01 : 86 + baseF ≠ 86 + baseF + 1 := by omega
-  have h02 : 86 + baseF ≠ 86 + baseF + 2 := by omega
-  have h03 : 86 + baseF ≠ 86 + baseF + 3 := by omega
-  have h12 : 86 + baseF + 1 ≠ 86 + baseF + 2 := by omega
-  have h13 : 86 + baseF + 1 ≠ 86 + baseF + 3 := by omega
-  have h23 : 86 + baseF + 2 ≠ 86 + baseF + 3 := by omega
-  have hsplit : treeFEraseGroup grp baseF =
-      ([.measureX (86 + baseF) [] [.CZ grp 98]] ++ [.measureX (86 + baseF + 1) [] [.CZ grp 99]]) ++
-      [.measureX (86 + baseF + 2) [] [.CZ grp 100]] ++ [.measureX (86 + baseF + 3) [] [.CZ grp 101]] := rfl
-  rw [hsplit, run_append, run_append, run_append]
-  rw [run_measureX_CZ (86 + baseF) grp 98 hg0 hq0 _ s hf0]
-  rw [run_measureX_CZ (86 + baseF + 1) grp 99 hg1 hq1 _ _ (by simp [writeBit, hg0, hq1_0, hf1])]
-  rw [run_measureX_CZ (86 + baseF + 2) grp 100 hg2 hq2 _ _ (by simp [writeBit, hg0, hg1, hq2_0, hq2_1, hf2])]
-  rw [run_measureX_CZ (86 + baseF + 3) grp 101 hg3 hq3 _ _ (by simp [writeBit, hg0, hg1, hg2, hq3_0, hq3_1, hq3_2, hf3])]
-  refine ⟨rfl, by simp [writeBit], by simp [writeBit],
-    by simp [writeBit], by simp [writeBit], ?_⟩
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-  rcases hw with ⟨hw0, hw1, hw2, hw3⟩
-  simp [writeBit, hw0, hw1, hw2, hw3]
+    (∀ w : Nat, (w < 86 ∨ 97 ≤ w) → w ≠ 102 → w ≠ 103 → w ≠ 104 → res.basis w = s.basis w) := by
+  have a86 := hanc 86 (by omega) (by omega)
+  have a87 := hanc 87 (by omega) (by omega)
+  have a88 := hanc 88 (by omega) (by omega)
+  have a89 := hanc 89 (by omega) (by omega)
+  have a90 := hanc 90 (by omega) (by omega)
+  have a91 := hanc 91 (by omega) (by omega)
+  have a92 := hanc 92 (by omega) (by omega)
+  have a93 := hanc 93 (by omega) (by omega)
+  have a94 := hanc 94 (by omega) (by omega)
+  have a95 := hanc 95 (by omega) (by omega)
+  have a96 := hanc 96 (by omega) (by omega)
+  have a102 := hanc 102 (by omega) (by omega)
+  have a103 := hanc 103 (by omega) (by omega)
+  have a104 := hanc 104 (by omega) (by omega)
+  refine ⟨by simp [treeDecodeCompute, treeGCompute, treeFSplit, treeFSplit3, run], ?_, ?_, ?_, ?_, ?_⟩
+  · intro k hk
+    have hk' : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 := by omega
+    rcases hk' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp [treeDecodeCompute, treeGCompute, treeFSplit, treeFSplit3, run, writeBit, targetF, qBit,
+        a86, a87, a88, a89, a90, a91, a92, a93, a94, a95, a96, a102, a103, a104] <;>
+      cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl
+  · simp [treeDecodeCompute, treeGCompute, treeFSplit, treeFSplit3, run, writeBit, a102, a103, a104]
+    cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
+  · simp [treeDecodeCompute, treeGCompute, treeFSplit, treeFSplit3, run, writeBit, a103]
+  · simp [treeDecodeCompute, treeGCompute, treeFSplit, treeFSplit3, run, writeBit, a102, a103, a104]
+    cases s.basis 6 <;> cases s.basis 4 <;> cases s.basis 3 <;> rfl
+  · intro w hw h102 h103 h104
+    have h86 : w ≠ 86 := by omega
+    have h87 : w ≠ 87 := by omega
+    have h88 : w ≠ 88 := by omega
+    have h89 : w ≠ 89 := by omega
+    have h90 : w ≠ 90 := by omega
+    have h91 : w ≠ 91 := by omega
+    have h92 : w ≠ 92 := by omega
+    have h93 : w ≠ 93 := by omega
+    have h94 : w ≠ 94 := by omega
+    have h95 : w ≠ 95 := by omega
+    have h96 : w ≠ 96 := by omega
+    simp [treeDecodeCompute, treeGCompute, treeFSplit, treeFSplit3, run, writeBit,
+      h86, h87, h88, h89, h90, h91, h92, h93, h94, h95, h96, h102, h103, h104]
 
 private theorem run_treeGErase (m : List Bool) (s : State)
     (hg0 : s.basis 102 = (s.basis 6 && !s.basis 4 && !s.basis 3))
@@ -36408,117 +36228,6 @@ private theorem run_treeGErase (m : List Bool) (s : State)
   rcases hw with ⟨h102, h103, h104⟩
   simp [writeBit, h102, h103, h104]
 
-private theorem run_treeQErase (m : List Bool) (s : State)
-    (hq0 : s.basis 98 = qBit (s.basis 1) (s.basis 2) 0)
-    (hq1 : s.basis 99 = qBit (s.basis 1) (s.basis 2) 1)
-    (hq2 : s.basis 100 = qBit (s.basis 1) (s.basis 2) 2)
-    (hq3 : s.basis 101 = qBit (s.basis 1) (s.basis 2) 3) :
-    let res := run treeQErase m s
-    res.phase = s.phase ∧
-    res.basis 98 = false ∧ res.basis 99 = false ∧
-    res.basis 100 = false ∧ res.basis 101 = false ∧
-    (∀ w : Nat, w ∉ ([98, 99, 100, 101] : List Nat) → res.basis w = s.basis w) := by
-  have hsplit : treeQErase =
-      [.CX 99 98, .CX 2 98, .X 98, .CX 101 99, .CX 1 99, .CX 101 100, .CX 2 100] ++
-      [.measureX 101 [] [.CZ 2 1]] := rfl
-  rw [hsplit, run_append]
-  have h1 : ∀ m', run [.CX 99 98, .CX 2 98, .X 98, .CX 101 99, .CX 1 99, .CX 101 100, .CX 2 100] m' s =
-      ⟨s.phase, writeBit (writeBit (writeBit s.basis 98 false) 99 false) 100 false⟩ := by
-    intro m'
-    simp only [run]
-    congr 1; funext w
-    by_cases h100 : w = 100
-    · subst h100; simp [writeBit, hq2, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
-    · by_cases h99 : w = 99
-      · subst h99; simp [writeBit, hq1, hq3, qBit]; cases s.basis 1 <;> cases s.basis 2 <;> rfl
-      · by_cases h98 : w = 98
-        · subst h98; cases hb1 : s.basis 1 <;> cases hb2 : s.basis 2 <;> simp [writeBit, hq0, hq1, qBit, hb1, hb2]
-        · simp [writeBit, h98, h99, h100]
-  rw [h1]
-  rw [run_measureX_CZ 101 2 1 (by decide) (by decide) _ _ (by simp [writeBit, hq3, qBit])]
-  refine ⟨rfl, by simp [writeBit], by simp [writeBit], by simp [writeBit], by simp [writeBit], ?_⟩
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-  rcases hw with ⟨h98, h99, h100, h101⟩
-  simp [writeBit, h98, h99, h100, h101]
-
-
-private theorem run_treeFGroup3 (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 2 < 11)
-    (m : List Bool) (s : State)
-    (hf0 : s.basis (86 + baseF) = false) (hf1 : s.basis (86 + baseF + 1) = false)
-    (hf2 : s.basis (86 + baseF + 2) = false)
-    (hq0 : s.basis 98 = qBit (s.basis 1) (s.basis 2) 0)
-    (hq1 : s.basis 99 = qBit (s.basis 1) (s.basis 2) 1) :
-    let res := run (treeFGroup3 grp baseF) m s
-    res.phase = s.phase ∧
-    res.basis (86 + baseF) = (s.basis grp && s.basis 98) ∧
-    res.basis (86 + baseF + 1) = (s.basis grp && s.basis 99) ∧
-    res.basis (86 + baseF + 2) = (s.basis grp && s.basis 2) ∧
-    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2] : List Nat) → res.basis w = s.basis w) := by
-  have hg0 : grp ≠ 86 + baseF := by omega
-  have hg1 : grp ≠ 86 + baseF + 1 := by omega
-  have hq99_0 : (99 : Nat) ≠ 86 + baseF := by omega
-  have h01 : 86 + baseF ≠ 86 + baseF + 1 := by omega
-  have h02 : 86 + baseF ≠ 86 + baseF + 2 := by omega
-  have h12 : 86 + baseF + 1 ≠ 86 + baseF + 2 := by omega
-  refine ⟨by simp [treeFGroup3, run], ?_, ?_, ?_, ?_⟩
-  · simp [treeFGroup3, run, writeBit, hf0]
-  · simp [treeFGroup3, run, writeBit, hf1, hg0, hq99_0]
-  · simp only [treeFGroup3, run, writeBit, Function.update_self,
-      Function.update_of_ne h02, Function.update_of_ne h12,
-      Function.update_of_ne h01, Function.update_of_ne (Ne.symm h01),
-      Function.update_of_ne (Ne.symm h02), Function.update_of_ne (Ne.symm h12),
-      Function.update_of_ne hg0, Function.update_of_ne hg1,
-      Function.update_of_ne hq99_0,
-      hf0, hf1, hf2, hq0, hq1, qBit]
-    cases s.basis grp <;> cases s.basis 1 <;> cases s.basis 2 <;> rfl
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-    rcases hw with ⟨hw0, hw1, hw2⟩
-    simp [treeFGroup3, run, writeBit, hw0, hw1, hw2]
-
-private theorem run_treeFEraseGroup3 (grp : Nat) (baseF : Nat) (hgrp : grp ≥ 102) (hbase : baseF + 2 < 11)
-    (m : List Bool) (s : State)
-    (hf0 : s.basis (86 + baseF) = (s.basis grp && s.basis 98))
-    (hf1 : s.basis (86 + baseF + 1) = (s.basis grp && s.basis 99))
-    (hf2 : s.basis (86 + baseF + 2) = (s.basis grp && s.basis 2)) :
-    let res := run (treeFEraseGroup3 grp baseF) m s
-    res.phase = s.phase ∧
-    res.basis (86 + baseF) = false ∧
-    res.basis (86 + baseF + 1) = false ∧
-    res.basis (86 + baseF + 2) = false ∧
-    (∀ w : Nat, w ∉ ([86 + baseF, 86 + baseF + 1, 86 + baseF + 2] : List Nat) → res.basis w = s.basis w) := by
-  have hg0 : grp ≠ 86 + baseF := by omega
-  have hg1 : grp ≠ 86 + baseF + 1 := by omega
-  have hg2 : grp ≠ 86 + baseF + 2 := by omega
-  have hq0 : (98 : Nat) ≠ 86 + baseF := by omega
-  have hq1 : (99 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hc2 : (2 : Nat) ≠ 86 + baseF + 2 := by omega
-  have hq1_0 : (99 : Nat) ≠ 86 + baseF := by omega
-  have hc2_0 : (2 : Nat) ≠ 86 + baseF := by omega
-  have hc2_1 : (2 : Nat) ≠ 86 + baseF + 1 := by omega
-  have hsplit : treeFEraseGroup3 grp baseF =
-      ([.measureX (86 + baseF) [] [.CZ grp 98]] ++ [.measureX (86 + baseF + 1) [] [.CZ grp 99]]) ++
-      [.measureX (86 + baseF + 2) [] [.CZ grp 2]] := rfl
-  rw [hsplit, run_append, run_append]
-  rw [run_measureX_CZ (86 + baseF) grp 98 hg0 hq0 _ s hf0]
-  rw [run_measureX_CZ (86 + baseF + 1) grp 99 hg1 hq1 _ _ (by simp [writeBit, hg0, hq1_0, hf1])]
-  rw [run_measureX_CZ (86 + baseF + 2) grp 2 hg2 hc2 _ _ (by simp [writeBit, hg0, hg1, hc2_0, hc2_1, hf2])]
-  refine ⟨rfl, by simp [writeBit], by simp [writeBit], by simp [writeBit], ?_⟩
-  intro w hw
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
-  rcases hw with ⟨hw0, hw1, hw2⟩
-  simp [writeBit, hw0, hw1, hw2]
-
-private theorem run_splitFlags (l r c : Wire) (lr : l ≠ r) (s : State) (m : List Bool)
-    (h : s.basis r = false) :
-    run (splitFlags l r c) m s =
-      ⟨s.phase, writeBit (writeBit s.basis r (s.basis l && s.basis c))
-        l (s.basis l && !s.basis c)⟩ := by
-  have hx (p q : Bool) : (p ^^ (p && q)) = (p && !q) := by cases p <;> cases q <;> rfl
-  simp [splitFlags, run, writeBit, h, lr, hx]
-
-set_option maxHeartbeats 2000000 in
 theorem tree_decode_C_spec (m : List Bool) (s : State)
     (hanc : ∀ a : Nat, 86 ≤ a → a < 105 → s.basis a = false) :
     let res := run treeDecodeCProg m s
@@ -36526,103 +36235,55 @@ theorem tree_decode_C_spec (m : List Bool) (s : State)
     (∀ k : Nat, k < 11 → res.basis (86 + k) = targetF s.basis k) ∧
     (∀ a : Nat, 97 ≤ a → a < 105 → res.basis a = false) ∧
     (∀ w : Nat, (w < 86 ∨ 105 ≤ w) → res.basis w = s.basis w) := by
-  let s0 : State := ⟨s.phase, writeBit s.basis 86 (s.basis 6)⟩
-  have seed (t : List Bool) : run [.CX 6 86] t s = s0 := by
-    simp [s0, run, hanc 86 (by decide) (by decide)]
-  let s1 : State := ⟨s.phase, writeBit (writeBit s0.basis 94 (s.basis 6 && s.basis 4)) 86 (s.basis 6 && !s.basis 4)⟩
-  have step1 (t : List Bool) : run (splitFlags 86 94 4) t s0 = s1 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s0.basis 94 = false from hanc 94 (by decide) (by decide))]
-    rfl
-  let s2 : State := ⟨s.phase, writeBit (writeBit s1.basis 90 ((s.basis 6 && !s.basis 4) && s.basis 3)) 86 ((s.basis 6 && !s.basis 4) && !s.basis 3)⟩
-  have step2 (t : List Bool) : run (splitFlags 86 90 3) t s1 = s2 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s1.basis 90 = false from hanc 90 (by decide) (by decide))]
-    rfl
-  let s3 : State := ⟨s.phase, writeBit (writeBit s2.basis 96 ((s.basis 6 && s.basis 4) && s.basis 2)) 94 ((s.basis 6 && s.basis 4) && !s.basis 2)⟩
-  have step3 (t : List Bool) : run (splitFlags 94 96 2) t s2 = s3 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s2.basis 96 = false from hanc 96 (by decide) (by decide))]
-    rfl
-  let s4 : State := ⟨s.phase, writeBit (writeBit s3.basis 92 (((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2)) 90 (((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2)⟩
-  have step4 (t : List Bool) : run (splitFlags 90 92 2) t s3 = s4 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s3.basis 92 = false from hanc 92 (by decide) (by decide))]
-    rfl
-  let s5 : State := ⟨s.phase, writeBit (writeBit s4.basis 88 (((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2)) 86 (((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2)⟩
-  have step5 (t : List Bool) : run (splitFlags 86 88 2) t s4 = s5 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s4.basis 88 = false from hanc 88 (by decide) (by decide))]
-    rfl
-  let s6 : State := ⟨s.phase, writeBit (writeBit s5.basis 95 (((s.basis 6 && s.basis 4) && !s.basis 2) && s.basis 1)) 94 (((s.basis 6 && s.basis 4) && !s.basis 2) && !s.basis 1)⟩
-  have step6 (t : List Bool) : run (splitFlags 94 95 1) t s5 = s6 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s5.basis 95 = false from hanc 95 (by decide) (by decide))]
-    rfl
-  let s7 : State := ⟨s.phase, writeBit (writeBit s6.basis 93 ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && s.basis 1)) 92 ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && !s.basis 1)⟩
-  have step7 (t : List Bool) : run (splitFlags 92 93 1) t s6 = s7 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s6.basis 93 = false from hanc 93 (by decide) (by decide))]
-    rfl
-  let s8 : State := ⟨s.phase, writeBit (writeBit s7.basis 91 ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && s.basis 1)) 90 ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && !s.basis 1)⟩
-  have step8 (t : List Bool) : run (splitFlags 90 91 1) t s7 = s8 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s7.basis 91 = false from hanc 91 (by decide) (by decide))]
-    rfl
-  let s9 : State := ⟨s.phase, writeBit (writeBit s8.basis 89 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && s.basis 1)) 88 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && !s.basis 1)⟩
-  have step9 (t : List Bool) : run (splitFlags 88 89 1) t s8 = s9 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s8.basis 89 = false from hanc 89 (by decide) (by decide))]
-    rfl
-  let s10 : State := ⟨s.phase, writeBit (writeBit s9.basis 87 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && s.basis 1)) 86 ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && !s.basis 1)⟩
-  have step10 (t : List Bool) : run (splitFlags 86 87 1) t s9 = s10 := by
-    rw [run_splitFlags _ _ _ (by decide) _ _ (show s9.basis 87 = false from hanc 87 (by decide) (by decide))]
-    rfl
   dsimp only [treeDecodeCProg]
-  rw [run_append, seed, run_append, step1, run_append, step2, run_append, step3, run_append, step4, run_append, step5, run_append, step6, run_append, step7, run_append, step8, run_append, step9, step10]
-  have frame (w : Nat) (outside : w < 86 ∨ 97 ≤ w) : s10.basis w = s.basis w := by
-    have n86 : w ≠ 86 := by omega
-    have n87 : w ≠ 87 := by omega
-    have n88 : w ≠ 88 := by omega
-    have n89 : w ≠ 89 := by omega
-    have n90 : w ≠ 90 := by omega
-    have n91 : w ≠ 91 := by omega
-    have n92 : w ≠ 92 := by omega
-    have n93 : w ≠ 93 := by omega
-    have n94 : w ≠ 94 := by omega
-    have n95 : w ≠ 95 := by omega
-    have n96 : w ≠ 96 := by omega
-    simp [s10, s9, s8, s7, s6, s5, s4, s3, s2, s1, s0, writeBit, n86, n87, n88, n89, n90, n91, n92, n93, n94, n95, n96]
-  refine ⟨rfl, ?_, ?_, ?_⟩
+  rw [run_append]
+  obtain ⟨hp1, hF1, h102, h103, h104, hoth1⟩ :=
+    run_treeDecodeCompute (m.take (measurementCount treeDecodeCompute)) s hanc
+  set s1 := run treeDecodeCompute (m.take (measurementCount treeDecodeCompute)) s
+  have hc : ∀ w : Nat, w < 86 → s1.basis w = s.basis w :=
+    fun w hw => hoth1 w (Or.inl hw) (by omega) (by omega) (by omega)
+  obtain ⟨hp2, hg0, hg1, hg01, hoth2⟩ :=
+    run_treeGErase (m.drop (measurementCount treeDecodeCompute)) s1
+      (by rw [h102, hc 6 (by omega), hc 4 (by omega), hc 3 (by omega)])
+      (by rw [h103, hc 6 (by omega), hc 4 (by omega)])
+      (by rw [h104, hc 6 (by omega), hc 4 (by omega), hc 3 (by omega)])
+  set s2 := run treeGErase (m.drop (measurementCount treeDecodeCompute)) s1
+  have h2_eq : ∀ w : Nat, (w < 102 ∨ 105 ≤ w) → s2.basis w = s1.basis w :=
+    fun w hw => hoth2 w (by simp; omega)
+  refine ⟨hp2.trans hp1, ?_, ?_, ?_⟩
   · intro k hk
-    interval_cases k
-    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && !s.basis 1) = targetF s.basis 0
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && !s.basis 2) && s.basis 1) = targetF s.basis 1
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && !s.basis 1) = targetF s.basis 2
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && !s.basis 3) && s.basis 2) && s.basis 1) = targetF s.basis 3
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && !s.basis 1) = targetF s.basis 4
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && !s.basis 2) && s.basis 1) = targetF s.basis 5
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && !s.basis 1) = targetF s.basis 6
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((((s.basis 6 && !s.basis 4) && s.basis 3) && s.basis 2) && s.basis 1) = targetF s.basis 7
-      simp [targetF, qBit, Bool.and_assoc]
-    · change (((s.basis 6 && s.basis 4) && !s.basis 2) && !s.basis 1) = targetF s.basis 8
-      simp [targetF, qBit, Bool.and_assoc]
-    · change (((s.basis 6 && s.basis 4) && !s.basis 2) && s.basis 1) = targetF s.basis 9
-      simp [targetF, qBit, Bool.and_assoc]
-    · change ((s.basis 6 && s.basis 4) && s.basis 2) = targetF s.basis 10
-      simp [targetF, Bool.and_assoc]
-  · intro a ha hb
-    rw [frame a (by omega)]
-    exact hanc a (by omega) hb
+    rw [h2_eq (86 + k) (by omega)]
+    exact hF1 k hk
+  · intro a ha1 ha2
+    have : a = 97 ∨ a = 98 ∨ a = 99 ∨ a = 100 ∨ a = 101 ∨ a = 102 ∨ a = 103 ∨ a = 104 := by omega
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [h2_eq 97 (by omega), hoth1 97 (by omega) (by omega) (by omega) (by omega)]
+      exact hanc 97 (by omega) (by omega)
+    · rw [h2_eq 98 (by omega), hoth1 98 (by omega) (by omega) (by omega) (by omega)]
+      exact hanc 98 (by omega) (by omega)
+    · rw [h2_eq 99 (by omega), hoth1 99 (by omega) (by omega) (by omega) (by omega)]
+      exact hanc 99 (by omega) (by omega)
+    · rw [h2_eq 100 (by omega), hoth1 100 (by omega) (by omega) (by omega) (by omega)]
+      exact hanc 100 (by omega) (by omega)
+    · rw [h2_eq 101 (by omega), hoth1 101 (by omega) (by omega) (by omega) (by omega)]
+      exact hanc 101 (by omega) (by omega)
+    · exact hg0
+    · exact hg1
+    · exact hg01
   · intro w hw
-    exact frame w (by omega)
+    rw [h2_eq w (by omega), hoth1 w (by omega) (by omega) (by omega) (by omega)]
 
-private theorem run_measureX_twoCZ (t a b c : Wire) (ha : a ≠ t) (hb : b ≠ t) (hc : c ≠ t)
-    (m : List Bool) (s : State)
-    (h : s.basis t = ((s.basis a && s.basis c) ^^ (s.basis b && s.basis c))) :
-    run [.measureX t [] [.CZ a c, .CZ b c]] m s = ⟨s.phase, writeBit s.basis t false⟩ := by
+private theorem run_cons_CX (c t : Wire) (p : Program) (m : List Bool) (s : State) :
+    run (.CX c t :: p) m s = run p m ⟨s.phase, writeBit s.basis t (s.basis t ^^ s.basis c)⟩ := rfl
+
+private theorem run_cons_measureX_CZ (t a b : Wire) (p : Program) (hat : a ≠ t) (hbt : b ≠ t)
+    (m : List Bool) (s : State) (ht : s.basis t = (s.basis a && s.basis b)) :
+    run (.measureX t [] [.CZ a b] :: p) m s = run p m.tail ⟨s.phase, writeBit s.basis t false⟩ := by
   simp only [run, measureAndCorrect]
-  cases m.headD false
+  congr 1
+  cases hm : m.headD false
   · simp [correct]
-  · simp [correct, writeBit, ha, hb, hc, h, Bool.xor_comm, Bool.xor_left_comm]
+  · simp [correct, writeBit, hat, hbt, ht]
 
 theorem tree_erase_F_spec (m : List Bool) (s : State)
     (hF : ∀ k : Nat, k < 11 → s.basis (86 + k) = targetF s.basis k)
@@ -36631,200 +36292,81 @@ theorem tree_erase_F_spec (m : List Bool) (s : State)
     res.phase = s.phase ∧
     (∀ a : Nat, 86 ≤ a → a < 105 → res.basis a = false) ∧
     (∀ w : Nat, (w < 86 ∨ 105 ≤ w) → res.basis w = s.basis w) := by
-  have f0 : s.basis 86 = targetF s.basis 0 := hF 0 (by decide)
-  have f1 : s.basis 87 = targetF s.basis 1 := hF 1 (by decide)
-  have f2 : s.basis 88 = targetF s.basis 2 := hF 2 (by decide)
-  have f3 : s.basis 89 = targetF s.basis 3 := hF 3 (by decide)
-  have f4 : s.basis 90 = targetF s.basis 4 := hF 4 (by decide)
-  have f5 : s.basis 91 = targetF s.basis 5 := hF 5 (by decide)
-  have f6 : s.basis 92 = targetF s.basis 6 := hF 6 (by decide)
-  have f7 : s.basis 93 = targetF s.basis 7 := hF 7 (by decide)
-  have f8 : s.basis 94 = targetF s.basis 8 := hF 8 (by decide)
-  have f9 : s.basis 95 = targetF s.basis 9 := hF 9 (by decide)
-  have f10 : s.basis 96 = targetF s.basis 10 := hF 10 (by decide)
-  let b1 := writeBit s.basis 86 (s.basis 86 ^^ s.basis 87)
-  let b2 := writeBit b1 88 (s.basis 88 ^^ s.basis 89)
-  let b3 := writeBit b2 90 (s.basis 90 ^^ s.basis 91)
-  let b4 := writeBit b3 92 (s.basis 92 ^^ s.basis 93)
-  let b5 := writeBit b4 94 (s.basis 94 ^^ s.basis 95)
-  let b6 := writeBit b5 86 ((s.basis 86 ^^ s.basis 87) ^^ (s.basis 88 ^^ s.basis 89))
-  let b7 := writeBit b6 87 (s.basis 87 ^^ s.basis 89)
-  let b8 := writeBit b7 90 ((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93))
-  let b9 := writeBit b8 91 (s.basis 91 ^^ s.basis 93)
-  let b10 := writeBit b9 94 ((s.basis 94 ^^ s.basis 95) ^^ s.basis 96)
-  let b11 := writeBit b10 86 (((s.basis 86 ^^ s.basis 87) ^^ (s.basis 88 ^^ s.basis 89)) ^^ ((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93)))
-  let b12 := writeBit b11 87 ((s.basis 87 ^^ s.basis 89) ^^ (s.basis 91 ^^ s.basis 93))
-  let b13 := writeBit b12 88 ((s.basis 88 ^^ s.basis 89) ^^ (s.basis 92 ^^ s.basis 93))
-  let b14 := writeBit b13 89 (s.basis 89 ^^ s.basis 93)
-  let b15 := writeBit b14 86 ((((s.basis 86 ^^ s.basis 87) ^^ (s.basis 88 ^^ s.basis 89)) ^^ ((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93))) ^^ ((s.basis 94 ^^ s.basis 95) ^^ s.basis 96))
-  let b16 := writeBit b15 87 (((s.basis 87 ^^ s.basis 89) ^^ (s.basis 91 ^^ s.basis 93)) ^^ s.basis 95)
-  let b17 := writeBit b16 88 (((s.basis 88 ^^ s.basis 89) ^^ (s.basis 92 ^^ s.basis 93)) ^^ s.basis 96)
-  let u0 : State := ⟨s.phase, b17⟩
-  have sums (t : List Bool) : run tagSubsetSums t s = u0 := by rfl
-  let u1 : State := ⟨s.phase, writeBit u0.basis 93 false⟩
-  have erase1 (t : List Bool) : run [.measureX 93 [] [.CZ 92 1]] t u0 = u1 := by
-    apply run_measureX_CZ 93 92 1 (by decide) (by decide)
-    change s.basis 93 = (((s.basis 92 ^^ s.basis 93) && s.basis 1))
-    rw [f6, f7]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u2 : State := ⟨s.phase, writeBit u1.basis 92 false⟩
-  have erase2 (t : List Bool) : run [.measureX 92 [] [.CZ 90 2]] t u1 = u2 := by
-    apply run_measureX_CZ 92 90 2 (by decide) (by decide)
-    change (s.basis 92 ^^ s.basis 93) = ((((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93)) && s.basis 2))
-    rw [f4, f5, f6, f7]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u3 : State := ⟨s.phase, writeBit u2.basis 91 false⟩
-  have erase3 (t : List Bool) : run [.measureX 91 [] [.CZ 90 1]] t u2 = u3 := by
-    apply run_measureX_CZ 91 90 1 (by decide) (by decide)
-    change (s.basis 91 ^^ s.basis 93) = ((((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93)) && s.basis 1))
-    rw [f4, f5, f6, f7]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u4 : State := ⟨s.phase, writeBit u3.basis 90 false⟩
-  have erase4 (t : List Bool) : run [.measureX 90 [] [.CZ 6 3, .CZ 94 3]] t u3 = u4 := by
-    apply run_measureX_twoCZ 90 6 94 3 (by decide) (by decide) (by decide)
-    change ((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93)) = ((s.basis 6 && s.basis 3) ^^ (((s.basis 94 ^^ s.basis 95) ^^ s.basis 96) && s.basis 3))
-    rw [f4, f5, f6, f7, f8, f9, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u5 : State := ⟨s.phase, writeBit u4.basis 95 false⟩
-  have erase5 (t : List Bool) : run [.measureX 95 [] [.CZ 94 1, .CZ 96 1]] t u4 = u5 := by
-    apply run_measureX_twoCZ 95 94 96 1 (by decide) (by decide) (by decide)
-    change s.basis 95 = ((((s.basis 94 ^^ s.basis 95) ^^ s.basis 96) && s.basis 1) ^^ (s.basis 96 && s.basis 1))
-    rw [f8, f9, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u6 : State := ⟨s.phase, writeBit u5.basis 89 false⟩
-  have erase6 (t : List Bool) : run [.measureX 89 [] [.CZ 88 1, .CZ 96 1]] t u5 = u6 := by
-    apply run_measureX_twoCZ 89 88 96 1 (by decide) (by decide) (by decide)
-    change (s.basis 89 ^^ s.basis 93) = (((((s.basis 88 ^^ s.basis 89) ^^ (s.basis 92 ^^ s.basis 93)) ^^ s.basis 96) && s.basis 1) ^^ (s.basis 96 && s.basis 1))
-    rw [f2, f3, f6, f7, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u7 : State := ⟨s.phase, writeBit u6.basis 87 false⟩
-  have erase7 (t : List Bool) : run [.measureX 87 [] [.CZ 6 1, .CZ 96 1]] t u6 = u7 := by
-    apply run_measureX_twoCZ 87 6 96 1 (by decide) (by decide) (by decide)
-    change (((s.basis 87 ^^ s.basis 89) ^^ (s.basis 91 ^^ s.basis 93)) ^^ s.basis 95) = ((s.basis 6 && s.basis 1) ^^ (s.basis 96 && s.basis 1))
-    rw [f1, f3, f5, f7, f9, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u8 : State := ⟨s.phase, writeBit u7.basis 96 false⟩
-  have erase8 (t : List Bool) : run [.measureX 96 [] [.CZ 94 2]] t u7 = u8 := by
-    apply run_measureX_CZ 96 94 2 (by decide) (by decide)
-    change s.basis 96 = ((((s.basis 94 ^^ s.basis 95) ^^ s.basis 96) && s.basis 2))
-    rw [f8, f9, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u9 : State := ⟨s.phase, writeBit u8.basis 88 false⟩
-  have erase9 (t : List Bool) : run [.measureX 88 [] [.CZ 6 2]] t u8 = u9 := by
-    apply run_measureX_CZ 88 6 2 (by decide) (by decide)
-    change (((s.basis 88 ^^ s.basis 89) ^^ (s.basis 92 ^^ s.basis 93)) ^^ s.basis 96) = ((s.basis 6 && s.basis 2))
-    rw [f2, f3, f6, f7, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  let u10 : State := ⟨s.phase, writeBit u9.basis 94 false⟩
-  have erase10 (t : List Bool) : run [.measureX 94 [] [.CZ 6 4]] t u9 = u10 := by
-    apply run_measureX_CZ 94 6 4 (by decide) (by decide)
-    change ((s.basis 94 ^^ s.basis 95) ^^ s.basis 96) = ((s.basis 6 && s.basis 4))
-    rw [f8, f9, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  have root : u10.basis 86 = u10.basis 6 := by
-    change ((((s.basis 86 ^^ s.basis 87) ^^ (s.basis 88 ^^ s.basis 89)) ^^ ((s.basis 90 ^^ s.basis 91) ^^ (s.basis 92 ^^ s.basis 93))) ^^ ((s.basis 94 ^^ s.basis 95) ^^ s.basis 96)) = s.basis 6
-    rw [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
-    unfold targetF
-    generalize s.basis 6 = c6
-    generalize s.basis 4 = c4
-    generalize s.basis 3 = c3
-    generalize s.basis 2 = c2
-    generalize s.basis 1 = c1
-    revert c6 c4 c3 c2 c1
-    decide
-  dsimp only [treeEraseFProg]
-  rw [run_append, sums, run_append, erase1, run_append, erase2, run_append, erase3, run_append, erase4, run_append, erase5, run_append, erase6, run_append, erase7, run_append, erase8, run_append, erase9, run_append, erase10]
-  simp only [run, root, Bool.xor_self]
-  have frame (w : Nat) (outside : w < 86 ∨ 97 ≤ w) : writeBit u10.basis 86 false w = s.basis w := by
-    have n86 : w ≠ 86 := by omega
-    have n87 : w ≠ 87 := by omega
-    have n88 : w ≠ 88 := by omega
-    have n89 : w ≠ 89 := by omega
-    have n90 : w ≠ 90 := by omega
-    have n91 : w ≠ 91 := by omega
-    have n92 : w ≠ 92 := by omega
-    have n93 : w ≠ 93 := by omega
-    have n94 : w ≠ 94 := by omega
-    have n95 : w ≠ 95 := by omega
-    have n96 : w ≠ 96 := by omega
-    simp [u10, u9, u8, u7, u6, u5, u4, u3, u2, u1, u0, b17, b16, b15, b14, b13, b12, b11, b10, b9, b8, b7, b6, b5, b4, b3, b2, b1, writeBit, n86, n87, n88, n89, n90, n91, n92, n93, n94, n95, n96]
+  have f0 : s.basis 86 = (s.basis 6 && !s.basis 4 && !s.basis 3 && (!s.basis 2 && !s.basis 1)) := hF 0 (by omega)
+  have f1 : s.basis 87 = (s.basis 6 && !s.basis 4 && !s.basis 3 && (!s.basis 2 && s.basis 1)) := hF 1 (by omega)
+  have f2 : s.basis 88 = (s.basis 6 && !s.basis 4 && !s.basis 3 && (s.basis 2 && !s.basis 1)) := hF 2 (by omega)
+  have f3 : s.basis 89 = (s.basis 6 && !s.basis 4 && !s.basis 3 && (s.basis 2 && s.basis 1)) := hF 3 (by omega)
+  have f4 : s.basis 90 = (s.basis 6 && !s.basis 4 && s.basis 3 && (!s.basis 2 && !s.basis 1)) := hF 4 (by omega)
+  have f5 : s.basis 91 = (s.basis 6 && !s.basis 4 && s.basis 3 && (!s.basis 2 && s.basis 1)) := hF 5 (by omega)
+  have f6 : s.basis 92 = (s.basis 6 && !s.basis 4 && s.basis 3 && (s.basis 2 && !s.basis 1)) := hF 6 (by omega)
+  have f7 : s.basis 93 = (s.basis 6 && !s.basis 4 && s.basis 3 && (s.basis 2 && s.basis 1)) := hF 7 (by omega)
+  have f8 : s.basis 94 = (s.basis 6 && s.basis 4 && (!s.basis 2 && !s.basis 1)) := hF 8 (by omega)
+  have f9 : s.basis 95 = (s.basis 6 && s.basis 4 && (!s.basis 2 && s.basis 1)) := hF 9 (by omega)
+  have f10 : s.basis 96 = (s.basis 6 && s.basis 4 && s.basis 2) := hF 10 (by omega)
+  have hrun : run treeEraseFProg m s = ⟨s.phase,
+      fun w => if 86 ≤ w ∧ w < 97 then false else s.basis w⟩ := by
+    show run [ .CX 87 86, .measureX 87 [] [.CZ 86 1], .CX 89 88, .measureX 89 [] [.CZ 88 1],
+        .CX 88 86, .measureX 88 [] [.CZ 86 2],
+        .CX 91 90, .measureX 91 [] [.CZ 90 1], .CX 93 92, .measureX 93 [] [.CZ 92 1],
+        .CX 92 90, .measureX 92 [] [.CZ 90 2],
+        .CX 95 94, .measureX 95 [] [.CZ 94 1], .CX 96 94, .measureX 96 [] [.CZ 94 2],
+        .CX 90 86, .measureX 90 [] [.CZ 86 3], .CX 94 86, .CX 6 86, .measureX 94 [] [.CZ 6 4] ] m s = _
+    rw [run_cons_CX, run_cons_measureX_CZ 87 86 1 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f0, f1]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 89 88 1 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f2, f3]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 88 86 2 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f0, f1, f2, f3]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 91 90 1 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f4, f5]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 93 92 1 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f6, f7]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 92 90 2 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f4, f5, f6, f7]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 95 94 1 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f8, f9]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 96 94 2 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f8, f9, f10]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_measureX_CZ 90 86 3 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f0, f1, f2, f3, f4, f5, f6, f7]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    rw [run_cons_CX, run_cons_CX, run_cons_measureX_CZ 94 6 4 _ (by decide) (by decide) _ _
+      (by simp [writeBit, f8, f9, f10]; cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)]
+    simp only [run]
+    congr 1
+    funext (w : Nat)
+    by_cases hw : 86 ≤ w ∧ w < 97
+    · rw [if_pos hw]
+      have : w = 86 ∨ w = 87 ∨ w = 88 ∨ w = 89 ∨ w = 90 ∨ w = 91 ∨ w = 92 ∨ w = 93 ∨ w = 94 ∨ w = 95 ∨ w = 96 := by omega
+      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        first
+        | (simp [writeBit, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]; done)
+        | (simp [writeBit, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10]
+           cases s.basis 1 <;> cases s.basis 2 <;> cases s.basis 3 <;> cases s.basis 4 <;> cases s.basis 6 <;> rfl)
+    · rw [if_neg hw]
+      have h86 : w ≠ 86 := by omega
+      have h87 : w ≠ 87 := by omega
+      have h88 : w ≠ 88 := by omega
+      have h89 : w ≠ 89 := by omega
+      have h90 : w ≠ 90 := by omega
+      have h91 : w ≠ 91 := by omega
+      have h92 : w ≠ 92 := by omega
+      have h93 : w ≠ 93 := by omega
+      have h94 : w ≠ 94 := by omega
+      have h95 : w ≠ 95 := by omega
+      have h96 : w ≠ 96 := by omega
+      simp [writeBit, h86, h87, h88, h89, h90, h91, h92, h93, h94, h95, h96]
+  rw [hrun]
   refine ⟨rfl, ?_, ?_⟩
-  · intro a lo hi
-    by_cases flag : a < 97
-    · interval_cases a <;> rfl
-    · exact (frame a (by omega)).trans (hQT a (by omega) hi)
+  · intro a ha1 ha2
+    by_cases h : a < 97
+    · simp [ha1, h]
+    · have h' : ¬ (86 ≤ a ∧ a < 97) := fun hh => h hh.2
+      simp only [h', if_false]
+      exact hQT a (by omega) ha2
   · intro w hw
-    exact frame w (by omega)
+    have h' : ¬ (86 ≤ w ∧ w < 97) := by omega
+    simp only [h', if_false]
+
 
 /-! ## Section 8: Component 4 — `clear_or_restore_C_spec` -/
 
@@ -38300,8 +37842,8 @@ private theorem packTag_inner_roundtrip (s0 : State) (m1 m2 : List Bool)
           cases hr5 : run treeEraseFProg m' s1 with
           | mk ph5 bs5 =>
             simp only [hr5] at hp5 hanc5 hoth5
-            rw [show ph5 = ph from hp5.trans hp1]
             congr 1
+            · exact hp5.trans hp1
             · funext (w : Nat)
               by_cases hw : w < 86 ∨ 105 ≤ w
               · exact (hoth5 w hw).trans (hoth1 w hw)
