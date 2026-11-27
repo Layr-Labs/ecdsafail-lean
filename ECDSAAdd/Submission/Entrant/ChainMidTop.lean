@@ -643,12 +643,12 @@ theorem unleave150Top_metrics :
     exact ⟨⟨⟨⟨hphys.1.1.1.1, hpc⟩, hphys.1.1.2⟩, hphys.1.2⟩, hphys.2⟩
 
 /-- Core undo helper for transition block 150 (called from `Trans150` in `MainQ1.lean`). -/
-theorem unleave150Top_undo_core (s uB : State) (m n : List Bool)
+theorem unleave150Top_undo_core (s uB : State) (m n : List Bool) (A : List Gate)
     (h1557_uB : uB.basis 1557 = false)
-    (hEnd : run leave150To20Red m s = run (GateMirror.forward leaveAfter150To20) [] uB)
-    (vAft : CRTBarrel.LeaveSplice.Valid uB leaveAfter150To20)
+    (hEnd : run leave150To20Red m s = run (GateMirror.forward A) [] uB)
+    (vAft : CRTBarrel.LeaveSplice.Valid uB A)
     (hSplit : let top := Shadow7.a0P 150 + lows150 - 2
-      leaveAfter150To20 = (tailD0_150 ++ pairGM false 1614 (Shadow7.a0P 150 - 1 + 16) (Shadow7.bankW 150 16) ++
+      A = (tailD0_150 ++ pairGM false 1614 (Shadow7.a0P 150 - 1 + 16) (Shadow7.bankW 150 16) ++
         tailD1_150 ++ [.pop (Shadow7.e0P 150 + 3) (Shadow7.e0P 150 + 4) 1559] ++
         tailE0_150 ++ [.make 1558 top 1559]) ++
       (chainMid150 ++ ([.pop 1558 top 1559] ++ tailE1_150)))
@@ -658,7 +658,7 @@ theorem unleave150Top_undo_core (s uB : State) (m n : List Bool)
   let pref := tailD0_150 ++ pairGM false 1614 (Shadow7.a0P 150 - 1 + 16) (Shadow7.bankW 150 16) ++
       tailD1_150 ++ [.pop (Shadow7.e0P 150 + 3) (Shadow7.e0P 150 + 4) 1559] ++
       tailE0_150 ++ [.make 1558 top 1559]
-  have hS : leaveAfter150To20 = pref ++ (chainMid150 ++ ([.pop 1558 top 1559] ++ tailE1_150)) := hSplit
+  have hS : A = pref ++ (chainMid150 ++ ([.pop 1558 top 1559] ++ tailE1_150)) := hSplit
   have vRaw : DeadJoin.RawValid uB (pref ++ (chainMid150 ++ ([.pop 1558 top 1559] ++ tailE1_150))) := by
     rw [← hS]; exact ⟨vAft.physical, vAft.prepared, vAft.ready⟩
   obtain ⟨_, vCP⟩ := vRaw.parts
@@ -877,7 +877,7 @@ theorem unleave20Top_undo (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 
   have hbar := barrel20_mid_rt j s [] z g0 s0 h
   simp only [List.drop_nil] at hbar
   have hbar_def (t : List Bool) : run (barrel20 (start20 j) false) t uB = run (barrel20 (start20 j) false) [] uB :=
-    state_eq_of_phase_basis ((hbar t).2.trans (hbar []).2.symm) (run_basis_any20 _ t [] uB uB rfl)
+    state_eq_of_phase_basis ((hbar t).2.1.trans (hbar []).2.1.symm) (run_basis_any20 _ t [] uB uB rfl)
   let uA := run (barrel20 (start20 j) false) [] uB
   obtain ⟨haf_prep, haf_ready⟩ := leaveAfter20_valid j s [] z g0 s0 h
   simp only [List.drop_nil] at haf_prep haf_ready
