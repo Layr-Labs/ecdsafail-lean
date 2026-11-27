@@ -2793,6 +2793,41 @@ def tailE1_150 : List Gate :=
   chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + (L - 1)) 1556, .x 1556] 0 (L - 1) ++
   xsG seq2.reverse ++ [.x 1558] ++ leaveLowClose150 ++ leaveClose150To20
 
+/-- Low chain top on the 150 -> 20 leave: `1556` is clean right after the innermost low link, so the link
+`make; cx; x; pop` becomes `x; pop` straight on `1556` (one fewer make). -/
+def lowHead150 : List Gate := DeadJoin.chainPre7 (1558 + ·) (Shadow7.b0P 150 - 1 + ·) 0 (lows150 - 2)
+
+def lowTail150 : List Gate := DeadJoin.chainPost7 (1558 + ·) (Shadow7.b0P 150 - 1 + ·) 0 (lows150 - 2)
+
+def lowOld150 : List Gate :=
+  [.make (1558 + (lows150 - 2)) (Shadow7.b0P 150 - 1 + (lows150 - 2)) (1558 + (lows150 - 1)),
+   .cx (1558 + (lows150 - 1)) 1556, .x 1556,
+   .pop (1558 + (lows150 - 2)) (Shadow7.b0P 150 - 1 + (lows150 - 2)) (1558 + (lows150 - 1))]
+
+def lowNew150 : List Gate :=
+  [.x 1556, .pop (1558 + (lows150 - 2)) (Shadow7.b0P 150 - 1 + (lows150 - 2)) 1556]
+
+def lowPre150 : List Gate :=
+  let L := lows150
+  let top := Shadow7.a0P 150 + L - 2
+  let H := Shadow7.liveW 150 - L
+  let hi := (List.range H).map fun i => Shadow7.bankW 150 (L + i)
+  let seq2 := (List.range (L - 1)).map (Shadow7.b0P 150 - 1 + ·)
+  xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++ lowHead150
+
+def lowPost150 : List Gate :=
+  let seq2 := (List.range (lows150 - 1)).map (Shadow7.b0P 150 - 1 + ·)
+  lowTail150 ++ (xsG seq2.reverse ++ [.x 1558])
+
+def tailE1_150S : List Gate := lowPre150 ++ (lowNew150 ++ (lowPost150 ++ (leaveLowClose150 ++ leaveClose150To20)))
+
+theorem tailE1_150_low_split :
+    tailE1_150 = lowPre150 ++ (lowOld150 ++ (lowPost150 ++ (leaveLowClose150 ++ leaveClose150To20))) := by
+  decide +kernel
+
+theorem lowPost150_keeps : lowPost150.all (fun g => decide (GateMirror.target g ≠ 1556)) = true := by
+  decide +kernel
+
 /-- Chain top on the 150 -> 20 leave: the innermost store-chain link computes straight into the clean `1557`. -/
 def chainH150 : Nat := Shadow7.liveW 150 - lows150
 
@@ -2854,7 +2889,7 @@ theorem tailD1S150_split : tailD1S150 = selHead150 ++ (DI7Affine.clear false sel
 def afterRow150 : List Gate :=
   let top := Shadow7.a0P 150 + lows150 - 2
   tailD0_150 ++ tailD1S150 ++ [.cx (Shadow7.e0P 150 + 4) 1559] ++ tailE0_150 ++
-  [.cx top 1559] ++ chainMid150S ++ [.cx top 1559] ++ tailE1_150
+  [.cx top 1559] ++ chainMid150S ++ [.cx top 1559] ++ tailE1_150S
 
 def leave150To20Red : Program :=
   GateMirror.forward (CRTBarrel.before 150) ++ CRTBarrel.barrel 150 false ++
@@ -2865,9 +2900,9 @@ def leaveInv150To20Red : Program :=
 
 private theorem leave150Red_sum_counts :
     (CRTBarrel.before 150).countP isCCX + afterRow150.countP isCCX = 50 ∧
-    (CRTBarrel.before 150).countP isMake + afterRow150.countP isMake = 234 ∧
+    (CRTBarrel.before 150).countP isMake + afterRow150.countP isMake = 233 ∧
     (CRTBarrel.before 150).countP isPop + afterRow150.countP isPop = 251 ∧
-    (CRTBarrel.before 150).length + afterRow150.length = 1571 := by
+    (CRTBarrel.before 150).length + afterRow150.length = 1569 := by
   decide +kernel
 
 private theorem leave150Red_gates_ok :
@@ -2877,12 +2912,12 @@ private theorem leave150Red_gates_ok :
 
 attribute [local irreducible] CRTBarrel.barrel GateMirror.forward inverse toffoliCount measurementCount gateSlots in
 theorem leave150To20Red_counts :
-    toffoliCount leave150To20Red = 452 ∧
+    toffoliCount leave150To20Red = 451 ∧
     toffoliCount leaveInv150To20Red = 455 ∧
     measurementCount leave150To20Red = 265 ∧
-    measurementCount leaveInv150To20Red = 262 ∧
-    gateSlots leave150To20Red = 11516 ∧
-    gateSlots leaveInv150To20Red = 11509 := by
+    measurementCount leaveInv150To20Red = 261 ∧
+    gateSlots leave150To20Red = 11514 ∧
+    gateSlots leaveInv150To20Red = 11506 := by
   have hs := leave150Red_sum_counts
   have cb : Counts (CRTBarrel.before 150) ((CRTBarrel.before 150).countP isCCX)
       ((CRTBarrel.before 150).countP isMake) ((CRTBarrel.before 150).countP isPop)
@@ -3361,12 +3396,12 @@ private theorem mixed_sum_vals (d : Bool) :
     (4 * Shadow7.wpP 45 - 2 + 6 + 30 * (Shadow7.smallBits j0 + 16) + 9 +
       (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 3 * Shadow7.lowsP 45 + 95 + CRTBarrel.barrelT 45 false)) +
     (prefixPairs.map (fun p => b15TF p.2)).sum +
-    (6 + 30 * (Shadow7.smallBits j7 + 16) + 9 + 41 + 452) +
+    (6 + 30 * (Shadow7.smallBits j7 + 16) + 9 + 41 + 451) +
     ((List.finRange 9).map b20TF).sum +
     (6 + 30 * (Shadow7.smallBits j20 + 16) + 9 + 9 + 41 +
       (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 3 * Shadow7.lowsP 345 + 95 + CRTBarrel.barrelT 345 false)) +
     (suffixPairs.map (fun p => b15TF p.2)).sum +
-    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126681 ∧
+    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126680 ∧
     (4 * Shadow7.wpP 45 - 7 + 2 + 15 * (Shadow7.smallBits j0 + 16) + 4 +
       (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 86 + CRTBarrel.barrelM 45 false)) +
     (prefixPairs.map (fun p => b15MF d p.2)).sum +
@@ -3390,10 +3425,10 @@ private theorem mixed_sum_vals (d : Bool) :
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 57 + CRTBarrel.barrelM 345 true) +
       15 * (Shadow7.smallBits j20 + 16) + (if d then 43 else 44) + 2 + 2 + 3) +
     ((List.finRange 9).reverse.map (b20MR d)).sum +
-    (262 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
+    (261 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
     (prefixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 57 + CRTBarrel.barrelM 45 true) +
-      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64992 else 65014) := by
+      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64991 else 65013) := by
   cases d <;> decide +kernel
 
 attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shadow7.enterInvP
@@ -3403,10 +3438,10 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   archiveLoadP20 archiveRestoreP20 leave150To20Red leaveInv150To20Red archiveLoad150To20 archiveRestore150To20
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forwardMixed d) = 126681 ∧
+    toffoliCount (forwardMixed d) = 126680 ∧
     toffoliCount (reverseMixed d) = (if d then 126664 else 126686) ∧
     measurementCount (forwardMixed d) = (if d then 65283 else 65305) ∧
-    measurementCount (reverseMixed d) = (if d then 65034 else 65056) := by
+    measurementCount (reverseMixed d) = (if d then 65033 else 65055) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
   have hfM := measure_flatten measurementCount measurementCount_append (forwardL d)
@@ -8817,13 +8852,8 @@ private theorem suffix_after150 :
     (leaveLowClose150 ++ leaveClose150To20) <:+ afterRow150 := by
   refine ⟨tailD0_150 ++ tailD1S150 ++ [.cx (Shadow7.e0P 150 + 4) 1559] ++ tailE0_150 ++
     [.cx (Shadow7.a0P 150 + lows150 - 2) 1559] ++ chainMid150S ++ [.cx (Shadow7.a0P 150 + lows150 - 2) 1559] ++
-    (let L := lows150; let top := Shadow7.a0P 150 + L - 2; let H := Shadow7.liveW 150 - L
-     let hi := (List.range H).map fun i => Shadow7.bankW 150 (L + i)
-     let seq2 := (List.range (L - 1)).map (Shadow7.b0P 150 - 1 + ·)
-     xsG hi.reverse ++ [.x top, .x 1558, .make 1556 1557 1558, .x 1558] ++ xsG seq2 ++
-     chainG (1558 + ·) (Shadow7.b0P 150 - 1 + ·) [.cx (1558 + (L - 1)) 1556, .x 1556] 0 (L - 1) ++
-     xsG seq2.reverse ++ [.x 1558]), ?_⟩
-  unfold afterRow150 tailE1_150; simp only [List.append_assoc]
+    (lowPre150 ++ (lowNew150 ++ lowPost150)), ?_⟩
+  unfold afterRow150 tailE1_150S; simp only [List.append_assoc]
 
 private theorem leave150_shape :
     ∃ X, leave150To20Red = X ++ (Eblk150 ++ GateMirror.forward leaveClose150To20) := by
@@ -9401,10 +9431,10 @@ theorem mixedCut_run_eq (d : Bool) :
    funext fun m => funext fun s => (MixedFredCut.rev_mixed_cut d).run_eq m s⟩
 
 theorem mixedCut_counts (d : Bool) :
-    toffoliCount (forwardMixedCut d) = 126589 ∧
+    toffoliCount (forwardMixedCut d) = 126588 ∧
     toffoliCount (reverseMixedCut d) = (if d then 126572 else 126594) ∧
     measurementCount (forwardMixedCut d) = (if d then 65283 else 65305) ∧
-    measurementCount (reverseMixedCut d) = (if d then 65034 else 65056) := by
+    measurementCount (reverseMixedCut d) = (if d then 65033 else 65055) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
   have htr := (MixedFredCut.rev_mixed_cut d).tc_eq
@@ -10099,10 +10129,10 @@ theorem resource_delta (d : Bool) :
   simpa only [pieces_old,pieces_new,pieces_saving,reverse,MixedWindow.reverseMixedCut] using h
 
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forward d) = 126589 ∧
+    toffoliCount (forward d) = 126588 ∧
     toffoliCount (reverse d) = (if d then 126401 else 126423) ∧
     measurementCount (forward d) = (if d then 65283 else 65305) ∧
-    measurementCount (reverse d) = (if d then 65205 else 65227) := by
+    measurementCount (reverse d) = (if d then 65204 else 65226) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d
   cases d <;> simp only [Bool.false_eq_true,↓reduceIte,forward] at old h ⊢ <;>
