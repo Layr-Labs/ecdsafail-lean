@@ -9615,6 +9615,45 @@ theorem moved_valid {j : Fin 26} (h0 : 0≤j.val) (h1 : j.val≤24) {s : State} 
   intro tape
   exact (congrArg State.phase (h.sameMove (by omega) (by omega) tape)).trans (ph tape)
 
+theorem moved_src1556 : ∀ j : Fin 26, j.val ≤ 24 →
+    LeaveRelocation.source (Relocated.moves j) 1556 = 1556 := by
+  decide +kernel
+
+set_option linter.constructorNameAsVariable false in
+/-- `1556` is clean at the end of the moved leave (`Whole.result` with the store result: the close
+does not touch `1556` and the relocation fixes it). Used by the 15-tick low chain top link. -/
+theorem moved_end1556 {j : Fin 26} (h0 : 0≤j.val) (h1 : j.val≤24) {s : State} {z : SkywalkNat.State}
+    {g0 s0 : Bool} (h : Inputs j s z g0 s0) :
+    (run (GateMirror.forward (Shadow7.leaveMoveOps (start j))) [] s).basis 1556 = false := by
+  let u := LeaveJ7.Admission.flags z g0 s0
+  let xs := SkywalkTrace.trace 15 (SkywalkRails.encode g0 s0 z.u z.v)
+  have par := RecordedParity.result j (by omega) (by omega) s z g0 s0 ⟨h.farSmall, h.endSmall⟩ h.odd h.record
+  have mode : LeaveSelector.actualMode (Shadow7.sbP (start j)) z = LeaveSelector.farMode (s.basis (Shadow7.e0P (start j) + 3)) (s.basis (Shadow7.e0P (start j) + 4)) z.u := by
+    rw [h.far, h.side]; exact LeaveTraceHistory.flags _ _
+  have ev := RecordedEvents.result j (by omega) (by omega) s z g0 s0 ⟨h.farSmall, h.endSmall⟩ h.odd h.record
+  have W := Whole.result (flag := LeaveJ7.RecordedEvents.glueFlag j (by omega) (by omega) s z g0 s0 ⟨h.farSmall, h.endSmall⟩ h.odd h.record h.far h.side) j (by omega) (by omega) s [] z u.1 u.2 ⟨h.farSmall, h.endSmall⟩ h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank
+      h.zero par mode ev.2 ⟨h.nextFarSmall, h.endSmall⟩ h.fit xs (SkywalkTrace.trace_length _ _)
+      (LeaveJ7.Far.certifiedChain _ _ _ _ ⟨h.farSmall, h.endSmall⟩ h.odd) (LeaveJ7.Far.firstSwap _ _ _ _ ⟨h.farSmall, h.endSmall⟩ h.odd)
+      ev.1 h.far h.side
+  have bs := beforeStore_result (flag := LeaveJ7.RecordedEvents.glueFlag j (by omega) (by omega) s z g0 s0 ⟨h.farSmall, h.endSmall⟩ h.odd h.record h.far h.side) j (by omega) (by omega) s [] z u.1 u.2 ⟨h.farSmall,h.endSmall⟩ h.ready h.fresh h.scratch h.temp h.odd h.room h.clean h.padding h.bank h.zero par mode
+    ev.2 ⟨h.nextFarSmall,h.endSmall⟩ h.fit
+  have v1556 : (run (StoreMapped.program j) [] s).basis 1556 = false := by
+    have safe : (1556 : Wire) ∉ (GateMirror.forward (Shadow7.leaveLowClose (start j))).map LeaveReadoutFrame.destination := by
+      intro hm
+      rw [dest_forward] at hm
+      obtain ⟨g, hg, e⟩ := List.mem_map.mp hm
+      exact (lowClose_keeps j (by omega) (by omega) g hg).2 e
+    rw [StoreMapped.program, run_append, run_take, LeaveReadoutFrame.preserved _ _ _ _ safe]
+    exact bs.2.1
+  have same : run (GateMirror.forward (Shadow7.leaveMoveOps (start j))) [] s = run (Shadow7.leaveP j) [] s :=
+    h.sameMove h0 h1 []
+  have W5 := W.2.2.2.2 1556
+  rw [same, W5, moved_src1556 j h1]
+  simp only [writeBit, Function.update_apply]
+  split
+  · rfl
+  · exact v1556
+
 end ECDSAAdd.Entrant.StairPacket.CRTBarrel.LeaveSplice
 end
 
@@ -10281,6 +10320,7 @@ theorem crt_all_pair {j : Fin 26} (hi : j.val≤24) {s : State} {z : SkywalkNat.
     exact h.movedRelation (Nat.zero_le _) hi
   obtain ⟨valid,beforeEq,whole⟩ := raw_crt_all_valid57 j hi s raw (pair_zero j hi s (entry_top_zero hi h))
     (admitted_scan_eq hi h) rel zero6 keptRel (h.zero _ (by simp [LeaveJ7.watched]))
+    (CRTBarrel.LeaveSplice.moved_end1556 (Nat.zero_le _) hi h)
   have cold4 := h.scratch 1556 (by decide)
   have cold5 := h.scratch 1571 (by decide)
   obtain ⟨clean, same⟩ := Clean1556.clean_raw j hi s _ valid cold4 cold5
@@ -15422,7 +15462,7 @@ set_option linter.unusedSimpArgs false
 
 def tcV : Pieces Nat := { WindowParams7.tcV with
   leave := fun j => if crtBlocks j then
-      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+95+CRTBarrel.barrelT (start j) false
+      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+94+CRTBarrel.barrelT (start j) false
     else if WindowParams.inBlocks j then 5*Shadow7.wpP (start j)+Shadow7.liveW (start j)+3*Shadow7.lowsP (start j)+112 else toffoliCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
       CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+124+CRTBarrel.barrelT (start j) true
@@ -15434,17 +15474,17 @@ def mcV : Pieces Nat := { WindowParams7.mcV with
       CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+86+CRTBarrel.barrelM (start j) false
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+Shadow7.lowsP (start j)+89 else measurementCount (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+57+CRTBarrel.barrelM (start j) true
+      CRTBarrel.adjustWidth (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+56+CRTBarrel.barrelM (start j) true
     else if WindowParams.inBlocks j then Shadow7.wpP (start j)+Shadow7.liveW (start j)+2*Shadow7.lowsP (start j)+57 else measurementCount (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.mcV.unrouted j a n + (if a=1 ∧ n=14 then 14 else 0) }
 
 def slotsV : Pieces Nat := { WindowParams7.slotsV with
   leave := fun j => if crtBlocks j then
-      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+643+3*Shadow7.wpP (start j+15)+
+      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+641+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) false
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+10*Shadow7.lowsP (start j)+725+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveP j)
   leaveInv := fun j => if crtBlocks j then
-      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+614+3*Shadow7.wpP (start j+15)+
+      6 * CRTBarrel.adjustWidth (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+611+3*Shadow7.wpP (start j+15)+
         CRTBarrel.barrelSlots (start j) true
     else if WindowParams.inBlocks j then 18*Shadow7.wpP (start j)+5*Shadow7.liveW (start j)+11*Shadow7.lowsP (start j)+693+3*Shadow7.wpP (start j+15) else gateSlots (Shadow7.leaveMoveInvP j)
   unrouted := fun j a n => WindowParams7.slotsV.unrouted j a n + (if a=1 ∧ n=14 then 98 else 0) }
@@ -15605,14 +15645,14 @@ theorem counts (d : Bool) (j : Fin 26) (js : List (Fin 26)) :
 
 /-- The CRT window (blocks 1..22, exit 420; CRT barrel on 1..22): counts by one Nat decide over the closed forms. -/
 theorem ship_counts :
-    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127041 ∧
-    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127041 ∧
+    toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=127016 ∧
+    toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=127016 ∧
     toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=126946 ∧
     toffoliCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=126971 ∧
     measurementCount (forwardW CRTBarrel.params true first WindowParams7.rest7)=65175 ∧
     measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7)=65200 ∧
-    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=65019 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65044 := by
+    measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7)=64994 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7)=65019 := by
   rw [(counts true first WindowParams7.rest7).1,(counts false first WindowParams7.rest7).1,(counts true first WindowParams7.rest7).2.1,(counts false first WindowParams7.rest7).2.1,
     (counts true first WindowParams7.rest7).2.2.1,(counts false first WindowParams7.rest7).2.2.1,(counts true first WindowParams7.rest7).2.2.2,
     (counts false first WindowParams7.rest7).2.2.2]
@@ -15692,10 +15732,10 @@ theorem window_physical (d : Bool) :
     flatten_of WindowPhysicalW.nilP (fun ha hb => WindowPhysicalW.appP ha hb) _
       (reverseL_onE (params_onE_phys d) _ _ WindowParams7.consec7 rfl WindowParams7.last7 (by decide))⟩
 
-theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127041 :=
+theorem ship_toffoliF_true : toffoliCount (forwardW CRTBarrel.params true first WindowParams7.rest7) = 127016 :=
   ship_counts.1
 
-theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127041 :=
+theorem ship_toffoliF_false : toffoliCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 127016 :=
   ship_counts.2.1
 
 theorem ship_toffoliR_true : toffoliCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 126946 :=
@@ -15708,8 +15748,8 @@ theorem ship_measureF : measurementCount (forwardW CRTBarrel.params true first W
     measurementCount (forwardW CRTBarrel.params false first WindowParams7.rest7) = 65200 :=
   ⟨ship_counts.2.2.2.2.1, ship_counts.2.2.2.2.2.1⟩
 
-theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 65019 ∧
-    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65044 :=
+theorem ship_measureR : measurementCount (reverseW CRTBarrel.params true first WindowParams7.rest7) = 64994 ∧
+    measurementCount (reverseW CRTBarrel.params false first WindowParams7.rest7) = 65019 :=
   ship_counts.2.2.2.2.2.2
 
 theorem ship_slotsF : gateSlots (forward45plus1 true) ≤ 2419219 ∧ gateSlots (forward45plus1 false) ≤ 2419219 :=
@@ -15760,7 +15800,7 @@ theorem cut_slotsF : gateSlots (forwardCut true) ≤ 2419219 ∧ gateSlots (forw
 theorem cut_slotsR : gateSlots (reverseCut true) ≤ 2403746 ∧ gateSlots (reverseCut false) ≤ 2403746 :=
   ⟨(FredCut.rev_cut true).slots_le.trans ship_slots.2.2.1, (FredCut.rev_cut false).slots_le.trans ship_slots.2.2.2⟩
 
-theorem cut_toffoliF : toffoliCount (forwardCut true) = 126937 ∧ toffoliCount (forwardCut false) = 126937 := by
+theorem cut_toffoliF : toffoliCount (forwardCut true) = 126912 ∧ toffoliCount (forwardCut false) = 126912 := by
   have a := (cut_toffoli true).1
   have b := (cut_toffoli false).1
   rw [ship_toffoliF_true] at a
@@ -15778,7 +15818,7 @@ theorem cut_measureF : measurementCount (forwardCut true) = 65175 ∧ measuremen
   rw [(cut_measure true).1, (cut_measure false).1]
   exact ship_measureF
 
-theorem cut_measureR : measurementCount (reverseCut true) = 65019 ∧ measurementCount (reverseCut false) = 65044 := by
+theorem cut_measureR : measurementCount (reverseCut true) = 64994 ∧ measurementCount (reverseCut false) = 65019 := by
   rw [(cut_measure true).2, (cut_measure false).2]
   exact ship_measureR
 
