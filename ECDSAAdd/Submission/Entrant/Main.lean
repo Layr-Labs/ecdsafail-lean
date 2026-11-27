@@ -1070,6 +1070,342 @@ theorem strong (d : Bool) (x : Nat) (good : Bounds x p) (raw : State) (m : List 
   rw [hf, hr]
   exact all (pullState (OB5.sig 44) raw) m ⟨raw, stage, rfl⟩
 
+
+/-! ### Section 6: the strong chain for the reverse walk with the chain-top measured erase
+
+`ChainMidTop` replaces, in each of the 22 window blocks, the inverse of the leave's store chain by
+`chainTopInv`, whose innermost step erases the inverted chain copy in wire 1557 by measurement
+instead of recomputing and erasing the top carry. Each block's top leave inverse undoes the same
+leave on the same admitted inputs as the old one, so every chunk of the strong chain carries over
+by swapping the leave inverse at the head of its reverse program. -/
+
+private theorem checked_swap {Fall Rall Rall' F L U U' R : Program} {A B : State → Prop}
+    (hF : Fall = F ++ L) (hR : Rall = U ++ R) (hR' : Rall' = U' ++ R)
+    (h : Checked Fall Rall A B)
+    (hu : ∀ s m, A s → ∀ k, run U k (run L (m.drop (measurementCount F)) (run F m s)) = run F m s)
+    (hu' : ∀ s m, A s → ∀ k, run U' k (run L (m.drop (measurementCount F)) (run F m s)) = run F m s) :
+    Checked Fall Rall' A B := by
+  subst hF hR hR'
+  intro s m hA
+  obtain ⟨ph, post, undo⟩ := h s m hA
+  refine ⟨ph, post, fun n => ?_⟩
+  have hout : run (F ++ L) m s = run L (m.drop (measurementCount F)) (run F m s) := by
+    rw [run_append, run_take]
+  have key := undo (List.replicate (measurementCount U) false ++ n.drop (measurementCount U'))
+  show run (U' ++ R) n (run (F ++ L) m s) = s
+  rw [hout, run_append, run_take, hu s m hA] at key
+  rw [hout, run_append, run_take, hu' s m hA]
+  rwa [List.drop_left' (by simp)] at key
+
+private theorem chunk1_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked
+      ([Shadow7.portalP 45, Shadow7.enterP MixedWindow.j0, Shadow7.routed MixedWindow.j0 0 1,
+        MixedWindow.packW d 45 45, Shadow7.routed MixedWindow.j0 1 14, CRTBarrel.leave MixedWindow.j0]).flatten
+      ([ChainMidTop.unleave15Top MixedWindow.j0, TickCut.Hosted.unroutedHigh MixedWindow.j0 1 14,
+        MixedWindow.unpackW d 45 45, Shadow7.unrouted MixedWindow.j0 0 1,
+        Shadow7.enterInvP MixedWindow.j0, Shadow7.portalInvP 45]).flatten
+      (BeforeW d x p) (fun s => ReadyW d x p 60 s ∧ SavedBefore d x p 0 s) := by
+  refine checked_swap
+    (F := Shadow7.portalP (start WindowParams.first) ++ NativeFirstJ7.enteredWindow WindowParams.first d)
+    (L := CRTBarrel.leave WindowParams.first)
+    (U := CRTBarrel.unleave MixedWindow.j0) (U' := ChainMidTop.unleave15Top MixedWindow.j0)
+    (first_eq d) rfl rfl (chunk1_checked d x good) ?_ ?_
+  · intro s m hb
+    obtain ⟨raw, stage, rfl⟩ := hb
+    obtain ⟨g, sg, -, hin, -⟩ := StockWindowW7.leaves22.first d x p good raw m [] stage
+    exact fun t => (LeaveJ7.Admission.Inputs.crt_pair (by decide) (by decide) hin).2 _ t
+  · intro s m hb
+    obtain ⟨raw, stage, rfl⟩ := hb
+    obtain ⟨g, sg, -, hin, -⟩ := StockWindowW7.leaves22.first d x p good raw m [] stage
+    exact fun t => ChainMidTop.unleave15Top_undo (by decide) (by decide) hin _ t
+
+private theorem inputs15 (d : Bool) (x : Nat) (good : Bounds x p) (k : Fin 26) (h1 : 1 ≤ k.val)
+    (h24 : k.val ≤ 24) (s : State) (m : List Bool) (h : ReadyW d x p (start k) s) :
+    ∃ z g sg, LeaveJ7.Admission.Inputs k (run (NativeJ7.nextWindow k d) m s) z g sg := by
+  obtain ⟨k1', e0, raw, g, sg, pg, ps, pre⟩ := h
+  have same0 : k1' = k := Fin.ext (by have := e0; simp only [StairPacket.start] at this; omega)
+  rw [same0] at pre
+  have curr := readInput (start k) x p raw g sg pre.input
+  have scr := StockWindowW7.leaves22.scratch k h1 h24 d x p good raw s g sg pg ps m pre
+  have native := NativeJ7.from_domain_matched k h1 h24 d x p good raw s m pre.domain g sg pre.cut curr
+    scr pg ps _ pre.facts
+  exact ⟨_, _, _, native.1⟩
+
+private theorem chunk15_top (d : Bool) (x : Nat) (good : Bounds x p)
+    (i k : Fin 26) (hk : k.val = i.val + 1) (h1 : 1 ≤ k.val) (h24 : k.val ≤ 24)
+    (hu : k.val ≤ 6 ∨ (20 ≤ k.val ∧ k.val ≤ 24))
+    (n : Nat) (bNew : MixedGeo.Bank)
+    (hbn : bNew.val = n)
+    (hb_ports : MixedGeo.bankPorts StockWindowChainP.ExitPorts420 bNew = ArchiveJ7.codePorts i)
+    (hb_key : mixedKey x p bNew = value x p (start i) (Shadow7.sbP (start i)) (StockRowVectorW.crossW i))
+    (hprev : ∀ b : MixedGeo.Bank, b.val < n → MixedGeo.endTick b + 15 ≤ start k) :
+    Checked (MixedWindow.block15F d i k).flatten (ChainMidTop.block15R_top d i k).flatten
+      (fun s => ReadyW d x p (start k) s ∧ SavedBefore d x p n s)
+      (fun s => ReadyW d x p (start k + 15) s ∧ SavedBefore d x p (n + 1) s) := by
+  have hfe : (MixedWindow.block15F d i k).flatten = NativeJ7.nextWindow k d ++ CRTBarrel.leave k := by
+    have e : (MixedWindow.block15F d i k).flatten = (nextF CRTBarrel.params d i k).flatten := by
+      simp only [MixedWindow.block15F, MixedWindow.packW, nextF, CRTBarrel.params, Shadow7.params, ofParts,
+        List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+    exact e.trans (next_eq d i k hk)
+  refine checked_swap (U := CRTBarrel.unleave k) (U' := ChainMidTop.unleave15Top k) hfe rfl rfl
+    (chunk15_step d x good i k hk h1 h24 n bNew hbn hb_ports hb_key hprev) ?_ ?_
+  · intro s m hA
+    obtain ⟨z, g, sg, hin⟩ := inputs15 d x good k h1 h24 s m hA.1
+    exact fun t => (LeaveJ7.Admission.Inputs.crt_pair (Nat.zero_le _) h24 hin).2 _ t
+  · intro s m hA
+    obtain ⟨z, g, sg, hin⟩ := inputs15 d x good k h1 h24 s m hA.1
+    exact fun t => ChainMidTop.unleave15Top_undo h24 hu hin _ t
+
+private theorem chunk2_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked (MixedWindow.prefixPairs.flatMap fun p => MixedWindow.block15F d p.1 p.2).flatten
+      (MixedWindow.prefixPairs.reverse.flatMap fun p => ChainMidTop.block15R_top d p.1 p.2).flatten
+      (fun s => ReadyW d x p 60 s ∧ SavedBefore d x p 0 s)
+      (fun s => ReadyW d x p 150 s ∧ SavedBefore d x p 6 s) := by
+  have mk (n : Nat) (hn : n < 6) :=
+    chunk15_top d x good ⟨n, by omega⟩ ⟨n + 1, by omega⟩ rfl (by dsimp; omega) (by dsimp; omega)
+      (Or.inl (by dsimp; omega)) n ⟨n, by omega⟩ rfl
+      (by simp only [MixedGeo.bankPorts, dif_pos (show n < 7 by omega)])
+      (by unfold mixedKey; rw [dif_pos (show n < 7 by omega)])
+      (fun b hb => by
+        have h : ∀ k : MixedGeo.Bank, k.val < 6 → ∀ m : Nat, m < 6 → k.val < m → MixedGeo.endTick k + 15 ≤ 45 + 15 * (m + 1) := by
+          decide +kernel
+        exact h b (by omega) n hn hb)
+  have c := composition (mk 0 (by decide)) (composition (mk 1 (by decide)) (composition (mk 2 (by decide))
+    (composition (mk 3 (by decide)) (composition (mk 4 (by decide)) (mk 5 (by decide))))))
+  simpa only [MixedWindow.prefixPairs, List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append,
+    List.flatMap_cons, List.flatMap_nil, List.append_nil, List.flatten_append, List.append_assoc] using c
+
+private theorem chunk3_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked
+      ([Shadow7.enterP MixedWindow.j7, Shadow7.routed MixedWindow.j7 0 1, MixedWindow.packW d 150 140,
+        Shadow7.archiveLoadP MixedWindow.j6 d, Shadow7.routed MixedWindow.j7 1 14, leave150To20Red]).flatten
+      ([ChainMidTop.unleave150Top, TickCut.Hosted.unroutedHigh MixedWindow.j7 1 14,
+        Shadow7.archiveRestoreP MixedWindow.j6 d, MixedWindow.unpackW d 150 140,
+        Shadow7.unrouted MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten
+      (fun s => ReadyW d x p 150 s ∧ SavedBefore d x p 6 s)
+      (fun s => Ready20 ⟨0, by decide⟩ d x p s ∧ SavedBefore d x p 7 s) := by
+  have hfl : ([Shadow7.enterP MixedWindow.j7, Shadow7.routed MixedWindow.j7 0 1, MixedWindow.packW d 150 140,
+      Shadow7.archiveLoadP MixedWindow.j6 d, Shadow7.routed MixedWindow.j7 1 14, leave150To20Red]).flatten =
+      NativeJ7.nextWindow MixedWindow.j7 d ++ leave150To20Red := by
+    simp only [NativeJ7.nextWindow, NativeJ7.window, Shadow7.body, NativeJ7.withArchive, NativeJ7.program,
+      MixedWindow.packW, show NativeJ7.prev MixedWindow.j7 = MixedWindow.j6 from rfl,
+      show start MixedWindow.j7 = 150 from rfl,
+      List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+  have key : ∀ s m, (ReadyW d x p 150 s ∧ SavedBefore d x p 6 s) →
+      ∃ g sg, LeaveJ7.Admission.Inputs MixedWindow.j7 (run (NativeJ7.nextWindow MixedWindow.j7 d) m s)
+        (unsigned 150 x p) g sg ∧ Shadow7.SmallIfFar 163 20 (SkywalkNat.step^[15] (unsigned 150 x p)) := by
+    intro s m ⟨hr, hs⟩
+    obtain ⟨k, ek, raw, g, sg, pg, ps, pre⟩ := hr
+    have hk7 : k = MixedWindow.j7 := Fin.ext (by simp only [start] at ek; show k.val = 7; omega)
+    subst hk7
+    have hs150 : start MixedWindow.j7 = 150 := rfl
+    have hinp150 : InputAt 150 (signedAt 150 x p g sg) raw := hs150 ▸ pre.input
+    have inp := readInput 150 x p raw g sg hinp150
+    have scr := StockWindowW7.leaves22.scratch MixedWindow.j7 (by decide) (by decide) d x p good raw s g sg pg ps m pre
+    have nat := NativeJ7.from_domain_matched MixedWindow.j7 (by decide) (by decide) d x p good raw s m pre.domain g sg
+      pre.cut (hs150.symm ▸ inp) scr pg ps _ pre.facts
+    have hnextSmall20 : Shadow7.SmallIfFar 163 20 (SkywalkNat.step^[15] (unsigned 150 x p)) := by
+      have hs165 : start20 ⟨0, by decide⟩ = 165 := rfl
+      have hsb163 : sbP20 (start20 ⟨0, by decide⟩) = 163 := rfl
+      have h1 := (actualNumbers20 ⟨0, by decide⟩ x p good).small.1
+      rw [hsb163, hs165] at h1
+      have he165 : SkywalkNat.step^[15] (unsigned 150 x p) = unsigned 165 x p := by
+        show SkywalkNat.step^[15] (SkywalkNat.step^[150] (SkywalkNat.init x p)) = SkywalkNat.step^[165] (SkywalkNat.init x p)
+        rw [show (165 : Nat) = 150 + 15 by decide, Nat.add_comm, Function.iterate_add_apply]
+      rw [he165]; exact h1
+    exact ⟨g, sg, nat.1, hnextSmall20⟩
+  refine checked_swap (U := leaveInv150To20Red) (U' := ChainMidTop.unleave150Top) hfl rfl rfl
+    (chunk3_checked d x good) ?_ ?_
+  · intro s m hA
+    obtain ⟨g, sg, hin, hsm⟩ := key s m hA
+    exact fun t => (leave150To20Red_pair _ _ g sg hin hsm).2 _ t
+  · intro s m hA
+    obtain ⟨g, sg, hin, hsm⟩ := key s m hA
+    exact fun t => leave150To20Red_top _ _ g sg hin hsm _ t
+
+private theorem inputs20 (d : Bool) (x : Nat) (good : Bounds x p) (j : Fin 9) (s : State) (m : List Bool)
+    (h : Ready20 j d x p s) : ∃ z g sg, Inputs20 j (run (nextWindow20 j d) m s) z g sg := by
+  obtain ⟨raw, g, sg, pg, ps, pre⟩ := h
+  have nums := actualNumbers20 j x p good
+  have hist := WideReference20.pulled_history20 j pre.domain
+  have inp := readInput (start20 j) x p raw g sg pre.input
+  let T := Shadow.reduced (sbP20 (start20 j)) 20 (unsigned (start20 j) x p)
+  let Z := encode g sg T.u T.v
+  have to' : T.v % 2 = 1 := shadow_odd20 (sbP20 (start20 j)) (unsigned (start20 j) x p) nums.small.1 nums.odd
+  have parity : (Z.a + Z.b) % 2 = 1 := encode_odd_sum g sg _ _ (by omega)
+  have ready := EnterJ20.ready_pending_at j raw s (unsigned (start20 j) x p) g sg m nums.small.1 pre.cut inp hist
+  have scr := scratch_raw_clean20 j d raw s m x p good pre.domain _ _ _ Z parity ready.2.1 pre.cut
+  have prevOdd : (unsigned (prevTick20 j) x p).v % 2 = 1 := by
+    unfold prevTick20; split_ifs with h0
+    · exact (LeaveJ7.Admission.actualNumbers MixedWindow.j7 (by decide) (by decide) x p good).odd
+    · exact (actualNumbers20 (prev20 j) x p good).odd
+  have prevSm : PrevSmall20 j (unsigned (prevTick20 j) x p) := by
+    unfold PrevSmall20 prevTick20; split_ifs with h0
+    · exact (LeaveJ7.Admission.actualNumbers MixedWindow.j7 (by decide) (by decide) x p good).farSmall
+    · exact (actualNumbers20 (prev20 j) x p good).small.1
+  have adm := TickCut.Leaf20.admitted20 j d x p good raw s m pre.domain g sg pre.cut inp scr
+    (unsigned (prevTick20 j) x p) pg ps (prevCross20 j x p) prevOdd prevSm pre.facts
+  exact ⟨_, _, _, adm.1⟩
+
+private theorem block20_top_flatten (d : Bool) (j : Fin 9) :
+    (ChainMidTop.block20R_top d j).flatten = ChainMidTop.unleave20Top j ++ TickCut.Wide.nextUnwind20 j d := by
+  unfold ChainMidTop.block20R_top TickCut.Wide.nextUnwind20 TickCut.Wide.unwind20 TickCut.Wide.unbodySelected
+    fromArchive20 packRev20 archRestore20 prev20
+  by_cases h0 : j.val = 0
+  · simp only [h0, ↓reduceDIte, ↓reduceIte, List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+  · simp only [h0, ↓reduceDIte, ↓reduceIte, List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+
+private theorem step20_next_top (d : Bool) (x : Nat) (good : Bounds x p)
+    (j k : Fin 9) (hk : k.val = j.val + 1) :
+    Checked (MixedWindow.block20F d j).flatten (ChainMidTop.block20R_top d j).flatten
+      (fun s => Ready20 j d x p s ∧ SavedBefore d x p (7 + j.val) s)
+      (fun s => Ready20 k d x p s ∧ SavedBefore d x p (7 + j.val + 1) s) := by
+  refine checked_swap (block20_flatten d j).1 (block20_flatten d j).2 (block20_top_flatten d j)
+    (step20_next_checked d x good j k hk) ?_ ?_
+  · intro s m hA
+    obtain ⟨z, g, sg, hin⟩ := inputs20 d x good j s m hA.1
+    exact fun t => (leaveP20Red_pair j _ z g sg hin).2 _ t
+  · intro s m hA
+    obtain ⟨z, g, sg, hin⟩ := inputs20 d x good j s m hA.1
+    exact fun t => ChainMidTop.unleave20Top_undo j _ z g sg hin _ t
+
+private theorem step20_last_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked (MixedWindow.block20F d MixedWindow.k8).flatten (ChainMidTop.block20R_top d MixedWindow.k8).flatten
+      (fun s => Ready20 MixedWindow.k8 d x p s ∧ SavedBefore d x p 15 s)
+      (fun s => Ready345 d x p s ∧ SavedBefore d x p 16 s) := by
+  refine checked_swap (block20_flatten d MixedWindow.k8).1 (block20_flatten d MixedWindow.k8).2
+    (block20_top_flatten d MixedWindow.k8) (step20_last_checked d x good) ?_ ?_
+  · intro s m hA
+    obtain ⟨z, g, sg, hin⟩ := inputs20 d x good MixedWindow.k8 s m hA.1
+    exact fun t => (leaveP20Red_pair MixedWindow.k8 _ z g sg hin).2 _ t
+  · intro s m hA
+    obtain ⟨z, g, sg, hin⟩ := inputs20 d x good MixedWindow.k8 s m hA.1
+    exact fun t => ChainMidTop.unleave20Top_undo MixedWindow.k8 _ z g sg hin _ t
+
+private theorem chunk4_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked ((List.finRange 9).flatMap (MixedWindow.block20F d)).flatten
+      ((List.finRange 9).reverse.flatMap (ChainMidTop.block20R_top d)).flatten
+      (fun s => Ready20 ⟨0, by decide⟩ d x p s ∧ SavedBefore d x p 7 s)
+      (fun s => Ready345 d x p s ∧ SavedBefore d x p 16 s) := by
+  have c := composition (step20_next_top d x good ⟨0, by decide⟩ ⟨1, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨1, by decide⟩ ⟨2, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨2, by decide⟩ ⟨3, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨3, by decide⟩ ⟨4, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨4, by decide⟩ ⟨5, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨5, by decide⟩ ⟨6, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨6, by decide⟩ ⟨7, by decide⟩ rfl)
+    (composition (step20_next_top d x good ⟨7, by decide⟩ ⟨8, by decide⟩ rfl)
+      (step20_last_top d x good))))))))
+  have hfr : List.finRange 9 =
+      [⟨0, by decide⟩, ⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩, ⟨4, by decide⟩,
+       ⟨5, by decide⟩, ⟨6, by decide⟩, ⟨7, by decide⟩, ⟨8, by decide⟩] := by decide
+  rw [hfr]
+  simpa only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append,
+    List.flatMap_cons, List.flatMap_nil, List.append_nil, List.flatten_append, List.append_assoc] using c
+
+private theorem chunk5_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked
+      ([Shadow7.enterP MixedWindow.j20, Shadow7.routed MixedWindow.j20 0 1,
+        MixedWindow.packW d 345 330, MixedWindow.packW d 345 335, archiveLoadP20 MixedWindow.k8 d,
+        Shadow7.routed MixedWindow.j20 1 14, CRTBarrel.leave MixedWindow.j20]).flatten
+      ([ChainMidTop.unleave15Top MixedWindow.j20, TickCut.Hosted.unroutedHigh MixedWindow.j20 1 14,
+        archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
+        Shadow7.unrouted MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten
+      (fun s => Ready345 d x p s ∧ SavedBefore d x p 16 s)
+      (fun s => ReadyW d x p 360 s ∧ SavedBefore d x p 17 s) := by
+  have hfl : ([Shadow7.enterP MixedWindow.j20, Shadow7.routed MixedWindow.j20 0 1,
+      MixedWindow.packW d 345 330, MixedWindow.packW d 345 335, archiveLoadP20 MixedWindow.k8 d,
+      Shadow7.routed MixedWindow.j20 1 14, CRTBarrel.leave MixedWindow.j20]).flatten =
+      nextWindow345 d ++ CRTBarrel.leave MixedWindow.j20 := by
+    simp only [nextWindow345, window345, Shadow7.body, withArchive345, packProg345,
+      List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+  refine checked_swap (U := CRTBarrel.unleave MixedWindow.j20) (U' := ChainMidTop.unleave15Top MixedWindow.j20)
+    hfl rfl rfl (chunk5_checked d x good) ?_ ?_
+  · intro s m hA
+    obtain ⟨⟨raw, g, sg, pg, ps, pre⟩, _⟩ := hA
+    have inp := readInput 345 x p raw g sg pre.input
+    have adm := admitted345 d x p good raw s m pre.domain g sg pre.cut inp pg ps _ pre.facts
+    exact fun t => (LeaveJ7.Admission.Inputs.crt_pair (by decide) (by decide) adm.1).2 _ t
+  · intro s m hA
+    obtain ⟨⟨raw, g, sg, pg, ps, pre⟩, _⟩ := hA
+    have inp := readInput 345 x p raw g sg pre.input
+    have adm := admitted345 d x p good raw s m pre.domain g sg pre.cut inp pg ps _ pre.facts
+    exact fun t => ChainMidTop.unleave15Top_undo (by decide) (by decide) adm.1 _ t
+
+private theorem chunk6_top (d : Bool) (x : Nat) (good : Bounds x p) :
+    Checked (MixedWindow.suffixPairs.flatMap fun p => MixedWindow.block15F d p.1 p.2).flatten
+      (MixedWindow.suffixPairs.reverse.flatMap fun p => ChainMidTop.block15R_top d p.1 p.2).flatten
+      (fun s => ReadyW d x p 360 s ∧ SavedBefore d x p 17 s)
+      (fun s => ReadyW d x p 420 s ∧ SavedBefore d x p 21 s) := by
+  have mk (r : Nat) (hr : r < 4) :=
+    chunk15_top d x good ⟨20 + r, by omega⟩ ⟨21 + r, by omega⟩ (by dsimp; omega) (by dsimp; omega) (by dsimp; omega)
+      (Or.inr ⟨by dsimp; omega, by dsimp; omega⟩) (17 + r) ⟨17 + r, by omega⟩ rfl
+      (by unfold MixedGeo.bankPorts
+          rw [dif_neg (by dsimp; omega), dif_neg (by dsimp; omega), dif_neg (by dsimp; omega), dif_pos (by dsimp; omega)]
+          congr 1; apply Fin.ext; dsimp; omega)
+      (by unfold mixedKey
+          rw [dif_neg (by dsimp; omega), dif_neg (by dsimp; omega), dif_neg (by dsimp; omega)]
+          have hfe : (⟨(⟨17 + r, by omega⟩ : MixedGeo.Bank).val + 3, by dsimp; omega⟩ : Fin 26) = ⟨20 + r, by omega⟩ :=
+            Fin.ext (by dsimp; omega)
+          rw [hfe])
+      (fun b hb => by
+        have h : ∀ k : MixedGeo.Bank, ∀ m : Nat, m < 4 → k.val < 17 + m → MixedGeo.endTick k + 15 ≤ 45 + 15 * (21 + m) := by
+          decide +kernel
+        exact h b r hr hb)
+  have c := composition (mk 0 (by decide)) (composition (mk 1 (by decide))
+    (composition (mk 2 (by decide)) (mk 3 (by decide))))
+  simpa only [MixedWindow.suffixPairs, List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append,
+    List.flatMap_cons, List.flatMap_nil, List.append_nil, List.flatten_append, List.append_assoc] using c
+
+/-- The strong chain with the chain-top reverse: phase preservation, all 22 saved archive keys,
+and exact roundtrip under `ChainMidTop.reverseUncutTop d`. -/
+theorem strongTop (d : Bool) (x : Nat) (good : Bounds x p) (raw : State) (m : List Bool)
+    (stage : Rolling1588.Integer.Stage base d x p 45 raw.basis) :
+    let start0 := pullState (OB5.sig 44) raw
+    let out := run (MixedWindow.forwardMixed d) m start0
+    out.phase = raw.phase ∧
+    mixedFinal StockWindowChainP.ExitPorts420 d x p out ∧
+    ∀ n, run (ChainMidTop.reverseUncutTop d) n out = start0 := by
+  have all := composition (chunk1_top d x good)
+    (composition (chunk2_top d x good)
+    (composition (chunk3_top d x good)
+    (composition (chunk4_top d x good)
+    (composition (chunk5_top d x good)
+    (composition (chunk6_top d x good)
+      (chunk7_checked d x good))))))
+  have hf : MixedWindow.forwardMixed d =
+      ([Shadow7.portalP 45, Shadow7.enterP MixedWindow.j0, Shadow7.routed MixedWindow.j0 0 1,
+        MixedWindow.packW d 45 45, Shadow7.routed MixedWindow.j0 1 14, CRTBarrel.leave MixedWindow.j0]).flatten ++
+      ((MixedWindow.prefixPairs.flatMap fun p => MixedWindow.block15F d p.1 p.2).flatten ++
+      (([Shadow7.enterP MixedWindow.j7, Shadow7.routed MixedWindow.j7 0 1, MixedWindow.packW d 150 140,
+        Shadow7.archiveLoadP MixedWindow.j6 d, Shadow7.routed MixedWindow.j7 1 14, leave150To20Red]).flatten ++
+      (((List.finRange 9).flatMap (MixedWindow.block20F d)).flatten ++
+      (([Shadow7.enterP MixedWindow.j20, Shadow7.routed MixedWindow.j20 0 1,
+        MixedWindow.packW d 345 330, MixedWindow.packW d 345 335, archiveLoadP20 MixedWindow.k8 d,
+        Shadow7.routed MixedWindow.j20 1 14, CRTBarrel.leave MixedWindow.j20]).flatten ++
+      ((MixedWindow.suffixPairs.flatMap fun p => MixedWindow.block15F d p.1 p.2).flatten ++
+      ([Shadow7.parkP 420, Shadow7.portalInvP 420, MixedWindow.tickW 420, MixedWindow.packW d 420 410,
+        Shadow7.exitLoadP 420 d]).flatten))))) := by
+    simp only [MixedWindow.forwardMixed, MixedWindow.forwardL, List.flatten_append, List.append_assoc]
+  have hr : ChainMidTop.reverseUncutTop d =
+      (((((([Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410, MixedWindow.recvW 420,
+        Shadow7.portalP 420, Shadow7.parkInvP 420]).flatten ++
+      (MixedWindow.suffixPairs.reverse.flatMap fun p => ChainMidTop.block15R_top d p.1 p.2).flatten) ++
+      ([ChainMidTop.unleave15Top MixedWindow.j20, TickCut.Hosted.unroutedHigh MixedWindow.j20 1 14,
+        archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
+        Shadow7.unrouted MixedWindow.j20 0 1, Shadow7.enterInvP MixedWindow.j20]).flatten) ++
+      ((List.finRange 9).reverse.flatMap (ChainMidTop.block20R_top d)).flatten) ++
+      ([ChainMidTop.unleave150Top, TickCut.Hosted.unroutedHigh MixedWindow.j7 1 14,
+        Shadow7.archiveRestoreP MixedWindow.j6 d,
+        MixedWindow.unpackW d 150 140, Shadow7.unrouted MixedWindow.j7 0 1, Shadow7.enterInvP MixedWindow.j7]).flatten) ++
+      (MixedWindow.prefixPairs.reverse.flatMap fun p => ChainMidTop.block15R_top d p.1 p.2).flatten) ++
+      ([ChainMidTop.unleave15Top MixedWindow.j0, TickCut.Hosted.unroutedHigh MixedWindow.j0 1 14,
+        MixedWindow.unpackW d 45 45, Shadow7.unrouted MixedWindow.j0 0 1,
+        Shadow7.enterInvP MixedWindow.j0, Shadow7.portalInvP 45]).flatten := by
+    simp only [ChainMidTop.reverseUncutTop, ChainMidTop.reverseL_top, List.flatten_append, List.append_assoc]
+  rw [hf, hr]
+  exact all (pullState (OB5.sig 44) raw) m ⟨raw, stage, rfl⟩
+
 end ECDSAAdd.Entrant.StairPacket.Shadow20.MixedChain
 end
 -- ==== end Shadow7Wide20Chain ====
@@ -2443,7 +2779,7 @@ theorem result (d:Bool) (x:Nat) (good:Bounds x p) (raw:State) (m:List Bool)
     let out:=run (Shadow20.MergeCut.forward d) m start0
     out.phase=raw.phase ∧ Shadow20.MixedChain.mixedFinal StockWindowChainP.ExitPorts420 d x p out ∧
       ∀n,run (Shadow20.MergeCut.reverse d) n out=start0 := by
-  have h := Shadow20.MixedChain.strong d x good raw m stage
+  have h := Shadow20.MixedChain.strongTop d x good raw m stage
   rw [← (Shadow20.MergeCut.run_eq d).1, ← Shadow20.MergeCut.reverse_run_eq d] at h
   exact h
 
@@ -2972,8 +3308,11 @@ private theorem tagSwap_caller (q : Wire) (hq : q ∈ callerDomain) : tagSwap q 
 
 theorem group84Body_good (d:Bool):GoodP (group84Body d):=by
   have ord {a b:Program} (x:GoodP a) (y:GoodP b):GoodP (ordered d a b):=by cases d <;> first | exact app x y | exact app y x
-  have og (j n:Nat) (hi:j+n≤102):GoodP (ogroup d j n):=
-    Finset.Subset.trans (WindowFieldCosts.ot_ogroup_sub d j n) (ordinary d j n hi)
+  have og (j n:Nat) (hi:j+n≤102):GoodP (rgroup d j n):= by
+    intro q hq
+    rcases Finset.mem_insert.mp (WindowFieldCosts.rgroup_sub d j n hq) with e|h
+    · subst e; exact callerDomain_of_range (by decide) (by decide)
+    · exact Finset.Subset.trans (WindowFieldCosts.ot_ogroup_sub d j n) (ordinary d j n hi) h
   have ot (j:Nat) (hj:j∈[10,13,16,19,22,25,28,31,35,39,43,47,51,55,59,63,67,70,73,76,79,82]) (hi:j≤83):GoodP (oten j (!d)):=
     Finset.Subset.trans (WindowFieldCosts.ot_oten_sub j (!d)) (pair d j hj hi)
   have c43 := ord (ot 82 (by decide) (by decide)) (og 84 1 (by decide))
