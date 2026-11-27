@@ -5122,11 +5122,212 @@ theorem forward_relX (d : Bool) : LRel 90 (forwardLCX d) (MixedFredCut.forwardLC
     exact (LRel.app (LRel.refl (forwardPreX d)) (tail_rel d)).cast (by omega)
   exact Rel.trans h1 (forward_rel d)
 
+/-! ### Reverse exit merge
+
+The mirror of the exit merge in the reverse walks. The merged receiver untick of tick 420 (`recvWM`) ends
+with the exchange of the eight pairs `ps8` under `436` (`ps8.flatMap (fR 436)`, its last 24 gates). The reverse
+portal `portalCM`, the inverse park and the first 142 gates of block 24's unleave never write those sixteen
+wires, `435` or `436` (the portal brackets its own exchanges by `CX 435 436` and is measurement-free on that
+stretch), and the unleave then exchanges the same pairs under `435` (`fE 435 ps8.reverse`). Moving the second
+exchange back next to the first and composing the two gives one exchange under `435 ⊕ 436`, which saves eight
+Toffolis per reverse walk. -/
+
+def recvA : Program := recvWM.take 1329
+def mergedX : Program := [.CX 435 436] ++ fE 436 ps8 ++ [.CX 435 436]
+def recvX : Program := recvA ++ mergedX
+def unA : Program := (MixedFredCut.unleave15C jL).take 142
+def unB : Program := (MixedFredCut.unleave15C jL).drop 166
+def unleaveX : Program := unA ++ unB
+def portA : Program := portalCM.take 121
+def portB : Program := portalCM.drop 121
+/-- Everything between the moved exchange's new and old positions, after the portal's gate-only head. -/
+def midR : Program := portB ++ (Shadow7.parkInvP 420 ++ unA)
+
+theorem rexit_facts :
+    recvWM.drop 1329 = ps8.flatMap (fR 436) ∧
+    ((MixedFredCut.unleave15C jL).drop 142).take 24 = fE 435 ps8.reverse ∧
+    (MixedFredCut.wl (fE 435 ps8.reverse)).all
+      (fun q => !(StairLoan.maskOf (MixedFredCut.wl midR)).testBit q) = true ∧
+    portA.all isGate = true := by
+  decide +kernel
+
+theorem rexit_small :
+    toffoliCount (ps8.flatMap (fR 436)) = 8 ∧ toffoliCount (fE 435 ps8.reverse) = 8 ∧
+    toffoliCount mergedX = 8 ∧ measurementCount (ps8.flatMap (fR 436)) = 0 ∧
+    measurementCount (fE 435 ps8.reverse) = 0 ∧ measurementCount mergedX = 0 ∧
+    gateSlots mergedX ≤ gateSlots (ps8.flatMap (fR 436)) + gateSlots (fE 435 ps8.reverse) ∧
+    (MixedFredCut.wl mergedX).all
+      (fun q => (StairLoan.maskOf (MixedFredCut.wl (ps8.flatMap (fR 436) ++ fE 435 ps8.reverse))).testBit q) = true ∧
+    mergedX.all physicalGateCheck = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+theorem portA_nonint : ∀ i ∈ portA, ∀ j ∈ fE 435 ps8.reverse, NonInt i j := by
+  unfold NonInt
+  decide +kernel
+
+theorem good8a : Good [435] ps8 := by unfold Good; decide
+
+theorem recv_split : recvWM = recvA ++ ps8.flatMap (fR 436) := by
+  rw [← rexit_facts.1]; exact (List.take_append_drop 1329 recvWM).symm
+
+theorem unleave_split : MixedFredCut.unleave15C jL = unA ++ (fE 435 ps8.reverse ++ unB) := by
+  unfold unA unB
+  have h3 : ((MixedFredCut.unleave15C jL).drop 142).drop 24 = (MixedFredCut.unleave15C jL).drop 166 := by
+    rw [List.drop_drop]
+  have e : (MixedFredCut.unleave15C jL).drop 142 = fE 435 ps8.reverse ++ (MixedFredCut.unleave15C jL).drop 166 := by
+    rw [← List.take_append_drop 24 ((MixedFredCut.unleave15C jL).drop 142), rexit_facts.2.1, h3]
+  conv_lhs => rw [← List.take_append_drop 142 (MixedFredCut.unleave15C jL)]
+  rw [e]
+
+theorem portal_split : portalCM = portA ++ portB := (List.take_append_drop 121 portalCM).symm
+
+theorem rexit_eqv (R : Program) :
+    Eqv (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R))))
+      (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R)))) := by
+  rw [recv_split, unleave_split, portal_split]
+  have gA : GateOnly portA := fun i hi => List.all_eq_true.mp rexit_facts.2.2.2 i hi
+  have gE : GateOnly (fE 435 ps8.reverse) := gate_ce _ _
+  have gF : GateOnly (ps8.flatMap (fR 436)) := gate_csl _ _
+  have gM : GateOnly mergedX := by
+    have g1 : GateOnly [Instr.CX 435 436] := by intro k hk; simp at hk; subst hk; rfl
+    exact gate_app.mpr ⟨gate_app.mpr ⟨g1, gate_ce _ _⟩, g1⟩
+  have dj : Disjoint (wires (fE 435 ps8.reverse)) (wires midR) := disj_mask _ _ rexit_facts.2.2.1
+  have eNew : recvX ++ ((portA ++ portB) ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R))) =
+      recvA ++ (mergedX ++ (portA ++ (midR ++ (unB ++ R)))) := by
+    simp only [recvX, unleaveX, midR, List.append_assoc]
+  have eOld : recvA ++ ps8.flatMap (fR 436) ++ ((portA ++ portB) ++ (Shadow7.parkInvP 420 ++
+      (unA ++ (fE 435 ps8.reverse ++ unB) ++ R))) =
+      recvA ++ (ps8.flatMap (fR 436) ++ (portA ++ (midR ++ (fE 435 ps8.reverse ++ (unB ++ R))))) := by
+    simp only [midR, List.append_assoc]
+  rw [eNew, eOld]
+  refine Eqv.appR ?_
+  -- 1. the unleave's exchange moves back over `midR` (disjoint wires)
+  have s1 : Eqv (midR ++ (fE 435 ps8.reverse ++ (unB ++ R))) (fE 435 ps8.reverse ++ (midR ++ (unB ++ R))) := by
+    have cm := eqv_comm_disj (fE 435 ps8.reverse) midR rexit_small.2.2.2.2.1 dj
+    have m1 : measurementCount (midR ++ fE 435 ps8.reverse) = measurementCount (fE 435 ps8.reverse ++ midR) := by
+      simp only [measurementCount_append]; omega
+    have := Eqv.appLm (Q := unB ++ R) (Eqv.symm cm) m1
+    simpa only [List.append_assoc] using this
+  -- 2. and over the portal's gate-only head (only read-only sharing of `435`)
+  have s2 : Eqv (portA ++ (fE 435 ps8.reverse ++ (midR ++ (unB ++ R))))
+      (fE 435 ps8.reverse ++ (portA ++ (midR ++ (unB ++ R)))) := by
+    have cm := commP portA (fE 435 ps8.reverse) gA gE portA_nonint
+    have := Eqv.appL (Q := midR ++ (unB ++ R)) cm (gate_app.mpr ⟨gA, gE⟩) (gate_app.mpr ⟨gE, gA⟩)
+    simpa only [List.append_assoc] using this
+  -- 3. the two adjacent exchanges compose into one under `435 ⊕ 436`
+  have s3 : Eqv (ps8.flatMap (fR 436) ++ (fE 435 ps8.reverse ++ (portA ++ (midR ++ (unB ++ R)))))
+      (mergedX ++ (portA ++ (midR ++ (unB ++ R)))) := by
+    have t1 : Eqv (ps8.flatMap (fR 436) ++ fE 435 ps8.reverse) (ps8.flatMap (fR 436) ++ fE 435 ps8) :=
+      Eqv.appR (fE_rev 435 ps8 good8a)
+    have t2 : Eqv (ps8.flatMap (fR 436) ++ fE 435 ps8) mergedX := merge_rev 435 436 ps8 good8
+    have := Eqv.appL (Q := portA ++ (midR ++ (unB ++ R))) (t1.trans t2) (gate_app.mpr ⟨gF, gE⟩) gM
+    simpa only [List.append_assoc] using this
+  refine Eqv.symm ?_
+  exact (Eqv.appR (Eqv.appR s1)).trans ((Eqv.appR s2).trans s3)
+
+theorem rexit_mc (R : Program) :
+    measurementCount (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R)))) =
+      measurementCount (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R)))) := by
+  rw [recv_split, unleave_split]
+  have h := rexit_small
+  simp only [recvX, unleaveX, measurementCount_append]
+  omega
+
+theorem rexit_tc (R : Program) :
+    toffoliCount (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R)))) + 8 =
+      toffoliCount (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R)))) := by
+  rw [recv_split, unleave_split]
+  have h := rexit_small
+  simp only [recvX, unleaveX, toffoliCount_append]
+  omega
+
+theorem rexit_gs (R : Program) :
+    gateSlots (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R)))) ≤
+      gateSlots (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R)))) := by
+  rw [recv_split, unleave_split]
+  have h := rexit_small.2.2.2.2.2.2.1
+  simp only [recvX, unleaveX, gateSlots_append]
+  omega
+
+theorem rexit_w (R : Program) :
+    wires (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R)))) ⊆
+      wires (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R)))) := by
+  rw [recv_split, unleave_split]
+  have hm := sub_mask _ _ rexit_small.2.2.2.2.2.2.2.1
+  intro q hq
+  simp only [recvX, unleaveX, wires_append, Finset.mem_union] at hq hm ⊢
+  rcases hq with (h | h) | h | h | (h | h) | h
+  · exact Or.inl (Or.inl h)
+  · rcases Finset.mem_union.mp (hm h) with h' | h'
+    · exact Or.inl (Or.inr h')
+    · exact Or.inr (Or.inr (Or.inr (Or.inl (Or.inr (Or.inl h')))))
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr (Or.inl h))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl (Or.inl h))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl (Or.inr (Or.inr h)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr h)))
+
+theorem rexit_phys (R : Program)
+    (h : GatePhysical (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R))))) :
+    GatePhysical (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R)))) := by
+  rw [recv_split, unleave_split] at h
+  have pm := physicalGateCheck_correct _ rexit_small.2.2.2.2.2.2.2.2
+  simp only [recvX, unleaveX, gatePhysical_append] at h ⊢
+  exact ⟨⟨h.1.1, pm⟩, h.2.1, h.2.2.1, ⟨h.2.2.2.1.1, h.2.2.2.1.2.2⟩, h.2.2.2.2⟩
+
+theorem rexit_rel (R : Program) :
+    Rel 8 (recvX ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (unleaveX ++ R))))
+      (recvWM ++ (portalCM ++ (Shadow7.parkInvP 420 ++ (MixedFredCut.unleave15C jL ++ R)))) :=
+  ⟨rexit_eqv R, rexit_mc R, rexit_tc R, rexit_w R, rexit_gs R, rexit_phys R⟩
+
+/-- The reverse window list after block 24's unleave. -/
+def reversePostX (d : Bool) : List Program :=
+  [TickCut.Hosted.unroutedHigh jL 1 14, Shadow7.archiveRestoreP jL' d,
+   MixedWindow.unpackW d (start jL) (start jL - 10), u15 jL, i15 jL] ++
+  ([(⟨22, by decide⟩, ⟨23, by decide⟩), (⟨21, by decide⟩, ⟨22, by decide⟩), (⟨20, by decide⟩, ⟨21, by decide⟩)].flatMap
+    fun (p : Fin 26 × Fin 26) => block15RM d p.1 p.2) ++
+  [MixedFredCut.unleave15C MixedWindow.j20, TickCut.Hosted.unroutedHigh MixedWindow.j20 1 14,
+   archiveRestoreP20 MixedWindow.k8 d, MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330,
+   u15 MixedWindow.j20, i15 MixedWindow.j20] ++
+  ((List.finRange 9).reverse.flatMap (block20RM d)) ++
+  [MixedFredCut.unleave150C, TickCut.Hosted.unroutedHigh MixedWindow.j7 1 14,
+   Shadow7.archiveRestoreP MixedWindow.j6 d, MixedWindow.unpackW d 150 140,
+   u15 MixedWindow.j7, i15 MixedWindow.j7] ++
+  (MixedWindow.prefixPairs.reverse.flatMap fun p => block15RM d p.1 p.2) ++
+  [MixedFredCut.unleave15C MixedWindow.j0, TickCut.Hosted.unroutedHigh MixedWindow.j0 1 14,
+   MixedWindow.unpackW d 45 45, u15 MixedWindow.j0, i15 MixedWindow.j0, MixedFredCut.portalInvC 45]
+
+def reverseLCX (d : Bool) : List Program :=
+  [Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410] ++
+    ([recvX, portalCM, Shadow7.parkInvP 420, unleaveX] ++ reversePostX d)
+
+theorem reverseLCM_eq (d : Bool) : reverseLCM d = [Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410] ++
+    ([recvWM, portalCM, Shadow7.parkInvP 420, MixedFredCut.unleave15C jL] ++ reversePostX d) := by
+  simp only [reverseLCM, reversePostX, MixedWindow.suffixPairs, List.reverse_cons, List.reverse_nil,
+    List.nil_append, List.flatMap_cons, List.flatMap_nil, block15RM,
+    List.cons_append, List.append_nil]
+  rfl
+
+theorem rtail_rel (d : Bool) :
+    LRel 8 ([recvX, portalCM, Shadow7.parkInvP 420, unleaveX] ++ reversePostX d)
+      ([recvWM, portalCM, Shadow7.parkInvP 420, MixedFredCut.unleave15C jL] ++ reversePostX d) := by
+  unfold LRel
+  simp only [List.flatten_append, List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc]
+  exact rexit_rel _
+
+theorem reverse_relX (d : Bool) : LRel 91 (reverseLCX d) (TickCut.Mixed.reverseLC d) := by
+  have h1 : LRel 8 (reverseLCX d) (reverseLCM d) := by
+    rw [reverseLCM_eq]
+    exact (LRel.app (LRel.refl [Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410]) (rtail_rel d)).cast
+      (by omega)
+  exact Rel.trans h1 (reverse_rel d)
+
 def forward (d : Bool) : Program := (forwardLCX d).flatten
-def reverse (d : Bool) : Program := (reverseLCM d).flatten
+def reverse (d : Bool) : Program := (reverseLCX d).flatten
 
 theorem fwdRel (d : Bool) : Rel 90 (forward d) (MixedWindow.forwardMixedCut d) := forward_relX d
-theorem revRel (d : Bool) : Rel 83 (reverse d) (TickCut.Mixed.reverse d) := reverse_rel d
+theorem revRel (d : Bool) : Rel 91 (reverse d) (TickCut.Mixed.reverse d) := reverse_relX d
 
 theorem run_eq (d : Bool) :
     run (forward d) = run (MixedWindow.forwardMixed d) ∧
@@ -5141,7 +5342,7 @@ theorem reverse_run_eq (d : Bool) : run (reverse d) = run (TickCut.Mixed.reverse
 
 theorem mixed_counts (d : Bool) :
     toffoliCount (forward d) = 126477 ∧
-    toffoliCount (reverse d) = (if d then 126318 else 126340) ∧
+    toffoliCount (reverse d) = (if d then 126310 else 126332) ∧
     measurementCount (forward d) = (if d then 65283 else 65305) ∧
     measurementCount (reverse d) = (if d then 65183 else 65205) := by
   have old := TickCut.Mixed.mixed_counts d
@@ -5870,7 +6071,7 @@ private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b
 theorem exactWalks (d : Bool) (tail : Nat) :
     toffoliCount (forward d tail)+(if d then 39623 else 39623)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 39755 else 39733)=
+    toffoliCount (backward d tail)+(if d then 39763 else 39741)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
     measurementCount (forward d tail)+(if d then 17928 else 17906)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
     measurementCount (backward d tail)+(if d then 17709 else 17687)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
@@ -5878,17 +6079,17 @@ theorem exactWalks (d : Bool) (tail : Nat) :
   have mcw := Shadow20.MergeCut.mixed_counts d
   cases d
   · simp only [Bool.false_eq_true, ↓reduceIte] at mcw ⊢
-    have t := walk tc false tail 39623 39733 (subEq 39623 mcw.1 sf.1 (by omega)) (subEq 39733 mcw.2.1 sf.2.2.1 (by omega))
+    have t := walk tc false tail 39623 39741 (subEq 39623 mcw.1 sf.1 (by omega)) (subEq 39741 mcw.2.1 sf.2.2.1 (by omega))
     have mv := walk mc false tail 17906 17687 (subEq 17906 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17687 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
   · simp only [↓reduceIte] at mcw ⊢
-    have t := walk tc true tail 39623 39755 (subEq 39623 mcw.1 sf.1 (by omega)) (subEq 39755 mcw.2.1 sf.2.2.1 (by omega))
+    have t := walk tc true tail 39623 39763 (subEq 39623 mcw.1 sf.1 (by omega)) (subEq 39763 mcw.2.1 sf.2.2.1 (by omega))
     have mv := walk mc true tail 17928 17709 (subEq 17928 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17709 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 39623 else 39623)=f) (hr : (if d then 39755 else 39733)=r) :
+    (hf : (if d then 39623 else 39623)=f) (hr : (if d then 39763 else 39741)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+(if d then 17928 else 17906)=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -6414,17 +6615,17 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+39623+39733+681=tc.measure Stair44Outer.divide+1092 := by
-  have k := kernels tc 39623 39733 616 1092 (WindowWalkCosts.inst true 4 409 39623 39755 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 39623 39733 rfl rfl rfl).2.1 (field_delta_tc_div 1092 fieldTcDiv)
+theorem tc_div : tc.measure divide+39623+39741+681=tc.measure Stair44Outer.divide+1092 := by
+  have k := kernels tc 39623 39741 616 1092 (WindowWalkCosts.inst true 4 409 39623 39763 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 39623 39741 rfl rfl rfl).2.1 (field_delta_tc_div 1092 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+39623+39755+729=tc.measure (Stair44Outer.multiply k)+1004 :=
-  kernelsM tc k 39623 39755 729 1004 (WindowWalkCosts.inst false 84 489 39623 39733 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 39623 39755 rfl rfl rfl).2.1 (field_delta_tc_mul 1004 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+39623+39763+729=tc.measure (Stair44Outer.multiply k)+1004 :=
+  kernelsM tc k 39623 39763 729 1004 (WindowWalkCosts.inst false 84 489 39623 39741 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 39623 39763 rfl rfl rfl).2.1 (field_delta_tc_mul 1004 fieldTcMul)
 
 theorem mc_div : mc.measure divide+17928+17687+1406=mc.measure Stair44Outer.divide+706 := by
   have k := kernels mc 17928 17687 1381 706 (WindowWalkCosts.instMeasurements true 4 409 17928 17709 rfl rfl rfl).1
@@ -6439,9 +6640,9 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+17906+17709+1707=mc.measure (
     (WindowWalkCosts.instMeasurements true 4 409 17928 17709 rfl rfl rfl).2 (field_delta_mc_mul 596 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+158048=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+158064=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+73041=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 158048
+  ⟨finite_delta tc C cx cy 158064
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
@@ -6450,7 +6651,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2009549 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2009533 ∧
     measurementCount (program C) ≤ 1446543 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -11481,7 +11682,7 @@ theorem programOld_eq (C : Point) : programOld C = WindowCallerCosts.program C :
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2009549 ∧
+theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2009533 ∧
     measurementCount (programOld C) ≤ 1446543 ∧ gateSlots (programOld C) ≤ 67209134 := by
   rw [programOld_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -22079,7 +22280,7 @@ theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular 
   omega
 
 /-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
-theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2009047 ∧
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2009031 ∧
     measurementCount (programNC C) ≤ 1446041 ∧ gateSlots (programNC C) ≤ 67209134 := by
   have m := metricsOld C
   cases C with
@@ -22293,7 +22494,7 @@ set_option maxHeartbeats 1500000
 
 /-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
 turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
-theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2009046 := by
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2009030 := by
   have m := (metricsNC C).1
   cases C with
   | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
@@ -22321,7 +22522,7 @@ open Arithmetic Secp256k1 Challenge Baselines
 
 /-- The NC entry: both field converters deleted, square reading the odd word. -/
 def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
-def boundsNC : Challenge.Bounds := ⟨2009046,1446041,1542,67209134⟩
+def boundsNC : Challenge.Bounds := ⟨2009030,1446041,1542,67209134⟩
 
 theorem certificateOfSemanticsNC
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
