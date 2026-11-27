@@ -2763,12 +2763,12 @@ private theorem leaveAfter150_ok :
 
 attribute [local irreducible] CRTBarrel.barrel GateMirror.forward inverse toffoliCount measurementCount gateSlots in
 theorem leave150To20_counts :
-    toffoliCount leave150To20 = 453 ∧
-    toffoliCount leaveInv150To20 = 460 ∧
-    measurementCount leave150To20 = 270 ∧
-    measurementCount leaveInv150To20 = 263 ∧
-    gateSlots leave150To20 = 11521 ∧
-    gateSlots leaveInv150To20 = 11510 := by
+    toffoliCount leave150To20 = 452 ∧
+    toffoliCount leaveInv150To20 = 458 ∧
+    measurementCount leave150To20 = 275 ∧
+    measurementCount leaveInv150To20 = 269 ∧
+    gateSlots leave150To20 = 11686 ∧
+    gateSlots leaveInv150To20 = 11701 := by
   have hs := leave150_sum_counts
   have cb : Counts (CRTBarrel.before 150) ((CRTBarrel.before 150).countP isCCX)
       ((CRTBarrel.before 150).countP isMake) ((CRTBarrel.before 150).countP isPop)
@@ -2781,12 +2781,12 @@ theorem leave150To20_counts :
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics ⟨7, by decide⟩ (by decide) (by decide) false
   obtain ⟨g1, g2, g3⟩ := CRTBarrel.barrel_metrics ⟨7, by decide⟩ (by decide) (by decide) true
   have hs7 : start ⟨7, by decide⟩ = 150 := rfl
-  have hbt0 : CRTBarrel.barrelT 150 false = 168 := by decide
-  have hbt1 : CRTBarrel.barrelT 150 true = 154 := by decide
-  have hbm0 : CRTBarrel.barrelM 150 false = 14 := by decide
-  have hbm1 : CRTBarrel.barrelM 150 true = 28 := by decide
-  have hbs0 : CRTBarrel.barrelSlots 150 false = 9694 := by decide
-  have hbs1 : CRTBarrel.barrelSlots 150 true = 9704 := by decide
+  have hbt0 : CRTBarrel.barrelT 150 false = 167 := by decide
+  have hbt1 : CRTBarrel.barrelT 150 true = 152 := by decide
+  have hbm0 : CRTBarrel.barrelM 150 false = 19 := by decide
+  have hbm1 : CRTBarrel.barrelM 150 true = 34 := by decide
+  have hbs0 : CRTBarrel.barrelSlots 150 false = 9859 := by decide
+  have hbs1 : CRTBarrel.barrelSlots 150 true = 9895 := by decide
   rw [hs7, hbt0] at f1; rw [hs7, hbm0] at f2; rw [hs7, hbs0] at f3
   rw [hs7, hbt1] at g1; rw [hs7, hbm1] at g2; rw [hs7, hbs1] at g3
   simp only [leave150To20, leaveInv150To20, toffoliCount_append, measurementCount_append, gateSlots_append]
@@ -2991,12 +2991,12 @@ private theorem leave150Red_gates_ok :
 
 attribute [local irreducible] CRTBarrel.barrel GateMirror.forward inverse toffoliCount measurementCount gateSlots in
 theorem leave150To20Red_counts :
-    toffoliCount leave150To20Red = 451 ∧
-    toffoliCount leaveInv150To20Red = 455 ∧
-    measurementCount leave150To20Red = 265 ∧
-    measurementCount leaveInv150To20Red = 261 ∧
-    gateSlots leave150To20Red = 11514 ∧
-    gateSlots leaveInv150To20Red = 11506 := by
+    toffoliCount leave150To20Red = 450 ∧
+    toffoliCount leaveInv150To20Red = 453 ∧
+    measurementCount leave150To20Red = 270 ∧
+    measurementCount leaveInv150To20Red = 267 ∧
+    gateSlots leave150To20Red = 11679 ∧
+    gateSlots leaveInv150To20Red = 11697 := by
   have hs := leave150Red_sum_counts
   have cb : Counts (CRTBarrel.before 150) ((CRTBarrel.before 150).countP isCCX)
       ((CRTBarrel.before 150).countP isMake) ((CRTBarrel.before 150).countP isPop)
@@ -3009,12 +3009,12 @@ theorem leave150To20Red_counts :
   obtain ⟨f1, f2, f3⟩ := CRTBarrel.barrel_metrics ⟨7, by decide⟩ (by decide) (by decide) false
   obtain ⟨g1, g2, g3⟩ := CRTBarrel.barrel_metrics ⟨7, by decide⟩ (by decide) (by decide) true
   have hs7 : start ⟨7, by decide⟩ = 150 := rfl
-  have hbt0 : CRTBarrel.barrelT 150 false = 168 := by decide
-  have hbt1 : CRTBarrel.barrelT 150 true = 154 := by decide
-  have hbm0 : CRTBarrel.barrelM 150 false = 14 := by decide
-  have hbm1 : CRTBarrel.barrelM 150 true = 28 := by decide
-  have hbs0 : CRTBarrel.barrelSlots 150 false = 9694 := by decide
-  have hbs1 : CRTBarrel.barrelSlots 150 true = 9704 := by decide
+  have hbt0 : CRTBarrel.barrelT 150 false = 167 := by decide
+  have hbt1 : CRTBarrel.barrelT 150 true = 152 := by decide
+  have hbm0 : CRTBarrel.barrelM 150 false = 19 := by decide
+  have hbm1 : CRTBarrel.barrelM 150 true = 34 := by decide
+  have hbs0 : CRTBarrel.barrelSlots 150 false = 9859 := by decide
+  have hbs1 : CRTBarrel.barrelSlots 150 true = 9895 := by decide
   rw [hs7, hbt0] at f1; rw [hs7, hbm0] at f2; rw [hs7, hbs0] at f3
   rw [hs7, hbt1] at g1; rw [hs7, hbm1] at g2; rw [hs7, hbs1] at g3
   simp only [leave150To20Red, leaveInv150To20Red, toffoliCount_append, measurementCount_append, gateSlots_append]
@@ -3475,39 +3475,39 @@ private theorem mixed_sum_vals (d : Bool) :
     (4 * Shadow7.wpP 45 - 2 + 6 + 30 * (Shadow7.smallBits j0 + 16) + 9 +
       (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 3 * Shadow7.lowsP 45 + 94 + CRTBarrel.barrelT 45 false)) +
     (prefixPairs.map (fun p => b15TF p.2)).sum +
-    (6 + 30 * (Shadow7.smallBits j7 + 16) + 9 + 41 + 451) +
+    (6 + 30 * (Shadow7.smallBits j7 + 16) + 9 + 41 + 450) +
     ((List.finRange 9).map b20TF).sum +
     (6 + 30 * (Shadow7.smallBits j20 + 16) + 9 + 9 + 41 +
       (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 3 * Shadow7.lowsP 345 + 94 + CRTBarrel.barrelT 345 false)) +
     (suffixPairs.map (fun p => b15TF p.2)).sum +
-    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126659 ∧
+    (0 + (5 * Shadow7.wpP 420 - 4) + WindowParams.tickT 420 + 9 + 41) = 126634 ∧
     (4 * Shadow7.wpP 45 - 7 + 2 + 15 * (Shadow7.smallBits j0 + 16) + 4 +
       (CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + Shadow7.lowsP 45 + 86 + CRTBarrel.barrelM 45 false)) +
     (prefixPairs.map (fun p => b15MF d p.2)).sum +
-    (2 + 15 * (Shadow7.smallBits j7 + 16) + 4 + (if d then 48 else 49) + 265) +
+    (2 + 15 * (Shadow7.smallBits j7 + 16) + 4 + (if d then 48 else 49) + 270) +
     ((List.finRange 9).map (b20MF d)).sum +
     (2 + 15 * (Shadow7.smallBits j20 + 16) + 4 + 4 + (if d then 48 else 49) +
       (CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + Shadow7.lowsP 345 + 86 + CRTBarrel.barrelM 345 false)) +
     (suffixPairs.map (fun p => b15MF d p.2)).sum +
-    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65283 else 65305) ∧
+    (0 + (3 * Shadow7.wpP 420 - 5) + WindowParams.tickM 420 + 4 + (if d then 48 else 49)) = (if d then 65251 else 65273) ∧
     ((if d then 50 else 51) + 11 + WindowParams.recvT 420 + (4 * Shadow7.wpP 420 - 2) + 0) +
     (suffixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 124 + CRTBarrel.barrelT 345 true) +
       15 * (2 * (Shadow7.smallBits j20 + 16) - 1) + (if d then 50 else 51) + 11 + 11 + 6) +
     ((List.finRange 9).reverse.map (b20TR d)).sum +
-    (455 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
+    (453 + 15 * (2 * (Shadow7.smallBits j7 + 16) - 1) + (if d then 50 else 51) + 11 + 6) +
     (prefixPairs.reverse.map (fun p => b15TR d p.2 - 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 124 + CRTBarrel.barrelT 45 true) +
-      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126706 else 126728) ∧
+      15 * (2 * (Shadow7.smallBits j0 + 16) - 1) + 11 + 6 + (5 * Shadow7.wpP 45 - 4)) = (if d then 126670 else 126692) ∧
     ((if d then 43 else 44) + 2 + WindowParams.recvM 420 + (4 * Shadow7.wpP 420 - 7) + 0) +
     (suffixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 345 + Shadow7.liveW 345 + 2 * Shadow7.lowsP 345 + 56 + CRTBarrel.barrelM 345 true) +
       15 * (Shadow7.smallBits j20 + 16) + (if d then 43 else 44) + 2 + 2 + 3) +
     ((List.finRange 9).reverse.map (b20MR d)).sum +
-    (261 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
+    (267 + 15 * (Shadow7.smallBits j7 + 16) + (if d then 43 else 44) + 2 + 3) +
     (prefixPairs.reverse.map (fun p => b15MR d p.2 + 14)).sum +
     ((CRTBarrel.adjustWidth 45 + Shadow7.liveW 45 + 2 * Shadow7.lowsP 45 + 56 + CRTBarrel.barrelM 45 true) +
-      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64970 else 64992) := by
+      15 * (Shadow7.smallBits j0 + 16) + 2 + 3 + (3 * Shadow7.wpP 45 - 5)) = (if d then 64949 else 64971) := by
   cases d <;> decide +kernel
 
 attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shadow7.enterInvP
@@ -3517,10 +3517,10 @@ attribute [local irreducible] toffoliCount measurementCount Shadow7.enterP Shado
   archiveLoadP20 archiveRestoreP20 leave150To20Red leaveInv150To20Red archiveLoad150To20 archiveRestore150To20
   packW unpackW TickRanges.tick W.ReverseCarry.compactReceiverTick TickCut.Tail.selected in
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forwardMixed d) = 126659 ∧
-    toffoliCount (reverseMixed d) = (if d then 126664 else 126686) ∧
-    measurementCount (forwardMixed d) = (if d then 65283 else 65305) ∧
-    measurementCount (reverseMixed d) = (if d then 65012 else 65034) := by
+    toffoliCount (forwardMixed d) = 126634 ∧
+    toffoliCount (reverseMixed d) = (if d then 126628 else 126650) ∧
+    measurementCount (forwardMixed d) = (if d then 65251 else 65273) ∧
+    measurementCount (reverseMixed d) = (if d then 64991 else 65013) := by
   have hfT := measure_flatten toffoliCount toffoliCount_append (forwardL d)
   have hrT := measure_flatten toffoliCount toffoliCount_append (reverseL d)
   have hfM := measure_flatten measurementCount measurementCount_append (forwardL d)
@@ -9505,10 +9505,10 @@ theorem mixedCut_run_eq (d : Bool) :
    funext fun m => funext fun s => (MixedFredCut.rev_mixed_cut d).run_eq m s⟩
 
 theorem mixedCut_counts (d : Bool) :
-    toffoliCount (forwardMixedCut d) = 126567 ∧
-    toffoliCount (reverseMixedCut d) = (if d then 126572 else 126594) ∧
-    measurementCount (forwardMixedCut d) = (if d then 65283 else 65305) ∧
-    measurementCount (reverseMixedCut d) = (if d then 65012 else 65034) := by
+    toffoliCount (forwardMixedCut d) = 126542 ∧
+    toffoliCount (reverseMixedCut d) = (if d then 126536 else 126558) ∧
+    measurementCount (forwardMixedCut d) = (if d then 65251 else 65273) ∧
+    measurementCount (reverseMixedCut d) = (if d then 64991 else 65013) := by
   have hmc := mixed_counts d
   have htf := (MixedFredCut.fwd_mixed_cut d).tc_eq
   have htr := (MixedFredCut.rev_mixed_cut d).tc_eq
@@ -10203,10 +10203,10 @@ theorem resource_delta (d : Bool) :
   simpa only [pieces_old,pieces_new,pieces_saving,reverse,MixedWindow.reverseMixedCut] using h
 
 theorem mixed_counts (d : Bool) :
-    toffoliCount (forward d) = 126567 ∧
-    toffoliCount (reverse d) = (if d then 126401 else 126423) ∧
-    measurementCount (forward d) = (if d then 65283 else 65305) ∧
-    measurementCount (reverse d) = (if d then 65183 else 65205) := by
+    toffoliCount (forward d) = 126542 ∧
+    toffoliCount (reverse d) = (if d then 126365 else 126387) ∧
+    measurementCount (forward d) = (if d then 65251 else 65273) ∧
+    measurementCount (reverse d) = (if d then 65162 else 65184) := by
   have h := resource_delta d
   have old := MixedWindow.mixedCut_counts d
   cases d <;> simp only [Bool.false_eq_true,↓reduceIte,forward] at old h ⊢ <;>
@@ -12149,11 +12149,27 @@ private theorem live20_ne_b0 : ∀ j : Fin 9, ∀ i < wpP20 (start20 j) + 20,
 private theorem free20_ne_b0 : ∀ j : Fin 9, ∀ i : Fin 22,
     (columnsP20 (start20 j))[i.val].free ≠ b0P20 (start20 j) - 1 := by decide +kernel
 
+/-- The carry adjustment preserves a spare high bit on positive far inputs. -/
+private theorem adjusted_lt_short (x w : Nat) (cin neg : Bool)
+    (pos : 2 ≤ x) (room : x + 1 < 2 ^ (w - 1)) :
+    HighBankAdjust.adjusted x w cin neg < 2 ^ (w - 1) := by
+  have upper : 2 ^ (w - 1) ≤ 2 ^ w := Nat.pow_le_pow_right (by decide) (Nat.sub_le ..)
+  have bit : cin.toNat ≤ 1 := by cases cin <;> decide
+  cases neg
+  · change (x + cin.toNat) % 2 ^ w < _
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
+  · change (x + 2 ^ w - cin.toNat) % 2 ^ w < _
+    rw [show x + 2 ^ w - cin.toNat = (x - cin.toNat) + 2 ^ w by omega,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    omega
+
 set_option maxHeartbeats 16000000 in
 /-- Master core theorem for 20-tick block leave (`entry ++ selPrefix ++ work20Prog`). -/
 theorem core20_result (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.State)
     (G sg : Bool) (small : Small20 (sbP20 (start20 j)) z) (odd : z.v % 2 = 1)
     (room : high (sbP20 (start20 j)) 20 z + 1 < 2 ^ wpP20 (start20 j))
+    (shortRoom : start20 j < 225 → high (sbP20 (start20 j)) 20 z + 1 < 2 ^ (wpP20 (start20 j) - 1))
     (fit : TrueMiddle20.F j z < 2 ^ liveW20 (start20 j))
     (ready : onRails20 j 20 (SkywalkRails.encode G sg
       (step^[20] (TrueMiddle20.r j z)).u (step^[20] (TrueMiddle20.r j z)).v) s.basis)
@@ -12502,7 +12518,13 @@ theorem core20_result (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.St
       href_out _ (by omega) (by unfold Wire at *; omega) (by unfold Wire at *; omega)]
     exact (keptE _ (by omega)).trans (hp ▸ crtScratch r hr)
   let n3 := n2.drop (measurementCount (GateMirror.forward (leaveAdjust20 (start20 j))))
-  have hBar := barrel20_result j false slot H uAdj n3 hH_lt_wp hH_narrow hBar_in hBar_tags hBar_scr
+  have short (active : start20 j < 225) : H < 2 ^ (wpP20 (start20 j) - 1) := by
+    by_cases hf : far (sbP20 (start20 j)) 20 z
+    · rw [hH_exact.1 hf]
+      exact adjusted_lt_short _ _ _ _ hf (shortRoom active)
+    · rw [hH_exact.2 hf]
+      exact Nat.two_pow_pos _
+  have hBar := barrel20_result j false slot H uAdj n3 hH_lt_wp short hH_narrow hBar_in hBar_tags hBar_scr
   generalize huBar_def : run (barrel20 (start20 j) false) n3 uAdj = uBar at hBar
   have hBar_out_pad : ∀ i, liveW20 (start20 j) ≤ i → i < wpP20 (start20 j) + 20 →
       uBar.basis (bankW20 (start20 j) i) = ((H <<< (slot.val - 1)).testBit i) := by
@@ -13749,6 +13771,7 @@ attribute [local irreducible] run SkywalkNat.step barrel20 core20Prog fullProg20
 theorem beforeStore20_result (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.State)
     (G sg : Bool) (small : Small20 (sbP20 (start20 j)) z) (odd : z.v % 2 = 1)
     (room : high (sbP20 (start20 j)) 20 z + 1 < 2 ^ wpP20 (start20 j))
+    (shortRoom : start20 j < 225 → high (sbP20 (start20 j)) 20 z + 1 < 2 ^ (wpP20 (start20 j) - 1))
     (fit : TrueMiddle20.F j z < 2 ^ liveW20 (start20 j))
     (nextSmall : Shadow7.SmallIfFar (nextSb20 (start20 j)) (nextLen20 j) (step^[20] z))
     (ready : onRails20 j 20 (SkywalkRails.encode G sg
@@ -13797,7 +13820,7 @@ theorem beforeStore20_result (j : Fin 9) (s : State) (m : List Bool) (z : Skywal
   have hcrt : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false := fun k hk => by
     have hp : poolW20 (start20 j) (22 + k) = 1625 + k := by unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
     rw [hp]; exact cPool _ (by omega) (by omega)
-  have hc := core20_result j s m z G sg small odd room fit ready fresh scratch temp clean
+  have hc := core20_result j s m z G sg small odd room shortRoom fit ready fresh scratch temp clean
     (cPool 1623 (by decide) (by omega)) (cPool 1624 (by decide) (by omega)) hcrt
     padding bank zero par farBit sideBit events flag
   have hfront := entry20_core j s m z G sg small ready fresh scratch temp
@@ -14157,6 +14180,7 @@ attribute [local irreducible] run SkywalkNat.step barrel20 core20Prog fullProg20
 theorem whole20_result (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.State)
     (G sg : Bool) (small : Small20 (sbP20 (start20 j)) z) (odd : z.v % 2 = 1)
     (room : high (sbP20 (start20 j)) 20 z + 1 < 2 ^ wpP20 (start20 j))
+    (shortRoom : start20 j < 225 → high (sbP20 (start20 j)) 20 z + 1 < 2 ^ (wpP20 (start20 j) - 1))
     (fit : TrueMiddle20.F j z < 2 ^ liveW20 (start20 j))
     (nextSmall : Shadow7.SmallIfFar (nextSb20 (start20 j)) (nextLen20 j) (step^[20] z))
     (ready : onRails20 j 20 (SkywalkRails.encode G sg
@@ -14219,10 +14243,10 @@ theorem whole20_result (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.S
   have hcrt : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false := fun k hk => by
     have hp : poolW20 (start20 j) (22 + k) = 1625 + k := by unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
     rw [hp]; exact cPool _ (by omega) (by omega)
-  have hc := core20_result j s m z G sg small odd room fit ready fresh scratch temp clean
+  have hc := core20_result j s m z G sg small odd room shortRoom fit ready fresh scratch temp clean
     (cPool 1623 (by decide) (by omega)) (cPool 1624 (by decide) (by omega)) hcrt
     padding bank zero par farBit sideBit events flag
-  have hbs := beforeStore20_result j s m z G sg small odd room fit nextSmall ready fresh scratch temp clean
+  have hbs := beforeStore20_result j s m z G sg small odd room shortRoom fit nextSmall ready fresh scratch temp clean
     cPool padding bank zero par farBit sideBit events flag
   dsimp only at hc hbs
   have hprev : s.basis (start20 j + 35) = G := by
@@ -15070,6 +15094,10 @@ structure Numeric20 (j : Fin 9) (z : SkywalkNat.State) : Prop where
   shortRoom : TrimHigh.selected (start20 j) = true →
     Shadow.high (sbP20 (start20 j)) 20 z + 1 < 2^(wpP20 (start20 j)-1)
 
+private theorem Numeric20.earlyRoom {j : Fin 9} {z : SkywalkNat.State} (h : Numeric20 j z) (active : start20 j < 225) :
+    Shadow.high (sbP20 (start20 j)) 20 z + 1 < 2 ^ (wpP20 (start20 j) - 1) :=
+  h.shortRoom (by simp [TrimHigh.selected, active])
+
 theorem actualNumbers20 (j : Fin 9) (x p : Nat) (good : Bounds x p) :
     Numeric20 j (unsigned (start20 j) x p) := by
   have hg := geom20_facts j; dsimp only at hg
@@ -15486,17 +15514,17 @@ theorem archiveCut20 (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.Sta
   let xs := SkywalkTrace.trace 20 (SkywalkRails.encode g0 s0 z.u z.v)
   have par := recordedParity20 j s z g0 s0 h.small h.odd h.record
   have ev := recordedEvents20 j s z g0 s0 h.small h.odd h.record
-  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2
     xs (SkywalkTrace.trace_length _ _) (certifiedChain20 _ _ _ _ h.small h.odd)
     (firstSwap20 _ _ _ _ h.small h.odd) ev.1 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
   have hcrt : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false := fun k hk => by
     have hp : poolW20 (start20 j) (22 + k) = 1625 + k := by unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
     rw [hp]; exact h.cPool _ (by omega) (by omega)
-  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.ready
+  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.ready
     h.fresh h.scratch h.temp h.clean (h.cPool 1623 (by decide) (by omega)) (h.cPool 1624 (by decide) (by omega)) hcrt
     h.padding h.bank h.zero par h.far h.side ev.2 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
-  have hbs := beforeStore20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have hbs := beforeStore20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
   have hprev : s.basis (start20 j + 35) = u.1 := by
     have hr := h.ready.2.2.1
@@ -15738,17 +15766,17 @@ theorem highZero20 (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.State
   let xs := SkywalkTrace.trace 20 (SkywalkRails.encode g0 s0 z.u z.v)
   have par := recordedParity20 j s z g0 s0 h.small h.odd h.record
   have ev := recordedEvents20 j s z g0 s0 h.small h.odd h.record
-  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2
     xs (SkywalkTrace.trace_length _ _) (certifiedChain20 _ _ _ _ h.small h.odd)
     (firstSwap20 _ _ _ _ h.small h.odd) ev.1 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
   have hcrt : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false := fun k hk => by
     have hp : poolW20 (start20 j) (22 + k) = 1625 + k := by unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
     rw [hp]; exact h.cPool _ (by omega) (by omega)
-  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.ready
+  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.ready
     h.fresh h.scratch h.temp h.clean (h.cPool 1623 (by decide) (by omega)) (h.cPool 1624 (by decide) (by omega)) hcrt
     h.padding h.bank h.zero par h.far h.side ev.2 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
-  have hbs := beforeStore20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have hbs := beforeStore20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
   have hprev : s.basis (start20 j + 35) = u.1 := by
     have hr := h.ready.2.2.1
@@ -15823,7 +15851,7 @@ theorem boundaryRails20 (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
   let o := pullState (OB5.sig (start20 j + 19)) raw
   have par := recordedParity20 j s z g0 s0 h.small h.odd h.record
   have ev := recordedEvents20 j s z g0 s0 h.small h.odd h.record
-  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2
     xs (SkywalkTrace.trace_length _ _) (certifiedChain20 _ _ _ _ h.small h.odd)
     (firstSwap20 _ _ _ _ h.small h.odd) ev.1 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
@@ -16079,17 +16107,17 @@ theorem boundaryClean20 (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
   let xs := SkywalkTrace.trace 20 (SkywalkRails.encode g0 s0 z.u z.v)
   have par := recordedParity20 j s z g0 s0 h.small h.odd h.record
   have ev := recordedEvents20 j s z g0 s0 h.small h.odd h.record
-  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have w := whole20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2
     xs (SkywalkTrace.trace_length _ _) (certifiedChain20 _ _ _ _ h.small h.odd)
     (firstSwap20 _ _ _ _ h.small h.odd) ev.1 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
   have hcrt : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false := fun k hk => by
     have hp : poolW20 (start20 j) (22 + k) = 1625 + k := by unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
     rw [hp]; exact h.cPool _ (by omega) (by omega)
-  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.ready
+  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.ready
     h.fresh h.scratch h.temp h.clean (h.cPool 1623 (by decide) (by omega)) (h.cPool 1624 (by decide) (by omega)) hcrt
     h.padding h.bank h.zero par h.far h.side ev.2 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
-  have hbs := beforeStore20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have hbs := beforeStore20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2 (recordedFlag20 j s z g0 s0 h.small h.odd h.record h.far h.side)
   have hprev : s.basis (start20 j + 35) = u.1 := by
     have hr := h.ready.2.2.1
@@ -17333,7 +17361,7 @@ theorem endpoint20_next (j k : Fin 9) (hk : k.val = j.val + 1) (d : Bool) (x p :
     simp only [EnterJ20.pull, hs, show start20 j + 20 - 1 = start20 j + 19 by omega]; exact eo
   let u := flags20 (unsigned (start20 j) x p) G S
   let xs := SkywalkTrace.trace 20 (SkywalkRails.encode G S (unsigned (start20 j) x p).u (unsigned (start20 j) x p).v)
-  have w := whole20_result j v n (unsigned (start20 j) x p) u.1 u.2 adm.1.small adm.1.odd adm.1.room adm.1.fit
+  have w := whole20_result j v n (unsigned (start20 j) x p) u.1 u.2 adm.1.small adm.1.odd adm.1.room adm.1.toNumeric20.earlyRoom adm.1.fit
     adm.1.nextFarSmall adm.1.ready adm.1.fresh adm.1.scratch adm.1.temp adm.1.clean adm.1.cPool adm.1.padding
     adm.1.bank adm.1.zero (recordedParity20 j v _ G S adm.1.small adm.1.odd adm.1.record) adm.1.far adm.1.side
     (recordedEvents20 j v _ G S adm.1.small adm.1.odd adm.1.record).2
@@ -17481,7 +17509,7 @@ private theorem endpoint20_reentry_gen (j : Fin 9) (hj : j = MixedWindow.k8) (d 
     rw [hp]; exact eo
   let u := flags20 (unsigned (start20 j) x p) G S
   let xs := SkywalkTrace.trace 20 (SkywalkRails.encode G S (unsigned (start20 j) x p).u (unsigned (start20 j) x p).v)
-  have w := whole20_result j v n (unsigned (start20 j) x p) u.1 u.2 adm.1.small adm.1.odd adm.1.room adm.1.fit
+  have w := whole20_result j v n (unsigned (start20 j) x p) u.1 u.2 adm.1.small adm.1.odd adm.1.room adm.1.toNumeric20.earlyRoom adm.1.fit
     adm.1.nextFarSmall adm.1.ready adm.1.fresh adm.1.scratch adm.1.temp adm.1.clean adm.1.cPool adm.1.padding
     adm.1.bank adm.1.zero (recordedParity20 j v _ G S adm.1.small adm.1.odd adm.1.record) adm.1.far adm.1.side
     (recordedEvents20 j v _ G S adm.1.small adm.1.odd adm.1.record).2
@@ -17956,6 +17984,7 @@ private theorem phase_step_any20 (P Q : Program) (s : State)
 attribute [local irreducible] run barrel20 in
 theorem barrel20_roundtrip (j : Fin 9) (slot : Fin 22) (v : Nat) (u : State) (m n : List Bool)
     (admitted : v < 2 ^ wpP20 (start20 j))
+    (short : start20 j < 225 → v < 2 ^ (wpP20 (start20 j) - 1))
     (small : v < 2 ^ (liveW20 (start20 j) - (slot.val - 1)))
     (input : HighBankBarrel.holds (bankW20 (start20 j)) (liveW20 (start20 j))
       (v <<< CRTBarrel20.entryShift false slot.val) u)
@@ -17965,7 +17994,7 @@ theorem barrel20_roundtrip (j : Fin 9) (slot : Fin 22) (v : Nat) (u : State) (m 
   have hg := geom20_facts j; dsimp only at hg
   have hb0 : b0P20 (start20 j) = 787 + sbP20 (start20 j) := rfl
   have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
-  have hf := barrel20_result j false slot v u m admitted small input tag scratch
+  have hf := barrel20_result j false slot v u m admitted short small input tag scratch
   have htag_out : ∀ k < 21, HighBankBarrel.outside (bankW20 (start20 j)) (liveW20 (start20 j)) (tagsP20.getD k 0) := by
     intro k hk i hi e
     have tr := tagsP20_getD_range hk
@@ -17981,7 +18010,7 @@ theorem barrel20_roundtrip (j : Fin 9) (slot : Fin 22) (v : Nat) (u : State) (m 
     simp [CRTBarrel20.exitShift, CRTBarrel20.entryShift]
   have hshift0 : CRTBarrel20.exitShift true slot.val = CRTBarrel20.entryShift false slot.val := by
     simp [CRTBarrel20.exitShift, CRTBarrel20.entryShift]
-  have hb := barrel20_result j true slot v (run (barrel20 (start20 j) false) m u) n admitted small
+  have hb := barrel20_result j true slot v (run (barrel20 (start20 j) false) m u) n admitted short small
     (hshift ▸ hf.bits)
     (fun k hk => (hf.frame _ (htag_out k hk)).trans (tag k hk))
     (fun k hk => (hf.frame _ (hscr_out k hk)).trans (scratch k hk))
@@ -18105,7 +18134,47 @@ private theorem storePart1_check : ∀ j : Fin 9,
 
 private theorem storePart1Mid_no1558 : ∀ j : Fin 9,
     (storePart1Mid20 (start20 j)).all (fun g => decide (GateMirror.target g ≠ 1558)) = true := by
-  decide +kernel
+  intro j
+  let s := start20 j
+  let L := lowsP20 s
+  let top := a0P20 s + L - 2
+  let H := liveW20 s - L
+  let hi := (List.range H).map fun i => bankW20 s (L + i)
+  let seq := fun i => if i = 0 then top else bankW20 s (L + i - 1)
+  let A : Wire → Prop := fun _ => True
+  let T : Wire → Prop := fun q => q ≠ 1558
+  have geom := geom20_facts j
+  dsimp only at geom
+  obtain ⟨hs, _, hb, _, _, _, _, _, hL, _, _, hLive, hLow, _⟩ := geom
+  have htop : T top := by
+    change a0P20 (start20 j) + lowsP20 (start20 j) - 2 ≠ 1558
+    unfold a0P20
+    omega
+  have hhi : ∀ q ∈ hi, T q := by
+    intro q hq
+    obtain ⟨i, hi0, rfl⟩ := List.mem_map.mp hq
+    have ih : i < liveW20 (start20 j) - lowsP20 (start20 j) := List.mem_range.mp hi0
+    have index : lowsP20 (start20 j) + i < wpP20 (start20 j) + 20 := by omega
+    have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
+    change bankW20 (start20 j) (lowsP20 (start20 j) + i) ≠ 1558
+    rcases bank20_cases j index with ⟨h, _⟩ | ⟨_, _, _, _, h⟩ | ⟨_, _, h, _⟩ <;>
+      (unfold Wire at *; omega)
+  have hcarry (k : Nat) (hk : 0 < k) : T (storeWire20 s k) := by
+    change storeWire20 s k ≠ 1558
+    unfold storeWire20
+    dsimp only
+    split_ifs <;> (unfold Wire at *; omega)
+  have hx : AllAT A T [.x top] := allAT_cons (ok_x htop) allAT_nil
+  have hend : AllAT A T [.cx (storeWire20 s (H + 1)) 1557, .x 1557] :=
+    allAT_cons (ok_cx trivial (by decide)) (allAT_cons (ok_x (by decide)) allAT_nil)
+  have hchain : AllAT A T
+      (chainG (storeWire20 s) seq [.cx (storeWire20 s (H + 1)) 1557, .x 1557] 0 (H + 1)) :=
+    allAT_chainG _ _ _ hend 0 (H + 1) (fun k _ _ => ⟨trivial, hcarry k⟩) (fun _ _ _ => trivial)
+  have hmid : AllAT A T (storePart1Mid20 s) := by
+    simp only [storePart1Mid20, List.append_assoc]
+    exact allAT_append hx (allAT_append (allAT_xsG hi hhi) (allAT_append hchain
+      (allAT_append (allAT_xsG hi.reverse (fun q hq => hhi q (List.mem_reverse.mp hq))) hx)))
+  exact List.all_eq_true.mpr (fun g h => decide_eq_true (hmid g h).2)
 
 private theorem storePart2_check : ∀ j : Fin 9,
     checkMask (storePart2_20 (start20 j)) 0 (GateMirror.interval 1559 44) = true := by
@@ -18561,7 +18630,8 @@ theorem barrel20_mid_rt (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
           have ht := of_decide_eq_true (List.all_eq_true.mp (beforeFixed20_targets j) g hg')
           rw [e, eb] at ht; unfold Wire at *; omega
         exact (LeaveReadoutFrame.preserved _ _ _ _ hnotDst).trans (h.padding i (by omega) (by omega))
-  have hH_small : H < 2 ^ (liveW20 (start20 j) - (slot.val - 1)) := by
+  have hH_small : H < 2 ^ (liveW20 (start20 j) - (slot.val - 1)) ∧
+      (start20 j < 225 → H < 2 ^ (wpP20 (start20 j) - 1)) := by
     have ha0_pos : 1 ≤ a0P20 (start20 j) := by unfold a0P20; omega
     have hbt_eq : bTopP (start20 j) = b0P20 (start20 j) + 18 + wpP20 (start20 j) := by
       have : ∀ m : Fin 9, bTopP (start20 m) = b0P20 (start20 m) + 18 + wpP20 (start20 m) := by decide +kernel
@@ -18650,6 +18720,10 @@ theorem barrel20_mid_rt (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
         unfold TrueMiddle20.neg
         exact (HighBankSum.adjusted_gate (Shadow.high (sbP20 (start20 j)) 20 z) (wpP20 (start20 j))
           (HighBankSum.cross17 (TrueMiddle20.d j z)) _ (by have := h.room; omega)).symm
+      have short (active : start20 j < 225) : H < 2 ^ (wpP20 (start20 j) - 1) := by
+        rw [hH_eq]
+        exact adjusted_lt_short _ _ _ _ (by simpa only [Shadow.far] using hf) (h.toNumeric20.earlyRoom active)
+      refine ⟨?_, short⟩
       have hkey_eq : slot.val - 1 = (TrueMiddle20.key j z).val := by
         have hen : Selector20.enabled20 k = true := by
           unfold k actualMode20 Selector20.enabled20
@@ -18674,12 +18748,12 @@ theorem barrel20_mid_rt (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.
     · have hH0 : H = 0 := by
         rw [hH_val, h.bank, if_neg hf, hu3, decide_eq_false hf, hu6, if_neg hf, Bool.false_xor]
         unfold HighBankAdjust.adjusted; cases uSel.basis 1601 <;> simp
-      rw [hH0]; exact Nat.two_pow_pos _
+      rw [hH0]; exact ⟨Nat.two_pow_pos _, fun _ => Nat.two_pow_pos _⟩
   dsimp only
   intro t
-  exact ⟨barrel20_roundtrip j slot H uB _ t hH_lt_wp hH_small hH_holds htag_uB hscr_uB,
-    (barrel20_result j false slot H uB t hH_lt_wp hH_small hH_holds htag_uB hscr_uB).phase,
-    (barrel20_result j false slot H uB t hH_lt_wp hH_small hH_holds htag_uB hscr_uB).frame⟩
+  have forward := barrel20_result j false slot H uB t hH_lt_wp hH_small.2 hH_small.1 hH_holds htag_uB hscr_uB
+  exact ⟨barrel20_roundtrip j slot H uB _ t hH_lt_wp hH_small.2 hH_small.1 hH_holds htag_uB hscr_uB,
+    forward.phase, forward.frame⟩
 
 theorem leaveAfter20_validC (j : Fin 9) (s : State) (m : List Bool) (z : SkywalkNat.State) (g0 s0 : Bool)
     (h : Inputs20 j s z g0 s0) :
@@ -18700,14 +18774,14 @@ theorem leaveAfter20_validC (j : Fin 9) (s : State) (m : List Bool) (z : Skywalk
   have hcrt : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false := fun k hk => by
     have hp : poolW20 (start20 j) (22 + k) = 1625 + k := by unfold poolW20; rw [if_pos (by omega)]; unfold Wire; omega
     rw [hp]; exact h.cPool _ (by omega) (by omega)
-  have hwhole (t : List Bool) := whole20_result j s t z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have hwhole (t : List Bool) := whole20_result j s t z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2
     xs (SkywalkTrace.trace_length _ _) (certifiedChain20 _ _ _ _ h.small h.odd)
     (firstSwap20 _ _ _ _ h.small h.odd) ev.1 hflag
-  have hcore (t : List Bool) := core20_result j s t z u.1 u.2 h.small h.odd h.room h.fit h.ready
+  have hcore (t : List Bool) := core20_result j s t z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.ready
     h.fresh h.scratch h.temp h.clean (h.cPool 1623 (by decide) (by omega)) (h.cPool 1624 (by decide) (by omega)) hcrt
     h.padding h.bank h.zero par h.far h.side ev.2 hflag
-  have hbs (t : List Bool) := beforeStore20_result j s t z u.1 u.2 h.small h.odd h.room h.fit h.nextFarSmall h.ready
+  have hbs (t : List Bool) := beforeStore20_result j s t z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.nextFarSmall h.ready
     h.fresh h.scratch h.temp h.clean h.cPool h.padding h.bank h.zero par h.far h.side ev.2 hflag
   have hbf_split := leaveBefore20_split (start20 j)
   have hcar_after := hcar_after20 j s z g0 s0 h
@@ -20124,7 +20198,7 @@ theorem admittedLowJoin (j : Fin 9) (s : State) (z : SkywalkNat.State) (g0 s0 : 
       omega
     rw [hp]
     exact h.cPool _ (by omega) (by omega)
-  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.fit h.ready
+  have hc := core20_result j s m z u.1 u.2 h.small h.odd h.room h.toNumeric20.earlyRoom h.fit h.ready
     h.fresh h.scratch h.temp h.clean (h.cPool 1623 (by decide) (by omega))
     (h.cPool 1624 (by decide) (by omega)) crt h.padding h.bank h.zero
     (recordedParity20 j s z g0 s0 h.small h.odd h.record) h.far h.side
