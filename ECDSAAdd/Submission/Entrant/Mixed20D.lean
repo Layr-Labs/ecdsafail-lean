@@ -9,6 +9,4892 @@ import ECDSAAdd.Submission.Entrant.CRT
 import ECDSAAdd.Framework.RecordedPaths
 import ECDSAAdd.Framework.MeasuredLocality
 
+-- ==== begin: declarations continued from module CRT ====
+section
+set_option linter.unnecessarySeqFocus false
+section
+section
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue265
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+def prep (tags taps : List Wire) (a b : Wire) : Program :=
+  toggles tags a ++ toggles taps b
+
+def coherentStep (tags taps : List Wire) (a b target : Wire) : Program :=
+  prep tags taps a b ++ ([Instr.CCX a b target] ++ (prep tags taps a b).reverse)
+
+private theorem xorAt_agree (u v : BasisState) (xs : List Wire)
+    (h : ∀ q ∈ xs, u q = v q) : xorAt u xs = xorAt v xs := by
+  induction xs with
+  | nil => rfl
+  | cons q qs ih =>
+    rw [xorAt, xorAt, h q (by simp), ih (fun j hj => h j (List.mem_cons_of_mem _ hj))]
+
+private theorem toggles_proper (xs : List Wire) (q : Wire) (fresh : q ∉ xs) :
+    ProperProgram (toggles xs q) := by
+  intro i hi
+  change i ∈ xs.map (fun p => Instr.CX p q) at hi
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hi
+  exact fun eq => fresh (eq ▸ hp)
+
+private def prepared (tags taps : List Wire) (a b : Wire) (bits : BasisState) : BasisState :=
+  writeBit (writeBit bits a (bits a ^^ xorAt bits tags)) b (bits b ^^ xorAt bits taps)
+
+private theorem prep_run (tags taps : List Wire) (a b : Wire)
+    (ab : a ≠ b) (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (s : State) (m : List Bool) :
+    run (prep tags taps a b) m s = ⟨s.phase, prepared tags taps a b s.basis⟩ := by
+  cases s with
+  | mk ph bits =>
+    rw [prep, run_append, run_toggles _ _ atags, run_toggles _ _ btaps]
+    have keep : xorAt (writeBit bits a (bits a ^^ xorAt bits tags)) taps = xorAt bits taps :=
+      xorAt_agree _ _ _ (fun q hq => by
+        have ne : q ≠ a := fun e => ataps (e ▸ hq)
+        simp [writeBit, Function.update_of_ne ne])
+    have pivotKeep : writeBit bits a (bits a ^^ xorAt bits tags) b = bits b := by
+      simp [writeBit, Function.update_of_ne ab.symm]
+    simp only [prepared, pivotKeep, keep]
+
+/-- Compute the two parities, use a single Toffoli, and undo the preparation. -/
+theorem coherent_run (tags taps : List Wire) (a b target : Wire)
+    (ab : a ≠ b) (ta : target ≠ a) (tb : target ≠ b)
+    (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (ttags : target ∉ tags) (ttaps : target ∉ taps) (s : State) (m : List Bool) :
+    run (coherentStep tags taps a b target) m s =
+      ⟨s.phase, writeBit s.basis target
+        (s.basis target ^^ ((s.basis a ^^ xorAt s.basis tags) &&
+          (s.basis b ^^ xorAt s.basis taps)))⟩ := by
+  let selector := s.basis a ^^ xorAt s.basis tags
+  let parity := s.basis b ^^ xorAt s.basis taps
+  let value := s.basis target ^^ (selector && parity)
+  let next : State := ⟨s.phase, writeBit s.basis target value⟩
+  let ready : State := ⟨s.phase, prepared tags taps a b s.basis⟩
+  let toggled : State := ⟨s.phase, writeBit ready.basis target value⟩
+  have first (tape : List Bool) : run (prep tags taps a b) tape s = ready :=
+    prep_run tags taps a b ab atags btaps ataps s tape
+  have middle (tape : List Bool) : run [Instr.CCX a b target] tape ready = toggled := by
+    have ha : ready.basis a = selector := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ab, Function.update_self, selector]
+    have hb : ready.basis b = parity := by
+      simp only [ready, prepared, writeBit, Function.update_self, parity]
+    have ht : ready.basis target = s.basis target := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ta, Function.update_of_ne tb]
+    change (⟨ready.phase, writeBit ready.basis target
+      (ready.basis target ^^ (ready.basis a && ready.basis b))⟩ : State) = toggled
+    rw [ha, hb, ht]
+  have move : run (prep tags taps a b) [] next = toggled := by
+    rw [prep_run tags taps a b ab atags btaps ataps]
+    have same (xs : List Wire) (h : target ∉ xs) :
+        xorAt next.basis xs = xorAt s.basis xs := by
+      apply xorAt_agree
+      intro q hq
+      have ne : q ≠ target := fun e => h (e ▸ hq)
+      simp [next, writeBit, Function.update_of_ne ne]
+    rw [show next.phase = s.phase from rfl]
+    apply congrArg (State.mk s.phase)
+    unfold prepared
+    rw [same tags ttags, same taps ttaps,
+      show next.basis a = s.basis a by simp [next, writeBit, Function.update_of_ne ta.symm],
+      show next.basis b = s.basis b by simp [next, writeBit, Function.update_of_ne tb.symm]]
+    change Function.update (Function.update (Function.update s.basis target value) a selector) b parity =
+      Function.update (Function.update (Function.update s.basis a selector) b parity) target value
+    have firstSwap : Function.update (Function.update s.basis target value) a selector =
+        Function.update (Function.update s.basis a selector) target value :=
+      Function.update_comm ta value selector s.basis
+    have secondSwap :
+        Function.update (Function.update (Function.update s.basis a selector) target value) b parity =
+          Function.update (Function.update (Function.update s.basis a selector) b parity) target value :=
+      Function.update_comm tb value parity (Function.update s.basis a selector)
+    exact (congrArg (fun bits : BasisState => Function.update bits b parity) firstSwap).trans secondSwap
+  have proper : ProperProgram (prep tags taps a b) :=
+    (properProgram_append _ _).mpr ⟨toggles_proper _ _ atags, toggles_proper _ _ btaps⟩
+  have undo (tape : List Bool) : run (prep tags taps a b).reverse tape toggled = next := by
+    rw [← move]
+    exact run_reverse_proper _ proper next [] tape
+  change run (coherentStep tags taps a b target) m s = next
+  rw [coherentStep, run_append, run_append, first, middle, undo]
+
+/-! The data below is the selected option for window 265 in `shared.json`. -/
+
+def factors : List (Nat × Nat) :=
+  [(11,1),(13,1),(19,1),(21,1),(31,1),(67,1),(73,1),(87,1),(91,1),
+    (97,1),(103,1),(109,1),(115,1),(117,1),(257,2),(2047,1),(8191,1)]
+
+def mask (i : Fin 3) : Nat :=
+  if i.val = 0 then 526296214359912093987035662594879
+  else if i.val = 1 then 1052592425536949196534328960902774
+  else 807110896316668770394816322768037
+
+def taps (i : Fin 3) : List Wire := selected 110 (mask i)
+def tags (i : Fin 3) : List Wire := List.range' (114 + i.val) (20 - i.val)
+def pivot (i : Fin 3) : Wire := (taps i).headD 0
+def dest (i : Fin 3) : Wire := 110 + i.val
+
+def correction (i : Fin 3) : Program := coherentStep (tags i) (taps i).tail 142 (pivot i) (dest i)
+
+set_option maxRecDepth 4000 in
+private theorem separate : ∀ i : Fin 3,
+    (142 : Wire) ≠ pivot i ∧ dest i ≠ 142 ∧ dest i ≠ pivot i ∧
+    142 ∉ tags i ∧ pivot i ∉ (taps i).tail ∧ 142 ∉ (taps i).tail ∧
+    dest i ∉ tags i ∧ dest i ∉ (taps i).tail := by decide +kernel
+
+set_option maxRecDepth 4000 in
+private theorem correction_tags : ∀ (slot : Fin 22) (i : Fin 3),
+    xorAt (flags20 113 slot.val) (tags i) = decide (i.val < slot.val - 1) := by decide +kernel
+
+def Flags (slot : Fin 22) (s : State) : Prop :=
+  ∀ q, 113 ≤ q → s.basis q = flags20 113 slot.val q
+
+def corrected (slot : Fin 22) (i : Fin 3) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis (dest i)
+    (s.basis (dest i) ^^ (decide (i.val < slot.val - 1) && xorAt s.basis (taps i)))⟩
+
+theorem correction_run (slot : Fin 22) (i : Fin 3) (s : State) (m : List Bool)
+    (h : Flags slot s) : run (correction i) m s = corrected slot i s := by
+  obtain ⟨ab, ta, tb, atags, btaps, ataps, ttags, ttaps⟩ := separate i
+  have hot : xorAt s.basis (tags i) = decide (i.val < slot.val - 1) := by
+    rw [← correction_tags slot i]
+    apply xorAt_agree
+    intro q hq
+    change q ∈ List.range' (114 + i.val) (20 - i.val) at hq
+    have lower : 114 + i.val ≤ q := (List.mem_range'_1.mp hq).1
+    exact h q (le_trans (le_trans (by decide : 113 ≤ 114) (Nat.le_add_right 114 i.val)) lower)
+  have size : ∀ j : Fin 3, taps j = pivot j :: (taps j).tail := by decide +kernel
+  rw [correction, coherent_run _ _ _ _ _ ab ta tb atags btaps ataps ttags ttaps,
+    h 142 (by decide), hot]
+  have zero : flags20 113 slot.val 142 = false := by simp [flags20]
+  have parity : xorAt s.basis (taps i) = (s.basis (pivot i) ^^ xorAt s.basis (taps i).tail) := by
+    exact congrArg (xorAt s.basis) (size i)
+  simp only [corrected, zero, Bool.false_xor, parity]
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem factors_extent : extent20 factors = 110 := by decide +kernel
+
+theorem scalar_run (r : Rows) (size : r.size = 113) (mirror : Bool) (slot : Fin 22)
+    (x : Nat → Bool) (dim : Nat) (ph : Bool) (m : List Bool) :
+    run (components20 113 mirror 0 factors) m (frame20 r x dim slot.val ph) =
+      frame20 (componentRows20 mirror slot.val 0 factors r) x dim slot.val ph := by
+  rw [← size]
+  exact frame_components20 r mirror 0 slot.val dim factors
+    (lt_trans slot.isLt (by decide)) (by simp [size, factors_extent]) factors_used x ph m
+
+def shiftPort (q : Wire) : Wire := [110,111,112,114,115,142][q]?.getD 0
+
+def shiftProgram (mirror : Bool) : Program :=
+  renameProgram shiftPort (LateQuotientShift.program false mirror)
+
+abbrev QuotientFrame (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) : Prop :=
+  LateQuotientShift.Frame false mirror shiftPort (LateQuotientShift.capShift (slot.val-1)) word s
+
+private theorem shift_fit : ∀ a ∈ LateQuotientShift.ports false,
+    ∀ b ∈ LateQuotientShift.ports false, shiftPort a = shiftPort b → a = b := by
+  have finite : ∀ a b : Fin 6, shiftPort a.val = shiftPort b.val → a = b := by decide +kernel
+  intro a ha b hb eq
+  exact congrArg Fin.val (finite ⟨a, Finset.mem_range.mp ha⟩ ⟨b, Finset.mem_range.mp hb⟩ eq)
+
+theorem shift_run (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) (m : List Bool)
+    (input : QuotientFrame mirror slot word s) :
+    let out := run (shiftProgram mirror) m s
+    out.phase = s.phase ∧ QuotientFrame (!mirror) slot word out ∧
+    ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → out.basis q = s.basis q :=
+  LateQuotientShift.placed_run false mirror shiftPort shift_fit _ _ s m input
+
+theorem placement_inj (a b : Wire) (ha : a < 144) (hb : b < 144)
+    (eq : Shadow20.place20 265 a = Shadow20.place20 265 b) : a = b := by
+  let j : Fin 9 := ⟨5, by decide⟩
+  have start : Shadow20.start20 j = 265 := rfl
+  have bound : Shadow20.liveW20 (Shadow20.start20 j) + 31 = 144 := by
+    rw [start]
+    decide
+  have ha' : a < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using ha
+  have hb' : b < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using hb
+  exact Shadow20.place20_inj j a ha' b hb' (by simpa only [start] using eq)
+
+theorem shift_eq_of_frames (mirror : Bool) (slot : Fin 22) (word : Fin 16)
+    (s t : State) (m : List Bool) (input : QuotientFrame mirror slot word s)
+    (out : QuotientFrame (!mirror) slot word t) (phase : t.phase = s.phase)
+    (agree : ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → t.basis q = s.basis q) :
+    run (shiftProgram mirror) m s = t := by
+  obtain ⟨hp, result, outside⟩ := shift_run mirror slot word s m input
+  apply State.extensionality
+  · exact hp.trans phase.symm
+  · funext q
+    by_cases inside : q ∈ (LateQuotientShift.ports false).image shiftPort
+    · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp inside
+      exact (result i hi).trans (out i hi).symm
+    · exact (outside q inside).trans (agree q inside).symm
+
+def order (mirror : Bool) : List (Fin 3) := if mirror then [2,1,0] else [0,1,2]
+def corrections (mirror : Bool) : Program := (order mirror).flatMap correction
+
+private theorem correction_reverse (i : Fin 3) : (correction i).reverse = correction i := by
+  simp [correction, coherentStep, List.reverse_append, List.append_assoc]
+
+theorem corrections_reverse : (corrections false).reverse = corrections true := by
+  simp [corrections, order, List.flatMap_cons, List.reverse_append, correction_reverse, List.append_assoc]
+
+private theorem corrected_flags (slot : Fin 22) (i : Fin 3) (s : State) (h : Flags slot s) :
+    Flags slot (corrected slot i s) := by
+  intro q hq
+  have below : dest i < (113 : Nat) := by
+    change 110 + i.val < 113
+    exact Nat.add_lt_add_left i.isLt 110
+  have ne : q ≠ dest i := Nat.ne_of_gt (lt_of_lt_of_le below hq)
+  simpa [corrected, writeBit, Function.update_of_ne ne] using h q hq
+
+private theorem correction_list (xs : List (Fin 3)) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (xs.flatMap correction) m s =
+      xs.foldl (fun u i => corrected slot i u) s := by
+  induction xs generalizing s m with
+  | nil => rfl
+  | cons i tail ih =>
+    rw [List.flatMap_cons, run_append, correction_run slot i s _ flags]
+    exact ih _ _ (corrected_flags slot i s flags)
+
+theorem corrections_run (mirror : Bool) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (corrections mirror) m s =
+      (order mirror).foldl (fun u i => corrected slot i u) s :=
+  correction_list _ slot s m flags
+
+/-- The middle omits only the outer basis changes. The inverse uses the existing inverse scalar emitter. -/
+def middle (mirror : Bool) : Program :=
+  if mirror then corrections true ++ (shiftProgram true ++ components20 113 true 0 factors)
+  else components20 113 false 0 factors ++ (shiftProgram false ++ corrections false)
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue265
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue265.Caller
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+/-- Exact coordinate rows of the fixed 5,640-CNOT window-265 plan. -/
+def outerRows : Rows := #[
+  9485140717953385904087205892748521, 2371285179488346476021801473187130, 4742570358976692952043602946374260, 7522697810790616406689852949421241, 4660801904511577556318713240402290,
+  3761348905395308203344926474710620, 5919158203488569330000554212521361, 7230265848604605701913189688090290, 4075937980139556146765386717740388, 8151875960279112293530773435480776,
+  5604383910799496487937678577570897, 824174104529337718814364496701602, 6593392836234701750514915973612820, 2802191955399748243968839288785448, 2009921364594126823947288901633585,
+  3349868940990211373245481502722642, 6029764093782380471841866704900756, 1004960682297063411973644450816792, 4495476177893366345024074907195457, 7279891811044555687511434793527490,
+  4175189905019456117961876928614788, 8350379810038912235923753857229576, 6316165903008169214786515056018960, 2247738088946683172512037453597728, 365797821736308795747745338262081,
+  731595643472617591495490676524162, 1463191286945235182990981353048324, 2641873156984452413733716331892808, 5283746313968904827467432663785616, 182898910868154397873872669131040,
+  2663062834118181126157658133678401, 7906791174049600594916857117236162, 7969079394767621945538996499021508, 5553565072465588634017000339602824, 3261914137796959095804662698029648,
+  6523828275593918191609325396059296, 8819637438197167258898012728278849, 4370347574359627495655851557863874, 8740695148719254991311703115727748, 4851404057602561519194345291921480,
+  2204909359549291814724503182069712, 4409818719098583629449006364139424, 4957968333766236793544983779389377, 9915936667532473587089967558778754, 9447279617995291917118942459117316,
+  8509965518920928577176892259794440, 6635337320772201897292791861148688, 2478984166883118396772491889694688, 8759000614057692196492904017597377, 4876524254361052659036464514839618,
+  1602856980531272698322403114482500, 3205713961062545396644806228965000, 6411427922125090793289612457930000, 9571797165563673726776948338018784, 5718269370418425799433889439097281,
+  1051945023767196341806786219754370, 7754567737060582326701880985888452, 9842552905203109399559176531373128, 9300512093336563542057360404306064, 2859134685209212899716944719548640,
+  2114896565339501341816081513762497, 3748344375592879721290276562096962, 7496688751185759442580553124193924, 4608783785301863628100113589947656, 8725531381700461373118313634354384,
+  6249745141204578299438537086101344, 7840670289142395006646133914677953, 5296746861215134756231275170915714, 7968420810352684602377159744289220, 5552247903635713947693326830138248,
+  8476570679983287273562782079833552, 3920335144571197503323066957338976, 10384593717069655257060992658440191, 3461531239023218419020330886146730, 4153837486827862102824397063376076,
+  2769224991218574735216264708917384, 4886867631562190709205173015736560, 3257911754374793806136782010491040, 3909494105249752567364138412589248, 2606329403499835044909425608392832,
+  5172093368812902229197692841557760, 3448062245875268152798461894371840, 4137674695050321783358154273246208, 2758449796700214522238769515497472, 4867852582412143274539005027348480,
+  3245235054941428849692670018232320, 3894282065929714619631204021878784, 2596188043953143079754136014585856, 1948062524355030590479443664309249, 3246770873925050984132406107182082,
+  5844187573065091771438330992927748, 654427254275518088989188105978888, 659500333766025981151894990521360, 669646492747041765477308759606304, 689938810709073334128136297776192,
+  730523446633136471429791374115968, 811692718481262746033101526795520, 974031262177515295239721832154624, 30427328678997891120676818923521, 50712214464996485201128031539202,
+  91281986036993673362030456770564, 172421529180988049683835307233288, 334700615468976802327445008158736, 659258788044954307614664410009632, 1308375133196909318189103213711424,
+  2606607823500819339337980821115008, 5203073204108639381635736035922176, 11410248254624209170253807096320, 12678053616249121300282007884800, 15213664339498945560338409461760,
+  3894222643901120721397872246915072, 7788445287802241442795744493830144, 5192296858534827628530496329220096
+]
+
+def pivotPlan : List (Nat × Nat) := [(0,317222139864203376453333828680), (1,634444284450773235776312871056), (2,1268888564179179988682980528416), (4,3489443547950970106725962542819), (4,6978887081734840764842989210950), (5,12371663516094695958985406526535), (7,40287211753986173615728759981375), (8,80574422917676536869030145657470), (8,120861635263728770594751333948541), (9,201436059966222764272190325142651), (11,603762554228690042734532466758513), (12,1207525102038783578366506771310306), (12,1042574555137911176455603552584486), (13,1287310707450390940272565132627935), (16,1107478313374985552243957414112677), (15,736903261560659621061614789670639), (16,1122349996820886166506149343817182), (17,336857322176553767581565099301831), (18,717840222381860203484619493390083), (19,1160282957362312075576262710619654), (20,275528529322128018612143664585740), (21,1092284857561064420929999012614935), (22,411896010856869882732405737367086), (23,823520229276461600175161860901980), (24,1235502881719559025578335985998277), (28,1192044724041977388014122192349775), (29,212286995578279212017632050959518), (27,500873844574465866121756385791528), (28,387229624680987101239280522065975), (29,773976102328170409171115862847598), (35,611282914222172782617934155916973), (31,1222098625589898128341758485810522), (33,752701853217630439972981049487683), (33,479699399200758492209473573685617), (35,683374092020103228401109002823562), (35,476115960031138967758650984762175), (37,990164941656839759206528920498387), (38,616020800495609854156766238302630), (39,1231637552561673946630948626547532), (39,1102798392150963553367036277503563), (41,632371244347499630741176255389449), (41,1152743884786157598512133942392970), (43,354545118817146661049132095204893), (43,708776749204417901763858482781242), (45,880148213326887834003398248683113), (45,238642024290344758834101687644392), (46,1235732282345209926501609024927673), (47,124726461433115279305376808071026), (48,643174612024739237675850924239613), (49,666624679949173894823381434728199), (50,1263211508255883636454697974038030), (52,583282315465634287191219629381345), (53,1166546590143973947277112381386178), (53,391246215936816918924918633558393), (57,1182837185230163418339910996079635), (56,994987854362359455970453809159221), (56,910844807372590811981035904885855), (57,469226297299574800413892805104779), (58,201905979786943230102064732153199), (59,350166782504911509640847858239383), (60,652515239269408296221107291472487), (61,1291435013998131885454645038515406), (62,631583188472044293988457858879285), (65,685109460837142010366665905264835), (64,729112938616889200425953015035695), (65,1179818098171995324412693879898546), (70,374343847879666889853872255907321), (71,748687682333645868909343169276914), (68,14156630430990000997999540177391), (69,28097406963270784159199838868446), (70,324911325842783741266018584337322), (71,649822626945089478777965894121300), (72,960369118985316452998950311427309), (73,285741929452675018500960453395767), (74,369860874203562198368569431953241), (75,1100703516407522528239827892048363), (76,754369945863085806842960018420285), (77,338424493448297028364674436978247), (78,1013443026852946497186098996902601), (79,930646820473734341647365811801947), (80,200071263788719392376481980289517), (81,535563573269406354301998105702967), (82,946913483926021230044604456195673), (83,244275881136081118814946555198187), (84,407761637435789897132566021017405), (85,1220117352507515190025063952159047), (86,1207129487741870416839726444721097), (87,1043288522564875286327750128718939), (88,860450197565973529371541542993133), (89,875060532129660990594407872199130), (90,845969273646537360571292183163828), (91,904410611901287205462757499987816), (92,287156335636167980112946260031571), (93,574312671272335960225892520063142), (94,1148625342544671920451785040126284), (95,299116426479597246794391652778648), (96,848453914242372374240519113999125), (97,899238688291131397589237736015402), (98,1291120036019541840280218164300891), (99,1278131768015893035291404448142573), (102,1258513717590925477181823520318849), (102,50849221505850734906475725218520), (102,101698443011701469812951450437040), (106,975741837807905637823357948145377), (106,660912195369641999446408588245025), (106,813587544093611758503611603496320), (106,1157283777552064887954899078219458), (107,723930967626468013873266089950887), (108,281810533148802561776758493994539), (109,563621066297605123553516987989078), (110,1238944954858416139774437458009033), (111,2477889909716832279548874916018066), (112,4955779819433664559097749832036132)]
+
+private def reversePivot (row : Nat × Nat) (i : Nat) : List (Wire × Wire) :=
+  (if row.1 = i then [] else [(i,row.1),(row.1,i),(i,row.1)]) ++
+    (selected 113 row.2).map (fun q => (i,q))
+
+def outerOps : List (Wire × Wire) :=
+  (pivotPlan.zipIdx.flatMap (fun (row,i) => reversePivot row i)).reverse
+
+/-- Supply this equality from a packed receipt for the same gate order. -/
+abbrev BasisCertificate : Prop := applyOps outerOps (units 113) = outerRows
+
+abbrev BasisBounds : Prop :=
+  ∀ pair ∈ outerOps, pair.1 < 113 ∧ pair.2 < 113 ∧ pair.1 ≠ pair.2
+
+private abbrev shift (slot : Fin 22) : Nat := slot.val - 1
+private abbrev dim (slot : Fin 22) : Nat := 113 - shift slot
+private abbrev clip (slot : Fin 22) (k q : Nat) : Nat :=
+  clipShift (dim slot) k (read outerRows q)
+
+private def coded (slot : Fin 22) (k : Nat) : Rows :=
+  outerRows.map (clipShift (dim slot) k)
+
+private def scalarFrame (slot : Fin 22) : Rows :=
+  Array.ofFn (fun q : Fin 113 => clip slot (if q.val < 110 then shift slot else 0) q.val)
+
+/-- The shared wide primary action supplies these exact row equalities. -/
+abbrev ScalarAction : Prop := ∀ slot : Fin 22,
+  componentRows20 false slot.val 0 factors (coded slot 0) = scalarFrame slot ∧
+  componentRows20 true slot.val 0 factors (scalarFrame slot) = coded slot 0
+
+def logical (mirror : Bool) : Program :=
+  cnotProgram outerOps ++ middle mirror ++ (cnotProgram outerOps).reverse
+
+abbrev CoordinateAction : Prop := BasisCertificate → BasisBounds → ScalarAction →
+  ∀ (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool),
+    run (logical mirror) t
+      (frame20 (plain20 113 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 113 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph
+
+abbrev j265 : Fin 9 := ⟨5, by decide⟩
+
+/-- The old caller supplies all four fields immediately before the barrel. -/
+structure Admitted (mirror : Bool) (slot : Fin 22) (v : Nat) (s : State) : Prop where
+  small : v < 2 ^ (113 - (slot.val - 1))
+  bank : HighBankBarrel.holds (Shadow20.bankW20 265) 113 (v <<< entryShift mirror slot.val) s
+  tags : ∀ k < 21, s.basis (Shadow20.tagsP20.getD k 0) = decide (slot.val = k + 1)
+  scratch : ∀ k < 10, s.basis (Shadow20.poolW20 265 (22 + k)) = false
+
+abbrev Scope (mirror : Bool) : Prop := wires (logical mirror) ⊆ Finset.range 144
+
+def physical (mirror : Bool) : Program := renameProgram (Shadow20.place20 265) (logical mirror)
+
+private def packedRowsWord : Nat := 0x1000000000000000000000000000000000001800000000000000000000000000000000000c0000000000000000000000000000000000000c006003001800c0060030018000000000000a005002801400a0050028014000000000000900480240120090048024012000000000100880440220110088044022011000000000080840420210108084042021010800000000040820410208104082041020810400000000020810408204102081040820410200000000010808404202101080840420210100000000008804402201100880440220110080000000004802401200900480240120090040000000002801400a005002801400a0050020000000001800c006003001800c00600300100000000300600c0180300600c018030060000000000280500a0140280500a014028050000000000240480901202404809012024048000000000220440881102204408811022044000000000210420841082104208410821042000000000208410821042084108210420841000000000204408811022044088110220440800000001202404809012024048090120240400000000a0140280500a0140280500a0140200000000600c0180300600c0180300600c0100000000800080008000800080008000800000000000c000c000c000c000c000c000c00000000000a000a000a000a000a000a000a00000000000f000f000f000f000f000f000f00000000000880088008800880088008800880000000000cc00cc00cc00cc00cc00cc00cc0000000000aa00aa00aa00aa00aa00aa00aa0000000000ff00ff00ff00ff00ff00ff00ff0000000000808080808080808080808080808000000000c0c0c0c0c0c0c0c0c0c0c0c0c0c000000000a0a0a0a0a0a0a0a0a0a0a0a0a0a000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f000000000888888888888888888888888888800000000cccccccccccccccccccccccccccc00000000aaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001ffffffffffffffffffffffffffff00000000c149960a4cb0526582932c14996000000001a1ed5d0f6ae87b5743daba1ed5d00000000111bf388df9c46fce237e711bf3880000000188df9c46fce237e711bf388df9c4000000010526582932c149960a4cb05265820000000182932c149960a4cb0526582932c1000000013422dfae33b0792a6845bf5c676000000001ae33b0792a6845bf5c6760f254d000000000e33b0792a6845bf5c6760f254d0800000001719d83c953422dfae33b0792a68400000000b8cec1e4a9a116fd719d83c95342000000006845bf5c6760f254d08b7eb8cec1000000008cf75a6c48705f9519eeb4d890e000000001ca8cf75a6c48705f9519eeb4d89000000001e5467bad3624382fca8cf75a6c48000000017e5467bad3624382fca8cf75a6c40000000033dd69b121c17e5467bad36243820000000119eeb4d890e0bf2a33dd69b121c100000001d7ed10b2a4f06e63afda216549e0000000013c1b98ebf6885952783731d7ed10000000009e0dcc75fb442ca93c1b98ebf688000000004f06e63afda216549e0dcc75fb4400000000f06e63afda216549e0dcc75fb44200000001afda216549e0dcc75fb442ca93c1000000007a392dd9abf04314f4725bb357e0000000014725bb357e08629e8e4b766afc1000000001a392dd9abf04314f4725bb357e0800000001d1c96ecd5f8218a7a392dd9abf0400000001e8e4b766afc10c53d1c96ecd5f8200000000f4725bb357e08629e8e4b766afc100000000d96bbcc54fd07091b2d7798a9fa0000000006cb5de62a7e83848d96bbcc54fd000000000ef3153f41c246cb5de62a7e8384800000001aef3153f41c246cb5de62a7e838400000000d7798a9fa0e12365aef3153f41c200000001b2d7798a9fa0e12365aef3153f410000000141a64a0d32506992834c941a64a000000000a0d32506992834c941a64a0d32500000000111cfd88e7ec473f6239fb11cfd880000000188e7ec473f6239fb11cfd88e7ec40000000185d5bc2eade1756f0bab785d5bc200000000834c941a64a0d32506992834c941000000000904824120904824120904824120000000010482412090482412090482412090000000008241209048241209048241209048000000004824120904824120904824120904000000002412090482412090482412090482000000001209048241209048241209048241000000006ed2717946107eacdda4e2f28c2000000001376938bca3083f566ed271794610000000019bb49c5e51841fab376938bca30800000000cdda4e2f28c20fd59bb49c5e51840000000166ed2717946107eacdda4e2f28c200000000dda4e2f28c20fd59bb49c5e5184100000000318c6318c6318c6318c6318c631800000001294a5294a5294a5294a5294a529400000000a5294a5294a5294a5294a5294a52000000006318c6318c6318c6318c6318c631000000008a28a28a28a28a28a28a28a28a280000000145145145145145145145145145140000000028a28a28a28a28a28a28a28a28a20000000114514514514514514514514514510000000191eb23d647ac8f591eb23d647ac800000000c8f591eb23d647ac8f591eb23d6400000001647ac8f591eb23d647ac8f591eb20000000123d647ac8f591eb23d647ac8f59100000000b972e5cb972e5cb972e5cb972e5c00000000e5cb972e5cb972e5cb972e5cb9720000000172e5cb972e5cb972e5cb972e5cb900000000e9d3a74e9d3a74e9d3a74e9d3a740000000074e9d3a74e9d3a74e9d3a74e9d3a00000001d3a74e9d3a74e9d3a74e9d3a74e9
+
+set_option maxRecDepth 5000 in
+private theorem pivot_bounds : ∀ v ∈ pivotPlan.zipIdx,
+    v.1.1 < 113 ∧ v.2 < 113 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+namespace PackedBasis
+
+open CRTBarrel20.Packed20
+
+/-- One spill followed by the three CNOTs of the original swap, if required. -/
+private def steps (n : Nat) (v : (Nat × Nat) × Nat) : List ((Nat × Nat) × Nat) :=
+  let ((j,mask),i) := v
+  [((n,mask),i)] ++ (if i = j then [] else [((i,0),j),((j,0),i),((i,0),j)])
+
+private def emit (n : Nat) (v : (Nat × Nat) × Nat) : List (Wire × Wire) :=
+  (CRTBarrel20.elimStep n v.2 v.1).reverse
+
+private def rowSteps : List ((Nat × Nat) × Nat) := pivotPlan.zipIdx.reverse.flatMap (steps 113)
+
+private theorem emit_pivot (j mask i : Nat) (hj : j < 113) (hi : i < 113) :
+    (steps 113 ((j,mask),i)).flatMap (emit 113) = (reversePivot (j,mask) i).reverse := by
+  by_cases h : i = j
+  · subst j
+    simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected]
+  · simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected,
+      h,Ne.symm h,hj,hi,List.append_assoc]
+
+private theorem emit_rows : rowSteps.flatMap (emit 113) = outerOps := by
+  have fold (xs : List ((Nat × Nat) × Nat))
+      (bounds : ∀ v ∈ xs, v.1.1 < 113 ∧ v.2 < 113) :
+      (xs.flatMap (steps 113)).flatMap (emit 113) =
+        xs.flatMap (fun (row,i) => (reversePivot row i).reverse) := by
+    induction xs with
+    | nil => rfl
+    | cons v tail ih =>
+      obtain ⟨⟨j,mask⟩,i⟩ := v
+      obtain ⟨hj,hi⟩ := bounds ((j,mask),i) (List.mem_cons_self ..)
+      rw [List.flatMap_cons,List.flatMap_append,List.flatMap_cons,emit_pivot j mask i hj hi]
+      rw [ih (fun v hv => bounds v (List.mem_cons_of_mem _ hv))]
+  unfold rowSteps outerOps
+  rw [fold _ (fun v hv => ⟨(pivot_bounds v (List.mem_reverse.mp hv)).1,
+    (pivot_bounds v (List.mem_reverse.mp hv)).2.1⟩)]
+  exact (List.reverse_flatMap ..).symm
+
+/-- The grouped packed reflection, generalized from a zip-indexed plan to exact row steps. -/
+private theorem coordinates_steps (n : Nat) (xs : List ((Nat × Nat) × Nat))
+    (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false)
+    (target : CRTBarrel20.Matrix20.Rows) (size : target.size = n) (narrow : n ≤ width) (word : Nat)
+    (receipt : xs.foldl (quickStep n) (identityWord width n) = word)
+    (rows : ∀ j : Fin n, digit width word j.val = CRTBarrel20.Matrix20.read target j.val) :
+    CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n) = target := by
+  have carry (xs : List ((Nat × Nat) × Nat)) (x : Nat) (r : CRTBarrel20.Matrix20.Rows)
+      (size : r.size = n) (agree : Matches x r)
+      (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false) :
+      Matches (xs.foldl (quickStep n) x) (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) r) := by
+    induction xs generalizing x r with
+    | nil => exact agree
+    | cons v xs ih =>
+      obtain ⟨⟨donor,mask⟩,i⟩ := v
+      have use := good ((donor,mask),i) (by simp)
+      rw [List.foldl_cons,List.flatMap_cons]
+      unfold CRTBarrel20.Matrix20.applyOps
+      rw [List.foldl_append]
+      change Matches (xs.foldl _ _) (CRTBarrel20.Matrix20.applyOps _
+        (CRTBarrel20.Matrix20.applyOps (CRTBarrel20.elimStep n i (donor,mask)).reverse r))
+      rw [CRTBarrel20.Packed20.backward_row n i donor mask r size use.2]
+      apply ih _ _ ((pivotBack_size ..).trans size) _
+        (fun v hv => good v (List.mem_cons_of_mem _ hv))
+      rw [CRTBarrel20.Packed20.quickStep_eq]
+      exact matches_step n x r ((donor,mask),i) size use.1 agree
+  have base : Matches (identityWord width n) (CRTBarrel20.Matrix20.units n) := by
+    intro q hq
+    have sq : q < n := by simpa [CRTBarrel20.Matrix20.units] using hq
+    simpa [CRTBarrel20.Matrix20.units,CRTBarrel20.Matrix20.read,sq,identityWord] using
+      (digit_units width n 0 q (by simpa using narrow) sq).symm
+  have matched := carry xs (identityWord width n) (CRTBarrel20.Matrix20.units n)
+    (by simp [CRTBarrel20.Matrix20.units]) base good
+  rw [receipt] at matched
+  have os : (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n)).size = n := by
+    simp [CRTBarrel20.Matrix20.units]
+  apply Array.ext (os.trans size.symm)
+  intro q ho ht
+  have eq := (matched q ho).trans (rows ⟨q,os ▸ ho⟩)
+  simpa only [CRTBarrel20.Matrix20.read,Array.getElem?_eq_getElem ho,Array.getElem?_eq_getElem ht,
+    Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem step_shape : ∀ v ∈ rowSteps, v.2 < 113 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_receipt : rowSteps.foldl (quickStep 113) (identityWord width 113) = packedRowsWord := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_digits : ∀ q : Fin 113,
+    digit width packedRowsWord q.val = CRTBarrel20.Matrix20.read outerRows q.val := by
+  decide +kernel
+
+end PackedBasis
+
+/-- Exact coordinates of the original swap and spill basis tape. -/
+theorem basis_certificate : BasisCertificate := by
+  have proved := PackedBasis.coordinates_steps 113 PackedBasis.rowSteps PackedBasis.step_shape outerRows
+    (by rfl) (by decide) packedRowsWord PackedBasis.packed_receipt PackedBasis.packed_digits
+  rw [PackedBasis.emit_rows] at proved
+  exact proved
+
+namespace ScalarPremise
+
+open CRTBarrel20.Packed20
+
+private theorem outer_size : outerRows.size = 113 := rfl
+
+private theorem coded_size (slot : Fin 22) : (coded slot 0).size = 113 := by
+  simp [coded,outer_size]
+
+private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 113 := by
+  simp [scalarFrame]
+
+private theorem coded_read (slot : Fin 22) (q : Nat) (low : q < 113) :
+    read (coded slot 0) q = clip slot 0 q := by
+  simp [coded,clip,Matrix20.read,outer_size,low]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (low : q < 113) :
+    read (scalarFrame slot) q = clip slot (if q < 110 then shift slot else 0) q := by
+  simp [scalarFrame,Matrix20.read,low]
+
+set_option maxRecDepth 5000 in
+private theorem prefix_table : residueTable 113 outerRows 0 factors = true := by
+  decide +kernel
+
+private theorem extent : extent20 factors = 110 := by decide +kernel
+
+private theorem scalar_direction (slot : Fin 22) (mirror : Bool) :
+    let input := if mirror then scalarFrame slot else coded slot 0
+    let output := if mirror then coded slot 0 else scalarFrame slot
+    componentRows20 mirror slot.val 0 factors input = output := by
+  intro input output
+  have inputSize : input.size = 113 := by cases mirror <;> simp [input,coded_size,scalar_size]
+  have outputSize : output.size = 113 := by cases mirror <;> simp [output,coded_size,scalar_size]
+  apply componentRows_split 113 110 (dim slot) slot mirror outerRows input output outer_size
+    inputSize outputSize (by decide) (Nat.le_refl _) (by decide) factors extent prefix_table
+  · intro q hq
+    cases mirror
+    · simpa [input,entryShift] using coded_read slot q hq
+    · exact scalar_read slot q hq
+  · intro q hq
+    cases mirror
+    · exact scalar_read slot q hq
+    · simpa [output,exitShift] using coded_read slot q hq
+
+theorem scalar_action : ScalarAction := fun slot =>
+  ⟨scalar_direction slot false,scalar_direction slot true⟩
+
+end ScalarPremise
+
+theorem basis_bounds : BasisBounds := by
+  intro pair hp
+  obtain ⟨⟨⟨j,mask⟩,i⟩,listed,step⟩ := List.mem_flatMap.mp (List.mem_reverse.mp hp)
+  have ⟨hj,hi,clear⟩ := pivot_bounds _ listed
+  change pair ∈ (if j = i then [] else [(i,j),(j,i),(i,j)]) ++
+    (selected 113 mask).map (fun q => (i,q)) at step
+  rcases List.mem_append.mp step with swap | spill
+  · by_cases same : j = i
+    · simp [same] at swap
+    · simp only [if_neg same, List.mem_cons, List.not_mem_nil, or_false] at swap
+      rcases swap with rfl | rfl | rfl
+      · exact ⟨hi,hj,Ne.symm same⟩
+      · exact ⟨hj,hi,same⟩
+      · exact ⟨hi,hj,Ne.symm same⟩
+  · obtain ⟨q,hq,rfl⟩ := List.mem_map.mp spill
+    change q ∈ (List.range 113).filter mask.testBit at hq
+    obtain ⟨within,bit⟩ := List.mem_filter.mp hq
+    refine ⟨hi,List.mem_range.mp within,?_⟩
+    intro eq
+    change i = q at eq
+    subst q
+    change mask.testBit i = false at clear
+    simp [clear] at bit
+
+private theorem append_scope {p q : Program}
+    (hp : wires p ⊆ Finset.range 144) (hq : wires q ⊆ Finset.range 144) :
+    wires (p ++ q) ⊆ Finset.range 144 := by
+  rw [wires_append]
+  exact Finset.union_subset hp hq
+
+private theorem cnot_scope (pairs : List (Wire × Wire))
+    (bounds : ∀ pair ∈ pairs, pair.1 < 113 ∧ pair.2 < 113 ∧ pair.1 ≠ pair.2) :
+    wires (cnotProgram pairs) ⊆ Finset.range 144 := by
+  have fits : Fits (· < 144) (cnotProgram pairs) := by
+    intro gate hg
+    obtain ⟨⟨a,b⟩,hpair,rfl⟩ := List.mem_map.mp hg
+    obtain ⟨ha,hb,sep⟩ := bounds (a,b) hpair
+    refine ⟨sep,?_⟩
+    intro q hq
+    simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl
+    · exact Nat.lt_trans ha (by decide : 113 < 144)
+    · exact Nat.lt_trans hb (by decide : 113 < 144)
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem basis_scope : wires (cnotProgram outerOps) ⊆ Finset.range 144 :=
+  cnot_scope outerOps basis_bounds
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+private theorem scalar_scope (mirror : Bool) : wires (components20 113 mirror 0 factors) ⊆ Finset.range 144 := by
+  have fits := CRTBarrel20.fitsComponents 113 mirror 0 factors (by decide +kernel) factors_used
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem shift_scope (mirror : Bool) : wires (shiftProgram mirror) ⊆ Finset.range 144 := by
+  cases mirror <;> decide +kernel
+
+set_option maxRecDepth 7000 in
+private theorem correction_scope_forward : wires (corrections false) ⊆ Finset.range 144 := by
+  decide +kernel
+
+private theorem correction_scope (mirror : Bool) : wires (corrections mirror) ⊆ Finset.range 144 := by
+  cases mirror
+  · exact correction_scope_forward
+  · simpa only [← corrections_reverse, wires_reverse] using correction_scope_forward
+
+/-- Scope of both emitted gate orders, including the scalar correction wires. -/
+theorem logical_scope (mirror : Bool) : Scope mirror := by
+  have rev : wires (cnotProgram outerOps).reverse ⊆ Finset.range 144 := by
+    rw [wires_reverse]
+    exact basis_scope
+  have body : wires (middle mirror) ⊆ Finset.range 144 := by
+    cases mirror
+    · exact append_scope (scalar_scope false) (append_scope (shift_scope false) (correction_scope false))
+    · exact append_scope (correction_scope true) (append_scope (shift_scope true) (scalar_scope true))
+  change wires ((cnotProgram outerOps ++ middle mirror) ++ (cnotProgram outerOps).reverse) ⊆ Finset.range 144
+  exact append_scope (append_scope basis_scope body) rev
+
+private def parityRow (i : Fin 3) : Nat := [3894222643901120721397872246915073,7788445287802241442795744493830146,5192296858534827628530496329220100][i.val]?.getD 0
+
+private def raised (slot : Fin 22) (i : Nat) : Nat :=
+  if shift slot ≤ i then clip slot 0 (110 + (i - shift slot)) else 0
+
+private def layer (slot : Fin 22) (done : Nat) : Rows :=
+  Array.ofFn (fun q : Fin 113 =>
+    if q.val < 110 ∨ q.val - 110 < done then clip slot (shift slot) q.val
+    else raised slot (q.val - 110))
+
+private theorem rows_size : outerRows.size = 113 := rfl
+@[simp] private theorem coded_size (slot : Fin 22) (k : Nat) : (coded slot k).size = 113 := by
+  simp [coded, rows_size]
+@[simp] private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 113 := by
+  simp [scalarFrame]
+@[simp] private theorem layer_size (slot : Fin 22) (done : Nat) : (layer slot done).size = 113 := by
+  simp [layer]
+
+private theorem coded_read (slot : Fin 22) (k q : Nat) (h : q < 113) :
+    read (coded slot k) q = clip slot k q := by
+  simp [coded, clip, Matrix20.read, rows_size, h]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (h : q < 113) :
+    read (scalarFrame slot) q = clip slot (if q < 110 then shift slot else 0) q := by
+  simp [scalarFrame, Matrix20.read, h]
+
+private theorem layer_read (slot : Fin 22) (done q : Nat) (h : q < 113) :
+    read (layer slot done) q =
+      if q < 110 ∨ q - 110 < done then clip slot (shift slot) q else raised slot (q - 110) := by
+  simp [layer, Matrix20.read, h]
+
+private theorem layer_done (slot : Fin 22) : layer slot 3 = coded slot (shift slot) := by
+  apply Array.ext (by simp)
+  intro q hq hc
+  have inBank : q < 113 := by simpa only [layer_size] using hq
+  have done : q < 110 ∨ q - 110 < 3 := Or.inr (by omega)
+  have eq := (layer_read slot 3 q inBank).trans (by simp only [if_pos done]; exact (coded_read slot _ q inBank).symm)
+  simpa only [Matrix20.read, Array.getElem?_eq_getElem hq, Array.getElem?_eq_getElem hc, Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem parity_certificate : ∀ i : Fin 3,
+    (taps i).foldr (fun q z => read outerRows q ^^^ z) 0 = parityRow i := by
+  decide +kernel
+
+set_option maxRecDepth 5000 in
+private theorem quotient_certificate : ∀ (slot : Fin 22) (i : Fin 3),
+    (3 - shift slot ≤ i.val → clip slot 0 (110 + i.val) = 0) ∧
+    clip slot (shift slot) (110 + i.val) = raised slot i.val ^^^
+      (if i.val < shift slot then clipShift (dim slot) (shift slot) (parityRow i) else 0) := by
+  decide +kernel
+
+private theorem flags (rs : Rows) (sz : rs.size = 113) (slot : Fin 22)
+    (x : Nat → Bool) (ph : Bool) : Flags slot (frame20 rs x (dim slot) slot.val ph) := by
+  intro q hq
+  simp [frame20, Matrix20.basis, sz, Nat.not_lt_of_ge hq]
+
+private theorem taps_low (i : Fin 3) (q : Wire) (mem : q ∈ taps i) : q < 110 := by
+  change q ∈ (List.range 110).filter (fun q => (mask i).testBit q) at mem
+  exact List.mem_range.mp (List.mem_filter.mp mem).1
+
+private theorem layer_parity (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (done : Nat) (i : Fin 3) :
+    xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis (taps i) =
+      rowValue x (clipShift (dim slot) (shift slot) (parityRow i)) (dim slot) := by
+  have eval (xs : List Wire) (low : ∀ q ∈ xs, q < 110) :
+      xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis xs =
+        rowValue x (clipShift (dim slot) (shift slot) (xs.foldr (fun q z => read outerRows q ^^^ z) 0)) (dim slot) := by
+    induction xs with
+    | nil => simp [xorAt, clip_zero, rowValue_zero]
+    | cons q qs ih =>
+      have hlow : q < (110 : Nat) := low q (by simp)
+      have hbank : q < (113 : Nat) := Nat.lt_trans hlow (by decide : 110 < 113)
+      rw [xorAt, List.foldr_cons, clip_xor, rowValue_xor, ih (fun r hr => low r (List.mem_cons_of_mem _ hr))]
+      simp only [frame20, Matrix20.basis, layer_size, if_pos hbank, layer_read slot done q hbank,
+        if_pos (Or.inl hlow)]
+  exact (eval (taps i) (taps_low i)).trans
+    (congrArg (fun z => rowValue x (clipShift (dim slot) (shift slot) z) (dim slot)) (parity_certificate i))
+
+private theorem adjacent_layers (q i : Nat) (apart : q ≠ 110 + i) :
+    (q < 110 ∨ q - 110 < i) ↔ (q < 110 ∨ q - 110 < i + 1) := by
+  omega
+
+private theorem layer_step (mirror : Bool) (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (if mirror then i.val + 1 else i.val)) x (dim slot) slot.val ph) =
+      frame20 (layer slot (if mirror then i.val else i.val + 1)) x (dim slot) slot.val ph := by
+  let current := if mirror then i.val + 1 else i.val
+  let next := if mirror then i.val else i.val + 1
+  have target : dest i = 110 + i.val := rfl
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases hit : q = dest i
+    · subst q
+      have bank : dest i < 113 := Nat.add_lt_add_left i.isLt 110
+      have low : ¬ dest i < 110 := Nat.not_lt_of_ge (Nat.le_add_right 110 i.val)
+      have index : dest i - 110 = i.val := Nat.add_sub_cancel_left 110 i.val
+      have bit (done : Nat) : (frame20 (layer slot done) x (dim slot) slot.val ph).basis (dest i) =
+          rowValue x (if i.val < done then clip slot (shift slot) (dest i) else raised slot i.val) (dim slot) := by
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot done _ bank, low,
+          false_or, index]
+      have row := (quotient_certificate slot i).2
+      change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ (dest i) =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis (dest i)
+      rw [writeBit, Function.update_self, layer_parity, bit current, bit next, target, row]
+      by_cases active : i.val < shift slot
+      · cases mirror <;>
+          simp [current, next, active, rowValue_xor]
+      · cases mirror <;>
+          simp [current, next, active]
+    · change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ q =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis q
+      rw [writeBit, Function.update_of_ne hit]
+      by_cases bank : q < 113
+      · have apart : q ≠ 110 + i.val := fun eq => hit (eq.trans target.symm)
+        have adjacent := adjacent_layers q i.val apart
+        have same : (q < 110 ∨ q - 110 < current) ↔ (q < 110 ∨ q - 110 < next) := by
+          cases mirror
+          · exact adjacent
+          · exact adjacent.symm
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot current q bank,
+          layer_read slot next q bank, same]
+      · simp only [frame20, Matrix20.basis, layer_size, if_neg bank]
+
+private theorem layer_step_forward (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot i.val) x (dim slot) slot.val ph) =
+      frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph :=
+  layer_step false slot i x ph
+
+private theorem layer_step_inverse (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph) =
+      frame20 (layer slot i.val) x (dim slot) slot.val ph :=
+  layer_step true slot i x ph
+
+private theorem correction_forward (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections false) t (frame20 (layer slot 0) x (dim slot) slot.val ph) =
+      frame20 (coded slot (shift slot)) x (dim slot) slot.val ph := by
+  rw [corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨2, by decide⟩ (corrected slot ⟨1, by decide⟩
+    (corrected slot ⟨0, by decide⟩ _)) = _
+  rw [layer_step_forward slot ⟨0, by decide⟩ x ph, layer_step_forward slot ⟨1, by decide⟩ x ph,
+    layer_step_forward slot ⟨2, by decide⟩ x ph, layer_done]
+
+private theorem correction_inverse (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections true) t (frame20 (coded slot (shift slot)) x (dim slot) slot.val ph) =
+      frame20 (layer slot 0) x (dim slot) slot.val ph := by
+  rw [← layer_done, corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨0, by decide⟩ (corrected slot ⟨1, by decide⟩
+    (corrected slot ⟨2, by decide⟩ _)) = _
+  rw [layer_step_inverse slot ⟨2, by decide⟩ x ph, layer_step_inverse slot ⟨1, by decide⟩ x ph,
+    layer_step_inverse slot ⟨0, by decide⟩ x ph]
+
+private def quotientWord (slot : Fin 22) (x : Nat → Bool) : Fin 16 :=
+  ⟨fieldWord (3 - shift slot) (fun i => rowValue x (clip slot 0 (110 + i)) (dim slot)),
+    lt_of_lt_of_le (fieldWord_small ..) (by
+      simpa using Nat.pow_le_pow_right (by decide : 0 < 2) (show 3 - shift slot ≤ 4 by omega))⟩
+
+private theorem word_small (slot : Fin 22) (x : Nat → Bool) :
+    (quotientWord slot x).val < 2 ^ (3 - shift slot) :=
+  fieldWord_small ..
+
+private theorem word_bit (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 3) :
+    (quotientWord slot x).val.testBit i = rowValue x (clip slot 0 (110 + i)) (dim slot) := by
+  by_cases low : i < 3 - shift slot
+  · exact fieldWord_bit _ _ _ low
+  · have high : 3 - shift slot ≤ i := Nat.le_of_not_lt low
+    rw [Nat.testBit_lt_two_pow (lt_of_lt_of_le (word_small slot x)
+      (Nat.pow_le_pow_right (by decide : 0 < 2) high)), (quotient_certificate slot ⟨i,hi⟩).1 high]
+    exact (rowValue_zero ..).symm
+
+private theorem word_raised (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 3) :
+    ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val).testBit i =
+      rowValue x (raised slot i) (dim slot) := by
+  have uncapped : ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val) =
+      (quotientWord slot x).val <<< shift slot := by
+    by_cases within : shift slot ≤ 4
+    · simp [LateQuotientShift.capShift, Nat.min_eq_left within]
+    · have z : 3 - shift slot = 0 := by omega
+      have small := word_small slot x
+      rw [z, Nat.pow_zero] at small
+      rw [show (quotientWord slot x).val = 0 by omega]
+      simp
+  rw [uncapped, Nat.testBit_shiftLeft]
+  by_cases moved : shift slot ≤ i
+  · simp only [raised, moved, decide_true, Bool.true_and]
+    exact word_bit slot x _ (by omega)
+  · simp [raised, moved, rowValue_zero]
+
+private theorem shiftPort_low : ∀ i : Fin 3, shiftPort i.val = 110 + i.val := by decide
+
+private theorem selector_projection : ∀ (slot : Fin 22) (q : Fin 6), 3 ≤ q.val →
+    113 ≤ shiftPort q.val ∧
+    flags20 113 slot.val (shiftPort q.val) =
+      LateQuotientShift.admittedBit false false (LateQuotientShift.capShift (shift slot)) 0 q.val := by
+  decide +kernel
+
+private theorem quotient_admission (shifted : Bool) (slot : Fin 22) (rs : Rows) (sz : rs.size = 113)
+    (x : Nat → Bool) (ph : Bool)
+    (qRows : ∀ i : Fin 3, read rs (110 + i.val) =
+      if shifted then raised slot i.val else clip slot 0 (110 + i.val)) :
+    QuotientFrame shifted slot (quotientWord slot x) (frame20 rs x (dim slot) slot.val ph) := by
+  have small : (quotientWord slot x).val <
+      2 ^ (LateQuotientShift.quotientWidth false - (LateQuotientShift.capShift (shift slot)).val) := by
+    rw [LateQuotientShift.capShift_width]
+    exact word_small ..
+  apply (LateQuotientShift.frame_iff false shifted shiftPort _ _ _ small).mpr
+  intro q hq
+  have bound : q < 6 := Finset.mem_range.mp hq
+  by_cases low : q < 3
+  · have bank : 110 + q < 113 := Nat.add_lt_add_left low 110
+    rw [shiftPort_low ⟨q,low⟩]
+    simp only [frame20, Matrix20.basis, sz, if_pos bank, qRows ⟨q,low⟩,
+      LateQuotientShift.admittedBit, LateQuotientShift.quotientWidth, Bool.false_eq_true, if_false,
+      if_pos low]
+    cases shifted
+    · exact (word_bit slot x q low).symm
+    · exact (word_raised slot x q low).symm
+  · have projection := selector_projection slot ⟨q,bound⟩ (Nat.le_of_not_lt low)
+    have independent : LateQuotientShift.admittedBit false shifted
+        (LateQuotientShift.capShift (shift slot)) (quotientWord slot x) q =
+        LateQuotientShift.admittedBit false false (LateQuotientShift.capShift (shift slot)) 0 q := by
+      simp only [LateQuotientShift.admittedBit, LateQuotientShift.quotientWidth,
+        Bool.false_eq_true, if_false, if_neg low]
+    exact (flags rs sz slot x ph (shiftPort q) projection.1).trans
+      (projection.2.trans independent.symm)
+
+private theorem shift_pair (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    let left := frame20 (scalarFrame slot) x (dim slot) slot.val ph
+    let right := frame20 (layer slot 0) x (dim slot) slot.val ph
+    run (shiftProgram false) t left = right ∧ run (shiftProgram true) t right = left := by
+  intro left right
+  have l : QuotientFrame false slot (quotientWord slot x) left := by
+    apply quotient_admission false slot _ (scalar_size slot)
+    intro i
+    change read (scalarFrame slot) (110 + i.val) = clip slot 0 (110 + i.val)
+    rw [scalar_read slot _ (Nat.add_lt_add_left i.isLt 110),
+      if_neg (Nat.not_lt_of_ge (Nat.le_add_right 110 i.val))]
+  have r : QuotientFrame true slot (quotientWord slot x) right := by
+    apply quotient_admission true slot _ (layer_size slot 0)
+    intro i
+    change read (layer slot 0) (110 + i.val) = raised slot i.val
+    have non : ¬ (110 + i.val < 110 ∨ 110 + i.val - 110 < 0) := by omega
+    rw [layer_read slot 0 _ (Nat.add_lt_add_left i.isLt 110), if_neg non, Nat.add_sub_cancel_left]
+  have agree : ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → right.basis q = left.basis q := by
+    intro q free
+    by_cases known : q < 113
+    · have below : q < 110 := by
+        by_contra! above
+        have eq : 110 + (q - 110) = q := Nat.add_sub_of_le above
+        have within : 110 + (q - 110) < 110 + 3 := eq.symm ▸ known
+        have high : q - 110 < 3 := Nat.lt_of_add_lt_add_left within
+        have port : q - 110 ∈ LateQuotientShift.ports false :=
+          Finset.mem_range.mpr (Nat.lt_trans high (by decide : 3 < 6))
+        exact free (Finset.mem_image.mpr ⟨q - 110, port, (shiftPort_low ⟨q - 110,high⟩).trans eq⟩)
+      simp only [right, left, frame20, Matrix20.basis, layer_size, scalar_size, if_pos known,
+        layer_read slot 0 q known, scalar_read slot q known, if_pos below, if_pos (Or.inl below)]
+    · have ge := Nat.le_of_not_lt known
+      exact (flags _ (layer_size ..) _ _ _ q ge).trans ((flags _ (scalar_size ..) _ _ _ q ge).symm)
+  have samePhase : right.phase = left.phase := by
+    simp only [right, left, frame20]
+  have forwardOut : QuotientFrame (!false) slot (quotientWord slot x) right := by
+    change QuotientFrame true slot (quotientWord slot x) right
+    exact r
+  have inverseOut : QuotientFrame (!true) slot (quotientWord slot x) left := by
+    change QuotientFrame false slot (quotientWord slot x) left
+    exact l
+  have forward : run (shiftProgram false) t left = right :=
+    shift_eq_of_frames false slot (quotientWord slot x) left right t l forwardOut samePhase agree
+  have inverse : run (shiftProgram true) t right = left :=
+    shift_eq_of_frames true slot (quotientWord slot x) right left t r inverseOut samePhase.symm
+      (fun q free => (agree q free).symm)
+  exact ⟨forward,inverse⟩
+
+private theorem middle_run (scalar : ScalarAction) (slot : Fin 22) (mirror : Bool)
+    (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (middle mirror) t (frame20 (coded slot (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (coded slot (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  cases mirror
+  · simp only [middle, Bool.false_eq_true, if_false, entryShift, exitShift, run_append]
+    rw [scalar_run _ (coded_size ..), (scalar slot).1, (shift_pair slot x ph _).1,
+      correction_forward]
+  · simp only [middle, if_true, entryShift, exitShift, run_append]
+    rw [correction_inverse, (shift_pair slot x ph _).2, scalar_run _ (scalar_size _),
+      (scalar slot).2]
+
+private theorem encode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps) t (frame20 (plain20 113 (dim slot) k) x (dim slot) slot.val ph) =
+      frame20 (coded slot k) x (dim slot) slot.val ph := by
+  have mapped : applyOps outerOps (plain20 113 (dim slot) k) = coded slot k := by
+    rw [plain20, apply_map outerOps (clipShift (dim slot) k) (clip_zero (dim slot) k)
+      (clip_xor (dim slot) k) (units 113), coordinates, coded]
+  have step := run_ops outerOps (plain20 113 (dim slot) k) x (dim slot) (flags20 113 slot.val) ph t
+    (fun pair hp => by simpa only [plain20_size] using ⟨(bounds pair hp).1,(bounds pair hp).2.1⟩)
+  rw [mapped] at step
+  simpa only [frame20, plain20_size, coded_size] using step
+
+private theorem decode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps).reverse t (frame20 (coded slot k) x (dim slot) slot.val ph) =
+      frame20 (plain20 113 (dim slot) k) x (dim slot) slot.val ph := by
+  have step := reverse_cnots outerOps (fun pair hp => (bounds pair hp).2.2)
+    (frame20 (plain20 113 (dim slot) k) x (dim slot) slot.val ph) [] t
+  rw [show cnotProgram outerOps.reverse = (cnotProgram outerOps).reverse from List.map_reverse,
+    encode_run coordinates bounds] at step
+  exact step
+
+/-- All measurement outcomes are allowed. The outer basis is the exact original 5,640-gate model. -/
+theorem logical_run (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (logical mirror) t
+      (frame20 (plain20 113 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 113 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  rw [logical, run_append, run_append, encode_run coordinates bounds, middle_run scalar,
+    decode_run coordinates bounds]
+
+private theorem bank_place : ∀ i : Fin 113, Shadow20.place20 265 i.val = Shadow20.bankW20 265 i.val := by
+  decide +kernel
+
+private theorem tag_place : ∀ i : Fin 21, Shadow20.place20 265 (113 + i.val) = Shadow20.tagsP20.getD i.val 0 := by
+  decide +kernel
+
+private theorem scratch_place : ∀ i : Fin 10,
+    Shadow20.place20 265 (134 + i.val) = Shadow20.poolW20 265 (22 + i.val) := by decide +kernel
+
+/-- Transport a logical program over the fixed bank, selector, and scratch placement. -/
+private theorem physical_result_program (program : Program) (mirror : Bool)
+    (scope : wires program ⊆ Finset.range 144) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s)
+    (action : run program t
+      (frame20 (plain20 113 (dim slot) (entryShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) =
+      frame20 (plain20 113 (dim slot) (exitShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) :
+    HighBankBarrel.Result (Shadow20.bankW20 265) 113 (v <<< exitShift mirror slot.val) s
+      (run (renameProgram (Shadow20.place20 265) program) t s) := by
+  let f := Shadow20.place20 265
+  let pool : Finset Wire := Finset.range 144
+  have inj : ∀ a ∈ pool, ∀ b ∈ pool, f a = f b → a = b :=
+    fun a ha b hb => placement_inj a b (Finset.mem_range.mp ha) (Finset.mem_range.mp hb)
+  have bankBit (k i : Nat) (ik : i < 113) :
+      (frame20 (plain20 113 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis i = (v <<< k).testBit i := by
+    simpa only [frame20, Matrix20.basis, plain20_size, if_pos ik] using plain20_bits 113 _ k v i h.small ik
+  have other (k q : Nat) (above : 113 ≤ q) (high : q < 144) :
+      (frame20 (plain20 113 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis q = s.basis (f q) := by
+    simp only [frame20, Matrix20.basis, plain20_size, if_neg (Nat.not_lt_of_ge above)]
+    by_cases tag : q < 134
+    · have pos : q - 113 < 21 := by omega
+      have hf : f q = Shadow20.tagsP20.getD (q - 113) 0 := by
+        simpa only [f, show 113 + (q - 113) = q by omega] using tag_place ⟨q - 113,pos⟩
+      rw [hf, h.tags _ pos]
+      simp [flags20, above, show q < 113 + 21 by exact tag]
+    · have pos : q - 134 < 10 := by omega
+      have hf : f q = Shadow20.poolW20 265 (22 + (q - 134)) := by
+        simpa only [f, show 134 + (q - 134) = q by omega] using scratch_place ⟨q - 134,pos⟩
+      rw [hf, h.scratch _ pos]
+      simp [flags20, show ¬ q < 113 + 21 from tag]
+  let before := entryShift mirror slot.val
+  let after := exitShift mirror slot.val
+  let beforeFrame := frame20 (plain20 113 (dim slot) before) v.testBit (dim slot) slot.val s.phase
+  let afterFrame := frame20 (plain20 113 (dim slot) after) v.testBit (dim slot) slot.val s.phase
+  let out := run (renameProgram f program) t s
+  have placeBank (q : Nat) (low : q < 113) : f q = Shadow20.bankW20 265 q := bank_place ⟨q,low⟩
+  have agrees : ∀ q ∈ pool, beforeFrame.basis q = s.basis (f q) := by
+    intro q hq
+    by_cases low : q < 113
+    · rw [placeBank q low]
+      have logicalBit : beforeFrame.basis q = (v <<< before).testBit q := bankBit before q low
+      exact Eq.trans logicalBit (h.bank q low).symm
+    · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq)
+  have moved : out.phase = afterFrame.phase ∧ ∀ q ∈ pool, out.basis (f q) = afterFrame.basis q := by
+    have result := run_rename_pool f pool inj program scope t beforeFrame s rfl agrees
+    have afterAction : run program t beforeFrame = afterFrame := action
+    rw [afterAction] at result
+    exact result
+  change HighBankBarrel.Result (Shadow20.bankW20 265) 113 (v <<< after) s out
+  have phase : afterFrame.phase = s.phase := rfl
+  refine ⟨?_,Eq.trans moved.1 phase,?_⟩
+  · intro i low
+    have within : i ∈ pool := Finset.mem_range.mpr (Nat.lt_trans low (by decide : 113 < 144))
+    have bit : out.basis (f i) = (v <<< after).testBit i :=
+      Eq.trans (moved.2 i within) (bankBit after i low)
+    rwa [placeBank i low] at bit
+  · intro q free
+    by_cases hit : q ∈ pool.image f
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hit
+      have above : 113 ≤ a := by
+        by_contra! low
+        exact free a low (placeBank a low)
+      have placed : out.basis (f a) = afterFrame.basis a := moved.2 a ha
+      have restored : afterFrame.basis a = s.basis (f a) := other after a above (Finset.mem_range.mp ha)
+      exact Eq.trans placed restored
+    · have preserved : out.basis q = s.basis q :=
+        run_rename_pool_outside f pool program scope t s q hit
+      exact preserved
+
+/-- Exact bank result, phase, and frame for the stock window-265 placement. -/
+theorem physical_result (logicalRun : CoordinateAction) (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (mirror : Bool) (scope : Scope mirror) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 265) 113 (v <<< exitShift mirror slot.val) s
+      (run (physical mirror) t s) := by
+  unfold physical
+  exact physical_result_program (logical mirror) mirror scope slot v s t h
+    (logicalRun coordinates bounds scalar slot mirror v.testBit s.phase t)
+
+
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨260, 58, 21086⟩ else ⟨260, 58, 21133⟩
+
+theorem width_at_start : Shadow20.liveW20 265 = 113 := by decide +kernel
+
+private theorem basis_fits : Fits (· < 144) (cnotProgram outerOps) := by
+  intro instr h
+  change instr ∈ outerOps.map (fun (a, b) => Instr.CX a b) at h
+  obtain ⟨⟨a,b⟩, member, rfl⟩ := List.mem_map.mp h
+  obtain ⟨ha, hb, distinct⟩ := basis_bounds (a,b) member
+  refine ⟨distinct, ?_⟩
+  intro q hq
+  simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem shift_fits (mir : Bool) : Fits (· < 144) (shiftProgram mir) := by
+  apply CRTBarrel20.lateResidueFits
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 144) (corrections mir) := by
+  have forward : Fits (· < 144) (corrections false) := by
+    apply CRTBarrel20.lateResidueFits
+    decide +kernel
+  cases mir
+  · exact forward
+  · rw [← corrections_reverse]
+    exact CRTBarrel20.fits_reverse forward
+
+theorem program_fits (mir : Bool) : Fits (· < 144) (logical mir) := by
+  have b := basis_fits
+  have r := CRTBarrel20.fits_reverse b
+  have s := shift_fits mir
+  have c := correction_fits mir
+  have f := CRTBarrel20.fitsComponents 113 mir 0 factors (by decide +kernel) factors_used
+  cases mir
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append f (CRTBarrel20.fits_append s c))) r
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append c (CRTBarrel20.fits_append s f))) r
+
+private theorem shift_cost (mir : Bool) : count (shiftProgram mir) = ⟨2, 0, 10⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem correction_cost (mir : Bool) : count (corrections mir) = ⟨3, 0, 497⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem basis_prices :
+    count (cnotProgram outerOps) = ⟨0, 0, 5640⟩ ∧
+      count (cnotProgram outerOps).reverse = ⟨0, 0, 5640⟩ := by
+  have len : outerOps.length = 5640 := by decide +kernel
+  have padded := congrArg (fun n => (⟨0, 0, n⟩ : CRTBarrel20.Count)) len
+  exact ⟨(CRTBarrel20.count_map_cx Prod.fst Prod.snd outerOps).trans padded,
+    (CRTBarrel20.count_map_cx_rev Prod.fst Prod.snd outerOps).trans padded⟩
+
+
+private theorem append_price {p q : Program} {a b : CRTBarrel20.Count}
+    (hp : count p = a) (hq : count q = b) : count (p ++ q) = cadd a b :=
+  (CRTBarrel20.count_append p q).trans (congrArg₂ cadd hp hq)
+
+attribute [local irreducible] count cnotProgram components20 outerOps in
+theorem costs (mir : Bool) : count (logical mir) = bounds mir := by
+  have b := basis_prices.1
+  have r := basis_prices.2
+  have f := CRTBarrel20.residueFieldPrice 113 mir factors factors_used
+  have s := shift_cost mir
+  have c := correction_cost mir
+  cases mir
+  · unfold logical middle
+    exact (append_price (append_price b (append_price f (append_price s c))) r).trans
+      (by decide +kernel)
+  · unfold logical middle
+    exact (append_price (append_price b (append_price c (append_price s f))) r).trans
+      (by decide +kernel)
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (h : Admitted mir slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 265) 113 (v <<< exitShift mir slot.val) s
+      (run (physical mir) tape s) :=
+  physical_result logical_run basis_certificate basis_bounds ScalarPremise.scalar_action
+    mir (logical_scope mir) slot v s tape h
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue265.Caller
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue285
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+def prep (tags taps : List Wire) (a b : Wire) : Program :=
+  toggles tags a ++ toggles taps b
+
+def coherentStep (tags taps : List Wire) (a b target : Wire) : Program :=
+  prep tags taps a b ++ ([Instr.CCX a b target] ++ (prep tags taps a b).reverse)
+
+private theorem xorAt_agree (u v : BasisState) (xs : List Wire)
+    (h : ∀ q ∈ xs, u q = v q) : xorAt u xs = xorAt v xs := by
+  induction xs with
+  | nil => rfl
+  | cons q qs ih =>
+    rw [xorAt, xorAt, h q (by simp), ih (fun j hj => h j (List.mem_cons_of_mem _ hj))]
+
+private theorem toggles_proper (xs : List Wire) (q : Wire) (fresh : q ∉ xs) :
+    ProperProgram (toggles xs q) := by
+  intro i hi
+  change i ∈ xs.map (fun p => Instr.CX p q) at hi
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hi
+  exact fun eq => fresh (eq ▸ hp)
+
+private def prepared (tags taps : List Wire) (a b : Wire) (bits : BasisState) : BasisState :=
+  writeBit (writeBit bits a (bits a ^^ xorAt bits tags)) b (bits b ^^ xorAt bits taps)
+
+private theorem prep_run (tags taps : List Wire) (a b : Wire)
+    (ab : a ≠ b) (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (s : State) (m : List Bool) :
+    run (prep tags taps a b) m s = ⟨s.phase, prepared tags taps a b s.basis⟩ := by
+  cases s with
+  | mk ph bits =>
+    rw [prep, run_append, run_toggles _ _ atags, run_toggles _ _ btaps]
+    have keep : xorAt (writeBit bits a (bits a ^^ xorAt bits tags)) taps = xorAt bits taps :=
+      xorAt_agree _ _ _ (fun q hq => by
+        have ne : q ≠ a := fun e => ataps (e ▸ hq)
+        simp [writeBit, Function.update_of_ne ne])
+    have pivotKeep : writeBit bits a (bits a ^^ xorAt bits tags) b = bits b := by
+      simp [writeBit, Function.update_of_ne ab.symm]
+    simp only [prepared, pivotKeep, keep]
+
+/-- Compute the two parities, use a single Toffoli, and undo the preparation. -/
+theorem coherent_run (tags taps : List Wire) (a b target : Wire)
+    (ab : a ≠ b) (ta : target ≠ a) (tb : target ≠ b)
+    (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (ttags : target ∉ tags) (ttaps : target ∉ taps) (s : State) (m : List Bool) :
+    run (coherentStep tags taps a b target) m s =
+      ⟨s.phase, writeBit s.basis target
+        (s.basis target ^^ ((s.basis a ^^ xorAt s.basis tags) &&
+          (s.basis b ^^ xorAt s.basis taps)))⟩ := by
+  let selector := s.basis a ^^ xorAt s.basis tags
+  let parity := s.basis b ^^ xorAt s.basis taps
+  let value := s.basis target ^^ (selector && parity)
+  let next : State := ⟨s.phase, writeBit s.basis target value⟩
+  let ready : State := ⟨s.phase, prepared tags taps a b s.basis⟩
+  let toggled : State := ⟨s.phase, writeBit ready.basis target value⟩
+  have first (tape : List Bool) : run (prep tags taps a b) tape s = ready :=
+    prep_run tags taps a b ab atags btaps ataps s tape
+  have middle (tape : List Bool) : run [Instr.CCX a b target] tape ready = toggled := by
+    have ha : ready.basis a = selector := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ab, Function.update_self, selector]
+    have hb : ready.basis b = parity := by
+      simp only [ready, prepared, writeBit, Function.update_self, parity]
+    have ht : ready.basis target = s.basis target := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ta, Function.update_of_ne tb]
+    change (⟨ready.phase, writeBit ready.basis target
+      (ready.basis target ^^ (ready.basis a && ready.basis b))⟩ : State) = toggled
+    rw [ha, hb, ht]
+  have move : run (prep tags taps a b) [] next = toggled := by
+    rw [prep_run tags taps a b ab atags btaps ataps]
+    have same (xs : List Wire) (h : target ∉ xs) :
+        xorAt next.basis xs = xorAt s.basis xs := by
+      apply xorAt_agree
+      intro q hq
+      have ne : q ≠ target := fun e => h (e ▸ hq)
+      simp [next, writeBit, Function.update_of_ne ne]
+    rw [show next.phase = s.phase from rfl]
+    apply congrArg (State.mk s.phase)
+    unfold prepared
+    rw [same tags ttags, same taps ttaps,
+      show next.basis a = s.basis a by simp [next, writeBit, Function.update_of_ne ta.symm],
+      show next.basis b = s.basis b by simp [next, writeBit, Function.update_of_ne tb.symm]]
+    change Function.update (Function.update (Function.update s.basis target value) a selector) b parity =
+      Function.update (Function.update (Function.update s.basis a selector) b parity) target value
+    have firstSwap : Function.update (Function.update s.basis target value) a selector =
+        Function.update (Function.update s.basis a selector) target value :=
+      Function.update_comm ta value selector s.basis
+    have secondSwap :
+        Function.update (Function.update (Function.update s.basis a selector) target value) b parity =
+          Function.update (Function.update (Function.update s.basis a selector) b parity) target value :=
+      Function.update_comm tb value parity (Function.update s.basis a selector)
+    exact (congrArg (fun bits : BasisState => Function.update bits b parity) firstSwap).trans secondSwap
+  have proper : ProperProgram (prep tags taps a b) :=
+    (properProgram_append _ _).mpr ⟨toggles_proper _ _ atags, toggles_proper _ _ btaps⟩
+  have undo (tape : List Bool) : run (prep tags taps a b).reverse tape toggled = next := by
+    rw [← move]
+    exact run_reverse_proper _ proper next [] tape
+  change run (coherentStep tags taps a b target) m s = next
+  rw [coherentStep, run_append, run_append, first, middle, undo]
+
+/-! The data below is the selected option for window 285 in `shared.json`. -/
+
+def factors : List (Nat × Nat) :=
+  [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (37,1), (67,1), (73,1), (87,1), (91,1), (97,1), (103,1), (257,2), (2047,1), (8191,1)]
+
+def mask (i : Fin 3) : Nat :=
+  if i.val = 0 then 631538929397069407430700093714
+  else if i.val = 1 then 1263078424814180339003419648556
+  else 2525537121521323569894614352985
+
+def taps (i : Fin 3) : List Wire := selected 101 (mask i)
+def tags (i : Fin 3) : List Wire := List.range' (105 + i.val) (20 - i.val)
+def pivot (i : Fin 3) : Wire := (taps i).headD 0
+def dest (i : Fin 3) : Wire := 101 + i.val
+
+def correction (i : Fin 3) : Program := coherentStep (tags i) (taps i).tail 133 (pivot i) (dest i)
+
+set_option maxRecDepth 4000 in
+private theorem separate : ∀ i : Fin 3,
+    (133 : Wire) ≠ pivot i ∧ dest i ≠ 133 ∧ dest i ≠ pivot i ∧
+    133 ∉ tags i ∧ pivot i ∉ (taps i).tail ∧ 133 ∉ (taps i).tail ∧
+    dest i ∉ tags i ∧ dest i ∉ (taps i).tail := by decide +kernel
+
+set_option maxRecDepth 4000 in
+private theorem correction_tags : ∀ (slot : Fin 22) (i : Fin 3),
+    xorAt (flags20 104 slot.val) (tags i) = decide (i.val < slot.val - 1) := by decide +kernel
+
+def Flags (slot : Fin 22) (s : State) : Prop :=
+  ∀ q, 104 ≤ q → s.basis q = flags20 104 slot.val q
+
+def corrected (slot : Fin 22) (i : Fin 3) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis (dest i)
+    (s.basis (dest i) ^^ (decide (i.val < slot.val - 1) && xorAt s.basis (taps i)))⟩
+
+theorem correction_run (slot : Fin 22) (i : Fin 3) (s : State) (m : List Bool)
+    (h : Flags slot s) : run (correction i) m s = corrected slot i s := by
+  obtain ⟨ab, ta, tb, atags, btaps, ataps, ttags, ttaps⟩ := separate i
+  have hot : xorAt s.basis (tags i) = decide (i.val < slot.val - 1) := by
+    rw [← correction_tags slot i]
+    apply xorAt_agree
+    intro q hq
+    change q ∈ List.range' (105 + i.val) (20 - i.val) at hq
+    have lower : 105 + i.val ≤ q := (List.mem_range'_1.mp hq).1
+    exact h q (le_trans (le_trans (by decide : 104 ≤ 105) (Nat.le_add_right 105 i.val)) lower)
+  have size : ∀ j : Fin 3, taps j = pivot j :: (taps j).tail := by decide +kernel
+  rw [correction, coherent_run _ _ _ _ _ ab ta tb atags btaps ataps ttags ttaps,
+    h 133 (by decide), hot]
+  have zero : flags20 104 slot.val 133 = false := by simp [flags20]
+  have parity : xorAt s.basis (taps i) = (s.basis (pivot i) ^^ xorAt s.basis (taps i).tail) := by
+    exact congrArg (xorAt s.basis) (size i)
+  simp only [corrected, zero, Bool.false_xor, parity]
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem factors_extent : extent20 factors = 101 := by decide +kernel
+
+theorem scalar_run (r : Rows) (size : r.size = 104) (mirror : Bool) (slot : Fin 22)
+    (x : Nat → Bool) (dim : Nat) (ph : Bool) (m : List Bool) :
+    run (components20 104 mirror 0 factors) m (frame20 r x dim slot.val ph) =
+      frame20 (componentRows20 mirror slot.val 0 factors r) x dim slot.val ph := by
+  rw [← size]
+  exact frame_components20 r mirror 0 slot.val dim factors
+    (lt_trans slot.isLt (by decide)) (by simp [size, factors_extent]) factors_used x ph m
+
+def shiftPort (q : Wire) : Wire := [101,102,103,105,106,133][q]?.getD 0
+
+def shiftProgram (mirror : Bool) : Program :=
+  renameProgram shiftPort (LateQuotientShift.program false mirror)
+
+abbrev QuotientFrame (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) : Prop :=
+  LateQuotientShift.Frame false mirror shiftPort (LateQuotientShift.capShift (slot.val-1)) word s
+
+private theorem shift_fit : ∀ a ∈ LateQuotientShift.ports false,
+    ∀ b ∈ LateQuotientShift.ports false, shiftPort a = shiftPort b → a = b := by
+  have finite : ∀ a b : Fin 6, shiftPort a.val = shiftPort b.val → a = b := by decide +kernel
+  intro a ha b hb eq
+  exact congrArg Fin.val (finite ⟨a, Finset.mem_range.mp ha⟩ ⟨b, Finset.mem_range.mp hb⟩ eq)
+
+theorem shift_run (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) (m : List Bool)
+    (input : QuotientFrame mirror slot word s) :
+    let out := run (shiftProgram mirror) m s
+    out.phase = s.phase ∧ QuotientFrame (!mirror) slot word out ∧
+    ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → out.basis q = s.basis q :=
+  LateQuotientShift.placed_run false mirror shiftPort shift_fit _ _ s m input
+
+theorem placement_inj (a b : Wire) (ha : a < 135) (hb : b < 135)
+    (eq : Shadow20.place20 285 a = Shadow20.place20 285 b) : a = b := by
+  let j : Fin 9 := ⟨6, by decide⟩
+  have start : Shadow20.start20 j = 285 := rfl
+  have bound : Shadow20.liveW20 (Shadow20.start20 j) + 31 = 135 := by
+    rw [start]
+    decide
+  have ha' : a < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using ha
+  have hb' : b < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using hb
+  exact Shadow20.place20_inj j a ha' b hb' (by simpa only [start] using eq)
+
+theorem shift_eq_of_frames (mirror : Bool) (slot : Fin 22) (word : Fin 16)
+    (s t : State) (m : List Bool) (input : QuotientFrame mirror slot word s)
+    (out : QuotientFrame (!mirror) slot word t) (phase : t.phase = s.phase)
+    (agree : ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → t.basis q = s.basis q) :
+    run (shiftProgram mirror) m s = t := by
+  obtain ⟨hp, result, outside⟩ := shift_run mirror slot word s m input
+  apply State.extensionality
+  · exact hp.trans phase.symm
+  · funext q
+    by_cases inside : q ∈ (LateQuotientShift.ports false).image shiftPort
+    · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp inside
+      exact (result i hi).trans (out i hi).symm
+    · exact (outside q inside).trans (agree q inside).symm
+
+def order (mirror : Bool) : List (Fin 3) := if mirror then [2,1,0] else [0,1,2]
+def corrections (mirror : Bool) : Program := (order mirror).flatMap correction
+
+private theorem correction_reverse (i : Fin 3) : (correction i).reverse = correction i := by
+  simp [correction, coherentStep, List.reverse_append, List.append_assoc]
+
+theorem corrections_reverse : (corrections false).reverse = corrections true := by
+  simp [corrections, order, List.flatMap_cons, List.reverse_append, correction_reverse, List.append_assoc]
+
+private theorem corrected_flags (slot : Fin 22) (i : Fin 3) (s : State) (h : Flags slot s) :
+    Flags slot (corrected slot i s) := by
+  intro q hq
+  have below : dest i < (104 : Nat) := by
+    change 101 + i.val < 104
+    exact Nat.add_lt_add_left i.isLt 101
+  have ne : q ≠ dest i := Nat.ne_of_gt (lt_of_lt_of_le below hq)
+  simpa [corrected, writeBit, Function.update_of_ne ne] using h q hq
+
+private theorem correction_list (xs : List (Fin 3)) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (xs.flatMap correction) m s =
+      xs.foldl (fun u i => corrected slot i u) s := by
+  induction xs generalizing s m with
+  | nil => rfl
+  | cons i tail ih =>
+    rw [List.flatMap_cons, run_append, correction_run slot i s _ flags]
+    exact ih _ _ (corrected_flags slot i s flags)
+
+theorem corrections_run (mirror : Bool) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (corrections mirror) m s =
+      (order mirror).foldl (fun u i => corrected slot i u) s :=
+  correction_list _ slot s m flags
+
+/-- The middle omits only the outer basis changes. The inverse uses the existing inverse scalar emitter. -/
+def middle (mirror : Bool) : Program :=
+  if mirror then corrections true ++ (shiftProgram true ++ components20 104 true 0 factors)
+  else components20 104 false 0 factors ++ (shiftProgram false ++ corrections false)
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue285
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue285.Caller
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+/-- Exact coordinate rows of the fixed 5,241-CNOT window-285 plan. -/
+def outerRows : Rows := #[
+  13255433048055816103839542179049, 18525665464752706843920324009274, 16768921325853743263893396732532, 18206257439498349829369973595321, 16130105275345029234792695904626,
+  9103128719749174914684986797660, 16977008825933236631904088290705, 9728029704611030987968230268594, 19456059409222061975936460537188, 18629709214792453527925669788360,
+  6438860191635450928237222630481, 12877720383270901856474445260962, 1609715047908862732059305657620, 3219430095817725464118611315240, 8538333020196268862817114299121,
+  17076666040392537725634228598242, 13870922477133405027321205910468, 4269166510098134431408557149560, 1962813832611451976511024318001, 3271356387685753294185040530002,
+  5888441497834355929533072954004, 11122611718131561200229137802008, 13006941636501259033504247172385, 5731473669350847643061243058754, 4161168905019116182181437307300,
+  8322337810038232364362874614600, 16644675620076464728725749229200, 13063655486347181331732372985921, 18789172937257675738318833133762, 17295936270863681052690414981508,
+  14309462938075691681433578677000, 8336516272499712938919906067984, 16673032544999425877839812135968, 714448870578728116694815113793, 1428897741157456233389630227586,
+  2857795482314912466779260455172, 5159908509735258620573664710728, 10319817019470517241147329421456, 357224435289364058347407556896, 6067176039812300620568215210305,
+  16933838229100800001376366975938, 18374830136167139351673994903236, 16467250668682608279400738520456, 16728601212691827973102492267088, 13174792821731985522257733248160,
+  17071670212342294904905670147905, 9629509574518354507192531370434, 19259019149036709014385062740868, 3908162329812287870952234563656, 14409122354911408938200043179984,
+  8535835106171147452452835073952, 9060390475229210101854465601473, 18120780950458420203708931202946, 15959152297265169983470611119876, 11635894990878669542993970953736,
+  2989380378105668662040690621456, 4530195237614605050927232800736, 17282074883822243771638713324481, 8745949484651757289124206195778, 546621842790734830570262887236,
+  1093243685581469661140525774472, 2186487371162939322281051548944, 18782242243736957097792982305248, 20282409603651670423947251286015, 13521606402434446949298167524010,
+  16225927682921336339157801028812, 10817285121947557559438534019208, 19089326685789807457832707092720, 12726217790526538305221804728480, 15271461348631845966266165674176,
+  10180974232421230644177443782784, 78919881726271091143763623680, 52613254484180727429175749120, 63135905381016872915010898944, 42090603587344581943340599296,
+  74277535742372791664718704640, 49518357161581861109812469760, 59422028593898233331774963712, 39614685729265488887849975808, 951202404470229780507540851713,
+  1585337340783716300845901419522, 2853607213410689341522622555140, 5390146958664635422876064826376, 10463226449172527585582949368848, 326975826536641487049467167776,
+  336884184916539713929754051648, 356700901676336167690327819392, 396334335195929075211475354880, 475601202235114890253770425856, 10144919075346220696729567637505,
+  10147395257693144353233528967170, 10152347622386991666241451626500, 10162252351774686292257296945160, 10182061810550075544288987582480, 10221680728100854048352368857120,
+  10300918563202411056479131406400, 10459394233405525072732656504960, 10776345573811753105239706702080, 11410248254624209170253807096320, 12678053616249121300282007884800,
+  15213664339498945560338409461760, 17747108403195211620953844875264, 15211807202738752817960438464512, 10141204801825835211973625643008
+]
+
+def pivotPlan : List (Nat × Nat) := [(0,619574491922272219637761096), (1,1239148993067916476130298000), (2,2478297976912460915405820192), (4,6815319429591738489724923619), (4,13630638831513360868881976646), (5,24163405304872453044820456519), (7,78685960459063032697081070911), (8,157371919765202655265234160254), (8,236057881373513161716856757373), (9,393429804622983697594845295739), (11,1179223738730623783216876573553), (12,2358447464913788910815020377826), (12,2036278427999749132496044901158), (13,2514278725484154746622175678431), (15,2163043580813089259375434018213), (15,745134554582295226854213114698), (16,71236559523186423521472675963), (17,142473118072947573413743427830), (18,800080837731269442862170888925), (20,2389430657461195170297980284775), (21,291947543344315542271687450318), (21,1539006125373116612536962254886), (25,559300763770719027865697550123), (24,1118356425274772423407993945686), (24,1676909159485249278043301051857), (25,2195911613759424834481923163636), (26,1556314256439547518636856412271), (27,400574193853739346596993984231), (29,1194289855313019288046414375721), (29,1602296232323999039787023571868), (30,1950242499378360823624358140945), (31,1170736887387667464790526081058), (32,2341473430143965948488582066244), (33,997846895361150594658469745385), (34,1995693748898776526281638553042), (37,1918351002238594259157820603551), (36,162734968259317925012382593690), (37,1401349825724976872465550692879), (38,54736718651455011631388605877), (39,1129748490881846983950570962913), (40,2259496960961387145091726081986), (41,552015162964867123671795564420), (44,291773995530750847327207473385), (43,722919898234849015297817493043), (44,1945144023801379403137367474876), (48,2492347511974703412725927361015), (46,2407369144152354577629504653849), (47,2242673099799845240244992617925), (48,585216054692329838861103684490), (50,1808017119645612633363846747497), (50,1529356143295258456450936723772), (51,1244362408226804287598661789457), (52,2488723850781400180874109636130), (54,1422315472247234402564322538871), (55,2226590931040281745010888370926), (55,875457952118351613141784892929), (56,2213664643713481696749653783451), (57,1595942988429993480013318570353), (59,283274527925421012393891349395), (59,1313120701236662778324710786500), (62,2093968179409280904335028965181), (61,951798731034546450707913185628), (62,1142523206433222390202414654681), (63,2435107706929453543749755679799), (64,2236574142591236257515352579161), (65,2194025719474229335790622205163), (66,1519637982435802656448017214781), (67,835717307591869792884151449415), (68,2502161290044585509769445546441), (69,2476882420065151389866568165979), (70,2394399366500127522573892779757), (71,2354496637094513522143884018487), (72,1992355010413797021220902471001), (73,1630077952774124594950542528491), (74,180988593441806257629577023549), (75,542626390479043794370132783175), (76,903707717435957838828441129161), (77,2354594073810368329669988446555), (78,1997473769707709200153020077037), (79,1635454742149559003852316488759), (80,1799617747608443550987023837294), (81,1471835537704961099559902695644), (83,820485162395691182661033209149), (83,1143805151212543763214065728450), (84,174169158297413201252671979715), (85,348338316594826402505343959430), (86,2401462118618105867398628432309), (88,1734366535224733888688436373971), (88,212939218767733900860229552415), (90,1307453559531077420140481575917), (90,1144983638901624950136648731703), (93,972349564653353044595351380867), (94,1944699129306706089190702761734), (93,1312964376922084458169493060054), (94,1313308778948268765397679832480), (98,1895694635801162220174692809), (99,3791389271602324440349385618), (100,7582778543204648880698771236), (98,801820210198484159750610110304), (99,1603640420396968319501220220608), (100,712251431176450669134492257353), (101,1385546493629094797608101890395), (102,2771092987258189595216203780790), (103,5542185974516379190432407561580)]
+
+private def reversePivot (row : Nat × Nat) (i : Nat) : List (Wire × Wire) :=
+  (if row.1 = i then [] else [(i,row.1),(row.1,i),(i,row.1)]) ++
+    (selected 104 row.2).map (fun q => (i,q))
+
+def outerOps : List (Wire × Wire) :=
+  (pivotPlan.zipIdx.flatMap (fun (row,i) => reversePivot row i)).reverse
+
+/-- Supply this equality from a packed receipt for the same gate order. -/
+abbrev BasisCertificate : Prop := applyOps outerOps (units 104) = outerRows
+
+abbrev BasisBounds : Prop :=
+  ∀ pair ∈ outerOps, pair.1 < 104 ∧ pair.2 < 104 ∧ pair.1 ≠ pair.2
+
+private abbrev shift (slot : Fin 22) : Nat := slot.val - 1
+private abbrev dim (slot : Fin 22) : Nat := 104 - shift slot
+private abbrev clip (slot : Fin 22) (k q : Nat) : Nat :=
+  clipShift (dim slot) k (read outerRows q)
+
+private def coded (slot : Fin 22) (k : Nat) : Rows :=
+  outerRows.map (clipShift (dim slot) k)
+
+private def scalarFrame (slot : Fin 22) : Rows :=
+  Array.ofFn (fun q : Fin 104 => clip slot (if q.val < 101 then shift slot else 0) q.val)
+
+/-- The shared wide primary action supplies these exact row equalities. -/
+abbrev ScalarAction : Prop := ∀ slot : Fin 22,
+  componentRows20 false slot.val 0 factors (coded slot 0) = scalarFrame slot ∧
+  componentRows20 true slot.val 0 factors (scalarFrame slot) = coded slot 0
+
+def logical (mirror : Bool) : Program :=
+  cnotProgram outerOps ++ middle mirror ++ (cnotProgram outerOps).reverse
+
+abbrev CoordinateAction : Prop := BasisCertificate → BasisBounds → ScalarAction →
+  ∀ (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool),
+    run (logical mirror) t
+      (frame20 (plain20 104 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 104 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph
+
+abbrev j285 : Fin 9 := ⟨6, by decide⟩
+
+/-- The old caller supplies all four fields immediately before the barrel. -/
+structure Admitted (mirror : Bool) (slot : Fin 22) (v : Nat) (s : State) : Prop where
+  small : v < 2 ^ (104 - (slot.val - 1))
+  bank : HighBankBarrel.holds (Shadow20.bankW20 285) 104 (v <<< entryShift mirror slot.val) s
+  tags : ∀ k < 21, s.basis (Shadow20.tagsP20.getD k 0) = decide (slot.val = k + 1)
+  scratch : ∀ k < 10, s.basis (Shadow20.poolW20 285 (22 + k)) = false
+
+abbrev Scope (mirror : Bool) : Prop := wires (logical mirror) ⊆ Finset.range 135
+
+def physical (mirror : Bool) : Program := renameProgram (Shadow20.place20 285) (logical mirror)
+
+private def packedRowsWord : Nat := 0x800000000000000000000000000000000000c00000000000000000000000000000000000e00000000000000000000000000000000000c006003001800c0060030018000000000000a005002801400a0050028014000000000000900480240120090048024012000000000000880440220110088044022011000000000000840420210108084042021010800000000000820410208104082041020810400000000000810408204102081040820410200000000000808404202101080840420210100000000000804402201100880440220110080000000000802401200900480240120090040000000000801400a005002801400a0050020000000000800c006003001800c00600300100000000000600c0180300600c018030060000000000000500a0140280500a01402805000000000000048090120240480901202404800000000000044088110220440881102204400000000000042084108210420841082104200000000000841082104208410821042084100000000000440881102204408811022044080000000000240480901202404809012024040000000000140280500a0140280500a0140200000000000c0180300600c0180300600c01000000000000800080008000800080008000000000000000c000c000c000c000c000c000000000000000a000a000a000a000a000a000000000000000f000f000f000f000f000f000000000000000880088008800880088008800000000000000cc00cc00cc00cc00cc00cc00000000000000aa00aa00aa00aa00aa00aa00000000000000ff00ff00ff00ff00ff00ff000000000000808080808080808080808080800000000000c0c0c0c0c0c0c0c0c0c0c0c0c00000000000a0a0a0a0a0a0a0a0a0a0a0a0a00000000000f0f0f0f0f0f0f0f0f0f0f0f0f00000000000888888888888888888888888880000000000cccccccccccccccccccccccccc0000000000aaaaaaaaaaaaaaaaaaaaaaaaaa0000000000ffffffffffffffffffffffffff0000000000ed10b2a4f06e63afda216549e000000000001b98ebf6885952783731d7ed1000000000000dcc75fb442ca93c1b98ebf688000000000006e63afda216549e0dcc75fb4400000000006e63afda216549e0dcc75fb4420000000000da216549e0dcc75fb442ca93c10000000000392dd9abf04314f4725bb357e0000000000025bb357e08629e8e4b766afc10000000000092dd9abf04314f4725bb357e080000000000c96ecd5f8218a7a392dd9abf040000000000e4b766afc10c53d1c96ecd5f820000000000725bb357e08629e8e4b766afc100000000006bbcc54fd07091b2d7798a9fa00000000000b5de62a7e83848d96bbcc54fd000000000003153f41c246cb5de62a7e838480000000000f3153f41c246cb5de62a7e83840000000000798a9fa0e12365aef3153f41c20000000000d7798a9fa0e12365aef3153f410000000000a64a0d32506992834c941a64a00000000000d32506992834c941a64a0d32500000000000cfd88e7ec473f6239fb11cfd880000000000e7ec473f6239fb11cfd88e7ec40000000000d5bc2eade1756f0bab785d5bc200000000004c941a64a0d32506992834c9410000000000048241209048241209048241200000000000824120904824120904824120900000000000412090482412090482412090480000000000241209048241209048241209040000000000120904824120904824120904820000000000090482412090482412090482410000000000d2717946107eacdda4e2f28c2000000000006938bca3083f566ed2717946100000000000b49c5e51841fab376938bca3080000000000da4e2f28c20fd59bb49c5e51840000000000ed2717946107eacdda4e2f28c20000000000a4e2f28c20fd59bb49c5e518410000000000d215d8f9a42bb1f3485763e6900000000000690aec7cd215d8f9a42bb1f34800000000003485763e690aec7cd215d8f9a40000000000485763e690aec7cd215d8f9a420000000000a42bb1f3485763e690aec7cd2100000000008c6318c6318c6318c6318c631800000000004a5294a5294a5294a5294a52940000000000294a5294a5294a5294a5294a52000000000018c6318c6318c6318c6318c631000000000035e26bc4d789af135e26bc4d780000000000af135e26bc4d789af135e26bc40000000000d789af135e26bc4d789af135e200000000006bc4d789af135e26bc4d789af1000000000028a28a28a28a28a28a28a28a280000000000145145145145145145145145140000000000a28a28a28a28a28a28a28a28a20000000000514514514514514514514514510000000000eb23d647ac8f591eb23d647ac80000000000f591eb23d647ac8f591eb23d6400000000007ac8f591eb23d647ac8f591eb20000000000d647ac8f591eb23d647ac8f591000000000072e5cb972e5cb972e5cb972e5c0000000000cb972e5cb972e5cb972e5cb9720000000000e5cb972e5cb972e5cb972e5cb90000000000d3a74e9d3a74e9d3a74e9d3a740000000000e9d3a74e9d3a74e9d3a74e9d3a0000000000a74e9d3a74e9d3a74e9d3a74e9
+
+set_option maxRecDepth 5000 in
+private theorem pivot_bounds : ∀ v ∈ pivotPlan.zipIdx,
+    v.1.1 < 104 ∧ v.2 < 104 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+namespace PackedBasis
+
+open CRTBarrel20.Packed20
+
+/-- One spill followed by the three CNOTs of the original swap, if required. -/
+private def steps (n : Nat) (v : (Nat × Nat) × Nat) : List ((Nat × Nat) × Nat) :=
+  let ((j,mask),i) := v
+  [((n,mask),i)] ++ (if i = j then [] else [((i,0),j),((j,0),i),((i,0),j)])
+
+private def emit (n : Nat) (v : (Nat × Nat) × Nat) : List (Wire × Wire) :=
+  (CRTBarrel20.elimStep n v.2 v.1).reverse
+
+private def rowSteps : List ((Nat × Nat) × Nat) := pivotPlan.zipIdx.reverse.flatMap (steps 104)
+
+private theorem emit_pivot (j mask i : Nat) (hj : j < 104) (hi : i < 104) :
+    (steps 104 ((j,mask),i)).flatMap (emit 104) = (reversePivot (j,mask) i).reverse := by
+  by_cases h : i = j
+  · subst j
+    simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected]
+  · simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected,
+      h,Ne.symm h,hj,hi,List.append_assoc]
+
+private theorem emit_rows : rowSteps.flatMap (emit 104) = outerOps := by
+  have fold (xs : List ((Nat × Nat) × Nat))
+      (bounds : ∀ v ∈ xs, v.1.1 < 104 ∧ v.2 < 104) :
+      (xs.flatMap (steps 104)).flatMap (emit 104) =
+        xs.flatMap (fun (row,i) => (reversePivot row i).reverse) := by
+    induction xs with
+    | nil => rfl
+    | cons v tail ih =>
+      obtain ⟨⟨j,mask⟩,i⟩ := v
+      obtain ⟨hj,hi⟩ := bounds ((j,mask),i) (List.mem_cons_self ..)
+      rw [List.flatMap_cons,List.flatMap_append,List.flatMap_cons,emit_pivot j mask i hj hi]
+      rw [ih (fun v hv => bounds v (List.mem_cons_of_mem _ hv))]
+  unfold rowSteps outerOps
+  rw [fold _ (fun v hv => ⟨(pivot_bounds v (List.mem_reverse.mp hv)).1,
+    (pivot_bounds v (List.mem_reverse.mp hv)).2.1⟩)]
+  exact (List.reverse_flatMap ..).symm
+
+/-- The grouped packed reflection, generalized from a zip-indexed plan to exact row steps. -/
+private theorem coordinates_steps (n : Nat) (xs : List ((Nat × Nat) × Nat))
+    (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false)
+    (target : CRTBarrel20.Matrix20.Rows) (size : target.size = n) (narrow : n ≤ width) (word : Nat)
+    (receipt : xs.foldl (quickStep n) (identityWord width n) = word)
+    (rows : ∀ j : Fin n, digit width word j.val = CRTBarrel20.Matrix20.read target j.val) :
+    CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n) = target := by
+  have carry (xs : List ((Nat × Nat) × Nat)) (x : Nat) (r : CRTBarrel20.Matrix20.Rows)
+      (size : r.size = n) (agree : Matches x r)
+      (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false) :
+      Matches (xs.foldl (quickStep n) x) (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) r) := by
+    induction xs generalizing x r with
+    | nil => exact agree
+    | cons v xs ih =>
+      obtain ⟨⟨donor,mask⟩,i⟩ := v
+      have use := good ((donor,mask),i) (by simp)
+      rw [List.foldl_cons,List.flatMap_cons]
+      unfold CRTBarrel20.Matrix20.applyOps
+      rw [List.foldl_append]
+      change Matches (xs.foldl _ _) (CRTBarrel20.Matrix20.applyOps _
+        (CRTBarrel20.Matrix20.applyOps (CRTBarrel20.elimStep n i (donor,mask)).reverse r))
+      rw [CRTBarrel20.Packed20.backward_row n i donor mask r size use.2]
+      apply ih _ _ ((pivotBack_size ..).trans size) _
+        (fun v hv => good v (List.mem_cons_of_mem _ hv))
+      rw [CRTBarrel20.Packed20.quickStep_eq]
+      exact matches_step n x r ((donor,mask),i) size use.1 agree
+  have base : Matches (identityWord width n) (CRTBarrel20.Matrix20.units n) := by
+    intro q hq
+    have sq : q < n := by simpa [CRTBarrel20.Matrix20.units] using hq
+    simpa [CRTBarrel20.Matrix20.units,CRTBarrel20.Matrix20.read,sq,identityWord] using
+      (digit_units width n 0 q (by simpa using narrow) sq).symm
+  have matched := carry xs (identityWord width n) (CRTBarrel20.Matrix20.units n)
+    (by simp [CRTBarrel20.Matrix20.units]) base good
+  rw [receipt] at matched
+  have os : (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n)).size = n := by
+    simp [CRTBarrel20.Matrix20.units]
+  apply Array.ext (os.trans size.symm)
+  intro q ho ht
+  have eq := (matched q ho).trans (rows ⟨q,os ▸ ho⟩)
+  simpa only [CRTBarrel20.Matrix20.read,Array.getElem?_eq_getElem ho,Array.getElem?_eq_getElem ht,
+    Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem step_shape : ∀ v ∈ rowSteps, v.2 < 104 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_receipt : rowSteps.foldl (quickStep 104) (identityWord width 104) = packedRowsWord := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_digits : ∀ q : Fin 104,
+    digit width packedRowsWord q.val = CRTBarrel20.Matrix20.read outerRows q.val := by
+  decide +kernel
+
+end PackedBasis
+
+/-- Exact coordinates of the original swap and spill basis tape. -/
+theorem basis_certificate : BasisCertificate := by
+  have proved := PackedBasis.coordinates_steps 104 PackedBasis.rowSteps PackedBasis.step_shape outerRows
+    (by rfl) (by decide) packedRowsWord PackedBasis.packed_receipt PackedBasis.packed_digits
+  rw [PackedBasis.emit_rows] at proved
+  exact proved
+
+namespace ScalarPremise
+
+open CRTBarrel20.Packed20
+
+private theorem outer_size : outerRows.size = 104 := rfl
+
+private theorem coded_size (slot : Fin 22) : (coded slot 0).size = 104 := by
+  simp [coded,outer_size]
+
+private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 104 := by
+  simp [scalarFrame]
+
+private theorem coded_read (slot : Fin 22) (q : Nat) (low : q < 104) :
+    read (coded slot 0) q = clip slot 0 q := by
+  simp [coded,clip,Matrix20.read,outer_size,low]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (low : q < 104) :
+    read (scalarFrame slot) q = clip slot (if q < 101 then shift slot else 0) q := by
+  simp [scalarFrame,Matrix20.read,low]
+
+set_option maxRecDepth 5000 in
+private theorem prefix_table : residueTable 104 outerRows 0 factors = true := by
+  decide +kernel
+
+private theorem extent : extent20 factors = 101 := by decide +kernel
+
+private theorem scalar_direction (slot : Fin 22) (mirror : Bool) :
+    let input := if mirror then scalarFrame slot else coded slot 0
+    let output := if mirror then coded slot 0 else scalarFrame slot
+    componentRows20 mirror slot.val 0 factors input = output := by
+  intro input output
+  have inputSize : input.size = 104 := by cases mirror <;> simp [input,coded_size,scalar_size]
+  have outputSize : output.size = 104 := by cases mirror <;> simp [output,coded_size,scalar_size]
+  apply componentRows_split 104 101 (dim slot) slot mirror outerRows input output outer_size
+    inputSize outputSize (by decide) (Nat.le_refl _) (by decide) factors extent prefix_table
+  · intro q hq
+    cases mirror
+    · simpa [input,entryShift] using coded_read slot q hq
+    · exact scalar_read slot q hq
+  · intro q hq
+    cases mirror
+    · exact scalar_read slot q hq
+    · simpa [output,exitShift] using coded_read slot q hq
+
+theorem scalar_action : ScalarAction := fun slot =>
+  ⟨scalar_direction slot false,scalar_direction slot true⟩
+
+end ScalarPremise
+
+theorem basis_bounds : BasisBounds := by
+  intro pair hp
+  obtain ⟨⟨⟨j,mask⟩,i⟩,listed,step⟩ := List.mem_flatMap.mp (List.mem_reverse.mp hp)
+  have ⟨hj,hi,clear⟩ := pivot_bounds _ listed
+  change pair ∈ (if j = i then [] else [(i,j),(j,i),(i,j)]) ++
+    (selected 104 mask).map (fun q => (i,q)) at step
+  rcases List.mem_append.mp step with swap | spill
+  · by_cases same : j = i
+    · simp [same] at swap
+    · simp only [if_neg same, List.mem_cons, List.not_mem_nil, or_false] at swap
+      rcases swap with rfl | rfl | rfl
+      · exact ⟨hi,hj,Ne.symm same⟩
+      · exact ⟨hj,hi,same⟩
+      · exact ⟨hi,hj,Ne.symm same⟩
+  · obtain ⟨q,hq,rfl⟩ := List.mem_map.mp spill
+    change q ∈ (List.range 104).filter mask.testBit at hq
+    obtain ⟨within,bit⟩ := List.mem_filter.mp hq
+    refine ⟨hi,List.mem_range.mp within,?_⟩
+    intro eq
+    change i = q at eq
+    subst q
+    change mask.testBit i = false at clear
+    simp [clear] at bit
+
+private theorem append_scope {p q : Program}
+    (hp : wires p ⊆ Finset.range 135) (hq : wires q ⊆ Finset.range 135) :
+    wires (p ++ q) ⊆ Finset.range 135 := by
+  rw [wires_append]
+  exact Finset.union_subset hp hq
+
+private theorem cnot_scope (pairs : List (Wire × Wire))
+    (bounds : ∀ pair ∈ pairs, pair.1 < 104 ∧ pair.2 < 104 ∧ pair.1 ≠ pair.2) :
+    wires (cnotProgram pairs) ⊆ Finset.range 135 := by
+  have fits : Fits (· < 135) (cnotProgram pairs) := by
+    intro gate hg
+    obtain ⟨⟨a,b⟩,hpair,rfl⟩ := List.mem_map.mp hg
+    obtain ⟨ha,hb,sep⟩ := bounds (a,b) hpair
+    refine ⟨sep,?_⟩
+    intro q hq
+    simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl
+    · exact Nat.lt_trans ha (by decide : 104 < 135)
+    · exact Nat.lt_trans hb (by decide : 104 < 135)
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem basis_scope : wires (cnotProgram outerOps) ⊆ Finset.range 135 :=
+  cnot_scope outerOps basis_bounds
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+private theorem scalar_scope (mirror : Bool) : wires (components20 104 mirror 0 factors) ⊆ Finset.range 135 := by
+  have fits := CRTBarrel20.fitsComponents 104 mirror 0 factors (by decide +kernel) factors_used
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem shift_scope (mirror : Bool) : wires (shiftProgram mirror) ⊆ Finset.range 135 := by
+  cases mirror <;> decide +kernel
+
+set_option maxRecDepth 7000 in
+private theorem correction_scope_forward : wires (corrections false) ⊆ Finset.range 135 := by
+  decide +kernel
+
+private theorem correction_scope (mirror : Bool) : wires (corrections mirror) ⊆ Finset.range 135 := by
+  cases mirror
+  · exact correction_scope_forward
+  · simpa only [← corrections_reverse, wires_reverse] using correction_scope_forward
+
+/-- Scope of both emitted gate orders, including the scalar correction wires. -/
+theorem logical_scope (mirror : Bool) : Scope mirror := by
+  have rev : wires (cnotProgram outerOps).reverse ⊆ Finset.range 135 := by
+    rw [wires_reverse]
+    exact basis_scope
+  have body : wires (middle mirror) ⊆ Finset.range 135 := by
+    cases mirror
+    · exact append_scope (scalar_scope false) (append_scope (shift_scope false) (correction_scope false))
+    · exact append_scope (correction_scope true) (append_scope (shift_scope true) (scalar_scope true))
+  change wires ((cnotProgram outerOps ++ middle mirror) ++ (cnotProgram outerOps).reverse) ⊆ Finset.range 135
+  exact append_scope (append_scope basis_scope body) rev
+
+private def parityRow (i : Fin 3) : Nat := [17747108403195211620953844875265,15211807202738752817960438464515,10141204801825835211973625643015][i.val]?.getD 0
+
+private def raised (slot : Fin 22) (i : Nat) : Nat :=
+  if shift slot ≤ i then clip slot 0 (101 + (i - shift slot)) else 0
+
+private def layer (slot : Fin 22) (done : Nat) : Rows :=
+  Array.ofFn (fun q : Fin 104 =>
+    if q.val < 101 ∨ q.val - 101 < done then clip slot (shift slot) q.val
+    else raised slot (q.val - 101))
+
+private theorem rows_size : outerRows.size = 104 := rfl
+@[simp] private theorem coded_size (slot : Fin 22) (k : Nat) : (coded slot k).size = 104 := by
+  simp [coded, rows_size]
+@[simp] private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 104 := by
+  simp [scalarFrame]
+@[simp] private theorem layer_size (slot : Fin 22) (done : Nat) : (layer slot done).size = 104 := by
+  simp [layer]
+
+private theorem coded_read (slot : Fin 22) (k q : Nat) (h : q < 104) :
+    read (coded slot k) q = clip slot k q := by
+  simp [coded, clip, Matrix20.read, rows_size, h]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (h : q < 104) :
+    read (scalarFrame slot) q = clip slot (if q < 101 then shift slot else 0) q := by
+  simp [scalarFrame, Matrix20.read, h]
+
+private theorem layer_read (slot : Fin 22) (done q : Nat) (h : q < 104) :
+    read (layer slot done) q =
+      if q < 101 ∨ q - 101 < done then clip slot (shift slot) q else raised slot (q - 101) := by
+  simp [layer, Matrix20.read, h]
+
+private theorem layer_done (slot : Fin 22) : layer slot 3 = coded slot (shift slot) := by
+  apply Array.ext (by simp)
+  intro q hq hc
+  have inBank : q < 104 := by simpa only [layer_size] using hq
+  have done : q < 101 ∨ q - 101 < 3 := Or.inr (by omega)
+  have eq := (layer_read slot 3 q inBank).trans (by simp only [if_pos done]; exact (coded_read slot _ q inBank).symm)
+  simpa only [Matrix20.read, Array.getElem?_eq_getElem hq, Array.getElem?_eq_getElem hc, Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem parity_certificate : ∀ i : Fin 3,
+    (taps i).foldr (fun q z => read outerRows q ^^^ z) 0 = parityRow i := by
+  decide +kernel
+
+set_option maxRecDepth 5000 in
+private theorem quotient_certificate : ∀ (slot : Fin 22) (i : Fin 3),
+    (3 - shift slot ≤ i.val → clip slot 0 (101 + i.val) = 0) ∧
+    clip slot (shift slot) (101 + i.val) = raised slot i.val ^^^
+      (if i.val < shift slot then clipShift (dim slot) (shift slot) (parityRow i) else 0) := by
+  decide +kernel
+
+private theorem flags (rs : Rows) (sz : rs.size = 104) (slot : Fin 22)
+    (x : Nat → Bool) (ph : Bool) : Flags slot (frame20 rs x (dim slot) slot.val ph) := by
+  intro q hq
+  simp [frame20, Matrix20.basis, sz, Nat.not_lt_of_ge hq]
+
+private theorem taps_low (i : Fin 3) (q : Wire) (mem : q ∈ taps i) : q < 101 := by
+  change q ∈ (List.range 101).filter (fun q => (mask i).testBit q) at mem
+  exact List.mem_range.mp (List.mem_filter.mp mem).1
+
+private theorem layer_parity (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (done : Nat) (i : Fin 3) :
+    xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis (taps i) =
+      rowValue x (clipShift (dim slot) (shift slot) (parityRow i)) (dim slot) := by
+  have eval (xs : List Wire) (low : ∀ q ∈ xs, q < 101) :
+      xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis xs =
+        rowValue x (clipShift (dim slot) (shift slot) (xs.foldr (fun q z => read outerRows q ^^^ z) 0)) (dim slot) := by
+    induction xs with
+    | nil => simp [xorAt, clip_zero, rowValue_zero]
+    | cons q qs ih =>
+      have hlow : q < (101 : Nat) := low q (by simp)
+      have hbank : q < (104 : Nat) := Nat.lt_trans hlow (by decide : 101 < 104)
+      rw [xorAt, List.foldr_cons, clip_xor, rowValue_xor, ih (fun r hr => low r (List.mem_cons_of_mem _ hr))]
+      simp only [frame20, Matrix20.basis, layer_size, if_pos hbank, layer_read slot done q hbank,
+        if_pos (Or.inl hlow)]
+  exact (eval (taps i) (taps_low i)).trans
+    (congrArg (fun z => rowValue x (clipShift (dim slot) (shift slot) z) (dim slot)) (parity_certificate i))
+
+private theorem adjacent_layers (q i : Nat) (apart : q ≠ 101 + i) :
+    (q < 101 ∨ q - 101 < i) ↔ (q < 101 ∨ q - 101 < i + 1) := by
+  omega
+
+private theorem layer_step (mirror : Bool) (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (if mirror then i.val + 1 else i.val)) x (dim slot) slot.val ph) =
+      frame20 (layer slot (if mirror then i.val else i.val + 1)) x (dim slot) slot.val ph := by
+  let current := if mirror then i.val + 1 else i.val
+  let next := if mirror then i.val else i.val + 1
+  have target : dest i = 101 + i.val := rfl
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases hit : q = dest i
+    · subst q
+      have bank : dest i < 104 := Nat.add_lt_add_left i.isLt 101
+      have low : ¬ dest i < 101 := Nat.not_lt_of_ge (Nat.le_add_right 101 i.val)
+      have index : dest i - 101 = i.val := Nat.add_sub_cancel_left 101 i.val
+      have bit (done : Nat) : (frame20 (layer slot done) x (dim slot) slot.val ph).basis (dest i) =
+          rowValue x (if i.val < done then clip slot (shift slot) (dest i) else raised slot i.val) (dim slot) := by
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot done _ bank, low,
+          false_or, index]
+      have row := (quotient_certificate slot i).2
+      change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ (dest i) =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis (dest i)
+      rw [writeBit, Function.update_self, layer_parity, bit current, bit next, target, row]
+      by_cases active : i.val < shift slot
+      · cases mirror <;>
+          simp [current, next, active, rowValue_xor]
+      · cases mirror <;>
+          simp [current, next, active]
+    · change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ q =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis q
+      rw [writeBit, Function.update_of_ne hit]
+      by_cases bank : q < 104
+      · have apart : q ≠ 101 + i.val := fun eq => hit (eq.trans target.symm)
+        have adjacent := adjacent_layers q i.val apart
+        have same : (q < 101 ∨ q - 101 < current) ↔ (q < 101 ∨ q - 101 < next) := by
+          cases mirror
+          · exact adjacent
+          · exact adjacent.symm
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot current q bank,
+          layer_read slot next q bank, same]
+      · simp only [frame20, Matrix20.basis, layer_size, if_neg bank]
+
+private theorem layer_step_forward (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot i.val) x (dim slot) slot.val ph) =
+      frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph :=
+  layer_step false slot i x ph
+
+private theorem layer_step_inverse (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph) =
+      frame20 (layer slot i.val) x (dim slot) slot.val ph :=
+  layer_step true slot i x ph
+
+private theorem correction_forward (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections false) t (frame20 (layer slot 0) x (dim slot) slot.val ph) =
+      frame20 (coded slot (shift slot)) x (dim slot) slot.val ph := by
+  rw [corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨2, by decide⟩ (corrected slot ⟨1, by decide⟩
+    (corrected slot ⟨0, by decide⟩ _)) = _
+  rw [layer_step_forward slot ⟨0, by decide⟩ x ph, layer_step_forward slot ⟨1, by decide⟩ x ph,
+    layer_step_forward slot ⟨2, by decide⟩ x ph, layer_done]
+
+private theorem correction_inverse (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections true) t (frame20 (coded slot (shift slot)) x (dim slot) slot.val ph) =
+      frame20 (layer slot 0) x (dim slot) slot.val ph := by
+  rw [← layer_done, corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨0, by decide⟩ (corrected slot ⟨1, by decide⟩
+    (corrected slot ⟨2, by decide⟩ _)) = _
+  rw [layer_step_inverse slot ⟨2, by decide⟩ x ph, layer_step_inverse slot ⟨1, by decide⟩ x ph,
+    layer_step_inverse slot ⟨0, by decide⟩ x ph]
+
+private def quotientWord (slot : Fin 22) (x : Nat → Bool) : Fin 16 :=
+  ⟨fieldWord (3 - shift slot) (fun i => rowValue x (clip slot 0 (101 + i)) (dim slot)),
+    lt_of_lt_of_le (fieldWord_small ..) (by
+      simpa using Nat.pow_le_pow_right (by decide : 0 < 2) (show 3 - shift slot ≤ 4 by omega))⟩
+
+private theorem word_small (slot : Fin 22) (x : Nat → Bool) :
+    (quotientWord slot x).val < 2 ^ (3 - shift slot) :=
+  fieldWord_small ..
+
+private theorem word_bit (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 3) :
+    (quotientWord slot x).val.testBit i = rowValue x (clip slot 0 (101 + i)) (dim slot) := by
+  by_cases low : i < 3 - shift slot
+  · exact fieldWord_bit _ _ _ low
+  · have high : 3 - shift slot ≤ i := Nat.le_of_not_lt low
+    rw [Nat.testBit_lt_two_pow (lt_of_lt_of_le (word_small slot x)
+      (Nat.pow_le_pow_right (by decide : 0 < 2) high)), (quotient_certificate slot ⟨i,hi⟩).1 high]
+    exact (rowValue_zero ..).symm
+
+private theorem word_raised (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 3) :
+    ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val).testBit i =
+      rowValue x (raised slot i) (dim slot) := by
+  have uncapped : ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val) =
+      (quotientWord slot x).val <<< shift slot := by
+    by_cases within : shift slot ≤ 4
+    · simp [LateQuotientShift.capShift, Nat.min_eq_left within]
+    · have z : 3 - shift slot = 0 := by omega
+      have small := word_small slot x
+      rw [z, Nat.pow_zero] at small
+      rw [show (quotientWord slot x).val = 0 by omega]
+      simp
+  rw [uncapped, Nat.testBit_shiftLeft]
+  by_cases moved : shift slot ≤ i
+  · simp only [raised, moved, decide_true, Bool.true_and]
+    exact word_bit slot x _ (by omega)
+  · simp [raised, moved, rowValue_zero]
+
+private theorem shiftPort_low : ∀ i : Fin 3, shiftPort i.val = 101 + i.val := by decide
+
+private theorem selector_projection : ∀ (slot : Fin 22) (q : Fin 6), 3 ≤ q.val →
+    104 ≤ shiftPort q.val ∧
+    flags20 104 slot.val (shiftPort q.val) =
+      LateQuotientShift.admittedBit false false (LateQuotientShift.capShift (shift slot)) 0 q.val := by
+  decide +kernel
+
+private theorem quotient_admission (shifted : Bool) (slot : Fin 22) (rs : Rows) (sz : rs.size = 104)
+    (x : Nat → Bool) (ph : Bool)
+    (qRows : ∀ i : Fin 3, read rs (101 + i.val) =
+      if shifted then raised slot i.val else clip slot 0 (101 + i.val)) :
+    QuotientFrame shifted slot (quotientWord slot x) (frame20 rs x (dim slot) slot.val ph) := by
+  have small : (quotientWord slot x).val <
+      2 ^ (LateQuotientShift.quotientWidth false - (LateQuotientShift.capShift (shift slot)).val) := by
+    rw [LateQuotientShift.capShift_width]
+    exact word_small ..
+  apply (LateQuotientShift.frame_iff false shifted shiftPort _ _ _ small).mpr
+  intro q hq
+  have bound : q < 6 := Finset.mem_range.mp hq
+  by_cases low : q < 3
+  · have bank : 101 + q < 104 := Nat.add_lt_add_left low 101
+    rw [shiftPort_low ⟨q,low⟩]
+    simp only [frame20, Matrix20.basis, sz, if_pos bank, qRows ⟨q,low⟩,
+      LateQuotientShift.admittedBit, LateQuotientShift.quotientWidth, Bool.false_eq_true, if_false,
+      if_pos low]
+    cases shifted
+    · exact (word_bit slot x q low).symm
+    · exact (word_raised slot x q low).symm
+  · have projection := selector_projection slot ⟨q,bound⟩ (Nat.le_of_not_lt low)
+    have independent : LateQuotientShift.admittedBit false shifted
+        (LateQuotientShift.capShift (shift slot)) (quotientWord slot x) q =
+        LateQuotientShift.admittedBit false false (LateQuotientShift.capShift (shift slot)) 0 q := by
+      simp only [LateQuotientShift.admittedBit, LateQuotientShift.quotientWidth,
+        Bool.false_eq_true, if_false, if_neg low]
+    exact (flags rs sz slot x ph (shiftPort q) projection.1).trans
+      (projection.2.trans independent.symm)
+
+private theorem shift_pair (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    let left := frame20 (scalarFrame slot) x (dim slot) slot.val ph
+    let right := frame20 (layer slot 0) x (dim slot) slot.val ph
+    run (shiftProgram false) t left = right ∧ run (shiftProgram true) t right = left := by
+  intro left right
+  have l : QuotientFrame false slot (quotientWord slot x) left := by
+    apply quotient_admission false slot _ (scalar_size slot)
+    intro i
+    change read (scalarFrame slot) (101 + i.val) = clip slot 0 (101 + i.val)
+    rw [scalar_read slot _ (Nat.add_lt_add_left i.isLt 101),
+      if_neg (Nat.not_lt_of_ge (Nat.le_add_right 101 i.val))]
+  have r : QuotientFrame true slot (quotientWord slot x) right := by
+    apply quotient_admission true slot _ (layer_size slot 0)
+    intro i
+    change read (layer slot 0) (101 + i.val) = raised slot i.val
+    have non : ¬ (101 + i.val < 101 ∨ 101 + i.val - 101 < 0) := by omega
+    rw [layer_read slot 0 _ (Nat.add_lt_add_left i.isLt 101), if_neg non, Nat.add_sub_cancel_left]
+  have agree : ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → right.basis q = left.basis q := by
+    intro q free
+    by_cases known : q < 104
+    · have below : q < 101 := by
+        by_contra! above
+        have eq : 101 + (q - 101) = q := Nat.add_sub_of_le above
+        have within : 101 + (q - 101) < 101 + 3 := eq.symm ▸ known
+        have high : q - 101 < 3 := Nat.lt_of_add_lt_add_left within
+        have port : q - 101 ∈ LateQuotientShift.ports false :=
+          Finset.mem_range.mpr (Nat.lt_trans high (by decide : 3 < 6))
+        exact free (Finset.mem_image.mpr ⟨q - 101, port, (shiftPort_low ⟨q - 101,high⟩).trans eq⟩)
+      simp only [right, left, frame20, Matrix20.basis, layer_size, scalar_size, if_pos known,
+        layer_read slot 0 q known, scalar_read slot q known, if_pos below, if_pos (Or.inl below)]
+    · have ge := Nat.le_of_not_lt known
+      exact (flags _ (layer_size ..) _ _ _ q ge).trans ((flags _ (scalar_size ..) _ _ _ q ge).symm)
+  have samePhase : right.phase = left.phase := by
+    simp only [right, left, frame20]
+  have forwardOut : QuotientFrame (!false) slot (quotientWord slot x) right := by
+    change QuotientFrame true slot (quotientWord slot x) right
+    exact r
+  have inverseOut : QuotientFrame (!true) slot (quotientWord slot x) left := by
+    change QuotientFrame false slot (quotientWord slot x) left
+    exact l
+  have forward : run (shiftProgram false) t left = right :=
+    shift_eq_of_frames false slot (quotientWord slot x) left right t l forwardOut samePhase agree
+  have inverse : run (shiftProgram true) t right = left :=
+    shift_eq_of_frames true slot (quotientWord slot x) right left t r inverseOut samePhase.symm
+      (fun q free => (agree q free).symm)
+  exact ⟨forward,inverse⟩
+
+private theorem middle_run (scalar : ScalarAction) (slot : Fin 22) (mirror : Bool)
+    (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (middle mirror) t (frame20 (coded slot (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (coded slot (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  cases mirror
+  · simp only [middle, Bool.false_eq_true, if_false, entryShift, exitShift, run_append]
+    rw [scalar_run _ (coded_size ..), (scalar slot).1, (shift_pair slot x ph _).1,
+      correction_forward]
+  · simp only [middle, if_true, entryShift, exitShift, run_append]
+    rw [correction_inverse, (shift_pair slot x ph _).2, scalar_run _ (scalar_size _),
+      (scalar slot).2]
+
+private theorem encode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps) t (frame20 (plain20 104 (dim slot) k) x (dim slot) slot.val ph) =
+      frame20 (coded slot k) x (dim slot) slot.val ph := by
+  have mapped : applyOps outerOps (plain20 104 (dim slot) k) = coded slot k := by
+    rw [plain20, apply_map outerOps (clipShift (dim slot) k) (clip_zero (dim slot) k)
+      (clip_xor (dim slot) k) (units 104), coordinates, coded]
+  have step := run_ops outerOps (plain20 104 (dim slot) k) x (dim slot) (flags20 104 slot.val) ph t
+    (fun pair hp => by simpa only [plain20_size] using ⟨(bounds pair hp).1,(bounds pair hp).2.1⟩)
+  rw [mapped] at step
+  simpa only [frame20, plain20_size, coded_size] using step
+
+private theorem decode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps).reverse t (frame20 (coded slot k) x (dim slot) slot.val ph) =
+      frame20 (plain20 104 (dim slot) k) x (dim slot) slot.val ph := by
+  have step := reverse_cnots outerOps (fun pair hp => (bounds pair hp).2.2)
+    (frame20 (plain20 104 (dim slot) k) x (dim slot) slot.val ph) [] t
+  rw [show cnotProgram outerOps.reverse = (cnotProgram outerOps).reverse from List.map_reverse,
+    encode_run coordinates bounds] at step
+  exact step
+
+/-- All measurement outcomes are allowed. The outer basis is the exact original 5,241-gate model. -/
+theorem logical_run (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (logical mirror) t
+      (frame20 (plain20 104 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 104 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  rw [logical, run_append, run_append, encode_run coordinates bounds, middle_run scalar,
+    decode_run coordinates bounds]
+
+private theorem bank_place : ∀ i : Fin 104, Shadow20.place20 285 i.val = Shadow20.bankW20 285 i.val := by
+  decide +kernel
+
+private theorem tag_place : ∀ i : Fin 21, Shadow20.place20 285 (104 + i.val) = Shadow20.tagsP20.getD i.val 0 := by
+  decide +kernel
+
+private theorem scratch_place : ∀ i : Fin 10,
+    Shadow20.place20 285 (125 + i.val) = Shadow20.poolW20 285 (22 + i.val) := by decide +kernel
+
+/-- Transport a logical program over the fixed bank, selector, and scratch placement. -/
+private theorem physical_result_program (program : Program) (mirror : Bool)
+    (scope : wires program ⊆ Finset.range 135) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s)
+    (action : run program t
+      (frame20 (plain20 104 (dim slot) (entryShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) =
+      frame20 (plain20 104 (dim slot) (exitShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) :
+    HighBankBarrel.Result (Shadow20.bankW20 285) 104 (v <<< exitShift mirror slot.val) s
+      (run (renameProgram (Shadow20.place20 285) program) t s) := by
+  let f := Shadow20.place20 285
+  let pool : Finset Wire := Finset.range 135
+  have inj : ∀ a ∈ pool, ∀ b ∈ pool, f a = f b → a = b :=
+    fun a ha b hb => placement_inj a b (Finset.mem_range.mp ha) (Finset.mem_range.mp hb)
+  have bankBit (k i : Nat) (ik : i < 104) :
+      (frame20 (plain20 104 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis i = (v <<< k).testBit i := by
+    simpa only [frame20, Matrix20.basis, plain20_size, if_pos ik] using plain20_bits 104 _ k v i h.small ik
+  have other (k q : Nat) (above : 104 ≤ q) (high : q < 135) :
+      (frame20 (plain20 104 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis q = s.basis (f q) := by
+    simp only [frame20, Matrix20.basis, plain20_size, if_neg (Nat.not_lt_of_ge above)]
+    by_cases tag : q < 125
+    · have pos : q - 104 < 21 := by omega
+      have hf : f q = Shadow20.tagsP20.getD (q - 104) 0 := by
+        simpa only [f, show 104 + (q - 104) = q by omega] using tag_place ⟨q - 104,pos⟩
+      rw [hf, h.tags _ pos]
+      simp [flags20, above, show q < 104 + 21 by exact tag]
+    · have pos : q - 125 < 10 := by omega
+      have hf : f q = Shadow20.poolW20 285 (22 + (q - 125)) := by
+        simpa only [f, show 125 + (q - 125) = q by omega] using scratch_place ⟨q - 125,pos⟩
+      rw [hf, h.scratch _ pos]
+      simp [flags20, show ¬ q < 104 + 21 from tag]
+  let before := entryShift mirror slot.val
+  let after := exitShift mirror slot.val
+  let beforeFrame := frame20 (plain20 104 (dim slot) before) v.testBit (dim slot) slot.val s.phase
+  let afterFrame := frame20 (plain20 104 (dim slot) after) v.testBit (dim slot) slot.val s.phase
+  let out := run (renameProgram f program) t s
+  have placeBank (q : Nat) (low : q < 104) : f q = Shadow20.bankW20 285 q := bank_place ⟨q,low⟩
+  have agrees : ∀ q ∈ pool, beforeFrame.basis q = s.basis (f q) := by
+    intro q hq
+    by_cases low : q < 104
+    · rw [placeBank q low]
+      have logicalBit : beforeFrame.basis q = (v <<< before).testBit q := bankBit before q low
+      exact Eq.trans logicalBit (h.bank q low).symm
+    · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq)
+  have moved : out.phase = afterFrame.phase ∧ ∀ q ∈ pool, out.basis (f q) = afterFrame.basis q := by
+    have result := run_rename_pool f pool inj program scope t beforeFrame s rfl agrees
+    have afterAction : run program t beforeFrame = afterFrame := action
+    rw [afterAction] at result
+    exact result
+  change HighBankBarrel.Result (Shadow20.bankW20 285) 104 (v <<< after) s out
+  have phase : afterFrame.phase = s.phase := rfl
+  refine ⟨?_,Eq.trans moved.1 phase,?_⟩
+  · intro i low
+    have within : i ∈ pool := Finset.mem_range.mpr (Nat.lt_trans low (by decide : 104 < 135))
+    have bit : out.basis (f i) = (v <<< after).testBit i :=
+      Eq.trans (moved.2 i within) (bankBit after i low)
+    rwa [placeBank i low] at bit
+  · intro q free
+    by_cases hit : q ∈ pool.image f
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hit
+      have above : 104 ≤ a := by
+        by_contra! low
+        exact free a low (placeBank a low)
+      have placed : out.basis (f a) = afterFrame.basis a := moved.2 a ha
+      have restored : afterFrame.basis a = s.basis (f a) := other after a above (Finset.mem_range.mp ha)
+      exact Eq.trans placed restored
+    · have preserved : out.basis q = s.basis q :=
+        run_rename_pool_outside f pool program scope t s q hit
+      exact preserved
+
+/-- Exact bank result, phase, and frame for the stock window-285 placement. -/
+theorem physical_result (logicalRun : CoordinateAction) (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (mirror : Bool) (scope : Scope mirror) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 285) 104 (v <<< exitShift mirror slot.val) s
+      (run (physical mirror) t s) := by
+  unfold physical
+  exact physical_result_program (logical mirror) mirror scope slot v s t h
+    (logicalRun coordinates bounds scalar slot mirror v.testBit s.phase t)
+
+
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨237, 49, 18756⟩ else ⟨237, 49, 18748⟩
+
+theorem width_at_start : Shadow20.liveW20 285 = 104 := by decide +kernel
+
+private theorem basis_fits : Fits (· < 135) (cnotProgram outerOps) := by
+  intro instr h
+  change instr ∈ outerOps.map (fun (a, b) => Instr.CX a b) at h
+  obtain ⟨⟨a,b⟩, member, rfl⟩ := List.mem_map.mp h
+  obtain ⟨ha, hb, distinct⟩ := basis_bounds (a,b) member
+  refine ⟨distinct, ?_⟩
+  intro q hq
+  simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem shift_fits (mir : Bool) : Fits (· < 135) (shiftProgram mir) := by
+  apply CRTBarrel20.lateResidueFits
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 135) (corrections mir) := by
+  have forward : Fits (· < 135) (corrections false) := by
+    apply CRTBarrel20.lateResidueFits
+    decide +kernel
+  cases mir
+  · exact forward
+  · rw [← corrections_reverse]
+    exact CRTBarrel20.fits_reverse forward
+
+theorem program_fits (mir : Bool) : Fits (· < 135) (logical mir) := by
+  have b := basis_fits
+  have r := CRTBarrel20.fits_reverse b
+  have s := shift_fits mir
+  have c := correction_fits mir
+  have f := CRTBarrel20.fitsComponents 104 mir 0 factors (by decide +kernel) factors_used
+  cases mir
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append f (CRTBarrel20.fits_append s c))) r
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append c (CRTBarrel20.fits_append s f))) r
+
+private theorem shift_cost (mir : Bool) : count (shiftProgram mir) = ⟨2, 0, 10⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem correction_cost (mir : Bool) : count (corrections mir) = ⟨3, 0, 429⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem basis_prices :
+    count (cnotProgram outerOps) = ⟨0, 0, 5241⟩ ∧
+      count (cnotProgram outerOps).reverse = ⟨0, 0, 5241⟩ := by
+  have len : outerOps.length = 5241 := by decide +kernel
+  have padded := congrArg (fun n => (⟨0, 0, n⟩ : CRTBarrel20.Count)) len
+  exact ⟨(CRTBarrel20.count_map_cx Prod.fst Prod.snd outerOps).trans padded,
+    (CRTBarrel20.count_map_cx_rev Prod.fst Prod.snd outerOps).trans padded⟩
+
+
+private theorem append_price {p q : Program} {a b : CRTBarrel20.Count}
+    (hp : count p = a) (hq : count q = b) : count (p ++ q) = cadd a b :=
+  (CRTBarrel20.count_append p q).trans (congrArg₂ cadd hp hq)
+
+attribute [local irreducible] count cnotProgram components20 outerOps in
+theorem costs (mir : Bool) : count (logical mir) = bounds mir := by
+  have b := basis_prices.1
+  have r := basis_prices.2
+  have f := CRTBarrel20.residueFieldPrice 104 mir factors factors_used
+  have s := shift_cost mir
+  have c := correction_cost mir
+  cases mir
+  · unfold logical middle
+    exact (append_price (append_price b (append_price f (append_price s c))) r).trans
+      (by decide +kernel)
+  · unfold logical middle
+    exact (append_price (append_price b (append_price c (append_price s f))) r).trans
+      (by decide +kernel)
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (h : Admitted mir slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 285) 104 (v <<< exitShift mir slot.val) s
+      (run (physical mir) tape s) :=
+  physical_result logical_run basis_certificate basis_bounds ScalarPremise.scalar_action
+    mir (logical_scope mir) slot v s tape h
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue285.Caller
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue305
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+def prep (tags taps : List Wire) (a b : Wire) : Program :=
+  toggles tags a ++ toggles taps b
+
+def coherentStep (tags taps : List Wire) (a b target : Wire) : Program :=
+  prep tags taps a b ++ ([Instr.CCX a b target] ++ (prep tags taps a b).reverse)
+
+private theorem xorAt_agree (u v : BasisState) (xs : List Wire)
+    (h : ∀ q ∈ xs, u q = v q) : xorAt u xs = xorAt v xs := by
+  induction xs with
+  | nil => rfl
+  | cons q qs ih =>
+    rw [xorAt, xorAt, h q (by simp), ih (fun j hj => h j (List.mem_cons_of_mem _ hj))]
+
+private theorem toggles_proper (xs : List Wire) (q : Wire) (fresh : q ∉ xs) :
+    ProperProgram (toggles xs q) := by
+  intro i hi
+  change i ∈ xs.map (fun p => Instr.CX p q) at hi
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hi
+  exact fun eq => fresh (eq ▸ hp)
+
+private def prepared (tags taps : List Wire) (a b : Wire) (bits : BasisState) : BasisState :=
+  writeBit (writeBit bits a (bits a ^^ xorAt bits tags)) b (bits b ^^ xorAt bits taps)
+
+private theorem prep_run (tags taps : List Wire) (a b : Wire)
+    (ab : a ≠ b) (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (s : State) (m : List Bool) :
+    run (prep tags taps a b) m s = ⟨s.phase, prepared tags taps a b s.basis⟩ := by
+  cases s with
+  | mk ph bits =>
+    rw [prep, run_append, run_toggles _ _ atags, run_toggles _ _ btaps]
+    have keep : xorAt (writeBit bits a (bits a ^^ xorAt bits tags)) taps = xorAt bits taps :=
+      xorAt_agree _ _ _ (fun q hq => by
+        have ne : q ≠ a := fun e => ataps (e ▸ hq)
+        simp [writeBit, Function.update_of_ne ne])
+    have pivotKeep : writeBit bits a (bits a ^^ xorAt bits tags) b = bits b := by
+      simp [writeBit, Function.update_of_ne ab.symm]
+    simp only [prepared, pivotKeep, keep]
+
+/-- Compute the two parities, use a single Toffoli, and undo the preparation. -/
+theorem coherent_run (tags taps : List Wire) (a b target : Wire)
+    (ab : a ≠ b) (ta : target ≠ a) (tb : target ≠ b)
+    (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (ttags : target ∉ tags) (ttaps : target ∉ taps) (s : State) (m : List Bool) :
+    run (coherentStep tags taps a b target) m s =
+      ⟨s.phase, writeBit s.basis target
+        (s.basis target ^^ ((s.basis a ^^ xorAt s.basis tags) &&
+          (s.basis b ^^ xorAt s.basis taps)))⟩ := by
+  let selector := s.basis a ^^ xorAt s.basis tags
+  let parity := s.basis b ^^ xorAt s.basis taps
+  let value := s.basis target ^^ (selector && parity)
+  let next : State := ⟨s.phase, writeBit s.basis target value⟩
+  let ready : State := ⟨s.phase, prepared tags taps a b s.basis⟩
+  let toggled : State := ⟨s.phase, writeBit ready.basis target value⟩
+  have first (tape : List Bool) : run (prep tags taps a b) tape s = ready :=
+    prep_run tags taps a b ab atags btaps ataps s tape
+  have middle (tape : List Bool) : run [Instr.CCX a b target] tape ready = toggled := by
+    have ha : ready.basis a = selector := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ab, Function.update_self, selector]
+    have hb : ready.basis b = parity := by
+      simp only [ready, prepared, writeBit, Function.update_self, parity]
+    have ht : ready.basis target = s.basis target := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ta, Function.update_of_ne tb]
+    change (⟨ready.phase, writeBit ready.basis target
+      (ready.basis target ^^ (ready.basis a && ready.basis b))⟩ : State) = toggled
+    rw [ha, hb, ht]
+  have move : run (prep tags taps a b) [] next = toggled := by
+    rw [prep_run tags taps a b ab atags btaps ataps]
+    have same (xs : List Wire) (h : target ∉ xs) :
+        xorAt next.basis xs = xorAt s.basis xs := by
+      apply xorAt_agree
+      intro q hq
+      have ne : q ≠ target := fun e => h (e ▸ hq)
+      simp [next, writeBit, Function.update_of_ne ne]
+    rw [show next.phase = s.phase from rfl]
+    apply congrArg (State.mk s.phase)
+    unfold prepared
+    rw [same tags ttags, same taps ttaps,
+      show next.basis a = s.basis a by simp [next, writeBit, Function.update_of_ne ta.symm],
+      show next.basis b = s.basis b by simp [next, writeBit, Function.update_of_ne tb.symm]]
+    change Function.update (Function.update (Function.update s.basis target value) a selector) b parity =
+      Function.update (Function.update (Function.update s.basis a selector) b parity) target value
+    have firstSwap : Function.update (Function.update s.basis target value) a selector =
+        Function.update (Function.update s.basis a selector) target value :=
+      Function.update_comm ta value selector s.basis
+    have secondSwap :
+        Function.update (Function.update (Function.update s.basis a selector) target value) b parity =
+          Function.update (Function.update (Function.update s.basis a selector) b parity) target value :=
+      Function.update_comm tb value parity (Function.update s.basis a selector)
+    exact (congrArg (fun bits : BasisState => Function.update bits b parity) firstSwap).trans secondSwap
+  have proper : ProperProgram (prep tags taps a b) :=
+    (properProgram_append _ _).mpr ⟨toggles_proper _ _ atags, toggles_proper _ _ btaps⟩
+  have undo (tape : List Bool) : run (prep tags taps a b).reverse tape toggled = next := by
+    rw [← move]
+    exact run_reverse_proper _ proper next [] tape
+  change run (coherentStep tags taps a b target) m s = next
+  rw [coherentStep, run_append, run_append, first, middle, undo]
+
+/-! The data below is the selected option for window 305 in `shared.json`. -/
+
+def factors : List (Nat × Nat) :=
+  [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (67,1), (73,1), (87,1), (91,1), (97,1), (257,2), (2047,1), (8191,1)]
+
+def mask (i : Fin 4) : Nat :=
+  if i.val = 0 then 450048295754044082337400402
+  else if i.val = 1 then 900096247194315484301461676
+  else if i.val = 2 then 562252287889028643360822553
+  else 1124806472732601104280234555
+
+def taps (i : Fin 4) : List Wire := selected 90 (mask i)
+def tags (i : Fin 4) : List Wire := List.range' (95 + i.val) (20 - i.val)
+def pivot (i : Fin 4) : Wire := (taps i).headD 0
+def dest (i : Fin 4) : Wire := 90 + i.val
+
+def correction (i : Fin 4) : Program := coherentStep (tags i) (taps i).tail 123 (pivot i) (dest i)
+
+set_option maxRecDepth 4000 in
+private theorem separate : ∀ i : Fin 4,
+    (123 : Wire) ≠ pivot i ∧ dest i ≠ 123 ∧ dest i ≠ pivot i ∧
+    123 ∉ tags i ∧ pivot i ∉ (taps i).tail ∧ 123 ∉ (taps i).tail ∧
+    dest i ∉ tags i ∧ dest i ∉ (taps i).tail := by decide +kernel
+
+set_option maxRecDepth 4000 in
+private theorem correction_tags : ∀ (slot : Fin 22) (i : Fin 4),
+    xorAt (flags20 94 slot.val) (tags i) = decide (i.val < slot.val - 1) := by decide +kernel
+
+def Flags (slot : Fin 22) (s : State) : Prop :=
+  ∀ q, 94 ≤ q → s.basis q = flags20 94 slot.val q
+
+def corrected (slot : Fin 22) (i : Fin 4) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis (dest i)
+    (s.basis (dest i) ^^ (decide (i.val < slot.val - 1) && xorAt s.basis (taps i)))⟩
+
+theorem correction_run (slot : Fin 22) (i : Fin 4) (s : State) (m : List Bool)
+    (h : Flags slot s) : run (correction i) m s = corrected slot i s := by
+  obtain ⟨ab, ta, tb, atags, btaps, ataps, ttags, ttaps⟩ := separate i
+  have hot : xorAt s.basis (tags i) = decide (i.val < slot.val - 1) := by
+    rw [← correction_tags slot i]
+    apply xorAt_agree
+    intro q hq
+    change q ∈ List.range' (95 + i.val) (20 - i.val) at hq
+    have lower : 95 + i.val ≤ q := (List.mem_range'_1.mp hq).1
+    exact h q (le_trans (le_trans (by decide : 94 ≤ 95) (Nat.le_add_right 95 i.val)) lower)
+  have size : ∀ j : Fin 4, taps j = pivot j :: (taps j).tail := by decide +kernel
+  rw [correction, coherent_run _ _ _ _ _ ab ta tb atags btaps ataps ttags ttaps,
+    h 123 (by decide), hot]
+  have zero : flags20 94 slot.val 123 = false := by simp [flags20]
+  have parity : xorAt s.basis (taps i) = (s.basis (pivot i) ^^ xorAt s.basis (taps i).tail) := by
+    exact congrArg (xorAt s.basis) (size i)
+  simp only [corrected, zero, Bool.false_xor, parity]
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem factors_extent : extent20 factors = 90 := by decide +kernel
+
+theorem scalar_run (r : Rows) (size : r.size = 94) (mirror : Bool) (slot : Fin 22)
+    (x : Nat → Bool) (dim : Nat) (ph : Bool) (m : List Bool) :
+    run (components20 94 mirror 0 factors) m (frame20 r x dim slot.val ph) =
+      frame20 (componentRows20 mirror slot.val 0 factors r) x dim slot.val ph := by
+  rw [← size]
+  exact frame_components20 r mirror 0 slot.val dim factors
+    (lt_trans slot.isLt (by decide)) (by simp [size, factors_extent]) factors_used x ph m
+
+def shiftPort (q : Wire) : Wire := [90,91,92,93,95,96,97,123][q]?.getD 0
+
+def shiftProgram (mirror : Bool) : Program :=
+  renameProgram shiftPort (LateQuotientShift.program true mirror)
+
+abbrev QuotientFrame (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) : Prop :=
+  LateQuotientShift.Frame true mirror shiftPort (LateQuotientShift.capShift (slot.val-1)) word s
+
+private theorem shift_fit : ∀ a ∈ LateQuotientShift.ports true,
+    ∀ b ∈ LateQuotientShift.ports true, shiftPort a = shiftPort b → a = b := by
+  have finite : ∀ a b : Fin 8, shiftPort a.val = shiftPort b.val → a = b := by decide +kernel
+  intro a ha b hb eq
+  exact congrArg Fin.val (finite ⟨a, Finset.mem_range.mp ha⟩ ⟨b, Finset.mem_range.mp hb⟩ eq)
+
+theorem shift_run (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) (m : List Bool)
+    (input : QuotientFrame mirror slot word s) :
+    let out := run (shiftProgram mirror) m s
+    out.phase = s.phase ∧ QuotientFrame (!mirror) slot word out ∧
+    ∀ q, q ∉ (LateQuotientShift.ports true).image shiftPort → out.basis q = s.basis q :=
+  LateQuotientShift.placed_run true mirror shiftPort shift_fit _ _ s m input
+
+theorem placement_inj (a b : Wire) (ha : a < 125) (hb : b < 125)
+    (eq : Shadow20.place20 305 a = Shadow20.place20 305 b) : a = b := by
+  let j : Fin 9 := ⟨7, by decide⟩
+  have start : Shadow20.start20 j = 305 := rfl
+  have bound : Shadow20.liveW20 (Shadow20.start20 j) + 31 = 125 := by
+    rw [start]
+    decide
+  have ha' : a < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using ha
+  have hb' : b < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using hb
+  exact Shadow20.place20_inj j a ha' b hb' (by simpa only [start] using eq)
+
+theorem shift_eq_of_frames (mirror : Bool) (slot : Fin 22) (word : Fin 16)
+    (s t : State) (m : List Bool) (input : QuotientFrame mirror slot word s)
+    (out : QuotientFrame (!mirror) slot word t) (phase : t.phase = s.phase)
+    (agree : ∀ q, q ∉ (LateQuotientShift.ports true).image shiftPort → t.basis q = s.basis q) :
+    run (shiftProgram mirror) m s = t := by
+  obtain ⟨hp, result, outside⟩ := shift_run mirror slot word s m input
+  apply State.extensionality
+  · exact hp.trans phase.symm
+  · funext q
+    by_cases inside : q ∈ (LateQuotientShift.ports true).image shiftPort
+    · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp inside
+      exact (result i hi).trans (out i hi).symm
+    · exact (outside q inside).trans (agree q inside).symm
+
+def order (mirror : Bool) : List (Fin 4) := if mirror then [3,2,1,0] else [0,1,2,3]
+def corrections (mirror : Bool) : Program := (order mirror).flatMap correction
+
+private theorem correction_reverse (i : Fin 4) : (correction i).reverse = correction i := by
+  simp [correction, coherentStep, List.reverse_append, List.append_assoc]
+
+theorem corrections_reverse : (corrections false).reverse = corrections true := by
+  simp [corrections, order, List.flatMap_cons, List.reverse_append, correction_reverse, List.append_assoc]
+
+private theorem corrected_flags (slot : Fin 22) (i : Fin 4) (s : State) (h : Flags slot s) :
+    Flags slot (corrected slot i s) := by
+  intro q hq
+  have below : dest i < (94 : Nat) := by
+    change 90 + i.val < 94
+    exact Nat.add_lt_add_left i.isLt 90
+  have ne : q ≠ dest i := Nat.ne_of_gt (lt_of_lt_of_le below hq)
+  simpa [corrected, writeBit, Function.update_of_ne ne] using h q hq
+
+private theorem correction_list (xs : List (Fin 4)) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (xs.flatMap correction) m s =
+      xs.foldl (fun u i => corrected slot i u) s := by
+  induction xs generalizing s m with
+  | nil => rfl
+  | cons i tail ih =>
+    rw [List.flatMap_cons, run_append, correction_run slot i s _ flags]
+    exact ih _ _ (corrected_flags slot i s flags)
+
+theorem corrections_run (mirror : Bool) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (corrections mirror) m s =
+      (order mirror).foldl (fun u i => corrected slot i u) s :=
+  correction_list _ slot s m flags
+
+/-- The middle omits only the outer basis changes. The inverse uses the existing inverse scalar emitter. -/
+def middle (mirror : Bool) : Program :=
+  if mirror then corrections true ++ (shiftProgram true ++ components20 94 true 0 factors)
+  else components20 94 false 0 factors ++ (shiftProgram false ++ corrections false)
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue305
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue305.Caller
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+/-- Exact coordinate rows of the fixed 4,106-CNOT window-305 plan. -/
+def outerRows : Rows := #[
+  4522867545105641319316485353, 6082477043417931429425618234, 12164954086835862858851236468, 3587101846118267253251005625, 7174203692236534506502011250,
+  11697071237342175825818496604, 2375007252102302487296931217, 2772755985083548360710364850, 5545511970167096721420729700, 11091023940334193442841459400,
+  1571987351473498761776665681, 3143974702946997523553331362, 5344756995009895790040663316, 10689513990019791580081326632, 1498509284286487112753650417,
+  2997018568572974225507300834, 5994037137145948451014601668, 10652774956426285755569819000, 1916810383409621070811547185, 3194683972349368451352578642,
+  5750431150228863212434641556, 10861925505987852734598767384, 10815712122131713196007168065, 12098421377027728648916904130, 4389802125489372899447820676,
+  8779604250978745798895641352, 17559208501957491597791282704, 15311376375348898797196577824, 1395407950349078352919560769, 2790815900698156705839121538,
+  5581631801396313411678243076, 10077946308076676993307938888, 348851987587269588229890192, 697703975174539176459780384, 6221607471078794662103009601,
+  18625532305363925154733579202, 13703473486379114370184412868, 7599906344192144341982838152, 11458922182052740864718746192, 3110803735539397331051504800,
+  17808231146896237895334838081, 3287829035237489576941404610, 6575658070474979153882809220, 6175325984769244470195009608, 9403817943865580573430206416,
+  18807635887731161146860412832, 8572907974509531792069275585, 17145815949019063584138551170, 14484591269472042769891114756, 9162141910378001141396241928,
+  18324283820756002282792483856, 14189974301537808095227631584, 19807040628566084398385987583, 13204693752377389598923991722, 3961408125713216879677197516,
+  2640938750475477919784798344, 15146560480668182187001049328, 10097706987112121458000699552, 233024007394895110569246912, 155349338263263407046164608,
+  19498759840572837948605660928, 12999173227048558632403773952, 3714783495318619719852936192, 2476522330212413146568624128, 14856413856674538469560741888,
+  9904275904449692313040494592, 906708199980136617000960, 604472133320091078000640, 464454299057729385013447681, 774090498429548975022412802,
+  1393362897173188155040343044, 2631907694660466515076203528, 5108997289635023235147924496, 10063176479584136675291366432, 164494230916279157192262720,
+  174170362146648519380042880, 193522624607387243755603200, 232227149528864692506723840, 3714273520385484755941994497, 6190455867309141259903324162,
+  11142820561156454267825983492, 1240509320284995885285314568, 1242927467108163518589964304, 1247763760754498785199263776, 1257436348047169318417862720,
+  1276781522632510384855060608, 1315471871803192517729456384, 1392852570144556783478247936, 1547613966827285314975831040, 1857136760192742377970997248,
+  11141460353568422474092118016, 2475880078570760549798248448, 4951760157141521099596496896, 9903520314283042199192993792
+]
+
+def pivotPlan : List (Nat × Nat) := [(0,302526607383921982456904), (1,605053219271443592284304), (2,1210106434039287557198112), (4,3327792690230341061766883), (4,6655585366949883237879110), (5,11798537746519752462513223), (7,38420879130830753468548415), (8,76841757698652005954292350), (8,115262637390209239392689277), (9,192104396791064982705992827), (11,575792841176132175063372657), (12,1151585676229691025456948962), (12,994276576171679244342084390), (13,1227675158928875143270305759), (15,1056173623442854277240991141), (15,363835231731896957563525962), (16,34783476330669512783560827), (17,69566952181729547413618934), (18,390664471549675950642944733), (20,1166714188214547980900265831), (21,142552511398551734197214926), (21,751467834653037635088549926), (22,273096076059910271203442475), (23,546072473278675214123990614), (24,1091779701657517095515716780), (25,292497039501836435217185112), (26,584641825200835434753028784), (27,1169283497598980823572276576), (28,410431281480167078251023293), (29,1224039028654358940516342983), (33,393206028659729243558048307), (31,807872045475235936783195624), (32,110024326284745865909167672), (33,1062665001287121826147820459), (34,254543764223366138324187413), (38,454059562709038315896179519), (39,908119013215395515483821694), (37,34174025973162077239755671), (39,405139361714541291599137809), (39,776713754068892933622782901), (40,1146474326108101780091714427), (41,183070842461831102008424182), (44,806302000163905186748487319), (45,863578439717419314952383790), (44,579362550713093558355583271), (45,354155798677645503011886297), (47,255594247977155232129416997), (48,510958579361573448440741450), (49,1021771651756152997313510548), (49,432638725447833727814596904), (50,1158709340325999550908527423), (51,726543133131095601822100585), (52,490682156548049349207708357), (53,849109422231643174222788431), (54,73924589476747758500813265), (55,85935707756031549249464947), (56,243290124996110217729408661), (57,419781195560571052983452607), (58,1215251732220508121094816961), (59,1171388924417748732698037571), (60,1129940433783094357428672453), (61,952943512876076389327845455), (62,854724251862127482446694609), (63,225800790010759691211561331), (64,560079350636907576202849173), (65,717930265755817736247557311), (66,326017587223008451957802433), (67,955707021525082948789554755), (68,856370015888707074899432133), (69,763431031925026590360839562), (70,567123337924620837265775057), (71,1134246675849241674531550114), (72,548468096463278030046004771), (74,896124568893308323354242337), (75,683361929745098036209244738), (76,1108920428457376400912397444), (77,257869871864535252332407048), (77,431379526888596192129342897), (78,54002995312593431896348227), (79,108005990625186863792696454), (80,216011981250373727585392908), (81,432023962500747455170785816), (82,864047925001494910341571632), (83,914813357254156334803633967), (84,784192675940997812735541521), (86,639008210453436442353798509), (86,484099330490005478170237176), (88,19887251830442282554047645), (89,39774503660884565108095290), (89,39798505890373766631581870), (90,253440420048385472795307457), (91,506880840096770945590614914), (92,1013761680193541891181229828), (93,2027523360387083782362459656)]
+
+private def reversePivot (row : Nat × Nat) (i : Nat) : List (Wire × Wire) :=
+  (if row.1 = i then [] else [(i,row.1),(row.1,i),(i,row.1)]) ++
+    (selected 94 row.2).map (fun q => (i,q))
+
+def outerOps : List (Wire × Wire) :=
+  (pivotPlan.zipIdx.flatMap (fun (row,i) => reversePivot row i)).reverse
+
+/-- Supply this equality from a packed receipt for the same gate order. -/
+abbrev BasisCertificate : Prop := applyOps outerOps (units 94) = outerRows
+
+abbrev BasisBounds : Prop :=
+  ∀ pair ∈ outerOps, pair.1 < 94 ∧ pair.2 < 94 ∧ pair.1 ≠ pair.2
+
+private abbrev shift (slot : Fin 22) : Nat := slot.val - 1
+private abbrev dim (slot : Fin 22) : Nat := 94 - shift slot
+private abbrev clip (slot : Fin 22) (k q : Nat) : Nat :=
+  clipShift (dim slot) k (read outerRows q)
+
+private def coded (slot : Fin 22) (k : Nat) : Rows :=
+  outerRows.map (clipShift (dim slot) k)
+
+private def scalarFrame (slot : Fin 22) : Rows :=
+  Array.ofFn (fun q : Fin 94 => clip slot (if q.val < 90 then shift slot else 0) q.val)
+
+/-- The shared wide primary action supplies these exact row equalities. -/
+abbrev ScalarAction : Prop := ∀ slot : Fin 22,
+  componentRows20 false slot.val 0 factors (coded slot 0) = scalarFrame slot ∧
+  componentRows20 true slot.val 0 factors (scalarFrame slot) = coded slot 0
+
+def logical (mirror : Bool) : Program :=
+  cnotProgram outerOps ++ middle mirror ++ (cnotProgram outerOps).reverse
+
+abbrev CoordinateAction : Prop := BasisCertificate → BasisBounds → ScalarAction →
+  ∀ (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool),
+    run (logical mirror) t
+      (frame20 (plain20 94 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 94 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph
+
+abbrev j305 : Fin 9 := ⟨7, by decide⟩
+
+/-- The old caller supplies all four fields immediately before the barrel. -/
+structure Admitted (mirror : Bool) (slot : Fin 22) (v : Nat) (s : State) : Prop where
+  small : v < 2 ^ (94 - (slot.val - 1))
+  bank : HighBankBarrel.holds (Shadow20.bankW20 305) 94 (v <<< entryShift mirror slot.val) s
+  tags : ∀ k < 21, s.basis (Shadow20.tagsP20.getD k 0) = decide (slot.val = k + 1)
+  scratch : ∀ k < 10, s.basis (Shadow20.poolW20 305 (22 + k)) = false
+
+abbrev Scope (mirror : Bool) : Prop := wires (logical mirror) ⊆ Finset.range 125
+
+def physical (mirror : Bool) : Program := renameProgram (Shadow20.place20 305) (logical mirror)
+
+private def packedRowsWord : Nat := 0x20000000000000000000000000000000000010000000000000000000000000000000000008000000000000000000000000000000000024000000000000000000000000000000000006003001800c00600300180000000000000005002801400a0050028014000000000000000480240120090048024012000000000000000440220110088044022011000000000000000420210108084042021010800000000000000410208104082041020810400000000000000408204102081040820410200000000000000404202101080840420210100000000000000402201100880440220110080000000000002401200900480240120090040000000000001400a005002801400a0050020000000000000c006003001800c00600300100000000000000c0180300600c018030060000000000000000a0140280500a01402805000000000000000090120240480901202404800000000000000088110220440881102204400000000000002084108210420841082104200000000000001082104208410821042084100000000000000881102204408811022044080000000000000480901202404809012024040000000000000280500a0140280500a014020000000000000180300600c0180300600c010000000000000000800080008000800080000000000000000000c000c000c000c000c0000000000000002000a000a000a000a000a0000000000000003000f000f000f000f000f0000000000000000800880088008800880088000000000000000c00cc00cc00cc00cc00cc000000000000002a00aa00aa00aa00aa00aa000000000000003f00ff00ff00ff00ff00ff0000000000000000808080808080808080808000000000000000c0c0c0c0c0c0c0c0c0c0c000000000000020a0a0a0a0a0a0a0a0a0a0a000000000000030f0f0f0f0f0f0f0f0f0f0f00000000000000888888888888888888888880000000000000ccccccccccccccccccccccc0000000000002aaaaaaaaaaaaaaaaaaaaaaa0000000000003fffffffffffffffffffffff0000000000002dd9abf04314f4725bb357e00000000000003b357e08629e8e4b766afc100000000000001d9abf04314f4725bb357e080000000000002ecd5f8218a7a392dd9abf040000000000003766afc10c53d1c96ecd5f820000000000001bb357e08629e8e4b766afc10000000000003cc54fd07091b2d7798a9fa00000000000001e62a7e83848d96bbcc54fd000000000000013f41c246cb5de62a7e83848000000000000153f41c246cb5de62a7e83840000000000000a9fa0e12365aef3153f41c2000000000000398a9fa0e12365aef3153f410000000000000a0d32506992834c941a64a00000000000002506992834c941a64a0d3250000000000000188e7ec473f6239fb11cfd880000000000002c473f6239fb11cfd88e7ec40000000000003c2eade1756f0bab785d5bc2000000000000141a64a0d32506992834c941000000000000024120904824120904824120000000000000012090482412090482412090000000000000209048241209048241209048000000000000120904824120904824120904000000000000090482412090482412090482000000000000048241209048241209048241000000000000317946107eacdda4e2f28c2000000000000038bca3083f566ed2717946100000000000001c5e51841fab376938bca3080000000000000e2f28c20fd59bb49c5e51840000000000002717946107eacdda4e2f28c200000000000022f28c20fd59bb49c5e518410000000000002318c6318c6318c6318c63180000000000001294a5294a5294a5294a52940000000000000a5294a5294a5294a5294a5200000000000006318c6318c6318c6318c631000000000000226bc4d789af135e26bc4d78000000000000135e26bc4d789af135e26bc400000000000009af135e26bc4d789af135e200000000000004d789af135e26bc4d789af1000000000000228a28a28a28a28a28a28a280000000000001145145145145145145145140000000000000a28a28a28a28a28a28a28a200000000000005145145145145145145145100000000000023d647ac8f591eb23d647ac800000000000011eb23d647ac8f591eb23d6400000000000008f591eb23d647ac8f591eb200000000000007ac8f591eb23d647ac8f59100000000000025cb972e5cb972e5cb972e5c000000000000172e5cb972e5cb972e5cb9720000000000000b972e5cb972e5cb972e5cb9000000000000274e9d3a74e9d3a74e9d3a7400000000000013a74e9d3a74e9d3a74e9d3a0000000000000e9d3a74e9d3a74e9d3a74e9
+
+set_option maxRecDepth 5000 in
+private theorem pivot_bounds : ∀ v ∈ pivotPlan.zipIdx,
+    v.1.1 < 94 ∧ v.2 < 94 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+namespace PackedBasis
+
+open CRTBarrel20.Packed20
+
+/-- One spill followed by the three CNOTs of the original swap, if required. -/
+private def steps (n : Nat) (v : (Nat × Nat) × Nat) : List ((Nat × Nat) × Nat) :=
+  let ((j,mask),i) := v
+  [((n,mask),i)] ++ (if i = j then [] else [((i,0),j),((j,0),i),((i,0),j)])
+
+private def emit (n : Nat) (v : (Nat × Nat) × Nat) : List (Wire × Wire) :=
+  (CRTBarrel20.elimStep n v.2 v.1).reverse
+
+private def rowSteps : List ((Nat × Nat) × Nat) := pivotPlan.zipIdx.reverse.flatMap (steps 94)
+
+private theorem emit_pivot (j mask i : Nat) (hj : j < 94) (hi : i < 94) :
+    (steps 94 ((j,mask),i)).flatMap (emit 94) = (reversePivot (j,mask) i).reverse := by
+  by_cases h : i = j
+  · subst j
+    simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected]
+  · simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected,
+      h,Ne.symm h,hj,hi,List.append_assoc]
+
+private theorem emit_rows : rowSteps.flatMap (emit 94) = outerOps := by
+  have fold (xs : List ((Nat × Nat) × Nat))
+      (bounds : ∀ v ∈ xs, v.1.1 < 94 ∧ v.2 < 94) :
+      (xs.flatMap (steps 94)).flatMap (emit 94) =
+        xs.flatMap (fun (row,i) => (reversePivot row i).reverse) := by
+    induction xs with
+    | nil => rfl
+    | cons v tail ih =>
+      obtain ⟨⟨j,mask⟩,i⟩ := v
+      obtain ⟨hj,hi⟩ := bounds ((j,mask),i) (List.mem_cons_self ..)
+      rw [List.flatMap_cons,List.flatMap_append,List.flatMap_cons,emit_pivot j mask i hj hi]
+      rw [ih (fun v hv => bounds v (List.mem_cons_of_mem _ hv))]
+  unfold rowSteps outerOps
+  rw [fold _ (fun v hv => ⟨(pivot_bounds v (List.mem_reverse.mp hv)).1,
+    (pivot_bounds v (List.mem_reverse.mp hv)).2.1⟩)]
+  exact (List.reverse_flatMap ..).symm
+
+/-- The grouped packed reflection, generalized from a zip-indexed plan to exact row steps. -/
+private theorem coordinates_steps (n : Nat) (xs : List ((Nat × Nat) × Nat))
+    (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false)
+    (target : CRTBarrel20.Matrix20.Rows) (size : target.size = n) (narrow : n ≤ width) (word : Nat)
+    (receipt : xs.foldl (quickStep n) (identityWord width n) = word)
+    (rows : ∀ j : Fin n, digit width word j.val = CRTBarrel20.Matrix20.read target j.val) :
+    CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n) = target := by
+  have carry (xs : List ((Nat × Nat) × Nat)) (x : Nat) (r : CRTBarrel20.Matrix20.Rows)
+      (size : r.size = n) (agree : Matches x r)
+      (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false) :
+      Matches (xs.foldl (quickStep n) x) (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) r) := by
+    induction xs generalizing x r with
+    | nil => exact agree
+    | cons v xs ih =>
+      obtain ⟨⟨donor,mask⟩,i⟩ := v
+      have use := good ((donor,mask),i) (by simp)
+      rw [List.foldl_cons,List.flatMap_cons]
+      unfold CRTBarrel20.Matrix20.applyOps
+      rw [List.foldl_append]
+      change Matches (xs.foldl _ _) (CRTBarrel20.Matrix20.applyOps _
+        (CRTBarrel20.Matrix20.applyOps (CRTBarrel20.elimStep n i (donor,mask)).reverse r))
+      rw [CRTBarrel20.Packed20.backward_row n i donor mask r size use.2]
+      apply ih _ _ ((pivotBack_size ..).trans size) _
+        (fun v hv => good v (List.mem_cons_of_mem _ hv))
+      rw [CRTBarrel20.Packed20.quickStep_eq]
+      exact matches_step n x r ((donor,mask),i) size use.1 agree
+  have base : Matches (identityWord width n) (CRTBarrel20.Matrix20.units n) := by
+    intro q hq
+    have sq : q < n := by simpa [CRTBarrel20.Matrix20.units] using hq
+    simpa [CRTBarrel20.Matrix20.units,CRTBarrel20.Matrix20.read,sq,identityWord] using
+      (digit_units width n 0 q (by simpa using narrow) sq).symm
+  have matched := carry xs (identityWord width n) (CRTBarrel20.Matrix20.units n)
+    (by simp [CRTBarrel20.Matrix20.units]) base good
+  rw [receipt] at matched
+  have os : (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n)).size = n := by
+    simp [CRTBarrel20.Matrix20.units]
+  apply Array.ext (os.trans size.symm)
+  intro q ho ht
+  have eq := (matched q ho).trans (rows ⟨q,os ▸ ho⟩)
+  simpa only [CRTBarrel20.Matrix20.read,Array.getElem?_eq_getElem ho,Array.getElem?_eq_getElem ht,
+    Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem step_shape : ∀ v ∈ rowSteps, v.2 < 94 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_receipt : rowSteps.foldl (quickStep 94) (identityWord width 94) = packedRowsWord := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_digits : ∀ q : Fin 94,
+    digit width packedRowsWord q.val = CRTBarrel20.Matrix20.read outerRows q.val := by
+  decide +kernel
+
+end PackedBasis
+
+/-- Exact coordinates of the original swap and spill basis tape. -/
+theorem basis_certificate : BasisCertificate := by
+  have proved := PackedBasis.coordinates_steps 94 PackedBasis.rowSteps PackedBasis.step_shape outerRows
+    (by rfl) (by decide) packedRowsWord PackedBasis.packed_receipt PackedBasis.packed_digits
+  rw [PackedBasis.emit_rows] at proved
+  exact proved
+
+namespace ScalarPremise
+
+open CRTBarrel20.Packed20
+
+private theorem outer_size : outerRows.size = 94 := rfl
+
+private theorem coded_size (slot : Fin 22) : (coded slot 0).size = 94 := by
+  simp [coded,outer_size]
+
+private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 94 := by
+  simp [scalarFrame]
+
+private theorem coded_read (slot : Fin 22) (q : Nat) (low : q < 94) :
+    read (coded slot 0) q = clip slot 0 q := by
+  simp [coded,clip,Matrix20.read,outer_size,low]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (low : q < 94) :
+    read (scalarFrame slot) q = clip slot (if q < 90 then shift slot else 0) q := by
+  simp [scalarFrame,Matrix20.read,low]
+
+set_option maxRecDepth 5000 in
+private theorem prefix_table : residueTable 94 outerRows 0 factors = true := by
+  decide +kernel
+
+private theorem extent : extent20 factors = 90 := by decide +kernel
+
+private theorem scalar_direction (slot : Fin 22) (mirror : Bool) :
+    let input := if mirror then scalarFrame slot else coded slot 0
+    let output := if mirror then coded slot 0 else scalarFrame slot
+    componentRows20 mirror slot.val 0 factors input = output := by
+  intro input output
+  have inputSize : input.size = 94 := by cases mirror <;> simp [input,coded_size,scalar_size]
+  have outputSize : output.size = 94 := by cases mirror <;> simp [output,coded_size,scalar_size]
+  apply componentRows_split 94 90 (dim slot) slot mirror outerRows input output outer_size
+    inputSize outputSize (by decide) (Nat.le_refl _) (by decide) factors extent prefix_table
+  · intro q hq
+    cases mirror
+    · simpa [input,entryShift] using coded_read slot q hq
+    · exact scalar_read slot q hq
+  · intro q hq
+    cases mirror
+    · exact scalar_read slot q hq
+    · simpa [output,exitShift] using coded_read slot q hq
+
+theorem scalar_action : ScalarAction := fun slot =>
+  ⟨scalar_direction slot false,scalar_direction slot true⟩
+
+end ScalarPremise
+
+theorem basis_bounds : BasisBounds := by
+  intro pair hp
+  obtain ⟨⟨⟨j,mask⟩,i⟩,listed,step⟩ := List.mem_flatMap.mp (List.mem_reverse.mp hp)
+  have ⟨hj,hi,clear⟩ := pivot_bounds _ listed
+  change pair ∈ (if j = i then [] else [(i,j),(j,i),(i,j)]) ++
+    (selected 94 mask).map (fun q => (i,q)) at step
+  rcases List.mem_append.mp step with swap | spill
+  · by_cases same : j = i
+    · simp [same] at swap
+    · simp only [if_neg same, List.mem_cons, List.not_mem_nil, or_false] at swap
+      rcases swap with rfl | rfl | rfl
+      · exact ⟨hi,hj,Ne.symm same⟩
+      · exact ⟨hj,hi,same⟩
+      · exact ⟨hi,hj,Ne.symm same⟩
+  · obtain ⟨q,hq,rfl⟩ := List.mem_map.mp spill
+    change q ∈ (List.range 94).filter mask.testBit at hq
+    obtain ⟨within,bit⟩ := List.mem_filter.mp hq
+    refine ⟨hi,List.mem_range.mp within,?_⟩
+    intro eq
+    change i = q at eq
+    subst q
+    change mask.testBit i = false at clear
+    simp [clear] at bit
+
+private theorem append_scope {p q : Program}
+    (hp : wires p ⊆ Finset.range 125) (hq : wires q ⊆ Finset.range 125) :
+    wires (p ++ q) ⊆ Finset.range 125 := by
+  rw [wires_append]
+  exact Finset.union_subset hp hq
+
+private theorem cnot_scope (pairs : List (Wire × Wire))
+    (bounds : ∀ pair ∈ pairs, pair.1 < 94 ∧ pair.2 < 94 ∧ pair.1 ≠ pair.2) :
+    wires (cnotProgram pairs) ⊆ Finset.range 125 := by
+  have fits : Fits (· < 125) (cnotProgram pairs) := by
+    intro gate hg
+    obtain ⟨⟨a,b⟩,hpair,rfl⟩ := List.mem_map.mp hg
+    obtain ⟨ha,hb,sep⟩ := bounds (a,b) hpair
+    refine ⟨sep,?_⟩
+    intro q hq
+    simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl
+    · exact Nat.lt_trans ha (by decide : 94 < 125)
+    · exact Nat.lt_trans hb (by decide : 94 < 125)
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem basis_scope : wires (cnotProgram outerOps) ⊆ Finset.range 125 :=
+  cnot_scope outerOps basis_bounds
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+private theorem scalar_scope (mirror : Bool) : wires (components20 94 mirror 0 factors) ⊆ Finset.range 125 := by
+  have fits := CRTBarrel20.fitsComponents 94 mirror 0 factors (by decide +kernel) factors_used
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem shift_scope (mirror : Bool) : wires (shiftProgram mirror) ⊆ Finset.range 125 := by
+  cases mirror <;> decide +kernel
+
+set_option maxRecDepth 7000 in
+private theorem correction_scope_forward : wires (corrections false) ⊆ Finset.range 125 := by
+  decide +kernel
+
+private theorem correction_scope (mirror : Bool) : wires (corrections mirror) ⊆ Finset.range 125 := by
+  cases mirror
+  · exact correction_scope_forward
+  · simpa only [← corrections_reverse, wires_reverse] using correction_scope_forward
+
+/-- Scope of both emitted gate orders, including the scalar correction wires. -/
+theorem logical_scope (mirror : Bool) : Scope mirror := by
+  have rev : wires (cnotProgram outerOps).reverse ⊆ Finset.range 125 := by
+    rw [wires_reverse]
+    exact basis_scope
+  have body : wires (middle mirror) ⊆ Finset.range 125 := by
+    cases mirror
+    · exact append_scope (scalar_scope false) (append_scope (shift_scope false) (correction_scope false))
+    · exact append_scope (correction_scope true) (append_scope (shift_scope true) (scalar_scope true))
+  change wires ((cnotProgram outerOps ++ middle mirror) ++ (cnotProgram outerOps).reverse) ⊆ Finset.range 125
+  exact append_scope (append_scope basis_scope body) rev
+
+private def parityRow (i : Fin 4) : Nat := [11141460353568422474092118017,2475880078570760549798248450,4951760157141521099596496900,9903520314283042199192993800][i.val]?.getD 0
+
+private def raised (slot : Fin 22) (i : Nat) : Nat :=
+  if shift slot ≤ i then clip slot 0 (90 + (i - shift slot)) else 0
+
+private def layer (slot : Fin 22) (done : Nat) : Rows :=
+  Array.ofFn (fun q : Fin 94 =>
+    if q.val < 90 ∨ q.val - 90 < done then clip slot (shift slot) q.val
+    else raised slot (q.val - 90))
+
+private theorem rows_size : outerRows.size = 94 := rfl
+@[simp] private theorem coded_size (slot : Fin 22) (k : Nat) : (coded slot k).size = 94 := by
+  simp [coded, rows_size]
+@[simp] private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 94 := by
+  simp [scalarFrame]
+@[simp] private theorem layer_size (slot : Fin 22) (done : Nat) : (layer slot done).size = 94 := by
+  simp [layer]
+
+private theorem coded_read (slot : Fin 22) (k q : Nat) (h : q < 94) :
+    read (coded slot k) q = clip slot k q := by
+  simp [coded, clip, Matrix20.read, rows_size, h]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (h : q < 94) :
+    read (scalarFrame slot) q = clip slot (if q < 90 then shift slot else 0) q := by
+  simp [scalarFrame, Matrix20.read, h]
+
+private theorem layer_read (slot : Fin 22) (done q : Nat) (h : q < 94) :
+    read (layer slot done) q =
+      if q < 90 ∨ q - 90 < done then clip slot (shift slot) q else raised slot (q - 90) := by
+  simp [layer, Matrix20.read, h]
+
+private theorem layer_done (slot : Fin 22) : layer slot 4 = coded slot (shift slot) := by
+  apply Array.ext (by simp)
+  intro q hq hc
+  have inBank : q < 94 := by simpa only [layer_size] using hq
+  have done : q < 90 ∨ q - 90 < 4 := Or.inr (by omega)
+  have eq := (layer_read slot 4 q inBank).trans (by simp only [if_pos done]; exact (coded_read slot _ q inBank).symm)
+  simpa only [Matrix20.read, Array.getElem?_eq_getElem hq, Array.getElem?_eq_getElem hc, Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem parity_certificate : ∀ i : Fin 4,
+    (taps i).foldr (fun q z => read outerRows q ^^^ z) 0 = parityRow i := by
+  decide +kernel
+
+set_option maxRecDepth 5000 in
+private theorem quotient_certificate : ∀ (slot : Fin 22) (i : Fin 4),
+    (4 - shift slot ≤ i.val → clip slot 0 (90 + i.val) = 0) ∧
+    clip slot (shift slot) (90 + i.val) = raised slot i.val ^^^
+      (if i.val < shift slot then clipShift (dim slot) (shift slot) (parityRow i) else 0) := by
+  decide +kernel
+
+private theorem flags (rs : Rows) (sz : rs.size = 94) (slot : Fin 22)
+    (x : Nat → Bool) (ph : Bool) : Flags slot (frame20 rs x (dim slot) slot.val ph) := by
+  intro q hq
+  simp [frame20, Matrix20.basis, sz, Nat.not_lt_of_ge hq]
+
+private theorem taps_low (i : Fin 4) (q : Wire) (mem : q ∈ taps i) : q < 90 := by
+  change q ∈ (List.range 90).filter (fun q => (mask i).testBit q) at mem
+  exact List.mem_range.mp (List.mem_filter.mp mem).1
+
+private theorem layer_parity (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (done : Nat) (i : Fin 4) :
+    xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis (taps i) =
+      rowValue x (clipShift (dim slot) (shift slot) (parityRow i)) (dim slot) := by
+  have eval (xs : List Wire) (low : ∀ q ∈ xs, q < 90) :
+      xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis xs =
+        rowValue x (clipShift (dim slot) (shift slot) (xs.foldr (fun q z => read outerRows q ^^^ z) 0)) (dim slot) := by
+    induction xs with
+    | nil => simp [xorAt, clip_zero, rowValue_zero]
+    | cons q qs ih =>
+      have hlow : q < (90 : Nat) := low q (by simp)
+      have hbank : q < (94 : Nat) := Nat.lt_trans hlow (by decide : 90 < 94)
+      rw [xorAt, List.foldr_cons, clip_xor, rowValue_xor, ih (fun r hr => low r (List.mem_cons_of_mem _ hr))]
+      simp only [frame20, Matrix20.basis, layer_size, if_pos hbank, layer_read slot done q hbank,
+        if_pos (Or.inl hlow)]
+  exact (eval (taps i) (taps_low i)).trans
+    (congrArg (fun z => rowValue x (clipShift (dim slot) (shift slot) z) (dim slot)) (parity_certificate i))
+
+private theorem adjacent_layers (q i : Nat) (apart : q ≠ 90 + i) :
+    (q < 90 ∨ q - 90 < i) ↔ (q < 90 ∨ q - 90 < i + 1) := by
+  omega
+
+private theorem layer_step (mirror : Bool) (slot : Fin 22) (i : Fin 4) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (if mirror then i.val + 1 else i.val)) x (dim slot) slot.val ph) =
+      frame20 (layer slot (if mirror then i.val else i.val + 1)) x (dim slot) slot.val ph := by
+  let current := if mirror then i.val + 1 else i.val
+  let next := if mirror then i.val else i.val + 1
+  have target : dest i = 90 + i.val := rfl
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases hit : q = dest i
+    · subst q
+      have bank : dest i < 94 := Nat.add_lt_add_left i.isLt 90
+      have low : ¬ dest i < 90 := Nat.not_lt_of_ge (Nat.le_add_right 90 i.val)
+      have index : dest i - 90 = i.val := Nat.add_sub_cancel_left 90 i.val
+      have bit (done : Nat) : (frame20 (layer slot done) x (dim slot) slot.val ph).basis (dest i) =
+          rowValue x (if i.val < done then clip slot (shift slot) (dest i) else raised slot i.val) (dim slot) := by
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot done _ bank, low,
+          false_or, index]
+      have row := (quotient_certificate slot i).2
+      change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ (dest i) =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis (dest i)
+      rw [writeBit, Function.update_self, layer_parity, bit current, bit next, target, row]
+      by_cases active : i.val < shift slot
+      · cases mirror <;>
+          simp [current, next, active, rowValue_xor]
+      · cases mirror <;>
+          simp [current, next, active]
+    · change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ q =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis q
+      rw [writeBit, Function.update_of_ne hit]
+      by_cases bank : q < 94
+      · have apart : q ≠ 90 + i.val := fun eq => hit (eq.trans target.symm)
+        have adjacent := adjacent_layers q i.val apart
+        have same : (q < 90 ∨ q - 90 < current) ↔ (q < 90 ∨ q - 90 < next) := by
+          cases mirror
+          · exact adjacent
+          · exact adjacent.symm
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot current q bank,
+          layer_read slot next q bank, same]
+      · simp only [frame20, Matrix20.basis, layer_size, if_neg bank]
+
+private theorem layer_step_forward (slot : Fin 22) (i : Fin 4) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot i.val) x (dim slot) slot.val ph) =
+      frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph :=
+  layer_step false slot i x ph
+
+private theorem layer_step_inverse (slot : Fin 22) (i : Fin 4) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph) =
+      frame20 (layer slot i.val) x (dim slot) slot.val ph :=
+  layer_step true slot i x ph
+
+private theorem correction_forward (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections false) t (frame20 (layer slot 0) x (dim slot) slot.val ph) =
+      frame20 (coded slot (shift slot)) x (dim slot) slot.val ph := by
+  rw [corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨3, by decide⟩ (corrected slot ⟨2, by decide⟩ (corrected slot ⟨1, by decide⟩ (corrected slot ⟨0, by decide⟩ _))) = _
+  rw [layer_step_forward slot ⟨0, by decide⟩ x ph, layer_step_forward slot ⟨1, by decide⟩ x ph,
+    layer_step_forward slot ⟨2, by decide⟩ x ph, layer_step_forward slot ⟨3, by decide⟩ x ph,
+    layer_done]
+
+private theorem correction_inverse (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections true) t (frame20 (coded slot (shift slot)) x (dim slot) slot.val ph) =
+      frame20 (layer slot 0) x (dim slot) slot.val ph := by
+  rw [← layer_done, corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨0, by decide⟩ (corrected slot ⟨1, by decide⟩ (corrected slot ⟨2, by decide⟩ (corrected slot ⟨3, by decide⟩ _))) = _
+  rw [layer_step_inverse slot ⟨3, by decide⟩ x ph, layer_step_inverse slot ⟨2, by decide⟩ x ph,
+    layer_step_inverse slot ⟨1, by decide⟩ x ph, layer_step_inverse slot ⟨0, by decide⟩ x ph]
+
+private def quotientWord (slot : Fin 22) (x : Nat → Bool) : Fin 16 :=
+  ⟨fieldWord (4 - shift slot) (fun i => rowValue x (clip slot 0 (90 + i)) (dim slot)),
+    lt_of_lt_of_le (fieldWord_small ..) (by
+      simpa using Nat.pow_le_pow_right (by decide : 0 < 2) (show 4 - shift slot ≤ 4 by omega))⟩
+
+private theorem word_small (slot : Fin 22) (x : Nat → Bool) :
+    (quotientWord slot x).val < 2 ^ (4 - shift slot) :=
+  fieldWord_small ..
+
+private theorem word_bit (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 4) :
+    (quotientWord slot x).val.testBit i = rowValue x (clip slot 0 (90 + i)) (dim slot) := by
+  by_cases low : i < 4 - shift slot
+  · exact fieldWord_bit _ _ _ low
+  · have high : 4 - shift slot ≤ i := Nat.le_of_not_lt low
+    rw [Nat.testBit_lt_two_pow (lt_of_lt_of_le (word_small slot x)
+      (Nat.pow_le_pow_right (by decide : 0 < 2) high)), (quotient_certificate slot ⟨i,hi⟩).1 high]
+    exact (rowValue_zero ..).symm
+
+private theorem word_raised (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 4) :
+    ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val).testBit i =
+      rowValue x (raised slot i) (dim slot) := by
+  have uncapped : ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val) =
+      (quotientWord slot x).val <<< shift slot := by
+    by_cases within : shift slot ≤ 4
+    · simp [LateQuotientShift.capShift, Nat.min_eq_left within]
+    · have z : 4 - shift slot = 0 := by omega
+      have small := word_small slot x
+      rw [z, Nat.pow_zero] at small
+      rw [show (quotientWord slot x).val = 0 by omega]
+      simp
+  rw [uncapped, Nat.testBit_shiftLeft]
+  by_cases moved : shift slot ≤ i
+  · simp only [raised, moved, decide_true, Bool.true_and]
+    exact word_bit slot x _ (by omega)
+  · simp [raised, moved, rowValue_zero]
+
+private theorem shiftPort_low : ∀ i : Fin 4, shiftPort i.val = 90 + i.val := by decide
+
+private theorem selector_projection : ∀ (slot : Fin 22) (q : Fin 8), 4 ≤ q.val →
+    94 ≤ shiftPort q.val ∧
+    flags20 94 slot.val (shiftPort q.val) =
+      LateQuotientShift.admittedBit true false (LateQuotientShift.capShift (shift slot)) 0 q.val := by
+  decide +kernel
+
+private theorem quotient_admission (shifted : Bool) (slot : Fin 22) (rs : Rows) (sz : rs.size = 94)
+    (x : Nat → Bool) (ph : Bool)
+    (qRows : ∀ i : Fin 4, read rs (90 + i.val) =
+      if shifted then raised slot i.val else clip slot 0 (90 + i.val)) :
+    QuotientFrame shifted slot (quotientWord slot x) (frame20 rs x (dim slot) slot.val ph) := by
+  have small : (quotientWord slot x).val <
+      2 ^ (LateQuotientShift.quotientWidth true - (LateQuotientShift.capShift (shift slot)).val) := by
+    rw [LateQuotientShift.capShift_width]
+    exact word_small ..
+  apply (LateQuotientShift.frame_iff true shifted shiftPort _ _ _ small).mpr
+  intro q hq
+  have bound : q < 8 := Finset.mem_range.mp hq
+  by_cases low : q < 4
+  · have bank : 90 + q < 94 := Nat.add_lt_add_left low 90
+    rw [shiftPort_low ⟨q,low⟩]
+    simp only [frame20, Matrix20.basis, sz, if_pos bank, qRows ⟨q,low⟩,
+      LateQuotientShift.admittedBit, show LateQuotientShift.quotientWidth true = 4 from rfl,
+      if_pos low]
+    cases shifted
+    · exact (word_bit slot x q low).symm
+    · exact (word_raised slot x q low).symm
+  · have projection := selector_projection slot ⟨q,bound⟩ (Nat.le_of_not_lt low)
+    have independent : LateQuotientShift.admittedBit true shifted
+        (LateQuotientShift.capShift (shift slot)) (quotientWord slot x) q =
+        LateQuotientShift.admittedBit true false (LateQuotientShift.capShift (shift slot)) 0 q := by
+      simp only [LateQuotientShift.admittedBit, show LateQuotientShift.quotientWidth true = 4 from rfl, if_neg low]
+    exact (flags rs sz slot x ph (shiftPort q) projection.1).trans
+      (projection.2.trans independent.symm)
+
+private theorem shift_pair (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    let left := frame20 (scalarFrame slot) x (dim slot) slot.val ph
+    let right := frame20 (layer slot 0) x (dim slot) slot.val ph
+    run (shiftProgram false) t left = right ∧ run (shiftProgram true) t right = left := by
+  intro left right
+  have l : QuotientFrame false slot (quotientWord slot x) left := by
+    apply quotient_admission false slot _ (scalar_size slot)
+    intro i
+    change read (scalarFrame slot) (90 + i.val) = clip slot 0 (90 + i.val)
+    rw [scalar_read slot _ (Nat.add_lt_add_left i.isLt 90),
+      if_neg (Nat.not_lt_of_ge (Nat.le_add_right 90 i.val))]
+  have r : QuotientFrame true slot (quotientWord slot x) right := by
+    apply quotient_admission true slot _ (layer_size slot 0)
+    intro i
+    change read (layer slot 0) (90 + i.val) = raised slot i.val
+    have non : ¬ (90 + i.val < 90 ∨ 90 + i.val - 90 < 0) := by omega
+    rw [layer_read slot 0 _ (Nat.add_lt_add_left i.isLt 90), if_neg non, Nat.add_sub_cancel_left]
+  have agree : ∀ q, q ∉ (LateQuotientShift.ports true).image shiftPort → right.basis q = left.basis q := by
+    intro q free
+    by_cases known : q < 94
+    · have below : q < 90 := by
+        by_contra! above
+        have eq : 90 + (q - 90) = q := Nat.add_sub_of_le above
+        have within : 90 + (q - 90) < 90 + 4 := eq.symm ▸ known
+        have high : q - 90 < 4 := Nat.lt_of_add_lt_add_left within
+        have port : q - 90 ∈ LateQuotientShift.ports true :=
+          Finset.mem_range.mpr (Nat.lt_trans high (by decide : 4 < 8))
+        exact free (Finset.mem_image.mpr ⟨q - 90, port, (shiftPort_low ⟨q - 90,high⟩).trans eq⟩)
+      simp only [right, left, frame20, Matrix20.basis, layer_size, scalar_size, if_pos known,
+        layer_read slot 0 q known, scalar_read slot q known, if_pos below, if_pos (Or.inl below)]
+    · have ge := Nat.le_of_not_lt known
+      exact (flags _ (layer_size ..) _ _ _ q ge).trans ((flags _ (scalar_size ..) _ _ _ q ge).symm)
+  have samePhase : right.phase = left.phase := by
+    simp only [right, left, frame20]
+  have forwardOut : QuotientFrame (!false) slot (quotientWord slot x) right := by
+    change QuotientFrame true slot (quotientWord slot x) right
+    exact r
+  have inverseOut : QuotientFrame (!true) slot (quotientWord slot x) left := by
+    change QuotientFrame false slot (quotientWord slot x) left
+    exact l
+  have forward : run (shiftProgram false) t left = right :=
+    shift_eq_of_frames false slot (quotientWord slot x) left right t l forwardOut samePhase agree
+  have inverse : run (shiftProgram true) t right = left :=
+    shift_eq_of_frames true slot (quotientWord slot x) right left t r inverseOut samePhase.symm
+      (fun q free => (agree q free).symm)
+  exact ⟨forward,inverse⟩
+
+private theorem middle_run (scalar : ScalarAction) (slot : Fin 22) (mirror : Bool)
+    (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (middle mirror) t (frame20 (coded slot (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (coded slot (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  cases mirror
+  · simp only [middle, Bool.false_eq_true, if_false, entryShift, exitShift, run_append]
+    rw [scalar_run _ (coded_size ..), (scalar slot).1, (shift_pair slot x ph _).1,
+      correction_forward]
+  · simp only [middle, if_true, entryShift, exitShift, run_append]
+    rw [correction_inverse, (shift_pair slot x ph _).2, scalar_run _ (scalar_size _),
+      (scalar slot).2]
+
+private theorem encode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps) t (frame20 (plain20 94 (dim slot) k) x (dim slot) slot.val ph) =
+      frame20 (coded slot k) x (dim slot) slot.val ph := by
+  have mapped : applyOps outerOps (plain20 94 (dim slot) k) = coded slot k := by
+    rw [plain20, apply_map outerOps (clipShift (dim slot) k) (clip_zero (dim slot) k)
+      (clip_xor (dim slot) k) (units 94), coordinates, coded]
+  have step := run_ops outerOps (plain20 94 (dim slot) k) x (dim slot) (flags20 94 slot.val) ph t
+    (fun pair hp => by simpa only [plain20_size] using ⟨(bounds pair hp).1,(bounds pair hp).2.1⟩)
+  rw [mapped] at step
+  simpa only [frame20, plain20_size, coded_size] using step
+
+private theorem decode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps).reverse t (frame20 (coded slot k) x (dim slot) slot.val ph) =
+      frame20 (plain20 94 (dim slot) k) x (dim slot) slot.val ph := by
+  have step := reverse_cnots outerOps (fun pair hp => (bounds pair hp).2.2)
+    (frame20 (plain20 94 (dim slot) k) x (dim slot) slot.val ph) [] t
+  rw [show cnotProgram outerOps.reverse = (cnotProgram outerOps).reverse from List.map_reverse,
+    encode_run coordinates bounds] at step
+  exact step
+
+/-- All measurement outcomes are allowed. The outer basis is the exact original 4,106-gate model. -/
+theorem logical_run (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (logical mirror) t
+      (frame20 (plain20 94 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 94 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  rw [logical, run_append, run_append, encode_run coordinates bounds, middle_run scalar,
+    decode_run coordinates bounds]
+
+private theorem bank_place : ∀ i : Fin 94, Shadow20.place20 305 i.val = Shadow20.bankW20 305 i.val := by
+  decide +kernel
+
+private theorem tag_place : ∀ i : Fin 21, Shadow20.place20 305 (94 + i.val) = Shadow20.tagsP20.getD i.val 0 := by
+  decide +kernel
+
+private theorem scratch_place : ∀ i : Fin 10,
+    Shadow20.place20 305 (115 + i.val) = Shadow20.poolW20 305 (22 + i.val) := by decide +kernel
+
+/-- Transport a logical program over the fixed bank, selector, and scratch placement. -/
+private theorem physical_result_program (program : Program) (mirror : Bool)
+    (scope : wires program ⊆ Finset.range 125) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s)
+    (action : run program t
+      (frame20 (plain20 94 (dim slot) (entryShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) =
+      frame20 (plain20 94 (dim slot) (exitShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) :
+    HighBankBarrel.Result (Shadow20.bankW20 305) 94 (v <<< exitShift mirror slot.val) s
+      (run (renameProgram (Shadow20.place20 305) program) t s) := by
+  let f := Shadow20.place20 305
+  let pool : Finset Wire := Finset.range 125
+  have inj : ∀ a ∈ pool, ∀ b ∈ pool, f a = f b → a = b :=
+    fun a ha b hb => placement_inj a b (Finset.mem_range.mp ha) (Finset.mem_range.mp hb)
+  have bankBit (k i : Nat) (ik : i < 94) :
+      (frame20 (plain20 94 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis i = (v <<< k).testBit i := by
+    simpa only [frame20, Matrix20.basis, plain20_size, if_pos ik] using plain20_bits 94 _ k v i h.small ik
+  have other (k q : Nat) (above : 94 ≤ q) (high : q < 125) :
+      (frame20 (plain20 94 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis q = s.basis (f q) := by
+    simp only [frame20, Matrix20.basis, plain20_size, if_neg (Nat.not_lt_of_ge above)]
+    by_cases tag : q < 115
+    · have pos : q - 94 < 21 := by omega
+      have hf : f q = Shadow20.tagsP20.getD (q - 94) 0 := by
+        simpa only [f, show 94 + (q - 94) = q by omega] using tag_place ⟨q - 94,pos⟩
+      rw [hf, h.tags _ pos]
+      simp [flags20, above, show q < 94 + 21 by exact tag]
+    · have pos : q - 115 < 10 := by omega
+      have hf : f q = Shadow20.poolW20 305 (22 + (q - 115)) := by
+        simpa only [f, show 115 + (q - 115) = q by omega] using scratch_place ⟨q - 115,pos⟩
+      rw [hf, h.scratch _ pos]
+      simp [flags20, show ¬ q < 94 + 21 from tag]
+  let before := entryShift mirror slot.val
+  let after := exitShift mirror slot.val
+  let beforeFrame := frame20 (plain20 94 (dim slot) before) v.testBit (dim slot) slot.val s.phase
+  let afterFrame := frame20 (plain20 94 (dim slot) after) v.testBit (dim slot) slot.val s.phase
+  let out := run (renameProgram f program) t s
+  have placeBank (q : Nat) (low : q < 94) : f q = Shadow20.bankW20 305 q := bank_place ⟨q,low⟩
+  have agrees : ∀ q ∈ pool, beforeFrame.basis q = s.basis (f q) := by
+    intro q hq
+    by_cases low : q < 94
+    · rw [placeBank q low]
+      have logicalBit : beforeFrame.basis q = (v <<< before).testBit q := bankBit before q low
+      exact Eq.trans logicalBit (h.bank q low).symm
+    · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq)
+  have moved : out.phase = afterFrame.phase ∧ ∀ q ∈ pool, out.basis (f q) = afterFrame.basis q := by
+    have result := run_rename_pool f pool inj program scope t beforeFrame s rfl agrees
+    have afterAction : run program t beforeFrame = afterFrame := action
+    rw [afterAction] at result
+    exact result
+  change HighBankBarrel.Result (Shadow20.bankW20 305) 94 (v <<< after) s out
+  have phase : afterFrame.phase = s.phase := rfl
+  refine ⟨?_,Eq.trans moved.1 phase,?_⟩
+  · intro i low
+    have within : i ∈ pool := Finset.mem_range.mpr (Nat.lt_trans low (by decide : 94 < 125))
+    have bit : out.basis (f i) = (v <<< after).testBit i :=
+      Eq.trans (moved.2 i within) (bankBit after i low)
+    rwa [placeBank i low] at bit
+  · intro q free
+    by_cases hit : q ∈ pool.image f
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hit
+      have above : 94 ≤ a := by
+        by_contra! low
+        exact free a low (placeBank a low)
+      have placed : out.basis (f a) = afterFrame.basis a := moved.2 a ha
+      have restored : afterFrame.basis a = s.basis (f a) := other after a above (Finset.mem_range.mp ha)
+      exact Eq.trans placed restored
+    · have preserved : out.basis q = s.basis q :=
+        run_rename_pool_outside f pool program scope t s q hit
+      exact preserved
+
+/-- Exact bank result, phase, and frame for the stock window-305 placement. -/
+theorem physical_result (logicalRun : CoordinateAction) (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (mirror : Bool) (scope : Scope mirror) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 305) 94 (v <<< exitShift mirror slot.val) s
+      (run (physical mirror) t s) := by
+  unfold physical
+  exact physical_result_program (logical mirror) mirror scope slot v s t h
+    (logicalRun coordinates bounds scalar slot mirror v.testBit s.phase t)
+
+
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨212, 38, 15003⟩ else ⟨212, 38, 15029⟩
+
+theorem width_at_start : Shadow20.liveW20 305 = 94 := by decide +kernel
+
+private theorem basis_fits : Fits (· < 125) (cnotProgram outerOps) := by
+  intro instr h
+  change instr ∈ outerOps.map (fun (a, b) => Instr.CX a b) at h
+  obtain ⟨⟨a,b⟩, member, rfl⟩ := List.mem_map.mp h
+  obtain ⟨ha, hb, distinct⟩ := basis_bounds (a,b) member
+  refine ⟨distinct, ?_⟩
+  intro q hq
+  simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem shift_fits (mir : Bool) : Fits (· < 125) (shiftProgram mir) := by
+  apply CRTBarrel20.lateResidueFits
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 125) (corrections mir) := by
+  have forward : Fits (· < 125) (corrections false) := by
+    apply CRTBarrel20.lateResidueFits
+    decide +kernel
+  cases mir
+  · exact forward
+  · rw [← corrections_reverse]
+    exact CRTBarrel20.fits_reverse forward
+
+theorem program_fits (mir : Bool) : Fits (· < 125) (logical mir) := by
+  have b := basis_fits
+  have r := CRTBarrel20.fits_reverse b
+  have s := shift_fits mir
+  have c := correction_fits mir
+  have f := CRTBarrel20.fitsComponents 94 mir 0 factors (by decide +kernel) factors_used
+  cases mir
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append f (CRTBarrel20.fits_append s c))) r
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append c (CRTBarrel20.fits_append s f))) r
+
+private theorem shift_cost (mir : Bool) : count (shiftProgram mir) = ⟨4, 0, 20⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem correction_cost (mir : Bool) : count (corrections mir) = ⟨4, 0, 500⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem basis_prices :
+    count (cnotProgram outerOps) = ⟨0, 0, 4106⟩ ∧
+      count (cnotProgram outerOps).reverse = ⟨0, 0, 4106⟩ := by
+  have len : outerOps.length = 4106 := by decide +kernel
+  have padded := congrArg (fun n => (⟨0, 0, n⟩ : CRTBarrel20.Count)) len
+  exact ⟨(CRTBarrel20.count_map_cx Prod.fst Prod.snd outerOps).trans padded,
+    (CRTBarrel20.count_map_cx_rev Prod.fst Prod.snd outerOps).trans padded⟩
+
+
+private theorem append_price {p q : Program} {a b : CRTBarrel20.Count}
+    (hp : count p = a) (hq : count q = b) : count (p ++ q) = cadd a b :=
+  (CRTBarrel20.count_append p q).trans (congrArg₂ cadd hp hq)
+
+attribute [local irreducible] count cnotProgram components20 outerOps in
+theorem costs (mir : Bool) : count (logical mir) = bounds mir := by
+  have b := basis_prices.1
+  have r := basis_prices.2
+  have f := CRTBarrel20.residueFieldPrice 94 mir factors factors_used
+  have s := shift_cost mir
+  have c := correction_cost mir
+  cases mir
+  · unfold logical middle
+    exact (append_price (append_price b (append_price f (append_price s c))) r).trans
+      (by decide +kernel)
+  · unfold logical middle
+    exact (append_price (append_price b (append_price c (append_price s f))) r).trans
+      (by decide +kernel)
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (h : Admitted mir slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 305) 94 (v <<< exitShift mir slot.val) s
+      (run (physical mir) tape s) :=
+  physical_result logical_run basis_certificate basis_bounds ScalarPremise.scalar_action
+    mir (logical_scope mir) slot v s tape h
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue305.Caller
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue325
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+def prep (tags taps : List Wire) (a b : Wire) : Program :=
+  toggles tags a ++ toggles taps b
+
+def coherentStep (tags taps : List Wire) (a b target : Wire) : Program :=
+  prep tags taps a b ++ ([Instr.CCX a b target] ++ (prep tags taps a b).reverse)
+
+private theorem xorAt_agree (u v : BasisState) (xs : List Wire)
+    (h : ∀ q ∈ xs, u q = v q) : xorAt u xs = xorAt v xs := by
+  induction xs with
+  | nil => rfl
+  | cons q qs ih =>
+    rw [xorAt, xorAt, h q (by simp), ih (fun j hj => h j (List.mem_cons_of_mem _ hj))]
+
+private theorem toggles_proper (xs : List Wire) (q : Wire) (fresh : q ∉ xs) :
+    ProperProgram (toggles xs q) := by
+  intro i hi
+  change i ∈ xs.map (fun p => Instr.CX p q) at hi
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hi
+  exact fun eq => fresh (eq ▸ hp)
+
+private def prepared (tags taps : List Wire) (a b : Wire) (bits : BasisState) : BasisState :=
+  writeBit (writeBit bits a (bits a ^^ xorAt bits tags)) b (bits b ^^ xorAt bits taps)
+
+private theorem prep_run (tags taps : List Wire) (a b : Wire)
+    (ab : a ≠ b) (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (s : State) (m : List Bool) :
+    run (prep tags taps a b) m s = ⟨s.phase, prepared tags taps a b s.basis⟩ := by
+  cases s with
+  | mk ph bits =>
+    rw [prep, run_append, run_toggles _ _ atags, run_toggles _ _ btaps]
+    have keep : xorAt (writeBit bits a (bits a ^^ xorAt bits tags)) taps = xorAt bits taps :=
+      xorAt_agree _ _ _ (fun q hq => by
+        have ne : q ≠ a := fun e => ataps (e ▸ hq)
+        simp [writeBit, Function.update_of_ne ne])
+    have pivotKeep : writeBit bits a (bits a ^^ xorAt bits tags) b = bits b := by
+      simp [writeBit, Function.update_of_ne ab.symm]
+    simp only [prepared, pivotKeep, keep]
+
+/-- Compute the two parities, use a single Toffoli, and undo the preparation. -/
+theorem coherent_run (tags taps : List Wire) (a b target : Wire)
+    (ab : a ≠ b) (ta : target ≠ a) (tb : target ≠ b)
+    (atags : a ∉ tags) (btaps : b ∉ taps) (ataps : a ∉ taps)
+    (ttags : target ∉ tags) (ttaps : target ∉ taps) (s : State) (m : List Bool) :
+    run (coherentStep tags taps a b target) m s =
+      ⟨s.phase, writeBit s.basis target
+        (s.basis target ^^ ((s.basis a ^^ xorAt s.basis tags) &&
+          (s.basis b ^^ xorAt s.basis taps)))⟩ := by
+  let selector := s.basis a ^^ xorAt s.basis tags
+  let parity := s.basis b ^^ xorAt s.basis taps
+  let value := s.basis target ^^ (selector && parity)
+  let next : State := ⟨s.phase, writeBit s.basis target value⟩
+  let ready : State := ⟨s.phase, prepared tags taps a b s.basis⟩
+  let toggled : State := ⟨s.phase, writeBit ready.basis target value⟩
+  have first (tape : List Bool) : run (prep tags taps a b) tape s = ready :=
+    prep_run tags taps a b ab atags btaps ataps s tape
+  have middle (tape : List Bool) : run [Instr.CCX a b target] tape ready = toggled := by
+    have ha : ready.basis a = selector := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ab, Function.update_self, selector]
+    have hb : ready.basis b = parity := by
+      simp only [ready, prepared, writeBit, Function.update_self, parity]
+    have ht : ready.basis target = s.basis target := by
+      simp only [ready, prepared, writeBit, Function.update_of_ne ta, Function.update_of_ne tb]
+    change (⟨ready.phase, writeBit ready.basis target
+      (ready.basis target ^^ (ready.basis a && ready.basis b))⟩ : State) = toggled
+    rw [ha, hb, ht]
+  have move : run (prep tags taps a b) [] next = toggled := by
+    rw [prep_run tags taps a b ab atags btaps ataps]
+    have same (xs : List Wire) (h : target ∉ xs) :
+        xorAt next.basis xs = xorAt s.basis xs := by
+      apply xorAt_agree
+      intro q hq
+      have ne : q ≠ target := fun e => h (e ▸ hq)
+      simp [next, writeBit, Function.update_of_ne ne]
+    rw [show next.phase = s.phase from rfl]
+    apply congrArg (State.mk s.phase)
+    unfold prepared
+    rw [same tags ttags, same taps ttaps,
+      show next.basis a = s.basis a by simp [next, writeBit, Function.update_of_ne ta.symm],
+      show next.basis b = s.basis b by simp [next, writeBit, Function.update_of_ne tb.symm]]
+    change Function.update (Function.update (Function.update s.basis target value) a selector) b parity =
+      Function.update (Function.update (Function.update s.basis a selector) b parity) target value
+    have firstSwap : Function.update (Function.update s.basis target value) a selector =
+        Function.update (Function.update s.basis a selector) target value :=
+      Function.update_comm ta value selector s.basis
+    have secondSwap :
+        Function.update (Function.update (Function.update s.basis a selector) target value) b parity =
+          Function.update (Function.update (Function.update s.basis a selector) b parity) target value :=
+      Function.update_comm tb value parity (Function.update s.basis a selector)
+    exact (congrArg (fun bits : BasisState => Function.update bits b parity) firstSwap).trans secondSwap
+  have proper : ProperProgram (prep tags taps a b) :=
+    (properProgram_append _ _).mpr ⟨toggles_proper _ _ atags, toggles_proper _ _ btaps⟩
+  have undo (tape : List Bool) : run (prep tags taps a b).reverse tape toggled = next := by
+    rw [← move]
+    exact run_reverse_proper _ proper next [] tape
+  change run (coherentStep tags taps a b target) m s = next
+  rw [coherentStep, run_append, run_append, first, middle, undo]
+
+/-! The data below is the selected option for window 325 in `shared.json`. -/
+
+def factors : List (Nat × Nat) :=
+  [(11,1), (13,1), (19,1), (21,1), (25,1), (31,1), (37,1), (67,1), (73,1), (87,1), (91,1), (257,1), (2047,1), (8191,1)]
+
+def mask (i : Fin 3) : Nat :=
+  if i.val = 0 then 955259970453064737862281
+  else if i.val = 1 then 1911110198400706976621907
+  else 1403778097005952619122415
+
+def taps (i : Fin 3) : List Wire := selected 81 (mask i)
+def tags (i : Fin 3) : List Wire := List.range' (85 + i.val) (20 - i.val)
+def pivot (i : Fin 3) : Wire := (taps i).headD 0
+def dest (i : Fin 3) : Wire := 81 + i.val
+
+def correction (i : Fin 3) : Program := coherentStep (tags i) (taps i).tail 113 (pivot i) (dest i)
+
+set_option maxRecDepth 4000 in
+private theorem separate : ∀ i : Fin 3,
+    (113 : Wire) ≠ pivot i ∧ dest i ≠ 113 ∧ dest i ≠ pivot i ∧
+    113 ∉ tags i ∧ pivot i ∉ (taps i).tail ∧ 113 ∉ (taps i).tail ∧
+    dest i ∉ tags i ∧ dest i ∉ (taps i).tail := by decide +kernel
+
+set_option maxRecDepth 4000 in
+private theorem correction_tags : ∀ (slot : Fin 22) (i : Fin 3),
+    xorAt (flags20 84 slot.val) (tags i) = decide (i.val < slot.val - 1) := by decide +kernel
+
+def Flags (slot : Fin 22) (s : State) : Prop :=
+  ∀ q, 84 ≤ q → s.basis q = flags20 84 slot.val q
+
+def corrected (slot : Fin 22) (i : Fin 3) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis (dest i)
+    (s.basis (dest i) ^^ (decide (i.val < slot.val - 1) && xorAt s.basis (taps i)))⟩
+
+theorem correction_run (slot : Fin 22) (i : Fin 3) (s : State) (m : List Bool)
+    (h : Flags slot s) : run (correction i) m s = corrected slot i s := by
+  obtain ⟨ab, ta, tb, atags, btaps, ataps, ttags, ttaps⟩ := separate i
+  have hot : xorAt s.basis (tags i) = decide (i.val < slot.val - 1) := by
+    rw [← correction_tags slot i]
+    apply xorAt_agree
+    intro q hq
+    change q ∈ List.range' (85 + i.val) (20 - i.val) at hq
+    have lower : 85 + i.val ≤ q := (List.mem_range'_1.mp hq).1
+    exact h q (le_trans (le_trans (by decide : 84 ≤ 85) (Nat.le_add_right 85 i.val)) lower)
+  have size : ∀ j : Fin 3, taps j = pivot j :: (taps j).tail := by decide +kernel
+  rw [correction, coherent_run _ _ _ _ _ ab ta tb atags btaps ataps ttags ttaps,
+    h 113 (by decide), hot]
+  have zero : flags20 84 slot.val 113 = false := by simp [flags20]
+  have parity : xorAt s.basis (taps i) = (s.basis (pivot i) ^^ xorAt s.basis (taps i).tail) := by
+    exact congrArg (xorAt s.basis) (size i)
+  simp only [corrected, zero, Bool.false_xor, parity]
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+theorem factors_extent : extent20 factors = 81 := by decide +kernel
+
+theorem scalar_run (r : Rows) (size : r.size = 84) (mirror : Bool) (slot : Fin 22)
+    (x : Nat → Bool) (dim : Nat) (ph : Bool) (m : List Bool) :
+    run (components20 84 mirror 0 factors) m (frame20 r x dim slot.val ph) =
+      frame20 (componentRows20 mirror slot.val 0 factors r) x dim slot.val ph := by
+  rw [← size]
+  exact frame_components20 r mirror 0 slot.val dim factors
+    (lt_trans slot.isLt (by decide)) (by simp [size, factors_extent]) factors_used x ph m
+
+def shiftPort (q : Wire) : Wire := [81,82,83,85,86,113][q]?.getD 0
+
+def shiftProgram (mirror : Bool) : Program :=
+  renameProgram shiftPort (LateQuotientShift.program false mirror)
+
+abbrev QuotientFrame (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) : Prop :=
+  LateQuotientShift.Frame false mirror shiftPort (LateQuotientShift.capShift (slot.val-1)) word s
+
+private theorem shift_fit : ∀ a ∈ LateQuotientShift.ports false,
+    ∀ b ∈ LateQuotientShift.ports false, shiftPort a = shiftPort b → a = b := by
+  have finite : ∀ a b : Fin 6, shiftPort a.val = shiftPort b.val → a = b := by decide +kernel
+  intro a ha b hb eq
+  exact congrArg Fin.val (finite ⟨a, Finset.mem_range.mp ha⟩ ⟨b, Finset.mem_range.mp hb⟩ eq)
+
+theorem shift_run (mirror : Bool) (slot : Fin 22) (word : Fin 16) (s : State) (m : List Bool)
+    (input : QuotientFrame mirror slot word s) :
+    let out := run (shiftProgram mirror) m s
+    out.phase = s.phase ∧ QuotientFrame (!mirror) slot word out ∧
+    ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → out.basis q = s.basis q :=
+  LateQuotientShift.placed_run false mirror shiftPort shift_fit _ _ s m input
+
+theorem placement_inj (a b : Wire) (ha : a < 115) (hb : b < 115)
+    (eq : Shadow20.place20 325 a = Shadow20.place20 325 b) : a = b := by
+  let j : Fin 9 := ⟨8, by decide⟩
+  have start : Shadow20.start20 j = 325 := rfl
+  have bound : Shadow20.liveW20 (Shadow20.start20 j) + 31 = 115 := by
+    rw [start]
+    decide
+  have ha' : a < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using ha
+  have hb' : b < Shadow20.liveW20 (Shadow20.start20 j) + 31 := by
+    simpa only [bound] using hb
+  exact Shadow20.place20_inj j a ha' b hb' (by simpa only [start] using eq)
+
+theorem shift_eq_of_frames (mirror : Bool) (slot : Fin 22) (word : Fin 16)
+    (s t : State) (m : List Bool) (input : QuotientFrame mirror slot word s)
+    (out : QuotientFrame (!mirror) slot word t) (phase : t.phase = s.phase)
+    (agree : ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → t.basis q = s.basis q) :
+    run (shiftProgram mirror) m s = t := by
+  obtain ⟨hp, result, outside⟩ := shift_run mirror slot word s m input
+  apply State.extensionality
+  · exact hp.trans phase.symm
+  · funext q
+    by_cases inside : q ∈ (LateQuotientShift.ports false).image shiftPort
+    · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp inside
+      exact (result i hi).trans (out i hi).symm
+    · exact (outside q inside).trans (agree q inside).symm
+
+def order (mirror : Bool) : List (Fin 3) := if mirror then [2,1,0] else [0,1,2]
+def corrections (mirror : Bool) : Program := (order mirror).flatMap correction
+
+private theorem correction_reverse (i : Fin 3) : (correction i).reverse = correction i := by
+  simp [correction, coherentStep, List.reverse_append, List.append_assoc]
+
+theorem corrections_reverse : (corrections false).reverse = corrections true := by
+  simp [corrections, order, List.flatMap_cons, List.reverse_append, correction_reverse, List.append_assoc]
+
+private theorem corrected_flags (slot : Fin 22) (i : Fin 3) (s : State) (h : Flags slot s) :
+    Flags slot (corrected slot i s) := by
+  intro q hq
+  have below : dest i < (84 : Nat) := by
+    change 81 + i.val < 84
+    exact Nat.add_lt_add_left i.isLt 81
+  have ne : q ≠ dest i := Nat.ne_of_gt (lt_of_lt_of_le below hq)
+  simpa [corrected, writeBit, Function.update_of_ne ne] using h q hq
+
+private theorem correction_list (xs : List (Fin 3)) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (xs.flatMap correction) m s =
+      xs.foldl (fun u i => corrected slot i u) s := by
+  induction xs generalizing s m with
+  | nil => rfl
+  | cons i tail ih =>
+    rw [List.flatMap_cons, run_append, correction_run slot i s _ flags]
+    exact ih _ _ (corrected_flags slot i s flags)
+
+theorem corrections_run (mirror : Bool) (slot : Fin 22) (s : State) (m : List Bool)
+    (flags : Flags slot s) : run (corrections mirror) m s =
+      (order mirror).foldl (fun u i => corrected slot i u) s :=
+  correction_list _ slot s m flags
+
+/-- The middle omits only the outer basis changes. The inverse uses the existing inverse scalar emitter. -/
+def middle (mirror : Bool) : Program :=
+  if mirror then corrections true ++ (shiftProgram true ++ components20 84 true 0 factors)
+  else components20 84 false 0 factors ++ (shiftProgram false ++ corrections false)
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue325
+
+namespace ECDSAAdd.Entrant.StairPacket.LateResidue325.Caller
+
+open ECDSAAdd CRTBarrel20 CRTBarrel20.Matrix20
+
+/-- Exact coordinate rows of the fixed 3,386-CNOT window-325 plan. -/
+def outerRows : Rows := #[
+  15992089582303756011861225, 8833725674034455701790010, 17667451348068911403580020, 8681420058964896120724665, 17362840117929792241449330,
+  14012116586399481458011740, 15184052214546338270475665, 6733709805276808982634162, 13467419610553617965268324, 7592026107273169135237832,
+  5219489252939351357461585, 10438978505878702714923170, 6140575591693354538190100, 12281151183386709076380200, 9112674521263969515641585,
+  18225349042527939031283170, 17107884971221811267267524, 14227743817549018155470200, 1871885140048458076964401, 3119808566747430128274002,
+  5615655420145374230893204, 10607349126941262436131608, 2357795337655473125444897, 4715590675310946250889794, 7548279334894709188917668,
+  15096558669789418377835336, 10850304225744769960371856, 3079591498469857435129921, 9163180881436901855144130, 18326361762873803710288260,
+  17309910411913540625277704, 15277007709993014455256592, 11211202306151962115214368, 2725406153025543658046017, 5450812306051087316092034,
+  10901624612102174632184068, 340675769128192957255752, 681351538256385914511504, 1362703076512771829023008, 12564461538059220812089665,
+  17746089855552897656118210, 8761801784595079112851140, 17523603569190158225702280, 7976818662973321901847120, 15953637325946643803694240,
+  12843082168896443659927361, 18893618999532288535904706, 18444424885230510276510596, 4968601456177162494687304, 3210770542224110914981840,
+  6421541084448221829963680, 19342813113834066795298815, 12895208742556044530199210, 15474250491067253436239052, 10316166994044835624159368,
+  1137812536107886282076400, 758541690738590854717600, 910250028886309025661120, 606833352590872683774080, 226784325711781926276097,
+  377973876186303210460162, 680352977135345778828292, 1285111179033430915564552, 2494627582829601189037072, 4913660390421941735982112,
+  9751726005606622829872192, 85044122141918222353536, 94493469046575802615040, 113392162855890963138048, 453402529343931244621825,
+  755670882239885407703042, 1360207588031793733865476, 2569280999615610386190344, 4987427822783243690840080, 9823721469118510300139552,
+  153495647954976723439680, 155857119461976365338752, 160580062475975649136896, 170025948503974216733184, 188917720559971351925760,
+  226701264671965622310912, 7253554917687775048237056, 14507109835375550096474112, 9671406556917033397649408
+]
+
+def pivotPlan : List (Nat × Nat) := [(0,590874558653679289416), (1,1181751369107172264080), (2,2363500486414530842912), (4,6499624648790099554019), (4,12999242542180754509126), (5,23044137060890905883719), (7,75041065698774095791423), (8,150081848017049399921278), (8,225122617384691718134909), (9,375204165394468312249467), (11,1124595631506063329547121), (12,2249191085119941260928738), (12,1941946480760867544711974), (13,2397803218713973340311519), (15,2062839234892767752760741), (15,710615815115419095620426), (16,67936754919856395255931), (17,135873271913161706438902), (18,763016142017771759327965), (20,2278738416384575715831655), (21,278422497673472620945102), (21,1467710643047658098395174), (25,533390584339794758369067), (24,1066547789895099330395734), (24,1599225385876923895741905), (25,2094184524718143463622132), (26,1484216809962168993155183), (27,382017086099881502467815), (29,1138963089224067037047593), (29,1528068338614978156272540), (30,1859895883914707755047953), (31,1116501344740030934890530), (32,2233002711231640272531524), (33,951621030427653472850665), (34,1903242229693563727914450), (37,1829482155848423646133407), (36,155196431231303246066330), (37,1336431162401450584330767), (38,52200862635006865096117), (39,1077412606487058278596577), (40,2154824170390802820923330), (41,526442525969658325303172), (44,278257422391906107179241), (43,689429774433798568590899), (44,1855033787576343175168700), (48,2376887949764381938268663), (46,2295846402070574931954201), (47,2138779913644320678358469), (48,558105547916068346157962), (50,1724259694343861795509609), (50,1458507804511361790761276), (51,1186715963557886900365073), (52,1274227340289768520755507), (53,1103336178803601353177941), (54,1487029690790253812092415), (55,834901746080637875033601), (56,2197452989485150598314499), (57,1870712406244716682726917), (58,1716663260451210939945487), (63,318409580987257672955409), (64,636819161974515345910818), (61,1581510778096166667824725), (63,1102563526398665643026636), (64,1054307459388806077024732), (64,936666363648028544163069), (68,324103949886988624165773), (66,2117703229600108547691731), (67,2112469543029321639460213), (68,1235732538342469001336244), (69,1441571405598923504560655), (70,812925111901650330811921), (71,1625850223803300661623842), (72,1390611452718385544703593), (75,2191627627091325851241215), (74,192925572770762763322323), (75,2075329275892182990114442), (78,1215756847129759093654963), (77,1543404582166102106578584), (78,722129162693642883411325), (79,377419560863261854984479), (80,754839121726523709968958), (81,2203587653587061070382597), (82,4407175307174122140765194), (83,8814350614348244281530388)]
+
+private def reversePivot (row : Nat × Nat) (i : Nat) : List (Wire × Wire) :=
+  (if row.1 = i then [] else [(i,row.1),(row.1,i),(i,row.1)]) ++
+    (selected 84 row.2).map (fun q => (i,q))
+
+def outerOps : List (Wire × Wire) :=
+  (pivotPlan.zipIdx.flatMap (fun (row,i) => reversePivot row i)).reverse
+
+/-- Supply this equality from a packed receipt for the same gate order. -/
+abbrev BasisCertificate : Prop := applyOps outerOps (units 84) = outerRows
+
+abbrev BasisBounds : Prop :=
+  ∀ pair ∈ outerOps, pair.1 < 84 ∧ pair.2 < 84 ∧ pair.1 ≠ pair.2
+
+private abbrev shift (slot : Fin 22) : Nat := slot.val - 1
+private abbrev dim (slot : Fin 22) : Nat := 84 - shift slot
+private abbrev clip (slot : Fin 22) (k q : Nat) : Nat :=
+  clipShift (dim slot) k (read outerRows q)
+
+private def coded (slot : Fin 22) (k : Nat) : Rows :=
+  outerRows.map (clipShift (dim slot) k)
+
+private def scalarFrame (slot : Fin 22) : Rows :=
+  Array.ofFn (fun q : Fin 84 => clip slot (if q.val < 81 then shift slot else 0) q.val)
+
+/-- The shared wide primary action supplies these exact row equalities. -/
+abbrev ScalarAction : Prop := ∀ slot : Fin 22,
+  componentRows20 false slot.val 0 factors (coded slot 0) = scalarFrame slot ∧
+  componentRows20 true slot.val 0 factors (scalarFrame slot) = coded slot 0
+
+def logical (mirror : Bool) : Program :=
+  cnotProgram outerOps ++ middle mirror ++ (cnotProgram outerOps).reverse
+
+abbrev CoordinateAction : Prop := BasisCertificate → BasisBounds → ScalarAction →
+  ∀ (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool),
+    run (logical mirror) t
+      (frame20 (plain20 84 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 84 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph
+
+abbrev j325 : Fin 9 := ⟨8, by decide⟩
+
+/-- The old caller supplies all four fields immediately before the barrel. -/
+structure Admitted (mirror : Bool) (slot : Fin 22) (v : Nat) (s : State) : Prop where
+  small : v < 2 ^ (84 - (slot.val - 1))
+  bank : HighBankBarrel.holds (Shadow20.bankW20 325) 84 (v <<< entryShift mirror slot.val) s
+  tags : ∀ k < 21, s.basis (Shadow20.tagsP20.getD k 0) = decide (slot.val = k + 1)
+  scratch : ∀ k < 10, s.basis (Shadow20.poolW20 325 (22 + k)) = false
+
+abbrev Scope (mirror : Bool) : Prop := wires (logical mirror) ⊆ Finset.range 115
+
+def physical (mirror : Bool) : Program := renameProgram (Shadow20.place20 325) (logical mirror)
+
+private def packedRowsWord : Nat := 0x800000000000000000000000000000000000c0000000000000000000000000000000000060000000000000000000000000000000000003001800c00600300180000000000000000002801400a0050028014000000000000000000240120090048024012000000000000000000220110088044022011000000000000000000210108084042021010800000000000000000208104082041020810400000000000000008204102081040820410200000000000000004202101080840420210100000000000000002201100880440220110080000000000000001200900480240120090040000000000000000a005002801400a00500200000000000000006003001800c0060030010000000000000000180300600c01803006000000000000000000140280500a01402805000000000000000000120240480901202404800000000000000008110220440881102204400000000000000004108210420841082104200000000000000002104208410821042084100000000000000001102204408811022044080000000000000000901202404809012024040000000000000000500a0140280500a014020000000000000000300600c0180300600c010000000000000000808080808080808080800000000000000000c0c0c0c0c0c0c0c0c0c00000000000000000a0a0a0a0a0a0a0a0a0a00000000000000000f0f0f0f0f0f0f0f0f0f0000000000000000888888888888888888888000000000000000ccccccccccccccccccccc000000000000000aaaaaaaaaaaaaaaaaaaaa000000000000000fffffffffffffffffffff00000000000000054fd07091b2d7798a9fa00000000000000002a7e83848d96bbcc54fd000000000000000041c246cb5de62a7e83848000000000000000f41c246cb5de62a7e8384000000000000000fa0e12365aef3153f41c2000000000000000a9fa0e12365aef3153f41000000000000000d32506992834c941a64a00000000000000006992834c941a64a0d3250000000000000000e7ec473f6239fb11cfd8800000000000000073f6239fb11cfd88e7ec4000000000000000eade1756f0bab785d5bc2000000000000000a64a0d32506992834c941000000000000000120904824120904824120000000000000000090482412090482412090000000000000000048241209048241209048000000000000000904824120904824120904000000000000000482412090482412090482000000000000000241209048241209048241000000000000000946107eacdda4e2f28c20000000000000000ca3083f566ed271794610000000000000000e51841fab376938bca308000000000000000f28c20fd59bb49c5e51840000000000000007946107eacdda4e2f28c200000000000000028c20fd59bb49c5e518410000000000000008f9a42bb1f3485763e690000000000000000c7cd215d8f9a42bb1f34800000000000000063e690aec7cd215d8f9a40000000000000003e690aec7cd215d8f9a420000000000000001f3485763e690aec7cd210000000000000008c6318c6318c6318c63180000000000000004a5294a5294a5294a5294000000000000000294a5294a5294a5294a5200000000000000018c6318c6318c6318c631000000000000000bc4d789af135e26bc4d78000000000000000e26bc4d789af135e26bc4000000000000000f135e26bc4d789af135e2000000000000000789af135e26bc4d789af1000000000000000a28a28a28a28a28a28a280000000000000005145145145145145145140000000000000008a28a28a28a28a28a28a2000000000000000451451451451451451451000000000000000647ac8f591eb23d647ac8000000000000000b23d647ac8f591eb23d64000000000000000591eb23d647ac8f591eb2000000000000000c8f591eb23d647ac8f591000000000000000b972e5cb972e5cb972e5c000000000000000e5cb972e5cb972e5cb97200000000000000072e5cb972e5cb972e5cb9000000000000000e9d3a74e9d3a74e9d3a7400000000000000074e9d3a74e9d3a74e9d3a000000000000000d3a74e9d3a74e9d3a74e9
+
+set_option maxRecDepth 5000 in
+private theorem pivot_bounds : ∀ v ∈ pivotPlan.zipIdx,
+    v.1.1 < 84 ∧ v.2 < 84 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+namespace PackedBasis
+
+open CRTBarrel20.Packed20
+
+/-- One spill followed by the three CNOTs of the original swap, if required. -/
+private def steps (n : Nat) (v : (Nat × Nat) × Nat) : List ((Nat × Nat) × Nat) :=
+  let ((j,mask),i) := v
+  [((n,mask),i)] ++ (if i = j then [] else [((i,0),j),((j,0),i),((i,0),j)])
+
+private def emit (n : Nat) (v : (Nat × Nat) × Nat) : List (Wire × Wire) :=
+  (CRTBarrel20.elimStep n v.2 v.1).reverse
+
+private def rowSteps : List ((Nat × Nat) × Nat) := pivotPlan.zipIdx.reverse.flatMap (steps 84)
+
+private theorem emit_pivot (j mask i : Nat) (hj : j < 84) (hi : i < 84) :
+    (steps 84 ((j,mask),i)).flatMap (emit 84) = (reversePivot (j,mask) i).reverse := by
+  by_cases h : i = j
+  · subst j
+    simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected]
+  · simp [steps,emit,reversePivot,CRTBarrel20.elimStep,CRTBarrel20.selected,
+      h,Ne.symm h,hj,hi,List.append_assoc]
+
+private theorem emit_rows : rowSteps.flatMap (emit 84) = outerOps := by
+  have fold (xs : List ((Nat × Nat) × Nat))
+      (bounds : ∀ v ∈ xs, v.1.1 < 84 ∧ v.2 < 84) :
+      (xs.flatMap (steps 84)).flatMap (emit 84) =
+        xs.flatMap (fun (row,i) => (reversePivot row i).reverse) := by
+    induction xs with
+    | nil => rfl
+    | cons v tail ih =>
+      obtain ⟨⟨j,mask⟩,i⟩ := v
+      obtain ⟨hj,hi⟩ := bounds ((j,mask),i) (List.mem_cons_self ..)
+      rw [List.flatMap_cons,List.flatMap_append,List.flatMap_cons,emit_pivot j mask i hj hi]
+      rw [ih (fun v hv => bounds v (List.mem_cons_of_mem _ hv))]
+  unfold rowSteps outerOps
+  rw [fold _ (fun v hv => ⟨(pivot_bounds v (List.mem_reverse.mp hv)).1,
+    (pivot_bounds v (List.mem_reverse.mp hv)).2.1⟩)]
+  exact (List.reverse_flatMap ..).symm
+
+/-- The grouped packed reflection, generalized from a zip-indexed plan to exact row steps. -/
+private theorem coordinates_steps (n : Nat) (xs : List ((Nat × Nat) × Nat))
+    (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false)
+    (target : CRTBarrel20.Matrix20.Rows) (size : target.size = n) (narrow : n ≤ width) (word : Nat)
+    (receipt : xs.foldl (quickStep n) (identityWord width n) = word)
+    (rows : ∀ j : Fin n, digit width word j.val = CRTBarrel20.Matrix20.read target j.val) :
+    CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n) = target := by
+  have carry (xs : List ((Nat × Nat) × Nat)) (x : Nat) (r : CRTBarrel20.Matrix20.Rows)
+      (size : r.size = n) (agree : Matches x r)
+      (good : ∀ v ∈ xs, v.2 < n ∧ v.1.2.testBit v.2 = false) :
+      Matches (xs.foldl (quickStep n) x) (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) r) := by
+    induction xs generalizing x r with
+    | nil => exact agree
+    | cons v xs ih =>
+      obtain ⟨⟨donor,mask⟩,i⟩ := v
+      have use := good ((donor,mask),i) (by simp)
+      rw [List.foldl_cons,List.flatMap_cons]
+      unfold CRTBarrel20.Matrix20.applyOps
+      rw [List.foldl_append]
+      change Matches (xs.foldl _ _) (CRTBarrel20.Matrix20.applyOps _
+        (CRTBarrel20.Matrix20.applyOps (CRTBarrel20.elimStep n i (donor,mask)).reverse r))
+      rw [CRTBarrel20.Packed20.backward_row n i donor mask r size use.2]
+      apply ih _ _ ((pivotBack_size ..).trans size) _
+        (fun v hv => good v (List.mem_cons_of_mem _ hv))
+      rw [CRTBarrel20.Packed20.quickStep_eq]
+      exact matches_step n x r ((donor,mask),i) size use.1 agree
+  have base : Matches (identityWord width n) (CRTBarrel20.Matrix20.units n) := by
+    intro q hq
+    have sq : q < n := by simpa [CRTBarrel20.Matrix20.units] using hq
+    simpa [CRTBarrel20.Matrix20.units,CRTBarrel20.Matrix20.read,sq,identityWord] using
+      (digit_units width n 0 q (by simpa using narrow) sq).symm
+  have matched := carry xs (identityWord width n) (CRTBarrel20.Matrix20.units n)
+    (by simp [CRTBarrel20.Matrix20.units]) base good
+  rw [receipt] at matched
+  have os : (CRTBarrel20.Matrix20.applyOps (xs.flatMap (emit n)) (CRTBarrel20.Matrix20.units n)).size = n := by
+    simp [CRTBarrel20.Matrix20.units]
+  apply Array.ext (os.trans size.symm)
+  intro q ho ht
+  have eq := (matched q ho).trans (rows ⟨q,os ▸ ho⟩)
+  simpa only [CRTBarrel20.Matrix20.read,Array.getElem?_eq_getElem ho,Array.getElem?_eq_getElem ht,
+    Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem step_shape : ∀ v ∈ rowSteps, v.2 < 84 ∧ v.1.2.testBit v.2 = false := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_receipt : rowSteps.foldl (quickStep 84) (identityWord width 84) = packedRowsWord := by
+  decide +kernel
+
+set_option maxRecDepth 8000 in
+private theorem packed_digits : ∀ q : Fin 84,
+    digit width packedRowsWord q.val = CRTBarrel20.Matrix20.read outerRows q.val := by
+  decide +kernel
+
+end PackedBasis
+
+/-- Exact coordinates of the original swap and spill basis tape. -/
+theorem basis_certificate : BasisCertificate := by
+  have proved := PackedBasis.coordinates_steps 84 PackedBasis.rowSteps PackedBasis.step_shape outerRows
+    (by rfl) (by decide) packedRowsWord PackedBasis.packed_receipt PackedBasis.packed_digits
+  rw [PackedBasis.emit_rows] at proved
+  exact proved
+
+namespace ScalarPremise
+
+open CRTBarrel20.Packed20
+
+private theorem outer_size : outerRows.size = 84 := rfl
+
+private theorem coded_size (slot : Fin 22) : (coded slot 0).size = 84 := by
+  simp [coded,outer_size]
+
+private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 84 := by
+  simp [scalarFrame]
+
+private theorem coded_read (slot : Fin 22) (q : Nat) (low : q < 84) :
+    read (coded slot 0) q = clip slot 0 q := by
+  simp [coded,clip,Matrix20.read,outer_size,low]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (low : q < 84) :
+    read (scalarFrame slot) q = clip slot (if q < 81 then shift slot else 0) q := by
+  simp [scalarFrame,Matrix20.read,low]
+
+set_option maxRecDepth 5000 in
+private theorem prefix_table : residueTable 84 outerRows 0 factors = true := by
+  decide +kernel
+
+private theorem extent : extent20 factors = 81 := by decide +kernel
+
+private theorem scalar_direction (slot : Fin 22) (mirror : Bool) :
+    let input := if mirror then scalarFrame slot else coded slot 0
+    let output := if mirror then coded slot 0 else scalarFrame slot
+    componentRows20 mirror slot.val 0 factors input = output := by
+  intro input output
+  have inputSize : input.size = 84 := by cases mirror <;> simp [input,coded_size,scalar_size]
+  have outputSize : output.size = 84 := by cases mirror <;> simp [output,coded_size,scalar_size]
+  apply componentRows_split 84 81 (dim slot) slot mirror outerRows input output outer_size
+    inputSize outputSize (by decide) (Nat.le_refl _) (by decide) factors extent prefix_table
+  · intro q hq
+    cases mirror
+    · simpa [input,entryShift] using coded_read slot q hq
+    · exact scalar_read slot q hq
+  · intro q hq
+    cases mirror
+    · exact scalar_read slot q hq
+    · simpa [output,exitShift] using coded_read slot q hq
+
+theorem scalar_action : ScalarAction := fun slot =>
+  ⟨scalar_direction slot false,scalar_direction slot true⟩
+
+end ScalarPremise
+
+theorem basis_bounds : BasisBounds := by
+  intro pair hp
+  obtain ⟨⟨⟨j,mask⟩,i⟩,listed,step⟩ := List.mem_flatMap.mp (List.mem_reverse.mp hp)
+  have ⟨hj,hi,clear⟩ := pivot_bounds _ listed
+  change pair ∈ (if j = i then [] else [(i,j),(j,i),(i,j)]) ++
+    (selected 84 mask).map (fun q => (i,q)) at step
+  rcases List.mem_append.mp step with swap | spill
+  · by_cases same : j = i
+    · simp [same] at swap
+    · simp only [if_neg same, List.mem_cons, List.not_mem_nil, or_false] at swap
+      rcases swap with rfl | rfl | rfl
+      · exact ⟨hi,hj,Ne.symm same⟩
+      · exact ⟨hj,hi,same⟩
+      · exact ⟨hi,hj,Ne.symm same⟩
+  · obtain ⟨q,hq,rfl⟩ := List.mem_map.mp spill
+    change q ∈ (List.range 84).filter mask.testBit at hq
+    obtain ⟨within,bit⟩ := List.mem_filter.mp hq
+    refine ⟨hi,List.mem_range.mp within,?_⟩
+    intro eq
+    change i = q at eq
+    subst q
+    change mask.testBit i = false at clear
+    simp [clear] at bit
+
+private theorem append_scope {p q : Program}
+    (hp : wires p ⊆ Finset.range 115) (hq : wires q ⊆ Finset.range 115) :
+    wires (p ++ q) ⊆ Finset.range 115 := by
+  rw [wires_append]
+  exact Finset.union_subset hp hq
+
+private theorem cnot_scope (pairs : List (Wire × Wire))
+    (bounds : ∀ pair ∈ pairs, pair.1 < 84 ∧ pair.2 < 84 ∧ pair.1 ≠ pair.2) :
+    wires (cnotProgram pairs) ⊆ Finset.range 115 := by
+  have fits : Fits (· < 115) (cnotProgram pairs) := by
+    intro gate hg
+    obtain ⟨⟨a,b⟩,hpair,rfl⟩ := List.mem_map.mp hg
+    obtain ⟨ha,hb,sep⟩ := bounds (a,b) hpair
+    refine ⟨sep,?_⟩
+    intro q hq
+    simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl | rfl
+    · exact Nat.lt_trans ha (by decide : 84 < 115)
+    · exact Nat.lt_trans hb (by decide : 84 < 115)
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem basis_scope : wires (cnotProgram outerOps) ⊆ Finset.range 115 :=
+  cnot_scope outerOps basis_bounds
+
+private theorem factors_used : ∀ pair ∈ factors, UsedField20 pair.1 := by
+  intro pair hp
+  unfold UsedField20
+  simp only [factors, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+
+private theorem scalar_scope (mirror : Bool) : wires (components20 84 mirror 0 factors) ⊆ Finset.range 115 := by
+  have fits := CRTBarrel20.fitsComponents 84 mirror 0 factors (by decide +kernel) factors_used
+  exact fun q hq => Finset.mem_range.mpr (CRTBarrel20.support fits q hq)
+
+private theorem shift_scope (mirror : Bool) : wires (shiftProgram mirror) ⊆ Finset.range 115 := by
+  cases mirror <;> decide +kernel
+
+set_option maxRecDepth 7000 in
+private theorem correction_scope_forward : wires (corrections false) ⊆ Finset.range 115 := by
+  decide +kernel
+
+private theorem correction_scope (mirror : Bool) : wires (corrections mirror) ⊆ Finset.range 115 := by
+  cases mirror
+  · exact correction_scope_forward
+  · simpa only [← corrections_reverse, wires_reverse] using correction_scope_forward
+
+/-- Scope of both emitted gate orders, including the scalar correction wires. -/
+theorem logical_scope (mirror : Bool) : Scope mirror := by
+  have rev : wires (cnotProgram outerOps).reverse ⊆ Finset.range 115 := by
+    rw [wires_reverse]
+    exact basis_scope
+  have body : wires (middle mirror) ⊆ Finset.range 115 := by
+    cases mirror
+    · exact append_scope (scalar_scope false) (append_scope (shift_scope false) (correction_scope false))
+    · exact append_scope (correction_scope true) (append_scope (shift_scope true) (scalar_scope true))
+  change wires ((cnotProgram outerOps ++ middle mirror) ++ (cnotProgram outerOps).reverse) ⊆ Finset.range 115
+  exact append_scope (append_scope basis_scope body) rev
+
+private def parityRow (i : Fin 3) : Nat := [7253554917687775048237057,14507109835375550096474114,9671406556917033397649413][i.val]?.getD 0
+
+private def raised (slot : Fin 22) (i : Nat) : Nat :=
+  if shift slot ≤ i then clip slot 0 (81 + (i - shift slot)) else 0
+
+private def layer (slot : Fin 22) (done : Nat) : Rows :=
+  Array.ofFn (fun q : Fin 84 =>
+    if q.val < 81 ∨ q.val - 81 < done then clip slot (shift slot) q.val
+    else raised slot (q.val - 81))
+
+private theorem rows_size : outerRows.size = 84 := rfl
+@[simp] private theorem coded_size (slot : Fin 22) (k : Nat) : (coded slot k).size = 84 := by
+  simp [coded, rows_size]
+@[simp] private theorem scalar_size (slot : Fin 22) : (scalarFrame slot).size = 84 := by
+  simp [scalarFrame]
+@[simp] private theorem layer_size (slot : Fin 22) (done : Nat) : (layer slot done).size = 84 := by
+  simp [layer]
+
+private theorem coded_read (slot : Fin 22) (k q : Nat) (h : q < 84) :
+    read (coded slot k) q = clip slot k q := by
+  simp [coded, clip, Matrix20.read, rows_size, h]
+
+private theorem scalar_read (slot : Fin 22) (q : Nat) (h : q < 84) :
+    read (scalarFrame slot) q = clip slot (if q < 81 then shift slot else 0) q := by
+  simp [scalarFrame, Matrix20.read, h]
+
+private theorem layer_read (slot : Fin 22) (done q : Nat) (h : q < 84) :
+    read (layer slot done) q =
+      if q < 81 ∨ q - 81 < done then clip slot (shift slot) q else raised slot (q - 81) := by
+  simp [layer, Matrix20.read, h]
+
+private theorem layer_done (slot : Fin 22) : layer slot 3 = coded slot (shift slot) := by
+  apply Array.ext (by simp)
+  intro q hq hc
+  have inBank : q < 84 := by simpa only [layer_size] using hq
+  have done : q < 81 ∨ q - 81 < 3 := Or.inr (by omega)
+  have eq := (layer_read slot 3 q inBank).trans (by simp only [if_pos done]; exact (coded_read slot _ q inBank).symm)
+  simpa only [Matrix20.read, Array.getElem?_eq_getElem hq, Array.getElem?_eq_getElem hc, Option.getD_some] using eq
+
+set_option maxRecDepth 5000 in
+private theorem parity_certificate : ∀ i : Fin 3,
+    (taps i).foldr (fun q z => read outerRows q ^^^ z) 0 = parityRow i := by
+  decide +kernel
+
+set_option maxRecDepth 5000 in
+private theorem quotient_certificate : ∀ (slot : Fin 22) (i : Fin 3),
+    (3 - shift slot ≤ i.val → clip slot 0 (81 + i.val) = 0) ∧
+    clip slot (shift slot) (81 + i.val) = raised slot i.val ^^^
+      (if i.val < shift slot then clipShift (dim slot) (shift slot) (parityRow i) else 0) := by
+  decide +kernel
+
+private theorem flags (rs : Rows) (sz : rs.size = 84) (slot : Fin 22)
+    (x : Nat → Bool) (ph : Bool) : Flags slot (frame20 rs x (dim slot) slot.val ph) := by
+  intro q hq
+  simp [frame20, Matrix20.basis, sz, Nat.not_lt_of_ge hq]
+
+private theorem taps_low (i : Fin 3) (q : Wire) (mem : q ∈ taps i) : q < 81 := by
+  change q ∈ (List.range 81).filter (fun q => (mask i).testBit q) at mem
+  exact List.mem_range.mp (List.mem_filter.mp mem).1
+
+private theorem layer_parity (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (done : Nat) (i : Fin 3) :
+    xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis (taps i) =
+      rowValue x (clipShift (dim slot) (shift slot) (parityRow i)) (dim slot) := by
+  have eval (xs : List Wire) (low : ∀ q ∈ xs, q < 81) :
+      xorAt (frame20 (layer slot done) x (dim slot) slot.val ph).basis xs =
+        rowValue x (clipShift (dim slot) (shift slot) (xs.foldr (fun q z => read outerRows q ^^^ z) 0)) (dim slot) := by
+    induction xs with
+    | nil => simp [xorAt, clip_zero, rowValue_zero]
+    | cons q qs ih =>
+      have hlow : q < (81 : Nat) := low q (by simp)
+      have hbank : q < (84 : Nat) := Nat.lt_trans hlow (by decide : 81 < 84)
+      rw [xorAt, List.foldr_cons, clip_xor, rowValue_xor, ih (fun r hr => low r (List.mem_cons_of_mem _ hr))]
+      simp only [frame20, Matrix20.basis, layer_size, if_pos hbank, layer_read slot done q hbank,
+        if_pos (Or.inl hlow)]
+  exact (eval (taps i) (taps_low i)).trans
+    (congrArg (fun z => rowValue x (clipShift (dim slot) (shift slot) z) (dim slot)) (parity_certificate i))
+
+private theorem adjacent_layers (q i : Nat) (apart : q ≠ 81 + i) :
+    (q < 81 ∨ q - 81 < i) ↔ (q < 81 ∨ q - 81 < i + 1) := by
+  omega
+
+private theorem layer_step (mirror : Bool) (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (if mirror then i.val + 1 else i.val)) x (dim slot) slot.val ph) =
+      frame20 (layer slot (if mirror then i.val else i.val + 1)) x (dim slot) slot.val ph := by
+  let current := if mirror then i.val + 1 else i.val
+  let next := if mirror then i.val else i.val + 1
+  have target : dest i = 81 + i.val := rfl
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases hit : q = dest i
+    · subst q
+      have bank : dest i < 84 := Nat.add_lt_add_left i.isLt 81
+      have low : ¬ dest i < 81 := Nat.not_lt_of_ge (Nat.le_add_right 81 i.val)
+      have index : dest i - 81 = i.val := Nat.add_sub_cancel_left 81 i.val
+      have bit (done : Nat) : (frame20 (layer slot done) x (dim slot) slot.val ph).basis (dest i) =
+          rowValue x (if i.val < done then clip slot (shift slot) (dest i) else raised slot i.val) (dim slot) := by
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot done _ bank, low,
+          false_or, index]
+      have row := (quotient_certificate slot i).2
+      change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ (dest i) =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis (dest i)
+      rw [writeBit, Function.update_self, layer_parity, bit current, bit next, target, row]
+      by_cases active : i.val < shift slot
+      · cases mirror <;>
+          simp [current, next, active, rowValue_xor]
+      · cases mirror <;>
+          simp [current, next, active]
+    · change writeBit (frame20 (layer slot current) x (dim slot) slot.val ph).basis (dest i) _ q =
+        (frame20 (layer slot next) x (dim slot) slot.val ph).basis q
+      rw [writeBit, Function.update_of_ne hit]
+      by_cases bank : q < 84
+      · have apart : q ≠ 81 + i.val := fun eq => hit (eq.trans target.symm)
+        have adjacent := adjacent_layers q i.val apart
+        have same : (q < 81 ∨ q - 81 < current) ↔ (q < 81 ∨ q - 81 < next) := by
+          cases mirror
+          · exact adjacent
+          · exact adjacent.symm
+        simp only [frame20, Matrix20.basis, layer_size, if_pos bank, layer_read slot current q bank,
+          layer_read slot next q bank, same]
+      · simp only [frame20, Matrix20.basis, layer_size, if_neg bank]
+
+private theorem layer_step_forward (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot i.val) x (dim slot) slot.val ph) =
+      frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph :=
+  layer_step false slot i x ph
+
+private theorem layer_step_inverse (slot : Fin 22) (i : Fin 3) (x : Nat → Bool) (ph : Bool) :
+    corrected slot i (frame20 (layer slot (i.val + 1)) x (dim slot) slot.val ph) =
+      frame20 (layer slot i.val) x (dim slot) slot.val ph :=
+  layer_step true slot i x ph
+
+private theorem correction_forward (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections false) t (frame20 (layer slot 0) x (dim slot) slot.val ph) =
+      frame20 (coded slot (shift slot)) x (dim slot) slot.val ph := by
+  rw [corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨2, by decide⟩ (corrected slot ⟨1, by decide⟩
+    (corrected slot ⟨0, by decide⟩ _)) = _
+  rw [layer_step_forward slot ⟨0, by decide⟩ x ph, layer_step_forward slot ⟨1, by decide⟩ x ph,
+    layer_step_forward slot ⟨2, by decide⟩ x ph, layer_done]
+
+private theorem correction_inverse (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (corrections true) t (frame20 (coded slot (shift slot)) x (dim slot) slot.val ph) =
+      frame20 (layer slot 0) x (dim slot) slot.val ph := by
+  rw [← layer_done, corrections_run _ _ _ _ (flags _ (layer_size ..) _ _ _)]
+  change corrected slot ⟨0, by decide⟩ (corrected slot ⟨1, by decide⟩
+    (corrected slot ⟨2, by decide⟩ _)) = _
+  rw [layer_step_inverse slot ⟨2, by decide⟩ x ph, layer_step_inverse slot ⟨1, by decide⟩ x ph,
+    layer_step_inverse slot ⟨0, by decide⟩ x ph]
+
+private def quotientWord (slot : Fin 22) (x : Nat → Bool) : Fin 16 :=
+  ⟨fieldWord (3 - shift slot) (fun i => rowValue x (clip slot 0 (81 + i)) (dim slot)),
+    lt_of_lt_of_le (fieldWord_small ..) (by
+      simpa using Nat.pow_le_pow_right (by decide : 0 < 2) (show 3 - shift slot ≤ 4 by omega))⟩
+
+private theorem word_small (slot : Fin 22) (x : Nat → Bool) :
+    (quotientWord slot x).val < 2 ^ (3 - shift slot) :=
+  fieldWord_small ..
+
+private theorem word_bit (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 3) :
+    (quotientWord slot x).val.testBit i = rowValue x (clip slot 0 (81 + i)) (dim slot) := by
+  by_cases low : i < 3 - shift slot
+  · exact fieldWord_bit _ _ _ low
+  · have high : 3 - shift slot ≤ i := Nat.le_of_not_lt low
+    rw [Nat.testBit_lt_two_pow (lt_of_lt_of_le (word_small slot x)
+      (Nat.pow_le_pow_right (by decide : 0 < 2) high)), (quotient_certificate slot ⟨i,hi⟩).1 high]
+    exact (rowValue_zero ..).symm
+
+private theorem word_raised (slot : Fin 22) (x : Nat → Bool) (i : Nat) (hi : i < 3) :
+    ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val).testBit i =
+      rowValue x (raised slot i) (dim slot) := by
+  have uncapped : ((quotientWord slot x).val <<< (LateQuotientShift.capShift (shift slot)).val) =
+      (quotientWord slot x).val <<< shift slot := by
+    by_cases within : shift slot ≤ 4
+    · simp [LateQuotientShift.capShift, Nat.min_eq_left within]
+    · have z : 3 - shift slot = 0 := by omega
+      have small := word_small slot x
+      rw [z, Nat.pow_zero] at small
+      rw [show (quotientWord slot x).val = 0 by omega]
+      simp
+  rw [uncapped, Nat.testBit_shiftLeft]
+  by_cases moved : shift slot ≤ i
+  · simp only [raised, moved, decide_true, Bool.true_and]
+    exact word_bit slot x _ (by omega)
+  · simp [raised, moved, rowValue_zero]
+
+private theorem shiftPort_low : ∀ i : Fin 3, shiftPort i.val = 81 + i.val := by decide
+
+private theorem selector_projection : ∀ (slot : Fin 22) (q : Fin 6), 3 ≤ q.val →
+    84 ≤ shiftPort q.val ∧
+    flags20 84 slot.val (shiftPort q.val) =
+      LateQuotientShift.admittedBit false false (LateQuotientShift.capShift (shift slot)) 0 q.val := by
+  decide +kernel
+
+private theorem quotient_admission (shifted : Bool) (slot : Fin 22) (rs : Rows) (sz : rs.size = 84)
+    (x : Nat → Bool) (ph : Bool)
+    (qRows : ∀ i : Fin 3, read rs (81 + i.val) =
+      if shifted then raised slot i.val else clip slot 0 (81 + i.val)) :
+    QuotientFrame shifted slot (quotientWord slot x) (frame20 rs x (dim slot) slot.val ph) := by
+  have small : (quotientWord slot x).val <
+      2 ^ (LateQuotientShift.quotientWidth false - (LateQuotientShift.capShift (shift slot)).val) := by
+    rw [LateQuotientShift.capShift_width]
+    exact word_small ..
+  apply (LateQuotientShift.frame_iff false shifted shiftPort _ _ _ small).mpr
+  intro q hq
+  have bound : q < 6 := Finset.mem_range.mp hq
+  by_cases low : q < 3
+  · have bank : 81 + q < 84 := Nat.add_lt_add_left low 81
+    rw [shiftPort_low ⟨q,low⟩]
+    simp only [frame20, Matrix20.basis, sz, if_pos bank, qRows ⟨q,low⟩,
+      LateQuotientShift.admittedBit, LateQuotientShift.quotientWidth, Bool.false_eq_true, if_false,
+      if_pos low]
+    cases shifted
+    · exact (word_bit slot x q low).symm
+    · exact (word_raised slot x q low).symm
+  · have projection := selector_projection slot ⟨q,bound⟩ (Nat.le_of_not_lt low)
+    have independent : LateQuotientShift.admittedBit false shifted
+        (LateQuotientShift.capShift (shift slot)) (quotientWord slot x) q =
+        LateQuotientShift.admittedBit false false (LateQuotientShift.capShift (shift slot)) 0 q := by
+      simp only [LateQuotientShift.admittedBit, LateQuotientShift.quotientWidth,
+        Bool.false_eq_true, if_false, if_neg low]
+    exact (flags rs sz slot x ph (shiftPort q) projection.1).trans
+      (projection.2.trans independent.symm)
+
+private theorem shift_pair (slot : Fin 22) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    let left := frame20 (scalarFrame slot) x (dim slot) slot.val ph
+    let right := frame20 (layer slot 0) x (dim slot) slot.val ph
+    run (shiftProgram false) t left = right ∧ run (shiftProgram true) t right = left := by
+  intro left right
+  have l : QuotientFrame false slot (quotientWord slot x) left := by
+    apply quotient_admission false slot _ (scalar_size slot)
+    intro i
+    change read (scalarFrame slot) (81 + i.val) = clip slot 0 (81 + i.val)
+    rw [scalar_read slot _ (Nat.add_lt_add_left i.isLt 81),
+      if_neg (Nat.not_lt_of_ge (Nat.le_add_right 81 i.val))]
+  have r : QuotientFrame true slot (quotientWord slot x) right := by
+    apply quotient_admission true slot _ (layer_size slot 0)
+    intro i
+    change read (layer slot 0) (81 + i.val) = raised slot i.val
+    have non : ¬ (81 + i.val < 81 ∨ 81 + i.val - 81 < 0) := by omega
+    rw [layer_read slot 0 _ (Nat.add_lt_add_left i.isLt 81), if_neg non, Nat.add_sub_cancel_left]
+  have agree : ∀ q, q ∉ (LateQuotientShift.ports false).image shiftPort → right.basis q = left.basis q := by
+    intro q free
+    by_cases known : q < 84
+    · have below : q < 81 := by
+        by_contra! above
+        have eq : 81 + (q - 81) = q := Nat.add_sub_of_le above
+        have within : 81 + (q - 81) < 81 + 3 := eq.symm ▸ known
+        have high : q - 81 < 3 := Nat.lt_of_add_lt_add_left within
+        have port : q - 81 ∈ LateQuotientShift.ports false :=
+          Finset.mem_range.mpr (Nat.lt_trans high (by decide : 3 < 6))
+        exact free (Finset.mem_image.mpr ⟨q - 81, port, (shiftPort_low ⟨q - 81,high⟩).trans eq⟩)
+      simp only [right, left, frame20, Matrix20.basis, layer_size, scalar_size, if_pos known,
+        layer_read slot 0 q known, scalar_read slot q known, if_pos below, if_pos (Or.inl below)]
+    · have ge := Nat.le_of_not_lt known
+      exact (flags _ (layer_size ..) _ _ _ q ge).trans ((flags _ (scalar_size ..) _ _ _ q ge).symm)
+  have samePhase : right.phase = left.phase := by
+    simp only [right, left, frame20]
+  have forwardOut : QuotientFrame (!false) slot (quotientWord slot x) right := by
+    change QuotientFrame true slot (quotientWord slot x) right
+    exact r
+  have inverseOut : QuotientFrame (!true) slot (quotientWord slot x) left := by
+    change QuotientFrame false slot (quotientWord slot x) left
+    exact l
+  have forward : run (shiftProgram false) t left = right :=
+    shift_eq_of_frames false slot (quotientWord slot x) left right t l forwardOut samePhase agree
+  have inverse : run (shiftProgram true) t right = left :=
+    shift_eq_of_frames true slot (quotientWord slot x) right left t r inverseOut samePhase.symm
+      (fun q free => (agree q free).symm)
+  exact ⟨forward,inverse⟩
+
+private theorem middle_run (scalar : ScalarAction) (slot : Fin 22) (mirror : Bool)
+    (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (middle mirror) t (frame20 (coded slot (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (coded slot (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  cases mirror
+  · simp only [middle, Bool.false_eq_true, if_false, entryShift, exitShift, run_append]
+    rw [scalar_run _ (coded_size ..), (scalar slot).1, (shift_pair slot x ph _).1,
+      correction_forward]
+  · simp only [middle, if_true, entryShift, exitShift, run_append]
+    rw [correction_inverse, (shift_pair slot x ph _).2, scalar_run _ (scalar_size _),
+      (scalar slot).2]
+
+private theorem encode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps) t (frame20 (plain20 84 (dim slot) k) x (dim slot) slot.val ph) =
+      frame20 (coded slot k) x (dim slot) slot.val ph := by
+  have mapped : applyOps outerOps (plain20 84 (dim slot) k) = coded slot k := by
+    rw [plain20, apply_map outerOps (clipShift (dim slot) k) (clip_zero (dim slot) k)
+      (clip_xor (dim slot) k) (units 84), coordinates, coded]
+  have step := run_ops outerOps (plain20 84 (dim slot) k) x (dim slot) (flags20 84 slot.val) ph t
+    (fun pair hp => by simpa only [plain20_size] using ⟨(bounds pair hp).1,(bounds pair hp).2.1⟩)
+  rw [mapped] at step
+  simpa only [frame20, plain20_size, coded_size] using step
+
+private theorem decode_run (coordinates : BasisCertificate) (bounds : BasisBounds) (slot : Fin 22)
+    (k : Nat) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (cnotProgram outerOps).reverse t (frame20 (coded slot k) x (dim slot) slot.val ph) =
+      frame20 (plain20 84 (dim slot) k) x (dim slot) slot.val ph := by
+  have step := reverse_cnots outerOps (fun pair hp => (bounds pair hp).2.2)
+    (frame20 (plain20 84 (dim slot) k) x (dim slot) slot.val ph) [] t
+  rw [show cnotProgram outerOps.reverse = (cnotProgram outerOps).reverse from List.map_reverse,
+    encode_run coordinates bounds] at step
+  exact step
+
+/-- All measurement outcomes are allowed. The outer basis is the exact original 3,386-gate model. -/
+theorem logical_run (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (slot : Fin 22) (mirror : Bool) (x : Nat → Bool) (ph : Bool) (t : List Bool) :
+    run (logical mirror) t
+      (frame20 (plain20 84 (dim slot) (entryShift mirror slot.val)) x (dim slot) slot.val ph) =
+      frame20 (plain20 84 (dim slot) (exitShift mirror slot.val)) x (dim slot) slot.val ph := by
+  rw [logical, run_append, run_append, encode_run coordinates bounds, middle_run scalar,
+    decode_run coordinates bounds]
+
+private theorem bank_place : ∀ i : Fin 84, Shadow20.place20 325 i.val = Shadow20.bankW20 325 i.val := by
+  decide +kernel
+
+private theorem tag_place : ∀ i : Fin 21, Shadow20.place20 325 (84 + i.val) = Shadow20.tagsP20.getD i.val 0 := by
+  decide +kernel
+
+private theorem scratch_place : ∀ i : Fin 10,
+    Shadow20.place20 325 (105 + i.val) = Shadow20.poolW20 325 (22 + i.val) := by decide +kernel
+
+/-- Transport a logical program over the fixed bank, selector, and scratch placement. -/
+private theorem physical_result_program (program : Program) (mirror : Bool)
+    (scope : wires program ⊆ Finset.range 115) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s)
+    (action : run program t
+      (frame20 (plain20 84 (dim slot) (entryShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) =
+      frame20 (plain20 84 (dim slot) (exitShift mirror slot.val)) v.testBit (dim slot) slot.val s.phase) :
+    HighBankBarrel.Result (Shadow20.bankW20 325) 84 (v <<< exitShift mirror slot.val) s
+      (run (renameProgram (Shadow20.place20 325) program) t s) := by
+  let f := Shadow20.place20 325
+  let pool : Finset Wire := Finset.range 115
+  have inj : ∀ a ∈ pool, ∀ b ∈ pool, f a = f b → a = b :=
+    fun a ha b hb => placement_inj a b (Finset.mem_range.mp ha) (Finset.mem_range.mp hb)
+  have bankBit (k i : Nat) (ik : i < 84) :
+      (frame20 (plain20 84 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis i = (v <<< k).testBit i := by
+    simpa only [frame20, Matrix20.basis, plain20_size, if_pos ik] using plain20_bits 84 _ k v i h.small ik
+  have other (k q : Nat) (above : 84 ≤ q) (high : q < 115) :
+      (frame20 (plain20 84 (dim slot) k) v.testBit (dim slot) slot.val s.phase).basis q = s.basis (f q) := by
+    simp only [frame20, Matrix20.basis, plain20_size, if_neg (Nat.not_lt_of_ge above)]
+    by_cases tag : q < 105
+    · have pos : q - 84 < 21 := by omega
+      have hf : f q = Shadow20.tagsP20.getD (q - 84) 0 := by
+        simpa only [f, show 84 + (q - 84) = q by omega] using tag_place ⟨q - 84,pos⟩
+      rw [hf, h.tags _ pos]
+      simp [flags20, above, show q < 84 + 21 by exact tag]
+    · have pos : q - 105 < 10 := by omega
+      have hf : f q = Shadow20.poolW20 325 (22 + (q - 105)) := by
+        simpa only [f, show 105 + (q - 105) = q by omega] using scratch_place ⟨q - 105,pos⟩
+      rw [hf, h.scratch _ pos]
+      simp [flags20, show ¬ q < 84 + 21 from tag]
+  let before := entryShift mirror slot.val
+  let after := exitShift mirror slot.val
+  let beforeFrame := frame20 (plain20 84 (dim slot) before) v.testBit (dim slot) slot.val s.phase
+  let afterFrame := frame20 (plain20 84 (dim slot) after) v.testBit (dim slot) slot.val s.phase
+  let out := run (renameProgram f program) t s
+  have placeBank (q : Nat) (low : q < 84) : f q = Shadow20.bankW20 325 q := bank_place ⟨q,low⟩
+  have agrees : ∀ q ∈ pool, beforeFrame.basis q = s.basis (f q) := by
+    intro q hq
+    by_cases low : q < 84
+    · rw [placeBank q low]
+      have logicalBit : beforeFrame.basis q = (v <<< before).testBit q := bankBit before q low
+      exact Eq.trans logicalBit (h.bank q low).symm
+    · exact other before q (Nat.le_of_not_lt low) (Finset.mem_range.mp hq)
+  have moved : out.phase = afterFrame.phase ∧ ∀ q ∈ pool, out.basis (f q) = afterFrame.basis q := by
+    have result := run_rename_pool f pool inj program scope t beforeFrame s rfl agrees
+    have afterAction : run program t beforeFrame = afterFrame := action
+    rw [afterAction] at result
+    exact result
+  change HighBankBarrel.Result (Shadow20.bankW20 325) 84 (v <<< after) s out
+  have phase : afterFrame.phase = s.phase := rfl
+  refine ⟨?_,Eq.trans moved.1 phase,?_⟩
+  · intro i low
+    have within : i ∈ pool := Finset.mem_range.mpr (Nat.lt_trans low (by decide : 84 < 115))
+    have bit : out.basis (f i) = (v <<< after).testBit i :=
+      Eq.trans (moved.2 i within) (bankBit after i low)
+    rwa [placeBank i low] at bit
+  · intro q free
+    by_cases hit : q ∈ pool.image f
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hit
+      have above : 84 ≤ a := by
+        by_contra! low
+        exact free a low (placeBank a low)
+      have placed : out.basis (f a) = afterFrame.basis a := moved.2 a ha
+      have restored : afterFrame.basis a = s.basis (f a) := other after a above (Finset.mem_range.mp ha)
+      exact Eq.trans placed restored
+    · have preserved : out.basis q = s.basis q :=
+        run_rename_pool_outside f pool program scope t s q hit
+      exact preserved
+
+/-- Exact bank result, phase, and frame for the stock window-325 placement. -/
+theorem physical_result (logicalRun : CoordinateAction) (coordinates : BasisCertificate) (bounds : BasisBounds) (scalar : ScalarAction)
+    (mirror : Bool) (scope : Scope mirror) (slot : Fin 22) (v : Nat) (s : State) (t : List Bool)
+    (h : Admitted mirror slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 325) 84 (v <<< exitShift mirror slot.val) s
+      (run (physical mirror) t s) := by
+  unfold physical
+  exact physical_result_program (logical mirror) mirror scope slot v s t h
+    (logicalRun coordinates bounds scalar slot mirror v.testBit s.phase t)
+
+
+def bounds (mir : Bool) : CRTBarrel20.Count :=
+  if mir then ⟨187, 37, 12892⟩ else ⟨187, 37, 12954⟩
+
+theorem width_at_start : Shadow20.liveW20 325 = 84 := by decide +kernel
+
+private theorem basis_fits : Fits (· < 115) (cnotProgram outerOps) := by
+  intro instr h
+  change instr ∈ outerOps.map (fun (a, b) => Instr.CX a b) at h
+  obtain ⟨⟨a,b⟩, member, rfl⟩ := List.mem_map.mp h
+  obtain ⟨ha, hb, distinct⟩ := basis_bounds (a,b) member
+  refine ⟨distinct, ?_⟩
+  intro q hq
+  simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl <;> (unfold Wire at *; omega)
+
+private theorem shift_fits (mir : Bool) : Fits (· < 115) (shiftProgram mir) := by
+  apply CRTBarrel20.lateResidueFits
+  cases mir <;> decide +kernel
+
+private theorem correction_fits (mir : Bool) : Fits (· < 115) (corrections mir) := by
+  have forward : Fits (· < 115) (corrections false) := by
+    apply CRTBarrel20.lateResidueFits
+    decide +kernel
+  cases mir
+  · exact forward
+  · rw [← corrections_reverse]
+    exact CRTBarrel20.fits_reverse forward
+
+theorem program_fits (mir : Bool) : Fits (· < 115) (logical mir) := by
+  have b := basis_fits
+  have r := CRTBarrel20.fits_reverse b
+  have s := shift_fits mir
+  have c := correction_fits mir
+  have f := CRTBarrel20.fitsComponents 84 mir 0 factors (by decide +kernel) factors_used
+  cases mir
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append f (CRTBarrel20.fits_append s c))) r
+  · exact CRTBarrel20.fits_append
+      (CRTBarrel20.fits_append b (CRTBarrel20.fits_append c (CRTBarrel20.fits_append s f))) r
+
+private theorem shift_cost (mir : Bool) : count (shiftProgram mir) = ⟨2, 0, 10⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem correction_cost (mir : Bool) : count (corrections mir) = ⟨3, 0, 389⟩ := by
+  cases mir <;> decide +kernel
+
+private theorem basis_prices :
+    count (cnotProgram outerOps) = ⟨0, 0, 3386⟩ ∧
+      count (cnotProgram outerOps).reverse = ⟨0, 0, 3386⟩ := by
+  have len : outerOps.length = 3386 := by decide +kernel
+  have padded := congrArg (fun n => (⟨0, 0, n⟩ : CRTBarrel20.Count)) len
+  exact ⟨(CRTBarrel20.count_map_cx Prod.fst Prod.snd outerOps).trans padded,
+    (CRTBarrel20.count_map_cx_rev Prod.fst Prod.snd outerOps).trans padded⟩
+
+
+private theorem append_price {p q : Program} {a b : CRTBarrel20.Count}
+    (hp : count p = a) (hq : count q = b) : count (p ++ q) = cadd a b :=
+  (CRTBarrel20.count_append p q).trans (congrArg₂ cadd hp hq)
+
+attribute [local irreducible] count cnotProgram components20 outerOps in
+theorem costs (mir : Bool) : count (logical mir) = bounds mir := by
+  have b := basis_prices.1
+  have r := basis_prices.2
+  have f := CRTBarrel20.residueFieldPrice 84 mir factors factors_used
+  have s := shift_cost mir
+  have c := correction_cost mir
+  cases mir
+  · unfold logical middle
+    exact (append_price (append_price b (append_price f (append_price s c))) r).trans
+      (by decide +kernel)
+  · unfold logical middle
+    exact (append_price (append_price b (append_price c (append_price s f))) r).trans
+      (by decide +kernel)
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (h : Admitted mir slot v s) :
+    HighBankBarrel.Result (Shadow20.bankW20 325) 84 (v <<< exitShift mir slot.val) s
+      (run (physical mir) tape s) :=
+  physical_result logical_run basis_certificate basis_bounds ScalarPremise.scalar_action
+    mir (logical_scope mir) slot v s tape h
+
+end ECDSAAdd.Entrant.StairPacket.LateResidue325.Caller
+
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed ECDSAAdd.Entrant.IntegerPacket
+open ECDSAAdd.Entrant.StairPacket ECDSAAdd.Entrant.StairPacket.Partial ECDSAAdd.Entrant.StairPacket.GateMirror
+open ECDSAAdd.Baselines ECDSAAdd.Challenge
+
+def wideLogicalAt (s : Nat) (mir : Bool) : Program :=
+  if s = 165 then CRTResidueEarly165.logicalProgram mir
+  else if s = 185 then CRTResidueEarly185.logicalProgram mir
+  else if s = 205 then CRTResidueEarly205.logicalProgram mir
+  else if s = 225 then CRTResidueEarly225.logicalProgram mir
+  else if s = 245 then CRTResidueEarly245.logicalProgram mir
+  else if s = 265 then LateResidue265.Caller.logical mir
+  else if s = 285 then LateResidue285.Caller.logical mir
+  else if s = 305 then LateResidue305.Caller.logical mir
+  else if s = 325 then LateResidue325.Caller.logical mir
+  else CRTBarrel20.logical20 (liveW20 s) mir
+
+def widePriceAt (s : Nat) (mir : Bool) : CRTBarrel20.Count :=
+  if s = 165 then CRTResidueEarly165.bounds mir
+  else if s = 185 then CRTResidueEarly185.bounds mir
+  else if s = 205 then CRTResidueEarly205.bounds mir
+  else if s = 225 then CRTResidueEarly225.bounds mir
+  else if s = 245 then CRTResidueEarly245.bounds mir
+  else if s = 265 then LateResidue265.Caller.bounds mir
+  else if s = 285 then LateResidue285.Caller.bounds mir
+  else if s = 305 then LateResidue305.Caller.bounds mir
+  else if s = 325 then LateResidue325.Caller.bounds mir
+  else CRTBarrel20.listedPrice20 (liveW20 s) mir
+
+def barrel20 (s : Nat) (mir : Bool) : Program := renameProgram (place20 s) (wideLogicalAt s mir)
+
+def barrel20T (s : Nat) (mir : Bool) : Nat := (widePriceAt s mir).t
+def barrel20M (s : Nat) (mir : Bool) : Nat := (widePriceAt s mir).m
+def barrel20Slots (s : Nat) (mir : Bool) : Nat := (widePriceAt s mir).slots
+
+
+
+theorem wideLogical_metrics (j : Fin 9) (mir : Bool) :
+    CRTBarrel20.count (wideLogicalAt (start20 j) mir) = widePriceAt (start20 j) mir := by
+  by_cases h165 : start20 j = 165
+  · simp only [wideLogicalAt, widePriceAt, if_pos h165]
+    exact CRTResidueEarly165.costs mir
+  by_cases h185 : start20 j = 185
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_pos h185]
+    exact CRTResidueEarly185.costs mir
+  by_cases h205 : start20 j = 205
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_pos h205]
+    exact CRTResidueEarly205.costs mir
+  by_cases h225 : start20 j = 225
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_pos h225]
+    exact CRTResidueEarly225.costs mir
+  by_cases h245 : start20 j = 245
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_pos h245]
+    exact CRTResidueEarly245.costs mir
+  by_cases h265 : start20 j = 265
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_pos h265]
+    exact LateResidue265.Caller.costs mir
+  by_cases h285 : start20 j = 285
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_pos h285]
+    exact LateResidue285.Caller.costs mir
+  by_cases h305 : start20 j = 305
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_pos h305]
+    exact LateResidue305.Caller.costs mir
+  by_cases h325 : start20 j = 325
+  · simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_neg h305, if_pos h325]
+    exact LateResidue325.Caller.costs mir
+  simp only [wideLogicalAt, widePriceAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_neg h305, if_neg h325]
+  exact CRTBarrel20.logical20_metrics _ (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1 mir
+
+theorem barrel20_metrics (j : Fin 9) (mir : Bool) :
+    toffoliCount (barrel20 (start20 j) mir) = barrel20T (start20 j) mir ∧
+    measurementCount (barrel20 (start20 j) mir) = barrel20M (start20 j) mir ∧
+    gateSlots (barrel20 (start20 j) mir) = barrel20Slots (start20 j) mir := by
+  have h := (CRTBarrel20.count_rename (place20 (start20 j)) (wideLogicalAt (start20 j) mir)).trans
+    (wideLogical_metrics j mir)
+  exact ⟨congrArg CRTBarrel20.Count.t h, congrArg CRTBarrel20.Count.m h, congrArg CRTBarrel20.Count.slots h⟩
+
+private theorem wideLogical_fits (j : Fin 9) (mir : Bool) :
+    CRTBarrel20.Fits (· < liveW20 (start20 j) + 31) (wideLogicalAt (start20 j) mir) := by
+  by_cases h165 : start20 j = 165
+  · have width : liveW20 (start20 j) = 94 := (congrArg liveW20 h165).trans CRTResidueEarly165.width_at_start
+    rw [wideLogicalAt, if_pos h165, width]
+    exact CRTResidueEarly165.program_fits mir
+  by_cases h185 : start20 j = 185
+  · have width : liveW20 (start20 j) = 104 := (congrArg liveW20 h185).trans CRTResidueEarly185.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_pos h185, width]
+    exact CRTResidueEarly185.program_fits mir
+  by_cases h205 : start20 j = 205
+  · have width : liveW20 (start20 j) = 113 := (congrArg liveW20 h205).trans CRTResidueEarly205.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_pos h205, width]
+    exact CRTResidueEarly205.program_fits mir
+  by_cases h225 : start20 j = 225
+  · have width : liveW20 (start20 j) = 123 := (congrArg liveW20 h225).trans CRTResidueEarly225.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_pos h225, width]
+    exact CRTResidueEarly225.program_fits mir
+  by_cases h245 : start20 j = 245
+  · have width : liveW20 (start20 j) = 123 := (congrArg liveW20 h245).trans CRTResidueEarly245.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_pos h245, width]
+    exact CRTResidueEarly245.program_fits mir
+  by_cases h265 : start20 j = 265
+  · have width : liveW20 (start20 j) = 113 :=
+      (congrArg liveW20 h265).trans LateResidue265.Caller.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_pos h265, width]
+    exact LateResidue265.Caller.program_fits mir
+  by_cases h285 : start20 j = 285
+  · have width : liveW20 (start20 j) = 104 :=
+      (congrArg liveW20 h285).trans LateResidue285.Caller.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_pos h285, width]
+    exact LateResidue285.Caller.program_fits mir
+  by_cases h305 : start20 j = 305
+  · have width : liveW20 (start20 j) = 94 :=
+      (congrArg liveW20 h305).trans LateResidue305.Caller.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_pos h305, width]
+    exact LateResidue305.Caller.program_fits mir
+  by_cases h325 : start20 j = 325
+  · have width : liveW20 (start20 j) = 84 :=
+      (congrArg liveW20 h325).trans LateResidue325.Caller.width_at_start
+    rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_neg h305, if_pos h325, width]
+    exact LateResidue325.Caller.program_fits mir
+  rw [wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_neg h305, if_neg h325]
+  exact CRTBarrel20.logical20_fits _ (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1 mir
+
+theorem barrel20_phys (j : Fin 9) (mir : Bool) :
+    GatePhysical (barrel20 (start20 j) mir) := by
+  have hf := wideLogical_fits j mir
+  have hr := CRTBarrel20.fits_rename (Q := fun _ => True) (f := place20 (start20 j)) hf
+    (fun _ _ => trivial) (fun a ha b hb => place20_inj j a ha b hb)
+  intro g hg
+  exact (hr g hg).1
+
+theorem barrel20_wires (j : Fin 9) (mir : Bool) (q : Wire)
+    (hq : q ∈ wires (barrel20 (start20 j) mir)) :
+    (∃ i < liveW20 (start20 j), q = bankW20 (start20 j) i) ∨
+    (∃ k < 10, q = poolW20 (start20 j) (22 + k)) ∨
+    q ∈ tagsP20 := by
+  have hf := wideLogical_fits j mir
+  rw [barrel20, renameProgram_support] at hq
+  obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hq
+  have hxlt : x < liveW20 (start20 j) + 31 := CRTBarrel20.support hf x hx
+  unfold place20
+  by_cases h1 : x < liveW20 (start20 j)
+  · left; rw [if_pos h1]; exact ⟨x, h1, rfl⟩
+  · by_cases h2 : x < liveW20 (start20 j) + 21
+    · right; right
+      rw [if_neg h1, if_pos h2, List.getD_eq_getElem _ _ (by rw [tagsP20_length]; unfold Wire at *; omega)]
+      exact List.getElem_mem _
+    · right; left
+      rw [if_neg h1, if_neg h2]
+      exact ⟨x - liveW20 (start20 j) - 21, by unfold Wire at *; omega, rfl⟩
+
+theorem barrel20_cov (j : Fin 9) (mir : Bool) :
+    WindowCovered.CoveredW (barrel20 (start20 j) mir) := by
+  have hg := geom20_facts j
+  have hbt : bTopP (start20 j) ≤ 1043 := by unfold bTopP railP; split_ifs <;> omega
+  intro q hq
+  rw [WindowCovered.dom_iff]
+  rcases barrel20_wires j mir q hq with ⟨i, hi, rfl⟩ | ⟨k, hk, rfl⟩ | ht
+  · rcases bank20_cases j (i := i) (by omega) with ⟨_, e⟩ | ⟨_, _, e, _, _⟩ | ⟨_, e, _, _⟩
+    · rw [e]; unfold Wire at *; omega
+    · have hb0 : b0P20 (start20 j) = 787 + sbP20 (start20 j) := rfl; unfold Wire at *; omega
+    · unfold Wire at *; omega
+  · rcases pool20_cases j (22 + k) with ⟨_, e⟩ | ⟨_, e⟩ <;> (rw [e]; unfold Wire at *; omega)
+  · have := tagsP20_range q ht; unfold Wire at *; omega
+
+end ECDSAAdd.Entrant.StairPacket.Shadow20
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 0
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the adjusted high-word headroom. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^(wpP20 (start20 j)-1)) (small : v < 2^(94-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 125) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 94 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 94 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^74 at admitted
+    unfold liveDim
+    by_cases bound : 74 ≤ 94-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 94 := by decide +kernel
+  have hr := placed_from_rows20 94 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 165 ∧ liveW20 (start20 j) = 94 ∧
+    wpP20 (start20 j) = 75 ∧ place20 (start20 j) 123 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^(wpP20 (start20 j)-1)) (small : v < 2^(94-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 94 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly165
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 1
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the adjusted high-word headroom. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^(wpP20 (start20 j)-1)) (small : v < 2^(104-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 135) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 104 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 104 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^84 at admitted
+    unfold liveDim
+    by_cases bound : 84 ≤ 104-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 104 := by decide +kernel
+  have hr := placed_from_rows20 104 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 185 ∧ liveW20 (start20 j) = 104 ∧
+    wpP20 (start20 j) = 85 ∧ place20 (start20 j) 133 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^(wpP20 (start20 j)-1)) (small : v < 2^(104-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 104 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly185
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 2
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the adjusted high-word headroom. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^(wpP20 (start20 j)-1)) (small : v < 2^(113-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 144) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 113 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 113 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^94 at admitted
+    unfold liveDim
+    by_cases bound : 94 ≤ 113-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 113 := by decide +kernel
+  have hr := placed_from_rows20 113 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 205 ∧ liveW20 (start20 j) = 113 ∧
+    wpP20 (start20 j) = 95 ∧ place20 (start20 j) 142 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^(wpP20 (start20 j)-1)) (small : v < 2^(113-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 113 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly205
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 3
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 154) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^104 at admitted
+    unfold liveDim
+    by_cases bound : 104 ≤ 123-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 123 := by decide +kernel
+  have hr := placed_from_rows20 123 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 225 ∧ liveW20 (start20 j) = 123 ∧
+    wpP20 (start20 j) = 104 ∧ place20 (start20 j) 152 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly225
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+open Arithmetic Shadow20 CRTBarrel20
+
+private def j : Fin 9 := 4
+
+def placedProgram (program : Program) : Program := renameProgram (place20 (start20 j)) program
+
+/-- Same placed frame as the active wide caller, with the existing unshifted word bound. -/
+theorem placed_result (program : Program) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (fit : CRTBarrel20.Fits (· < 154) program)
+    (shift : run program tape
+      (CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.entryShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase) =
+      CRTBarrel20.frame20 (CRTBarrel20.plain20 123 (liveDim slot) (CRTBarrel20.exitShift mir slot.val)) v.testBit (liveDim slot) slot.val s.phase)
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram program) tape s) := by
+  have live : v < 2^(liveDim slot) := by
+    change v < 2^114 at admitted
+    unfold liveDim
+    by_cases bound : 114 ≤ 123-(slot.val-1)
+    · rwa [Nat.min_eq_left bound]
+    · rwa [Nat.min_eq_right (by omega)]
+  have hw : liveW20 (start20 j) = 123 := by decide +kernel
+  have hr := placed_from_rows20 123 program (liveDim slot) fit mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22+k))
+    (place20 (start20 j))
+    (fun i hi => by
+      unfold place20
+      rw [hw, if_pos hi])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [hw, if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape live shift input tag scratch
+  exact ⟨hr.1,hr.2.1,hr.2.2⟩
+
+
+theorem shape_layout : start20 j = 245 ∧ liveW20 (start20 j) = 123 ∧
+    wpP20 (start20 j) = 114 ∧ place20 (start20 j) 152 = 1633 := by decide +kernel
+
+theorem placed_exact (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2^wpP20 (start20 j)) (small : v < 2^(123-(slot.val-1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k+1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22+k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) 123 (v <<< CRTBarrel20.exitShift mir slot.val) s
+      (run (placedProgram (logicalProgram mir)) tape s) :=
+  placed_result (logicalProgram mir) mir slot v s tape admitted small (program_fits mir)
+    (logical_run slot mir v.testBit s.phase tape) input tag scratch
+end ECDSAAdd.Entrant.StairPacket.CRTResidueEarly245
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+end
+
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+end
+
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+end
+
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Entrant.StairPacket
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+end
+
+namespace ECDSAAdd.Entrant.StairPacket.Shadow20
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed ECDSAAdd.Entrant.IntegerPacket
+open ECDSAAdd.Entrant.StairPacket ECDSAAdd.Entrant.StairPacket.Partial ECDSAAdd.Entrant.StairPacket.GateMirror
+open ECDSAAdd.Baselines ECDSAAdd.Challenge
+
+/-- Physical barrel semantics for all 9 20-tick blocks (`j : Fin 9`), returning `HighBankBarrel.Result`. -/
+theorem barrel20_result (j : Fin 9) (mir : Bool) (slot : Fin 22) (v : Nat) (s : State) (tape : List Bool)
+    (admitted : v < 2 ^ wpP20 (start20 j))
+    (short : start20 j < 225 → v < 2 ^ (wpP20 (start20 j) - 1))
+    (small : v < 2 ^ (liveW20 (start20 j) - (slot.val - 1)))
+    (input : HighBankBarrel.holds (bankW20 (start20 j)) (liveW20 (start20 j))
+      (v <<< CRTBarrel20.entryShift mir slot.val) s)
+    (tag : ∀ k < 21, s.basis (tagsP20.getD k 0) = decide (slot.val = k + 1))
+    (scratch : ∀ k < 10, s.basis (poolW20 (start20 j) (22 + k)) = false) :
+    HighBankBarrel.Result (bankW20 (start20 j)) (liveW20 (start20 j))
+      (v <<< CRTBarrel20.exitShift mir slot.val) s (run (barrel20 (start20 j) mir) tape s) := by
+  by_cases h165 : start20 j = 165
+  · have fixed : j = CRTResidueEarly165.j := Fin.ext (by
+      change j.val = 0
+      unfold start20 at h165
+      omega)
+    rw [barrel20, wideLogicalAt, if_pos h165]
+    subst j
+    exact CRTResidueEarly165.placed_exact mir slot v s tape (short (by decide)) small input tag scratch
+  by_cases h185 : start20 j = 185
+  · have fixed : j = CRTResidueEarly185.j := Fin.ext (by
+      change j.val = 1
+      unfold start20 at h185
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_pos h185]
+    subst j
+    exact CRTResidueEarly185.placed_exact mir slot v s tape (short (by decide)) small input tag scratch
+  by_cases h205 : start20 j = 205
+  · have fixed : j = CRTResidueEarly205.j := Fin.ext (by
+      change j.val = 2
+      unfold start20 at h205
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_pos h205]
+    subst j
+    exact CRTResidueEarly205.placed_exact mir slot v s tape (short (by decide)) small input tag scratch
+  by_cases h225 : start20 j = 225
+  · have fixed : j = CRTResidueEarly225.j := Fin.ext (by
+      change j.val = 3
+      unfold start20 at h225
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_pos h225]
+    subst j
+    exact CRTResidueEarly225.placed_exact mir slot v s tape admitted small input tag scratch
+  by_cases h245 : start20 j = 245
+  · have fixed : j = CRTResidueEarly245.j := Fin.ext (by
+      change j.val = 4
+      unfold start20 at h245
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_pos h245]
+    subst j
+    exact CRTResidueEarly245.placed_exact mir slot v s tape admitted small input tag scratch
+  by_cases h265 : start20 j = 265
+  · have fixed : j = LateResidue265.Caller.j265 := Fin.ext (by
+      change j.val = 5
+      unfold start20 at h265
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_pos h265]
+    subst j
+    exact LateResidue265.Caller.placed_exact mir slot v s tape ⟨small, input, tag, scratch⟩
+  by_cases h285 : start20 j = 285
+  · have fixed : j = LateResidue285.Caller.j285 := Fin.ext (by
+      change j.val = 6
+      unfold start20 at h285
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_pos h285]
+    subst j
+    exact LateResidue285.Caller.placed_exact mir slot v s tape ⟨small, input, tag, scratch⟩
+  by_cases h305 : start20 j = 305
+  · have fixed : j = LateResidue305.Caller.j305 := Fin.ext (by
+      change j.val = 7
+      unfold start20 at h305
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_pos h305]
+    subst j
+    exact LateResidue305.Caller.placed_exact mir slot v s tape ⟨small, input, tag, scratch⟩
+  by_cases h325 : start20 j = 325
+  · have fixed : j = LateResidue325.Caller.j325 := Fin.ext (by
+      change j.val = 8
+      unfold start20 at h325
+      omega)
+    rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_neg h305, if_pos h325]
+    subst j
+    exact LateResidue325.Caller.placed_exact mir slot v s tape ⟨small, input, tag, scratch⟩
+  rw [barrel20, wideLogicalAt, if_neg h165, if_neg h185, if_neg h205, if_neg h225, if_neg h245, if_neg h265, if_neg h285, if_neg h305, if_neg h325]
+  have hu := (geom20_facts j).2.2.2.2.2.2.2.2.2.2.1
+  have hr := CRTBarrel20.barrel20_result (liveW20 (start20 j)) hu mir slot
+    (bankW20 (start20 j)) (fun k => tagsP20.getD k 0) (fun k => poolW20 (start20 j) (22 + k))
+    (place20 (start20 j))
+    (fun i hi => by simp [place20, hi])
+    (fun k hk => by
+      unfold place20
+      rw [if_neg (by unfold Wire at *; omega), if_pos (by unfold Wire at *; omega)]
+      simp only [Nat.add_sub_cancel_left])
+    (fun k hk => by
+      unfold place20
+      rw [if_neg (by unfold Wire at *; omega), if_neg (by unfold Wire at *; omega)]
+      congr 1; unfold Wire at *; omega)
+    (place20_inj j) v s tape small input tag scratch
+  exact ⟨hr.1, hr.2.1, hr.2.2⟩
+
+end ECDSAAdd.Entrant.StairPacket.Shadow20
+end
+
+
+end
+-- ==== end: declarations continued from module CRT ====
+
 namespace ECDSAAdd.Entrant.StairPacket
 open Arithmetic PortalAnd
 

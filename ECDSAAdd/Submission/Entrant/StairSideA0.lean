@@ -19392,7 +19392,7 @@ theorem reverse_tick_counts (w : Nat → Wire) (i : Nat)
   have due := reverseDue_eq_one i hi0
   have nt : ¬W.trimTick i := by unfold W.trimTick; omega
   have nh : ¬W.highTick i := by unfold W.highTick; omega
-  simp only [nt,nh,if_false,Nat.add_zero] at a
+  simp only [nt,nh,W.highSave,show i ≠ 1 by omega,if_false,Nat.add_zero] at a
   rw [due]
   constructor <;> omega
 

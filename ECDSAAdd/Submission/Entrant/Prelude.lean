@@ -46462,6 +46462,9 @@ def highTick (i : Nat) : Prop := 1 ≤ i ∧ i ≤ 44
 
 instance (i : Nat) : Decidable (highTick i) := by unfold highTick; infer_instance
 
+def highSave (i : Nat) : Nat :=
+  (if highTick i then 1 else 0) + (if i = 1 then 1 else 0)
+
 theorem compactSkywalkStage_tops (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) (x p i : Nat)
     (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256) (hq : p+2^32 ≤ 2^256)
     (hx : x < p) (hc : x.Coprime p) (hi : i < 512) (htrim : trimTick i) (s : State)
@@ -46574,6 +46577,24 @@ theorem compactSkywalkStage_atop (w : Nat → Wire) (hn : (skywalkPoolWires w).N
     simp [wireBlock_length]; omega
   have e256 : compactSkywalkTickPreWidth i-2=256 := by omega
   exact top_pair_eq _ _ _ _ _ la (by rw [len,e256]; exact fit.1) (by rw [len,e256]; exact fit.2)
+
+theorem compactSkywalkStage_atop_zero (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) (x p : Nat)
+    (hp0 : 0<p) (hx0 : 0<x) (hpo : p%2=1) (hp : p<2^256) (hq : p+2^32≤2^256)
+    (hx : x<p) (hc : x.Coprime p) (s : State)
+    (hin : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    s.basis (w (1+compactSkywalkTickPreWidth 1-1)) = false := by
+  have loc := (compactSkywalkStage_local_input w hn x p 1 hp0 hx0 hpo hp hq hx hc (by decide) s hin).1
+  let L := compactSkywalkTickLayout w 1
+  have form : L.a = (L.a0 :: L.aMid) ++ [L.aSign] := rfl
+  change signedRegValue L.a s.basis = _ at loc
+  have a0 : 0 ≤ (SkywalkTrace.next^[1] (SkywalkRails.encode false false (x:Int) (p:Int))).a := by
+    rw [Function.iterate_one]
+    change 0 ≤ (SkywalkRails.route ((x:Int)+(p:Int)) (x:Int)).1/2
+    unfold SkywalkRails.route
+    split <;> dsimp <;> omega
+  change s.basis L.aSign = false
+  rw [signedRegValue_sign (L.a0 :: L.aMid) L.aSign s.basis, ← form, loc]
+  exact decide_eq_false (Int.not_lt.mpr a0)
 
 end ECDSAAdd.Entrant.W
 end WCompactSkywalkStageVirtual
@@ -51424,6 +51445,14 @@ def stc_swapHigh (k : Wire) (a b : List Wire) (p q x y : Wire) : Program :=
     copyRegister (some k) a b ++ [.CCX k p x] ++ stc_affineErase k p q x y ++
     copyRegister none (b++[x,y]) (a++[p,q])
 
+def stc_writeXor (k p x : Wire) : Program :=
+  [.CX p x, .measureX x [] [.CZ k p], .CX p x]
+
+def stc_swapZero (k : Wire) (a b : List Wire) (p q x y : Wire) : Program :=
+  copyRegister none (b++[x,y]) (a++[p,q]) ++
+    copyRegister (some k) a b ++ stc_writeXor k p x ++ stc_writeXor k q y ++
+    copyRegister none (b++[x,y]) (a++[p,q])
+
 /-- The old inverse swap has precisely the adjacent CCX pair selected by H3. -/
 theorem stc_swap_tail (k : Wire) (a b : List Wire) (p q x y : Wire)
     (hlen : a.length=b.length) :
@@ -51698,6 +51727,177 @@ theorem stc_swapHigh_physical (k : Wire) (a b : List Wire) (p q x y : Wire)
   simp only [stc_swapHigh,gatePhysical_append]
   exact ⟨⟨⟨⟨back,low⟩,first⟩,aff⟩,back⟩
 
+theorem stc_writeXor_same (k p x : Wire) (hk : k ≠ x) (hp : p ≠ x)
+    (s : State) (m : List Bool)
+    (want : (s.basis x ^^ (s.basis k && s.basis p)) = s.basis p) :
+    run (stc_writeXor k p x) m s = run [.CCX k p x] [] s := by
+  apply State.extensionality
+  · cases hm : m.headD false <;> cases a : s.basis k <;>
+      cases b : s.basis p <;> cases c : s.basis x <;>
+      simp_all [stc_writeXor, run, measureAndCorrect, correct, writeBit, Function.update_apply]
+  · funext w
+    by_cases hw : w = x
+    · subst w
+      cases hm : m.headD false <;> cases a : s.basis k <;>
+        cases b : s.basis p <;> cases c : s.basis x <;>
+        simp_all [stc_writeXor, run, measureAndCorrect, correct, writeBit, Function.update_apply]
+    · cases hm : m.headD false <;>
+        simp [stc_writeXor, run, measureAndCorrect, correct, writeBit, Function.update_apply,
+          hk, hp, hw, hm]
+
+theorem stc_swapZero_same (k : Wire) (a b : List Wire) (p q x y : Wire)
+    (hlen : a.length = b.length) (nd : (k::((a++[p,q])++(b++[x,y]))).Nodup)
+    (s : State) (m : List Bool)
+    (zp : (run (swapRegisters k (a++[p,q]) (b++[x,y])) [] s).basis p = false)
+    (zq : (run (swapRegisters k (a++[p,q]) (b++[x,y])) [] s).basis q = false) :
+    run (stc_swapZero k a b p q x y) m s =
+      run (swapRegisters k (a++[p,q]) (b++[x,y])) [] s := by
+  have small : [k,p,q,x,y].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro w
+    have h := List.nodup_iff_count.mp nd w
+    simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
+    omega
+  have ndba : (b++a).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro w
+    have h := List.nodup_iff_count.mp nd w
+    simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
+    omega
+  have outside : ∀w∈[p,q,x,y],w∉a := by
+    intro w hw ha
+    have count := List.nodup_iff_count.mp nd w
+    have positive := List.count_pos_iff.mpr ha
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hw
+    rcases hw with rfl|rfl|rfl|rfl
+    all_goals
+      simp only [List.count_cons,List.count_append,List.count_nil,beq_self_eq_true,if_true] at count
+      omega
+  have frame (u : State) (w : Wire) (hw : w∈[p,q,x,y]) :
+      (run (copyRegister none b a) [] u).basis w = u.basis w :=
+    (copyRegister_correct none b a hlen.symm ndba (by simp) u []).2.1 w (outside w hw)
+  simp only [List.nodup_cons,List.nodup_nil,List.mem_cons,List.not_mem_nil,
+    not_or,not_false_eq_true,and_true] at small
+  have hkx : k ≠ x := by tauto
+  have hky : k ≠ y := by tauto
+  have hpx : p ≠ x := by tauto
+  have hpy : p ≠ y := by tauto
+  have hqx : q ≠ x := by tauto
+  have hqy : q ≠ y := by tauto
+  have hpq : p ≠ q := by tauto
+  have hxy : x ≠ y := by tauto
+  let P := copyRegister none (b++[x,y]) (a++[p,q]) ++ copyRegister (some k) a b
+  let Q := copyRegister none b a
+  let u := run P [] s
+  let v := run [.CCX k p x] [] u
+  let t := run [.CCX k q y] [] v
+  have shape : swapRegisters k (a++[p,q]) (b++[x,y]) =
+      P ++ [.CCX k p x] ++ [.CCX k q y] ++ Q ++ [.CX x p,.CX y q] := by
+    rw [stc_swap_tail k a b p q x y hlen]
+    simp only [P,Q,stc_copy_append none b a [x,y] [p,q] hlen.symm,
+      copyRegister,copyGate,List.append_assoc,List.cons_append,List.nil_append,List.append_nil]
+  have hp : (run [.CX x p,.CX y q] [] (run Q [] t)).basis p = false := by
+    rw [shape] at zp
+    simpa only [run_append,List.take_nil,List.drop_nil,u,v,t] using zp
+  have hq : (run [.CX x p,.CX y q] [] (run Q [] t)).basis q = false := by
+    rw [shape] at zq
+    simpa only [run_append,List.take_nil,List.drop_nil,u,v,t] using zq
+  have alterP : (u.basis x ^^ (u.basis k && u.basis p)) = u.basis p := by
+    have h : ((run Q [] t).basis p ^^ (run Q [] t).basis x) = false := by
+      simpa only [run,writeBit,Function.update_apply,hpq,if_false,if_true] using hp
+    rw [frame t p (by simp),frame t x (by simp)] at h
+    have e : (u.basis p ^^ (u.basis x ^^ (u.basis k && u.basis p))) = false := by
+      simpa only [t,v,run,writeBit,Function.update_apply,hpy,hxy,hpx,hkx,hqx,
+        Ne.symm hxy,if_false,if_true] using h
+    cases hp' : u.basis p <;> cases hx' : u.basis x <;> cases hk' : u.basis k <;> simp_all
+  have alterQ : (v.basis y ^^ (v.basis k && v.basis q)) = v.basis q := by
+    have h : ((run Q [] t).basis q ^^ (run Q [] t).basis y) = false := by
+      simpa only [run,writeBit,Function.update_apply,Ne.symm hpq,Ne.symm hpy,if_false,if_true] using hq
+    rw [frame t q (by simp),frame t y (by simp)] at h
+    have e : (v.basis q ^^ (v.basis y ^^ (v.basis k && v.basis q))) = false := by
+      simpa only [t,run,writeBit,Function.update_apply,hqy,if_false,if_true] using h
+    cases hq' : v.basis q <;> cases hy' : v.basis y <;> cases hk' : v.basis k <;> simp_all
+  have p0 : measurementCount P = 0 := by
+    have f := copyRegister_counts none (b++[x,y]) (a++[p,q]) (by simp [hlen])
+    simp only [P,measurementCount_append,f.2,(copyRegister_counts (some k) a b hlen).2,Nat.add_zero]
+  have q0 : measurementCount Q = 0 := (copyRegister_counts none b a hlen.symm).2
+  have c0 : measurementCount ([.CX x p,.CX y q] : Program) = 0 := rfl
+  have rP (r : List Bool) : run P r s = u := stc_no_measure P p0 s r
+  have rQ (r : List Bool) : run Q r t = run Q [] t := stc_no_measure Q q0 t r
+  have rC (r : List Bool) : run [.CX x p,.CX y q] r (run Q [] t) =
+      run [.CX x p,.CX y q] [] (run Q [] t) := stc_no_measure _ c0 _ r
+  have newShape : stc_swapZero k a b p q x y =
+      P ++ stc_writeXor k p x ++ stc_writeXor k q y ++ Q ++ [.CX x p,.CX y q] := by
+    simp only [stc_swapZero,P,Q,stc_copy_append none b a [x,y] [p,q] hlen.symm,
+      copyRegister,copyGate,List.append_assoc,List.cons_append,List.nil_append,List.append_nil]
+  rw [shape,newShape]
+  have first' : ∀ r, run (stc_writeXor k p x) r u = v := fun r =>
+    stc_writeXor_same k p x hkx hpx u r alterP
+  have second' : ∀ r, run (stc_writeXor k q y) r v = t := fun r =>
+    stc_writeXor_same k q y hky hqy v r alterQ
+  simp only [run_append,List.take_nil,List.drop_nil,rP,first',second',rQ,rC]
+  rfl
+
+theorem stc_prefix_swapZero_same (P : Program) (k : Wire) (a b : List Wire) (p q x y : Wire)
+    (hlen : a.length=b.length) (nd : (k::((a++[p,q])++(b++[x,y]))).Nodup)
+    (s : State) (m : List Bool)
+    (zp : (run (P++swapRegisters k (a++[p,q]) (b++[x,y])) m s).basis p = false)
+    (zq : (run (P++swapRegisters k (a++[p,q]) (b++[x,y])) m s).basis q = false) :
+    run (P++stc_swapZero k a b p q x y) m s =
+      run (P++swapRegisters k (a++[p,q]) (b++[x,y])) m s := by
+  have hf := copyRegister_counts none (b++[x,y]) (a++[p,q]) (by simp [hlen])
+  have ho := copyRegister_counts (some k) (a++[p,q]) (b++[x,y]) (by simp [hlen])
+  have noSwap : measurementCount (swapRegisters k (a++[p,q]) (b++[x,y]))=0 := by
+    simp only [swapRegisters,measurementCount_append,hf.2,ho.2]
+  rw [stc_append_no_measure P _ noSwap s m] at zp zq ⊢
+  rw [run_append,run_take]
+  exact stc_swapZero_same k a b p q x y hlen nd _ _ zp zq
+
+theorem stc_swapZero_counts (k : Wire) (a b : List Wire) (p q x y : Wire) (hlen : a.length=b.length) :
+    toffoliCount (stc_swapZero k a b p q x y)+2 = toffoliCount (swapRegisters k (a++[p,q]) (b++[x,y])) ∧
+    measurementCount (stc_swapZero k a b p q x y)=2 ∧
+    Challenge.gateSlots (stc_swapZero k a b p q x y) =
+        Challenge.gateSlots (swapRegisters k (a++[p,q]) (b++[x,y]))+6 := by
+  have hf := copyRegister_counts none (b++[x,y]) (a++[p,q]) (by simp [hlen])
+  have hl := copyRegister_counts (some k) a b hlen
+  have tp : toffoliCount ([.CCX k p x,.CCX k q y] : Program)=2 := rfl
+  have sp : Challenge.gateSlots ([.CCX k p x,.CCX k q y] : Program)=2 := rfl
+  rw [stc_swap_tail k a b p q x y hlen]
+  simp only [stc_swapZero,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append,
+    tp,sp,hf.2,hl.2,show toffoliCount (stc_writeXor k p x)=0 from rfl,
+    show toffoliCount (stc_writeXor k q y)=0 from rfl,
+    show measurementCount (stc_writeXor k p x)=1 from rfl,
+    show measurementCount (stc_writeXor k q y)=1 from rfl,
+    show Challenge.gateSlots (stc_writeXor k p x)=4 from rfl,
+    show Challenge.gateSlots (stc_writeXor k q y)=4 from rfl]
+  exact ⟨by ring, trivial, by ring⟩
+
+theorem stc_swapZero_subset (k : Wire) (a b : List Wire) (p q x y : Wire) :
+    wires (stc_swapZero k a b p q x y) ⊆ wires (stc_swapHigh k a b p q x y) := by
+  intro w hw
+  simp only [stc_swapZero,stc_swapHigh,wires_append,Finset.mem_union] at hw ⊢
+  simp only [stc_writeXor,stc_affineErase,wires,Instr.wires,correctionWires,
+    Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false] at hw ⊢
+  tauto
+
+theorem stc_swapZero_physical (k : Wire) (a b : List Wire) (p q x y : Wire)
+    (nd : (k::((a++[p,q])++(b++[x,y]))).Nodup) : GatePhysical (stc_swapZero k a b p q x y) := by
+  have old := stc_swapHigh_physical k a b p q x y nd
+  have small : [k,p,q,x,y].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro w
+    have h := List.nodup_iff_count.mp nd w
+    simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
+    omega
+  simp only [List.nodup_cons,List.nodup_nil,List.mem_cons,List.not_mem_nil,
+    not_or,not_false_eq_true,and_true] at small
+  have pX : GatePhysical (stc_writeXor k p x) := by
+    simp_all [stc_writeXor,GatePhysical,PhysicalInstr,ProperGate]
+  have qY : GatePhysical (stc_writeXor k q y) := by
+    simp_all [stc_writeXor,GatePhysical,PhysicalInstr,ProperGate]
+  simp only [stc_swapHigh,stc_swapZero,gatePhysical_append] at old ⊢
+  exact ⟨⟨⟨old.1.1.1,pX⟩,qY⟩,old.2⟩
+
 end ECDSAAdd.Entrant.W.StockHigh
 end
 -- ==== end StockHigh ====
@@ -51970,17 +52170,18 @@ theorem receiverTickT_roundtrip (L : SkywalkIntegerLayout) (hv : L.Valid) (n : N
 /-- StockTickCut (hunt-square v67): the reverse tick whose final swap keeps only the first high CCX
 (`StockHigh.stc_swapHigh`): -1 T, +1 M, +7 slots against `receiverUntick`, exact when the stage `a` rail's top pair
 agrees (`a` fits one bit narrower). -/
-def receiverUntickH (L : SkywalkIntegerLayout) (n : Nat) (am bm : List Wire) (al bl : Wire) : Program :=
+def receiverUntickH (first : Bool) (L : SkywalkIntegerLayout) (n : Nat) (am bm : List Wire) (al bl : Wire) : Program :=
   [.CX L.previous L.a0] ++ narrowReceiver (narrowSkywalkRecordLayout L n) n ++
     skywalkSignedHalf L.aSign L.ext ++ [.CX L.a0 L.b0] ++
-    StockHigh.stc_swapHigh L.a0 am bm al L.aSign bl L.bSign
+    (if first then StockHigh.stc_swapZero L.a0 am bm al L.aSign bl L.bSign
+     else StockHigh.stc_swapHigh L.a0 am bm al L.aSign bl L.bSign)
 
-theorem receiverTickH_roundtrip (L : SkywalkIntegerLayout) (hv : L.Valid) (n : Nat)
+theorem receiverTickH_roundtrip (first : Bool) (L : SkywalkIntegerLayout) (hv : L.Valid) (n : Nat)
     (hn : 0 < n) (hle : n ≤ L.half.length) (am bm : List Wire) (al bl : Wire)
     (hA : L.aMid=am++[al]) (hB : L.bMid=bm++[bl]) (s : State) (m₁ m₂ : List Bool)
     (hq : s.basis L.history=false) (hk : regValue L.carry s.basis=0)
-    (htA : s.basis L.aSign=s.basis al) :
-    run (receiverUntickH L n am bm al bl) m₂ (run (narrowSkywalkTick L n) m₁ s)=s := by
+    (htA : s.basis L.aSign=s.basis al) (hzA : first = true → s.basis L.aSign = false) :
+    run (receiverUntickH first L n am bm al bl) m₂ (run (narrowSkywalkTick L n) m₁ s)=s := by
   have old := receiverTick_roundtrip L hv n hn hle s m₁ m₂ hq hk
   have hlen := L.high_lengths hv
   have nd : (L.a0::(L.ah++L.bh)).Nodup := by
@@ -51995,12 +52196,20 @@ theorem receiverTickH_roundtrip (L : SkywalkIntegerLayout) (hv : L.Valid) (n : N
   let P : Program := [ECDSAAdd.Instr.CX L.previous L.a0] ++ narrowReceiver (narrowSkywalkRecordLayout L n) n ++
     skywalkSignedHalf L.aSign L.ext ++ [ECDSAAdd.Instr.CX L.a0 L.b0]
   have eU : receiverUntick L n=P++swapRegisters L.a0 L.ah L.bh := rfl
-  have eH : receiverUntickH L n am bm al bl=P++StockHigh.stc_swapHigh L.a0 am bm al L.aSign bl L.bSign := rfl
   rw [eU,eA,eB] at old
   rw [eA,eB] at nd
-  rw [eH,StockHigh.stc_prefix_swapHigh_same P L.a0 am bm al L.aSign bl L.bSign hlen' nd _ m₂
-    (by rw [old]; exact htA.symm)]
-  exact old
+  cases first with
+  | false =>
+    change run (P++StockHigh.stc_swapHigh L.a0 am bm al L.aSign bl L.bSign) m₂ _=s
+    rw [StockHigh.stc_prefix_swapHigh_same P L.a0 am bm al L.aSign bl L.bSign hlen' nd _ m₂
+      (by rw [old]; exact htA.symm)]
+    exact old
+  | true =>
+    have hz := hzA rfl
+    change run (P++StockHigh.stc_swapZero L.a0 am bm al L.aSign bl L.bSign) m₂ _=s
+    rw [StockHigh.stc_prefix_swapZero_same P L.a0 am bm al L.aSign bl L.bSign hlen' nd _ m₂
+      (by rw [old]; exact htA.symm.trans hz) (by rw [old]; exact hz)]
+    exact old
 
 def untick2 (w : Nat → Wire) (i : Nat) : Program :=
   if trimTick i then
@@ -52008,7 +52217,7 @@ def untick2 (w : Nat → Wire) (i : Nat) : Program :=
       (wireBlock w (i+1) (compactSkywalkTickPreWidth i-3)) (wireBlock w 771 (compactSkywalkTickPreWidth i-3))
       (w (i+compactSkywalkTickPreWidth i-2)) (w (770+compactSkywalkTickPreWidth i-2))
   else if highTick i then
-    receiverUntickH (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+    receiverUntickH (decide (i=1)) (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
       (wireBlock w (i+1) (compactSkywalkTickPreWidth i-3)) (wireBlock w 771 (compactSkywalkTickPreWidth i-3))
       (w (i+compactSkywalkTickPreWidth i-2)) (w (770+compactSkywalkTickPreWidth i-2))
   else receiverUntick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
@@ -52025,7 +52234,8 @@ theorem compactReceiverTick_roundtrip (w : Nat → Wire) (i : Nat) (hi : i < 512
       s.basis (w (i+compactSkywalkTickPreWidth i-1))=s.basis (w (i+compactSkywalkTickPreWidth i-2)) ∧
       s.basis (w (770+compactSkywalkTickPreWidth i-1))=s.basis (w (770+compactSkywalkTickPreWidth i-2)))
     (hhigh : highTick i →
-      s.basis (w (i+compactSkywalkTickPreWidth i-1))=s.basis (w (i+compactSkywalkTickPreWidth i-2))) :
+      s.basis (w (i+compactSkywalkTickPreWidth i-1))=s.basis (w (i+compactSkywalkTickPreWidth i-2)))
+    (hfirst : i = 1 → s.basis (w (i+compactSkywalkTickPreWidth i-1)) = false) :
     run (compactReceiverTick w i) m2 (run (compactSkywalkTick w i) m1 s) = s := by
   by_cases last : i=511
   · subst i
@@ -52048,10 +52258,11 @@ theorem compactReceiverTick_roundtrip (w : Nat → Wire) (i : Nat) (hi : i < 512
         rw [hr,compactSkywalkSign_no_measure_append _ _ hz]
         rw [compactSkywalkReverseExpand_cleanup w i hi hn _ m1 m2]
         have split := compactSkywalkTick_aMid_split w i hi
-        exact receiverTickH_roundtrip _ (compactSkywalkTick_valid w i hi hn)
+        exact receiverTickH_roundtrip (decide (i=1)) _ (compactSkywalkTick_valid w i hi hn)
           (compactSkywalkTickPostWidth i) (by omega) (by
             rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1) _ _ _ _
           split.1 split.2 s m1 m2 hh hc (hhigh hg)
+          (fun h => hfirst (of_decide_eq_true h))
       · simp only [compactReceiverTick,last,if_false,untick2,ht,hg]
         rw [hr,compactSkywalkSign_no_measure_append _ _ hz]
         rw [compactSkywalkReverseExpand_cleanup w i hi hn _ m1 m2]
@@ -52231,14 +52442,17 @@ theorem receiverUntickT_physical (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Va
   exact ⟨⟨cx1,sw⟩,cx1⟩
 
 
-theorem receiverUntickH_physical (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
+theorem receiverUntickH_physical (first : Bool) (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
     (hn : 0<n) (hle : n≤L.half.length)
     (am bm : List Wire) (al bl : Wire) (hA : L.aMid=am++[al]) (hB : L.bMid=bm++[bl]) :
-    GatePhysical (receiverUntickH L n am bm al bl) := by
+    GatePhysical (receiverUntickH first L n am bm al bl) := by
   obtain ⟨_,nd,_,_,_⟩ := trim_facts L hv am bm al bl hA hB
   have old := receiverUntick_physical L n hv hn hle
   simp only [receiverUntick,receiverUntickH,gatePhysical_append] at old ⊢
-  exact ⟨old.1,StockHigh.stc_swapHigh_physical L.a0 am bm al L.aSign bl L.bSign nd⟩
+  refine ⟨old.1,?_⟩
+  split
+  · exact StockHigh.stc_swapZero_physical L.a0 am bm al L.aSign bl L.bSign nd
+  · exact StockHigh.stc_swapHigh_physical L.a0 am bm al L.aSign bl L.bSign nd
 
 
 theorem compactReceiverTick_physical (w : Nat → Wire) (i : Nat) (hi : i<512)
@@ -52259,7 +52473,7 @@ theorem compactReceiverTick_physical (w : Nat → Wire) (i : Nat) (hi : i<512)
           (compactSkywalkTick_valid w i hi hn) (by omega)
           (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; omega) _ _ _ _ split.1 split.2
       · have split := W.compactSkywalkTick_aMid_split w i hi
-        exact receiverUntickH_physical (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+        exact receiverUntickH_physical (decide (i=1)) (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
           (compactSkywalkTick_valid w i hi hn) (by omega)
           (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; omega) _ _ _ _ split.1 split.2
       · exact receiverUntick_physical (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
@@ -52438,20 +52652,25 @@ theorem receiverUntickT_support (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Val
     apply mem; simp; itauto
 
 
-theorem receiverUntickH_counts (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
+theorem receiverUntickH_counts (first : Bool) (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
     (am bm : List Wire) (al bl : Wire) (hA : L.aMid=am++[al]) (hB : L.bMid=bm++[bl]) :
-    toffoliCount (receiverUntickH L n am bm al bl)+1=toffoliCount (receiverUntick L n) ∧
-    measurementCount (receiverUntickH L n am bm al bl)=measurementCount (receiverUntick L n)+1 := by
+    toffoliCount (receiverUntickH first L n am bm al bl)+1+first.toNat=toffoliCount (receiverUntick L n) ∧
+    measurementCount (receiverUntickH first L n am bm al bl)=measurementCount (receiverUntick L n)+1+first.toNat := by
   obtain ⟨hl,_,_,eA,eB⟩ := trim_facts L hv am bm al bl hA hB
   have c := StockHigh.stc_swapHigh_counts L.a0 am bm al L.aSign bl L.bSign hl
-  simp only [receiverUntickH,receiverUntick,toffoliCount_append,measurementCount_append] at c ⊢
-  rw [eA,eB]
-  omega
+  have z := StockHigh.stc_swapZero_counts L.a0 am bm al L.aSign bl L.bSign hl
+  have noSwap : measurementCount (swapRegisters L.a0 (am++[al,L.aSign]) (bm++[bl,L.bSign])) = 0 := by
+    have f := copyRegister_counts none (bm++[bl,L.bSign]) (am++[al,L.aSign]) (by simp [hl])
+    have g := copyRegister_counts (some L.a0) (am++[al,L.aSign]) (bm++[bl,L.bSign]) (by simp [hl])
+    simp only [swapRegisters,measurementCount_append,f.2,g.2,Nat.add_zero]
+  cases first <;>
+    simp only [receiverUntickH,receiverUntick,Bool.false_eq_true,if_false,if_true,
+      Bool.toNat_false,Bool.toNat_true,toffoliCount_append,measurementCount_append,eA,eB] <;> omega
 
-theorem receiverUntickH_support (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
+theorem receiverUntickH_support (first : Bool) (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
     (hn : 0<n) (hle : n≤L.half.length)
     (am bm : List Wire) (al bl : Wire) (hA : L.aMid=am++[al]) (hB : L.bMid=bm++[bl]) :
-    wires (receiverUntickH L n am bm al bl) ⊆ L.wires.toFinset := by
+    wires (receiverUntickH first L n am bm al bl) ⊆ L.wires.toFinset := by
   obtain ⟨_,_,_,eA,eB⟩ := trim_facts L hv am bm al bl hA hB
   have old := receiverUntick_support L n hv hn hle
   have sw := StockHigh.stc_swapHigh_support L.a0 am bm al L.aSign bl L.bSign
@@ -52461,7 +52680,11 @@ theorem receiverUntickH_support (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Val
     simp only [SkywalkIntegerLayout.wires,List.mem_toFinset,List.mem_cons,List.mem_append] at this ⊢
     itauto
   simp only [receiverUntickH,receiverUntick,wires_append,Finset.union_subset_iff] at old ⊢
-  exact ⟨old.1,fun q hq => mem q (List.mem_toFinset.mp (sw hq))⟩
+  refine ⟨old.1,?_⟩
+  split
+  · exact (StockHigh.stc_swapZero_subset L.a0 am bm al L.aSign bl L.bSign).trans
+      (fun q hq => mem q (List.mem_toFinset.mp (sw hq)))
+  · exact fun q hq => mem q (List.mem_toFinset.mp (sw hq))
 
 
 theorem compactReceiverTick_support (w : Nat → Wire) (i : Nat) (hi : i<512)
@@ -52480,7 +52703,7 @@ theorem compactReceiverTick_support (w : Nat → Wire) (i : Nat) (hi : i<512)
           (compactSkywalkTick_valid w i hi hn) (by omega)
           (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; omega) _ _ _ _ split.1 split.2
       · have split := W.compactSkywalkTick_aMid_split w i hi
-        exact receiverUntickH_support (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+        exact receiverUntickH_support (decide (i=1)) (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
           (compactSkywalkTick_valid w i hi hn) (by omega)
           (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; omega) _ _ _ _ split.1 split.2
       · exact receiverUntick_support (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
@@ -52491,10 +52714,10 @@ theorem compactReceiverTick_support (w : Nat → Wire) (i : Nat) (hi : i<512)
 
 theorem compactReceiverTick_counts (w : Nat → Wire) (i : Nat) (hi : i<511)
     (hn : (skywalkPoolWires w).Nodup) :
-    toffoliCount (compactReceiverTick w i)+1+(if trimTick i then 1 else 0)+(if highTick i then 1 else 0)=
+    toffoliCount (compactReceiverTick w i)+1+(if trimTick i then 1 else 0)+highSave i=
       toffoliCount (compactSkywalkReverseTick w i) ∧
     measurementCount (compactReceiverTick w i)=measurementCount (compactSkywalkReverseTick w i)+
-      (if highTick i then 1 else 0) := by
+      highSave i := by
   have width := compactSkywalkTick_width_bounds i (by omega)
   have r := receiverUntick_counts (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
     (compactSkywalkTick_valid w i (by omega) hn) (by omega)
@@ -52504,7 +52727,7 @@ theorem compactReceiverTick_counts (w : Nat → Wire) (i : Nat) (hi : i<511)
   have split := W.compactSkywalkTick_aMid_split w i (by omega)
   have t := receiverUntickT_counts (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
     (compactSkywalkTick_valid w i (by omega) hn) _ _ _ _ split.1 split.2
-  have th := receiverUntickH_counts (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+  have th := receiverUntickH_counts (decide (i=1)) (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
     (compactSkywalkTick_valid w i (by omega) hn) _ _ _ _ split.1 split.2
   have dj : ¬(trimTick i ∧ highTick i) := by unfold trimTick highTick; omega
   have nn : 2≤compactSkywalkTickPostWidth i := by
@@ -52516,9 +52739,20 @@ theorem compactReceiverTick_counts (w : Nat → Wire) (i : Nat) (hi : i<511)
   rw [old.1,old.2]
   by_cases h1 : trimTick i
   · have h2 : ¬highTick i := fun h => dj ⟨h1,h⟩
-    simp only [h1,h2,if_true,if_false]
+    have h3 : i ≠ 1 := by unfold trimTick at h1; omega
+    simp only [highSave,h1,h2,h3,if_true,if_false]
     omega
-  · by_cases h2 : highTick i <;> simp only [h1,h2,if_true,if_false] <;> omega
+  · by_cases h2 : highTick i
+    · by_cases h3 : i = 1
+      · subst h3
+        simp only [highSave,h1,h2,eq_self_iff_true,if_true,if_false,decide_true,Bool.toNat_true] at th ⊢
+        omega
+      · simp only [h3,decide_false,Bool.toNat_false] at th
+        simp only [highSave,h1,h2,h3,decide_false,if_true,if_false]
+        omega
+    · have h3 : i ≠ 1 := by unfold highTick at h2; omega
+      simp only [highSave,h1,h2,h3,if_false]
+      omega
 
 end ECDSAAdd.Entrant.W.ReverseCarry
 
@@ -52599,14 +52833,14 @@ theorem receiverUntickT_slots (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid
   simp [gateSlots,instructionSlots,hl]
   omega
 
-theorem receiverUntickH_slots (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
+theorem receiverUntickH_slots (first : Bool) (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Valid)
     (am bm : List Wire) (al bl : Wire) (hA : L.aMid=am++[al]) (hB : L.bMid=bm++[bl]) :
-    gateSlots (receiverUntickH L n am bm al bl)=gateSlots (receiverUntick L n)+7 := by
+    gateSlots (receiverUntickH first L n am bm al bl) ≤ gateSlots (receiverUntick L n)+7 := by
   obtain ⟨hl,_,_,eA,eB⟩ := trim_facts L hv am bm al bl hA hB
   have c := (StockHigh.stc_swapHigh_counts L.a0 am bm al L.aSign bl L.bSign hl).2.2
-  simp only [receiverUntickH,receiverUntick,gateSlots_append] at c ⊢
-  rw [eA,eB]
-  omega
+  have z := (StockHigh.stc_swapZero_counts L.a0 am bm al L.aSign bl L.bSign hl).2.2
+  cases first <;>
+    simp only [receiverUntickH,receiverUntick,Bool.false_eq_true,if_false,if_true,gateSlots_append,eA,eB] <;> omega
 
 
 theorem compactReceiverTick_slots (w : Nat → Wire) (i : Nat) (hi : i<512)
@@ -52623,7 +52857,7 @@ theorem compactReceiverTick_slots (w : Nat → Wire) (i : Nat) (hi : i<512)
     have split := W.compactSkywalkTick_aMid_split w i hi
     have t := receiverUntickT_slots (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
       (compactSkywalkTick_valid w i hi hn) _ _ _ _ split.1 split.2
-    have th := receiverUntickH_slots (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+    have th := receiverUntickH_slots (decide (i=1)) (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
       (compactSkywalkTick_valid w i hi hn) _ _ _ _ split.1 split.2
     simp only [compactReceiverTick,last,if_false,compactSkywalkReverseTick,gateSlots_append,untick2]
     split_ifs <;> omega
@@ -52904,8 +53138,14 @@ theorem oneStep_roundtrip (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
       intro q hmem
       exact read q (by simp only [SkywalkIntegerLayout.wires,List.mem_append,List.mem_cons]; itauto))]
     exact loc.2.2.2.2.2
+  have first : i = 1 → t.basis (w (i+W.compactSkywalkTickPreWidth i-1)) = false := by
+    intro e
+    subst i
+    have rd := read (W.compactSkywalkTickLayout w 1).aSign (by simp [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.ah])
+    change t.basis (w (1+W.compactSkywalkTickPreWidth 1-1)) = _ at rd
+    exact rd.trans (W.compactSkywalkStage_atop_zero w hn x p hp0 hx0 hpo hp hq hx hc raw hraw)
   have rt := W.ReverseCarry.compactReceiverTick_roundtrip w i hi hn t []
-    (m2.drop (measurementCount (History5.decodeBefore w i))) hh clean tops atop
+    (m2.drop (measurementCount (History5.decodeBefore w i))) hh clean tops atop first
   have dp : run (History5.decodeBefore w i) (m2.take (measurementCount (History5.decodeBefore w i)))
       (run (History5.packAfter w i) [] (run (W.compactSkywalkTick w i) [] t))=
         run (W.compactSkywalkTick w i) [] t := by
@@ -52935,9 +53175,8 @@ attribute [local irreducible] forward5 reverse5 W.compactForward5 W.compactRever
   W.repairedTick W.compactSkywalkTick W.compactSkywalkReverseTick
 
 def reverseSave (i : Nat) : Nat := (if i < 511 then 1 else 0)+(if W.trimTick i then 1 else 0)+
-  (if W.highTick i then 1 else 0)
-/-- StockTickCut: one extra measurement per high reverse tick. -/
-def reverseMSave (i : Nat) : Nat := if W.highTick i then 1 else 0
+  W.highSave i
+def reverseMSave (i : Nat) : Nat := W.highSave i
 def reverseMCount (i : Nat) : Nat → Nat
   | 0 => 0
   | n+1 => reverseMSave i+reverseMCount (i+1) n
@@ -52955,8 +53194,8 @@ theorem reverseTick_counts (w : Nat → Wire) (i : Nat) (hi : i<512)
   · subst i
     have nt : ¬W.trimTick 511 := by unfold W.trimTick; omega
     have nh : ¬W.highTick 511 := by unfold W.highTick; omega
-    simp only [W.ReverseCarry.compactReceiverTick,if_true,reverseSave,reverseMSave,lt_self_iff_false,if_false,
-      nt,nh,Nat.add_zero,and_self]
+    simp only [W.ReverseCarry.compactReceiverTick,if_true,reverseSave,reverseMSave,W.highSave,
+      lt_self_iff_false,show (511:Nat) ≠ 1 by decide,if_false,nt,nh,Nat.add_zero,and_self]
   · have h := W.ReverseCarry.compactReceiverTick_counts w i (by omega) hn
     simp only [reverseSave,reverseMSave,if_pos (show i<511 by omega)]
     constructor
@@ -52982,10 +53221,10 @@ theorem counts_relative (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) (i 
 theorem counts_511 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
     toffoliCount (forward5 w 1 511)+257=toffoliCount (W.compactForward5 w 1 511) ∧
     measurementCount (forward5 w 1 511)=measurementCount (W.compactForward5 w 1 511)+256 ∧
-    toffoliCount (reverse5 w 1 511)+587=toffoliCount (W.compactReverse5 w 1 511) ∧
-    measurementCount (reverse5 w 1 511)=measurementCount (W.compactReverse5 w 1 511)+44 := by
-  have r : reverseCount 1 511=587 := by decide +kernel
-  have rm : reverseMCount 1 511=44 := by decide +kernel
+    toffoliCount (reverse5 w 1 511)+588=toffoliCount (W.compactReverse5 w 1 511) ∧
+    measurementCount (reverse5 w 1 511)=measurementCount (W.compactReverse5 w 1 511)+45 := by
+  have r : reverseCount 1 511=588 := by decide +kernel
+  have rm : reverseMCount 1 511=45 := by decide +kernel
   have c := counts_relative w hn 1 511 (by omega)
   rw [W.repair_count_511,W.fwd_count_511,r,rm] at c
   exact ⟨by omega,c.2.1,c.2.2.1,c.2.2.2⟩
@@ -72301,8 +72540,8 @@ theorem segH_counts (divide : Bool) :
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=(if divide then 1049365 else 1049109) ∧
-    measurementCount (program divide)=(if divide then 721066 else 721322) := by
+    toffoliCount (program divide)=(if divide then 1049364 else 1049108) ∧
+    measurementCount (program divide)=(if divide then 721067 else 721323) := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
   have narrow := W.compactPasses5_old_counts base base_pool_nodup
   have repair := Stack5.counts_511 base base_pool_nodup
@@ -72904,8 +73143,8 @@ section
 namespace ECDSAAdd.Entrant.OwnQ5Actual
 open Arithmetic MappedCompressed
  abbrev kernel_spec (divide : Bool) := OwnQ5Integer.program_spec divide (hosted_field_free divide)
- theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049365 else 1049109) ∧
-    measurementCount (OwnQ5Integer.program divide)=(if divide then 721066 else 721322) := by
+ theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049364 else 1049108) ∧
+    measurementCount (OwnQ5Integer.program divide)=(if divide then 721067 else 721323) := by
   rw [(OwnQ5Integer.program_counts divide).1,(OwnQ5Integer.program_counts divide).2]
   exact KernelOB5.program_counts divide
  
@@ -73862,8 +74101,8 @@ theorem arith_support (L : ControlledPointLayout) (hw : L.Widths) (multiply : Bo
 attribute [local irreducible] OwnQ5Integer.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
-    toffoliCount (arith L false)=1049365 ∧ measurementCount (arith L false)=721066 ∧
-    toffoliCount (arith L true)=1049109 ∧ measurementCount (arith L true)=721322 := by
+    toffoliCount (arith L false)=1049364 ∧ measurementCount (arith L false)=721067 ∧
+    toffoliCount (arith L true)=1049108 ∧ measurementCount (arith L true)=721323 := by
   have a := OwnQ5Actual.kernel_counts true
   have b := OwnQ5Actual.kernel_counts false
   have c := renameProgram_counts (wireFn2 L) (OwnQ5Integer.program true)
@@ -74280,8 +74519,8 @@ section ResourcesA
 attribute [local irreducible] run OwnQ5Runtime.kernelS OwnQ5Integer.program wires toffoliCount measurementCount
 
 theorem arithS_counts (L : ControlledPointLayout) :
-    toffoliCount (arithS L false)=1048345 ∧ measurementCount (arithS L false)=721066 ∧
-    toffoliCount (arithS L true)=1048089 ∧ measurementCount (arithS L true)=721322 := by
+    toffoliCount (arithS L false)=1048344 ∧ measurementCount (arithS L false)=721067 ∧
+    toffoliCount (arithS L true)=1048088 ∧ measurementCount (arithS L true)=721323 := by
   have o := ArithmeticOB5.arith_counts L
   have s1 := OwnQ5SW.selKernelQ_sel true
   have s2 := OwnQ5SW.selKernelQ_sel false
@@ -75360,8 +75599,8 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2156834 ∧
-    measurementCount (program L cx cy)=1500764 := by
+    toffoliCount (program L cx cy)=2156832 ∧
+    measurementCount (program L cx cy)=1500766 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -75702,8 +75941,8 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2154794 ∧
-    measurementCount (program L cx cy)=1500764 := by
+    toffoliCount (program L cx cy)=2154792 ∧
+    measurementCount (program L cx cy)=1500766 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
   constructor <;> omega
@@ -92408,7 +92647,7 @@ def kernel5 : Program :=
 
 
 theorem kernel5_counts :
-    toffoliCount kernel5=1049111 ∧ measurementCount kernel5=720812 := by
+    toffoliCount kernel5=1049110 ∧ measurementCount kernel5=720813 := by
   have old := KernelOB5.program_counts true
   have cv := OwnQ5Endpoint.endpoint_counts
   have renNew := renameProgram_counts HostOB5.hostSwap field5
@@ -93003,7 +93242,7 @@ theorem kernel5S_counts_diff : toffoliCount kernel5S+254=toffoliCount (SW.kernel
   have oldSelT := (SW.selKernel_sel true).tc
   have oldSelM := (SW.selKernel_sel true).mc
   have old := KernelOB5.program_counts true
-  change toffoliCount (KernelOB5.program true)=1049365 ∧ measurementCount (KernelOB5.program true)=721066 at old
+  change toffoliCount (KernelOB5.program true)=1049364 ∧ measurementCount (KernelOB5.program true)=721067 at old
   have new := kernel5_counts
   constructor <;> omega
 
@@ -93073,7 +93312,7 @@ theorem old_shapeS : Q5FusionPhase.kernel hostField5S=EntryFuse.kernel5S := by
 
 
 
-theorem kernel5_counts : toffoliCount kernel5=1049111 ∧ measurementCount kernel5=720812 := by
+theorem kernel5_counts : toffoliCount kernel5=1049110 ∧ measurementCount kernel5=720813 := by
   have c := Q5FusionPhase.relocated_counts hostField5
   rw [old_shape] at c
   simpa only [kernel5,c.1,c.2] using EntryFuse.kernel5_counts
@@ -96388,13 +96627,13 @@ theorem kernelS_counts_diff :
   have om := (OwnQ5SW.selKernelQ_sel false).mc
   omega
 
-theorem kernel_counts : toffoliCount kernel=1048855 ∧ measurementCount kernel=721068 := by
+theorem kernel_counts : toffoliCount kernel=1048854 ∧ measurementCount kernel=721069 := by
   have c := kernel_counts_diff
   have old := OwnQ5Actual.kernel_counts false
-  change toffoliCount (OwnQ5Integer.program false)=1049109 ∧ measurementCount (OwnQ5Integer.program false)=721322 at old
+  change toffoliCount (OwnQ5Integer.program false)=1049108 ∧ measurementCount (OwnQ5Integer.program false)=721323 at old
   omega
 
-theorem kernelS_counts : toffoliCount kernelS=1047835 ∧ measurementCount kernelS=721068 := by
+theorem kernelS_counts : toffoliCount kernelS=1047834 ∧ measurementCount kernelS=721069 := by
   have c := kernel_counts
   have t := selKernel.tc
   have m := selKernel.mc
@@ -96409,7 +96648,7 @@ theorem arithExit_counts_diff (L : ControlledPointLayout) :
   simpa only [arithExit,arithS,OwnQ5Runtime.kernelS,Bool.not_true,r.1,r.2,o.1,o.2] using c
 
 theorem arithExit_counts (L : ControlledPointLayout) :
-    toffoliCount (arithExit L)=1047835 ∧ measurementCount (arithExit L)=721068 := by
+    toffoliCount (arithExit L)=1047834 ∧ measurementCount (arithExit L)=721069 := by
   have c := kernelS_counts
   have r := renameProgram_counts (wireFn2 L) kernelS
   simpa only [arithExit,r.1,r.2] using c

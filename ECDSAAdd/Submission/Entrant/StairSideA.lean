@@ -40710,8 +40710,8 @@ private def step (i : Nat) (back measured : Bool) : Nat :=
   let pre := W.compactSkywalkTickPreWidth i - 1
   let post := W.compactSkywalkTickPostWidth i - 1
   if back then
-    if measured then post + (if W.highTick i then 1 else 0) + 2*due i
-    else pre+post-1-(if W.trimTick i then 1 else 0)-(if W.highTick i then 1 else 0)+11*due i
+    if measured then post + W.highSave i + 2*due i
+    else pre+post-1-(if W.trimTick i then 1 else 0)-W.highSave i+11*due i
   else if measured then post+W.repairDue i+4*due i
   else pre+post-W.repairDue i-W.fwdDue i-TickRanges.due i+9*due i
 private def total (i : Nat) (back measured : Bool) : Nat → Nat
@@ -42530,8 +42530,8 @@ def dueTick (t : Nat) : Bool := t != 5 && History5.packDue t
 
 def tickT (e : Nat) := (W.compactSkywalkTickPreWidth e-1)+(W.compactSkywalkTickPostWidth e-1)-W.repairDue e-W.fwdDue e-TickRanges.due e
 def tickM (e : Nat) := (W.compactSkywalkTickPostWidth e-1)+W.repairDue e
-def recvT (e : Nat) := (W.compactSkywalkTickPreWidth e-1)+(W.compactSkywalkTickPostWidth e-1)-1-(if W.trimTick e then 1 else 0)-(if W.highTick e then 1 else 0)
-def recvM (e : Nat) := W.compactSkywalkTickPostWidth e-1+(if W.highTick e then 1 else 0)
+def recvT (e : Nat) := (W.compactSkywalkTickPreWidth e-1)+(W.compactSkywalkTickPostWidth e-1)-1-(if W.trimTick e then 1 else 0)-W.highSave e
+def recvM (e : Nat) := W.compactSkywalkTickPostWidth e-1+W.highSave e
 
 /-- The stock exit tick and its receiver, closed forms for any tick below 511. -/
 theorem tick_closed (e : Nat) (hi : e < 511) :
