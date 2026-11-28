@@ -7428,8 +7428,8 @@ theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular 
   omega
 
 /-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
-theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2007627 ∧
-    measurementCount (programNC C) ≤ 1445809 ∧ gateSlots (programNC C) ≤ 67191214 := by
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2007615 ∧
+    measurementCount (programNC C) ≤ 1445797 ∧ gateSlots (programNC C) ≤ 67191214 := by
   have m := metricsOld C
   cases C with
   | zero =>
@@ -7644,7 +7644,7 @@ set_option maxHeartbeats 1500000
 
 /-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
 turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
-theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2007626 := by
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2007614 := by
   have m := (metricsNC C).1
   cases C with
   | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
@@ -7672,7 +7672,7 @@ open Arithmetic Secp256k1 Challenge Baselines
 
 /-- The NC entry: both field converters deleted, square reading the odd word. -/
 def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
-def boundsNC : Challenge.Bounds := ⟨2007626,1445809,1542,67191214⟩
+def boundsNC : Challenge.Bounds := ⟨2007614,1445797,1542,67191214⟩
 
 theorem certificateOfSemanticsNC
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
@@ -7681,7 +7681,7 @@ theorem certificateOfSemanticsNC
   physical C := Baselines.normalize_physical _ (WindowPhysical.physicalNC C)
   toffoli_le C := WindowParityCaller.toffoliNC_normalized C
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1445809
+    change measurementCount (normalizeProgram _) ≤ 1445797
     rw [normalize_measurements]
     exact (WindowParityCaller.metricsNC C).2.1
   qubits_le C := by

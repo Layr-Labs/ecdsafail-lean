@@ -5216,6 +5216,25 @@ theorem unshiftHalfOdd_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       simp only [decide_eq_false hodd, Bool.false_eq_true, if_false]; omega
 
 -- ============================================================================
+-- 6-bit minimum-boundary filter for `oddWord 0` equality (`256 -> 250` bits)
+-- ============================================================================
+
+/-- Concrete value of `oddWord 0 = 2^256 - q - 1 = 2^255 + 2147484136`. -/
+def eqOdd0Const : Nat := 2 ^ 255 + 2147484136
+
+/-- Indices of the 250 bits needed to decide `v = oddWord 0` on `{0} ∪ oddWord Fp`:
+    the 249 zero-bits of `oddWord 0` plus MSB bit 255, omitting the 6 redundant
+    lower 1-bits `{3, 5, 6, 7, 8, 31}`. -/
+def eqOdd0Indices : List Nat :=
+  (List.range 256).filter (fun i => i == 255 || !(eqOdd0Const.testBit i))
+
+def eqOdd0Wires (ys : List Wire) : List Wire :=
+  eqOdd0Indices.map (fun i => ys.getD i 0)
+
+def eqOdd0Anc (L : Layout) : List Wire :=
+  (eqAncillas L).take 250
+
+-- ============================================================================
 -- Forward (`paddedGD_odd`) and inverse (`paddedD_odd`) odd-word joint kernels
 -- ============================================================================
 
@@ -5225,7 +5244,7 @@ def programGD_odd (L : Layout) (J B : Wire) : Program :=
   signComplement L.lower L.r ++
   shiftHalfOdd L ++
   [.measureX L.lower [] [.CZ J B]] ++
-  eqToggle B L.y (eqAncillas L) L.r (oddWord 0) ++
+  eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249) ++
   [.X J] ++ maskedConstant J L.y (oddWord 0) ++ [.X J]
 
 def jointGD_odd (L : Layout) (J G : Wire) : Program :=
@@ -5233,7 +5252,7 @@ def jointGD_odd (L : Layout) (J G : Wire) : Program :=
 
 def programD_odd (L : Layout) (J B : Wire) : Program :=
   [.X J] ++ maskedConstant J L.y (oddWord 0) ++ [.X J] ++
-  eqToggle B L.y (eqAncillas L) L.r (oddWord 0) ++
+  eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249) ++
   unshiftHalfOdd L ++
   [.CCX J B L.lower] ++
   signComplement L.lower L.r ++
@@ -5380,57 +5399,92 @@ private theorem layout_eq_nodup (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup
     fun h => hB (hmemW B (Or.inl h)),
     fun h => hB (hmemW B (Or.inr (Or.inl h)))⟩
 
+private theorem eqOdd0Indices_length : eqOdd0Indices.length = 250 := by decide +kernel
+
+private theorem eqOdd0Indices_lt : ∀ i ∈ eqOdd0Indices, i < 256 := by
+  have h : eqOdd0Indices.all (fun i => decide (i < 256)) = true := by decide +kernel
+  exact fun i hi => of_decide_eq_true (List.all_eq_true.mp h i hi)
+
+private theorem eqOdd0Wires_length (ys : List Wire) : (eqOdd0Wires ys).length = 250 := by
+  simp [eqOdd0Wires, eqOdd0Indices_length]
+
+private theorem eqOdd0Anc_length (L : Layout) (hw : L.Widths) : (eqOdd0Anc L).length = 250 := by
+  simp [eqOdd0Anc, List.length_take, eqAncillas_length L hw]
+
+private theorem eqOdd0Wires_sublist (ys : List Wire) (hlen : ys.length = 256) :
+    (eqOdd0Wires ys).Sublist ys := by
+  have order := (List.filter_sublist (p := fun i : Nat => i == 255 || !(eqOdd0Const.testBit i))
+      (l := List.range 256)).map (fun i => ys.getD i 0)
+  have allWires : (List.range 256).map (fun i => ys.getD i 0) = ys := by
+    apply List.ext_getElem
+    · simp [hlen]
+    · intro i hi hy
+      simp [List.getElem?_eq_getElem hy]
+  rw [allWires] at order
+  exact order
+
+private theorem eqOdd0_nodup (L : Layout) (hw : L.Widths) (B : Wire)
+    (hnd : (B :: (L.y ++ eqAncillas L ++ L.r)).Nodup) :
+    (B :: (eqOdd0Wires L.y ++ eqOdd0Anc L ++ L.r)).Nodup := by
+  have len := BalancedCleanup.widths L.toLayout hw
+  have hsub : (B :: (eqOdd0Wires L.y ++ eqOdd0Anc L ++ L.r)).Sublist
+      (B :: (L.y ++ eqAncillas L ++ L.r)) :=
+    (List.Sublist.refl [B]).append
+      (((eqOdd0Wires_sublist L.y len.2.2.1).append (List.take_sublist 250 (eqAncillas L))).append
+        (List.Sublist.refl L.r))
+  exact hnd.sublist hsub
+
 theorem programGD_odd_counts (L : Layout) (hw : L.Widths) (J B : Wire) :
-    toffoliCount (programGD_odd L J B) = 765 ∧ measurementCount (programGD_odd L J B) = 509 := by
+    toffoliCount (programGD_odd L J B) = 759 ∧ measurementCount (programGD_odd L J B) = 503 := by
   have len := BalancedCleanup.widths L.toLayout hw
   have h1 := copyRegister_counts (some J) L.r L.y (len.2.1.trans len.2.2.1.symm)
   have h2 := signComplement_counts L.lower L.r
   have h3 := shiftHalfOdd_counts L hw
-  have h4 := eqToggle_counts B L.y (eqAncillas L) L.r (oddWord 0)
-    (len.2.2.1.trans (eqAncillas_length L hw).symm)
+  have h4 := eqToggle_counts B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
+    ((eqOdd0Wires_length L.y).trans (eqOdd0Anc_length L hw).symm)
   have h5 := maskedConstant_counts J L.y (oddWord 0)
   simp only [programGD_odd, toffoliCount_append, measurementCount_append,
     h1.1, h1.2, h2.1, h2.2, h3.1, h3.2, h4.1, h4.2, h5.1, h5.2,
-    len.2.1, len.2.2.1, Option.isSome_some, if_true, toffoliCount, measurementCount]
+    eqOdd0Wires_length, len.2.1, len.2.2.1, Option.isSome_some, if_true, toffoliCount, measurementCount]
   exact ⟨trivial, trivial⟩
 
 theorem programD_odd_counts (L : Layout) (hw : L.Widths) (J B : Wire) :
-    toffoliCount (programD_odd L J B) = 509 ∧ measurementCount (programD_odd L J B) = 765 := by
+    toffoliCount (programD_odd L J B) = 503 ∧ measurementCount (programD_odd L J B) = 759 := by
   have len := BalancedCleanup.widths L.toLayout hw
   have h1 := maskedConstant_counts J L.y (oddWord 0)
-  have h2 := eqToggle_counts B L.y (eqAncillas L) L.r (oddWord 0)
-    (len.2.2.1.trans (eqAncillas_length L hw).symm)
+  have h2 := eqToggle_counts B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
+    ((eqOdd0Wires_length L.y).trans (eqOdd0Anc_length L hw).symm)
   have h3 := unshiftHalfOdd_counts L hw
   have h4 := signComplement_counts L.lower L.r
   have h5 := eraseCopy_counts J L.r L.y (len.2.1.trans len.2.2.1.symm)
   simp only [programD_odd, toffoliCount_append, measurementCount_append,
     h1.1, h1.2, h2.1, h2.2, h3.1, h3.2, h4.1, h4.2, h5.1, h5.2,
-    len.2.1, len.2.2.1, toffoliCount, measurementCount]
+    eqOdd0Wires_length, len.2.1, len.2.2.1, toffoliCount, measurementCount]
   exact ⟨trivial, trivial⟩
 
 theorem jointGD_odd_counts (L : Layout) (hw : L.Widths) (J G : Wire) :
-    toffoliCount (jointGD_odd L J G) = 765 ∧ measurementCount (jointGD_odd L J G) = 509 := by
+    toffoliCount (jointGD_odd L J G) = 759 ∧ measurementCount (jointGD_odd L J G) = 503 := by
   have h := programGD_odd_counts L hw J G
   simp only [jointGD_odd, toffoliCount_append, measurementCount_append, h.1, h.2,
     toffoliCount, measurementCount]
   exact ⟨trivial, trivial⟩
 
 theorem jointD_odd_counts (L : Layout) (hw : L.Widths) (J G : Wire) :
-    toffoliCount (jointD_odd L J G) = 509 ∧ measurementCount (jointD_odd L J G) = 765 := by
+    toffoliCount (jointD_odd L J G) = 503 ∧ measurementCount (jointD_odd L J G) = 759 := by
   have h := programD_odd_counts L hw J G
   simp only [jointD_odd, toffoliCount_append, measurementCount_append, h.1, h.2,
     toffoliCount, measurementCount]
   exact ⟨trivial, trivial⟩
 
 theorem paddedGD_odd_counts :
-    toffoliCount paddedGD_odd = 765 ∧ measurementCount paddedGD_odd = 509 := by
+    toffoliCount paddedGD_odd = 759 ∧ measurementCount paddedGD_odd = 503 := by
   have h := jointGD_odd_counts portsJ portsJ_widths (base 1028) (base 1)
   have r := renameProgram_counts (Equiv.swap (base 719) (base 1032))
     (jointGD_odd portsJ (base 1028) (base 1))
   exact ⟨r.1.trans h.1, r.2.trans h.2⟩
 
 theorem paddedD_odd_counts :
-    toffoliCount paddedD_odd = 509 ∧ measurementCount paddedD_odd = 765 := by
+    toffoliCount paddedD_odd = 503 ∧ measurementCount paddedD_odd = 759 := by
   have h := jointD_odd_counts portsJ portsJ_widths (base 1028) (base 1)
   have r := renameProgram_counts (Equiv.swap (base 719) (base 1032))
     (jointD_odd portsJ (base 1028) (base 1))
@@ -5442,10 +5496,10 @@ theorem jointGD_odd_slots (L : Layout) (hw : L.Widths) (J G : Wire) :
   have h1 := copyRegister_gateSlots (some J) L.r L.y
   have h2 := signComplement_gateSlots L.lower L.r
   have h3 := shiftHalfOdd_slots_le L hw
-  have h4 := eqToggle_slots_le G L.y (eqAncillas L) L.r (oddWord 0)
+  have h4 := eqToggle_slots_le G (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
   have h5 := maskedConstant_gateSlots_le J L.y (oddWord 0)
   simp only [jointGD_odd, programGD_odd, gateSlots_append,
-    gateSlots_cons, gateSlots_nil, instructionSlots, h1, h2, len.2.1, len.2.2.1,
+    gateSlots_cons, gateSlots_nil, instructionSlots, h1, h2, eqOdd0Wires_length, len.2.1, len.2.2.1,
     List.length_nil, List.length_cons, Nat.min_self] at h3 h4 h5 ⊢
   omega
 
@@ -5453,12 +5507,12 @@ theorem jointD_odd_slots (L : Layout) (hw : L.Widths) (J G : Wire) :
     gateSlots (jointD_odd L J G) ≤ 8160 := by
   have len := BalancedCleanup.widths L.toLayout hw
   have h1 := maskedConstant_gateSlots_le J L.y (oddWord 0)
-  have h2 := eqToggle_slots_le G L.y (eqAncillas L) L.r (oddWord 0)
+  have h2 := eqToggle_slots_le G (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
   have h3 := unshiftHalfOdd_slots_le L hw
   have h4 := signComplement_gateSlots L.lower L.r
   have h5 := eraseCopy_slots J L.r L.y (len.2.1.trans len.2.2.1.symm)
   simp only [jointD_odd, programD_odd, gateSlots_append,
-    gateSlots_cons, gateSlots_nil, instructionSlots, h4, h5, len.2.1, len.2.2.1,
+    gateSlots_cons, gateSlots_nil, instructionSlots, h4, h5, eqOdd0Wires_length, len.2.1, len.2.2.1,
     List.length_nil, List.length_cons] at h1 h2 h3 ⊢
   omega
 
@@ -5486,7 +5540,7 @@ theorem jointGD_odd_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have hx (q : Wire) : GatePhysical [.X q] := by simp [GatePhysical, PhysicalInstr, ProperGate]
   simp only [jointGD_odd, programGD_odd, gatePhysical_append]
   exact ⟨⟨hx G, ⟨⟨⟨⟨⟨⟨⟨⟨hcp, hccx⟩, signComplement_physical L.lower L.r d.lr⟩,
-    shiftHalfOdd_physical L hw hn⟩, hmx⟩, eqToggle_physical G L.y (eqAncillas L) L.r (oddWord 0) d.eqND⟩,
+    shiftHalfOdd_physical L hw hn⟩, hmx⟩, eqToggle_physical G (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249) (eqOdd0_nodup L hw G d.eqND)⟩,
     hx J⟩, maskedConstant_physical J L.y (oddWord 0) d.jy⟩, hx J⟩⟩, hx G⟩
 
 theorem jointD_odd_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -5502,7 +5556,7 @@ theorem jointD_odd_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have hx (q : Wire) : GatePhysical [.X q] := by simp [GatePhysical, PhysicalInstr, ProperGate]
   simp only [jointD_odd, programD_odd, gatePhysical_append]
   exact ⟨⟨hx G, ⟨⟨⟨⟨⟨⟨⟨⟨hx J, maskedConstant_physical J L.y (oddWord 0) d.jy⟩, hx J⟩,
-    eqToggle_physical G L.y (eqAncillas L) L.r (oddWord 0) d.eqND⟩,
+    eqToggle_physical G (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249) (eqOdd0_nodup L hw G d.eqND)⟩,
     unshiftHalfOdd_physical L hw hn⟩, hccx⟩, signComplement_physical L.lower L.r d.lr⟩,
     hmx⟩, eraseCopy_physical J L.r L.y d.copyND⟩⟩, hx G⟩
 
@@ -5521,10 +5575,11 @@ private def oddJointSites (L : Layout) (J G : Wire) : Finset Wire :=
 
 private theorem jointGD_odd_sites (L : Layout) (hw : L.Widths) (J G : Wire) :
     wires (jointGD_odd L J G) ⊆ oddJointSites L J G := by
+  have len := BalancedCleanup.widths L.toLayout hw
   have h1 := copyRegister_wires_subset (some J) L.r L.y
   have h2 := signComplement_wires_subset L.lower L.r
   have h3 := shiftHalfOdd_wires_sub L hw
-  have h4 := eqToggle_wires_sub G L.y (eqAncillas L) L.r (oddWord 0)
+  have h4 := eqToggle_wires_sub G (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
   have h5 := maskedConstant_wires_subset J L.y (oddWord 0)
   intro q hq
   simp only [jointGD_odd, programGD_odd, wires_append, Finset.mem_union] at hq
@@ -5537,7 +5592,14 @@ private theorem jointGD_odd_sites (L : Layout) (hw : L.Widths) (J G : Wire) :
   · have m := h2 hq; simp only [List.mem_toFinset, List.mem_cons] at m; tauto
   · have m := h3 hq; simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at m; tauto
   · simp [wires, Instr.wires, correctionWires] at hq; tauto
-  · have m := h4 hq; simp only [eqAncillas, List.mem_toFinset, List.mem_cons, List.mem_append] at m; tauto
+  · have m := h4 hq
+    simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at m
+    rcases m with rfl | (((hy | ha) | hr))
+    · tauto
+    · have hy' := (eqOdd0Wires_sublist L.y len.2.2.1).subset hy; tauto
+    · have ha' := (List.take_sublist 250 (eqAncillas L)).subset ha
+      simp only [eqAncillas, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at ha'; tauto
+    · tauto
   · simp [wires, Instr.wires] at hq; tauto
   · have m := h5 hq; simp only [List.mem_toFinset, List.mem_cons] at m; tauto
   · simp [wires, Instr.wires] at hq; tauto
@@ -5545,8 +5607,9 @@ private theorem jointGD_odd_sites (L : Layout) (hw : L.Widths) (J G : Wire) :
 
 private theorem jointD_odd_sites (L : Layout) (hw : L.Widths) (J G : Wire) :
     wires (jointD_odd L J G) ⊆ oddJointSites L J G := by
+  have len := BalancedCleanup.widths L.toLayout hw
   have h1 := maskedConstant_wires_subset J L.y (oddWord 0)
-  have h2 := eqToggle_wires_sub G L.y (eqAncillas L) L.r (oddWord 0)
+  have h2 := eqToggle_wires_sub G (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
   have h3 := unshiftHalfOdd_wires_sub L hw
   have h4 := signComplement_wires_subset L.lower L.r
   have h5 := eraseCopy_wires_sub J L.r L.y
@@ -5558,7 +5621,14 @@ private theorem jointD_odd_sites (L : Layout) (hw : L.Widths) (J G : Wire) :
   · simp [wires, Instr.wires] at hq; tauto
   · have m := h1 hq; simp only [List.mem_toFinset, List.mem_cons] at m; tauto
   · simp [wires, Instr.wires] at hq; tauto
-  · have m := h2 hq; simp only [eqAncillas, List.mem_toFinset, List.mem_cons, List.mem_append] at m; tauto
+  · have m := h2 hq
+    simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at m
+    rcases m with rfl | (((hy | ha) | hr))
+    · tauto
+    · have hy' := (eqOdd0Wires_sublist L.y len.2.2.1).subset hy; tauto
+    · have ha' := (List.take_sublist 250 (eqAncillas L)).subset ha
+      simp only [eqAncillas, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at ha'; tauto
+    · tauto
   · have m := h3 hq; simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at m; tauto
   · simp [wires, Instr.wires] at hq; tauto
   · have m := h4 hq; simp only [List.mem_toFinset, List.mem_cons] at m; tauto
@@ -5713,6 +5783,145 @@ private theorem cond_eq_odd0 (Jv Bv : Bool) (Z : Fp) :
   · simp only [if_true, Bool.true_and]
     exact decide_eq_decide.mpr ⟨fun h => oddWord_injective h, fun h => h ▸ rfl⟩
 
+private theorem oddWord_zero_eq_const : oddWord 0 = eqOdd0Const := by
+  unfold oddWord eqOdd0Const
+  rw [oddRep_zero]
+  decide +kernel
+
+private theorem le_of_testBit_imp : ∀ (n a b : Nat), a < 2 ^ n → b < 2 ^ n →
+    (∀ i < n, a.testBit i = true → b.testBit i = true) → a ≤ b
+  | 0, a, b, ha, hb, _ => by omega
+  | n + 1, a, b, ha, hb, h => by
+    have hdiv : a / 2 ≤ b / 2 := le_of_testBit_imp n (a / 2) (b / 2)
+      (by rw [Nat.pow_succ] at ha; omega) (by rw [Nat.pow_succ] at hb; omega)
+      (fun i hi ha' => by
+        have := h (i + 1) (by omega)
+        rw [Nat.testBit_succ, Nat.testBit_succ] at this
+        exact this ha')
+    have h0 := h 0 (by omega)
+    simp only [Nat.testBit_zero] at h0
+    have ha2 : a % 2 = 0 ∨ a % 2 = 1 := by omega
+    have hb2 : b % 2 = 0 ∨ b % 2 = 1 := by omega
+    rcases ha2 with ha0 | ha1 <;> rcases hb2 with hb0 | hb1
+    · omega
+    · omega
+    · exfalso; simp [ha1, hb0] at h0
+    · omega
+
+private theorem eq_of_testBit_lt (n a b : Nat) (ha : a < 2 ^ n) (hb : b < 2 ^ n)
+    (h : ∀ i < n, a.testBit i = b.testBit i) : a = b :=
+  Nat.le_antisymm
+    (le_of_testBit_imp n a b ha hb (fun i hi h1 => by rw [← h i hi]; exact h1))
+    (le_of_testBit_imp n b a hb ha (fun i hi h1 => by rw [h i hi]; exact h1))
+
+private theorem testBit_two_pow_eq : ∀ (k j : Nat), (2 ^ k).testBit j = decide (j = k)
+  | 0, 0 => by decide
+  | 0, j + 1 => by rw [Nat.testBit_succ]; simp
+  | k + 1, 0 => by
+    rw [Nat.testBit_zero, Nat.pow_succ]
+    simp [show (2 ^ k * 2) % 2 = 0 by omega]
+  | k + 1, j + 1 => by
+    rw [Nat.testBit_succ, Nat.pow_succ, show (2 ^ k * 2) / 2 = 2 ^ k by omega,
+      testBit_two_pow_eq k j]
+    simp
+
+private theorem regValue_eqOdd0_testBit (ys : List Wire) (b : BasisState)
+    (hlen : ys.length = 256) (j : Nat) (hj : j < 250) :
+    (regValue (eqOdd0Wires ys) b).testBit j =
+      (regValue ys b).testBit (eqOdd0Indices.getD j 0) := by
+  have hj' : j < (eqOdd0Wires ys).length := by rw [eqOdd0Wires_length]; exact hj
+  rw [regValue_testBit (eqOdd0Wires ys) b j hj']
+  have hj0 : j < eqOdd0Indices.length := by rw [eqOdd0Indices_length]; exact hj
+  have hgi : (eqOdd0Wires ys).getD j 0 = ys.getD (eqOdd0Indices.getD j 0) 0 := by
+    rw [List.getD_eq_getElem _ _ hj', List.getD_eq_getElem _ _ hj0]
+    simp [eqOdd0Wires]
+  rw [hgi]
+  have hlt : eqOdd0Indices.getD j 0 < ys.length := by
+    rw [hlen, List.getD_eq_getElem _ _ hj0]
+    exact eqOdd0Indices_lt _ (List.getElem_mem hj0)
+  exact (regValue_testBit ys b _ hlt).symm
+
+private theorem oddWord_domain_nat (Jv : Bool) (Z : Fp) :
+    let v := if Jv then oddWord Z else 0
+    v < 2 ^ 255 ∨ (eqOdd0Const ≤ v ∧ v < 2 ^ 256) := by
+  cases Jv
+  · left; norm_num
+  · simp only [if_true]
+    have hb := oddRep_bounds Z
+    have hc := constants
+    unfold OddDomain at hb
+    unfold oddWord encodeWord eqOdd0Const
+    have hq : q = 57896044618658097711785492504343953926634992332820282019728792003954417335831 := by
+      norm_num [q, p]
+    by_cases hneg : oddRep Z < 0
+    · right; constructor <;> omega
+    · left; omega
+
+private theorem cond_eq_odd0_short (Jv Bv : Bool) (Z : Fp) (ys : List Wire) (b : BasisState)
+    (hlen : ys.length = 256) (hY : regValue ys b = if Jv then oddWord Z else 0) :
+    (Bv && decide (regValue (eqOdd0Wires ys) b = 2 ^ 249 % 2 ^ 250)) =
+      (Jv && Bv && decide (Z = 0)) := by
+  have hmod249 : (2 ^ 249 : Nat) % 2 ^ 250 = 2 ^ 249 := Nat.mod_eq_of_lt (by norm_num)
+  rw [hmod249]
+  have hiff : regValue (eqOdd0Wires ys) b = 2 ^ 249 ↔ regValue ys b = oddWord 0 := by
+    constructor
+    · intro hu
+      have hlast : eqOdd0Indices.getD 249 0 = 255 := by decide +kernel
+      have h255 : (regValue ys b).testBit 255 = true := by
+        rw [← hlast, ← regValue_eqOdd0_testBit ys b hlen 249 (by decide), hu, testBit_two_pow_eq]
+        decide
+      have hge255 : 2 ^ 255 ≤ regValue ys b := Nat.ge_two_pow_of_testBit h255
+      have hdom := oddWord_domain_nat Jv Z
+      dsimp only at hdom
+      rw [← hY] at hdom
+      have hbounds : eqOdd0Const ≤ regValue ys b ∧ regValue ys b < 2 ^ 256 := by
+        rcases hdom with hlt | hok
+        · omega
+        · exact hok
+      have hcov : (List.range 256).all (fun i =>
+          eqOdd0Const.testBit i || (eqOdd0Indices.take 249).contains i) = true := by
+        decide +kernel
+      have hle : regValue ys b ≤ eqOdd0Const := by
+        apply le_of_testBit_imp 256 (regValue ys b) eqOdd0Const hbounds.2 (by norm_num [eqOdd0Const])
+        intro i hi hvi
+        cases hci : eqOdd0Const.testBit i
+        · exfalso
+          have hm := List.all_eq_true.mp hcov i (List.mem_range.mpr hi)
+          simp only [hci, Bool.false_or] at hm
+          have hmem : i ∈ eqOdd0Indices.take 249 := List.contains_iff_mem.mp hm
+          obtain ⟨j, hj, hget⟩ := List.mem_iff_getElem.mp hmem
+          have hj249 : j < 249 := by
+            have : (eqOdd0Indices.take 249).length = 249 := by simp [List.length_take, eqOdd0Indices_length]
+            omega
+          have hgetD : eqOdd0Indices.getD j 0 = i := by
+            have hj0 : j < eqOdd0Indices.length := by rw [eqOdd0Indices_length]; omega
+            rw [List.getD_eq_getElem _ _ hj0]
+            simpa [List.getElem_take] using hget
+          have hzero : (regValue ys b).testBit i = false := by
+            rw [← hgetD, ← regValue_eqOdd0_testBit ys b hlen j (by omega), hu, testBit_two_pow_eq]
+            simp [show j ≠ 249 by omega]
+          rw [hzero] at hvi
+          exact Bool.false_ne_true hvi
+        · rfl
+      rw [oddWord_zero_eq_const]
+      omega
+    · intro hv
+      have hu_lt : regValue (eqOdd0Wires ys) b < 2 ^ 250 := by
+        have := regValue_lt (eqOdd0Wires ys) b
+        rwa [eqOdd0Wires_length] at this
+      have hmatch : (List.range 250).all (fun j =>
+          eqOdd0Const.testBit (eqOdd0Indices.getD j 0) == decide (j = 249)) = true := by
+        decide +kernel
+      apply eq_of_testBit_lt 250 (regValue (eqOdd0Wires ys) b) (2 ^ 249) hu_lt (by norm_num)
+      intro j hj
+      rw [regValue_eqOdd0_testBit ys b hlen j hj, hv, oddWord_zero_eq_const, testBit_two_pow_eq]
+      exact beq_iff_eq.mp (List.all_eq_true.mp hmatch j (List.mem_range.mpr hj))
+  have hdec : decide (regValue (eqOdd0Wires ys) b = 2 ^ 249) = decide (regValue ys b = oddWord 0 % 2 ^ 256) := by
+    rw [Nat.mod_eq_of_lt (oddWord_lt 0)]
+    exact decide_eq_decide.mpr hiff
+  rw [hdec, hY]
+  exact cond_eq_odd0 Jv Bv Z
+
 theorem programGD_odd_frame (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (J B : Wire) (hJ : J ∉ L.wires) (hB : B ∉ L.wires) (hJB : [J, B].Nodup)
     (Jv Bv : Bool) (Z : Fp) (s : State) (m : List Bool)
@@ -5821,14 +6030,18 @@ theorem programGD_odd_frame (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       exact (hs5_out q off.1 off.2).trans (hclean q hq)
     · have sf := flagAway L hn L.sign (by simp)
       exact (hs5_out L.sign (fun h => sf (by simp [h])) (fun h => sf (by simp [h]))).trans hsign
-  -- Step 6: eqToggle B L.y (eqAncillas L) L.r (oddWord 0)
+  -- Step 6: eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
   let m6 := (m.drop (measurementCount (shiftHalfOdd L))).drop 1
-  let s6 := run (eqToggle B L.y (eqAncillas L) L.r (oddWord 0)) m6 s5
-  have hc6 := eqToggle_correct B L.y (eqAncillas L) L.r (oddWord 0)
-    (len.2.2.1.trans (eqAncillas_length L hw).symm) d.eqND s5 m6 hs5_anc
+  let s6 := run (eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)) m6 s5
+  have hs5_anc_short : ∀ q ∈ eqOdd0Anc L, s5.basis q = false :=
+    fun q hq => hs5_anc q ((List.take_sublist 250 (eqAncillas L)).subset hq)
+  have hc6 := eqToggle_correct B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
+    ((eqOdd0Wires_length L.y).trans (eqOdd0Anc_length L hw).symm)
+    (eqOdd0_nodup L hw B d.eqND) s5 m6 hs5_anc_short
   have hs6_R : regValue L.r s6.basis = oddWord ((if Jv && Bv then -Z else Z) / 2) := by
     have h6 := hc6.2.2
-    rw [hs5_out B d.br d.by_, hb, hs5_Y, len.2.2.1, len.2.1, hs5_R, cond_eq_odd0] at h6
+    rw [hs5_out B d.br d.by_, hb, eqOdd0Wires_length, len.2.1, hs5_R,
+      cond_eq_odd0_short Jv Bv Z L.y s5.basis len.2.2.1 hs5_Y] at h6
     exact h6.trans hspec.2
   have hs6_Y : regValue L.y s6.basis = if Jv then oddWord Z else 0 :=
     (regValue_congr L.y _ s5.basis (fun q hq =>
@@ -5850,7 +6063,7 @@ theorem programGD_odd_frame (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     have hshape : programGD_odd L J B =
         (((copyRegister (some J) L.r L.y ++ [.CCX J B L.lower]) ++ signComplement L.lower L.r) ++
           shiftHalfOdd L) ++ ([.measureX L.lower [] [.CZ J B]] ++
-            (eqToggle B L.y (eqAncillas L) L.r (oddWord 0) ++
+            (eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249) ++
               ([.X J] ++ maskedConstant J L.y (oddWord 0) ++ [.X J]))) := by
       simp only [programGD_odd, List.append_assoc]
     rw [hshape, run_append]
@@ -5910,14 +6123,18 @@ theorem programD_odd_frame (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       exact (hs1_out q off.2).trans (hclean q hq)
     · have sf := flagAway L hn L.sign (by simp)
       exact (hs1_out L.sign (fun h => sf (by simp [h]))).trans hsign
-  -- Step 2: eqToggle B L.y (eqAncillas L) L.r (oddWord 0)
-  let m2 := m.take (measurementCount (eqToggle B L.y (eqAncillas L) L.r (oddWord 0)))
-  let s2 := run (eqToggle B L.y (eqAncillas L) L.r (oddWord 0)) m2 st1
-  have hc2 := eqToggle_correct B L.y (eqAncillas L) L.r (oddWord 0)
-    (len.2.2.1.trans (eqAncillas_length L hw).symm) d.eqND st1 m2 hs1_anc
+  -- Step 2: eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
+  let m2 := m.take (measurementCount (eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)))
+  let s2 := run (eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)) m2 st1
+  have hs1_anc_short : ∀ q ∈ eqOdd0Anc L, st1.basis q = false :=
+    fun q hq => hs1_anc q ((List.take_sublist 250 (eqAncillas L)).subset hq)
+  have hc2 := eqToggle_correct B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)
+    ((eqOdd0Wires_length L.y).trans (eqOdd0Anc_length L hw).symm)
+    (eqOdd0_nodup L hw B d.eqND) st1 m2 hs1_anc_short
   have hs2_R : regValue L.r s2.basis = encodeWord 256 (oddHalfSigned w) := by
     have h2 := hc2.2.2
-    rw [hs1_out B d.by_, hb, hs1_Y, len.2.2.1, len.2.1, hs1_R, cond_eq_odd0] at h2
+    rw [hs1_out B d.by_, hb, eqOdd0Wires_length, len.2.1, hs1_R,
+      cond_eq_odd0_short Jv Bv Z L.y st1.basis len.2.2.1 hs1_Y] at h2
     rw [h2, ← hspec.2]
     change (if (Jv && Bv && decide (Z = 0)) = true then
       2 ^ 256 - 1 - (if (Jv && Bv && decide (Z = 0)) = true then
@@ -5939,7 +6156,7 @@ theorem programD_odd_frame (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     have cm := (cleanCarries_sublist L hw).subset hc'
     exact (hc2.2.1 c (carry_not_r L hn c cm)).trans
       ((hs1_out c (fun h => y_not_carry L hn c h cm)).trans (hclean c (by simp [work, cm])))
-  let mRest := m.drop (measurementCount (eqToggle B L.y (eqAncillas L) L.r (oddWord 0)))
+  let mRest := m.drop (measurementCount (eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)))
   let m3 := mRest.take (measurementCount (unshiftHalfOdd L))
   let s3 := run (unshiftHalfOdd L) m3 s2
   have hc3 := unshiftHalfOdd_correct L hw hn w hspec.1 s2 m3 hs2_R hs2_par hs2_clean
@@ -6007,13 +6224,13 @@ theorem programD_odd_frame (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have hrun : run (programD_odd L J B) m s = run (eraseCopy J L.r L.y) m7 s6 := by
     have hshape : programD_odd L J B =
         (([.X J] ++ maskedConstant J L.y (oddWord 0) ++ [.X J]) ++
-          eqToggle B L.y (eqAncillas L) L.r (oddWord 0)) ++
+          eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)) ++
         ((unshiftHalfOdd L ++ [.CCX J B L.lower] ++ signComplement L.lower L.r) ++
           ([.measureX L.lower [] [.CZ J B]] ++ eraseCopy J L.r L.y)) := by
       simp only [programD_odd, List.append_assoc]
     rw [hshape, run_append, measurementCount_append, hm1, Nat.zero_add]
     have hpre1 : run (([.X J] ++ maskedConstant J L.y (oddWord 0) ++ [.X J]) ++
-        eqToggle B L.y (eqAncillas L) L.r (oddWord 0)) m2 s = s2 := by
+        eqToggle B (eqOdd0Wires L.y) (eqOdd0Anc L) L.r (2 ^ 249)) m2 s = s2 := by
       rw [run_append, hm1, List.take_zero, List.drop_zero]
     rw [hpre1, run_append]
     simp only [measurementCount_append, hm4, hm5, Nat.add_zero]
@@ -6733,9 +6950,9 @@ theorem cellOdd_slots (divide : Bool) (P : Program) (active hole : Nat) :
 against `Rolling1588.placedFirstPacket divide`. -/
 theorem placedFirstPacketOdd_counts_rel (half : Bool → Program) (divide : Bool) :
     toffoliCount (placedFirstPacketOdd half divide) +
-      (if divide then 7 + 3 * 1020 else 8 + 3 * 1020) =
+      (if divide then 13 + 3 * 1020 else 14 + 3 * 1020) =
       toffoliCount (Rolling1588.placedFirstPacket divide) + 3 * toffoliCount (half divide) ∧
-    measurementCount (placedFirstPacketOdd half divide) + (514 + 3 * 1021) =
+    measurementCount (placedFirstPacketOdd half divide) + (520 + 3 * 1021) =
       measurementCount (Rolling1588.placedFirstPacket divide) + 3 * measurementCount (half divide) := by
   have c2 := cellOdd_counts divide (half divide) 2 4
   have c3 := cellOdd_counts divide (half divide) 3 2
@@ -6763,12 +6980,12 @@ theorem placedFirstPacketOdd_counts_rel (half : Bool → Program) (divide : Bool
     exact ⟨by omega, by omega⟩
 
 /-- Exact T/M savings of `placedFirstPacketOdd` when `half` has `1,017 T / 1,017 M`
-(`-16 T / -526 M` for `divide = true`, `-17 T / -526 M` for `divide = false`; `-33 T / -1,052 M` combined). -/
+(`-22 T / -532 M` for `divide = true`, `-23 T / -532 M` for `divide = false`; `-45 T / -1,064 M` combined). -/
 theorem placedFirstPacketOdd_counts_delta (half : Bool → Program) (divide : Bool)
     (hT : toffoliCount (half divide) = 1017) (hM : measurementCount (half divide) = 1017) :
-    toffoliCount (placedFirstPacketOdd half divide) + (if divide then 16 else 17) =
+    toffoliCount (placedFirstPacketOdd half divide) + (if divide then 22 else 23) =
       toffoliCount (Rolling1588.placedFirstPacket divide) ∧
-    measurementCount (placedFirstPacketOdd half divide) + 526 =
+    measurementCount (placedFirstPacketOdd half divide) + 532 =
       measurementCount (Rolling1588.placedFirstPacket divide) := by
   have rel := placedFirstPacketOdd_counts_rel half divide
   rw [hT, hM] at rel
@@ -6783,9 +7000,9 @@ theorem hostedFirstPacketOdd_counts (half : Bool → Program) (divide : Bool) :
 /-- Exact T/M savings of `hostedFirstPacketOdd` against `StairFirstPacketHosted.hostedFirstPacket`. -/
 theorem hostedFirstPacketOdd_counts_delta (half : Bool → Program) (divide : Bool)
     (hT : toffoliCount (half divide) = 1017) (hM : measurementCount (half divide) = 1017) :
-    toffoliCount (hostedFirstPacketOdd half divide) + (if divide then 16 else 17) =
+    toffoliCount (hostedFirstPacketOdd half divide) + (if divide then 22 else 23) =
       toffoliCount (StairFirstPacketHosted.hostedFirstPacket divide) ∧
-    measurementCount (hostedFirstPacketOdd half divide) + 526 =
+    measurementCount (hostedFirstPacketOdd half divide) + 532 =
       measurementCount (StairFirstPacketHosted.hostedFirstPacket divide) := by
   have h1 := hostedFirstPacketOdd_counts half divide
   have h2 := StairLoan.rebindMany_counts StairSchedule.exclusiveRoles
