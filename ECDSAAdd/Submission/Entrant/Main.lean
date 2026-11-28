@@ -649,8 +649,8 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2008639 ∧
-    measurementCount (program C) ≤ 1446401 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2008637 ∧
+    measurementCount (program C) ≤ 1446403 := by
   have h := Stair44Resources.totals C
   cases C with
   | zero => change toffoliCount [] ≤ _ ∧ measurementCount [] ≤ _; simp [toffoliCount,measurementCount]
@@ -4840,8 +4840,8 @@ theorem programOld_eq (C : Point) : programOld C = WindowCallerCosts.program C :
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2008639 ∧
-    measurementCount (programOld C) ≤ 1446401 ∧ gateSlots (programOld C) ≤ 67209064 := by
+theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2008637 ∧
+    measurementCount (programOld C) ≤ 1446403 ∧ gateSlots (programOld C) ≤ 67209064 := by
   rw [programOld_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
 
@@ -15438,8 +15438,8 @@ theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular 
   omega
 
 /-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
-theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2008137 ∧
-    measurementCount (programNC C) ≤ 1445899 ∧ gateSlots (programNC C) ≤ 67209064 := by
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2008135 ∧
+    measurementCount (programNC C) ≤ 1445901 ∧ gateSlots (programNC C) ≤ 67209064 := by
   have m := metricsOld C
   cases C with
   | zero =>
@@ -15652,7 +15652,7 @@ set_option maxHeartbeats 1500000
 
 /-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
 turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
-theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2008136 := by
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2008134 := by
   have m := (metricsNC C).1
   cases C with
   | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
@@ -15680,7 +15680,7 @@ open Arithmetic Secp256k1 Challenge Baselines
 
 /-- The NC entry: both field converters deleted, square reading the odd word. -/
 def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
-def boundsNC : Challenge.Bounds := ⟨2008136,1445899,1542,67209064⟩
+def boundsNC : Challenge.Bounds := ⟨2008134,1445901,1542,67209064⟩
 
 theorem certificateOfSemanticsNC
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
@@ -15689,7 +15689,7 @@ theorem certificateOfSemanticsNC
   physical C := Baselines.normalize_physical _ (WindowPhysical.physicalNC C)
   toffoli_le C := WindowParityCaller.toffoliNC_normalized C
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1445899
+    change measurementCount (normalizeProgram _) ≤ 1445901
     rw [normalize_measurements]
     exact (WindowParityCaller.metricsNC C).2.1
   qubits_le C := by

@@ -31927,12 +31927,12 @@ theorem finite_sub (c : Cost) (C : Point) (cx cy : Fp) (d : Nat)
     c.append,c.rename,divide_eq,multiply_eq]
   omega
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2167597 ∧ measurementCount (program C) ≤ 1519521 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2167595 ∧ measurementCount (program C) ≤ 1519523 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2168837 ∧ measurementCount (concreteProgram C) ≤ 1520335 at h
+  change toffoliCount (concreteProgram C) ≤ 2168835 ∧ measurementCount (concreteProgram C) ≤ 1520337 at h
   cases C with
   | zero =>
-    change toffoliCount [] ≤ 2167597 ∧ measurementCount [] ≤ 1519521
+    change toffoliCount [] ≤ 2167595 ∧ measurementCount [] ≤ 1519523
     simp [toffoliCount, measurementCount]
   | @some cx cy hc =>
     let k := ReflectionE1.correction cx
@@ -32206,8 +32206,8 @@ def step (i : Nat) (back measured : Bool) : Nat :=
   let pre := W.compactSkywalkTickPreWidth i - 1
   let post := W.compactSkywalkTickPostWidth i - 1
   if back then
-    if measured then post + (if W.highTick i then 1 else 0) + 2*due i
-    else pre+post-1-(if W.trimTick i then 1 else 0)-(if W.highTick i then 1 else 0)+11*due i
+    if measured then post + W.highSave i + 2*due i
+    else pre+post-1-(if W.trimTick i then 1 else 0)-W.highSave i+11*due i
   else if measured then post+W.repairDue i+4*due i
   else pre+post-W.repairDue i-W.fwdDue i-TickRanges.due i+9*due i
 def total (i : Nat) (back measured : Bool) : Nat → Nat

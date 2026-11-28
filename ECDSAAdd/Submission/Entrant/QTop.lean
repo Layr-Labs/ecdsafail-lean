@@ -8117,13 +8117,13 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
                                                                                     
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153849 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153847 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500726 :=
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500728 :=
   (wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2.1.trans_le
     (ControlLoan1589.wrapper_measurements cx cy hc)
 
@@ -14644,13 +14644,13 @@ theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
                                                                                     
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152835 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152833 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589SumCleanupFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499841 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499843 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2
   have old:=ControlLoan1589SumCleanupFinal.wrapper_measurements cx cy hc
   omega
@@ -30223,8 +30223,14 @@ theorem oneStep_roundtrip (w : Nat → Wire) (isA : Bool) (hn : (skywalkPoolWire
       intro q hq
       exact read q (by simp only [SkywalkIntegerLayout.wires,List.mem_append,List.mem_cons]; itauto))]
     exact loc.2.2.2.2.2
+  have first : i = 1 → t.basis (w (i+W.compactSkywalkTickPreWidth i-1)) = false := by
+    intro e
+    subst i
+    have rd := read (W.compactSkywalkTickLayout w 1).aSign (by simp [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.ah])
+    change t.basis (w (1+W.compactSkywalkTickPreWidth 1-1)) = _ at rd
+    exact rd.trans (W.compactSkywalkStage_atop_zero w hn x p hp0 hx0 hpo hp hgap hx hc raw hraw)
   have rt := W.ReverseCarry.compactReceiverTick_roundtrip w i hi hn t []
-    (mD.drop (measurementCount (decodeBefore w isA i))) hh clean tops atop
+    (mD.drop (measurementCount (decodeBefore w isA i))) hh clean tops atop first
   have dp : run (decodeBefore w isA i)
       (mD.take (measurementCount (decodeBefore w isA i)))
       (run (packAfter w isA i) [] (run (W.compactSkywalkTick w i) [] t))=
@@ -36782,13 +36788,13 @@ theorem generic_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
                                                                                 
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152081 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152079 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500053 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500055 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).2.1
   have old:=ControlLoan1589BFFinal.wrapper_measurements cx cy hc
   omega

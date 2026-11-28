@@ -10171,8 +10171,8 @@ attribute [local irreducible] wires run toffoliCount measurementCount
 
 
 /-- Exact counts use the new field body and protected integer budget, not a mutable old parent. -/
-theorem raw_counts : toffoliCount Q6EndpointEntryRaw.kernel5=1048857 ∧
- measurementCount Q6EndpointEntryRaw.kernel5=720812 := by
+theorem raw_counts : toffoliCount Q6EndpointEntryRaw.kernel5=1048856 ∧
+ measurementCount Q6EndpointEntryRaw.kernel5=720813 := by
  have cfg:=MappedCompressed.LaneA.laneLogical_config
  have narrow:=W.compactPasses5_old_counts base base_pool_nodup
  have repair:=Stack5.counts_511 base base_pool_nodup
@@ -10241,12 +10241,12 @@ attribute [local irreducible] run wires toffoliCount measurementCount
 
 
 
-theorem kernel5_counts : toffoliCount kernel5=1048857 ∧ measurementCount kernel5=720812 := by
+theorem kernel5_counts : toffoliCount kernel5=1048856 ∧ measurementCount kernel5=720813 := by
  have h:=EndpointEntryResources.outer_counts Q6EndpointEntryRaw.hostField5
  rw [EndpointEntryQ5.old_shape] at h
  simpa only [kernel5,h.1,h.2] using EndpointEntryResources.raw_counts
 
-theorem kernel5S_counts : toffoliCount kernel5S=1047837 ∧ measurementCount kernel5S=720812 := by
+theorem kernel5S_counts : toffoliCount kernel5S=1047836 ∧ measurementCount kernel5S=720813 := by
  have c:=kernel5_counts
  have t:=selKernel5.tc
  have m:=selKernel5.mc
@@ -10261,7 +10261,7 @@ theorem kernel5S_counts : toffoliCount kernel5S=1047837 ∧ measurementCount ker
 
 
 theorem arithEntryS_counts (L : ControlledPointLayout) :
- toffoliCount (arithEntryS L)=1047837 ∧ measurementCount (arithEntryS L)=720812 := by
+ toffoliCount (arithEntryS L)=1047836 ∧ measurementCount (arithEntryS L)=720813 := by
  simpa only [arithEntryS,(renameProgram_counts (wireFn2 L) kernel5S).1,
    (renameProgram_counts (wireFn2 L) kernel5S).2] using kernel5S_counts
 
@@ -10270,7 +10270,7 @@ theorem arithEntryS_counts (L : ControlledPointLayout) :
 
 
 theorem fusedDivisionF_counts (L : ControlledPointLayout) (hw:L.Widths) (k:Fp) :
- toffoliCount (fusedDivisionF L k)=1048603 ∧ measurementCount (fusedDivisionF L k)=721579 := by
+ toffoliCount (fusedDivisionF L k)=1048602 ∧ measurementCount (fusedDivisionF L k)=721580 := by
  have a:=EntryFuse.fusedY_counts L hw k
  have b:=arithEntryS_counts L
  simp only [fusedDivisionF,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2]
@@ -10413,11 +10413,11 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
 attribute [local irreducible] toffoliCount measurementCount
 -- The isolated endpoint foundation already has the optimization; make the
 -- normal-half count premise explicit, and close it in the final MainBasis.
-theorem division_counts (oldNormal : toffoliCount OwnEntryFuseQ5.kernel5=1049111 ∧
- measurementCount OwnEntryFuseQ5.kernel5=720812)
+theorem division_counts (oldNormal : toffoliCount OwnEntryFuseQ5.kernel5=1049110 ∧
+ measurementCount OwnEntryFuseQ5.kernel5=720813)
  (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
- toffoliCount (OwnEntryFuseQ6.fusedDivisionF L k)=1048857 ∧
- measurementCount (OwnEntryFuseQ6.fusedDivisionF L k)=721579 := by
+ toffoliCount (OwnEntryFuseQ6.fusedDivisionF L k)=1048856 ∧
+ measurementCount (OwnEntryFuseQ6.fusedDivisionF L k)=721580 := by
  have eq:=OwnEntryFuseQ6.kernel5_counts_eq
  have tc:=OwnEntryFuseQ6.selKernel5.tc
  have mc:=OwnEntryFuseQ6.selKernel5.mc
@@ -10468,7 +10468,7 @@ attribute [local irreducible] wires run toffoliCount measurementCount
 
 
 theorem division_counts_diff (Dold : Program)
- (oldCounts : toffoliCount Dold=1048857 ∧ measurementCount Dold=721579)
+ (oldCounts : toffoliCount Dold=1048856 ∧ measurementCount Dold=721580)
  (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
  toffoliCount (OwnEndpointEntryQ6.fusedDivisionF L k)+254=toffoliCount Dold ∧
  measurementCount (OwnEndpointEntryQ6.fusedDivisionF L k)=measurementCount Dold := by
@@ -20741,8 +20741,8 @@ theorem raw_slots : Challenge.gateSlots OneFlagEntryRaw.kernel5≤20500006 := by
  omega
 
 /-- Exact counts use the new field body and protected integer budget, not a mutable old parent. -/
-theorem raw_counts : toffoliCount OneFlagEntryRaw.kernel5=1048857 ∧
- measurementCount OneFlagEntryRaw.kernel5=720812 := by
+theorem raw_counts : toffoliCount OneFlagEntryRaw.kernel5=1048856 ∧
+ measurementCount OneFlagEntryRaw.kernel5=720813 := by
  have cfg:=MappedCompressed.LaneA.laneLogical_config
  have r:=OneFlagReplay.replay_counts_eq true cfg.1 (cfg.2.1 _ (by simp))
  have fields : toffoliCount OneFlagEntryRaw.field5=toffoliCount Q6EndpointEntryRaw.field5 ∧
@@ -20817,12 +20817,12 @@ theorem kernel5_slots_le : Challenge.gateSlots kernel5≤20500006 := by
 theorem kernel5S_slots_le : Challenge.gateSlots kernel5S≤20500006 :=
  selKernel5.sub.slots.trans kernel5_slots_le
 
-theorem kernel5_counts : toffoliCount kernel5=1048857 ∧ measurementCount kernel5=720812 := by
+theorem kernel5_counts : toffoliCount kernel5=1048856 ∧ measurementCount kernel5=720813 := by
  have h:=OneFlagEntryResources.outer_counts OneFlagEntryRaw.hostField5
  rw [OneFlagEntryQ5.old_shape] at h
  simpa only [kernel5,h.1,h.2] using OneFlagEntryResources.raw_counts
 
-theorem kernel5S_counts : toffoliCount kernel5S=1047837 ∧ measurementCount kernel5S=720812 := by
+theorem kernel5S_counts : toffoliCount kernel5S=1047836 ∧ measurementCount kernel5S=720813 := by
  have c:=kernel5_counts
  have t:=selKernel5.tc
  have m:=selKernel5.mc
@@ -20837,7 +20837,7 @@ theorem kernel5S_counts : toffoliCount kernel5S=1047837 ∧ measurementCount ker
 
 
 theorem arithEntryS_counts (L : ControlledPointLayout) :
- toffoliCount (arithEntryS L)=1047837 ∧ measurementCount (arithEntryS L)=720812 := by
+ toffoliCount (arithEntryS L)=1047836 ∧ measurementCount (arithEntryS L)=720813 := by
  simpa only [arithEntryS,(renameProgram_counts (wireFn2 L) kernel5S).1,
    (renameProgram_counts (wireFn2 L) kernel5S).2] using kernel5S_counts
 
@@ -20846,7 +20846,7 @@ theorem arithEntryS_counts (L : ControlledPointLayout) :
 
 
 theorem fusedDivisionF_counts (L : ControlledPointLayout) (hw:L.Widths) (k:Fp) :
- toffoliCount (fusedDivisionF L k)=1048603 ∧ measurementCount (fusedDivisionF L k)=721579 := by
+ toffoliCount (fusedDivisionF L k)=1048602 ∧ measurementCount (fusedDivisionF L k)=721580 := by
  have a:=EntryFuse.fusedY_counts L hw k
  have b:=arithEntryS_counts L
  simp only [fusedDivisionF,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2]
@@ -21703,7 +21703,7 @@ attribute [local irreducible] wires run toffoliCount measurementCount
   have x:Challenge.gateSlots [.X (base 511)]=1:=rfl
   simp only [OneFlagExitRaw.rawKernel,OneFlagExitRaw.hostMul,Challenge.gateSlots_append,Baselines.rename_gateSlots,clear,x]
   omega
- theorem raw_counts : toffoliCount OneFlagExitRaw.rawKernel=1048855 ∧ measurementCount OneFlagExitRaw.rawKernel=721068 := by
+ theorem raw_counts : toffoliCount OneFlagExitRaw.rawKernel=1048854 ∧ measurementCount OneFlagExitRaw.rawKernel=721069 := by
   have cfg:=MappedCompressed.LaneA.laneLogical_config
   have r:=OneFlagReplay.replay_counts_eq false cfg.1 (cfg.2.1 _ (by simp))
   rw [OneFlagExitRaw.replay_false_eq] at r
@@ -21734,11 +21734,11 @@ attribute [local irreducible] run wires toffoliCount measurementCount
   rw [kernel,OneFlagEntryResources.outer_slots,OneFlagExitSupport.raw_shape]
   exact OneFlagExitResources.raw_slots
  theorem kernelS_slots_le : Challenge.gateSlots kernelS≤20500006 := selKernel.sub.slots.trans kernel_slots_le
- theorem kernel_counts : toffoliCount kernel=1048855 ∧ measurementCount kernel=721068 := by
+ theorem kernel_counts : toffoliCount kernel=1048854 ∧ measurementCount kernel=721069 := by
   have h:=OneFlagEntryResources.outer_counts OneFlagExitRaw.hostMul
   rw [OneFlagExitSupport.raw_shape] at h
   simpa only [kernel,h.1,h.2] using OneFlagExitResources.raw_counts
- theorem kernelS_counts : toffoliCount kernelS=1047835 ∧ measurementCount kernelS=721068 := by
+ theorem kernelS_counts : toffoliCount kernelS=1047834 ∧ measurementCount kernelS=721069 := by
   have c:=kernel_counts;have t:=selKernel.tc;have m:=selKernel.mc
   constructor <;> omega
 
@@ -21747,7 +21747,7 @@ attribute [local irreducible] run wires toffoliCount measurementCount
 
 
 
- theorem arithExit_counts (L : ControlledPointLayout) : toffoliCount (arithExit L)=1047835 ∧ measurementCount (arithExit L)=721068 := by
+ theorem arithExit_counts (L : ControlledPointLayout) : toffoliCount (arithExit L)=1047834 ∧ measurementCount (arithExit L)=721069 := by
   simpa only [arithExit,(renameProgram_counts (wireFn2 L) kernelS).1,(renameProgram_counts (wireFn2 L) kernelS).2] using kernelS_counts
 
 
@@ -43112,7 +43112,7 @@ theorem wrapper_toffoli (K E : Program)
     (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
       measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+10)
     (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤2154524 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤2154522 := by
   have h:=(Edges.wrapper_counts layout layout_widths (gen K E layout cx cy) hc).1
   have g:=(SelGeneric5.program_counts layout layout_widths cx cy).1
   have gf:=(genF_counts layout layout_widths cx cy).1
@@ -43130,7 +43130,7 @@ theorem wrapper_measurements (K E : Program)
     (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
       measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+10)
     (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤1500726 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤1500728 := by
   have h:=(Edges.wrapper_counts layout layout_widths (gen K E layout cx cy) hc).2
   have g:=(SelGeneric5.program_counts layout layout_widths cx cy).2
   have gf:=(genF_counts layout layout_widths cx cy).2
@@ -43603,13 +43603,13 @@ private theorem wrapper_metrics (L : ControlledPointLayout) (C : Point) (cy : Fp
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154524 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154522 := by
   have diff:=wrapper_metrics layout (.some hc) cy _ _ (actual_gen_metrics layout cx cy)
   exact diff.1.trans_le (Prefix1590Point.wrapper_toffoli Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_counts Prefix1590.exitKernel_counts cx cy hc)
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500726 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500728 := by
   have diff:=wrapper_metrics layout (.some hc) cy _ _ (actual_gen_metrics layout cx cy)
   exact diff.2.1.trans_le (Prefix1590Point.wrapper_measurements Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_counts Prefix1590.exitKernel_counts cx cy hc)
