@@ -2583,11 +2583,366 @@ theorem forward_relInterior (d : Bool) :
   Rel.trans (interiorF_rel d) (forward_relX d)
 
 
+/-! The reverse interior boundaries: the right window's inverse route ends with the same
+lower-pair exchange (under `r`) that the left window's unleave performs (under `c`), with only
+the inverse enter and a short unleave head in between.  The two exchanges merge as in the
+forward direction, saving one Toffoli per lower pair. -/
+
+open private unleave15C_eq unleave150C_eq unleave20C_eq suffix_after150 suffix_after20
+  from ECDSAAdd.Submission.Entrant.Mixed20D
+
+/-- The raw (uncut) unleave programs of the left windows. -/
+private def rRawUnleave : InteriorWindow → Program
+  | .short j => if j.val = 7 then leaveInv150To20Red else CRTBarrel.unleave j
+  | .wide j => leaveInvP20Red j
+
+/-- The low-close gate lists (small, no CRT program). -/
+private def rLowG : InteriorWindow → List GateMirror.Gate
+  | .short j => if j.val = 7 then leaveLowClose150 else Shadow7.leaveLowClose (start j)
+  | .wide j => leaveLowClose20 (start20 j)
+
+private def rDblk : InteriorWindow → Program
+  | .short j => if j.val = 7 then MixedFredCut.Dblk150 else MixedFredCut.Dblk15 (start j)
+  | .wide j => MixedFredCut.Dblk20 (start20 j)
+
+attribute [local irreducible] CRTBarrel.barrel barrel20 GateMirror.inverse CRTBarrel.before
+  WideSelectorNormalized.beforeRow CRTBarrel.afterPart WideSelectorNormalized.afterRow afterRow150
+  Shadow7.leaveLowClose leaveLowClose150 leaveLowClose20 Shadow7.leaveClose leaveClose150To20 leaveClose20 in
+/-- Expose the inverse close and the inverse low close at the head of each raw unleave,
+without evaluating any CRT program. -/
+private theorem rRawShape (w : InteriorWindow) (ok : fLeftOK w) :
+    ∃ T, rRawUnleave w = GateMirror.inverse (w.close) ++ (GateMirror.inverse (rLowG w) ++ T) := by
+  cases w with
+  | short j =>
+    change j.val ≤ 24 at ok
+    by_cases h : j.val = 7
+    · obtain ⟨Z, hZ⟩ := suffix_after150
+      refine ⟨GateMirror.inverse Z ++ (CRTBarrel.barrel 150 true ++ GateMirror.inverse (CRTBarrel.before 150)), ?_⟩
+      simp only [rRawUnleave, rLowG, InteriorWindow.close, if_pos h]
+      unfold leaveInv150To20Red
+      rw [← hZ]
+      simp only [FredCut.inv_app, List.append_assoc]
+    · obtain ⟨Z, hZ⟩ := FredCut.suffix_after (start j)
+      refine ⟨GateMirror.inverse Z ++
+        (CRTBarrel.barrel (start j) true ++ GateMirror.inverse (CRTBarrel.before (start j))), ?_⟩
+      simp only [rRawUnleave, rLowG, InteriorWindow.close, if_neg h]
+      unfold CRTBarrel.unleave
+      simp only [if_pos ok]
+      rw [← hZ]
+      simp only [FredCut.inv_app, List.append_assoc]
+  | wide j =>
+    obtain ⟨Z, hZ⟩ := suffix_after20 (start20 j)
+    refine ⟨GateMirror.inverse Z ++
+      (barrel20 (start20 j) true ++ GateMirror.inverse (WideSelectorNormalized.beforeRow (start20 j))), ?_⟩
+    simp only [rRawUnleave, rLowG, InteriorWindow.close]
+    unfold leaveInvP20Red
+    dsimp only
+    rw [← hZ]
+    simp only [FredCut.inv_app, List.append_assoc]
+
+attribute [local irreducible] CRTBarrel.unleave leaveInv150To20Red leaveInvP20Red GateMirror.inverse
+  Shadow7.leaveLowClose leaveLowClose150 leaveLowClose20 Shadow7.leaveClose leaveClose150To20 leaveClose20 in
+private theorem rLeaveShape (w : InteriorWindow) (ok : fLeftOK w)
+    (hD : (GateMirror.inverse (rLowG w)).take 6 = rDblk w) :
+    ∃ T, w.leaveR = GateMirror.inverse (w.close) ++ ((GateMirror.inverse (rLowG w)).drop 6 ++ T) := by
+  obtain ⟨T, hT⟩ := rRawShape w ok
+  have split : GateMirror.inverse (rLowG w) = rDblk w ++ (GateMirror.inverse (rLowG w)).drop 6 := by
+    rw [← hD]; exact (List.take_append_drop 6 _).symm
+  rw [split, List.append_assoc] at hT
+  refine ⟨T, ?_⟩
+  cases w with
+  | short j =>
+    change j.val ≤ 24 at ok
+    by_cases h : j.val = 7
+    · simp only [rRawUnleave, rDblk, InteriorWindow.close, if_pos h] at hT
+      simp only [InteriorWindow.leaveR, InteriorWindow.close, if_pos h]
+      exact unleave150C_eq _ hT
+    · simp only [rRawUnleave, rDblk, InteriorWindow.close, if_neg h] at hT
+      simp only [InteriorWindow.leaveR, InteriorWindow.close, if_neg h]
+      exact unleave15C_eq j ok _ hT
+  | wide j =>
+    simp only [rRawUnleave, rDblk, InteriorWindow.close] at hT
+    simp only [InteriorWindow.leaveR, InteriorWindow.close]
+    exact unleave20C_eq j _ hT
+
+/-- The last piece of each first inverse route: the renamed register swap of its first untick. -/
+private def rSwapTail : InteriorWindow → Program
+  | .short j => renameProgram (StairPacket.net j 0)
+      (swapRegisters (IntegerPacket.ports (Shadow7.shape j) 0).a0 (IntegerPacket.ports (Shadow7.shape j) 0).ah
+        (IntegerPacket.ports (Shadow7.shape j) 0).bh)
+  | .wide j => renameProgram (net20 j 0)
+      (swapRegisters (IntegerPacket.ports (shape20 j) 0).a0 (IntegerPacket.ports (shape20 j) 0).ah
+        (IntegerPacket.ports (shape20 j) 0).bh)
+
+private def rBaseU : InteriorWindow → Program
+  | .short j => Shadow7.unrouted j 0 1
+  | .wide j => unrouted20 j 0 1
+
+private theorem rBaseShape (w : InteriorWindow) : ∃ A, rBaseU w = A ++ rSwapTail w := by
+  cases w with
+  | short j =>
+    obtain ⟨P, hP⟩ : ∃ P, ECDSAAdd.Entrant.W.ReverseCarry.receiverUntick (IntegerPacket.ports (Shadow7.shape j) 0)
+        (IntegerPacket.ports (Shadow7.shape j) 0).half.length =
+        P ++ swapRegisters (IntegerPacket.ports (Shadow7.shape j) 0).a0 (IntegerPacket.ports (Shadow7.shape j) 0).ah
+          (IntegerPacket.ports (Shadow7.shape j) 0).bh := ⟨_, rfl⟩
+    refine ⟨renameProgram (StairPacket.net j 0) P, ?_⟩
+    simp only [rBaseU, rSwapTail, Shadow7.unrouted, List.nil_append]
+    rw [hP, rename_app]
+  | wide j =>
+    obtain ⟨P, hP⟩ : ∃ P, ECDSAAdd.Entrant.W.ReverseCarry.receiverUntick (IntegerPacket.ports (shape20 j) 0)
+        (IntegerPacket.ports (shape20 j) 0).half.length =
+        P ++ swapRegisters (IntegerPacket.ports (shape20 j) 0).a0 (IntegerPacket.ports (shape20 j) 0).ah
+          (IntegerPacket.ports (shape20 j) 0).bh := ⟨_, rfl⟩
+    refine ⟨renameProgram (net20 j 0) P, ?_⟩
+    simp only [rBaseU, rSwapTail, unrouted20, List.nil_append]
+    rw [hP, rename_app]
+
+private theorem rRestR_append (A S : Program) (n : Nat) (hS : S.length = 3 * n) :
+    restR (A ++ S) n = restR S n := by
+  have h1 : ∀ k, k ≤ S.length → (A ++ S).drop ((A ++ S).length - k) = S.drop (S.length - k) := by
+    intro k hk
+    rw [List.length_append, show A.length + S.length - k = A.length + (S.length - k) by omega,
+      List.drop_append]
+    simp
+  unfold restR
+  rw [h1 (3 * n) (by omega), h1 (2 * n) (by omega), h1 n (by omega)]
+
+private theorem rRouteShape (w : InteriorWindow) (hS : (rSwapTail w).length = 3 * w.n) :
+    ∃ A, w.routeR = A ++ restR (rSwapTail w) w.n := by
+  obtain ⟨A, hA⟩ := rBaseShape w
+  refine ⟨A, ?_⟩
+  have hU : w.routeR = unroutedM (rBaseU w) w.n := by cases w <;> rfl
+  rw [hU, hA]
+  unfold unroutedM
+  rw [rRestR_append A _ _ hS, List.length_append, hS, Nat.add_sub_cancel, List.take_left' rfl]
+
+private theorem rPassT_length (c : Wire) (ps : List (Wire × Wire)) : (passT c ps).length = 3 * ps.length := by
+  simp only [passT, List.length_append, List.length_map]
+  omega
+
+private def rCut (e : InteriorEdge) : Nat := (GateMirror.inverse e.left.close).length
+
+private def rLo (e : InteriorEdge) : List (Wire × Wire) := e.loPairs.reverse
+private def rEx (e : InteriorEdge) : Program := fE e.c (rLo e)
+private def rHead (e : InteriorEdge) : Program :=
+  e.right.routeR.take (e.right.routeR.length - 3 * e.allPairs.length)
+private def rMid (e : InteriorEdge) : Program := e.right.enterR ++ GateMirror.inverse e.left.close
+private def rTail (e : InteriorEdge) : Program := e.left.leaveR.drop (rCut e + 3 * e.count)
+private def rFused (e : InteriorEdge) : Program := [.CX e.c e.r] ++ fE e.r e.loPairs ++ [.CX e.c e.r]
+
+def InteriorEdge.newR (e : InteriorEdge) : List Program :=
+  [rHead e ++ (fOther e ++ rFused e), e.right.enterR, GateMirror.inverse e.left.close ++ rTail e]
+
+private def rNewCore (e : InteriorEdge) : Program := fOther e ++ rFused e
+private def rOldCore (e : InteriorEdge) : Program := passT e.r e.allPairs ++ rEx e
+
+/-- Facts on small programs only: the inverse low close, the inverse enter, the inverse close
+and the inverse route. -/
+private def rShapeFacts (e : InteriorEdge) : Prop :=
+  fLeftOK e.left ∧
+  (GateMirror.inverse (rLowG e.left)).take 6 = rDblk e.left ∧
+  ((GateMirror.inverse (rLowG e.left)).drop 6).take (3 * e.count) = rEx e ∧
+  (rEx e).length = 3 * e.count ∧
+  (rSwapTail e.right).length = 3 * e.right.n ∧
+  restR (rSwapTail e.right) e.right.n = passT e.r e.allPairs ∧
+  StairLoan.nodupMask ([e.c] ++ pw e.loPairs) 0 = true ∧
+  fStable (rEx e) (rMid e)
+
+private instance (e : InteriorEdge) : Decidable (rShapeFacts e) := by unfold rShapeFacts; infer_instance
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 0 in
+private theorem rShapeChecked : interiorEdges.all (fun e => decide (rShapeFacts e)) = true := by
+  decide +kernel
+
+private theorem rShapeFacts_of (e : InteriorEdge) (he : e ∈ interiorEdges) : rShapeFacts e :=
+  of_decide_eq_true (List.all_eq_true.mp rShapeChecked e he)
+
+private theorem rLeave_split (e : InteriorEdge) (he : e ∈ interiorEdges) :
+    e.left.leaveR = GateMirror.inverse e.left.close ++ (rEx e ++ rTail e) := by
+  obtain ⟨ok, hD, hex, hlen, _, _, _, _⟩ := rShapeFacts_of e he
+  obtain ⟨T, hT⟩ := rLeaveShape e.left ok hD
+  have hB : (GateMirror.inverse (rLowG e.left)).drop 6 =
+      rEx e ++ ((GateMirror.inverse (rLowG e.left)).drop 6).drop (3 * e.count) := by
+    rw [← hex]; exact (List.take_append_drop _ _).symm
+  rw [hB, List.append_assoc] at hT
+  have hTail : rTail e = ((GateMirror.inverse (rLowG e.left)).drop 6).drop (3 * e.count) ++ T := by
+    unfold rTail rCut
+    rw [hT, ← List.append_assoc]
+    exact List.drop_left' (by simp only [List.length_append, hlen])
+  rw [hTail]
+  exact hT
+
+private def rCostFacts (e : InteriorEdge) : Prop :=
+  toffoliCount (rNewCore e) + e.count = toffoliCount (rOldCore e) ∧
+  gateSlots (rNewCore e) ≤ gateSlots (rOldCore e) ∧
+  (MixedFredCut.wl (rNewCore e)).all
+    (fun q => (StairLoan.maskOf (MixedFredCut.wl (rOldCore e))).testBit q) = true ∧
+  (rNewCore e).all physicalGateCheck = true
+
+private instance (e : InteriorEdge) : Decidable (rCostFacts e) := by unfold rCostFacts; infer_instance
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 0 in
+private theorem rCostChecked : interiorEdges.all (fun e => decide (rCostFacts e)) = true := by
+  decide +kernel
+
+private theorem rCostFacts_of (e : InteriorEdge) (he : e ∈ interiorEdges) : rCostFacts e :=
+  of_decide_eq_true (List.all_eq_true.mp rCostChecked e he)
+
+private theorem rOld_flat (e : InteriorEdge) (he : e ∈ interiorEdges) :
+    e.oldR.flatten = rHead e ++ (passT e.r e.allPairs ++ (rMid e ++ (rEx e ++ rTail e))) := by
+  obtain ⟨_, _, _, _, hSl, hpass, _, _⟩ := rShapeFacts_of e he
+  have hLeave := rLeave_split e he
+  have hRoute : e.right.routeR = rHead e ++ passT e.r e.allPairs := by
+    obtain ⟨A, hA⟩ := rRouteShape e.right hSl
+    rw [hpass] at hA
+    unfold rHead
+    rw [hA, List.length_append, rPassT_length, Nat.add_sub_cancel, List.take_left' rfl]
+  simp only [InteriorEdge.oldR, List.flatten_cons, List.flatten_nil, List.append_nil,
+    hLeave, hRoute, rMid, List.append_assoc]
+
+private theorem rNew_flat (e : InteriorEdge) :
+    e.newR.flatten = rHead e ++ ((fOther e ++ rFused e) ++ (rMid e ++ rTail e)) := by
+  simp only [InteriorEdge.newR, List.flatten_cons, List.flatten_nil, List.append_nil,
+    rMid, List.append_assoc]
+
+private theorem rGateFused (e : InteriorEdge) : GateOnly (rFused e) := by
+  have hc : GateOnly [.CX e.c e.r] := by
+    intro i hi
+    simp only [List.mem_singleton] at hi
+    subst i
+    rfl
+  exact gate_app.mpr ⟨gate_app.mpr ⟨hc, gate_ce _ _⟩, hc⟩
+
+private theorem rRun (e : InteriorEdge) (he : e ∈ interiorEdges) : Eqv e.newR.flatten e.oldR.flatten := by
+  rw [rOld_flat e he, rNew_flat]
+  obtain ⟨_, _, _, _, _, _, hgood1, hstable⟩ := rShapeFacts_of e he
+  have hgood2 := StairLoan.nodup_of_mask _ (forward_route_frame e he).2.1
+  -- 1. split the inverse route's batched exchange: other pairs first, lower pairs last
+  have h1 : Eqv (passT e.r e.allPairs ++ (rMid e ++ (rEx e ++ rTail e)))
+      (fOther e ++ (fShared e ++ (rMid e ++ (rEx e ++ rTail e)))) := by
+    simpa only [List.append_assoc] using Eqv.appL (Q := rMid e ++ (rEx e ++ rTail e))
+      (interior_route_partition e he) (gate_passT _ _) (gate_app.mpr ⟨fGateOther e, fGateShared e⟩)
+  -- 2. the unleave's exchange moves back over the inverse enter and the unleave head
+  have h2 : Eqv (rMid e ++ (rEx e ++ rTail e)) (rEx e ++ (rMid e ++ rTail e)) := by
+    have sw := fStable_swap (rEx e) (rMid e) (gate_ce _ _) hstable
+    have hc : measurementCount (rMid e ++ rEx e) = measurementCount (rEx e ++ rMid e) := by
+      simp only [measurementCount_append, Nat.add_comm]
+    simpa only [List.append_assoc] using Eqv.appLm (Q := rTail e) sw.symm hc
+  -- 3. the adjacent exchanges compose into one under `c ⊕ r`
+  have h3 : Eqv (fShared e ++ (rEx e ++ (rMid e ++ rTail e))) (rFused e ++ (rMid e ++ rTail e)) := by
+    have t1 : Eqv (fShared e ++ rEx e) (fShared e ++ fE e.c e.loPairs) :=
+      Eqv.appR (fE_rev e.c e.loPairs (StairLoan.nodup_of_mask _ hgood1))
+    have t2 : Eqv (fShared e ++ fE e.c e.loPairs) (rFused e) := merge_rev e.c e.r e.loPairs hgood2
+    simpa only [List.append_assoc] using Eqv.appL (Q := rMid e ++ rTail e) (t1.trans t2)
+      (gate_app.mpr ⟨fGateShared e, gate_ce _ _⟩) (rGateFused e)
+  have chain := (Eqv.appR (P := rHead e) h1).trans
+    ((Eqv.appR (P := rHead e) (Eqv.appR (P := fOther e) (Eqv.appR (P := fShared e) h2))).trans
+      (Eqv.appR (P := rHead e) (Eqv.appR (P := fOther e) h3)))
+  simpa only [List.append_assoc] using chain.symm
+
+theorem interior_localR (e : InteriorEdge) (he : e ∈ interiorEdges) :
+    LRel e.count e.newR e.oldR := by
+  refine ⟨rRun e he, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [rNew_flat, rOld_flat e he]
+    simp only [measurementCount_append, gate_mc (rGateFused e), gate_mc (fGateOther e),
+      gate_mc (gate_ce e.c (rLo e)), gate_mc (gate_passT e.r e.allPairs), rEx]
+    omega
+  · rw [rNew_flat, rOld_flat e he]
+    have h := (rCostFacts_of e he).1
+    simp only [rOldCore, rNewCore, toffoliCount_append] at h
+    simp only [toffoliCount_append]
+    omega
+  · rw [rNew_flat, rOld_flat e he]
+    have hs := sub_mask _ _ (rCostFacts_of e he).2.2.1
+    have newEq :
+        wires (rHead e ++ ((fOther e ++ rFused e) ++ (rMid e ++ rTail e))) =
+        (wires (rHead e) ∪ wires (rMid e) ∪ wires (rTail e)) ∪ wires (rNewCore e) := by
+      simp only [rNewCore, wires_append]
+      ac_rfl
+    have oldEq :
+        wires (rHead e ++ (passT e.r e.allPairs ++ (rMid e ++ (rEx e ++ rTail e)))) =
+        (wires (rHead e) ∪ wires (rMid e) ∪ wires (rTail e)) ∪ wires (rOldCore e) := by
+      simp only [rOldCore, wires_append]
+      ac_rfl
+    rw [newEq, oldEq]
+    exact Finset.union_subset_union (Finset.Subset.refl _) hs
+  · rw [rNew_flat, rOld_flat e he]
+    have h := (rCostFacts_of e he).2.1
+    simp only [rOldCore, rNewCore, gateSlots_append] at h
+    simp only [gateSlots_append]
+    omega
+  · rw [rNew_flat, rOld_flat e he]
+    intro h
+    have hp := phys_of_all _ (rCostFacts_of e he).2.2.2
+    simp only [rNewCore, gatePhysical_append] at hp
+    simp only [gatePhysical_append] at h ⊢
+    exact ⟨h.1, ⟨hp.1, hp.2⟩, h.2.2.1, h.2.2.2.2⟩
+
+def interiorPrefixR (d : Bool) : List Program :=
+  [TickCut.Hosted.unroutedHigh jL 1 14, Shadow7.archiveRestoreP jL' d,
+   MixedWindow.unpackW d (start jL) (start jL - 10)]
+
+def interiorSuffixR : List Program :=
+  [u15 MixedWindow.j0, i15 MixedWindow.j0, MixedFredCut.portalInvC 45]
+
+def interiorBodyR (d : Bool) : InteriorWindow → List Program
+  | .short j =>
+    if j.val = 0 then
+      [TickCut.Hosted.unroutedHigh j 1 14, MixedWindow.unpackW d 45 45]
+    else if j.val = 20 then
+      [TickCut.Hosted.unroutedHigh j 1 14, archiveRestoreP20 MixedWindow.k8 d,
+       MixedWindow.unpackW d 345 335, MixedWindow.unpackW d 345 330]
+    else
+      [TickCut.Hosted.unroutedHigh j 1 14,
+       Shadow7.archiveRestoreP ⟨j.val - 1, by have := j.isLt; omega⟩ d,
+       MixedWindow.unpackW d (start j) (start j - 10)]
+  | .wide j =>
+    let s := start20 j
+    if j.val = 0 then
+      [TickCut.Wide.unroutedHigh j 1 19, archiveRestore150To20 d, MixedWindow.unpackW d 165 155]
+    else
+      [TickCut.Wide.unroutedHigh j 1 19, archiveRestoreP20 ⟨j.val - 1, by have := j.isLt; omega⟩ d,
+       MixedWindow.unpackW d s (s - 10), MixedWindow.unpackW d s (s - 15)]
+
+def interiorRC (d : Bool) : List Program :=
+  interiorPrefixR d ++
+    (interiorEdges.reverse.flatMap (fun e => e.newR ++ interiorBodyR d e.left) ++ interiorSuffixR)
+
+theorem interiorR_old (d : Bool) : reversePostX d =
+    interiorPrefixR d ++
+      (interiorEdges.reverse.flatMap (fun e => e.oldR ++ interiorBodyR d e.left) ++ interiorSuffixR) := by
+  rfl
+
+theorem interiorR_rel (d : Bool) : LRel 180 (interiorRC d) (reversePostX d) := by
+  rw [interiorR_old d]
+  unfold interiorRC
+  have hmem : ∀ e ∈ interiorEdges.reverse, e ∈ interiorEdges := fun e he => List.mem_reverse.mp he
+  have mid := interior_list_rel interiorEdges.reverse
+    (fun e => e.newR ++ interiorBodyR d e.left)
+    (fun e => e.oldR ++ interiorBodyR d e.left) InteriorEdge.count
+    (fun e he => (interior_localR e (hmem e he)).app (LRel.refl (interiorBodyR d e.left)))
+  rw [interior_sum_reverse] at mid
+  exact (LRel.refl (interiorPrefixR d)).app (mid.app (LRel.refl interiorSuffixR))
+
+def reverseLCI (d : Bool) : List Program :=
+  [Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410] ++
+    ([recvX, portalCM, Shadow7.parkInvP 420, unleaveX] ++ interiorRC d)
+
+theorem reverse_relInterior (d : Bool) : LRel 271 (reverseLCI d) (TickCut.Mixed.reverseLC d) := by
+  have h1 : LRel 180 (reverseLCI d) (reverseLCX d) :=
+    (LRel.app (LRel.refl [Shadow7.exitRestoreP 420 d, MixedWindow.unpackW d 420 410])
+      (LRel.app (LRel.refl [recvX, portalCM, Shadow7.parkInvP 420, unleaveX]) (interiorR_rel d))).cast
+      (by omega)
+  exact Rel.trans h1 (reverse_relX d)
+
+
 def forward (d : Bool) : Program := (interiorFC d).flatten
-def reverse (d : Bool) : Program := (reverseLCX d).flatten
+def reverse (d : Bool) : Program := (reverseLCI d).flatten
 
 theorem fwdRel (d : Bool) : Rel 270 (forward d) (MixedWindow.forwardMixedCut d) := forward_relInterior d
-theorem revRel (d : Bool) : Rel 91 (reverse d) (TickCut.Mixed.reverse d) := reverse_relX d
+theorem revRel (d : Bool) : Rel 271 (reverse d) (TickCut.Mixed.reverse d) := reverse_relInterior d
 
 theorem run_eq (d : Bool) :
     run (forward d) = run (MixedWindow.forwardMixed d) ∧
@@ -2602,7 +2957,7 @@ theorem reverse_run_eq (d : Bool) : run (reverse d) = run (TickCut.Mixed.reverse
 
 theorem mixed_counts (d : Bool) :
     toffoliCount (forward d) = 126272 ∧
-    toffoliCount (reverse d) = (if d then 126274 else 126296) ∧
+    toffoliCount (reverse d) = (if d then 126094 else 126116) ∧
     measurementCount (forward d) = (if d then 65251 else 65273) ∧
     measurementCount (reverse d) = (if d then 65162 else 65184) := by
   have old := TickCut.Mixed.mixed_counts d
@@ -2690,7 +3045,7 @@ private theorem subEq {x y a b : Nat} (n : Nat) (hx : x=a) (hy : y=b) (h : a+n=b
 theorem exactWalks (d : Bool) (tail : Nat) :
     toffoliCount (forward d tail)+(if d then 39828 else 39828)=
       toffoliCount (Stair44WalkRun.forward d (405+tail)) ∧
-    toffoliCount (backward d tail)+(if d then 39799 else 39777)=
+    toffoliCount (backward d tail)+(if d then 39979 else 39957)=
       toffoliCount (Stair44WalkRun.backward d (405+tail)) ∧
     measurementCount (forward d tail)+(if d then 17960 else 17938)=measurementCount (Stair44WalkRun.forward d (405+tail)) ∧
     measurementCount (backward d tail)+(if d then 17730 else 17708)=measurementCount (Stair44WalkRun.backward d (405+tail)) := by
@@ -2698,17 +3053,17 @@ theorem exactWalks (d : Bool) (tail : Nat) :
   have mcw := Shadow20.MergeCut.mixed_counts d
   cases d
   · simp only [Bool.false_eq_true, ↓reduceIte] at mcw ⊢
-    have t := walk tc false tail 39828 39777 (subEq 39828 mcw.1 sf.1 (by omega)) (subEq 39777 mcw.2.1 sf.2.2.1 (by omega))
+    have t := walk tc false tail 39828 39957 (subEq 39828 mcw.1 sf.1 (by omega)) (subEq 39957 mcw.2.1 sf.2.2.1 (by omega))
     have mv := walk mc false tail 17938 17708 (subEq 17938 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17708 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
   · simp only [↓reduceIte] at mcw ⊢
-    have t := walk tc true tail 39828 39799 (subEq 39828 mcw.1 sf.1 (by omega)) (subEq 39799 mcw.2.1 sf.2.2.1 (by omega))
+    have t := walk tc true tail 39828 39979 (subEq 39828 mcw.1 sf.1 (by omega)) (subEq 39979 mcw.2.1 sf.2.2.1 (by omega))
     have mv := walk mc true tail 17960 17730 (subEq 17960 mcw.2.2.1 sf.2.1 (by omega)) (subEq 17730 mcw.2.2.2 sf.2.2.2 (by omega))
     exact ⟨t.1,t.2,mv⟩
 
 /-- Rewrite small arithmetic arguments before instantiating either physical walk. -/
 theorem inst (d : Bool) (tail n f r : Nat) (hn : 405+tail=n)
-    (hf : (if d then 39828 else 39828)=f) (hr : (if d then 39799 else 39777)=r) :
+    (hf : (if d then 39828 else 39828)=f) (hr : (if d then 39979 else 39957)=r) :
     tc.measure (forward d tail)+f=tc.measure (Stair44WalkRun.forward d n) ∧
     tc.measure (backward d tail)+r=tc.measure (Stair44WalkRun.backward d n) ∧
     mc.measure (forward d tail)+(if d then 17960 else 17938)=mc.measure (Stair44WalkRun.forward d n) ∧
@@ -3234,17 +3589,17 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+39828+39777+681=tc.measure Stair44Outer.divide+1066 := by
-  have k := kernels tc 39828 39777 616 1066 (WindowWalkCosts.inst true 4 409 39828 39799 rfl rfl rfl).1
-    (WindowWalkCosts.inst false 85 490 39828 39777 rfl rfl rfl).2.1 (field_delta_tc_div 1066 fieldTcDiv)
+theorem tc_div : tc.measure divide+39828+39957+681=tc.measure Stair44Outer.divide+1066 := by
+  have k := kernels tc 39828 39957 616 1066 (WindowWalkCosts.inst true 4 409 39828 39979 rfl rfl rfl).1
+    (WindowWalkCosts.inst false 85 490 39828 39957 rfl rfl rfl).2.1 (field_delta_tc_div 1066 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
     rw [PackCutCounts.tc_ep, PackCutCounts.tc_dp]
   omega
 
-theorem tc_mul (k : Nat) : tc.measure (multiply k)+39828+39799+728=tc.measure (Stair44Outer.multiply k)+978 :=
-  kernelsM tc k 39828 39799 728 978 (WindowWalkCosts.inst false 84 489 39828 39777 rfl rfl rfl).1
-    (WindowWalkCosts.inst true 4 409 39828 39799 rfl rfl rfl).2.1 (field_delta_tc_mul 978 fieldTcMul)
+theorem tc_mul (k : Nat) : tc.measure (multiply k)+39828+39979+728=tc.measure (Stair44Outer.multiply k)+978 :=
+  kernelsM tc k 39828 39979 728 978 (WindowWalkCosts.inst false 84 489 39828 39957 rfl rfl rfl).1
+    (WindowWalkCosts.inst true 4 409 39828 39979 rfl rfl rfl).2.1 (field_delta_tc_mul 978 fieldTcMul)
 
 theorem mc_div : mc.measure divide+17960+17708+1406=mc.measure Stair44Outer.divide+688 := by
   have k := kernels mc 17960 17708 1381 688 (WindowWalkCosts.instMeasurements true 4 409 17960 17730 rfl rfl rfl).1
@@ -3259,9 +3614,9 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+17938+17730+1706=mc.measure (
     (WindowWalkCosts.instMeasurements true 4 409 17960 17730 rfl rfl rfl).2 (field_delta_mc_mul 578 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+158597=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+158957=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+73182=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 158597
+  ⟨finite_delta tc C cx cy 158957
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
@@ -3270,7 +3625,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2009000 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2008640 ∧
     measurementCount (program C) ≤ 1446401 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -7461,7 +7816,7 @@ theorem programOld_eq (C : Point) : programOld C = WindowCallerCosts.program C :
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2009000 ∧
+theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2008640 ∧
     measurementCount (programOld C) ≤ 1446401 ∧ gateSlots (programOld C) ≤ 67209064 := by
   rw [programOld_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -18059,7 +18414,7 @@ theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular 
   omega
 
 /-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
-theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2008498 ∧
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2008138 ∧
     measurementCount (programNC C) ≤ 1445899 ∧ gateSlots (programNC C) ≤ 67209064 := by
   have m := metricsOld C
   cases C with
@@ -18273,7 +18628,7 @@ set_option maxHeartbeats 1500000
 
 /-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
 turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
-theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2008497 := by
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2008137 := by
   have m := (metricsNC C).1
   cases C with
   | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
@@ -18301,7 +18656,7 @@ open Arithmetic Secp256k1 Challenge Baselines
 
 /-- The NC entry: both field converters deleted, square reading the odd word. -/
 def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
-def boundsNC : Challenge.Bounds := ⟨2008497,1445899,1542,67209064⟩
+def boundsNC : Challenge.Bounds := ⟨2008137,1445899,1542,67209064⟩
 
 theorem certificateOfSemanticsNC
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
