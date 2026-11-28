@@ -250,7 +250,7 @@ def entryFieldHostedCut : Program :=
 
 theorem field_delta_tc_div (n : Nat)
     (h : tc.measure (WindowFieldCosts.group84 true)=tc.measure (WindowFieldCosts.group true 1 84)+n) :
-    tc.measure (entryFieldHosted checkpointPrimitives)+616 =
+    tc.measure (entryFieldHosted checkpointPrimitives)+617 =
       tc.measure (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan)+n := by
   have g13 := (OddFullPass.P1LifeLoan.hostedGroup_counts_shift true 13 85 5 (by decide) (by decide)).1
   have g22 := (OddFullPass.P1LifeLoan.hostedGroup_counts_shift true 22 90 3 (by decide) (by decide)).1
@@ -613,8 +613,8 @@ attribute [local irreducible] Stair44Outer.divide Stair44Outer.multiply divide m
   WindowFieldCosts.group84 WindowFieldCosts.group Stair44WalkRun.forward Stair44WalkRun.backward
   toffoliCount measurementCount
 
-theorem tc_div : tc.measure divide+39828+39957+681=tc.measure Stair44Outer.divide+1066 := by
-  have k := kernels tc 39828 39957 616 1066 (WindowWalkCosts.inst true 4 409 39828 39979 rfl rfl rfl).1
+theorem tc_div : tc.measure divide+39828+39957+682=tc.measure Stair44Outer.divide+1066 := by
+  have k := kernels tc 39828 39957 617 1066 (WindowWalkCosts.inst true 4 409 39828 39979 rfl rfl rfl).1
     (WindowWalkCosts.inst false 85 490 39828 39957 rfl rfl rfl).2.1 (field_delta_tc_div 1066 fieldTcDiv)
   have e : tc.measure Rolling1588.ep + tc.measure Rolling1588.dp = 13 := by
     show toffoliCount Rolling1588.ep + toffoliCount Rolling1588.dp = 13
@@ -638,9 +638,9 @@ theorem mc_mul (k : Nat) : mc.measure (multiply k)+17938+17730+1707=mc.measure (
     (WindowWalkCosts.instMeasurements true 4 409 17960 17730 rfl rfl rfl).2 (field_delta_mc_mul 578 fieldMcMul)
 
 theorem deltas (C : Point) (cx cy : Fp) :
-    toffoliCount (finite C cx cy)+158958=toffoliCount (Stair44Outer.finite C cx cy) ∧
+    toffoliCount (finite C cx cy)+158959=toffoliCount (Stair44Outer.finite C cx cy) ∧
     measurementCount (finite C cx cy)+73183=measurementCount (Stair44Outer.finite C cx cy) :=
-  ⟨finite_delta tc C cx cy 158958
+  ⟨finite_delta tc C cx cy 158959
       (OddOuterBridge.entryYAllOdd_tc_eq layout layout_widths (-cy))
       (OddOuterBridge.exitYAllOdd_tc_eq layout layout_widths cy)
       (pair_delta2 tc_div (tc_mul _) rfl),
@@ -649,7 +649,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
       (OddOuterBridge.exitYAllOdd_mc_eq layout layout_widths cy)
       (pair_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2008639 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2008638 ∧
     measurementCount (program C) ≤ 1446401 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -4840,7 +4840,7 @@ theorem programOld_eq (C : Point) : programOld C = WindowCallerCosts.program C :
       WindowCallerCosts.entryFieldHostedCut, exitFieldHosted,
       WindowCallerCosts.exitFieldHosted, setup_eq]
 
-theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2008639 ∧
+theorem metricsOld (C : Point) : toffoliCount (programOld C) ≤ 2008638 ∧
     measurementCount (programOld C) ≤ 1446401 ∧ gateSlots (programOld C) ≤ 67209064 := by
   rw [programOld_eq]
   exact ⟨(WindowCallerCosts.totals C).1, (WindowCallerCosts.totals C).2, WindowSlots.slotBound C⟩
@@ -15438,7 +15438,7 @@ theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular 
   omega
 
 /-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
-theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2008137 ∧
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2008136 ∧
     measurementCount (programNC C) ≤ 1445899 ∧ gateSlots (programNC C) ≤ 67209064 := by
   have m := metricsOld C
   cases C with
@@ -15652,7 +15652,7 @@ set_option maxHeartbeats 1500000
 
 /-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
 turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
-theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2008136 := by
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2008135 := by
   have m := (metricsNC C).1
   cases C with
   | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
@@ -15680,7 +15680,7 @@ open Arithmetic Secp256k1 Challenge Baselines
 
 /-- The NC entry: both field converters deleted, square reading the odd word. -/
 def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
-def boundsNC : Challenge.Bounds := ⟨2008136,1445899,1542,67209064⟩
+def boundsNC : Challenge.Bounds := ⟨2008135,1445899,1542,67209064⟩
 
 theorem certificateOfSemanticsNC
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
