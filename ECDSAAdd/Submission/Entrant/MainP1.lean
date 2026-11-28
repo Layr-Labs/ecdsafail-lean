@@ -34632,7 +34632,7 @@ end
 
 
 
--- ==== Inlined TagPack1542 v3 (85-T packTag / 86-T unpackTag: 4xPK3 + 2xPK2 + P0_7) ====
+-- ==== Inlined TagPack1542 v3 (84-T packTag / 85-T unpackTag: 4xPK3 + 2xPK2 + P0_7) ====
 section
 set_option maxRecDepth 8192
 set_option linter.unusedSimpArgs false
@@ -34644,7 +34644,7 @@ open ECDSAAdd.Arithmetic
 open ECDSAAdd.Challenge
 
 /-!
-# TagPack1542 v3: 85-T `packTag` and 86-T `unpackTag`
+# TagPack1542 v3: 84-T `packTag` and 85-T `unpackTag`
 
 Logical 105-wire programs (wires `0..104`, wire `97` and `PK[6..8]` wires `62..85` unused):
 - `0..6`    : `C[0..6]` (`rest87_A[0..6]`, value in `0..86`; wire `6` is cleared to `false`)
@@ -34652,7 +34652,7 @@ Logical 105-wire programs (wires `0..104`, wire `97` and `PK[6..8]` wires `62..8
 - `14..85`  : `PK[0..8]`, where `PK[k]` is wires `14 + 8*k .. 21 + 8*k` (each in `used8`, 243 states)
 - `86..96, 98, 99` : 13 one-hot flags for `C ∈ 64..86` (wire `97` untouched)
 - `100, 101`: shared-prefix swap parity temporaries
-- `102..104`: `TMP` ancillas (reused across `uP0Prog` CCCX and slot compute/erase)
+- `102..104`: `TMP` ancillas (used for slot compute/erase)
 -/
 
 /-! ## Section 1: Wire constants, value readers, and valid value sets -/
@@ -34720,29 +34720,24 @@ def erase_and5 (lits : List (Wire × Bool)) (outF t0 t1 t2 : Wire) : Program :=
     ] ++ flips
   | _ => []
 
-/-- Fused 5-T bijection on `P0[0..6]` (wires `7..13`, ancilla `102`) sending all 14 `unused7`
-    states to `0..13` and all 114 `used7` states to `14..127`. -/
-def uP0Pre : Program :=
-  [ .CX 7 11, .CX 7 13, .CX 13 10, .CCX 9 10 7
-  , .CX 7 9, .CX 7 10, .CX 7 13, .CX 13 11, .X 8, .CCX 8 11 7
-  , .CX 7 11, .CX 11 13, .CX 10 8, .CX 11 8, .X 13, .X 8, .CCX 13 8 7
-  , .CX 10 9, .CX 10 13, .CX 13 11, .CX 8 7, .CX 11 7, .CX 13 8, .X 7
-  ]
-
-def uP0Cccx : Program :=
-  [ .CCX 11 7 102, .CCX 102 8 10, .measureX 102 [] [.CZ 11 7] ]
-
-def uP0Post : Program :=
-  [ .CX 7 13, .CX 9 13, .CX 12 13, .CX 12 9, .CX 9 12
-  , .CX 10 12, .CX 11 12, .CX 13 12, .CX 11 8, .CX 8 11
-  , .CX 10 11, .CX 13 11, .CX 10 7, .CX 7 10, .X 11, .X 10
-  ]
-
+/-- Reversibly compress the fourteen unused P0 words into 0..13.
+    Three quadratic steps clear independent coordinates on that set. An intermediate
+    shear aligns the final coordinate before the last compression. -/
 def uP0Prog : Program :=
-  uP0Pre ++ uP0Cccx ++ uP0Post
+  [ .CX 12 8, .CX 12 7, .CX 11 8, .CX 7 8, .CCX 7 8 9
+  , .CX 13 8, .CX 12 7, .CX 11 8, .CX 9 13, .CX 9 8
+  , .CX 13 9, .CX 8 13, .CX 8 9, .CX 9 8, .CX 7 11
+  , .X 9, .CCX 8 13 7, .CX 13 8, .CX 8 13, .CX 13 8
+  , .CX 8 7, .CX 10 7, .CX 13 7, .CX 8 10, .CX 8 11
+  , .CX 12 11, .CX 11 12, .CX 12 11, .CCX 11 12 8, .CX 12 11
+  , .CX 11 12, .CX 12 11, .CX 8 11, .CX 8 10, .CX 13 11
+  , .CX 11 10, .CX 10 11, .CX 11 10, .CCX 10 11 8, .CX 13 12
+  , .CX 13 11, .CX 13 9, .CX 13 8, .CX 13 7, .CX 12 13
+  , .CX 12 9, .CX 12 8, .CX 13 12, .CX 11 12, .CX 12 11
+  , .CX 10 11, .CX 10 8, .CX 10 7, .CX 11 10, .CX 9 13
+  , .CX 13 9, .CX 8 12, .CX 12 8, .CX 7 11, .CX 11 7 ]
 
-def uP0InvProg : Program :=
-  uP0Post.reverse ++ uP0Cccx ++ uP0Pre.reverse
+def uP0InvProg : Program := uP0Prog.reverse
 
 /-- 2-CCX involution on `PK[k]` merging the 8-flat (`b4..b0 = 01111`) and 4-flat (`b7..b3,b0 = 111111`)
     into adjacent prefix-sharing flats `b4..b0 = 01111` and `b5..b0 = 111111`. -/
@@ -34939,10 +34934,10 @@ private theorem measurementCount_reverse' (p : Program) : measurementCount p.rev
 private theorem gateSlots_reverse' (p : Program) : Challenge.gateSlots p.reverse = Challenge.gateSlots p := by
   simp [Challenge.gateSlots, List.map_reverse, List.sum_reverse]
 
-theorem packTagProg_toffoliCount : toffoliCount packTagProg = 85 := by
+theorem packTagProg_toffoliCount : toffoliCount packTagProg = 84 := by
   dsimp only [packTagProg, packSlotsProg]
   simp only [toffoliCount_append]
-  have h1 : toffoliCount uP0Prog = 5 := by decide
+  have h1 : toffoliCount uP0Prog = 4 := by decide
   have h2 : toffoliCount uPK12Prog = 8 := by decide
   have h3 : toffoliCount treeDecodeCProg = 12 := by decide
   have h4 : toffoliCount clearOrRestoreCProg = 0 := by decide
@@ -34955,7 +34950,7 @@ theorem packTagProg_toffoliCount : toffoliCount packTagProg = 85 := by
   have h11 : toffoliCount packP0Slot = 8 := by decide
   omega
 
-theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 86 := by
+theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 85 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   simp only [toffoliCount_append, toffoliCount_reverse']
   have h1 : toffoliCount unpackP0Slot = 11 := by decide
@@ -34968,13 +34963,13 @@ theorem unpackTagProg_toffoliCount : toffoliCount unpackTagProg = 86 := by
   have h8 : toffoliCount clearOrRestoreCProg = 0 := by decide
   have h9 : toffoliCount treeEraseFProg = 0 := by decide
   have h10 : toffoliCount uPK12Prog = 8 := by decide
-  have h11 : toffoliCount uP0InvProg = 5 := by decide
+  have h11 : toffoliCount uP0InvProg = 4 := by decide
   omega
 
-theorem packTagProg_measurementCount : measurementCount packTagProg = 34 := by
+theorem packTagProg_measurementCount : measurementCount packTagProg = 33 := by
   dsimp only [packTagProg, packSlotsProg]
   simp only [measurementCount_append]
-  have h1 : measurementCount uP0Prog = 1 := by decide
+  have h1 : measurementCount uP0Prog = 0 := by decide
   have h2 : measurementCount uPK12Prog = 0 := by decide
   have h3 : measurementCount treeDecodeCProg = 0 := by decide
   have h4 : measurementCount clearOrRestoreCProg = 0 := by decide
@@ -34987,7 +34982,7 @@ theorem packTagProg_measurementCount : measurementCount packTagProg = 34 := by
   have h11 : measurementCount packP0Slot = 5 := by decide
   omega
 
-theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 33 := by
+theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 32 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   simp only [measurementCount_append, measurementCount_reverse']
   have h1 : measurementCount unpackP0Slot = 2 := by decide
@@ -35000,13 +34995,13 @@ theorem unpackTagProg_measurementCount : measurementCount unpackTagProg = 33 := 
   have h8 : measurementCount clearOrRestoreCProg = 0 := by decide
   have h9 : measurementCount treeEraseFProg = 12 := by decide
   have h10 : measurementCount uPK12Prog = 0 := by decide
-  have h11 : measurementCount uP0InvProg = 1 := by decide
+  have h11 : measurementCount uP0InvProg = 0 := by decide
   omega
 
-theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 441 := by
+theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 457 := by
   dsimp only [packTagProg, packSlotsProg]
   simp only [Challenge.gateSlots_append]
-  have h1 : Challenge.gateSlots uP0Prog = 44 := by decide
+  have h1 : Challenge.gateSlots uP0Prog = 60 := by decide
   have h2 : Challenge.gateSlots uPK12Prog = 24 := by decide
   have h3 : Challenge.gateSlots treeDecodeCProg = 25 := by decide
   have h4 : Challenge.gateSlots clearOrRestoreCProg = 38 := by decide
@@ -35019,7 +35014,7 @@ theorem packTagProg_gateSlots : Challenge.gateSlots packTagProg = 441 := by
   have h11 : Challenge.gateSlots packP0Slot = 58 := by decide
   omega
 
-theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 440 := by
+theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 456 := by
   dsimp only [unpackTagProg, unpackSlotsProg]
   simp only [Challenge.gateSlots_append, gateSlots_reverse']
   have h1 : Challenge.gateSlots unpackP0Slot = 55 := by decide
@@ -35032,7 +35027,7 @@ theorem unpackTagProg_gateSlots : Challenge.gateSlots unpackTagProg = 440 := by
   have h8 : Challenge.gateSlots clearOrRestoreCProg = 38 := by decide
   have h9 : Challenge.gateSlots treeEraseFProg = 37 := by decide
   have h10 : Challenge.gateSlots uPK12Prog = 24 := by decide
-  have h11 : Challenge.gateSlots uP0InvProg = 44 := by decide
+  have h11 : Challenge.gateSlots uP0InvProg = 60 := by decide
   omega
 
 private def corrValidBool : Correction → Bool
@@ -35813,85 +35808,21 @@ private def pk2Pred (k : Nat) (b : BasisState) : Bool :=
   and5Bool (b (pkWire k 4)) (b (pkWire k 3)) (b (pkWire k 2)) (b (pkWire k 1)) (b (pkWire k 0))
     false true true true true
 
-private theorem run_uP0Cccx (m : List Bool) (s : State) (h102 : s.basis 102 = false) :
-    run uP0Cccx m s =
-      ⟨s.phase, writeBit s.basis 10 (s.basis 10 ^^ (s.basis 11 && s.basis 7 && s.basis 8))⟩ := by
-  have hsp : uP0Cccx = [.CCX 11 7 102, .CCX 102 8 10] ++ [.measureX 102 [] [.CZ 11 7]] := rfl
-  rw [hsp, run_append]
-  have hmc : measurementCount [.CCX 11 7 102, .CCX 102 8 10] = 0 := rfl
-  simp only [hmc, List.take_zero, List.drop_zero]
-  have h1 : run [.CCX 11 7 102, .CCX 102 8 10] [] s =
-      ⟨s.phase, writeBit (writeBit s.basis 102 (s.basis 11 && s.basis 7))
-        10 (s.basis 10 ^^ ((s.basis 11 && s.basis 7) && s.basis 8))⟩ := by
-    simp [run, writeBit, h102]
-  rw [h1]
-  rw [run_measureX_CZ 102 11 7 (by decide) (by decide) _ _ (by simp [writeBit])]
-  congr 1; funext w
-  by_cases h102w : w = 102
-  · subst h102w; simp [writeBit, h102]
-  · by_cases h10w : w = 10
-    · subst h10w; simp [writeBit]
-    · simp [writeBit, h102w, h10w]
-
-private theorem uP0Cccx_inv (m1 m2 : List Bool) (s : State) (h102 : s.basis 102 = false) :
-    run uP0Cccx m2 (run uP0Cccx m1 s) = s := by
-  rw [run_uP0Cccx m1 s h102]
-  rw [run_uP0Cccx m2 _ (by simp [writeBit, h102])]
-  cases s with
-  | mk ph bs =>
-    congr 1; funext w
-    by_cases h10 : w = 10
-    · subst h10; simp [writeBit]
-    · simp [writeBit, h10]
-
-private theorem uP0Pre_outside (m : List Bool) (s : State) (w : Nat) (hw : w < 7 ∨ 14 ≤ w) :
-    (run uP0Pre m s).basis w = s.basis w := by
-  apply run_preserves_outside uP0Pre m s w
-  intro hmem
-  have hsub : wires uP0Pre ⊆ ({7, 8, 9, 10, 11, 12, 13} : Finset Wire) := by decide
-  have hmem' := hsub hmem
-  simp only [Finset.mem_insert, Finset.mem_singleton] at hmem'
-  rcases hmem' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
-
-private theorem uP0Post_outside (m : List Bool) (s : State) (w : Nat) (hw : w < 7 ∨ 14 ≤ w) :
-    (run uP0Post m s).basis w = s.basis w := by
-  apply run_preserves_outside uP0Post m s w
-  intro hmem
-  have hsub : wires uP0Post ⊆ ({7, 8, 9, 10, 11, 12, 13} : Finset Wire) := by decide
-  have hmem' := hsub hmem
-  simp only [Finset.mem_insert, Finset.mem_singleton] at hmem'
-  rcases hmem' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
-
-private theorem uP0Prog_phase_and_outside (m : List Bool) (s : State) (h102 : s.basis 102 = false) :
+private theorem uP0Prog_phase_and_outside (m : List Bool) (s : State) (_h102 : s.basis 102 = false) :
     (run uP0Prog m s).phase = s.phase ∧
     (∀ w : Nat, (w < 7 ∨ 14 ≤ w) → (run uP0Prog m s).basis w = s.basis w) := by
-  dsimp only [uP0Prog]
-  rw [run_append, run_append]
-  have hmc_pre : measurementCount uP0Pre = 0 := rfl
-  simp only [measurementCount_append, hmc_pre, Nat.zero_add, List.take_zero, List.drop_zero]
-  have hp1 := run_pure_phase uP0Pre (by decide) [] s
-  set s1 := run uP0Pre [] s
-  have h102_1 : s1.basis 102 = false := (uP0Pre_outside [] s 102 (by omega)).trans h102
-  rw [run_uP0Cccx _ s1 h102_1]
-  have hp3 := run_pure_phase uP0Post (by decide) (m.drop (measurementCount uP0Cccx))
-    ⟨s1.phase, writeBit s1.basis 10 (s1.basis 10 ^^ (s1.basis 11 && s1.basis 7 && s1.basis 8))⟩
-  refine ⟨hp3.trans hp1, fun w hw => ?_⟩
-  rw [uP0Post_outside _ _ w hw]
-  simp only [writeBit, Function.update_of_ne (show w ≠ 10 by omega)]
-  exact uP0Pre_outside [] s w hw
+  refine ⟨run_pure_phase uP0Prog (by decide) m s, ?_⟩
+  intro w hw
+  apply run_preserves_outside uP0Prog m s w
+  intro hm
+  have sub : wires uP0Prog ⊆ ({7, 8, 9, 10, 11, 12, 13} : Finset Wire) := by decide
+  have h := sub hm
+  simp only [Finset.mem_insert, Finset.mem_singleton] at h
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> omega
 
-private theorem uP0Prog_inv (m1 m2 : List Bool) (s : State) (h102 : s.basis 102 = false) :
-    run uP0InvProg m2 (run uP0Prog m1 s) = s := by
-  dsimp only [uP0Prog, uP0InvProg]
-  simp only [run_append]
-  have hmc_pre : measurementCount uP0Pre = 0 := rfl
-  have hmc_postr : measurementCount uP0Post.reverse = 0 := rfl
-  simp only [measurementCount_append, hmc_pre, hmc_postr, Nat.zero_add, List.take_zero, List.drop_zero]
-  set s1 := run uP0Pre [] s
-  have h102_1 : s1.basis 102 = false := (uP0Pre_outside [] s 102 (by omega)).trans h102
-  rw [run_rev_inv uP0Post (by decide)]
-  rw [uP0Cccx_inv _ _ s1 h102_1]
-  exact run_rev_inv uP0Pre (by decide) [] _ s
+private theorem uP0Prog_inv (m1 m2 : List Bool) (s : State) (_h102 : s.basis 102 = false) :
+    run uP0InvProg m2 (run uP0Prog m1 s) = s :=
+  run_rev_inv uP0Prog (by decide) m1 m2 s
 
 private def evalPure7Step (v : Fin 7 → Bool) : Instr → Fin 7 → Bool
   | .X t => fun i => if i.val + 7 == t then !v i else v i
@@ -35963,49 +35894,13 @@ private theorem run_evalPure7 (p : Program) (hp : p.all inP0Range = true) (m : L
       funext j; exact hstep s [] j
     rw [hfun]
 
-private def evalUP0 (v : Fin 7 → Bool) : Fin 7 → Bool :=
-  let v1 := evalPure7 uP0Pre v
-  let v2 : Fin 7 → Bool := fun i =>
-    if i.val == 3 then v1 i ^^ (v1 ⟨4, by decide⟩ && v1 ⟨0, by decide⟩ && v1 ⟨1, by decide⟩) else v1 i
-  evalPure7 uP0Post v2
+private def evalUP0 := evalPure7 uP0Prog
 
-private theorem run_uP0Prog_fin7 (m : List Bool) (s : State) (h102 : s.basis 102 = false) (i : Fin 7) :
-    (run uP0Prog m s).basis (i.val + 7) = evalUP0 (fun j : Fin 7 => s.basis (j.val + 7)) i := by
-  dsimp only [uP0Prog]
-  rw [run_append, run_append]
-  have hmc_pre : measurementCount uP0Pre = 0 := rfl
-  simp only [measurementCount_append, hmc_pre, Nat.zero_add, List.take_zero, List.drop_zero]
-  set s1 := run uP0Pre [] s
-  have h102_1 : s1.basis 102 = false := (uP0Pre_outside [] s 102 (by omega)).trans h102
-  rw [run_uP0Cccx _ s1 h102_1]
-  rw [run_evalPure7 uP0Post (by decide) _ _ i]
-  dsimp only [evalUP0]
-  have hs1 : (fun j : Fin 7 => s1.basis (j.val + 7)) = evalPure7 uP0Pre (fun j : Fin 7 => s.basis (j.val + 7)) := by
-    funext j; exact run_evalPure7 uP0Pre (by decide) [] s j
-  have hs2 : (fun j : Fin 7 =>
-      writeBit s1.basis 10 (s1.basis 10 ^^ (s1.basis 11 && s1.basis 7 && s1.basis 8)) (j.val + 7)) =
-      (fun j : Fin 7 =>
-        let v1 := evalPure7 uP0Pre (fun k : Fin 7 => s.basis (k.val + 7))
-        if j.val == 3 then v1 j ^^ (v1 ⟨4, by decide⟩ && v1 ⟨0, by decide⟩ && v1 ⟨1, by decide⟩) else v1 j) := by
-    funext j
-    have h7 : s1.basis 7 = evalPure7 uP0Pre (fun k : Fin 7 => s.basis (k.val + 7)) ⟨0, by decide⟩ :=
-      congrFun hs1 ⟨0, by decide⟩
-    have h8 : s1.basis 8 = evalPure7 uP0Pre (fun k : Fin 7 => s.basis (k.val + 7)) ⟨1, by decide⟩ :=
-      congrFun hs1 ⟨1, by decide⟩
-    have h10 : s1.basis 10 = evalPure7 uP0Pre (fun k : Fin 7 => s.basis (k.val + 7)) ⟨3, by decide⟩ :=
-      congrFun hs1 ⟨3, by decide⟩
-    have h11 : s1.basis 11 = evalPure7 uP0Pre (fun k : Fin 7 => s.basis (k.val + 7)) ⟨4, by decide⟩ :=
-      congrFun hs1 ⟨4, by decide⟩
-    by_cases hj : j.val = 3
-    · have hj3 : j = ⟨3, by decide⟩ := Fin.ext hj
-      subst hj3
-      simp [writeBit, h7, h8, h10, h11]
-    · have hjne : j.val + 7 ≠ 10 := by omega
-      have hbeq : (j.val == 3) = false := beq_false_of_ne hj
-      simp only [writeBit, Function.update_of_ne hjne, hbeq, Bool.false_eq_true, ↓reduceIte]
-      exact congrFun hs1 j
-  rw [hs2]
+private theorem run_uP0Prog_fin7 (m : List Bool) (s : State) (_h102 : s.basis 102 = false) (i : Fin 7) :
+    (run uP0Prog m s).basis (i.val + 7) = evalUP0 (fun j : Fin 7 => s.basis (j.val + 7)) i :=
+  run_evalPure7 uP0Prog (by decide) m s i
 
+set_option maxHeartbeats 2000000 in
 private theorem used7_uP0_preds_false (m : List Bool) (s : State) (h102 : s.basis 102 = false)
     (hp0 : p0Val s ∈ used7) :
     let res := run uP0Prog m s
@@ -38416,7 +38311,7 @@ private theorem packTag_and_direct_roundtrip (s : State) (m1 m2 : List Bool)
       run_append uPK12Prog.reverse uP0InvProg, run_rev_inv uPK12Prog uPK12Prog_pure]
   exact uP0Prog_inv _ _ s h102
 
-/-- Main specification of `packTagProg` (85 T, 34 M, 441 slots):
+/-- Main specification of `packTagProg` (84 T, 33 M, 457 slots):
     phase-safe for any measurement tape `m`, clears `C[6]` (wire 6) to `false`,
     restores all 19 ancillas `86..104` to `false`, and leaves wires `≥ 105` untouched. -/
 theorem packTag_spec (s : State) (m : List Bool)
@@ -38432,7 +38327,7 @@ theorem packTag_spec (s : State) (m : List Bool)
   have h := packTag_and_direct_roundtrip s m [] hc hp0 hpk hanc
   exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
-/-- Roundtrip specification of `unpackTagProg` (86 T, 33 M, 440 slots) after `packTagProg` (85 T):
+/-- Roundtrip specification of `unpackTagProg` (85 T, 32 M, 456 slots) after `packTagProg` (84 T):
     if `u` agrees with `run packTagProg m1 s` on wires `0..104`, then for any tape `m2`,
     `run unpackTagProg m2 u` preserves `u.phase`, restores wires `0..104` identically
     to `s.basis`, and leaves wires `≥ 105` untouched. -/
@@ -41944,14 +41839,14 @@ theorem tagPort_inj : ∀ a ∈ Finset.range 105, ∀ b ∈ Finset.range 105, ta
   exact (List.Nodup.getElem_inj_iff tagSites_nodup).mp eq
 
 theorem packTag_counts :
-    toffoliCount packTag = 85 ∧ measurementCount packTag = 34 ∧ Challenge.gateSlots packTag = 441 := by
+    toffoliCount packTag = 84 ∧ measurementCount packTag = 33 ∧ Challenge.gateSlots packTag = 457 := by
   refine ⟨?_, ?_, ?_⟩
   · rw [packTag, (renameProgram_counts _ _).1, TagPack1542.packTagProg_toffoliCount]
   · rw [packTag, (renameProgram_counts _ _).2, TagPack1542.packTagProg_measurementCount]
   · rw [packTag, Baselines.rename_gateSlots, TagPack1542.packTagProg_gateSlots]
 
 theorem unpackTag_counts :
-    toffoliCount unpackTag = 86 ∧ measurementCount unpackTag = 33 ∧ Challenge.gateSlots unpackTag = 440 := by
+    toffoliCount unpackTag = 85 ∧ measurementCount unpackTag = 32 ∧ Challenge.gateSlots unpackTag = 456 := by
   refine ⟨?_, ?_, ?_⟩
   · rw [unpackTag, (renameProgram_counts _ _).1, TagPack1542.unpackTagProg_toffoliCount]
   · rw [unpackTag, (renameProgram_counts _ _).2, TagPack1542.unpackTagProg_measurementCount]
@@ -41966,7 +41861,7 @@ def group84Raw (d : Bool) : Program :=
   ordered d (ogroup d 1 9) (group84Body d)
 
 /-- The 1542-qubit field group: `group84Body d` has its archive tag `base 720` swapped onto
-    `sLetter 435` (`rest87A[6]`), bracketed by `packTag` (85 T, 34 M) and `unpackTag` (86 T, 33 M). -/
+    `sLetter 435` (`rest87A[6]`), bracketed by `packTag` (84 T, 33 M) and `unpackTag` (85 T, 32 M). -/
 def group84 (d : Bool) : Program :=
   ordered d (ogroup d 1 9) (packTag ++ renameProgram tagSwap (group84Body d) ++ unpackTag)
 
@@ -42411,8 +42306,8 @@ end
 
 /-- the field group (odd cell on packets 1..84, ten-blocks + packTag/unpackTag included) against the record packets 1..84. -/
 theorem group_cost (d : Bool) :
-    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 1066 else 978) ∧
-    measurementCount (group84 d)+0=measurementCount (group d 1 84)+(if d then 688 else 578) := by
+    toffoliCount (group84 d)+0=toffoliCount (group d 1 84)+(if d then 1064 else 976) ∧
+    measurementCount (group84 d)+0=measurementCount (group d 1 84)+(if d then 686 else 576) := by
   have t := osolve tc d (if d then 105 else 101) (fun j => (ooverhead j d).1)
   have m := osolve mc d (if d then 106 else 101) (fun j => (ooverhead j d).2)
   have f := ofield_counts d
@@ -42426,7 +42321,7 @@ theorem group_cost (d : Bool) :
 /-- Static syntax counts include both correction lists of every measurement. -/
 theorem group_slots (d : Bool) :
     slots.measure (group84 d)+(if d then 21193 else 18673)=
-      slots.measure (group d 1 84)+22*(if d then 5322 else 6122)+881 := by
+      slots.measure (group d 1 84)+22*(if d then 5322 else 6122)+913 := by
   have hc := ofield_slots d
   have h (j : Nat) : slots.measure (oten j (!d)) =
       slots.measure (ogroup d j 2)+(if d then 5322 else 6122) := by
@@ -42444,16 +42339,16 @@ theorem group_slots (d : Bool) :
   cases d <;> simp only [if_true,if_false,Bool.false_eq_true] at hc w ⊢ <;> omega
 
 theorem group_cost_div :
-    toffoliCount (group84 true) = toffoliCount (group true 1 84)+1066 ∧
-    measurementCount (group84 true) = measurementCount (group true 1 84)+688 := by
+    toffoliCount (group84 true) = toffoliCount (group true 1 84)+1064 ∧
+    measurementCount (group84 true) = measurementCount (group true 1 84)+686 := by
   have t := (group_cost true).1
   have m := (group_cost true).2
   simp only [if_true] at t m
   exact ⟨by omega,by omega⟩
 
 theorem group_cost_mul :
-    toffoliCount (group84 false) = toffoliCount (group false 1 84)+978 ∧
-    measurementCount (group84 false) = measurementCount (group false 1 84)+578 := by
+    toffoliCount (group84 false) = toffoliCount (group false 1 84)+976 ∧
+    measurementCount (group84 false) = measurementCount (group false 1 84)+576 := by
   have t := (group_cost false).1
   have m := (group_cost false).2
   simp only [Bool.false_eq_true,if_false] at t m
