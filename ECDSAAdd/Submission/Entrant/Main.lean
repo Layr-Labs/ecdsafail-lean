@@ -12,7 +12,2774 @@ import ECDSAAdd.Framework.MeasuredLocality
 import ECDSAAdd.Submission.Entrant.MainP1
 import ECDSAAdd.Submission.Entrant.Mixed20D
 import ECDSAAdd.Submission.Entrant.MainM
-import ECDSAAdd.Submission.Entrant.MainS
+
+-- ==== begin: declarations continued from module MainS ====
+section
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant ECDSAAdd.Arithmetic.MappedCompressed
+section
+section
+section
+section
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+open Arithmetic Secp256k1 MappedCompressed BalancedField StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg WindowFieldJourney
+set_option maxRecDepth 16000
+set_option maxHeartbeats 2000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires WindowFieldCosts.opk WindowFieldCosts.rpk surface oddCutWord
+
+
+private theorem packetProgram_true_split (pk : Nat → Program) : ∀ (a j b : Nat),
+    PacketSequence.program true pk j (a + b) =
+      PacketSequence.program true pk j a ++ PacketSequence.program true pk (j + a) b := by
+  intro a; induction a with
+  | zero => intro j b; simp [PacketSequence.program]
+  | succ a ih =>
+    intro j b
+    rw [Nat.succ_add, PacketSequence.program, if_pos rfl, ih (j + 1) b]
+    simp only [show j + 1 + a = j + (a + 1) by omega]
+    rw [← List.append_assoc]
+    congr 1
+
+private theorem orefBody_true_eq :
+    oreferenceProgram true (planBody true) = ogroup true 10 75 := by
+  have hfull := href_eq_true
+  have hsp : PacketSequence.program true (opk true) 1 84 = ogroup true 1 9 ++ ogroup true 10 75 :=
+    packetProgram_true_split (opk true) 9 1 75
+  rw [hsp] at hfull
+  exact (List.append_cancel_left hfull).symm
+
+attribute [local irreducible] group84Body
+
+set_option maxHeartbeats 1200000 in
+set_option maxRecDepth 8000 in
+/-- Core bracket lemma for `packTag ++ renameProgram tagSwap (group84Body d) ++ unpackTag`:
+    runs `group84Body d` with `base 720` swapped to `sLetter 435` (`rest87A[6]`),
+    preserving `Fits` and restoring all 105 `tagSites` identically! -/
+theorem othree_body_bracket (d : Bool) (x : Nat) (rows : Nat → Nat) (rb : ∀ j ∈ bankIds, rows j < 63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a0 r0 : State) (c0 : Nat → CodecBitSliceVerify.Cols)
+    (hvalid : valid d (planBody d) c0)
+    (hroute : path d (if d then 10 else 85) (planBody d))
+    (initial : Fits rows c0 a0 r0)
+    (start : OCut (if d then 10 else 85) origin r0)
+    (htag : TagReady r0) :
+    let mBody := (m.drop (measurementCount packTag)).take (measurementCount (group84Body d))
+    let r1 := run (oreferenceProgram d (planBody d)) (oreferenceTape d (planBody d) mBody) r0
+    Fits rows (finalCode d (planBody d) c0)
+      (run (packTag ++ renameProgram tagSwap (group84Body d) ++ unpackTag) m a0) r1 := by
+  intro mBody r1
+  let mPack := m.take (measurementCount packTag)
+  let mUnpack := (m.drop (measurementCount packTag)).drop (measurementCount (group84Body d))
+  have hmc_body : measurementCount (renameProgram tagSwap (group84Body d)) = measurementCount (group84Body d) :=
+    (renameProgram_counts _ _).2
+  have hrun_split :
+      run (packTag ++ renameProgram tagSwap (group84Body d) ++ unpackTag) m a0 =
+      run unpackTag mUnpack (run (renameProgram tagSwap (group84Body d)) mBody (run packTag mPack a0)) := by
+    rw [run_append, run_append, measurementCount_append, hmc_body]
+    simp only [mPack, mBody, mUnpack, List.take_take, Nat.min_eq_left (Nat.le_add_right _ _),
+      List.drop_take, List.drop_drop]
+    congr 1
+    · congr 1
+      have hlen_sub : measurementCount packTag + measurementCount (group84Body d) - measurementCount packTag =
+          measurementCount (group84Body d) := Nat.add_sub_cancel_left _ _
+      rw [hlen_sub]
+  -- Lift `packTag_spec` and `unpackTag_packTag_roundtrip` to `a0` via `tagPort`!
+  let s0 : State := ⟨a0.phase, fun q => a0.basis (tagPort q)⟩
+  have hagree_a0_r0 : ∀ i < 105, a0.basis (tagPort i) = r0.basis (tagPort i) := by
+    intro i hi
+    have hmem : tagPort i ∈ tagSites := by
+      have lt : i < tagSites.length := tagSites_length ▸ hi
+      simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem]
+    exact initial.outside _ (tagSites_disjoint_allBanks _ hmem)
+  have hreg_map : ∀ (xs : List Nat) (ys : List Wire),
+      xs.map tagPort = ys → (∀ i ∈ xs, i < 105) →
+      regValue xs s0.basis = regValue ys r0.basis := by
+    intro xs ys hmap hlt
+    subst hmap
+    induction xs with
+    | nil => rfl
+    | cons x xs ih =>
+      simp only [List.map_cons, regValue, List.foldr_cons, s0]
+      rw [hagree_a0_r0 x (hlt x List.mem_cons_self)]
+      have htail := ih (fun i hi => hlt i (List.mem_cons_of_mem _ hi))
+      simp only [regValue, s0] at htail
+      rw [htail]
+  have hc0 : TagPack1542.cVal s0 < 87 := by
+    have heq : TagPack1542.cVal s0 = regValue rest87A r0.basis :=
+      hreg_map TagPack1542.cWires rest87A (by decide +kernel) (by decide)
+    rw [heq]; exact htag.1
+  have hp0 : TagPack1542.p0Val s0 ∈ TagPack1542.used7 := by
+    have heq : TagPack1542.p0Val s0 = regValue p0Sites r0.basis :=
+      hreg_map TagPack1542.p0Wires p0Sites (by decide +kernel) (by decide)
+    rw [heq]; exact htag.2
+  have hpk0 : ∀ k < 9, TagPack1542.pkVal k s0 ∈ TagPack1542.used8 := by
+    intro k hk
+    have hmap_k : (TagPack1542.pkWires k).map tagPort = pkSitesOf (k + 1) := by
+      have hchk : (List.range 9).all (fun k' =>
+          (TagPack1542.pkWires k').map tagPort == pkSitesOf (k' + 1)) = true := by
+        decide +kernel
+      exact beq_iff_eq.mp (List.all_eq_true.mp hchk k (List.mem_range.mpr hk))
+    have heq : TagPack1542.pkVal k s0 = regValue (pkSitesOf (k + 1)) r0.basis :=
+      hreg_map (TagPack1542.pkWires k) (pkSitesOf (k + 1)) hmap_k (fun i hi => by
+        simp only [TagPack1542.pkWires, TagPack1542.pkWire, List.mem_cons, List.not_mem_nil, or_false] at hi
+        omega)
+    rw [heq]
+    exact ocut_pk_in_used8 (if d then 10 else 85) (by cases d <;> decide) origin ctx tr r0 start k hk
+  have hanc0 : ∀ a, 86 ≤ a → a < 105 → s0.basis a = false := by
+    intro a ha1 ha2
+    exact (hagree_a0_r0 a (by omega)).trans (ocut_anc_zero _ origin ctx r0 start a ha1 ha2)
+  -- Step 1: `a1 := run packTag mPack a0`
+  let a1 := run packTag mPack a0
+  have hp_pool := run_rename_pool tagPort (Finset.range 105) tagPort_inj TagPack1542.packTagProg
+    (fun q hq => Finset.mem_range.mpr (TagPack1542.packTagProg_wires_lt q hq)) mPack s0 a0 rfl (fun _ _ => rfl)
+  have hspec := TagPack1542.packTag_spec s0 mPack hc0 hp0 hpk0 hanc0
+  have ha1_ph : a1.phase = a0.phase := hp_pool.1.trans hspec.1
+  have ha1_435 : a1.basis (StairPhysicalLayout.sLetter 435) = false := by
+    have h6 : tagPort 6 = StairPhysicalLayout.sLetter 435 := by decide +kernel
+    rw [← h6]
+    change (run (renameProgram tagPort TagPack1542.packTagProg) mPack a0).basis (tagPort 6) = false
+    rw [hp_pool.2 6 (by decide)]
+    exact hspec.2.1
+  have ha1_anc : ∀ i, 86 ≤ i → i < 105 → a1.basis (tagPort i) = false := fun i hi1 hi2 =>
+    (hp_pool.2 i (Finset.mem_range.mpr (by omega))).trans (hspec.2.2.1 i hi1 hi2)
+  have ha1_out : ∀ w, w ∉ tagSites → a1.basis w = a0.basis w := fun w hw =>
+    run_preserves_outside packTag mPack a0 w (fun hm => by
+      rw [packTag, renameProgram_support] at hm
+      obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hm
+      have lt : i < tagSites.length := tagSites_length ▸ TagPack1542.packTagProg_wires_lt i hi
+      exact hw (by simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem]))
+  -- Step 2: `a2 := run (renameProgram tagSwap (group84Body d)) mBody a1`
+  -- Run `group84Body d` on `a1m := mask tagDataSet r0 (pullState tagSwap a1)` against `r0`!
+  let a1' := pullState tagSwap a1
+  have h720_not_tag : base 720 ∉ tagSites := by decide +kernel
+  let tagDataSet : Finset Wire := (tagSites.take 86).toFinset
+  have hbody_avoids_tagData : avoids (group84Body d) tagDataSet := by
+    intro q hq
+    rw [List.mem_toFinset] at hq
+    obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hq
+    have hi86 : i < 86 := by have := List.length_take_le 86 tagSites; omega
+    have hget : (tagSites.take 86)[i] = tagPort i := by
+      have lt : i < tagSites.length := by rw [tagSites_length]; omega
+      simp [tagPort, List.getElem_take, List.getElem?_eq_getElem lt]
+    rw [hget]
+    exact tagData_avoids_group84Body d i hi86
+  let a1m := mask tagDataSet r0 a1'
+  have hfits_m : Fits rows c0 a1m r0 := by
+    refine ⟨ha1_ph.trans initial.phase, ?_, ?_⟩
+    · intro q hq
+      by_cases hqm : q ∈ tagDataSet
+      · simp [a1m, mask, hqm]
+      · simp only [a1m, mask, hqm, ↓reduceIte]
+        change a1.basis (tagSwap q) = r0.basis q
+        by_cases hq720 : q = base 720
+        · subst hq720; simp [tagSwap, ha1_435, start.1]
+        · have hq435 : q ≠ StairPhysicalLayout.sLetter 435 := by
+            intro h; exact hqm (h ▸ (by decide +kernel : StairPhysicalLayout.sLetter 435 ∈ tagDataSet))
+          rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hq720 hq435]
+          by_cases hqt : q ∈ tagSites
+          · -- `q ∈ tagSites` and `q ∉ tagSites.take 86`, so `q = tagPort i` with `86 ≤ i < 105` (ancilla)!
+            obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hqt
+            have hi105 : i < 105 := tagSites_length ▸ hi
+            have hi86 : 86 ≤ i := by
+              by_contra! hlt
+              exact hqm (List.mem_toFinset.mpr (List.mem_iff_getElem.mpr ⟨i, by rw [List.length_take, tagSites_length]; omega, by simp [List.getElem_take]⟩))
+            have hget : tagSites[i] = tagPort i := by simp [tagPort, List.getElem?_eq_getElem hi]
+            rw [hget, ha1_anc i hi86 hi105, ocut_anc_zero _ origin ctx r0 start i hi86 hi105]
+          · exact (ha1_out q hqt).trans (initial.outside q hq)
+    · intro j hj i hi
+      have hmem_b : StairArchiveRelease.fieldPort j i ∈ allBanks :=
+        Finset.mem_biUnion.mpr ⟨j, hj, Finset.mem_image.mpr ⟨i, hi, rfl⟩⟩
+      have hnt : StairArchiveRelease.fieldPort j i ∉ tagSites :=
+        fun ht => tagSites_disjoint_allBanks _ ht hmem_b
+      have hnm : StairArchiveRelease.fieldPort j i ∉ tagDataSet := fun hm =>
+        hnt (List.take_subset 86 tagSites (List.mem_toFinset.mp hm))
+      have hn720 : StairArchiveRelease.fieldPort j i ≠ base 720 := by
+        have jm : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+        simpa using List.all_eq_true.mp (List.all_eq_true.mp fieldPort_ne720_chk j jm) i (List.mem_range.mpr (Finset.mem_range.mp hi))
+      have hn435 : StairArchiveRelease.fieldPort j i ≠ StairPhysicalLayout.sLetter 435 :=
+        fun h => hnt (h ▸ (by decide +kernel : StairPhysicalLayout.sLetter 435 ∈ tagSites))
+      simp only [a1m, mask, hnm, ↓reduceIte]
+      change a1.basis (tagSwap (StairArchiveRelease.fieldPort j i)) = _
+      rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hn720 hn435, ha1_out _ hnt]
+      exact initial.bytes j hj i hi
+  have htrail := otrail d x rows rb origin ctx en tr history _ (planBody d) mBody r0 hroute start
+  have htrav := otravel d rows rb (planBody d) mBody a1m r0 c0 hvalid htrail hfits_m
+  rw [← oemits_body, oref_run] at htrav
+  have hmask_eq : run (group84Body d) mBody a1m = mask tagDataSet r0 (run (group84Body d) mBody a1') :=
+    mask_run (group84Body d) tagDataSet mBody r0 a1' hbody_avoids_tagData
+  rw [hmask_eq] at htrav
+  -- Now let `a2 := run (renameProgram tagSwap (group84Body d)) mBody a1 = pullState tagSwap (run (group84Body d) mBody a1')`!
+  let a2' := run (group84Body d) mBody a1'
+  let a2 := run (renameProgram tagSwap (group84Body d)) mBody a1
+  have ha2_eq : a2 = pullState tagSwap a2' := by
+    have hconj := StairField2V3Seg.rename_conj tagSwap tagSwap.injective (fun q => Equiv.swap_apply_self _ _ q)
+      (group84Body d) a1 mBody
+    exact hconj
+  -- Check that `a2` agrees with `a1` on all 105 `tagSites`!
+  have hr1_720 : r1.basis (base 720) = false := by
+    have h720_av : base 720 ∉ wires (oreferenceProgram d (planBody d)) := by
+      have hsub : wires (oreferenceProgram d (planBody d)) ⊆ wires (group d 1 84) := by
+        intro q hq
+        have h1 : wires (oreferenceProgram d (planBody d)) ⊆ wires (oreferenceProgram d (plan d)) := by
+          cases d
+          · rw [plan_split_false]
+            have : ∀ l1 l2, wires (oreferenceProgram false (l1 ++ l2)) = wires (oreferenceProgram false l1) ∪ wires (oreferenceProgram false l2) := by
+              intro l1 l2; induction l1 with | nil => simp [oreferenceProgram, wires] | cons x xs ih => simp [oreferenceProgram, wires_append, ih, Finset.union_assoc]
+            rw [this]; exact Finset.subset_union_left
+          · rw [plan_split_true]; simp [oreferenceProgram, wires_append]
+        have h2 := h1 hq
+        rw [oreference_eq] at h2
+        exact ot_ogroup_sub d 1 84 h2
+      exact fun hw => (ot_groupUses d (hsub hw)).2 rfl
+    rw [run_preserves_outside _ _ _ _ h720_av]
+    exact start.1
+  have hr1_anc : ∀ i, 86 ≤ i → i < 105 → r1.basis (tagPort i) = false := by
+    intro i hi1 hi2
+    have hcut_end : OCut (if d then 85 else 10) origin r1 := by
+      have hseq : oreferenceProgram d (planBody d) = ogroup d 10 75 := by
+        cases d
+        · exact orefBody_false_eq
+        · exact orefBody_true_eq
+      have hsel := oselected d 10 75 (by decide) (by decide) origin ctx en r0 (oreferenceTape d (planBody d) mBody)
+        (by cases d <;> simpa using start)
+      cases d <;> simpa [r1, hseq] using hsel
+    exact ocut_anc_zero _ origin ctx r1 hcut_end i hi1 hi2
+  have ha2_agree_a1 : ∀ i < 105, a2.basis (tagPort i) = a1.basis (tagPort i) := by
+    intro i hi
+    rw [ha2_eq]
+    change a2'.basis (tagSwap (tagPort i)) = a1.basis (tagPort i)
+    by_cases h6 : i = 6
+    · subst h6
+      have htp6 : tagPort 6 = StairPhysicalLayout.sLetter 435 := by decide +kernel
+      rw [htp6, show tagSwap (StairPhysicalLayout.sLetter 435) = base 720 from Equiv.swap_apply_right _ _, ha1_435]
+      have h720_not_b : base 720 ∉ allBanks := by
+        intro hb
+        rw [allBanks, Finset.mem_biUnion] at hb
+        obtain ⟨j, hj, hjb⟩ := hb
+        rw [bank, Finset.mem_image] at hjb
+        obtain ⟨k, hk, heq⟩ := hjb
+        have jm : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+        have h1 := List.all_eq_true.mp (List.all_eq_true.mp fieldPort_ne720_chk j jm) k (List.mem_range.mpr (Finset.mem_range.mp hk))
+        rw [heq] at h1; simp at h1
+      have h720_not_m : base 720 ∉ tagDataSet := fun hm =>
+        h720_not_tag (List.take_subset 86 tagSites (List.mem_toFinset.mp hm))
+      have hout := htrav.outside (base 720) h720_not_b
+      simp only [mask, h720_not_m, ↓reduceIte] at hout
+      exact hout.trans hr1_720
+    · have hne435 : tagPort i ≠ StairPhysicalLayout.sLetter 435 := by
+        intro h
+        have htp6 : tagPort 6 = StairPhysicalLayout.sLetter 435 := by decide +kernel
+        exact h6 (tagPort_inj i (Finset.mem_range.mpr hi) 6 (by decide) (h.trans htp6.symm))
+      have hne720 : tagPort i ≠ base 720 := fun h => h720_not_tag (h ▸ by
+        have lt : i < tagSites.length := tagSites_length ▸ hi
+        simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem])
+      rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hne720 hne435]
+      by_cases hi86 : i < 86
+      · rw [run_preserves_outside (group84Body d) mBody a1' (tagPort i) (tagData_avoids_group84Body d i hi86)]
+        change a1.basis (tagSwap (tagPort i)) = a1.basis (tagPort i)
+        rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hne720 hne435]
+      · have hmem_t : tagPort i ∈ tagSites := by
+          have lt : i < tagSites.length := tagSites_length ▸ hi
+          simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem]
+        have hnot_b : tagPort i ∉ allBanks := tagSites_disjoint_allBanks _ hmem_t
+        have hnot_m : tagPort i ∉ tagDataSet := by
+          intro hm
+          obtain ⟨j, hj, hjeq⟩ := List.mem_iff_getElem.mp (List.mem_toFinset.mp hm)
+          have hj86 : j < 86 := by have := List.length_take_le 86 tagSites; omega
+          have hget : (tagSites.take 86)[j] = tagPort j := by
+            have lt : j < tagSites.length := by rw [tagSites_length]; omega
+            simp [tagPort, List.getElem_take, List.getElem?_eq_getElem lt]
+          rw [hget] at hjeq
+          have hij := tagPort_inj j (Finset.mem_range.mpr (by omega)) i (Finset.mem_range.mpr hi) hjeq
+          omega
+        have hout := htrav.outside (tagPort i) hnot_b
+        simp only [mask, hnot_m, ↓reduceIte] at hout
+        rw [hout, hr1_anc i (by omega) hi, ha1_anc i (by omega) hi]
+  -- Step 3: `a3 := run unpackTag mUnpack a2` via `TagPack1542.unpackTag_packTag_roundtrip`!
+  let u0 : State := ⟨a2.phase, fun q => a2.basis (tagPort q)⟩
+  have hu_pool := run_rename_pool tagPort (Finset.range 105) tagPort_inj TagPack1542.unpackTagProg
+    (fun q hq => Finset.mem_range.mpr (TagPack1542.unpackTagProg_wires_lt q hq)) mUnpack u0 a2 rfl (fun _ _ => rfl)
+  have hrt := TagPack1542.unpackTag_packTag_roundtrip s0 u0 mPack mUnpack hc0 hp0 hpk0 hanc0
+    (fun w hw => (ha2_agree_a1 w hw).trans (hp_pool.2 w (Finset.mem_range.mpr hw)))
+  let a3 := run unpackTag mUnpack a2
+  have ha3_out : ∀ w, w ∉ tagSites → a3.basis w = a2.basis w := fun w hw =>
+    run_preserves_outside unpackTag mUnpack a2 w (fun hm => by
+      rw [unpackTag, renameProgram_support] at hm
+      obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hm
+      have lt : i < tagSites.length := tagSites_length ▸ TagPack1542.unpackTagProg_wires_lt i hi
+      exact hw (by simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem]))
+  rw [hrun_split]
+  refine ⟨?_, ?_, ?_⟩
+  · -- Phase
+    have ha2_ph : a2.phase = r1.phase := by
+      have hp1 : a2.phase = a2'.phase := by rw [ha2_eq, pullState_phase]
+      exact hp1.trans ((mask_phase tagDataSet r0 a2').symm.trans htrav.phase)
+    exact (hu_pool.1.trans hrt.1).trans ha2_ph
+  · -- Outside `allBanks`
+    intro q hq
+    by_cases hqt : q ∈ tagSites
+    · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hqt
+      have hi105 : i < 105 := tagSites_length ▸ hi
+      have hget : tagSites[i] = tagPort i := by simp [tagPort, List.getElem?_eq_getElem hi]
+      rw [hget]
+      have hrest : a3.basis (tagPort i) = a0.basis (tagPort i) :=
+        (hu_pool.2 i (Finset.mem_range.mpr hi105)).trans (hrt.2.1 i hi105)
+      rw [hrest, hagree_a0_r0 i hi105]
+      by_cases hi86 : i < 86
+      · exact (run_preserves_outside _ _ _ _ (tagData_avoids_group84Body_ref d i hi86)).symm
+      · rw [ocut_anc_zero _ origin ctx r0 start i (by omega) hi105, hr1_anc i (by omega) hi105]
+    · rw [ha3_out q hqt, ha2_eq]
+      change a2'.basis (tagSwap q) = r1.basis q
+      by_cases hq720 : q = base 720
+      · subst hq720
+        rw [show tagSwap (base 720) = StairPhysicalLayout.sLetter 435 from Equiv.swap_apply_left _ _]
+        have h435_av : StairPhysicalLayout.sLetter 435 ∉ wires (group84Body d) := by
+          have h6 : tagPort 6 = StairPhysicalLayout.sLetter 435 := by decide +kernel
+          rw [← h6]
+          exact tagData_avoids_group84Body d 6 (by decide)
+        rw [run_preserves_outside _ _ _ _ h435_av]
+        change a1.basis (tagSwap (StairPhysicalLayout.sLetter 435)) = r1.basis (base 720)
+        rw [show tagSwap (StairPhysicalLayout.sLetter 435) = base 720 from Equiv.swap_apply_right _ _,
+            ha1_out _ h720_not_tag, initial.outside _ hq, start.1, hr1_720]
+      · have hq435 : q ≠ StairPhysicalLayout.sLetter 435 := fun h =>
+          hqt (h ▸ (by decide +kernel : StairPhysicalLayout.sLetter 435 ∈ tagSites))
+        rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hq720 hq435]
+        have hnm : q ∉ tagDataSet := fun hm => hqt (List.take_subset 86 tagSites (List.mem_toFinset.mp hm))
+        have hout := htrav.outside q hq
+        simpa [mask, hnm] using hout
+  · -- Archive bytes on `allBanks`
+    intro j hj i hi
+    have hmem_b : StairArchiveRelease.fieldPort j i ∈ allBanks :=
+      Finset.mem_biUnion.mpr ⟨j, hj, Finset.mem_image.mpr ⟨i, hi, rfl⟩⟩
+    have hnt : StairArchiveRelease.fieldPort j i ∉ tagSites :=
+      fun ht => tagSites_disjoint_allBanks _ ht hmem_b
+    have hnm : StairArchiveRelease.fieldPort j i ∉ tagDataSet := fun hm =>
+      hnt (List.take_subset 86 tagSites (List.mem_toFinset.mp hm))
+    have hn720 : StairArchiveRelease.fieldPort j i ≠ base 720 := by
+      have hchk : WindowBankCheck.banks.all (fun b =>
+          (List.range 16).all (fun k => StairArchiveRelease.fieldPort b k != base 720)) = true := by decide +kernel
+      have jm : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+      simpa using List.all_eq_true.mp (List.all_eq_true.mp hchk j jm) i (List.mem_range.mpr (Finset.mem_range.mp hi))
+    have hn435 : StairArchiveRelease.fieldPort j i ≠ StairPhysicalLayout.sLetter 435 :=
+      fun h => hnt (h ▸ (by decide +kernel : StairPhysicalLayout.sLetter 435 ∈ tagSites))
+    rw [ha3_out _ hnt, ha2_eq]
+    change a2'.basis (tagSwap (StairArchiveRelease.fieldPort j i)) = _
+    rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hn720 hn435]
+    have hby := htrav.bytes j hj i hi
+    simpa [mask, hnm] using hby
+
+private theorem othree_true_glue (P1 P2 R1 R2 : Program) (c1 c2 : Nat → CodecBitSliceVerify.Cols)
+    (rows : Nat → Nat) (m t2 : List Bool) (a r : State)
+    (hc : c1 = c2)
+    (h : Fits rows c1 (run P2 (m.drop (measurementCount P1)) (run P1 (m.take (measurementCount P1)) a))
+           (run R2 t2 (run R1 (m.take (measurementCount P1)) r))) :
+    Fits rows c2 (run (P1 ++ P2) m a) (run (R1 ++ R2) (joinTapes R1 (m.take (measurementCount P1)) t2) r) := by
+  subst hc; rw [run_append, joined]; exact h
+
+private theorem othree_false_glue (P1 P2 R1 R2 : Program) (c1 c2 : Nat → CodecBitSliceVerify.Cols)
+    (rows : Nat → Nat) (m t1 t1' : List Bool) (a r : State)
+    (hc : c1 = c2) (ht : t1 = t1')
+    (h : Fits rows c1 (run P2 (m.drop (measurementCount P1)) (run P1 (m.take (measurementCount P1)) a))
+           (run R2 (m.drop (measurementCount P1)) (run R1 t1 r))) :
+    Fits rows c2 (run (P1 ++ P2) m a) (run (R1 ++ R2) (joinTapes R1 t1' (m.drop (measurementCount P1))) r) := by
+  subst hc; subst ht; rw [run_append, joined]; exact h
+
+private theorem drop_take_take_eq (a b c : Nat) (m : List Bool) :
+    ((m.take (a + b + c)).drop a).take b = (m.drop a).take b := by
+  rw [List.drop_take, List.take_take, Nat.min_eq_left (by omega)]
+
+private theorem route_plan_true : path true 1 (plan true) := by
+  simp [path, plan, prev, next, span, feasible, bankIds]
+
+private theorem route_plan_false : path false 85 (plan false) := by
+  simp [path, plan, prev, next, span, feasible, bankIds]
+
+private theorem group84_true_eq :
+    group84 true = ogroup true 1 9 ++ (packTag ++ renameProgram tagSwap (group84Body true) ++ unpackTag) := rfl
+
+private theorem group84_false_eq :
+    group84 false = (packTag ++ renameProgram tagSwap (group84Body false) ++ unpackTag) ++ ogroup false 1 9 := rfl
+
+private theorem oreferenceTape1542_true_eq (m : List Bool) :
+    oreferenceTape1542 true m =
+      joinTapes (ogroup true 1 9) (m.take (measurementCount (ogroup true 1 9)))
+        (oreferenceTape true (planBody true)
+          (((m.drop (measurementCount (ogroup true 1 9))).drop (measurementCount packTag)).take (measurementCount (group84Body true)))) := rfl
+
+private theorem oreferenceTape1542_false_eq (m : List Bool) :
+    oreferenceTape1542 false m =
+      joinTapes (oreferenceProgram false (planBody false))
+        (oreferenceTape false (planBody false) ((m.drop (measurementCount packTag)).take (measurementCount (group84Body false))))
+        (m.drop (measurementCount (packTag ++ renameProgram tagSwap (group84Body false) ++ unpackTag))) := rfl
+
+private theorem hfin_eq_false :
+    finalCode false (plan false) (initialCode false) =
+      finalCode false (planBody false) (initialCode false) := by
+  rw [plan_split_false]
+  have hfc : ∀ ls c, finalCode false (ls ++ [Leg.native 1 9]) c = finalCode false ls c := by
+    intro ls; induction ls with | nil => intro c; rfl | cons l ls ih => intro c; exact ih _
+  exact hfc _ _
+
+private theorem valid_plan_false_split :
+    valid false (planBody false) (initialCode false) ∧ nativeRanges 1 9 := by
+  have hv : ∀ ls c, valid false (ls ++ [Leg.native 1 9]) c → valid false ls c ∧ nativeRanges 1 9 := by
+    intro ls
+    induction ls with
+    | nil => intro c h; exact ⟨trivial, h.1⟩
+    | cons l ls ih => intro c h; obtain ⟨h1, h2⟩ := ih _ h.2; exact ⟨⟨h.1, h1⟩, h2⟩
+  have h := valid_plan false
+  rw [plan_split_false] at h
+  exact hv _ _ h
+
+private theorem route_plan_false_body : path false 85 (planBody false) := by
+  have hp : ∀ ls c, path false c (ls ++ [Leg.native 1 9]) → path false c ls := by
+    intro ls
+    induction ls with
+    | nil => intros; trivial
+    | cons l ls ih => intro c h; exact ⟨h.1, h.2.1, ih _ h.2.2⟩
+  have h := route_plan_false
+  rw [plan_split_false] at h
+  exact hp _ _ h
+
+private theorem tagReady_run_outside (P : Program) (m : List Bool) (s : State)
+    (h : ∀ q ∈ rest87A ++ p0Sites, q ∉ wires P) (ht : TagReady s) :
+    TagReady (run P m s) := by
+  constructor
+  · rw [Arithmetic.regValue_congr rest87A _ s.basis (fun q hq =>
+      run_preserves_outside P m s q (h q (List.mem_append_left _ hq)))]
+    exact ht.1
+  · rw [Arithmetic.regValue_congr p0Sites _ s.basis (fun q hq =>
+      run_preserves_outside P m s q (h q (List.mem_append_right _ hq)))]
+    exact ht.2
+
+attribute [local irreducible] ogroup oreferenceProgram oreferenceTape planBody packTag unpackTag tagSwap
+
+set_option maxRecDepth 16000 in
+set_option maxHeartbeats 2000000 in
+private theorem othree_run_true (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows j<63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
+    (history : ∀j∈bankIds,ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode true) a r)
+    (start : OCut 1 origin r)
+    (htag : TagReady r) :
+    Fits rows (finalCode true (plan true) (initialCode true)) (run (group84 true) m a)
+      (run (PacketSequence.program true (opk true) 1 84) (oreferenceTape1542 true m) r) := by
+  have hvalid_all := valid_plan true
+  have hroute_all := route_plan_true
+  rw [plan_split_true] at hvalid_all hroute_all ⊢
+  obtain ⟨hloc19, hval_body⟩ := hvalid_all
+  obtain ⟨_, _, hroute_body⟩ := hroute_all
+  let m19 := m.take (measurementCount (ogroup true 1 9))
+  let mTail := m.drop (measurementCount (ogroup true 1 9))
+  have h19_fits : Fits rows (initialCode true) (run (ogroup true 1 9) m19 a) (run (ogroup true 1 9) m19 r) :=
+    plain (ogroup true 1 9) rows (initialCode true) m19 a r initial (ot_groupSafe true 1 9 hloc19)
+  have h19_cut : OCut 10 origin (run (ogroup true 1 9) m19 r) := by
+    have hs := oselected true 1 9 (by decide) (by decide) origin ctx en r m19 start
+    simpa only [if_true] using hs
+  have h19_tag : TagReady (run (ogroup true 1 9) m19 r) :=
+    tagReady_run_outside _ m19 r (ogroup19_avoids_rest87A_p0 true) htag
+  have hbody := othree_body_bracket true x rows rb origin ctx en tr history mTail
+    (run (ogroup true 1 9) m19 a) (run (ogroup true 1 9) m19 r) (initialCode true)
+    hval_body hroute_body h19_fits h19_cut h19_tag
+  rw [group84_true_eq, href_eq_true, oreferenceTape1542_true_eq]
+  exact othree_true_glue _ _ _ _ _ _ rows m _ a r
+    (finalCode_native_cons true 1 9 (planBody true) (initialCode true)).symm hbody
+
+set_option maxRecDepth 16000 in
+set_option maxHeartbeats 2000000 in
+private theorem othree_run_false (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows j<63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
+    (history : ∀j∈bankIds,ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode false) a r)
+    (start : OCut 85 origin r)
+    (htag : TagReady r) :
+    Fits rows (finalCode false (plan false) (initialCode false)) (run (group84 false) m a)
+      (run (PacketSequence.program false (opk false) 1 84) (oreferenceTape1542 false m) r) := by
+  let P1 := packTag ++ renameProgram tagSwap (group84Body false) ++ unpackTag
+  let mPre := m.take (measurementCount P1)
+  let m19 := m.drop (measurementCount P1)
+  have hbody := othree_body_bracket false x rows rb origin ctx en tr history mPre a r (initialCode false)
+    valid_plan_false_split.1 route_plan_false_body initial start htag
+  have h19 := plain (ogroup false 1 9) rows (finalCode false (planBody false) (initialCode false)) m19 _ _ hbody
+    (ot_groupSafe false 1 9 valid_plan_false_split.2)
+  have hmBody_eq : (mPre.drop (measurementCount packTag)).take (measurementCount (group84Body false)) =
+      (m.drop (measurementCount packTag)).take (measurementCount (group84Body false)) := by
+    have hmc : measurementCount P1 =
+        measurementCount packTag + measurementCount (group84Body false) + measurementCount unpackTag := by
+      simp only [P1, measurementCount_append, (renameProgram_counts _ _).2]
+    dsimp only [mPre]
+    rw [hmc]
+    exact drop_take_take_eq _ _ _ m
+  rw [group84_false_eq, href_eq_false, oreferenceTape1542_false_eq]
+  exact othree_false_glue P1 _ _ _ _ _ rows m _ _ a r hfin_eq_false.symm
+    (congrArg (oreferenceTape false (planBody false)) hmBody_eq) h19
+
+/-- Archive-coupled field-group runner directly between odd-word `OCut` endpoints (cuts 1 and 85),
+    for the 1542-qubit `group84 d` bracketed by `TagPack1542.{packTag, unpackTag}`. -/
+theorem othree_run (d : Bool) (x : Nat) (rows : Nat→Nat) (rb : ∀j∈bankIds,rows j<63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400)=true) (tr : TraceOK x origin)
+    (history : ∀j∈bankIds,ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode d) a r)
+    (start : OCut (if d then 1 else 85) origin r)
+    (htag : TagReady r) :
+    Fits rows (finalCode d (plan d) (initialCode d)) (run (group84 d) m a)
+      (run (PacketSequence.program d (opk d) 1 84) (oreferenceTape1542 d m) r) := by
+  cases d with
+  | true => exact othree_run_true x rows rb origin ctx en tr history m a r initial start htag
+  | false => exact othree_run_false x rows rb origin ctx en tr history m a r initial start htag
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+open Arithmetic Secp256k1 MappedCompressed WindowFieldCosts StairArchiveInactive
+set_option maxRecDepth 10000
+set_option maxHeartbeats 1800000
+attribute [local irreducible] wires run opk rpk
+
+def SignReady (s : State) : Prop :=
+  s.basis signHost =
+    (TraceParity5.parity (signPayload.map s.basis) ^^ prefixParityValue (regValue p0Sites s.basis))
+
+/-- The relocated raw packet has the ordinary packet's full result on an archive
+    stage when the relocated sign site is clear and the ordinary support agrees
+    with an ordinary cut. The two tapes are independent. -/
+theorem spk_run_eq (d : Bool) (k : Nat) (lo : 10 ≤ k) (hi : k ≤ 84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400) = true) (r a : State) (m n : List Bool)
+    (initial : OCut (if d then k else k + 1) origin r)
+    (clean : a.basis signHost = false)
+    (agree : ∀ q ∈ wires (opk d k), a.basis q = r.basis q) :
+    run (spk d k) m a = run (opk d k) n a := by
+  let f := Equiv.swap (base 720) signHost
+  let b := pullState f r
+  have fix : ∀ q ∈ wires (opk d k), f q = q := by
+    intro q used
+    exact Equiv.swap_apply_of_ne_of_ne
+      (fun he => opk_avoid720 d k (by omega) hi (he ▸ used))
+      (fun he => opk_avoids_sign d k (by omega) hi (he ▸ used))
+  have renameOld : renameProgram f (opk d k) = opk d k := by
+    rw [RouteA.Rolling1588.renameProgram_congr_on f id _ (fun q hq => fix q hq)]
+    exact StairField2V3Win.renameProgram_id' _
+  have symm : pullState f b = r :=
+    StairReplay.pullState_involutive f (fun q => Equiv.swap_apply_self _ _ q) r
+  have lift (P : Program) (t : List Bool) :
+      run (renameProgram f P) t b = pullState f (run P t r) := by
+    rw [StairField2V3Seg.rename_conj f f.injective (fun q => Equiv.swap_apply_self _ _ q), symm]
+  have eqb : run (spk d k) m b = run (opk d k) n b := by
+    change run (renameProgram f (rpk d k)) m b = run (opk d k) n b
+    rw [lift, rpk_run_eq d k lo hi origin ctx enabled r m n initial, ← lift, renameOld]
+  have agree' : ∀ q ∈ insert signHost (wires (opk d k)), a.basis q = b.basis q := by
+    intro q hq
+    rcases Finset.mem_insert.mp hq with h | h
+    · subst q
+      change a.basis signHost = r.basis (f signHost)
+      rw [show f signHost = base 720 from Equiv.swap_apply_right _ _, clean, initial.1]
+    · change a.basis q = r.basis (f q)
+      rw [fix q h]
+      exact agree q h
+  exact lift_on _ _ _ (spk_sub d k (by omega) hi) (Finset.subset_insert _ _) m n a b agree' eqb
+
+theorem spk_returns_zero (d : Bool) (k : Nat) (lo : 10 ≤ k) (hi : k ≤ 84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400) = true) (r a : State) (m n : List Bool)
+    (initial : OCut (if d then k else k + 1) origin r)
+    (clean : a.basis signHost = false)
+    (agree : ∀ q ∈ wires (opk d k), a.basis q = r.basis q) :
+    (run (spk d k) m a).basis signHost = false := by
+  rw [spk_run_eq d k lo hi origin ctx enabled r a m n initial clean agree,
+    run_preserves_outside _ _ _ _ (opk_avoids_sign d k (by omega) hi), clean]
+
+section
+attribute [local irreducible] gpk
+
+/-- The relocated fully decoded packet has the ordinary packet's result when the sign site is
+    clear and the ordinary support agrees with a reference cut. The two tapes are independent. -/
+theorem epk_run_eq (d : Bool) (k : Nat) (lo : 1 ≤ k) (hi : k ≤ 84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400) = true) (r a : State) (m n : List Bool)
+    (initial : OCut (if d then k else k + 1) origin r)
+    (clean : a.basis signHost = false)
+    (agree : ∀ q ∈ wires (opk d k), a.basis q = r.basis q) :
+    run (epk d k) m a = run (opk d k) n a := by
+  let f := Equiv.swap (base 720) signHost
+  let b := pullState f r
+  have fix : ∀ q ∈ wires (opk d k), f q = q := by
+    intro q used
+    exact Equiv.swap_apply_of_ne_of_ne
+      (fun he => opk_avoid720 d k lo hi (he ▸ used))
+      (fun he => opk_avoids_sign d k lo hi (he ▸ used))
+  have renameOld : renameProgram f (opk d k) = opk d k := by
+    rw [RouteA.Rolling1588.renameProgram_congr_on f id _ (fun q hq => fix q hq)]
+    exact StairField2V3Win.renameProgram_id' _
+  have symm : pullState f b = r :=
+    StairReplay.pullState_involutive f (fun q => Equiv.swap_apply_self _ _ q) r
+  have lift (P : Program) (t : List Bool) :
+      run (renameProgram f P) t b = pullState f (run P t r) := by
+    rw [StairField2V3Seg.rename_conj f f.injective (fun q => Equiv.swap_apply_self _ _ q), symm]
+  have eqb : run (epk d k) m b = run (opk d k) n b := by
+    change run (renameProgram f (gpk d k)) m b = run (opk d k) n b
+    rw [lift, gpk_run_eq d k lo hi origin ctx enabled r m n initial, ← lift, renameOld]
+  have agree' : ∀ q ∈ insert signHost (wires (opk d k)), a.basis q = b.basis q := by
+    intro q hq
+    rcases Finset.mem_insert.mp hq with h | h
+    · subst q
+      change a.basis signHost = r.basis (f signHost)
+      rw [show f signHost = base 720 from Equiv.swap_apply_right _ _, clean, initial.1]
+    · change a.basis q = r.basis (f q)
+      rw [fix q h]
+      exact agree q h
+  exact lift_on _ _ _ (epk_sub d k lo hi) (Finset.subset_insert _ _) m n a b agree' eqb
+
+end
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+namespace ECDSAAdd.Entrant.StairArchiveNativeCut
+
+open Arithmetic CodecBitSliceVerify StairArchiveRelease StairArchiveInactive StairArchiveNativeRows StairArchiveSlots
+open StairPacket StairPacket.WindowFieldCosts StairPacket.WindowFieldView
+set_option maxRecDepth 10000
+set_option maxHeartbeats 1500000
+attribute [local irreducible] wires run opk fieldHook CodecBitSliceVerify.get savedSites
+
+/-- The packet footprint sees the reference history at the output of either
+    archive hook. The held byte and tag lie outside that footprint. -/
+theorem spk_after_hook (j : Nat) (hs : j ∈ StairPacket.Shadow20.MixedFieldBanks.mixedBankList)
+    (hj : j ∈ List.range' 1 83) (hb : j ∈ WindowBankCheck.banks) (lo : 10 ≤ j)
+    (rev last : Bool) (row : Nat) (hr : row < 63145) (m n n' : List Bool)
+    (a shadow r : State) (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400) = true)
+    (change : frame j row (inputCols (fromStage rev last)) a)
+    (out : exterior j a shadow) (entryFrame : frame j row (before rev last) shadow)
+    (refCut : OCut (if !rev then (if rev ^^ last then j + 1 else j)
+      else (if rev ^^ last then j + 1 else j) + 1) origin r)
+    (match_ : ∀ q ∈ wires (opk (!rev) (if rev ^^ last then j + 1 else j)),
+      shadow.basis q = r.basis q)
+    (clean : a.basis signHost = false) :
+    let c := run (fieldHook j (fromStage rev last)) m a
+    let k := if rev ^^ last then j + 1 else j
+    run (spk (!rev) k) n c = run (opk (!rev) k) n' c := by
+  let active := rev ^^ last
+  let k := if active then j + 1 else j
+  let c := run (fieldHook j (fromStage rev last)) m a
+  have admin := StairArchiveAllPorts.field_run j hj _ row hr m a change
+  have checks := all_checks rev last
+  change (agrees active false (outputCols (fromStage rev last)) (before rev last) &&
+    agrees active false (inputCols (toStage rev last)) (after rev last) &&
+    agrees active true (outputCols (fromStage rev last)) (inputCols (toStage rev last))) = true at checks
+  simp only [Bool.and_eq_true] at checks
+  have same : ∀ z ∈ wires (opk (!rev) k), c.basis z = r.basis z := by
+    intro z used
+    have off : z ∉ savedSites j active := fun held => ot_packet_avoids j hs (!rev) active z held used
+    apply Eq.trans _ (match_ z used)
+    by_cases hz : z ∈ inside j
+    · obtain ⟨q, hq, rfl⟩ := Finset.mem_image.mp hz
+      have hh : q ∉ held active := fun h => off ((held_at j hj active q hq).mpr h)
+      exact (admin.2.1 q hq).trans ((congrArg (fun v : Nat => v.testBit row)
+        (column _ _ _ _ checks.1.1 q hq (decide_eq_false hh))).trans (entryFrame q hq).symm)
+    · exact (admin.2.2 z hz).trans (out z hz)
+  have z : c.basis signHost = false :=
+    (run_preserves_outside _ _ _ _ (hook_avoids_sign j hb (fromStage rev last))).trans clean
+  have hi := List.mem_range'_1.mp hj
+  exact spk_run_eq _ k (by dsimp [k]; split <;> omega) (by dsimp [k]; split <;> omega)
+    origin ctx enabled r c n n' refCut z same
+
+end ECDSAAdd.Entrant.StairArchiveNativeCut
+
+
+namespace ECDSAAdd.Entrant.CheckpointSignLoan
+
+open ECDSAAdd
+
+def xorBits : List Bool → Bool
+  | [] => false
+  | b :: bs => b ^^ xorBits bs
+
+def into (target : Wire) (sources : List Wire) : Program :=
+  sources.map fun q => .CX q target
+
+def flip (q : Wire) (b : Bool) (s : State) : State :=
+  ⟨s.phase, writeBit s.basis q (s.basis q ^^ b)⟩
+
+private theorem flip_at (q : Wire) (b : Bool) (s : State) :
+    (flip q b s).basis q = (s.basis q ^^ b) := by
+  simp [flip, writeBit]
+
+theorem flip_off (q w : Wire) (h : w ≠ q) (b : Bool) (s : State) :
+    (flip q b s).basis w = s.basis w := by
+  simp [flip, writeBit, h]
+
+private theorem flip_false (q : Wire) (s : State) : flip q false s = s := by
+  cases s
+  simp [flip, writeBit]
+
+theorem flip_flip (q : Wire) (a b : Bool) (s : State) :
+    flip q b (flip q a s) = flip q (a ^^ b) s := by
+  cases a <;> cases b <;> simp [flip, writeBit, Function.update_idem]
+
+theorem into_measurementCount (target : Wire) (sources : List Wire) :
+    measurementCount (into target sources) = 0 := by
+  induction sources with
+  | nil => rfl
+  | cons x xs ih => exact ih
+
+theorem run_into (target : Wire) (sources : List Wire) (h : target ∉ sources)
+    (m : List Bool) (s : State) :
+    run (into target sources) m s = flip target (xorBits (sources.map s.basis)) s := by
+  induction sources generalizing s with
+  | nil => exact (flip_false target s).symm
+  | cons q qs ih =>
+    have hn : ∀ r ∈ qs, r ≠ target := by
+      intro r hr e
+      exact h (List.mem_cons_of_mem _ (e ▸ hr))
+    have ht : target ∉ qs := by
+      intro hm
+      exact hn target hm rfl
+    let u := flip target (s.basis q) s
+    have same : qs.map u.basis = qs.map s.basis := by
+      apply List.map_congr_left
+      intro r hr
+      exact flip_off target r (hn r hr) _ _
+    change run (into target qs) m u = flip target (s.basis q ^^ xorBits (qs.map s.basis)) s
+    rw [ih ht, same, flip_flip]
+
+theorem round_trip (target : Wire) (a b : Bool) (s : State) (h : a = b) :
+    flip target b (flip target a s) = s := by
+  rw [← h, flip_flip, Bool.xor_self, flip_false]
+
+theorem clear_target (target : Wire) (b : Bool) (s : State) (h : s.basis target = b) :
+    (flip target b s).basis target = false := by
+  rw [flip_at, h, Bool.xor_self]
+
+end ECDSAAdd.Entrant.CheckpointSignLoan
+
+
+namespace ECDSAAdd.Entrant.CheckpointPrefixFinite
+
+open ECDSAAdd Challenge
+open _root_.ECDSAAdd.Entrant.CodecBitSliceVerify (Cols Rel get packBits pack_rows)
+open _root_.ECDSAAdd.Entrant.MeasuredCodec5 (bitRun)
+
+set_option maxRecDepth 14000
+set_option maxHeartbeats 3000000
+set_option linter.unnecessarySimpa false
+set_option linter.unusedSimpArgs false
+
+abbrev bitsOf := MeasuredCodec5.bitsOf
+def invV : Program := FourScratchPrefix.invV
+def clearV : Program := FourScratchPrefix.clearV
+def decoded : List Nat := [0, 1, 2, 3, 4, 6, 7, 8]
+def packed : List Nat := decoded.drop 1
+def expand (n : Nat) : Nat :=
+  packed.zipIdx.foldl (fun acc p => if n.testBit p.2 then acc + 2 ^ p.1 else acc) 0
+def parity (n : Nat) : Bool := (decoded.map (bitRun invV (expand n)).testBit).foldr (· ^^ ·) false
+def initial (n : Nat) (b : Bool) : Nat := if b then expand n + 4096 else expand n
+def final (n : Nat) (b : Bool) : Nat := initial n (b ^^ parity n)
+def bracket : Program := StairPacket.WindowFieldCosts.prefixSignCircuit
+def used : List Nat := [0, 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 64, 65, 66, 67, 68, 69, 70, 72, 73, 75, 76, 77, 78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 120, 121, 122, 123, 124, 125, 126, 127]
+
+private def rows : List (Nat × Bool) := used.flatMap fun n => [(n,false),(n,true)]
+private def row (r : Nat) : Nat × Bool := (rows[r]?).getD (0,false)
+private def rawColumns : Cols := [0, 345083368128590617579509237112959869905330560315251764034428002880716, 405983917690345643379270502607314466949755229610076382586122302328816, 429680629582079116016823740028901829587320687171071560687523888631552, 431352565057909333347209311432980312283816490763838098950330465120256, 0, 431359146272675726024069090269738145037179870151499058997379196780544, 431359146674410236340527822235602948910347852120108263138641324277760, 431359146674410236714672241392314085585897452225821531167161434767360, 0, 0, 0, 0]
+private def inputColumns : Cols := [0, 345083368128590617579509237112959869905330560315251764034428002880716, 405983917690345643379270502607314466949755229610076382586122302328816, 429680629582079116016823740028901829587320687171071560687523888631552, 431352565057909333347209311432980312283816490763838098950330465120256, 0, 431359146272675726024069090269738145037179870151499058997379196780544, 431359146674410236340527822235602948910347852120108263138641324277760, 431359146674410236714672241392314085585897452225821531167161434767360, 0, 0, 0, 287572764449606824476448160928209393852129540507099439798438509324970]
+private def invertedColumns : Cols := [81216839089046446303320618930319777084989458408771558609346738797760, 325119182429462738101007938385232482339775104043806324665319543749839, 20323723222685895629530000504468585749592226943051933601983177490428, 429680629582079116016823740028901829587320687171071560687523888631552, 26933701778361197018290294217874584988938741063867830149013930036416, 0, 5061572013606073506372551935893514865499168103810708718083152015372, 26940117076774481745042336754095838560022516616438865324938757356736, 5061571621299474634887510789353068612972694563564325774757486391308, 0, 0, 0, 0]
+private def parityColumn := decoded.foldr (fun q v => get invertedColumns q ^^^ v) 0
+private def outputColumns : Cols := inputColumns.set 12 (get inputColumns 12 ^^^ parityColumn)
+private def mask : Nat := 2^228-1
+
+private theorem row_count : rows.length = 228 := by decide +kernel
+
+private theorem row_exists (n : Nat) (hn : n ∈ used) (b : Bool) :
+    ∃ r : Fin 228, row r.val = (n,b) := by
+  have hm : (n,b) ∈ rows := by
+    unfold rows
+    exact List.mem_flatMap.mpr ⟨n,hn,by cases b <;> simp⟩
+  refine ⟨⟨rows.idxOf (n,b),row_count ▸ List.idxOf_lt_length_of_mem hm⟩,?_⟩
+  simp only [row, List.getElem?_idxOf hm, Option.getD_some]
+
+private theorem row_word (value : Nat × Bool → Nat) (r : Fin 228) :
+    ((rows.map value)[r.val]?).getD 0 = value (row r.val) := by
+  have hr : r.val < rows.length := by rw [row_count]; exact r.isLt
+  simp only [row, List.getElem?_map, List.getElem?_eq_getElem hr, Option.map_some, Option.getD_some]
+
+private theorem expand_bound : ∀ n : Fin 128, expand n.val < 4096 := by decide +kernel
+private theorem row_code_bound : ∀ r : Fin 228, (row r.val).1 < 128 := by decide +kernel
+
+private theorem raw_bound (r : Fin 228) : expand (row r.val).1 < 4096 :=
+  expand_bound ⟨(row r.val).1,row_code_bound r⟩
+
+private theorem initial_bound (r : Fin 228) : initial (row r.val).1 (row r.val).2 < 2^13 := by
+  have h := raw_bound r
+  unfold initial
+  split <;> omega
+
+private theorem initial_bit (n : Nat) (low : expand n < 4096) (b : Bool) (q : Nat) :
+    (initial n b).testBit q = if q = 12 then b else (expand n).testBit q := by
+  have h12 : (expand n).testBit 12 = false := Nat.testBit_lt_two_pow low
+  cases b with
+  | false =>
+    by_cases hq : q = 12
+    · simpa only [hq, initial, Bool.false_eq_true, if_false, if_true] using h12
+    · simp only [initial, Bool.false_eq_true, if_false, if_neg hq]
+  | true =>
+    have hor : expand n + 4096 = expand n ||| 4096 := by
+      have h := Nat.two_pow_add_eq_or_of_lt (i := 12) low 1
+      simpa only [Nat.mul_one, Nat.add_comm, Nat.or_comm] using h
+    simp only [initial, if_true, hor, Nat.testBit_or]
+    by_cases hq : q = 12
+    · subst q
+      rw [h12, show (4096 : Nat).testBit 12 = true from rfl]
+      rfl
+    · rw [if_neg hq, show (4096 : Nat).testBit q = false from
+          Nat.testBit_two_pow_of_ne (Ne.symm hq)]
+      simp only [Bool.or_false]
+
+private theorem packed_rel (value : Nat × Bool → Nat) (cols : Cols)
+    (len : cols.length = 13)
+    (columns : ∀ q : Fin 13, get cols q.val = packBits ((rows.map value).map (fun x => x.testBit q.val)))
+    (bound : ∀ r : Fin 228, value (row r.val) < 2^13) (r : Fin 228) :
+    Rel cols (value (row r.val)) r.val := by
+  intro q
+  by_cases hq : q < 13
+  · rw [columns ⟨q,hq⟩,pack_rows,row_word]
+  · have colBound : cols.length ≤ q := len ▸ Nat.le_of_not_gt hq
+    have hz : get cols q = 0 := by
+      simp only [CodecBitSliceVerify.get, List.getElem?_eq_none colBound, Option.getD_none]
+    rw [hz, Nat.zero_testBit]
+    exact Nat.testBit_lt_two_pow ((bound r).trans_le
+      (Nat.pow_le_pow_right (by decide) (Nat.le_of_not_gt hq)))
+
+private theorem raw_rel (r : Fin 228) : Rel rawColumns (expand (row r.val).1) r.val := by
+  refine packed_rel (fun p => expand p.1) rawColumns (by decide +kernel) (by decide +kernel) ?_ r
+  intro r'
+  have hb := raw_bound r'
+  change expand (row r'.val).1 < 8192
+  omega
+
+private theorem input_rel (r : Fin 228) :
+    Rel inputColumns (initial (row r.val).1 (row r.val).2) r.val :=
+  packed_rel (fun p => initial p.1 p.2) inputColumns
+    (by decide +kernel) (by decide +kernel) initial_bound r
+
+private theorem inverse_check : CodecBitSliceVerify.eval mask invV rawColumns = (true,invertedColumns) := by
+  decide +kernel
+
+private theorem bracket_check : CodecBitSliceVerify.eval mask bracket inputColumns = (true,outputColumns) := by
+  decide +kernel
+
+private theorem mask_row (r : Fin 228) : mask.testBit r.val = true := by
+  simp only [mask, Nat.testBit_two_pow_sub_one, decide_eq_true_eq]
+  exact r.isLt
+
+private theorem inverted_rel (r : Fin 228) :
+    Rel invertedColumns (bitRun invV (expand (row r.val).1)) r.val := by
+  have a := CodecBitSliceVerify.eval_sound mask r.val (mask_row r) invV rawColumns
+    (expand (row r.val).1) (by decide +kernel) (raw_rel r) (congrArg Prod.fst inverse_check)
+  simpa only [inverse_check] using a.2
+
+private theorem fold_columns (qs : List Nat) (cols : Cols) (x r : Nat) (h : Rel cols x r) :
+    (qs.foldr (fun q v => get cols q ^^^ v) 0).testBit r =
+      (qs.map x.testBit).foldr (· ^^ ·) false := by
+  induction qs with
+  | nil => exact Nat.zero_testBit _
+  | cons q qs ih => simp only [List.foldr_cons, Nat.testBit_xor, ← h q, ih, List.map_cons]
+
+private theorem output_rel (r : Fin 228) :
+    Rel outputColumns (final (row r.val).1 (row r.val).2) r.val := by
+  intro q
+  have hin := input_rel r q
+  have hb := raw_bound r
+  have hp : parityColumn.testBit r.val = parity (row r.val).1 :=
+    fold_columns decoded invertedColumns _ _ (inverted_rel r)
+  unfold final outputColumns
+  rw [initial_bit _ hb, CodecBitSliceVerify.get_set inputColumns 12 _ (by decide +kernel) q]
+  rw [initial_bit _ hb] at hin
+  split_ifs at hin ⊢ with hq
+  · subst q
+    rw [Nat.testBit_xor, hp, ← hin]
+  · exact hin
+
+theorem checked_phase_and_basis (n : Nat) (hn : n ∈ used) (b ph : Bool) (m : List Bool) :
+    run bracket m ⟨ph, bitsOf (initial n b)⟩ = ⟨ph, bitsOf (final n b)⟩ := by
+  obtain ⟨r,hr⟩ := row_exists n hn b
+  have low : Rel inputColumns (initial n b) r.val := by simpa only [hr] using input_rel r
+  have high : Rel outputColumns (final n b) r.val := by simpa only [hr] using output_rel r
+  have a := CodecBitSliceVerify.eval_sound mask r.val (mask_row r) bracket inputColumns
+    (initial n b) (by decide +kernel) low (congrArg Prod.fst bracket_check)
+  have atOut : Rel outputColumns (bitRun bracket (initial n b)) r.val := by
+    simpa only [bracket_check] using a.2
+  have result : bitRun bracket (initial n b) = final n b :=
+    Nat.eq_of_testBit_eq fun q => (atOut q).trans (high q).symm
+  rw [MeasuredCodec5.run_sim, MeasuredCodec5.sim_safe _ _ a.1, result]
+
+theorem counts :
+    toffoliCount bracket = 5 ∧ measurementCount bracket = 4 ∧ gateSlots bracket = 143 := by
+  decide +kernel
+
+end ECDSAAdd.Entrant.CheckpointPrefixFinite
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldCosts
+
+open Arithmetic MappedCompressed MeasuredCodec5
+set_option maxRecDepth 10000
+set_option maxHeartbeats 2200000
+attribute [local irreducible] run wires FourScratchPrefix.V FourScratchPrefix.invV FourScratchPrefix.clearV
+
+private def prefixIndex (i : Nat) : Nat :=
+  ([7, 0, 1, 2, 3, 7, 4, 5, 6, 7, 7, 7] : List Nat)[i]?.getD 7
+
+private theorem expand_bit : ∀ (w : Fin 128) (i : Fin 12),
+    (prefixExpand w).testBit i = w.val.testBit (prefixIndex i) := by decide +kernel
+
+private theorem prefix_index_at (i : Fin 12) (h : prefixIndex i < 7) :
+    prefixEncodedPorts.getD (prefixIndex i) 0 = i.val := by
+  have a : ∀ x : Fin 12, prefixIndex x < 7 →
+      prefixEncodedPorts.getD (prefixIndex x) 0 = x.val := by decide +kernel
+  exact a i h
+
+private theorem prefix_index_blank (i : Fin 12) (h : ¬ prefixIndex i < 7) :
+    i.val ∈ [0, 5, 9, 10, 11] := by
+  have a : ∀ x : Fin 12, ¬ prefixIndex x < 7 → x.val ∈ [0, 5, 9, 10, 11] := by decide +kernel
+  exact a i h
+
+private theorem prefix_expand_basis (label : Nat → Wire) (s : State)
+    (clear : ∀ i ∈ [0, 5, 9, 10, 11], s.basis (label i) = false)
+    (i : Nat) (hi : i < 12) :
+    bitsOf (prefixExpand (regValue (prefixEncodedPorts.map label) s.basis)) i = s.basis (label i) := by
+  let w := regValue (prefixEncodedPorts.map label) s.basis
+  have plen : prefixEncodedPorts.length = 7 := by decide +kernel
+  have wlt : w < 128 := by
+    have h := Arithmetic.regValue_lt (prefixEncodedPorts.map label) s.basis
+    simpa only [List.length_map, plen] using h
+  change (prefixExpand w).testBit i = s.basis (label i)
+  have e := expand_bit ⟨w, wlt⟩ ⟨i, hi⟩
+  change (prefixExpand w).testBit i = w.testBit (prefixIndex i) at e
+  rw [e]
+  by_cases h : prefixIndex i < 7
+  · have atIdx := prefix_index_at ⟨i, hi⟩ h
+    have hl : prefixIndex i < (prefixEncodedPorts.map label).length := by simp only [List.length_map, plen]; exact h
+    have hl' : prefixIndex i < prefixEncodedPorts.length := by rw [plen]; exact h
+    have hget : (prefixEncodedPorts.map label).getD (prefixIndex i) 0 = label i := by
+      rw [List.getD_eq_getElem _ _ hl, List.getElem_map, ← List.getD_eq_getElem _ _ hl']
+      rw [atIdx]
+    have bit := Arithmetic.regValue_bit (prefixEncodedPorts.map label) (prefixIndex i) 0 s.basis hl
+    rw [hget] at bit
+    change (s.basis (label i)).toNat = w / 2 ^ prefixIndex i % 2 at bit
+    rw [Nat.testBit_eq_decide_div_mod_eq, ← bit]
+    cases s.basis (label i) <;> decide
+  · have h7 := Nat.pow_le_pow_right (by decide : 0 < 2) (show 7 ≤ prefixIndex i by omega)
+    rw [Nat.testBit_lt_two_pow (wlt.trans_le h7)]
+    exact (clear i (prefix_index_blank ⟨i, hi⟩ h)).symm
+
+private theorem sim_basis_eq_bitRun (P : Program) (m : List Bool) (ph : Bool) (x : Nat) :
+    (MeasuredCodec5.sim P m ph x).2 = bitRun P x := by
+  induction P generalizing m ph x with
+  | nil => rfl
+  | cons i p ih =>
+    cases i <;> simp only [MeasuredCodec5.sim, bitRun, MeasuredCodec5.bitStep] <;> apply ih
+
+private theorem p0_site_shape : prefixEncodedPorts.map FourScratchWindow.label = p0Sites := by
+  decide +kernel
+
+private theorem p0_parity_shape :
+    prefixDataPorts.map FourScratchWindow.label = (List.range 8).map StairField2V3Win.pctrl := by
+  decide +kernel
+
+/-- Read the original eight-bit packet-zero parity from the seven-bit field code. -/
+theorem prefixParityValue_correct (s1 : State) (cl : FourScratchWindow.Clean s1)
+    (cn : StairField2V3Win.Canon s1) :
+    prefixParityValue (regValue p0Sites (run FourScratchWindow.prefixProgram [] s1).basis) =
+      TraceParity5.xorRange 8 (fun i => s1.basis (StairField2V3Win.pctrl i)) := by
+  let b := run FourScratchWindow.prefixProgram [] s1
+  let z := regValue p0Sites b.basis
+  let decodedIn := run FourScratchPrefix.V [] (FourScratchWindow.pull s1)
+  have bitMap := (FourScratchWindow.mapped_run FourScratchPrefix.V FourScratchPrefix.support.1 s1 []).2
+  have clB := FourScratchWindow.prefix_clean s1 [] cl
+  have zeroB := FourScratchWindow.prefix_zero s1 [] cl cn
+  have blank (i : Nat) (hi : i ∈ [0, 5, 9, 10, 11]) :
+      b.basis (FourScratchWindow.label i) = false := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl
+    · exact zeroB
+    · exact clB.1
+    · exact clB.2.1
+    · exact clB.2.2.1
+    · exact clB.2.2.2
+  have matchLocal (q : Wire) (hq : q ∈ wires FourScratchPrefix.invV) :
+      bitsOf (prefixExpand z) q = decodedIn.basis q := by
+    have hlt := Finset.mem_range.mp (FourScratchPrefix.support.2.2 hq)
+    rw [show z = regValue (prefixEncodedPorts.map FourScratchWindow.label) b.basis by rw [p0_site_shape]]
+    exact (prefix_expand_basis FourScratchWindow.label b blank q hlt).trans (bitMap q hlt)
+  have close : run FourScratchPrefix.invV [] decodedIn = FourScratchWindow.pull s1 :=
+    FourScratchPrefix.invV_V _ _ _ cl ((FourScratchWindow.code_compat s1).symm ▸ cn)
+  have inc := Arithmetic.run_local_increment FourScratchPrefix.invV
+    ⟨false, bitsOf (prefixExpand z)⟩ decodedIn [] matchLocal
+  have result (q : Nat) (hq : q ∈ prefixDataPorts) :
+      (bitRun FourScratchPrefix.invV (prefixExpand z)).testBit q = s1.basis (FourScratchWindow.label q) := by
+    have hlt : ∀ i ∈ prefixDataPorts, i < 12 := by decide +kernel
+    have hmem : q ∈ wires FourScratchPrefix.invV := by
+      rw [FourScratchPrefix.support_exact.2.2]
+      exact Finset.mem_range.mpr (hlt q hq)
+    have h := inc.2 q hmem
+    rw [close, MeasuredCodec5.run_sim, sim_basis_eq_bitRun] at h
+    exact h
+  change TraceParity5.parity (prefixDataPorts.map (bitRun FourScratchPrefix.invV (prefixExpand z)).testBit) = _
+  have mapEq : prefixDataPorts.map (bitRun FourScratchPrefix.invV (prefixExpand z)).testBit =
+      prefixDataPorts.map (fun q => s1.basis (FourScratchWindow.label q)) :=
+    List.map_congr_left result
+  have controls : prefixDataPorts.map (fun q => s1.basis (FourScratchWindow.label q)) =
+      (List.range 8).map (fun i => s1.basis (StairField2V3Win.pctrl i)) := by
+    simpa only [List.map_map, Function.comp_def] using
+      congrArg (List.map s1.basis) p0_parity_shape
+  rw [mapEq, controls, TraceParity5.parity_range]
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldCosts
+
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldCosts
+
+open Arithmetic MappedCompressed
+set_option maxRecDepth 18000
+set_option maxHeartbeats 4000000
+
+private def checkpointPrefixPlace (q : Wire) : Wire :=
+  if q = 12 then signHost else prefixLoanPort q
+
+private theorem checkpointPrefixPlace_lo {q : Wire} (hq : q < 12) :
+    checkpointPrefixPlace q = prefixLoanPort q :=
+  if_neg (Nat.ne_of_lt hq)
+
+private theorem checkpointPrefixPlace_end : checkpointPrefixPlace 12 = signHost := rfl
+
+private theorem checkpointPrefixPlace_inj :
+    ∀ i j : Fin 13, checkpointPrefixPlace i = checkpointPrefixPlace j → i = j := by
+  decide +kernel
+
+private theorem checkpointPrefix_support :
+    wires CheckpointPrefixFinite.bracket ⊆ Finset.range 13 := by
+  decide +kernel
+
+theorem prefixLoanEncoded_eq : prefixEncodedPorts.map prefixLoanPort = p0Sites := by
+  decide +kernel
+
+theorem checkpointPrefix_used_eq : CheckpointPrefixFinite.used = TagPack1542.used7 := by
+  decide +kernel
+
+private theorem checkpointPrefix_inv :
+    CheckpointPrefixFinite.invV = FourScratchPrefix.invV := rfl
+
+private theorem checkpointPrefix_program :
+    renameProgram checkpointPrefixPlace CheckpointPrefixFinite.bracket = prefixParity := rfl
+
+private theorem parity_fold (xs : List Bool) :
+    xs.foldr (· ^^ ·) false = TraceParity5.parity xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih => simp only [List.foldr_cons, TraceParity5.parity, ih]
+
+private theorem checkpointPrefix_parity (n : Nat) :
+    CheckpointPrefixFinite.parity n = prefixParityValue n := by
+  change (CheckpointPrefixFinite.decoded.map
+    (MeasuredCodec5.bitRun CheckpointPrefixFinite.invV (prefixExpand n)).testBit).foldr
+    (· ^^ ·) false = prefixParityValue n
+  rewrite [checkpointPrefix_inv, parity_fold]
+  rfl
+
+private theorem checkpointPrefix_expand_lt :
+    ∀ n : Fin 128, prefixExpand n < 4096 := by
+  decide +kernel
+
+private theorem checkpointPrefix_initial_lo {n i : Nat} (hn : n < 128) (hi : i < 12) (b : Bool) :
+    CheckpointPrefixFinite.bitsOf (CheckpointPrefixFinite.initial n b) i =
+      MeasuredCodec5.bitsOf (prefixExpand n) i := by
+  cases b
+  · rfl
+  · change (prefixExpand n + 4096).testBit i = (prefixExpand n).testBit i
+    have he : 2 ^ 12 + prefixExpand n = 2 ^ 12 ||| prefixExpand n := by
+      have h := Nat.shiftLeft_add_eq_or_of_lt (i := 12) (b := prefixExpand n)
+        (checkpointPrefix_expand_lt ⟨n, hn⟩) 1
+      exact h
+    rw [Nat.add_comm, show (4096 : Nat) = 2 ^ 12 from rfl, he,
+      Nat.testBit_or, Nat.testBit_two_pow_of_ne (by omega : 12 ≠ i), Bool.false_or]
+
+private theorem checkpointPrefix_initial_end {n : Nat} (hn : n < 128) (b : Bool) :
+    CheckpointPrefixFinite.bitsOf (CheckpointPrefixFinite.initial n b) 12 = b := by
+  have lo : (prefixExpand n).testBit 12 = false :=
+    Nat.testBit_lt_two_pow (checkpointPrefix_expand_lt ⟨n, hn⟩)
+  cases b
+  · exact lo
+  · change (prefixExpand n + 4096).testBit 12 = true
+    rw [Nat.add_comm, show (4096 : Nat) = 2 ^ 12 from rfl, Nat.testBit_two_pow_add_eq, lo]
+    rfl
+
+/-- The placed prefix restores every bit except the sign and preserves the phase. -/
+theorem prefixParity_run (s : State) (m : List Bool)
+    (clean : ∀ i ∈ [0, 5, 9, 10, 11], s.basis (prefixLoanPort i) = false)
+    (used : regValue p0Sites s.basis ∈ TagPack1542.used7) :
+    run prefixParity m s =
+      CheckpointSignLoan.flip signHost (prefixParityValue (regValue p0Sites s.basis)) s := by
+  let n := regValue p0Sites s.basis
+  let b := s.basis signHost
+  let parity := prefixParityValue n
+  have hn : n < 128 := by
+    have h := Arithmetic.regValue_lt p0Sites s.basis
+    have hlen : p0Sites.length = 7 := by simp [p0Sites]
+    simpa only [hlen] using h
+  have hUsed : n ∈ CheckpointPrefixFinite.used := checkpointPrefix_used_eq.symm ▸ used
+  have bitLo (q : Wire) (hq : q < 12) :
+      MeasuredCodec5.bitsOf (prefixExpand n) q = s.basis (prefixLoanPort q) := by
+    rw [show n = regValue (prefixEncodedPorts.map prefixLoanPort) s.basis from
+      congrArg (fun sites => regValue sites s.basis) prefixLoanEncoded_eq.symm]
+    exact prefix_expand_basis prefixLoanPort s clean q hq
+  have haveInput (q : Wire) (hq : q ∈ Finset.range 13) :
+      CheckpointPrefixFinite.bitsOf (CheckpointPrefixFinite.initial n b) q =
+        s.basis (checkpointPrefixPlace q) := by
+    have hlt := Finset.mem_range.mp hq
+    by_cases atSign : q = 12
+    · subst q
+      rw [checkpointPrefix_initial_end hn, checkpointPrefixPlace_end]
+    · have hq' : q < 12 := Nat.lt_of_le_of_ne (Nat.le_of_lt_succ hlt) atSign
+      rw [checkpointPrefix_initial_lo hn hq', checkpointPrefixPlace_lo hq']
+      exact bitLo q hq'
+  have h := run_rename_pool checkpointPrefixPlace (Finset.range 13)
+    (fun i hi j hj eq => congrArg Fin.val
+      (checkpointPrefixPlace_inj ⟨i, Finset.mem_range.mp hi⟩ ⟨j, Finset.mem_range.mp hj⟩ eq))
+    CheckpointPrefixFinite.bracket checkpointPrefix_support m
+    ⟨s.phase, CheckpointPrefixFinite.bitsOf (CheckpointPrefixFinite.initial n b)⟩ s rfl haveInput
+  rw [CheckpointPrefixFinite.checked_phase_and_basis n hUsed b s.phase m,
+    checkpointPrefix_program] at h
+  refine State.extensionality (run prefixParity m s)
+    (CheckpointSignLoan.flip signHost parity s) h.1 ?_
+  funext q
+  by_cases inside : q ∈ (Finset.range 13).image checkpointPrefixPlace
+  · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp inside
+    have hlt := Finset.mem_range.mp hi
+    have result := h.2 i hi
+    change (run prefixParity m s).basis (checkpointPrefixPlace i) =
+      CheckpointPrefixFinite.bitsOf
+        (CheckpointPrefixFinite.initial n (b ^^ CheckpointPrefixFinite.parity n)) i at result
+    rw [checkpointPrefix_parity] at result
+    by_cases atSign : i = 12
+    · subst i
+      rw [checkpointPrefix_initial_end hn, checkpointPrefixPlace_end] at result
+      simpa only [CheckpointSignLoan.flip, writeBit, Function.update_self] using result
+    · have hSmall : i < 12 := Nat.lt_of_le_of_ne (Nat.le_of_lt_succ hlt) atSign
+      have hOff : checkpointPrefixPlace i ≠ signHost := by
+        intro eq
+        exact atSign (congrArg Fin.val (checkpointPrefixPlace_inj ⟨i, hlt⟩
+          ⟨12, by decide⟩ (eq.trans checkpointPrefixPlace_end.symm)))
+      rw [CheckpointSignLoan.flip_off _ _ hOff]
+      rw [checkpointPrefixPlace_lo hSmall]
+      rw [checkpointPrefix_initial_lo hn hSmall, checkpointPrefixPlace_lo hSmall] at result
+      exact result.trans (bitLo i hSmall)
+  · have hOff : q ≠ signHost := by
+      intro eq
+      apply inside
+      exact Finset.mem_image.mpr ⟨12, by decide, checkpointPrefixPlace_end.trans eq.symm⟩
+    rw [CheckpointSignLoan.flip_off _ _ hOff, ← checkpointPrefix_program]
+    exact run_rename_pool_outside _ _ _ checkpointPrefix_support m s q inside
+
+theorem signPayload_avoids_sign : signHost ∉ signPayload := by
+  intro member
+  have band := signPayload_band signHost member
+  have outside : ¬ signPayloadBand signHost := by
+    unfold signPayloadBand
+    decide +kernel
+  exact outside band
+
+private theorem loan_parity (xs : List Bool) :
+    CheckpointSignLoan.xorBits xs = TraceParity5.parity xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih => simp only [CheckpointSignLoan.xorBits, TraceParity5.parity, ih]
+
+/-- The complete bracket changes only the sign bit. -/
+theorem signBracket_run (s : State) (m : List Bool)
+    (clean : ∀ i ∈ [0, 5, 9, 10, 11], s.basis (prefixLoanPort i) = false)
+    (used : regValue p0Sites s.basis ∈ TagPack1542.used7) :
+    run signBracket m s = CheckpointSignLoan.flip signHost
+      (TraceParity5.parity (signPayload.map s.basis) ^^
+        prefixParityValue (regValue p0Sites s.basis)) s := by
+  let parity := prefixParityValue (regValue p0Sites s.basis)
+  let t := CheckpointSignLoan.flip signHost parity s
+  have payload : signPayload.map t.basis = signPayload.map s.basis := by
+    apply List.map_congr_left
+    intro q hq
+    exact CheckpointSignLoan.flip_off signHost q (fun eq => signPayload_avoids_sign (eq ▸ hq)) parity s
+  rw [signBracket, run_append, run_take, prefixParity_run s _ clean used]
+  change run (CheckpointSignLoan.into signHost signPayload) _ t = _
+  rw [CheckpointSignLoan.run_into _ _ signPayload_avoids_sign, payload, loan_parity,
+    CheckpointSignLoan.flip_flip, Bool.xor_comm parity]
+
+theorem signBracket_clears (s : State) (m : List Bool)
+    (clean : ∀ i ∈ [0, 5, 9, 10, 11], s.basis (prefixLoanPort i) = false)
+    (used : regValue p0Sites s.basis ∈ TagPack1542.used7)
+    (ready : s.basis signHost = (TraceParity5.parity (signPayload.map s.basis) ^^
+      prefixParityValue (regValue p0Sites s.basis))) :
+    (run signBracket m s).basis signHost = false := by
+  rw [signBracket_run s m clean used]
+  exact CheckpointSignLoan.clear_target _ _ _ ready
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldCosts
+
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldJourney
+
+open WindowFieldCosts StairArchiveNativeCut StairArchiveRelease StairArchiveTen
+set_option maxRecDepth 10000
+set_option maxHeartbeats 1600000
+attribute [local irreducible] measurementCount run ogroup opk rgroup fieldHook packTag unpackTag
+
+def stenOldTape (j : Nat) (rev : Bool) (m : List Bool) : List Bool :=
+  let E := fieldHook j (enter rev)
+  let S := fieldHook j (shift rev)
+  let L := fieldHook j (leave rev)
+  let mA := m.drop (measurementCount E)
+  let mS := mA.drop (measurementCount (sfirst j rev))
+  let mB := mS.drop (measurementCount S)
+  let mL := mB.drop (measurementCount (ssecond j rev))
+  joinTapes E m (joinTapes (ofirst j rev) []
+    (joinTapes S mS (joinTapes (osecond j rev) [] (mL.take (measurementCount L)))))
+
+def signEmitted (d : Bool) : Leg → Program
+  | .native j n => rgroup d j n
+  | .paired j => sten j (!d)
+
+def signConcatenate (d : Bool) : List Leg → Program
+  | [] => []
+  | l :: ls => signEmitted d l ++ signConcatenate d ls
+
+theorem signEmits_body (d : Bool) : group84SignBody d = signConcatenate d (planBody d) := by
+  cases d <;> simp only [group84SignBody, ordered, signConcatenate, signEmitted, planBody, plan,
+    if_true, if_false, Bool.false_eq_true, List.tail_cons, List.dropLast,
+    List.append_assoc, List.append_nil]
+
+def signOldLegTape (d : Bool) (l : Leg) (m : List Bool) : List Bool :=
+  match l with
+  | .native _ _ => m
+  | .paired j => stenOldTape j (!d) m
+
+def signOldBodyTape (d : Bool) : List Leg → List Bool → List Bool
+  | [], _ => []
+  | l :: ls, m => joinTapes (oemitted d l) (signOldLegTape d l m)
+      (signOldBodyTape d ls (m.drop (measurementCount (signEmitted d l))))
+
+def signOldGroupTape (d : Bool) (m : List Bool) : List Bool :=
+  let m0 := m.drop (measurementCount signBracket)
+  let early := ogroup d 1 9
+  let mPack := if d then m0.drop (measurementCount early) else m0
+  let mBody := mPack.drop (measurementCount packTag)
+  let mUnpack := mBody.drop (measurementCount (group84SignBody d))
+  let mLate := mUnpack.drop (measurementCount unpackTag)
+  let mOld := joinTapes packTag mPack (joinTapes (group84Body d)
+    (signOldBodyTape d (planBody d) mBody) (mUnpack.take (measurementCount unpackTag)))
+  if d then joinTapes early m0 mOld
+  else joinTapes (packTag ++ renameProgram tagSwap (group84Body d) ++ unpackTag) mOld mLate
+
+/-- The old core tape seen by the early leg: the fully decoded early packets are independent of
+    their tape, so the ordinary early leg may use a zero tape. -/
+def signEarlyTape (d : Bool) (t : List Bool) : List Bool :=
+  if d then joinTapes (ogroup true 1 9) [] (t.drop (measurementCount (egroup true 1 9)))
+  else joinTapes (packTag ++ renameProgram tagSwap (group84SignBody false) ++ unpackTag) t []
+
+def signPadTape (d : Bool) (m : List Bool) : List Bool :=
+  List.replicate (measurementCount signBracket) false ++
+    signEarlyTape d (m.drop (measurementCount signBracket))
+
+/-- The same three hook tapes on each bank. The reference arithmetic on the
+    two packets may use a zero tape, because the raw-packet law is independent
+    of either packet tape. -/
+def oreferenceTapeSign (d : Bool) (m : List Bool) : List Bool :=
+  oreferenceTape1542 d (signOldGroupTape d (signPadTape d m))
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldJourney
+
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+open Arithmetic MappedCompressed CodecBitSliceVerify
+open StairArchiveRelease StairArchiveNativeCut StairArchiveInactive StairArchiveTen
+open WindowFieldCosts WindowFieldMask WindowFieldJourney StairField2V3Seg
+set_option maxRecDepth 12000
+set_option maxHeartbeats 2800000
+attribute [local irreducible] run wires measurementCount fieldHook opk ofirst osecond sfirst ssecond
+
+/-- Both raw substitutions use the original hook records, including short
+    tapes. Each reference packet can consume an independent zero tape. -/
+theorem sten_run_eq (j : Nat) (hj : j ∈ bankIds) (lo : 10 ≤ j) (hi : j ≤ 83)
+    (rev : Bool) (rows : Nat → Nat) (code : Nat → Cols) (hr : rows j < 63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400) = true)
+    (m : List Bool) (a r : State) (h : Fits rows code a r)
+    (active : code j = inputCols (enter rev))
+    (before_ : frame j (rows j) (StairArchiveNativeCut.canonical (!rev) (!rev)) r)
+    (middle_ : frame j (rows j) middle (run (ofirst j rev) [] r))
+    (refCut : OCut (if rev then j + 2 else j) origin r)
+    (otherApart : ∀ q ∈ inside j, q ∉ others j)
+    (safeA : avoids (ofirst j rev) (others j))
+    (safeB : avoids (osecond j rev) (others j))
+    (clear : a.basis signHost = false) :
+    run (sten j rev) m a = run (oten j rev) (stenOldTape j rev m) a := by
+  let E := fieldHook j (enter rev)
+  let S := fieldHook j (shift rev)
+  let L := fieldHook j (leave rev)
+  let A := ofirst j rev
+  let B := osecond j rev
+  let AS := sfirst j rev
+  let BS := ssecond j rev
+  let mA := m.drop (measurementCount E)
+  let mS := mA.drop (measurementCount AS)
+  let mB := mS.drop (measurementCount S)
+  let mL := mB.drop (measurementCount BS)
+  let rM := run A [] r
+  let shadow := mask (others j) a r
+  let shadowM := run A [] shadow
+  let aE := run E m a
+  let aM := run A [] aE
+  let aS := run S mS aM
+  have ⟨hBanks, hRange⟩ := geometry hj
+  have hList : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+  have arch := beforeFrame j hj rows code rev a r h active otherApart before_
+    (StairArchiveRelease.field_inj j hRange)
+  have beforeShadow := mask_frame j (rows j) _ (others j) a r otherApart before_
+  have outside : exterior j a shadow := by
+    intro q hq
+    by_cases other : q ∈ others j
+    · simp [shadow, mask, other]
+    · have notOwn : q ∉ bank j := by
+        intro own
+        obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp own
+        exact hq (Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (by have := Finset.mem_range.mp hi; omega), rfl⟩)
+      have notBank : q ∉ allBanks := by
+        rw [decompose j hj, Finset.mem_union]
+        exact fun mem => mem.elim notOwn other
+      simpa [shadow, mask, other] using h.outside q notBank
+  have agreeA (q : Wire) (hq : q ∈ wires A) : shadow.basis q = r.basis q := by
+    have hqOff : q ∉ others j := fun other => safeA q other hq
+    simp [shadow, mask, hqOff]
+  have hFirst : run AS mA aE = aM := by
+    have ref : OCut ((if !rev then (if rev ^^ false then j + 1 else j)
+      else (if rev ^^ false then j + 1 else j) + 1)) origin r := by
+      cases rev <;> simpa using refCut
+    simpa only [fromStage, sfirst, ofirst, Bool.xor_false, Bool.false_eq_true, if_false,
+      A, AS, E, aM, aE] using
+      spk_after_hook j hBanks hRange hList lo rev false (rows j) hr m mA []
+        a shadow r origin ctx enabled arch outside beforeShadow ref
+        (by simpa only [Bool.xor_false, A, ofirst] using agreeA) clear
+  have mFrame : frame j (rows j) middle shadowM := by
+    have hmask : shadowM = mask (others j) a rM := mask_run A (others j) [] a r safeA
+    rw [hmask]
+    exact mask_frame _ _ _ _ _ _ otherApart middle_
+  have midFacts : aM.phase = shadowM.phase ∧ exterior j aM shadowM ∧
+      frame j (rows j) (inputCols (shift rev)) aM := by
+    simpa only [fromStage, toStage, before, after, ofirst, Bool.xor_false,
+      Bool.false_eq_true, if_false, aM, A, aE, E, shadowM] using
+      ot_stage_packet j hBanks hRange rev false (rows j) hr m [] a shadow
+        arch outside h.phase beforeShadow (by simpa only [shadowM,A,ofirst,Bool.xor_false] using mFrame)
+  have midCut : OCut (j + 1) origin rM := by
+    cases rev
+    · simpa [rM, A, ofirst] using
+        (ostep true j (by omega) (by omega) origin ctx enabled r [] refCut)
+    · simpa [rM, A, ofirst] using
+        (ostep false (j + 1) (by omega) (by omega) origin ctx enabled r [] refCut)
+  have agreeB (q : Wire) (hq : q ∈ wires B) : shadowM.basis q = rM.basis q := by
+    have hmask : shadowM = mask (others j) a rM := mask_run A (others j) [] a r safeA
+    rw [hmask]
+    have hqOff : q ∉ others j := fun other => safeB q other hq
+    simp [mask, hqOff]
+  have midClear : aM.basis signHost = false := by
+    have hA : signHost ∉ wires A := by
+      unfold A ofirst
+      exact opk_avoids_sign _ _ (by split <;> omega) (by split <;> omega)
+    rw [show aM = run A [] (run E m a) from rfl]
+    rw [run_preserves_outside _ _ _ _ hA, run_preserves_outside _ _ _ _ (hook_avoids_sign j hList (enter rev)), clear]
+  have hSecond : run BS mB aS = run B [] aS := by
+    have key : (if rev ^^ true then j + 1 else j) = (if rev then j else j + 1) := by cases rev <;> rfl
+    have ref : OCut ((if !rev then (if rev ^^ true then j + 1 else j)
+      else (if rev ^^ true then j + 1 else j) + 1)) origin rM := by
+      cases rev <;> simpa using midCut
+    simpa only [fromStage, before, ssecond, osecond, if_true, key, aS, S, BS, B] using
+      spk_after_hook j hBanks hRange hList lo rev true (rows j) hr mS mB []
+        aM shadowM rM origin ctx enabled midFacts.2.2 midFacts.2.1 mFrame ref
+        (by simpa only [key, B, osecond] using agreeB) midClear
+  have actualShape :
+      run (sten j rev) m a =
+        run L mL (run BS mB (run S mS (run AS mA (run E m a)))) := by
+    simp only [sten, run_append, run_take, E, S, L, AS, BS, mA, mS, mB, mL]
+  have oldShape :
+      run (oten j rev) (stenOldTape j rev m) a =
+        run L mL (run B [] (run S mS (run A [] (run E m a)))) := by
+    simp only [oten, stenOldTape, joined, run_take, E, S, L, A, B, AS, BS, mA, mS, mB, mL]
+  rw [actualShape, oldShape, hFirst, hSecond]
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+open Arithmetic MappedCompressed CodecBitSliceVerify
+open StairArchiveRelease StairArchiveNativeCut StairArchiveInactive StairArchiveTen
+open WindowFieldCosts WindowFieldMask WindowFieldJourney StairField2V3Seg
+set_option maxRecDepth 10000
+set_option maxHeartbeats 2400000
+attribute [local irreducible] run wires measurementCount fieldHook opk ofirst osecond rgroup
+
+theorem ogroup_avoids_sign (d : Bool) (j n : Nat) (lo : 1 ≤ j) (hi : j + n ≤ 85) :
+    signHost ∉ wires (ogroup d j n) := by
+  unfold ogroup
+  induction n generalizing j with
+  | zero => simp [PacketSequence.program, wires]
+  | succ n ih =>
+    have a := opk_avoids_sign d j lo (by omega)
+    have b := ih (j + 1) (by omega) (by omega)
+    cases d <;> simp only [PacketSequence.program, Bool.false_eq_true, if_false, if_true,
+      wires_append, Finset.mem_union, not_or] <;> first | exact ⟨a,b⟩ | exact ⟨b,a⟩
+
+theorem rgroup_avoids_sign (d : Bool) (j n : Nat) (lo : 1 ≤ j) (hi : j + n ≤ 85) :
+    signHost ∉ wires (rgroup d j n) := fun h =>
+  (Finset.mem_insert.mp (rgroup_sub d j n h)).elim signHost_ne_tag (ogroup_avoids_sign d j n lo hi)
+
+private theorem oten_avoids_sign (j : Nat) (hj : j ∈ bankIds) (rev : Bool) :
+    signHost ∉ wires (oten j rev) := by
+  have list : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+  have ⟨_, hn⟩ := geometry hj
+  have range := List.mem_range'_1.mp hn
+  have hA : signHost ∉ wires (ofirst j rev) := by
+    rw [ofirst]
+    exact opk_avoids_sign _ _ (by split <;> omega) (by split <;> omega)
+  have hB : signHost ∉ wires (osecond j rev) := by
+    rw [osecond]
+    exact opk_avoids_sign _ _ (by split <;> omega) (by split <;> omega)
+  simp only [oten, wires_append, Finset.mem_union, not_or]
+  exact ⟨hook_avoids_sign j list _, hA, hook_avoids_sign j list _, hB, hook_avoids_sign j list _⟩
+
+private theorem paired_apart (j : Nat) (hj : j ∈ bankIds) : ∀ q ∈ inside j, q ∉ others j := by
+  intro q hi ho
+  obtain ⟨k, hk, mem⟩ := Finset.mem_biUnion.mp ho
+  obtain ⟨ne, kid⟩ := Finset.mem_erase.mp hk
+  have lists (h : Nat) (hm : h ∈ bankIds) : h ∈ WindowBankCheck.banks := by
+    simpa [bankIds, WindowBankCheck.banks] using hm
+  exact WindowBankCheck.separate j k (lists j hj) (lists k kid) ne.symm q hi mem
+
+private theorem paired_safe (j k : Nat) (hj : j ∈ bankIds) (which : k = j ∨ k = j + 1)
+    (d : Bool) : avoids (opk d k) (others j) := by
+  intro q ho used
+  obtain ⟨h, hm, mem⟩ := Finset.mem_biUnion.mp ho
+  obtain ⟨ne, hid⟩ := Finset.mem_erase.mp hm
+  have hlist : h ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hid
+  apply WindowBankCheck.packet_free h k hlist _ _ _ d q mem (ot_opk_sub d k used)
+  all_goals simp only [bankIds, Finset.mem_insert, Finset.mem_singleton] at hj hid
+  · apply List.mem_range'_1.mpr; omega
+  all_goals omega
+
+theorem signTravel_eq (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
+    (ls : List Leg) (c : Nat) (route : path d c ls)
+    (scope : ∀ l ∈ ls, 10 ≤ (span l).1)
+    (code : Nat → Cols) (valid_ : valid d ls code)
+    (m : List Bool) (a r : State) (fits : Fits rows code a r)
+    (cut : OCut c origin r) (clear : a.basis signHost = false) :
+    run (signConcatenate d ls) m a =
+      run (oconcatenate d ls) (signOldBodyTape d ls m) a := by
+  induction ls generalizing c code m a r with
+  | nil => simp only [signConcatenate, oconcatenate, run]
+  | cons l ls ih =>
+    obtain ⟨one, restRoute⟩ := route.2
+    obtain ⟨loc, restValid⟩ := valid_
+    have lower := scope l (by simp)
+    have nextScope (k : Leg) (hk : k ∈ ls) : 10 ≤ (span k).1 := scope k (List.mem_cons_of_mem _ hk)
+    let t := signOldLegTape d l m
+    let a' := run (oemitted d l) t a
+    let r' := ostock d t r l
+    let cs := codes d code l
+    have initial : OCut (prev d l) origin r := route.1 ▸ cut
+    have hlocal : run (signEmitted d l) m a = a' ∧ Fits rows cs a' r' ∧
+        OCut (next d l) origin r' ∧ a'.basis signHost = false := by
+      cases l with
+      | native j n =>
+        have lo : 10 ≤ j := lower
+        have hi : j + n ≤ 85 := one.2
+        have p := plain (rgroup d j n) rows code t a r fits (ot_rgroupSafe d j n loc)
+        rw [rgroup_run_eq d j n lo hi origin ctx en r t t initial] at p
+        refine ⟨rfl, p, oselected d j n (by omega) hi origin ctx en r t initial, ?_⟩
+        exact (run_preserves_outside _ _ _ _ (rgroup_avoids_sign d j n (by omega) hi)).trans clear
+      | paired j =>
+        have hj : j ∈ bankIds := loc.1
+        have hb := geometry hj
+        have range := List.mem_range'_1.mp hb.2
+        have lo : 10 ≤ j := lower
+        have z := opair_cuts d j x (rows j) hj (rb j hj) origin ctx en tr (history j hj) r [] initial
+        have p := opair_cuts d j x (rows j) hj (rb j hj) origin ctx en tr (history j hj) r t initial
+        have hrev : OCut (if !d then j + 2 else j) origin r := by cases d <;> exact initial
+        have fa : avoids (ofirst j (!d)) (others j) := by
+          rw [ofirst]; apply paired_safe _ _ hj; cases d <;> simp
+        have fb : avoids (osecond j (!d)) (others j) := by
+          rw [osecond]; apply paired_safe _ _ hj; cases d <;> simp
+        have eq := sten_run_eq j hj lo (by omega) (!d) rows code (rb j hj)
+          origin ctx en m a r fits loc.2 (by simpa only [Bool.not_not] using z.1.1)
+          (by simpa only [orefMiddle, tapeA, List.drop_nil] using z.1.2.1)
+          hrev (paired_apart j hj) fa fb clear
+        refine ⟨eq, ?_, p.2, ?_⟩
+        · exact ot_stepTen j hj rows code (!d) (rb j hj) t a r fits loc.2
+            (by simpa only [Bool.not_not] using p.1.1) p.1.2.1 p.1.2.2
+        · exact (run_preserves_outside _ _ _ _ (oten_avoids_sign j hj (!d))).trans clear
+    rw [signConcatenate, oconcatenate, signOldBodyTape, run_append, run_take, joined, hlocal.1]
+    exact ih (next d l) restRoute nextScope cs restValid _ a' r' hlocal.2.1 hlocal.2.2.1 hlocal.2.2.2
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+open Arithmetic MappedCompressed CodecBitSliceVerify
+open StairArchiveRelease StairArchiveNativeCut StairArchiveInactive StairArchiveTen
+open WindowFieldCosts WindowFieldMask WindowFieldJourney StairField2V3Seg
+set_option maxRecDepth 10000
+set_option maxHeartbeats 2400000
+attribute [local irreducible] run measurementCount fieldHook opk epk
+
+section
+attribute [local irreducible] StairArchiveInactive.packet wires
+
+theorem opk_early_safe (d : Bool) (k : Nat) (lo : 1 ≤ k) (hi : k ≤ 9) : avoids (opk d k) allBanks := by
+  intro q mem used
+  rw [allBanks] at mem
+  obtain ⟨h, hm, hq⟩ := Finset.mem_biUnion.mp mem
+  have hlist : h ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hm
+  have hb : 10 ≤ h := by
+    simp only [bankIds, Finset.mem_insert, Finset.mem_singleton] at hm
+    omega
+  exact WindowBankCheck.packet_free h k hlist (List.mem_range'_1.mpr (by omega)) (by omega) (by omega)
+    d q hq (ot_opk_sub d k used)
+
+end
+
+theorem early_seq_safe (d : Bool) (j n : Nat) (lo : 1 ≤ j) (hi : j + n ≤ 10) :
+    avoids (ogroup d j n) allBanks := by
+  unfold ogroup
+  induction n generalizing j with
+  | zero =>
+    intro q _ used
+    simp [PacketSequence.program, wires] at used
+  | succ n ih =>
+    have head := opk_early_safe d j lo (by omega)
+    have tail := ih (j + 1) (by omega) (by omega)
+    intro q inbank used
+    cases d <;> simp only [PacketSequence.program, Bool.false_eq_true, if_false, if_true,
+      wires_append, Finset.mem_union] at used
+    · exact used.elim (tail q inbank) (head q inbank)
+    · exact used.elim (head q inbank) (tail q inbank)
+
+attribute [local irreducible] wires
+
+/-- An early leg of relocated fully decoded packets runs exactly as the regular leg, from any state
+    that fits a reference cut and has a clear sign site. The two tapes are independent. -/
+theorem egroup_run_eq (d : Bool) (j n : Nat) (lo : 1 ≤ j) (hi : j + n ≤ 10)
+    (rows : Nat → Nat) (code : Nat → Cols)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true)
+    (a r : State) (m m' : List Bool) (fits : Fits rows code a r)
+    (initial : OCut (if d then j else j + n) origin r) (clear : a.basis signHost = false) :
+    run (egroup d j n) m a = run (ogroup d j n) m' a := by
+  unfold egroup ogroup
+  induction n generalizing j a r m m' with
+  | zero => simp only [PacketSequence.program, run]
+  | succ n ih =>
+    cases d with
+    | true =>
+      simp only [if_true] at initial
+      simp only [PacketSequence.program, if_true, run_append]
+      have agree : ∀ q ∈ wires (opk true j), a.basis q = r.basis q :=
+        fun q hq => fits.outside q (fun hb => opk_early_safe true j lo (by omega) q hb hq)
+      have first := epk_run_eq true j lo (by omega) origin ctx en r a
+        (m.take (measurementCount (epk true j))) (m'.take (measurementCount (opk true j)))
+        (by simpa only [if_true] using initial) clear agree
+      rw [first]
+      have next := ostep true j lo (by omega) origin ctx en r
+        (m'.take (measurementCount (opk true j))) (by simpa only [if_true] using initial)
+      have fits' := plain (opk true j) rows code (m'.take (measurementCount (opk true j))) a r fits
+        (opk_early_safe true j lo (by omega))
+      have clear' : (run (opk true j) (m'.take (measurementCount (opk true j))) a).basis signHost = false :=
+        (run_preserves_outside _ _ _ _ (opk_avoids_sign true j lo (by omega))).trans clear
+      exact ih (j + 1) (by omega) (by omega) _ _ _ _ fits'
+        (by simpa only [if_true] using next) clear'
+    | false =>
+      simp only [Bool.false_eq_true, if_false] at initial
+      simp only [PacketSequence.program, Bool.false_eq_true, if_false, run_append]
+      have start : OCut (if false then j + 1 else j + 1 + n) origin r := by
+        simpa only [Bool.false_eq_true, if_false, Nat.add_assoc, Nat.add_comm 1 n] using initial
+      have rest := ih (j + 1) (by omega) (by omega) a r
+        (m.take (measurementCount (PacketSequence.program false (epk false) (j + 1) n)))
+        (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) fits start clear
+      rw [rest]
+      have mid := oselected false (j + 1) n (by omega) (by omega) origin ctx en r
+        (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) start
+      have fits' := plain (ogroup false (j + 1) n) rows code
+        (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) a r fits
+        (early_seq_safe false (j + 1) n (by omega) (by omega))
+      have clear' : (run (ogroup false (j + 1) n)
+          (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) a).basis signHost = false :=
+        (run_preserves_outside _ _ _ _ (ogroup_avoids_sign false (j + 1) n (by omega) (by omega))).trans clear
+      have agree : ∀ q ∈ wires (opk false j),
+          (run (ogroup false (j + 1) n)
+            (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) a).basis q =
+          (run (ogroup false (j + 1) n)
+            (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) r).basis q :=
+        fun q hq => fits'.outside q (fun hb => opk_early_safe false j lo (by omega) q hb hq)
+      exact epk_run_eq false j lo (by omega) origin ctx en
+        (run (ogroup false (j + 1) n)
+          (m'.take (measurementCount (PacketSequence.program false (opk false) (j + 1) n))) r) _ _ _
+        (by simpa only [Bool.false_eq_true, if_false] using mid) clear' agree
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+end
+
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+open Arithmetic MappedCompressed Secp256k1 CodecBitSliceVerify
+open StairField2V3Seg WindowFieldCosts WindowFieldMask WindowFieldJourney
+open StairArchiveRelease StairArchiveNativeCut StairArchiveInactive ArchiveFieldScratch
+set_option maxRecDepth 12000
+set_option maxHeartbeats 2700000
+attribute [local irreducible] run wires StairArchiveInactive.packet Rolling1588.packet
+  surface Rolling1588.allEncodeCut CodecBitSliceVerify.get
+
+private theorem payload_on_surface (j : Nat) (lo : 1 ≤ j) (hi : j ≤ 84) (i : Fin 8) :
+    let p := History5.historyMap base (5*j) (NewHistory5.payloadPort i)
+    wire p ∈ surface ∧ wire p ≠ base 720 := by
+  let p := History5.historyMap base (5*j) (NewHistory5.payloadPort i)
+  have mem : wire p ∈ signPayload :=
+    List.mem_flatMap.mpr ⟨j, List.mem_range'_1.mpr ⟨lo, by omega⟩,
+      List.mem_map.mpr ⟨i, List.mem_finRange i, rfl⟩⟩
+  have hne : wire p ≠ base 720 := by
+    have band := WindowFieldCosts.signPayload_band (wire p) mem
+    unfold WindowFieldCosts.signPayloadBand at band
+    intro eq
+    rw [eq] at band
+    norm_num [MappedCompressed.base] at band
+  have hfix : shifted (Placement5.pi j) p = p := by
+    change shifted (Placement5.pi j) (base (History5.historyId (5*j) (NewHistory5.payloadPort i))) =
+      base (History5.historyId (5*j) (NewHistory5.payloadPort i))
+    rw [shifted_base, Placement5.pi_outside j _ (by omega)]
+    unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion
+      History5.historyId NewHistory5.payloadPort
+    have h := i.isLt
+    dsimp only
+    by_cases small : i.val < 5
+    · rw [if_pos small]; split <;> omega
+    · rw [if_neg small]; split <;> omega
+  refine ⟨?_,hne⟩
+  rw [surface]
+  apply Finset.mem_union_left
+  apply Finset.mem_biUnion.mpr
+  refine ⟨j,Finset.mem_Icc.mpr ⟨lo,hi⟩,Finset.mem_union_right _ ?_⟩
+  have original : packet true j =
+      renameProgram host (renameProgram (OB5.sig 511) (Rolling1588.packet true j)) := by
+    rw [packet, hosts_eq, StairGroups.packet_zero]; rfl
+  rw [original, renameProgram_support]
+  refine Finset.mem_image.mpr ⟨OB5.sig 511 p, ?_, rfl⟩
+  rw [renameProgram_support]
+  refine Finset.mem_image.mpr ⟨p, ?_, rfl⟩
+  have hbridge : ∀ v : Fin 8, (NewHistory5.payloadPort v).val ∈ wires Rolling1588.bridge7 := by
+    decide +kernel
+  have hbase : p ∈ wires (Rolling1588.onPacket j Rolling1588.bridge7) := by
+    rw [Rolling1588.onPacket, renameProgram_support]
+    exact Finset.mem_image.mpr ⟨(NewHistory5.payloadPort i).val, hbridge i,
+      by simp [p, MeasuredCodec5.label]⟩
+  rw [Rolling1588.packet, renameProgram_support]
+  refine Finset.mem_image.mpr ⟨p, ?_, hfix⟩
+  simp only [Rolling1588.basePacket, if_true, wires_append, Finset.mem_union]
+  exact Or.inl (Or.inr (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr hbase))))))
+
+private theorem cut_packet_parity_odd (c x j : Nat) (lo : 1 ≤ j) (hi : j ≤ 84)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (tr : TraceOK x origin) (r : State) (hcut : OCut c origin r) :
+    TraceParity5.xorRange 8 (fun i => r.basis (wire (NewHistory5.payloadWire base (8*j+i)))) =
+      TraceParity5.xorRange 5 (fun i => TraceParity5.rawS x (5*j+i)) := by
+  obtain ⟨_, X, Y, ideal, cf, tracked⟩ := hcut
+  obtain ⟨raw, _, pair, encoded⟩ := cf
+  have rawLegal := NewHistory5.frame_history_legal base (base 2409) ctx.hn
+    (ctx.hp _ (by simp)) 102 (by decide) origin raw.basis _ _ tr.2.2.2 pair
+  have h := StairField2V3LastRecXPar.cut_packet_parity base c base_pool_nodup 102 j
+    (by decide) (by omega) raw rawLegal
+  rw [← encoded] at h
+  refine Eq.trans ?_ (h.trans ?_)
+  · apply TraceParity5.xorRange_congr
+    intro i hi'
+    rw [NewHistory5.payloadWire_packet base j i hi']
+    have z := payload_on_surface j lo hi ⟨i,hi'⟩
+    exact tracked _ z.1 z.2
+  · apply TraceParity5.xorRange_congr
+    intro i hi'
+    have away := History5.history_words_away base (base 2409) ctx.hn (ctx.hp _ (by simp))
+      (5*j) (by omega) ⟨2*i+1, by omega⟩
+    rw [StairField2V3LastRecXPar.history_sign base (5*j) i hi'] at away
+    rw [pair.2.2 _ away.1 away.2,
+      show 1028+5*j+i = 1028+(5*j+i) by omega,
+      StairField2V3LastRecXPar.rawS_origin x origin tr (5*j+i) (by omega)]
+
+private theorem signPayload_wire_shape :
+    signPayload = (List.range' 8 672).map (fun i => wire (NewHistory5.payloadWire base i)) :=
+  WindowFieldCosts.signPayload_hosted_shape
+
+theorem ocut_signPayload_parity (c x : Nat) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (tr : TraceOK x origin)
+    (r : State) (hcut : OCut c origin r) :
+    TraceParity5.parity (signPayload.map r.basis) =
+      TraceParity5.xorRange 84 (fun j => TraceParity5.xorRange 5
+        (fun i => TraceParity5.rawS x (5*(j+1)+i))) := by
+  simp only [signPayload_wire_shape, List.range'_eq_map_range, List.map_map, Function.comp_def,
+    TraceParity5.parity_range]
+  rw [show (672 : Nat) = 84*8 from rfl, TraceParity5.xorRange_group]
+  apply TraceParity5.xorRange_congr
+  intro j hj
+  have h := cut_packet_parity_odd c x (j+1) (by omega) (by omega) origin ctx tr r hcut
+  rw [← h]
+  apply TraceParity5.xorRange_congr
+  intro i hi
+  rw [show 8 + (8*j+i) = 8*(j+1)+i by omega]
+
+private def parityBlock : Leg → List Wire
+  | .native j n => (List.range' j n).flatMap pkSitesOf
+  | .paired j => (List.range 16).map (fieldPort j)
+
+private def parityPacketSites (start : Nat) : List Wire :=
+  [StairPhysicalLayout.letterSite start, StairPhysicalLayout.sLetter start,
+   StairPhysicalLayout.letterSite (start+1), StairPhysicalLayout.sLetter (start+1),
+   StairPhysicalLayout.letterSite (start+2), StairPhysicalLayout.letterSite (start+3),
+   StairPhysicalLayout.sLetter (start+3), StairPhysicalLayout.letterSite (start+4)]
+
+private theorem parity_packet_sites (j : Nat) (lo : 1 ≤ j) (hi : j ≤ 84) :
+    pkSitesOf j = parityPacketSites (5*j) := by
+  have hosted : pkSitesOf j = (List.finRange 8).map (fun i =>
+      OB5.sig 511 (History5.historyMap base (5*j) (NewHistory5.payloadPort i))) := by
+    unfold pkSitesOf
+    exact List.map_congr_left fun i _ =>
+      WindowFieldCosts.signPayload_host_fix j (List.mem_range'_1.mpr ⟨lo, by omega⟩) i
+  have letter (k : Nat) (hk : k < 5) :
+      OB5.sig 511 (base (5*j+k)) = StairPhysicalLayout.letterSite (5*j+k) := by
+    have away : ¬ ((1285 ≤ 5*j+k ∧ 5*j+k ≤ 1028+511) ∨
+        (2053 ≤ 5*j+k+511 ∧ 5*j+k ≤ 1796)) := by omega
+    have endpoint : 5*j+k ≠ 511 := by omega
+    rw [OB5.sig_base 511 _ (by decide), if_neg away, StairPhysicalLayout.letterSite, if_neg endpoint]
+  have first : OB5.sig 511 (base (5*j)) = StairPhysicalLayout.letterSite (5*j) :=
+    letter 0 (by decide)
+  rw [hosted]
+  change [OB5.sig 511 (base (5*j)), StairPhysicalLayout.sLetter (5*j),
+    OB5.sig 511 (base (5*j+1)), StairPhysicalLayout.sLetter (5*j+1),
+    OB5.sig 511 (base (5*j+2)), OB5.sig 511 (base (5*j+3)),
+    StairPhysicalLayout.sLetter (5*j+3), OB5.sig 511 (base (5*j+4))] = parityPacketSites (5*j)
+  rw [first, letter 1 (by decide), letter 2 (by decide), letter 3 (by decide), letter 4 (by decide)]
+  rfl
+
+private theorem parity_paired_sites (j : Nat) (lo : 1 ≤ j) (hi : j+1 ≤ 84) :
+    parityBlock (.paired j) = (List.range' j 2).flatMap pkSitesOf := by
+  have packets : ArchiveFieldScratch.packetSites j =
+      parityPacketSites (5*j) ++ parityPacketSites (5*(j+1)) := by
+    simpa only [Nat.mul_succ] using (show ArchiveFieldScratch.packetSites j =
+      parityPacketSites (5*j) ++ parityPacketSites (5*j+5) from rfl)
+  have size : (ArchiveFieldScratch.packetSites j).length = 16 :=
+    (congrArg List.length packets).trans rfl
+  have fields : (List.range 16).map (fieldPort j) = ArchiveFieldScratch.packetSites j := by
+    apply List.ext_getElem
+    · rw [List.length_map, List.length_range, size]
+    · intro q hq hs
+      rw [List.getElem_map, List.getElem_range]
+      change ((ArchiveFieldScratch.packetSites j ++
+        (base 720 :: ArchiveFieldScratch.indices.map ArchiveFieldScratch.hole))[q]?).getD q =
+        (ArchiveFieldScratch.packetSites j)[q]
+      rw [List.getElem?_append_left hs, List.getElem?_eq_getElem hs]
+      rfl
+  calc
+    parityBlock (.paired j) = ArchiveFieldScratch.packetSites j := fields
+    _ = parityPacketSites (5*j) ++ parityPacketSites (5*(j+1)) := packets
+    _ = pkSitesOf j ++ pkSitesOf (j+1) :=
+      congrArg₂ List.append (parity_packet_sites j lo (by omega)).symm
+        (parity_packet_sites (j+1) (by omega) hi).symm
+    _ = (List.range' j 2).flatMap pkSitesOf := by
+      simp only [List.range'_succ, List.range'_zero, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+private theorem parity_block_shape : (plan true).flatMap parityBlock = signPayload := by
+  have schedule : (plan true).flatMap (fun l => List.range' (span l).1 (span l).2) =
+      List.range' 1 84 := by decide +kernel
+  have paired : (plan true).all (fun l => match l with
+      | .native _ _ => true
+      | .paired j => decide (1 ≤ j ∧ j+1 ≤ 84)) = true := by decide +kernel
+  calc
+    (plan true).flatMap parityBlock =
+        ((plan true).flatMap (fun l => List.range' (span l).1 (span l).2)).flatMap pkSitesOf := by
+      rw [List.flatMap_assoc]
+      apply List.flatMap_congr
+      intro l mem
+      cases l with
+      | native j n => rfl
+      | paired j =>
+        have b : 1 ≤ j ∧ j+1 ≤ 84 :=
+          of_decide_eq_true (List.all_eq_true.mp paired (.paired j) mem)
+        exact parity_paired_sites j b.1 b.2
+    _ = signPayload := by rw [schedule, signPayload]
+
+private theorem parity_append (xs ys : List Bool) :
+    TraceParity5.parity (xs ++ ys) =
+      (TraceParity5.parity xs ^^ TraceParity5.parity ys) := by
+  induction xs with
+  | nil => simp [TraceParity5.parity]
+  | cons x xs ih => simp [TraceParity5.parity, ih]
+
+private theorem bank_lookup (q : Wire) (mem : q ∈ allBanks) :
+    q ∈ WindowBankCheck.banks.flatMap (fun j => (List.range 16).map (fieldPort j)) := by
+  obtain ⟨j, hj, hq⟩ := Finset.mem_biUnion.mp mem
+  have list : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+  obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hq
+  exact List.mem_flatMap.mpr ⟨j,list,List.mem_map.mpr ⟨i,
+    List.mem_range.mpr (Finset.mem_range.mp hi),rfl⟩⟩
+
+private theorem native_parity_avoids (j n : Nat) (inPlan : Leg.native j n ∈ plan true) :
+    ∀ q ∈ parityBlock (.native j n), q ∉ allBanks := by
+  let bankSites := WindowBankCheck.banks.flatMap (fun b => (List.range 16).map (fieldPort b))
+  have check : (plan true).all (fun l => match l with
+    | .native j n => (parityBlock (.native j n)).all
+        (fun q => !(WindowBankCheck.maskOf bankSites).testBit q)
+    | .paired _ => true) = true := by decide +kernel
+  have native := List.all_eq_true.mp check (.native j n) inPlan
+  intro q hq hm
+  have off := List.all_eq_true.mp native q hq
+  rw [WindowBankCheck.maskOf_testBit] at off
+  simp [bankSites, bank_lookup q hm] at off
+
+private theorem parity_column (cs : Cols) (row : Nat) :
+    TraceParity5.parity ((List.range 16).map (fun i => (get cs i).testBit row)) =
+      (WindowFieldParity.parity cs).testBit row := by
+  have fold (xs : List Nat) : TraceParity5.parity (xs.map (fun n => n.testBit row)) =
+      (xs.foldr (· ^^^ ·) 0).testBit row := by
+    induction xs with
+    | nil => simp [TraceParity5.parity]
+    | cons x xs ih => simp [TraceParity5.parity, ih, Nat.testBit_xor]
+  rw [WindowFieldParity.parity]
+  simpa only [List.map_map, Function.comp_def] using fold ((List.range 16).map (get cs))
+
+private theorem parity_join (ls : List Leg) (a r : State)
+    (same : ∀ l ∈ ls, TraceParity5.parity ((parityBlock l).map a.basis) =
+      TraceParity5.parity ((parityBlock l).map r.basis)) :
+    TraceParity5.parity ((ls.flatMap parityBlock).map a.basis) =
+      TraceParity5.parity ((ls.flatMap parityBlock).map r.basis) := by
+  induction ls with
+  | nil => rfl
+  | cons l ls ih =>
+    simp only [List.flatMap_cons, List.map_append, parity_append]
+    rw [same l (by simp), ih (fun k hk => same k (List.mem_cons_of_mem _ hk))]
+
+theorem fits_signPayload_parity (d : Bool) (rows : Nat → Nat) (code : Nat → Cols)
+    (a r : State) (h : Fits rows code a r)
+    (codeShape : ∀ j ∈ bankIds, (code j).take 16 = (ArchivePortAction.code d).take 16)
+    (reference : ∀ j ∈ bankIds, frame j (rows j) (StairArchiveNativeCut.canonical d d) r) :
+    TraceParity5.parity (signPayload.map a.basis) = TraceParity5.parity (signPayload.map r.basis) := by
+  rw [← parity_block_shape]
+  apply parity_join
+  intro l member
+  cases l with
+  | native j n =>
+    exact congrArg TraceParity5.parity
+      (List.map_congr_left (fun q hq => h.outside q (native_parity_avoids j n member q hq)))
+  | paired j =>
+    have incl : (plan true).all (fun l => match l with
+        | .native _ _ => true
+        | .paired j => decide (j ∈ bankIds)) = true := by decide +kernel
+    have hj : j ∈ bankIds := of_decide_eq_true (List.all_eq_true.mp incl (.paired j) member)
+    have ha : ((parityBlock (.paired j)).map a.basis) =
+        (List.range 16).map (fun i => (get (ArchivePortAction.code d) i).testBit (rows j)) := by
+      simp only [parityBlock, List.map_map, Function.comp_def]
+      apply List.map_congr_left
+      intro i hi
+      have i_lt := List.mem_range.mp hi
+      exact (h.bytes j hj i (Finset.mem_range.mpr i_lt)).trans
+        (StairArchiveHandoff.wires_eq _ _ 16 (codeShape j hj) i _ i_lt)
+    have hr : ((parityBlock (.paired j)).map r.basis) =
+        (List.range 16).map (fun i => (CodecBitSliceVerify.get (StairArchiveNativeCut.canonical d d) i).testBit (rows j)) := by
+      simp only [parityBlock, List.map_map, Function.comp_def]
+      apply List.map_congr_left
+      intro i hi
+      exact reference j hj i (Finset.mem_range.mpr (by have := List.mem_range.mp hi; omega))
+    rw [ha, hr, parity_column, parity_column, WindowFieldParity.matchedParity d]
+
+theorem initial_signCode (d : Bool) (j : Nat) :
+    (initialCode d j).take 16 = (ArchivePortAction.code d).take 16 := by
+  symm
+  cases d
+  · simpa only [ArchivePortAction.code,List.take_take,Nat.min_self] using StairArchiveHandoff.archive_edges.2.1
+  · simpa only [ArchivePortAction.code,List.take_take,Nat.min_self] using StairArchiveHandoff.archive_edges.1
+
+theorem final_signCode (d : Bool) (j : Nat) (hj : j ∈ bankIds) :
+    (finalCode d (plan d) (initialCode d) j).take 16 = (ArchivePortAction.code (!d)).take 16 := by
+  have state : (finalCode d (plan d) (initialCode d) j).take 16 =
+      (outputCols (leave (!d))).take 16 := by
+    simp only [bankIds, Finset.mem_insert, Finset.mem_singleton] at hj
+    rcases hj with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|
+      rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> cases d <;> rfl
+  rw [state]
+  cases d
+  · exact StairArchiveHandoff.archive_edges.2.2.2.2.2.2.2.trans (initial_signCode true j)
+  · exact StairArchiveHandoff.archive_edges.2.2.2.2.2.2.1.trans (initial_signCode false j)
+
+theorem ocut_signFrames (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5*j-5) x ECDSAAdd.p (rows j))
+    (r : State) (hcut : OCut (if d then 1 else 85) origin r) :
+    ∀ j ∈ bankIds, frame j (rows j) (StairArchiveNativeCut.canonical d d) r := by
+  intro j hj
+  have geom := List.mem_range'_1.mp (geometry hj).2
+  have shape : boundaryCols j (if d then 1 else 85) = StairArchiveNativeCut.canonical d d := by
+    cases d
+    · simp [boundaryCols, show ¬85 ≤ j by omega, show ¬85 ≤ j+1 by omega]
+    · simp [boundaryCols, show 1 ≤ j by omega, show 1 ≤ j+1 by omega]
+  rw [← shape]
+  exact osee j _ x (rows j) hj (rb j hj) origin ctx tr (history j hj) r hcut
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+
+section
+
+namespace ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+open Arithmetic Secp256k1 MappedCompressed BalancedField StairArchiveTen StairArchiveInactive
+open StairArchiveNativeCut ArchiveFieldScratch WindowFieldMask WindowFieldCosts StairField2V3Seg WindowFieldJourney
+open StairArchiveRelease CodecBitSliceVerify
+set_option maxRecDepth 16000
+set_option maxHeartbeats 2400000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires measurementCount group84Body group84SignBody
+  packTag unpackTag tagSwap ogroup oreferenceProgram oreferenceTape planBody
+
+private def signedTagView (a : State) : State :=
+  ⟨a.phase, fun q => a.basis (tagPort q)⟩
+
+private theorem signedTagPool (a : State) (m : List Bool) :
+    (run packTag m a).phase = (run TagPack1542.packTagProg m (signedTagView a)).phase ∧
+    ∀ i ∈ Finset.range 105, (run packTag m a).basis (tagPort i) =
+      (run TagPack1542.packTagProg m (signedTagView a)).basis i := by
+  have program_eq : packTag = renameProgram tagPort TagPack1542.packTagProg := by
+    simp only [packTag]
+  have placed := run_rename_pool tagPort (Finset.range 105) tagPort_inj TagPack1542.packTagProg
+    (fun i hi => Finset.mem_range.mpr (TagPack1542.packTagProg_wires_lt i hi))
+    m (signedTagView a) a rfl (fun _ _ => rfl)
+  have state_eq := congrArg (fun p : Program => run p m a) program_eq
+  exact ⟨(congrArg State.phase state_eq).trans placed.1,
+    fun i hi => (congrArg (fun s : State => s.basis (tagPort i)) state_eq).trans (placed.2 i hi)⟩
+
+private theorem signedTagReads (a : State) (m : List Bool)
+    (hc : TagPack1542.cVal (signedTagView a) < 87)
+    (hp0 : TagPack1542.p0Val (signedTagView a) ∈ TagPack1542.used7)
+    (hpk : ∀ k < 9, TagPack1542.pkVal k (signedTagView a) ∈ TagPack1542.used8)
+    (hanc : ∀ i, 86 ≤ i → i < 105 → (signedTagView a).basis i = false) :
+    (run packTag m a).phase = a.phase ∧
+    (run packTag m a).basis (StairPhysicalLayout.sLetter 435) = false ∧
+    ∀ i, 86 ≤ i → i < 105 → (run packTag m a).basis (tagPort i) = false := by
+  have placed := signedTagPool a m
+  have spec := TagPack1542.packTag_spec (signedTagView a) m hc hp0 hpk hanc
+  have port6 : tagPort 6 = StairPhysicalLayout.sLetter 435 := by decide +kernel
+  have cleared := (placed.2 6 (by decide)).trans spec.2.1
+  exact ⟨placed.1.trans spec.1,
+    (congrArg (fun q => (run packTag m a).basis q) port6.symm).trans cleared,
+    fun i lo hi => (placed.2 i (Finset.mem_range.mpr hi)).trans (spec.2.2.1 i lo hi)⟩
+
+private theorem maskedPull_phase (sites : Finset Wire) (r a : State) (f : Wire → Wire) :
+    (mask sites r (pullState f a)).phase = a.phase := rfl
+
+private theorem signBody_after_nine (d : Bool) :
+    ∀ l ∈ planBody d, 10 ≤ (span l).1 := by
+  have checks : (planBody d).all (fun l => decide (10 ≤ (span l).1)) = true := by
+    cases d <;> decide +kernel
+  exact fun l h => of_decide_eq_true (List.all_eq_true.mp checks l h)
+
+/-- Compare the outputs on the masked state and use unchanged bits on the mask. -/
+private theorem signRuns_eq_of_mask (P Q : Program) (sites : Finset Wire)
+    (m n : List Bool) (archive start : State) (p : avoids P sites) (q : avoids Q sites)
+    (equal : run P m (mask sites archive start) = run Q n (mask sites archive start)) :
+    run P m start = run Q n start := by
+  have masked : mask sites archive (run P m start) = mask sites archive (run Q n start) :=
+    (mask_run P sites m archive start p).symm.trans (equal.trans (mask_run Q sites n archive start q))
+  apply State.extensionality
+  · have phase : (mask sites archive (run P m start)).phase =
+        (mask sites archive (run Q n start)).phase := congrArg State.phase masked
+    exact phase
+  · funext wire
+    by_cases hit : wire ∈ sites
+    · rw [run_preserves_outside _ _ _ _ (p wire hit),
+        run_preserves_outside _ _ _ _ (q wire hit)]
+    · simpa only [mask, hit, ↓reduceIte] using congrArg (fun s : State => s.basis wire) masked
+
+/-- Compare the two bodies after tag packing. The mask represents the restored
+    values on ports that both bodies avoid. -/
+private theorem signPacked_body_eq (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (mPack mBody : List Bool) (a0 r0 : State) (c0 : Nat → Cols)
+    (hvalid : valid d (planBody d) c0)
+    (hroute : path d (if d then 10 else 85) (planBody d))
+    (initial : Fits rows c0 a0 r0) (start : OCut (if d then 10 else 85) origin r0)
+    (htag : TagReady r0) (hclear : a0.basis signHost = false) :
+    run (group84SignBody d) mBody (pullState tagSwap (run packTag mPack a0)) =
+      run (group84Body d) (signOldBodyTape d (planBody d) mBody)
+        (pullState tagSwap (run packTag mPack a0)) := by
+  let s0 : State := ⟨a0.phase, fun q => a0.basis (tagPort q)⟩
+  have hagree_a0_r0 : ∀ i < 105, a0.basis (tagPort i) = r0.basis (tagPort i) := by
+    intro i hi
+    have hmem : tagPort i ∈ tagSites := by
+      have lt : i < tagSites.length := tagSites_length ▸ hi
+      simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem]
+    exact initial.outside _ (tagSites_disjoint_allBanks _ hmem)
+  have hreg_map : ∀ (xs : List Nat) (ys : List Wire),
+      xs.map tagPort = ys → (∀ i ∈ xs, i < 105) →
+      regValue xs s0.basis = regValue ys r0.basis := by
+    intro xs ys hmap hlt
+    subst hmap
+    induction xs with
+    | nil => rfl
+    | cons x xs ih =>
+      simp only [List.map_cons, regValue, List.foldr_cons, s0]
+      rw [hagree_a0_r0 x (hlt x List.mem_cons_self)]
+      have htail := ih (fun i hi => hlt i (List.mem_cons_of_mem _ hi))
+      simp only [regValue, s0] at htail
+      rw [htail]
+  have hc0 : TagPack1542.cVal s0 < 87 := by
+    have heq : TagPack1542.cVal s0 = regValue rest87A r0.basis :=
+      hreg_map TagPack1542.cWires rest87A (by decide +kernel) (by decide)
+    rw [heq]; exact htag.1
+  have hp0 : TagPack1542.p0Val s0 ∈ TagPack1542.used7 := by
+    have heq : TagPack1542.p0Val s0 = regValue p0Sites r0.basis :=
+      hreg_map TagPack1542.p0Wires p0Sites (by decide +kernel) (by decide)
+    rw [heq]; exact htag.2
+  have hpk0 : ∀ k < 9, TagPack1542.pkVal k s0 ∈ TagPack1542.used8 := by
+    intro k hk
+    have hmap_k : (TagPack1542.pkWires k).map tagPort = pkSitesOf (k + 1) := by
+      have hchk : (List.range 9).all (fun k' =>
+          (TagPack1542.pkWires k').map tagPort == pkSitesOf (k' + 1)) = true := by
+        decide +kernel
+      exact beq_iff_eq.mp (List.all_eq_true.mp hchk k (List.mem_range.mpr hk))
+    have heq : TagPack1542.pkVal k s0 = regValue (pkSitesOf (k + 1)) r0.basis :=
+      hreg_map (TagPack1542.pkWires k) (pkSitesOf (k + 1)) hmap_k (fun i hi => by
+        simp only [TagPack1542.pkWires, TagPack1542.pkWire, List.mem_cons, List.not_mem_nil, or_false] at hi
+        omega)
+    rw [heq]
+    exact ocut_pk_in_used8 (if d then 10 else 85) (by cases d <;> decide) origin ctx tr r0 start k hk
+  have hanc0 : ∀ a, 86 ≤ a → a < 105 → s0.basis a = false := by
+    intro a ha1 ha2
+    exact (hagree_a0_r0 a (by omega)).trans (ocut_anc_zero _ origin ctx r0 start a ha1 ha2)
+  obtain ⟨ha1_ph, ha1_435, ha1_anc⟩ :=
+    signedTagReads a0 mPack hc0 hp0 hpk0 hanc0
+  have ha1_out : ∀ w, w ∉ tagSites → (run packTag mPack a0).basis w = a0.basis w := fun w hw =>
+    run_preserves_outside packTag mPack a0 w (fun hm => by
+      rw [packTag, renameProgram_support] at hm
+      obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hm
+      have lt : i < tagSites.length := tagSites_length ▸ TagPack1542.packTagProg_wires_lt i hi
+      exact hw (by simp only [tagPort, List.getElem?_eq_getElem lt, Option.getD_some, List.getElem_mem]))
+  let a1' := pullState tagSwap (run packTag mPack a0)
+  let tagDataSet : Finset Wire := (tagSites.take 86).toFinset
+  have hbody_avoids_tagData : avoids (group84Body d) tagDataSet := by
+    intro q hq
+    rw [List.mem_toFinset] at hq
+    obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hq
+    have hi86 : i < 86 := by have := List.length_take_le 86 tagSites; omega
+    have hget : (tagSites.take 86)[i] = tagPort i := by
+      have lt : i < tagSites.length := by rw [tagSites_length]; omega
+      simp [tagPort, List.getElem_take, List.getElem?_eq_getElem lt]
+    rw [hget]
+    exact tagData_avoids_group84Body d i hi86
+  let a1m := mask tagDataSet r0 a1'
+  have hfits_m : Fits rows c0 a1m r0 := by
+    refine ⟨?_, ?_, ?_⟩
+    · exact (maskedPull_phase tagDataSet r0 (run packTag mPack a0) tagSwap).trans
+        (ha1_ph.trans initial.phase)
+    · intro q hq
+      by_cases hqm : q ∈ tagDataSet
+      · simp [a1m, mask, hqm]
+      · simp only [a1m, mask, hqm, ↓reduceIte]
+        change (run packTag mPack a0).basis (tagSwap q) = r0.basis q
+        by_cases hq720 : q = base 720
+        · subst hq720; simp [tagSwap, ha1_435, start.1]
+        · have hq435 : q ≠ StairPhysicalLayout.sLetter 435 := by
+            intro h; exact hqm (h ▸ (by decide +kernel : StairPhysicalLayout.sLetter 435 ∈ tagDataSet))
+          rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hq720 hq435]
+          by_cases hqt : q ∈ tagSites
+          · -- `q ∈ tagSites` and `q ∉ tagSites.take 86`, so `q = tagPort i` with `86 ≤ i < 105` (ancilla)!
+            obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hqt
+            have hi105 : i < 105 := tagSites_length ▸ hi
+            have hi86 : 86 ≤ i := by
+              by_contra! hlt
+              exact hqm (List.mem_toFinset.mpr (List.mem_iff_getElem.mpr ⟨i, by rw [List.length_take, tagSites_length]; omega, by simp [List.getElem_take]⟩))
+            have hget : tagSites[i] = tagPort i := by simp [tagPort, List.getElem?_eq_getElem hi]
+            rw [hget, ha1_anc i hi86 hi105, ocut_anc_zero _ origin ctx r0 start i hi86 hi105]
+          · exact (ha1_out q hqt).trans (initial.outside q hq)
+    · intro j hj i hi
+      have hmem_b : StairArchiveRelease.fieldPort j i ∈ allBanks :=
+        Finset.mem_biUnion.mpr ⟨j, hj, Finset.mem_image.mpr ⟨i, hi, rfl⟩⟩
+      have hnt : StairArchiveRelease.fieldPort j i ∉ tagSites :=
+        fun ht => tagSites_disjoint_allBanks _ ht hmem_b
+      have hnm : StairArchiveRelease.fieldPort j i ∉ tagDataSet := fun hm =>
+        hnt (List.take_subset 86 tagSites (List.mem_toFinset.mp hm))
+      have hn720 : StairArchiveRelease.fieldPort j i ≠ base 720 := by
+        have jm : j ∈ WindowBankCheck.banks := by simpa [bankIds, WindowBankCheck.banks] using hj
+        simpa using List.all_eq_true.mp (List.all_eq_true.mp fieldPort_ne720_chk j jm) i (List.mem_range.mpr (Finset.mem_range.mp hi))
+      have hn435 : StairArchiveRelease.fieldPort j i ≠ StairPhysicalLayout.sLetter 435 :=
+        fun h => hnt (h ▸ (by decide +kernel : StairPhysicalLayout.sLetter 435 ∈ tagSites))
+      simp only [a1m, mask, hnm, ↓reduceIte]
+      change (run packTag mPack a0).basis (tagSwap (StairArchiveRelease.fieldPort j i)) = _
+      rw [tagSwap, Equiv.swap_apply_of_ne_of_ne hn720 hn435, ha1_out _ hnt]
+      exact initial.bytes j hj i hi
+  have noSign : signHost ∉ tagSites := by decide +kernel
+  have noSignMask : signHost ∉ tagDataSet :=
+    fun h => noSign (List.take_subset 86 tagSites (List.mem_toFinset.mp h))
+  have hclear_masked : a1m.basis signHost = false := by
+    simp only [a1m, mask, noSignMask, ↓reduceIte]
+    change (run packTag mPack a0).basis (tagSwap signHost) = false
+    rw [tagSwap_signHost, ha1_out _ noSign, hclear]
+  have ha := signTravel_eq d x rows rb origin ctx en tr history (planBody d) _ hroute
+    (signBody_after_nine d) c0 hvalid mBody a1m r0 hfits_m start hclear_masked
+  rw [← signEmits_body, ← oemits_body] at ha
+  have hbody_sign_avoids : avoids (group84SignBody d) tagDataSet := by
+    intro q hq use
+    rcases Finset.mem_insert.mp (signBody_sub d use) with rfl | old
+    · exact noSignMask hq
+    · exact hbody_avoids_tagData q hq old
+  exact signRuns_eq_of_mask (group84SignBody d) (group84Body d) tagDataSet
+    mBody (signOldBodyTape d (planBody d) mBody) r0 a1' hbody_sign_avoids hbody_avoids_tagData ha
+
+private def signTagCore (body : Program) : Program :=
+  packTag ++ renameProgram tagSwap body ++ unpackTag
+
+private def oldTagTape (d : Bool) (m : List Bool) : List Bool :=
+  let mb := m.drop (measurementCount packTag)
+  let mu := mb.drop (measurementCount (group84SignBody d))
+  joinTapes packTag m (joinTapes (group84Body d) (signOldBodyTape d (planBody d) mb)
+    (mu.take (measurementCount unpackTag)))
+
+private theorem signTagCore_split (body : Program) (m : List Bool) (a : State) :
+    run (signTagCore body) m a =
+      run unpackTag ((m.drop (measurementCount packTag)).drop (measurementCount body))
+        (run (renameProgram tagSwap body) (m.drop (measurementCount packTag)) (run packTag m a)) := by
+  simp only [signTagCore, List.append_assoc, run_append, run_take]
+  rw [(renameProgram_counts tagSwap body).2]
+
+private theorem signTagCore_joined (body : Program) (mp mb mu : List Bool) (a : State) :
+    run (signTagCore body) (joinTapes packTag mp (joinTapes body mb mu)) a =
+      run unpackTag mu (run (renameProgram tagSwap body) mb (run packTag mp a)) := by
+  rw [signTagCore, List.append_assoc, joined]
+  have count := (renameProgram_counts tagSwap body).2
+  rw [show joinTapes body mb mu = joinTapes (renameProgram tagSwap body) mb mu by
+    simp only [joinTapes, count], joined]
+
+/-- Keep the true pack, body and unpack tape boundaries. The old body's padded
+    tape is used only for the old program. -/
+theorem othree_body_sign_bracket (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a0 r0 : State) (c0 : Nat → Cols)
+    (hvalid : valid d (planBody d) c0)
+    (hroute : path d (if d then 10 else 85) (planBody d))
+    (initial : Fits rows c0 a0 r0) (start : OCut (if d then 10 else 85) origin r0)
+    (htag : TagReady r0) (hclear : a0.basis signHost = false) :
+    run (signTagCore (group84SignBody d)) m a0 =
+      run (signTagCore (group84Body d)) (oldTagTape d m) a0 := by
+  let mb := m.drop (measurementCount packTag)
+  let mu := mb.drop (measurementCount (group84SignBody d))
+  have core := signPacked_body_eq d x rows rb origin ctx en tr history m mb a0 r0 c0
+    hvalid hroute initial start htag hclear
+  have renamed (P : Program) (t : List Bool) :
+      run (renameProgram tagSwap P) t (run packTag m a0) =
+        pullState tagSwap (run P t (pullState tagSwap (run packTag m a0))) :=
+    StairField2V3Seg.rename_conj tagSwap tagSwap.injective
+      (fun q => by unfold tagSwap; exact Equiv.swap_apply_self _ _ q) P _ t
+  rw [signTagCore_split, oldTagTape, signTagCore_joined, renamed, renamed]
+  change run unpackTag mu (pullState tagSwap
+    (run (group84SignBody d) mb (pullState tagSwap (run packTag m a0)))) =
+    run unpackTag (mu.take (measurementCount unpackTag)) (pullState tagSwap
+      (run (group84Body d) (signOldBodyTape d (planBody d) mb) (pullState tagSwap (run packTag m a0))))
+  rw [core, run_take]
+
+private def signCore (d : Bool) : Program :=
+  ordered d (ogroup d 1 9) (signTagCore (group84SignBody d))
+
+private theorem signTagCore_drop (body : Program) (t : List Bool) :
+    t.drop (measurementCount (signTagCore body)) =
+      (((t.drop (measurementCount packTag)).drop (measurementCount body)).drop
+        (measurementCount unpackTag)) := by
+  simp only [signTagCore, measurementCount_append, (renameProgram_counts _ _).2,
+    List.drop_drop, Nat.add_assoc]
+
+private theorem signAppendAfter (P Q R : Program) (t b u : List Bool) (a : State)
+    (tail : t.drop (measurementCount P) = u)
+    (body : run P t a = run Q b a) :
+    run (P ++ R) t a = run (Q ++ R) (joinTapes Q b u) a := by
+  rw [run_append, run_take, joined, tail, body]
+
+private theorem signAppendBefore (E P Q : Program) (t u b : List Bool) (a a1 : State)
+    (tape : t.drop (measurementCount E) = u) (early : run E t a = a1)
+    (body : run P u a1 = run Q b a1) :
+    run (E ++ P) t a = run (E ++ Q) (joinTapes E t b) a := by
+  rw [run_append, run_take, joined, tape, early, body]
+
+private theorem signTransportRun (P A Q B : Program) (m n k : List Bool) (a : State)
+    (left : P = A) (right : Q = B) (tape : n = k)
+    (inner : run A m a = run B k a) : run P m a = run Q n a :=
+  (congrArg (fun X => run X m a) left).trans
+    (inner.trans ((congrArg₂ (fun X t => run X t a) right tape).symm))
+
+
+private theorem signCore_matches_false (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode false) a r)
+    (start : OCut (if false then 1 else 85) origin r) (htag : TagReady r)
+    (hclear : a.basis signHost = false) :
+    run (signCore false) (m.drop (measurementCount signBracket)) a =
+      run (group84 false) (signOldGroupTape false m) a := by
+  let t := m.drop (measurementCount signBracket)
+  let P := signTagCore (group84SignBody false)
+  let P' := signTagCore (group84Body false)
+  let R := ogroup false 1 9
+  let u := (((t.drop (measurementCount packTag)).drop (measurementCount (group84SignBody false))).drop
+    (measurementCount unpackTag))
+  have drop_eq : t.drop (measurementCount P) = u := signTagCore_drop (group84SignBody false) t
+  have body := othree_body_sign_bracket false x rows rb origin ctx en tr history t a r (initialCode false)
+    valid_plan_false_split.1 route_plan_false_body initial start htag hclear
+  have lp : signCore false = P ++ R := rfl
+  have rp : group84 false = P' ++ R := rfl
+  have tp : signOldGroupTape false m = joinTapes P' (oldTagTape false t) u := rfl
+  exact signTransportRun _ _ _ _ t _ _ a lp rp tp
+    (signAppendAfter P P' R t (oldTagTape false t) u a drop_eq body)
+
+
+private def forwardBodyEq (m : List Bool) (a : State) : Prop :=
+  let t := m.drop (measurementCount signBracket)
+  let early := ogroup true 1 9
+  let mt := t.drop (measurementCount early)
+  let a1 := run early t a
+  run (signTagCore (group84SignBody true)) mt a1 =
+    run (signTagCore (group84Body true)) (oldTagTape true mt) a1
+
+private def forwardJoinEq (m : List Bool) (a : State) : Prop :=
+  let t := m.drop (measurementCount signBracket)
+  let early := ogroup true 1 9
+  run (early ++ signTagCore (group84SignBody true)) t a =
+    run (early ++ signTagCore (group84Body true))
+      (joinTapes early t (oldTagTape true (t.drop (measurementCount early)))) a
+
+private def coreRunEq (d : Bool) (m : List Bool) (a : State) : Prop :=
+  run (signCore d) (m.drop (measurementCount signBracket)) a =
+    run (group84 d) (signOldGroupTape d m) a
+
+
+set_option linter.unusedVariables false in
+private theorem forwardBodyRun
+    (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode true) a r)
+    (start : OCut (if true then 1 else 85) origin r) (htag : TagReady r)
+    (hclear : a.basis signHost = false) : forwardBodyEq m a := by
+  let t := m.drop (measurementCount signBracket)
+  let early := ogroup true 1 9
+  let mt := t.drop (measurementCount early)
+  let a1 := run early t a
+  let r1 := run early t r
+  have valid_all := valid_plan true
+  have route_all := route_plan_true
+  rw [plan_split_true] at valid_all route_all
+  have fits : Fits rows (initialCode true) a1 r1 :=
+    plain early rows (initialCode true) t a r initial (ot_groupSafe true 1 9 valid_all.1)
+  have cut : OCut 10 origin r1 := by
+    simpa only [r1, early, if_true] using oselected true 1 9 (by decide) (by decide) origin ctx en r t start
+  have tag : TagReady r1 :=
+    tagReady_run_outside early t r (ogroup19_avoids_rest87A_p0 true) htag
+  have clear : a1.basis signHost = false :=
+    (run_preserves_outside early t a _ (ogroup_avoids_sign true 1 9 (by decide) (by decide))).trans hclear
+  have body := othree_body_sign_bracket true x rows rb origin ctx en tr history mt a1 r1
+    (initialCode true) valid_all.2 route_all.2.2 fits cut tag clear
+  change run (signTagCore (group84SignBody true)) mt a1 =
+    run (signTagCore (group84Body true)) (oldTagTape true mt) a1
+  exact body
+
+
+private theorem forwardJoin (m : List Bool) (a : State) (body : forwardBodyEq m a) :
+    forwardJoinEq m a := by
+  let t := m.drop (measurementCount signBracket)
+  let early := ogroup true 1 9
+  let mt := t.drop (measurementCount early)
+  let a1 := run early t a
+  let P := signTagCore (group84SignBody true)
+  let P' := signTagCore (group84Body true)
+  have bodyRun : run P mt a1 = run P' (oldTagTape true mt) a1 := body
+  change run (early ++ P) t a =
+    run (early ++ P') (joinTapes early t (oldTagTape true mt)) a
+  exact signAppendBefore early P P' t mt (oldTagTape true mt) a a1 rfl rfl bodyRun
+
+
+
+private theorem forwardActualProgram :
+    signCore true = ogroup true 1 9 ++ signTagCore (group84SignBody true) := by
+  simp only [signCore, ordered, if_true]
+
+
+private theorem forwardReferenceProgram :
+    group84 true = ogroup true 1 9 ++ signTagCore (group84Body true) := by
+  simp only [group84, signTagCore, ordered, if_true]
+
+
+private theorem forwardTape (m : List Bool) :
+    signOldGroupTape true m = joinTapes (ogroup true 1 9) (m.drop (measurementCount signBracket))
+      (oldTagTape true ((m.drop (measurementCount signBracket)).drop
+        (measurementCount (ogroup true 1 9)))) := by
+  simp only [signOldGroupTape, oldTagTape, if_true]
+
+
+private theorem runGoalCongr (P A Q B : Program) (m n k : List Bool) (a : State)
+    (left : P = A) (right : Q = B) (tape : n = k) :
+    (run P m a = run Q n a) = (run A m a = run B k a) := by
+  subst A
+  subst B
+  subst k
+  rfl
+
+
+private theorem forwardGoalEq (m : List Bool) (a : State) :
+    coreRunEq true m a = forwardJoinEq m a := by
+  unfold coreRunEq forwardJoinEq
+  exact runGoalCongr (signCore true) (ogroup true 1 9 ++ signTagCore (group84SignBody true))
+    (group84 true) (ogroup true 1 9 ++ signTagCore (group84Body true))
+    (m.drop (measurementCount signBracket)) (signOldGroupTape true m)
+    (joinTapes (ogroup true 1 9) (m.drop (measurementCount signBracket))
+      (oldTagTape true ((m.drop (measurementCount signBracket)).drop
+        (measurementCount (ogroup true 1 9)))))
+    a forwardActualProgram forwardReferenceProgram (forwardTape m)
+
+
+private theorem forwardAlign (m : List Bool) (a : State) (joinProof : forwardJoinEq m a) :
+    coreRunEq true m a :=
+  Eq.mpr (forwardGoalEq m a) joinProof
+
+
+set_option linter.unusedVariables false in
+private theorem forwardCore
+    (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (htag : TagReady r) (hclear : a.basis signHost = false) :
+    Fits rows (initialCode true) a r → OCut (if true then 1 else 85) origin r → coreRunEq true m a :=
+  fun initial start =>
+    forwardAlign m a (forwardJoin m a
+      (forwardBodyRun x rows rb origin ctx en tr history m a r initial start htag hclear))
+
+
+private theorem coreCases (d : Bool) (rows : Nat → Nat) (origin : BasisState)
+    (m : List Bool) (a r : State)
+    (reverse : Fits rows (initialCode false) a r →
+      OCut (if false then 1 else 85) origin r → coreRunEq false m a)
+    (forward : Fits rows (initialCode true) a r →
+      OCut (if true then 1 else 85) origin r → coreRunEq true m a)
+    (initial : Fits rows (initialCode d) a r) (start : OCut (if d then 1 else 85) origin r) :
+    coreRunEq d m a :=
+  (Bool.rec (motive := fun bit =>
+    Fits rows (initialCode bit) a r → OCut (if bit then 1 else 85) origin r → coreRunEq bit m a)
+    reverse forward d) initial start
+
+private theorem signCore_matches (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode d) a r)
+    (start : OCut (if d then 1 else 85) origin r) (htag : TagReady r)
+    (hclear : a.basis signHost = false) :
+    run (signCore d) (m.drop (measurementCount signBracket)) a =
+      run (group84 d) (signOldGroupTape d m) a := by
+  change coreRunEq d m a
+  exact coreCases d rows origin m a r
+    (fun startFit startCut =>
+      signCore_matches_false x rows rb origin ctx en tr history m a r startFit startCut htag hclear)
+    (forwardCore x rows rb origin ctx en tr history m a r htag hclear) initial start
+
+private theorem signHost_outside_surface : signHost ∉ surface := by
+  intro h
+  have away := (reliable h signHost_ne_tag).2
+  have fix : StairArchiveInactive.host.symm signHost = signHost := by decide +kernel
+  rw [fix] at away
+  exact away (by decide +kernel)
+
+private theorem bank_mem_surface (j : Nat) (hj : j ∈ bankIds) {q : Wire} (hq : q ∈ bank j) :
+    q ∈ surface := by
+  obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hq
+  exact Finset.mem_union_right _ (Finset.mem_biUnion.mpr
+    ⟨j, hj, Finset.mem_image.mpr ⟨i, Finset.mem_range.mpr (by
+      have := Finset.mem_range.mp hi
+      omega), rfl⟩⟩)
+
+private theorem signHost_outside_banks : signHost ∉ allBanks := by
+  intro h
+  obtain ⟨j, hj, hq⟩ := Finset.mem_biUnion.mp h
+  exact signHost_outside_surface (bank_mem_surface j hj hq)
+
+private theorem bank_bit_not_sign (j i : Nat) (hj : j ∈ bankIds) (hi : i ∈ Finset.range 16) :
+    fieldPort j i ≠ signHost :=
+  fun eq => signHost_outside_banks (Finset.mem_biUnion.mpr ⟨j, hj, Finset.mem_image.mpr ⟨i, hi, eq⟩⟩)
+
+private def signZero (s : State) : State :=
+  mask {signHost} ⟨false, fun _ => false⟩ s
+
+private theorem signZero_at (s : State) : (signZero s).basis signHost = false := by
+  simp [signZero, mask]
+
+private theorem signZero_off (s : State) (q : Wire) (hq : q ≠ signHost) :
+    (signZero s).basis q = s.basis q := by
+  simp [signZero, mask, hq]
+
+private theorem signZero_fits {rows : Nat → Nat} {c : Nat → Cols} {a r : State}
+    (h : Fits rows c a r) : Fits rows c (signZero a) (signZero r) := by
+  refine ⟨h.phase, ?_, ?_⟩
+  · intro q hq
+    by_cases eq : q = signHost
+    · subst q; simp only [signZero_at]
+    · simpa only [signZero_off _ _ eq] using h.outside q hq
+  · intro j hj i hi
+    rw [signZero_off _ _ (bank_bit_not_sign j i hj hi)]
+    exact h.bytes j hj i hi
+
+private theorem signZero_cut {c : Nat} {origin : BasisState} {s : State} (h : OCut c origin s) :
+    OCut c origin (signZero s) := by
+  obtain ⟨zero, X, Y, ideal, frame, view⟩ := h
+  refine ⟨?_, X, Y, ideal, frame, ?_⟩
+  · exact (signZero_off s _ (Ne.symm signHost_ne_tag)).trans zero
+  · intro q hq hne
+    rw [signZero_off s q (fun eq => signHost_outside_surface (eq ▸ hq))]
+    exact view q hq hne
+
+private theorem sign_not_tag_ready_ports :
+    signHost ∉ rest87A ++ p0Sites := by decide +kernel
+
+private theorem signZero_tag (s : State) (h : TagReady s) : TagReady (signZero s) := by
+  have eq (q : Wire) (hq : q ∈ rest87A ++ p0Sites) :
+      (signZero s).basis q = s.basis q :=
+    signZero_off s q (fun e => sign_not_tag_ready_ports (e ▸ hq))
+  constructor
+  · rw [regValue_congr rest87A _ s.basis (fun q hq => eq q (List.mem_append_left _ hq))]
+    exact h.1
+  · rw [regValue_congr p0Sites _ s.basis (fun q hq => eq q (List.mem_append_right _ hq))]
+    exact h.2
+
+private theorem ref_avoids_tag_ready (d : Bool) (q : Wire) (hq : q ∈ rest87A ++ p0Sites) :
+    q ∉ wires (PacketSequence.program d (opk d) 1 84) := by
+  have h19 := ogroup19_avoids_rest87A_p0 d q hq
+  have hs : tagSites.take 14 = rest87A ++ p0Sites := by decide +kernel
+  rw [← hs] at hq
+  obtain ⟨i, hi, hqi⟩ := List.mem_iff_getElem.mp hq
+  have hi14 : i < 14 := by have := List.length_take_le 14 tagSites; omega
+  have eq : (tagSites.take 14)[i] = tagPort i := by
+    have lt : i < tagSites.length := tagSites_length ▸ (by omega : i < 105)
+    simp [tagPort, List.getElem_take, List.getElem?_eq_getElem lt]
+  rw [eq] at hqi
+  have hBody := tagData_avoids_group84Body_ref d i (by omega)
+  rw [hqi] at hBody
+  cases d
+  · rw [href_eq_false, wires_append, Finset.mem_union, not_or]
+    exact ⟨hBody, h19⟩
+  · rw [href_eq_true, wires_append, Finset.mem_union, not_or]
+    exact ⟨h19, hBody⟩
+
+private theorem signedRefProgram (d : Bool) :
+    ogroup d 1 84 = PacketSequence.program d (opk d) 1 84 := by
+  simp only [ogroup]
+
+private theorem signCutTransport (C : Nat → State → Prop) {i j : Nat} {s t : State}
+    (idx : i = j) (view : s = t) (h : C i s) : C j t := by
+  subst j
+  subst t
+  exact h
+
+private theorem signedReferenceEndCut (C : Nat → State → Prop) (d : Bool) (tape : List Bool) (r : State)
+    (out : C (if d then 1 + 84 else 1) (run (ogroup d 1 84) tape r)) :
+    C (if !d then 1 else 85) (run (PacketSequence.program d (opk d) 1 84) tape r) := by
+  have idx : (if d then 1 + 84 else 1) = (if !d then 1 else 85) := by
+    cases d <;> decide
+  exact signCutTransport C idx (congrArg (fun p : Program => run p tape r) (signedRefProgram d)) out
+
+private theorem ref_avoids_sign (d : Bool) :
+    signHost ∉ wires (PacketSequence.program d (opk d) 1 84) := by
+  rw [← signedRefProgram d]
+  exact ogroup_avoids_sign d 1 84 (by decide) (by decide)
+
+private theorem signZero_run (P : Program) (m : List Bool) (s : State) (avoid : signHost ∉ wires P) :
+    run P m (signZero s) = signZero (run P m s) :=
+  mask_run P {signHost} m _ s (fun q member => by
+    have eq : q = signHost := Finset.mem_singleton.mp member
+    exact eq.symm ▸ avoid)
+
+private def signDatum (s : State) : Bool :=
+  TraceParity5.parity (signPayload.map s.basis) ^^ prefixParityValue (regValue p0Sites s.basis)
+
+private theorem p0_in_tag (q : Wire) (hq : q ∈ p0Sites) : q ∈ tagSites := by
+  have check : p0Sites.all (fun q => tagSites.contains q) = true := by decide +kernel
+  exact List.contains_iff_mem.mp (List.all_eq_true.mp check q hq)
+
+private theorem signBracket_admits {rows : Nat → Nat} {c : Nat → Cols} {a r : State}
+    {cut : Nat} {origin : BasisState} (ctx : FrontierReplay1591.Context origin)
+    (h : Fits rows c a r) (frame : OCut cut origin r) (tag : TagReady r) :
+    (∀ i ∈ [0, 5, 9, 10, 11], a.basis (prefixLoanPort i) = false) ∧
+      regValue p0Sites a.basis ∈ TagPack1542.used7 := by
+  constructor
+  · intro i hi
+    have index : ∃ k : Fin 19, prefixLoanPort i = tagPort (86 + k.val) := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+    obtain ⟨k, eq⟩ := index
+    have hlt : 86 + k.val < tagSites.length := by rw [tagSites_length]; omega
+    have mem : tagPort (86 + k.val) ∈ tagSites := by
+      simp only [tagPort, List.getElem?_eq_getElem hlt, Option.getD_some, List.getElem_mem]
+    rw [eq, h.outside _ (tagSites_disjoint_allBanks _ mem)]
+    exact ocut_anc_zero cut origin ctx r frame _ (by omega) (by omega)
+  · rw [regValue_congr p0Sites a.basis r.basis
+      (fun q hq => h.outside q (tagSites_disjoint_allBanks q (p0_in_tag q hq)))]
+    exact tag.2
+
+private theorem signDatum_of_fits {rows : Nat → Nat} {c : Nat → Cols} {a r : State}
+    (h : Fits rows c a r)
+    (payload : TraceParity5.parity (signPayload.map a.basis) =
+      TraceParity5.parity (signPayload.map r.basis)) :
+    signDatum a = signDatum r := by
+  unfold signDatum
+  rw [payload, regValue_congr p0Sites a.basis r.basis
+    (fun q hq => h.outside q (tagSites_disjoint_allBanks q (p0_in_tag q hq)))]
+
+private theorem signBracket_zero (s : State) (m : List Bool)
+    (clean : ∀ i ∈ [0, 5, 9, 10, 11], s.basis (prefixLoanPort i) = false)
+    (used : regValue p0Sites s.basis ∈ TagPack1542.used7)
+    (ready : s.basis signHost = signDatum s) :
+    run signBracket m s = signZero s := by
+  rw [signBracket_run s m clean used]
+  change CheckpointSignLoan.flip signHost (signDatum s) s = signZero s
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases same : q = signHost
+    · subst q
+      simp [CheckpointSignLoan.flip, writeBit, ← ready, signZero_at]
+    · rw [CheckpointSignLoan.flip_off _ _ same, signZero_off _ _ same]
+
+private theorem signZero_datum (s : State) : signDatum (signZero s) = signDatum s := by
+  have payload : signPayload.map (signZero s).basis = signPayload.map s.basis := by
+    apply List.map_congr_left
+    intro q hq
+    exact signZero_off s q (fun e => signPayload_avoids_sign (e ▸ hq))
+  unfold signDatum
+  rw [payload, regValue_congr p0Sites (signZero s).basis s.basis
+    (fun q hq => signZero_off s q (fun e =>
+      sign_not_tag_ready_ports (List.mem_append_right rest87A (e ▸ hq))))]
+
+private theorem restore_fits {rows : Nat → Nat} {c : Nat → Cols} {a r : State}
+    (m : List Bool) (h : Fits rows c a (signZero r))
+    (clean : ∀ i ∈ [0, 5, 9, 10, 11], a.basis (prefixLoanPort i) = false)
+    (used : regValue p0Sites a.basis ∈ TagPack1542.used7)
+    (datum : signDatum a = r.basis signHost) :
+    Fits rows c (run signBracket m a) r := by
+  rw [signBracket_run a m clean used]
+  change Fits rows c (CheckpointSignLoan.flip signHost (signDatum a) a) r
+  refine ⟨h.phase, ?_, ?_⟩
+  · intro q hq
+    by_cases same : q = signHost
+    · subst q
+      have clear := (h.outside signHost signHost_outside_banks).trans (signZero_at r)
+      simp [CheckpointSignLoan.flip, writeBit, clear, datum]
+    · rw [CheckpointSignLoan.flip_off _ _ same]
+      exact (h.outside q hq).trans (signZero_off r q same)
+  · intro j hj i hi
+    rw [CheckpointSignLoan.flip_off _ _ (bank_bit_not_sign j i hj hi)]
+    exact h.bytes j hj i hi
+
+private def signCoreE (d : Bool) : Program :=
+  ordered d (egroup d 1 9) (signTagCore (group84SignBody d))
+
+section
+attribute [local irreducible] egroup
+
+private theorem signCoreE_true (rows : Nat → Nat) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true)
+    (t : List Bool) (a r : State) (initial : Fits rows (initialCode true) a r)
+    (start : OCut (if true then 1 else 85) origin r) (hclear : a.basis signHost = false) :
+    run (signCoreE true) t a = run (signCore true) (signEarlyTape true t) a := by
+  have lp : signCoreE true = egroup true 1 9 ++ signTagCore (group84SignBody true) := by
+    simp only [signCoreE, ordered, if_true]
+  have tp : signEarlyTape true t =
+      joinTapes (ogroup true 1 9) [] (t.drop (measurementCount (egroup true 1 9))) := by
+    simp only [signEarlyTape, if_true]
+  have early := egroup_run_eq true 1 9 (by decide) (by decide) rows (initialCode true) origin ctx en a r
+    t [] initial (by simpa using start) hclear
+  have left : run (egroup true 1 9 ++ signTagCore (group84SignBody true)) t a =
+      run (signTagCore (group84SignBody true)) (t.drop (measurementCount (egroup true 1 9)))
+        (run (egroup true 1 9) t a) := by
+    rw [run_append, run_take]
+  have right := joined (ogroup true 1 9) (signTagCore (group84SignBody true)) []
+    (t.drop (measurementCount (egroup true 1 9))) a
+  rw [lp, forwardActualProgram, tp, left, right, early]
+
+private theorem signCoreE_false (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (t : List Bool) (a r : State) (initial : Fits rows (initialCode false) a r)
+    (start : OCut (if false then 1 else 85) origin r) (htag : TagReady r)
+    (hclear : a.basis signHost = false) :
+    run (signCoreE false) t a = run (signCore false) (signEarlyTape false t) a := by
+  let P := signTagCore (group84SignBody false)
+  let told := oldTagTape false t
+  let tref := oreferenceTape false (planBody false)
+    ((told.drop (measurementCount packTag)).take (measurementCount (group84Body false)))
+  have bodyEq : run P t a = run (signTagCore (group84Body false)) told a :=
+    othree_body_sign_bracket false x rows rb origin ctx en tr history t a r (initialCode false)
+      valid_plan_false_split.1 route_plan_false_body initial start htag hclear
+  have bodyFit : Fits rows (finalCode false (planBody false) (initialCode false)) (run P t a)
+      (run (ogroup false 10 75) tref r) := by
+    have h : Fits rows (finalCode false (planBody false) (initialCode false))
+        (run (packTag ++ renameProgram tagSwap (group84Body false) ++ unpackTag) told a)
+        (run (oreferenceProgram false (planBody false)) tref r) :=
+      othree_body_bracket false x rows rb origin ctx en tr history told a r (initialCode false)
+        valid_plan_false_split.1 route_plan_false_body initial start htag
+    rw [orefBody_false_eq] at h
+    rw [bodyEq]
+    exact h
+  have cut : OCut 10 origin (run (ogroup false 10 75) tref r) := by
+    simpa using oselected false 10 75 (by decide) (by decide) origin ctx en r tref (by simpa using start)
+  have clear2 : (run P t a).basis signHost = false :=
+    (bodyFit.outside signHost signHost_outside_banks).trans
+      ((run_preserves_outside _ _ _ _ (ogroup_avoids_sign false 10 75 (by decide) (by decide))).trans
+        ((initial.outside signHost signHost_outside_banks).symm.trans hclear))
+  have early := egroup_run_eq false 1 9 (by decide) (by decide) rows
+    (finalCode false (planBody false) (initialCode false)) origin ctx en (run P t a)
+    (run (ogroup false 10 75) tref r) (t.drop (measurementCount P)) [] bodyFit (by simpa using cut) clear2
+  have lp : signCoreE false = P ++ egroup false 1 9 := rfl
+  have rp : signCore false = P ++ ogroup false 1 9 := rfl
+  have tp : signEarlyTape false t = joinTapes P t [] := rfl
+  have left : run (P ++ egroup false 1 9) t a =
+      run (egroup false 1 9) (t.drop (measurementCount P)) (run P t a) := by
+    rw [run_append, run_take]
+  have right := joined P (ogroup false 1 9) t [] a
+  rw [lp, rp, tp, left, right]
+  exact early
+
+private theorem signCoreE_matches (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (t : List Bool) (a r : State) (initial : Fits rows (initialCode d) a r)
+    (start : OCut (if d then 1 else 85) origin r) (htag : TagReady r)
+    (hclear : a.basis signHost = false) :
+    run (signCoreE d) t a = run (signCore d) (signEarlyTape d t) a := by
+  cases d with
+  | false => exact signCoreE_false x rows rb origin ctx en tr history t a r initial start htag hclear
+  | true => exact signCoreE_true rows origin ctx en t a r initial start hclear
+
+end
+
+private theorem signGroup_split (d : Bool) (m : List Bool) (a : State) :
+    run (group84Sign d) m a =
+      let t := m.drop (measurementCount signBracket)
+      run signBracket (t.drop (measurementCount (signCoreE d)))
+        (run (signCoreE d) t (run signBracket m a)) := by
+  change run ((signBracket ++ signCoreE d) ++ signBracket) m a = _
+  simp only [List.append_assoc, run_append, run_take]
+
+/-- The signed group has the same endpoint relation as the original runner,
+    with the reference tape obtained from the real new measurement boundaries. -/
+theorem othree_run_sign (d : Bool) (x : Nat) (rows : Nat → Nat)
+    (rb : ∀ j ∈ bankIds, rows j < 63145) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (en : origin (base 2400) = true) (tr : TraceOK x origin)
+    (history : ∀ j ∈ bankIds, ArchiveStockRows.Chronology (5 * j - 5) x ECDSAAdd.p (rows j))
+    (m : List Bool) (a r : State) (initial : Fits rows (initialCode d) a r)
+    (start : OCut (if d then 1 else 85) origin r) (htag : TagReady r) (hsign : SignReady r) :
+    Fits rows (finalCode d (plan d) (initialCode d)) (run (group84Sign d) m a)
+      (run (PacketSequence.program d (opk d) 1 84) (oreferenceTapeSign d m) r) := by
+  let ref := PacketSequence.program d (opk d) 1 84
+  let tape := oreferenceTapeSign d m
+  let a1 := run (signCoreE d) (m.drop (measurementCount signBracket)) (signZero a)
+  have startFrames := ocut_signFrames d x rows rb origin ctx tr history r start
+  have startDatum := signDatum_of_fits initial
+    (fits_signPayload_parity d rows (initialCode d) a r initial (fun j _ => initial_signCode d j) startFrames)
+  have aReady : a.basis signHost = signDatum a :=
+    (initial.outside signHost signHost_outside_banks).trans ((show r.basis signHost = signDatum r from hsign).trans
+      startDatum.symm)
+  obtain ⟨aClean, aUsed⟩ := signBracket_admits ctx initial start htag
+  have aZero := signBracket_zero a m aClean aUsed aReady
+  have zeroFit := signZero_fits initial
+  have zeroCut := signZero_cut start
+  have zeroTag := signZero_tag r htag
+  have hpad : (signPadTape d m).drop (measurementCount signBracket) =
+      signEarlyTape d (m.drop (measurementCount signBracket)) :=
+    List.drop_left' List.length_replicate
+  have core0 := signCore_matches d x rows rb origin ctx en tr history (signPadTape d m) (signZero a) (signZero r)
+    zeroFit zeroCut zeroTag (signZero_at a)
+  rw [hpad] at core0
+  have core : a1 = run (group84 d) (signOldGroupTape d (signPadTape d m)) (signZero a) :=
+    (signCoreE_matches d x rows rb origin ctx en tr history (m.drop (measurementCount signBracket))
+      (signZero a) (signZero r) zeroFit zeroCut zeroTag (signZero_at a)).trans core0
+  have mid := othree_run d x rows rb origin ctx en tr history (signOldGroupTape d (signPadTape d m))
+    (signZero a) (signZero r) zeroFit zeroCut zeroTag
+  have midFit : Fits rows (finalCode d (plan d) (initialCode d)) a1 (signZero (run ref tape r)) := by
+    change Fits rows (finalCode d (plan d) (initialCode d))
+      (run (group84 d) (signOldGroupTape d (signPadTape d m)) (signZero a)) (run ref tape (signZero r)) at mid
+    rw [← core, signZero_run ref tape r (ref_avoids_sign d)] at mid
+    exact mid
+  have endCut : OCut (if !d then 1 else 85) origin (run ref tape r) :=
+    signedReferenceEndCut (fun c s => OCut c origin s) d tape r
+      (oselected d 1 84 (by decide) (by decide) origin ctx en r tape start)
+  have endTag := tagReady_run_outside ref tape r (ref_avoids_tag_ready d) htag
+  have endZeroCut := signZero_cut endCut
+  have endZeroTag := signZero_tag (run ref tape r) endTag
+  obtain ⟨endClean, endUsed⟩ := signBracket_admits ctx midFit endZeroCut endZeroTag
+  have r1Ready : (run ref tape r).basis signHost = signDatum (run ref tape r) := by
+    have sameSign := run_preserves_outside ref tape r signHost (ref_avoids_sign d)
+    have sameP0 := regValue_congr p0Sites (run ref tape r).basis r.basis (fun q hq =>
+      run_preserves_outside ref tape r q (ref_avoids_tag_ready d q (List.mem_append_right _ hq)))
+    have samePayload := (ocut_signPayload_parity _ x origin ctx tr (run ref tape r) endCut).trans
+      (ocut_signPayload_parity _ x origin ctx tr r start).symm
+    unfold signDatum
+    rw [sameSign, sameP0, samePayload]
+    exact hsign
+  have endFrames := ocut_signFrames (!d) x rows rb origin ctx tr history (signZero (run ref tape r)) endZeroCut
+  have endDatum := signDatum_of_fits midFit
+    (fits_signPayload_parity (!d) rows (finalCode d (plan d) (initialCode d)) a1 (signZero (run ref tape r))
+      midFit (final_signCode d) endFrames)
+  have value : signDatum a1 = (run ref tape r).basis signHost :=
+    endDatum.trans ((signZero_datum (run ref tape r)).trans r1Ready.symm)
+  rw [signGroup_split, aZero]
+  exact restore_fits _ midFit endClean endUsed value
+
+end ECDSAAdd.Entrant.StairPacket.WindowFieldView
+
+end
+
+
+
+end
+
+end
+
+
+end
+end
+end
+end
+-- ==== end: declarations continued from module MainS ====
 
 section
 
@@ -7428,8 +10195,8 @@ theorem programNC_cost (c : Cost) {cx cy : Fp} (hc : curve.toAffine.Nonsingular 
   omega
 
 /-- Toffoli, measurement and slot bounds of the NC caller: 502 Toffolis and 502 measurements fewer. -/
-theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2007627 ∧
-    measurementCount (programNC C) ≤ 1445809 ∧ gateSlots (programNC C) ≤ 67191214 := by
+theorem metricsNC (C : Point) : toffoliCount (programNC C) ≤ 2007620 ∧
+    measurementCount (programNC C) ≤ 1445807 ∧ gateSlots (programNC C) ≤ 67191214 := by
   have m := metricsOld C
   cases C with
   | zero =>
@@ -7456,7 +10223,7 @@ end
 section
 
 namespace ECDSAAdd.Entrant.StairPacket.WindowPhysical
-open private fw bw firstDom from ECDSAAdd.Submission.Entrant.MainS
+open private fw bw firstDom from ECDSAAdd.Submission.Entrant.MainM
 open Arithmetic MappedCompressed Secp256k1 Baselines StairPhysicalV3 StairRestSupport
 open Stair44Outer StairConcreteAssembly Stair44WalkMap
 set_option maxHeartbeats 1400000
@@ -7583,7 +10350,7 @@ end
 section
 
 namespace ECDSAAdd.Entrant.StairPacket.WindowSites
-open private pieceOK_sub entryField exitField from ECDSAAdd.Submission.Entrant.MainS
+open private pieceOK_sub entryField exitField from ECDSAAdd.Submission.Entrant.MainM
 open Arithmetic MappedCompressed Secp256k1 Baselines StairSiteAvoidance StairSiteEasy
 open StairConcreteAssembly Stair44Outer
 set_option maxRecDepth 18000
@@ -7644,7 +10411,7 @@ set_option maxHeartbeats 1500000
 
 /-- The square's `CCX G0 G0 _` is the one repeated control of the NC caller: normalization
 turns it into a `CX`, so the entry has one Toffoli fewer than `programNC`. -/
-theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2007626 := by
+theorem toffoliNC_normalized (C : Point) : toffoliCount (normalizeProgram (programNC C)) ≤ 2007619 := by
   have m := (metricsNC C).1
   cases C with
   | zero => exact Nat.zero_le _ |>.trans' (by simp [programNC, normalizeProgram, toffoliCount])
@@ -7672,7 +10439,7 @@ open Arithmetic Secp256k1 Challenge Baselines
 
 /-- The NC entry: both field converters deleted, square reading the odd word. -/
 def entryNC : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.programNC C)
-def boundsNC : Challenge.Bounds := ⟨2007626,1445809,1542,67191214⟩
+def boundsNC : Challenge.Bounds := ⟨2007619,1445807,1542,67191214⟩
 
 theorem certificateOfSemanticsNC
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.programNC C)
@@ -7681,7 +10448,7 @@ theorem certificateOfSemanticsNC
   physical C := Baselines.normalize_physical _ (WindowPhysical.physicalNC C)
   toffoli_le C := WindowParityCaller.toffoliNC_normalized C
   measurements_le C := by
-    change measurementCount (normalizeProgram _) ≤ 1445809
+    change measurementCount (normalizeProgram _) ≤ 1445807
     rw [normalize_measurements]
     exact (WindowParityCaller.metricsNC C).2.1
   qubits_le C := by

@@ -5731,7 +5731,7 @@ private theorem wrapper_counts_delta (L : ControlledPointLayout) (C : Point) (cy
        
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499302 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499304 := by
   have diff:=(wrapper_counts_delta layout (.some hc) cy _ _
     (gen_counts_delta layout layout_widths cx cy)).2
   have old:=Rolling1588BFFinal.wrapper_measurements cx cy hc
