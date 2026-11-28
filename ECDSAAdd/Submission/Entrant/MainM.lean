@@ -2586,6 +2586,37 @@ theorem forward_relInterior (d : Bool) :
 def forward (d : Bool) : Program := (interiorFC d).flatten
 /-! The lower exchanges at the reverse boundary from wide window 8 to wide window 7. -/
 
+private theorem restR_suffix (P S : Program) (n : Nat) (hS : S.length = 3 * n) :
+    restR (P ++ S) n = restR S n := by
+  have e0 : (P ++ S).length = P.length + S.length := by simp only [List.length_append]
+  have h4 : (P ++ S).drop ((P ++ S).length - 3 * n) = S.drop (S.length - 3 * n) := by
+    rw [e0, show P.length + S.length - 3 * n = P.length + (S.length - 3 * n) by omega, drop_suf]
+  have h5 : (P ++ S).drop ((P ++ S).length - 2 * n) = S.drop (S.length - 2 * n) := by
+    rw [e0, show P.length + S.length - 2 * n = P.length + (S.length - 2 * n) by omega, drop_suf]
+  have h6 : (P ++ S).drop ((P ++ S).length - n) = S.drop (S.length - n) := by
+    rw [e0, show P.length + S.length - n = P.length + (S.length - n) by omega, drop_suf]
+  unfold restR
+  rw [h4, h5, h6]
+
+/-- The route suffix of a window reads only the last `3 * n` gates of its untick. -/
+private theorem routeSuffix15 (e : InteriorEdge) (j : Fin 26) (hr : e.right = .short j)
+    (hlen : (sw15 j).length = 3 * nP15 j)
+    (hs : restR (sw15 j) (nP15 j) = passT e.r e.allPairs) :
+    restR e.right.baseR e.right.n = passT e.r e.allPairs := by
+  obtain ⟨P, hP⟩ := unrouted15_split j
+  have hb : restR e.right.baseR e.right.n = restR (Shadow7.unrouted j 0 1) (nP15 j) := by rw [hr]; rfl
+  rw [hb, hP, restR_suffix P _ _ hlen]
+  exact hs
+
+private theorem routeSuffix20 (e : InteriorEdge) (j : Fin 9) (hr : e.right = .wide j)
+    (hlen : (sw20 j).length = 3 * nP20 j)
+    (hs : restR (sw20 j) (nP20 j) = passT e.r e.allPairs) :
+    restR e.right.baseR e.right.n = passT e.r e.allPairs := by
+  obtain ⟨P, hP⟩ := unrouted20_split j
+  have hb : restR e.right.baseR e.right.n = restR (unrouted20 j 0 1) (nP20 j) := by rw [hr]; rfl
+  rw [hb, hP, restR_suffix P _ _ hlen]
+  exact hs
+
 private def reverseLowerEdge : InteriorEdge := ⟨.wide 7, .wide 8, 92, 10⟩
 
 private theorem reverseLowerEdge_mem : reverseLowerEdge ∈ interiorEdges := by decide
@@ -2626,8 +2657,8 @@ private theorem reverseLowerLeave :
 set_option maxRecDepth 100000 in
 private theorem reverseLowerRoute :
     restR reverseLowerEdge.right.baseR reverseLowerEdge.right.n =
-      passT reverseLowerEdge.r reverseLowerEdge.allPairs := by
-  decide +kernel
+      passT reverseLowerEdge.r reverseLowerEdge.allPairs :=
+  routeSuffix20 reverseLowerEdge 8 rfl (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 private theorem reverseLowerStable : fStable reverseLowerEdge.swapR reverseLowerEdge.interiorMidR := by
@@ -2835,7 +2866,8 @@ private def revW1 (d : Bool) : List Program := revStepL (reverseLowerWalk d) 138
 private theorem revE1_mem : revE1 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE1_facts : ReverseLowerFacts revE1 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE1 1 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE1_at0 (d : Bool) : ((reverseLowerWalk d).drop 138).take 3 = revE1.oldR := by
   rfl
 private theorem revE1_at (d : Bool) : ((reverseLowerWalk d).drop 138).take 3 = revE1.oldR := by
@@ -2849,7 +2881,8 @@ private def revW2 (d : Bool) : List Program := revStepL (revW1 d) 132 revE2
 private theorem revE2_mem : revE2 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE2_facts : ReverseLowerFacts revE2 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE2 2 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE2_at0 (d : Bool) : ((reverseLowerWalk d).drop 132).take 3 = revE2.oldR := by
   rfl
 private theorem revE2_at (d : Bool) : ((revW1 d).drop 132).take 3 = revE2.oldR := by
@@ -2865,7 +2898,8 @@ private def revW3 (d : Bool) : List Program := revStepL (revW2 d) 126 revE3
 private theorem revE3_mem : revE3 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE3_facts : ReverseLowerFacts revE3 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE3 3 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE3_at0 (d : Bool) : ((reverseLowerWalk d).drop 126).take 3 = revE3.oldR := by
   rfl
 private theorem revE3_at (d : Bool) : ((revW2 d).drop 126).take 3 = revE3.oldR := by
@@ -2883,7 +2917,8 @@ private def revW4 (d : Bool) : List Program := revStepL (revW3 d) 120 revE4
 private theorem revE4_mem : revE4 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE4_facts : ReverseLowerFacts revE4 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE4 4 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE4_at0 (d : Bool) : ((reverseLowerWalk d).drop 120).take 3 = revE4.oldR := by
   rfl
 private theorem revE4_at (d : Bool) : ((revW3 d).drop 120).take 3 = revE4.oldR := by
@@ -2903,7 +2938,8 @@ private def revW5 (d : Bool) : List Program := revStepL (revW4 d) 114 revE5
 private theorem revE5_mem : revE5 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE5_facts : ReverseLowerFacts revE5 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE5 5 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE5_at0 (d : Bool) : ((reverseLowerWalk d).drop 114).take 3 = revE5.oldR := by
   rfl
 private theorem revE5_at (d : Bool) : ((revW4 d).drop 114).take 3 = revE5.oldR := by
@@ -2925,7 +2961,8 @@ private def revW6 (d : Bool) : List Program := revStepL (revW5 d) 108 revE6
 private theorem revE6_mem : revE6 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE6_facts : ReverseLowerFacts revE6 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE6 6 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE6_at0 (d : Bool) : ((reverseLowerWalk d).drop 108).take 3 = revE6.oldR := by
   rfl
 private theorem revE6_at (d : Bool) : ((revW5 d).drop 108).take 3 = revE6.oldR := by
@@ -2949,7 +2986,8 @@ private def revW7 (d : Bool) : List Program := revStepL (revW6 d) 102 revE7
 private theorem revE7_mem : revE7 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE7_facts : ReverseLowerFacts revE7 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE7 7 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE7_at0 (d : Bool) : ((reverseLowerWalk d).drop 102).take 3 = revE7.oldR := by
   rfl
 private theorem revE7_at (d : Bool) : ((revW6 d).drop 102).take 3 = revE7.oldR := by
@@ -2975,7 +3013,8 @@ private def revW8 (d : Bool) : List Program := revStepL (revW7 d) 96 revE8
 private theorem revE8_mem : revE8 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE8_facts : ReverseLowerFacts revE8 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE8 0 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE8_at0 (d : Bool) : ((reverseLowerWalk d).drop 96).take 3 = revE8.oldR := by
   rfl
 private theorem revE8_at (d : Bool) : ((revW7 d).drop 96).take 3 = revE8.oldR := by
@@ -3003,7 +3042,8 @@ private def revW9 (d : Bool) : List Program := revStepL (revW8 d) 90 revE9
 private theorem revE9_mem : revE9 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE9_facts : ReverseLowerFacts revE9 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE9 1 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE9_at0 (d : Bool) : ((reverseLowerWalk d).drop 90).take 3 = revE9.oldR := by
   rfl
 private theorem revE9_at (d : Bool) : ((revW8 d).drop 90).take 3 = revE9.oldR := by
@@ -3033,7 +3073,8 @@ private def revW10 (d : Bool) : List Program := revStepL (revW9 d) 83 revE10
 private theorem revE10_mem : revE10 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE10_facts : ReverseLowerFacts revE10 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE10 2 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE10_at0 (d : Bool) : ((reverseLowerWalk d).drop 83).take 3 = revE10.oldR := by
   rfl
 private theorem revE10_at (d : Bool) : ((revW9 d).drop 83).take 3 = revE10.oldR := by
@@ -3065,7 +3106,8 @@ private def revW11 (d : Bool) : List Program := revStepL (revW10 d) 76 revE11
 private theorem revE11_mem : revE11 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE11_facts : ReverseLowerFacts revE11 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE11 3 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE11_at0 (d : Bool) : ((reverseLowerWalk d).drop 76).take 3 = revE11.oldR := by
   rfl
 private theorem revE11_at (d : Bool) : ((revW10 d).drop 76).take 3 = revE11.oldR := by
@@ -3099,7 +3141,8 @@ private def revW12 (d : Bool) : List Program := revStepL (revW11 d) 69 revE12
 private theorem revE12_mem : revE12 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE12_facts : ReverseLowerFacts revE12 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE12 4 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE12_at0 (d : Bool) : ((reverseLowerWalk d).drop 69).take 3 = revE12.oldR := by
   rfl
 private theorem revE12_at (d : Bool) : ((revW11 d).drop 69).take 3 = revE12.oldR := by
@@ -3135,7 +3178,8 @@ private def revW13 (d : Bool) : List Program := revStepL (revW12 d) 62 revE13
 private theorem revE13_mem : revE13 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE13_facts : ReverseLowerFacts revE13 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE13 5 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE13_at0 (d : Bool) : ((reverseLowerWalk d).drop 62).take 3 = revE13.oldR := by
   rfl
 private theorem revE13_at (d : Bool) : ((revW12 d).drop 62).take 3 = revE13.oldR := by
@@ -3173,7 +3217,8 @@ private def revW14 (d : Bool) : List Program := revStepL (revW13 d) 55 revE14
 private theorem revE14_mem : revE14 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE14_facts : ReverseLowerFacts revE14 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE14 6 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE14_at0 (d : Bool) : ((reverseLowerWalk d).drop 55).take 3 = revE14.oldR := by
   rfl
 private theorem revE14_at (d : Bool) : ((revW13 d).drop 55).take 3 = revE14.oldR := by
@@ -3213,7 +3258,8 @@ private def revW15 (d : Bool) : List Program := revStepL (revW14 d) 48 revE15
 private theorem revE15_mem : revE15 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE15_facts : ReverseLowerFacts revE15 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix20 revE15 7 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE15_at0 (d : Bool) : ((reverseLowerWalk d).drop 48).take 3 = revE15.oldR := by
   rfl
 private theorem revE15_at (d : Bool) : ((revW14 d).drop 48).take 3 = revE15.oldR := by
@@ -3255,7 +3301,8 @@ private def revW16 (d : Bool) : List Program := revStepL (revW15 d) 34 revE16
 private theorem revE16_mem : revE16 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE16_facts : ReverseLowerFacts revE16 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE16 20 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE16_at0 (d : Bool) : ((reverseLowerWalk d).drop 34).take 3 = revE16.oldR := by
   rfl
 private theorem revE16_at (d : Bool) : ((revW15 d).drop 34).take 3 = revE16.oldR := by
@@ -3299,7 +3346,8 @@ private def revW17 (d : Bool) : List Program := revStepL (revW16 d) 27 revE17
 private theorem revE17_mem : revE17 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE17_facts : ReverseLowerFacts revE17 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE17 21 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE17_at0 (d : Bool) : ((reverseLowerWalk d).drop 27).take 3 = revE17.oldR := by
   rfl
 private theorem revE17_at (d : Bool) : ((revW16 d).drop 27).take 3 = revE17.oldR := by
@@ -3345,7 +3393,8 @@ private def revW18 (d : Bool) : List Program := revStepL (revW17 d) 21 revE18
 private theorem revE18_mem : revE18 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE18_facts : ReverseLowerFacts revE18 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE18 22 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE18_at0 (d : Bool) : ((reverseLowerWalk d).drop 21).take 3 = revE18.oldR := by
   rfl
 private theorem revE18_at (d : Bool) : ((revW17 d).drop 21).take 3 = revE18.oldR := by
@@ -3393,7 +3442,8 @@ private def revW19 (d : Bool) : List Program := revStepL (revW18 d) 15 revE19
 private theorem revE19_mem : revE19 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE19_facts : ReverseLowerFacts revE19 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE19 23 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE19_at0 (d : Bool) : ((reverseLowerWalk d).drop 15).take 3 = revE19.oldR := by
   rfl
 private theorem revE19_at (d : Bool) : ((revW18 d).drop 15).take 3 = revE19.oldR := by
@@ -3443,7 +3493,8 @@ private def revW20 (d : Bool) : List Program := revStepL (revW19 d) 9 revE20
 private theorem revE20_mem : revE20 ∈ interiorEdges := by decide
 set_option maxRecDepth 100000 in
 private theorem revE20_facts : ReverseLowerFacts revE20 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
+  refine ⟨?_, routeSuffix15 revE20 24 rfl (by decide +kernel) (by decide +kernel),
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide +kernel
 private theorem revE20_at0 (d : Bool) : ((reverseLowerWalk d).drop 9).take 3 = revE20.oldR := by
   rfl
 private theorem revE20_at (d : Bool) : ((revW19 d).drop 9).take 3 = revE20.oldR := by
