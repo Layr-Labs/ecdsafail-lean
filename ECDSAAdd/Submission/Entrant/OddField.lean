@@ -13359,13 +13359,7 @@ def cellDecoderOddLoan : Program :=
     StairLoan.rebindMany StairBoundaryLoan.exclusiveHoles rHosts44 window760Odd0 ++
     [.X fixedLayout.sigma] ++ restoreSource fixedLayout ++ copySource fixedLayout
 
-/-- `cellDecoderOddLoan` with the Toffoli of the first comparison carry cell erased.
-    The lower ladder `headLOdd` takes its carry-in from `fixedLayout.bias`, which is clean
-    `false` when the window starts, so the cell `CX x₀ c₁, CX bias c₁, CCX x₀ bias c₁`
-    (instruction 1017 is its `CCX`) never fires its Toffoli. -/
-def cellDecoderOddLoanX : Program := cellDecoderOddLoan.eraseIdx 1017
-
-def endPacket760DivOddLoan : Program := k5Wrap cellDecoderOddLoanX
+def endPacket760DivOddLoan : Program := k5Wrap cellDecoderOddLoan
 
 /-- Flat decomposition of `cellDecoderOddLoan` without `rebindMany`. -/
 def k5PreOdd : Program :=
@@ -13407,198 +13401,24 @@ theorem cellDecoderOddLoan_facts :
   refine ⟨by omega, by omega, by omega, ?_⟩
   exact ⟨⟨pp.1.1, StairLoan.rebindMany_physical _ _ _ pp.1.2⟩, pp.2⟩
 
-/-! ### Erasing a Toffoli whose control is clean -/
-
-/-- The wire an instruction writes. -/
-def writeTarget : Instr → Wire
-  | .X t => t
-  | .CX _ t => t
-  | .CCX _ _ t => t
-  | .measureX t _ _ => t
-
-/-- A wire no instruction writes keeps its value. -/
-theorem run_basis_of_unwritten (q : Wire) : ∀ (P : Program) (m : List Bool) (s : State),
-    (∀ i ∈ P, writeTarget i ≠ q) → (run P m s).basis q = s.basis q := by
-  intro P
-  induction P with
-  | nil => intro m s _; rfl
-  | cons i p ih =>
-    intro m s h
-    have hi : writeTarget i ≠ q := h i (List.mem_cons_self)
-    have hp : ∀ j ∈ p, writeTarget j ≠ q := fun j hj => h j (List.mem_cons_of_mem _ hj)
-    cases i with
-    | X t =>
-      have ht : q ≠ t := fun e => hi e.symm
-      simp only [run]
-      rw [ih _ _ hp]
-      simp only [writeBit, Function.update_of_ne ht]
-    | CX c t =>
-      have ht : q ≠ t := fun e => hi e.symm
-      simp only [run]
-      rw [ih _ _ hp]
-      simp only [writeBit, Function.update_of_ne ht]
-    | CCX a b t =>
-      have ht : q ≠ t := fun e => hi e.symm
-      simp only [run]
-      rw [ih _ _ hp]
-      simp only [writeBit, Function.update_of_ne ht]
-    | measureX t c0 c1 =>
-      have ht : q ≠ t := fun e => hi e.symm
-      simp only [run]
-      rw [ih _ _ hp]
-      simp only [measureAndCorrect, correct_basis, writeBit, Function.update_of_ne ht]
-
-/-- Erasing a Toffoli whose right control is `false` when it runs does not change the run. -/
-theorem run_eraseIdx_dead : ∀ (P : Program) (k : Nat) (a b t : Wire) (m : List Bool) (s : State),
-    P[k]? = some (Instr.CCX a b t) → (run (P.take k) m s).basis b = false →
-    run (P.eraseIdx k) m s = run P m s := by
-  intro P
-  induction P with
-  | nil => intro k a b t m s hk _; simp at hk
-  | cons i p ih =>
-    intro k a b t m s hk hb
-    cases k with
-    | zero =>
-      simp only [List.getElem?_cons_zero, Option.some.injEq] at hk
-      subst hk
-      simp only [List.take_zero, run] at hb
-      simp only [List.eraseIdx_cons_zero, run]
-      have hw : writeBit s.basis t (s.basis t ^^ (s.basis a && s.basis b)) = s.basis := by
-        simp only [writeBit, hb, Bool.and_false, Bool.xor_false, Function.update_eq_self]
-      rw [hw]
-    | succ k =>
-      simp only [List.getElem?_cons_succ] at hk
-      cases i with
-      | X u =>
-        simp only [List.take_succ_cons, run] at hb
-        simp only [List.eraseIdx_cons_succ, run]
-        exact ih k a b t m _ hk hb
-      | CX c u =>
-        simp only [List.take_succ_cons, run] at hb
-        simp only [List.eraseIdx_cons_succ, run]
-        exact ih k a b t m _ hk hb
-      | CCX x y u =>
-        simp only [List.take_succ_cons, run] at hb
-        simp only [List.eraseIdx_cons_succ, run]
-        exact ih k a b t m _ hk hb
-      | measureX u c0 c1 =>
-        simp only [List.take_succ_cons, run] at hb
-        simp only [List.eraseIdx_cons_succ, run]
-        exact ih k a b t _ _ hk hb
-
-/-- Resource counts after erasing one Toffoli. -/
-theorem counts_eraseIdx_ccx : ∀ (P : Program) (k : Nat) (a b t : Wire),
-    P[k]? = some (Instr.CCX a b t) →
-    toffoliCount (P.eraseIdx k) + 1 = toffoliCount P ∧
-    measurementCount (P.eraseIdx k) = measurementCount P ∧
-    gateSlots (P.eraseIdx k) + 1 = gateSlots P := by
-  intro P
-  induction P with
-  | nil => intro k a b t hk; simp at hk
-  | cons i p ih =>
-    intro k a b t hk
-    cases k with
-    | zero =>
-      simp only [List.getElem?_cons_zero, Option.some.injEq] at hk
-      subst hk
-      simp only [List.eraseIdx_cons_zero]
-      refine ⟨?_, rfl, ?_⟩
-      · show toffoliCount p + 1 = 1 + toffoliCount p
-        omega
-      · show gateSlots p + 1 = 1 + gateSlots p
-        omega
-    | succ k =>
-      simp only [List.getElem?_cons_succ] at hk
-      obtain ⟨h1, h2, h3⟩ := ih k a b t hk
-      simp only [List.eraseIdx_cons_succ]
-      cases i with
-      | X u =>
-        refine ⟨h1, h2, ?_⟩
-        show 1 + gateSlots (p.eraseIdx k) + 1 = 1 + gateSlots p
-        omega
-      | CX c u =>
-        refine ⟨h1, h2, ?_⟩
-        show 1 + gateSlots (p.eraseIdx k) + 1 = 1 + gateSlots p
-        omega
-      | CCX x y u =>
-        refine ⟨?_, h2, ?_⟩
-        · show 1 + toffoliCount (p.eraseIdx k) + 1 = 1 + toffoliCount p
-          omega
-        · show 1 + gateSlots (p.eraseIdx k) + 1 = 1 + gateSlots p
-          omega
-      | measureX u c0 c1 =>
-        refine ⟨h1, ?_, ?_⟩
-        · show 1 + measurementCount (p.eraseIdx k) = 1 + measurementCount p
-          omega
-        · show 1 + c0.length + c1.length + gateSlots (p.eraseIdx k) + 1 =
-            1 + c0.length + c1.length + gateSlots p
-          omega
-
-theorem wires_eraseIdx_sub (P : Program) (k : Nat) : wires (P.eraseIdx k) ⊆ wires P := by
-  intro q hq
-  rw [OddFullPass.mem_wires_iff_flatMap] at hq ⊢
-  obtain ⟨i, hi, hqi⟩ := List.mem_flatMap.mp hq
-  exact List.mem_flatMap.mpr ⟨i, List.mem_of_mem_eraseIdx hi, hqi⟩
-
-theorem gatePhysical_eraseIdx (P : Program) (k : Nat) (hp : GatePhysical P) :
-    GatePhysical (P.eraseIdx k) := fun i hi => hp i (List.mem_of_mem_eraseIdx hi)
-
-theorem bias_eq_784 : fixedLayout.bias = 784 := by decide +kernel
-
-/-- Instruction 1017 of `cellDecoderOddLoan` is the first carry cell's Toffoli; its right
-    control is `fixedLayout.bias`. -/
-theorem cellDecoderOddLoan_dead :
-    cellDecoderOddLoan[1017]? = some (Instr.CCX 786 784 528) := by decide +kernel
-
-/-- Nothing before instruction 1017 writes `fixedLayout.bias`. -/
-theorem cellDecoderOddLoan_bias_unwritten :
-    ((cellDecoderOddLoan.take 1017).all (fun i => decide (writeTarget i ≠ 784))) = true := by
-  decide +kernel
-
-/-- With a clean `bias`, the erased cell runs exactly like `cellDecoderOddLoan`. -/
-theorem cellDecoderOddLoanX_run (m : List Bool) (s : State)
-    (bc : s.basis fixedLayout.bias = false) :
-    run cellDecoderOddLoanX m s = run cellDecoderOddLoan m s := by
-  refine run_eraseIdx_dead cellDecoderOddLoan 1017 786 784 528 m s cellDecoderOddLoan_dead ?_
-  rw [run_basis_of_unwritten 784 _ m s
-    (fun i hi => of_decide_eq_true (List.all_eq_true.mp cellDecoderOddLoan_bias_unwritten i hi))]
-  rw [← bias_eq_784]; exact bc
-
-/-- 256 T (one fewer than `cellDecoderOddLoan`), 514 M, 5971 gate slots. -/
-theorem cellDecoderOddLoanX_facts :
-    toffoliCount cellDecoderOddLoanX = 256 ∧ measurementCount cellDecoderOddLoanX = 514 ∧
-      gateSlots cellDecoderOddLoanX = 5971 ∧ GatePhysical cellDecoderOddLoanX := by
-  obtain ⟨t, m, g, p⟩ := cellDecoderOddLoan_facts
-  obtain ⟨h1, h2, h3⟩ := counts_eraseIdx_ccx cellDecoderOddLoan 1017 786 784 528 cellDecoderOddLoan_dead
-  exact ⟨by unfold cellDecoderOddLoanX; omega, by unfold cellDecoderOddLoanX; omega,
-    by unfold cellDecoderOddLoanX; omega, gatePhysical_eraseIdx _ _ p⟩
-
-theorem k5Wrap_counts2 (P Q : Program) (kt km : Nat)
-    (ht : toffoliCount P = toffoliCount Q + kt) (hm : measurementCount P = measurementCount Q + km) :
-    toffoliCount (k5Wrap P) = toffoliCount (k5Wrap Q) + kt ∧
-      measurementCount (k5Wrap P) = measurementCount (k5Wrap Q) + km := by
-  simp only [k5Wrap, ControlLoan1589.loanWindow, k5_rename_tc, k5_rename_mc,
-    toffoliCount_append, measurementCount_append, ht, hm]
-  constructor <;> omega
-
 theorem endPacket760DivOddLoan_counts :
-    toffoliCount endPacket760DivOddLoan + 45 = toffoliCount endPacket760DivLoan ∧
+    toffoliCount endPacket760DivOddLoan + 44 = toffoliCount endPacket760DivLoan ∧
     measurementCount endPacket760DivOddLoan + 44 = measurementCount endPacket760DivLoan := by
-  obtain ⟨t, m, -, -⟩ := cellDecoderOddLoanX_facts
+  obtain ⟨t, m, -, -⟩ := cellDecoderOddLoan_facts
   obtain ⟨t0, m0, -, -⟩ := cellDecoderLoan_facts
   rw [endPacket760DivOddLoan, endPacket760DivLoan_k5]
-  have h := k5Wrap_counts2 cellDecoderLoan cellDecoderOddLoanX 45 44 (by omega) (by omega)
+  have h := k5Wrap_counts cellDecoderLoan cellDecoderOddLoan 44 (by omega) (by omega)
   exact ⟨by omega, by omega⟩
 
 theorem endPacket760DivOddLoan_slots_le :
     gateSlots endPacket760DivOddLoan ≤ gateSlots endPacket760DivLoan := by
-  obtain ⟨-, -, g, -⟩ := cellDecoderOddLoanX_facts
+  obtain ⟨-, -, g, -⟩ := cellDecoderOddLoan_facts
   obtain ⟨-, -, g0, -⟩ := cellDecoderLoan_facts
   rw [endPacket760DivOddLoan, endPacket760DivLoan_k5]
-  simpa only [Nat.add_zero] using k5Wrap_slots cellDecoderOddLoanX cellDecoderLoan 0 (by omega)
+  simpa only [Nat.add_zero] using k5Wrap_slots cellDecoderOddLoan cellDecoderLoan 0 (by omega)
 
 theorem endPacket760DivOddLoan_physical : GatePhysical endPacket760DivOddLoan :=
-  k5Wrap_physical cellDecoderOddLoanX cellDecoderOddLoanX_facts.2.2.2
+  k5Wrap_physical cellDecoderOddLoan cellDecoderOddLoan_facts.2.2.2
 
 attribute [local irreducible] wires
 
@@ -13797,10 +13617,6 @@ theorem cellDecoderOddLoan_sub :
     exact CompareDecoder.BoundaryLoan.Inclusion.mem_nine
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h))))))))
 
-theorem cellDecoderOddLoanX_sub :
-    wires cellDecoderOddLoanX ⊆ wires CompareDecoder.cellDecoderNext :=
-  (wires_eraseIdx_sub cellDecoderOddLoan 1017).trans cellDecoderOddLoan_sub
-
 theorem endPacket760DivOddLoan_sub_record :
     wires endPacket760DivOddLoan ⊆ wires (R2SqEp760.endPacket760 true) := by
   rw [endPacket760DivOddLoan, endPacket760_true_k5]
@@ -13810,7 +13626,7 @@ theorem endPacket760DivOddLoan_sub_record :
       (StairLoanGroupSupport.append_sub _ _ _ _
         (StairLoanGroupSupport.append_sub _ _ _ _ (Finset.Subset.refl _)
           (StairLoanGroupSupport.rename_sub _ _ _
-            (StairLoanGroupSupport.append_sub _ _ _ _ cellDecoderOddLoanX_sub (Finset.Subset.refl _))))
+            (StairLoanGroupSupport.append_sub _ _ _ _ cellDecoderOddLoan_sub (Finset.Subset.refl _))))
         (Finset.Subset.refl _)))
 
 /-- Kernel-checked verification of `lowPolysOdd` over all 192 reachable 6-bit states
@@ -14143,10 +13959,6 @@ theorem cellDecoderOddLoan_sub_loan :
   · unfold cellDecoderLoan; simp only [wires_append, Finset.mem_union, or_assoc]
     exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h)))))))
 
-theorem cellDecoderOddLoanX_sub_loan :
-    wires cellDecoderOddLoanX ⊆ wires cellDecoderLoan :=
-  (wires_eraseIdx_sub cellDecoderOddLoan 1017).trans cellDecoderOddLoan_sub_loan
-
 theorem endPacket760DivOddLoan_wires_sub :
     wires endPacket760DivOddLoan ⊆ wires endPacket760DivLoan := by
   rw [endPacket760DivOddLoan, endPacket760DivLoan_k5]
@@ -14156,7 +13968,7 @@ theorem endPacket760DivOddLoan_wires_sub :
       (StairLoanGroupSupport.append_sub _ _ _ _
         (StairLoanGroupSupport.append_sub _ _ _ _ (Finset.Subset.refl _)
           (StairLoanGroupSupport.rename_sub _ _ _
-            (StairLoanGroupSupport.append_sub _ _ _ _ cellDecoderOddLoanX_sub_loan (Finset.Subset.refl _))))
+            (StairLoanGroupSupport.append_sub _ _ _ _ cellDecoderOddLoan_sub_loan (Finset.Subset.refl _))))
         (Finset.Subset.refl _)))
 
 /-- Clean-wire rebind drop for `window760Odd0`: once `R[13..56]` (`rHosts44`) have been
@@ -15893,7 +15705,7 @@ private theorem endPacket760DivOddLoan_eq :
       renameProgram (Equiv.swap (base 760) (base 717))
         (renameProgram (shifted Placement5.pi0)
           (ControlLoan1589.loanWindow (base 510) (base 2409) (base 719)
-            (cellDecoderOddLoanX ++ List.replicate 507 (Instr.measureX (base 512) [] [])))) := by
+            (cellDecoderOddLoan ++ List.replicate 507 (Instr.measureX (base 512) [] [])))) := by
   unfold endPacket760DivOddLoan k5Wrap; rfl
 
 attribute [local irreducible] endPacket760DivOddLoan
@@ -16081,23 +15893,6 @@ private theorem run_rename_eq_of_outside (f : Equiv.Perm Wire) (P : Program) (R 
         simpa [pullState] using this.symm
       rw [hq, hout _ hsr, hs, hout _ hqr]
 
-/-- `cellDecoderOddLoan_correct` for the erased cell: `bias` is clean on entry, so the two
-    programs run identically. -/
-theorem cellDecoderOddLoanX_correct (Y : Fp) (sigma : Bool) (s : State) (m : List Bool)
-    (ys : regValue fixedLayout.y s.basis = oddWord Y)
-    (rs : regValue fixedLayout.r s.basis = oddWord ((if sigma then 1 else 3) * Y))
-    (sig : s.basis fixedLayout.sigma = sigma)
-    (hc : s.basis fixedLayout.h = false)
-    (bc : s.basis fixedLayout.bias = false)
-    (cc : ∀ q ∈ fixedLayout.carry, s.basis q = false) :
-    (run cellDecoderOddLoanX m s).phase = s.phase ∧
-    (∀ q, q ∉ fixedLayout.r → (run cellDecoderOddLoanX m s).basis q = s.basis q) ∧
-    regValue fixedLayout.r (run cellDecoderOddLoanX m s).basis = oddWord Y := by
-  rw [cellDecoderOddLoanX_run m s bc]
-  exact cellDecoderOddLoan_correct Y sigma s m ys rs sig hc bc cc
-
-attribute [local irreducible] cellDecoderOddLoanX
-
 theorem endPacket760DivOddLoan_frame (Y : Fp) (s : State) (m : List Bool)
     (clean : Q6EndpointCell.Clean base s.basis)
     (flagIn : s.basis (base 2409) = false)
@@ -16113,7 +15908,7 @@ theorem endPacket760DivOddLoan_frame (Y : Fp) (s : State) (m : List Bool)
   let g := base 510
   let flag := base 2409
   let c := base 719
-  let padP := cellDecoderOddLoanX ++ List.replicate 507 (Instr.measureX (base 512) [] [])
+  let padP := cellDecoderOddLoan ++ List.replicate 507 (Instr.measureX (base 512) [] [])
   have hpad : ∀ (st : State) (rec : List Bool),
       regValue L.y st.basis = oddWord Y →
       regValue L.r st.basis = oddWord ((if st.basis L.sigma then 1 else 3) * Y) →
@@ -16127,10 +15922,10 @@ theorem endPacket760DivOddLoan_frame (Y : Fp) (s : State) (m : List Bool)
     have hcc : ∀ q ∈ L.carry, st.basis q = false := by
       have hchk : L.carry.all (fun w => decide (w ∈ Q6EndpointCell.workIds.map base)) = true := by decide +kernel
       intro q hq; exact hcs q (of_decide_eq_true (List.all_eq_true.mp hchk q hq))
-    have hh := cellDecoderOddLoanX_correct Y (st.basis L.sigma) st (rec.take (measurementCount cellDecoderOddLoanX))
+    have hh := cellDecoderOddLoan_correct Y (st.basis L.sigma) st (rec.take (measurementCount cellDecoderOddLoan))
       hYs hRs rfl hch hcb hcc
     have h512_r : base 512 ∉ L.r := by decide +kernel
-    have h512_0 : (run cellDecoderOddLoanX (rec.take (measurementCount cellDecoderOddLoanX)) st).basis (base 512) = false :=
+    have h512_0 : (run cellDecoderOddLoan (rec.take (measurementCount cellDecoderOddLoan)) st).basis (base 512) = false :=
       (hh.2.1 _ h512_r).trans (hcs _ (by decide +kernel))
     have hrep : ∀ (k : Nat) (x : State) (r : List Bool), x.basis (base 512) = false →
         run (List.replicate k (Instr.measureX (base 512) [] [])) r x = x := by
@@ -16157,7 +15952,7 @@ theorem endPacket760DivOddLoan_frame (Y : Fp) (s : State) (m : List Bool)
         have hcons : List.replicate (k + 1) (Instr.measureX (base 512) [] []) =
             [Instr.measureX (base 512) [] []] ++ List.replicate k (Instr.measureX (base 512) [] []) := rfl
         rw [hcons, run_append, run_take, hstep]; exact ih x _ hx
-    show (run (cellDecoderOddLoanX ++ List.replicate 507 (Instr.measureX (base 512) [] [])) rec st).phase = _ ∧ _
+    show (run (cellDecoderOddLoan ++ List.replicate 507 (Instr.measureX (base 512) [] [])) rec st).phase = _ ∧ _
     rw [run_append, hrep 507 _ _ h512_0]
     exact ⟨hh.1, hh.2.2, hh.2.1⟩
   have hraw : ∀ (rec : List Bool),
